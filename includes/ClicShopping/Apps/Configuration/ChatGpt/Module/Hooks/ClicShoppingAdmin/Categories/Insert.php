@@ -211,6 +211,11 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
 
+                $update_sql_data = [
+                  'language_id' => $item['language_id'],
+                  'entity_id' => $item['categories_id']
+                ];
+
                 $this->app->db->save('categories_embedding', $sql_data_array_embedding, $update_sql_data);
               }
             }

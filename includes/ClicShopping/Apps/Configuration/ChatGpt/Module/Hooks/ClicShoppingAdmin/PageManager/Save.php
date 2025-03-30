@@ -63,15 +63,16 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
       if (isset($_POST['pages_id'])) {
         $pages_id = HTML::sanitize($_POST['pages_id']);
 
-        $QpageManager = $this->app->db->prepare('select id
-                                                 from :table_pages_manager_embedding
-                                                 where pages_id = :pages_id
-                                                ');
-        $QpageManager->bindInt(':pages_id',$pages_id);
-        $QpageManager->execute();
+        $Qcheck = $this->app->db->prepare('select id
+                                           from :table_pages_manager_embedding
+                                           where entity_id = :entity_id
+                                          ');
+        $Qcheck->bindInt(':entity_id', $pages_id);
+        $Qcheck->execute();
 
         $insert_embedding = false;
-        if ($QpageManager->fetch() === false) {
+
+        if ($Qcheck->fetch() === false) {
           $insert_embedding = true;
         }
 
@@ -149,10 +150,14 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
               $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
 
               if ($insert_embedding === true) {
-                $sql_data_array_embedding['pages_id'] = $item['pages_id'];
+                $sql_data_array_embedding['entity_id'] = $item['pages_id'];
                 $sql_data_array_embedding['language_id'] =  $item['language_id'];
                 $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding);
               } else {
+                $update_sql_data = [
+                  'language_id' => $item['language_id'],
+                  'entity_id' => $item['pages_id']
+                ];
                 $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding, $update_sql_data);
               }
             }

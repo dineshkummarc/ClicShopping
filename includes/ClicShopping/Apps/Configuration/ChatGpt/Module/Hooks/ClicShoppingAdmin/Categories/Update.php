@@ -64,15 +64,16 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       if (isset($_GET['cID'])){
         $cID = HTML::sanitize($_GET['cID']);
 
-        $Qcategories = $this->app->db->prepare('select id
-                                               from :table_categories_embedding
-                                               where categories_id = :categories_id
-                                              ');
-        $Qcategories->bindInt(':categories_id',$cID);
-        $Qcategories->execute();
+        $Qcheck = $this->app->db->prepare('select id
+                                           from :table_categories_embedding
+                                           where entity_id = :entity_id
+                                          ');
+        $Qcheck->bindInt(':entity_id', $cID);
+        $Qcheck->execute();
 
         $insert_embedding = false;
-        if ($Qcategories->fetch() === false) {
+
+        if ($Qcheck->fetch() === false) {
           $insert_embedding = true;
         }
 
@@ -86,24 +87,18 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
                                              from :table_categories_description
                                              where categories_id = :categories_id
                                             ');
-        $Qcategories->bindInt(':categories_id',$cID);
+        $Qcategories->bindInt(':categories_id', $cID);
         $Qcategories->execute();
 
         $categories_array = $Qcategories->fetchAll();
 
         if (is_array($categories_array)) {
           foreach ($categories_array as $item) {
-            $language_id = $item['language_id'];
-            $categories_name = $item['categories_name'];
+              $categories_name = $item['categories_name'];
             $categories_description = $item['categories_description'];
             $seo_categories_title = $item['categories_head_title_tag'];
             $seo_categories_description = $item['categories_head_desc_tag'];
             $seo_categories_keywords = $item['categories_head_keywords_tag'];
-
-            $update_sql_data = [
-              'language_id' => $item['language_id'],
-              'categories_id' => $item['categories_id']
-            ];
 
 //********************
 // add embedding
@@ -152,10 +147,14 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
 
               if ($insert_embedding === true) {
-                $sql_data_array_embedding['categories_id'] = $item['categories_id'];
+                $sql_data_array_embedding['entity_id'] = $item['categories_id'];
                 $sql_data_array_embedding['language_id'] =  $item['language_id'];
                 $this->app->db->save('categories_embedding', $sql_data_array_embedding);
               } else {
+                $update_sql_data = [
+                  'language_id' => $item['language_id'],
+                  'entity_id' => $item['categories_id']
+                ];
                 $this->app->db->save('categories_embedding', $sql_data_array_embedding, $update_sql_data);
               }
             }

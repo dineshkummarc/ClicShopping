@@ -127,11 +127,6 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             $seo_product_tag = $item['products_head_tag'];
             $products_description_summary = $item['products_head_tag'];
 
-            $update_sql_data = [
-              'language_id' => $item['language_id'],
-              'entity_id' => $item['products_id']
-            ];
-
             $Qcategories = $this->app->db->get('categories_description', 'categories_name', ['categories_id' => $Qcategories->valueInt('categories_id'), 'language_id' => $item['language_id']]);
             $categories_name = $Qcategories->value('categories_name');
 
@@ -245,6 +240,10 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
                 $sql_data_array_embedding['language_id'] =  $item['language_id'];
                 $this->app->db->save('products_embedding', $sql_data_array_embedding);
               } else {
+               $update_sql_data = [
+                 'language_id' => $item['language_id'],
+                 'entity_id' => $item['products_id']
+               ];
                 $this->app->db->save('products_embedding', $sql_data_array_embedding, $update_sql_data);
               }
             }
