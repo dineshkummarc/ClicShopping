@@ -63,15 +63,15 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       if (isset($_GET['pID'])){
         $pID = HTML::sanitize($_GET['pID']);
 
-        $Qcategories = $this->app->db->prepare('select id
-                                               from :table_products_embedding
-                                               where products_id = :products_id
-                                              ');
-        $Qcategories->bindInt(':products_id',$pID);
-        $Qcategories->execute();
+        $Qcheck = $this->app->db->prepare('select id
+                                           from :table_products_embedding
+                                           where entity_id = :entity_id
+                                          ');
+        $Qcheck->bindInt(':entity_id', $pID);
+        $Qcheck->execute();
 
         $insert_embedding = false;
-        if ($Qcategories->fetch() === false) {
+        if ($Qcheck->fetch() === false) {
           $insert_embedding = true;
         }
 
@@ -129,7 +129,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
             $update_sql_data = [
               'language_id' => $item['language_id'],
-              'products_id' => $item['products_id']
+              'entity_id' => $item['products_id']
             ];
 
             $Qcategories = $this->app->db->get('categories_description', 'categories_name', ['categories_id' => $Qcategories->valueInt('categories_id'), 'language_id' => $item['language_id']]);
@@ -240,11 +240,9 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               ];
 
               $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-
              if ($insert_embedding === true) {
-                $sql_data_array_embedding['products_id'] = $item['products_id'];
+                $sql_data_array_embedding['entity_id'] = $item['products_id'];
                 $sql_data_array_embedding['language_id'] =  $item['language_id'];
-
                 $this->app->db->save('products_embedding', $sql_data_array_embedding);
               } else {
                 $this->app->db->save('products_embedding', $sql_data_array_embedding, $update_sql_data);

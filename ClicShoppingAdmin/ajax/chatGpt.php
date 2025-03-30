@@ -34,7 +34,6 @@ try {
   // Récupération de la clé API OpenAI depuis la configuration
   Gpt::getEnvironment();
 
-
   // Deux approches possibles selon la configuration :
 
   // APPROCHE 1: Utilisation de MultiDBRAGManager (nouvelle implémentation)
