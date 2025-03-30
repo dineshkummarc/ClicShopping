@@ -1,6 +1,6 @@
 text_product_name = Product name
 text_product_model = Product model
-text_categories_name = Catogory name
+text_categories_name = Category name
 text_product_brand_name = Brand name
 text_product_ean = Product EAN
 text_product_sku = Product SKU

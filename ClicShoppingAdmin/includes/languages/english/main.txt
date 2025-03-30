@@ -482,13 +482,13 @@ success_migration_done = The migration has been a success
 
 text_rag_system_message_template = Use the following information to answer the user's question.
 If you cannot find the answer in the provided information, clearly state this and offer an answer based on your general knowledge.
-Information:
-{context}
+Information:{context}
 Question: {question}
 Instructions:
 - Respond in clear and concise English.
-- For each piece of information, indicate its origin and provide the reference link if available.
-- Reference links:<br>{links}.<br>
+- For each piece of information, indicate its origin, provide the reference link  and score if available./n
+- Reference links: {links}./n
+- Accuracy : {score} /n
 - Detailed answer:
 
 text_rag_answer_question_not_found = I couldn’t find any specific information to answer your question. Please rephrase or ask another question.

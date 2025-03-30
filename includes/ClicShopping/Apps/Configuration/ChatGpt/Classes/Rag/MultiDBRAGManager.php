@@ -33,8 +33,9 @@ use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
  */
 class MultiDBRAGManager
 {
-  private $app;
-  private $embeddingGenerator;
+  private mixed $app;
+  private mixed $language;
+  private mixed $embeddingGenerator;
   private array $vectorStores = [];
 
   private string $systemMessageTemplate;
@@ -176,6 +177,7 @@ class MultiDBRAGManager
       $document->sourceType = $sourceType;
       $document->sourceName = $sourceName;
       $document->chunkNumber = 128;
+
       $document->metadata = [
         'type' => $type,
         'entity_type' => $entityType,
@@ -309,14 +311,8 @@ class MultiDBRAGManager
    * @param array $modelOptions Additional options for the model
    * @return string Generated answer
    */
-  public function answerQuestion(
-    string $question,
-    int $limit = 5,
-    float $minScore = 0.7,
-    ?int $languageId = null,
-    ?string $entityType = null,
-    array $modelOptions = []
-  ): string {
+  public function answerQuestion(string $question, int $limit = 5, float $minScore = 0.7, int|null $languageId = null, string|null $entityType = null, array $modelOptions = []): string
+  {
     try {
       // Recherche des documents pertinents
       $documents = $this->searchDocuments($question, $limit, $minScore, $languageId, $entityType);
@@ -327,48 +323,39 @@ class MultiDBRAGManager
 
       // Préparation du contexte et des liens
       $context = '';
-      $links = '';
-      foreach ($documents as $doc) {
-        $tableName = $doc->metadata['table_name'] ?? 'inconnu';
-        $score = round(($doc->metadata['score'] ?? 0) * 100, 2);
 
-        // Générer des liens spécifiques selon le type d'entité
+      foreach ($documents as $doc) {
+        $score = round(($doc->metadata['score'] ?? 0) * 100, 2);
         $link = '';
 
-        if (isset($doc->metadata['entity_id'], $doc->metadata['type'])) {
-          switch ($doc->metadata['type']) {
-            case 'products':
-              $link = HTML::link(CLICSHOPPING::link(null, 'A&Catalog\Products&Products'), $doc->metadata['type']);
-              $link = str_replace('%5C', '\\', $link);
-              break;
-            case 'category':
-              $link = HTML::link(CLICSHOPPING::link(null, 'A&Catalog\Categories&Categories'), $doc->metadata['type']);
-              $link = str_replace('%5C', '\\', $link);
-              break;
-            case 'Page Manager':
-              $link = HTML::link(CLICSHOPPING::link(null, 'A&Catalog\Communication&PageManager'), $doc->metadata['type']);
-              $link = str_replace('%5C', '\\', $link);
-              break;
-            default:
-              $link = '';
+        if (!empty($doc->metadata['entity_id']) && !empty($doc->metadata['type'])) {
+          $routes = [
+            'products' => 'A&Catalog\Products&Products',
+            'category' => 'A&Catalog\Categories&Categories',
+            'Page Manager' => 'A&Catalog\Communication&PageManager',
+          ];
+
+          if (isset($routes[$doc->metadata['type']])) {
+            $link = "/n" . HTML::link(CLICSHOPPING::link(null, $routes[$doc->metadata['type']]), $doc->metadata['type']);
+
+            $link = str_replace('%5C', '\\', $link);
           }
         }
+
 
         // Ajouter au contexte
         $context .= $doc->content . "\n\n";
 
         // Ajouter aux liens
         if (!empty($link)) {
-          $link .= "<br>- {{$doc->metadata['entity_id']}: {$link} (pertinence: {$score}%)\n";
+          $link .= "- {{$doc->metadata['entity_id']}: {$link} \n";
+          $score .= "- (accuracy: {$score}%)  \n";
         }
       }
 
       // Utiliser la classe Gpt existante pour générer la réponse
-      $prompt = str_replace(
-        ['{context}', '{question}', '{links}'],
-        [$context, $question, $link],
-        $this->systemMessageTemplate
-      );
+      $prompt = str_replace(['{context}', '{question}', '{links}', '{score}'], [$context, $question, $link, $score], $this->systemMessageTemplate);
+
 
       // Génération de la réponse via la classe Gpt existante
       // Si des options de modèle sont fournies, les utiliser pour cette requête spécifique
