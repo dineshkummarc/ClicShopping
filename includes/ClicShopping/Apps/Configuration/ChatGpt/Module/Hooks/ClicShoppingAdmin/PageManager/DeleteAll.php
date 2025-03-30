@@ -8,7 +8,7 @@
  *
  */
 
-namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\Products;
+namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\PageManager;
 
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\HTML;
@@ -54,7 +54,7 @@ class DeleteAll implements \ClicShopping\OM\Modules\HooksInterface
     if (isset($_POST['selected']) && is_array($_POST['selected']) && isset($_POST['DeleteAll'])) {
       foreach ($_POST['selected'] as $items) {
         if (isset($items)) {
-          $this->app->delete('products_embedding', 'entity_id', $items);
+          $this->app->delete('page_manager_embedding', 'entity_id', $items);
         }
       }
     }

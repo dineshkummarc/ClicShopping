@@ -50,7 +50,7 @@ class DeleteConfirm extends \ClicShopping\OM\PagesActionsAbstract
     // Check if DeleteConfirm is set in GET and we have a valid product ID
     if (isset($_GET['DeleteConfirm']) && isset($this->Id)) {
       // Delete the product embedding from the database
-      $this->app->db->delete('products_embedding', ['products_id' => (int)$this->Id]);
+      $this->app->db->delete('products_embedding', ['entity_id' => (int)$this->Id]);
     } // end if
   }
 }

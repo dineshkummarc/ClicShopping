@@ -205,7 +205,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                   'sourcetype' => 'manual',
                   'sourcename' => 'manual',
                   'date_modified' => 'now()',
-                  'categories_id'=> $item['categories_id'],
+                  'entity_id'=> $item['categories_id'],
                   'language_id' => $item['language_id']
                 ];
 

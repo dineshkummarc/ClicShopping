@@ -38,7 +38,7 @@ class DeleteConfirm implements \ClicShopping\OM\Modules\HooksInterface
 
     if (isset($_GET['Delete'], $_GET['Categories'], $_GET['categories_id'])) {
       $cID = HTML::sanitize($_GET['categories_id']);
-      $this->app->db->delete('categories_embedding', ['categories_id' => $cID]);
+      $this->app->db->delete('categories_embedding', ['entity_id' => $cID]);
     }
   }
 }
