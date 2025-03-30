@@ -1,5 +1,12 @@
 <?php
-
+/**
+ *
+ * @copyright 2008 - https://www.clicshopping.org
+ * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
+ * @Licence GPL 2 & MIT
+ * @Info : https://www.clicshopping.org/forum/trademark/
+ *
+ */
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
 
@@ -58,6 +65,7 @@ class MultiDBRAGManager
 
     $this->app = Registry::get('ChatGpt');
     $this->systemMessageTemplate = CLICSHOPPING::getDef('text_rag_system_message_template');
+    $this->language = Registry::get('Language');
 
     // Préparation des paramètres pour getOpenAiGpt
     $parameters = null;
@@ -146,16 +154,8 @@ class MultiDBRAGManager
    * @param int|null $languageId Language ID
    * @return bool True if successful, false otherwise
    */
-  public function addDocument(
-    string $content,
-    string $tableName,
-    string $type = 'text',
-    string $sourceType = 'manual',
-    string $sourceName = 'manual',
-    ?string $entityType = null,
-    ?int $entityId = null,
-    ?int $languageId = null
-  ): bool {
+  public function addDocument(string $content, string $tableName, string $type = 'text', string $sourceType = 'manual', string $sourceName = 'manual', string|null $entityType = null, int|null $entityId = null, int|null $languageId = null): bool
+  {
     try {
       // Vérifier si la table existe dans les vector stores
       if (!isset($this->vectorStores[$tableName])) {
@@ -204,31 +204,29 @@ class MultiDBRAGManager
    * @param string|null $entityType Entity type for filtering results
    * @return array Array of matching documents with similarity scores
    */
-  public function searchDocuments(
-    string $query,
-    int $limit = 5,
-    float $minScore = 0.7,
-    ?int $languageId = null,
-    ?string $entityType = null
-  ): array {
+  public function searchDocuments(string $query, int $limit = 5, float $minScore = 0.7, int|null $languageId = null, string|null $entityType = null): array {
     try {
-      // Initialiser le tableau des résultats
       $allResults = [];
+
       if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
         error_log("Starting document search for query: " . $query);
       }
       // Vérifier si des vector stores sont disponibles
+
       if (empty($this->vectorStores)) {
         if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
           error_log("No vector store available");
         }
         return [];
       }
+
       if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
         error_log("Found embedding tables: " . implode(", ", array_keys($this->vectorStores)));
       }
+
       // Génération de l'embedding pour la requête
       $queryEmbedding = $this->embeddingGenerator->embedText($query);
+
       if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
         error_log("Generated embedding for query, length: " . count($queryEmbedding));
       }
@@ -325,6 +323,7 @@ class MultiDBRAGManager
       $context = '';
 
       foreach ($documents as $doc) {
+        //$tableName = $doc->metadata['table_name'] ?? 'inconnu';
         $score = round(($doc->metadata['score'] ?? 0) * 100, 2);
         $link = '';
 
@@ -341,7 +340,6 @@ class MultiDBRAGManager
             $link = str_replace('%5C', '\\', $link);
           }
         }
-
 
         // Ajouter au contexte
         $context .= $doc->content . "\n\n";

@@ -45,7 +45,7 @@ class DoctrineOrm
    * @return array Array containing connection parameters and configuration
    * @throws \Exception If configuration cannot be initialized
    */
-  private static function Orm()
+  private static function Orm(): array
   {
     // Configuration de Doctrine avec un pilote de métadonnées minimal
     $config = ORMSetup::createConfiguration(true, null, null);

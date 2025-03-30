@@ -1,4 +1,12 @@
 <?php
+/**
+ *
+ * @copyright 2008 - https://www.clicshopping.org
+ * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
+ * @Licence GPL 2 & MIT
+ * @Info : https://www.clicshopping.org/forum/trademark/
+ *
+ */
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
@@ -46,6 +54,7 @@ class VectorType extends Type
   public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
   {
     $dimension = $column['dimension'] ?? 3072;
+
     return "VECTOR({$dimension})";
   }
 
@@ -59,7 +68,7 @@ class VectorType extends Type
    * @param AbstractPlatform $platform Database platform
    * @return array|null Array of floats representing the vector, or null
    */
-  public function convertToPHPValue($value, AbstractPlatform $platform): ?array
+  public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?array
   {
     if ($value === null) {
       return null;
@@ -87,7 +96,7 @@ class VectorType extends Type
    * @return string|null MariaDB vector format [x,y,z,...] or null
    * @throws \InvalidArgumentException If the value cannot be converted
    */
-  public function convertToDatabaseValue($value, AbstractPlatform $platform): ?string
+  public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): ?string
   {
     if ($value === null) {
       return null;
