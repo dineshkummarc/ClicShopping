@@ -20,7 +20,6 @@ use function strlen;
  */
 class HTMLOverrideCommon extends HTML
 {
-
   /**
    * Nettoie une chaîne HTML en supprimant les balises, le JavaScript et les entités HTML.
    *

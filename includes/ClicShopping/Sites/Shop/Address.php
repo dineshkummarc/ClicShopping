@@ -11,6 +11,7 @@
 namespace ClicShopping\Sites\Shop;
 
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 /**
@@ -58,22 +59,22 @@ class Address
     $Qformat = Registry::get('Db')->get('address_format', 'address_format', ['address_format_id' => (int)$address_format_id]);
 
     $replace = [
-      '$company' => HTML::outputProtected($address['company']),
+      '$company' => Hash::displayDecryptedDataText(HTML::outputProtected($address['company'])),
       '$firstname' => '',
       '$lastname' => '',
-      '$street' => HTML::outputProtected($address['street_address']),
-      '$suburb' => HTML::outputProtected($address['suburb']),
-      '$city' => HTML::outputProtected($address['city']),
-      '$state' => HTML::outputProtected($address['state']),
-      '$postcode' => HTML::outputProtected($address['postcode']),
+      '$street' => Hash::displayDecryptedDataText(HTML::outputProtected($address['street_address'])) ,
+      '$suburb' => Hash::displayDecryptedDataText(HTML::outputProtected($address['suburb'])),
+      '$city' => Hash::displayDecryptedDataText(HTML::outputProtected($address['city'])),
+      '$state' => Hash::displayDecryptedDataText(HTML::outputProtected($address['state'])),
+      '$postcode' => Hash::displayDecryptedDataText(HTML::outputProtected($address['postcode'])),
       '$country' => ''
     ];
 
     if (isset($address['firstname']) && !empty($address['firstname'])) {
-      $replace['$firstname'] = HTML::outputProtected($address['firstname']);
-      $replace['$lastname'] = HTML::outputProtected($address['lastname']);
+      $replace['$firstname'] = Hash::displayDecryptedDataText(HTML::outputProtected($address['firstname']));
+      $replace['$lastname'] = Hash::displayDecryptedDataText(HTML::outputProtected($address['lastname']));
     } elseif (isset($address['name']) && !empty($address['name'])) {
-      $replace['$firstname'] = HTML::outputProtected($address['name']);
+      $replace['$firstname'] = Hash::displayDecryptedDataText(HTML::outputProtected($address['name']));
     }
 
     if (isset($address['country_id']) && !empty($address['country_id'])) {
@@ -86,7 +87,7 @@ class Address
       if (CLICSHOPPING::getSite() === 'ClicShoppingAdmin') {
         $replace['$country'] = HTML::outputProtected($address['country']);
       } else {
-        $replace['$country'] = HTML::outputProtected($address['country']['title']); // bug osc à tester
+        $replace['$country'] = Hash::displayDecryptedDataText(HTML::outputProtected($address['country']['title'])); // bug osc à tester
       }
     }
 

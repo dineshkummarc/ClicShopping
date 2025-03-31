@@ -336,12 +336,13 @@ class Hash
   /**
    * Encrypts the provided data using a specified cipher and key.
    *
-   * @param string $data The plaintext data to be encrypted.
+   * @param string|null $data The plaintext data to be encrypted.
    * @return string The encrypted data in Base64-encoded format, including the encryption initialization vector.
    * @throws Exception If the encryption process fails.
    */
-  public static function encryptDatatext(string $data): string
+  public static function encryptDatatext(string|null $data): string
   {
+    if (!empty($data) || is_null($data)) {
     $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(self::$cipher));
 
     $encrypted = openssl_encrypt($data, self::$cipher, self::$key, 0, $iv);
@@ -350,6 +351,9 @@ class Hash
     }
 
     return base64_encode($encrypted . '::' . $iv);
+    } else {
+      return '';
+    }
   }
 
   /**
@@ -429,7 +433,7 @@ class Hash
     return base64_encode($iv . $encrypted);
   }
 
-/**
+  /**
    * Hashes an email address using a secure one-way hashing algorithm.
    *
    * @param string $encryptedEmail The email address to be hashed.
