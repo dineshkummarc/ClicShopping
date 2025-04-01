@@ -863,35 +863,47 @@ class Order
       $cc_owner = $this->info['cc_owner'];
     }
 
+    $firstname = Hash::displayDecryptedDataText($this->customer['firstname']);
+    $lastame = Hash::displayDecryptedDataText($this->customer['lastname']);
+    $customers_name =  Hash::encryptDatatext($firstname . ' ' . $lastame);
+
+    $delivery_firstname = Hash::displayDecryptedDataText($this->delivery['firstname']);
+    $delivery_lastame = Hash::displayDecryptedDataText($this->delivery['lastname']);
+    $delivery_name =  Hash::encryptDatatext($delivery_firstname . ' ' . $delivery_lastame);
+
+    $billing_firstname = Hash::displayDecryptedDataText($this->billing['firstname']);
+    $billing_lastame = Hash::displayDecryptedDataText($this->billing['lastname']);
+    $billing_name =  Hash::encryptDatatext($billing_firstname . ' ' . $billing_lastame);
+
     $sql_data_array = [
       'customers_id' => (int)$CLICSHOPPING_Customer->getID(),
       'customers_group_id' => (int)$this->customer['customers_group_id'],
-      'customers_name' => Hash::encryptDatatext($this->customer['firstname']) . ' ' . Hash::encryptDatatext($this->customer['lastname']),
-      'customers_company' => Hash::encryptDatatext($this->customer['company']),
-      'customers_street_address' => Hash::encryptDatatext($this->customer['street_address']),
-      'customers_suburb' => Hash::encryptDatatext($this->customer['suburb']),
-      'customers_city' => Hash::encryptDatatext($this->customer['city']),
-      'customers_postcode' => Hash::encryptDatatext($this->customer['postcode']),
+      'customers_name' => $customers_name,
+      'customers_company' => $this->customer['company'],
+      'customers_street_address' => $this->customer['street_address'],
+      'customers_suburb' => $this->customer['suburb'],
+      'customers_city' => $this->customer['city'],
+      'customers_postcode' => $this->customer['postcode'],
       'customers_state' => $this->customer['state'],
       'customers_country' => $this->customer['country']['title'],
-      'customers_telephone' => Hash::encryptDatatext($this->customer['telephone']),
-      'customers_email_address' => Hash::encryptDatatext($this->customer['email_address']),
+      'customers_telephone' => $this->customer['telephone'],
+      'customers_email_address' => $this->customer['email_address'],
       'customers_address_format_id' => (int)$this->customer['format_id'],
-      'delivery_name' => Hash::encryptDatatext($this->delivery['firstname']) . ' ' . Hash::encryptDatatext($this->delivery['lastname']),
-      'delivery_company' => Hash::encryptDatatext($this->delivery['company']),
-      'delivery_street_address' => Hash::encryptDatatext($this->delivery['street_address']),
-      'delivery_suburb' => Hash::encryptDatatext($this->delivery['suburb']),
-      'delivery_city' => Hash::encryptDatatext($this->delivery['city']),
-      'delivery_postcode' => Hash::encryptDatatext($this->delivery['postcode']),
+      'delivery_name' => $delivery_name,
+      'delivery_company' => $this->delivery['company'],
+      'delivery_street_address' => $this->delivery['street_address'],
+      'delivery_suburb' => $this->delivery['suburb'],
+      'delivery_city' => $this->delivery['city'],
+      'delivery_postcode' => $this->delivery['postcode'],
       'delivery_state' => $this->delivery['state'],
       'delivery_country' => $this->delivery['country']['title'],
       'delivery_address_format_id' => (int)$this->delivery['format_id'],
-      'billing_name' => Hash::encryptDatatext($this->billing['firstname']) . ' ' . Hash::encryptDatatext($this->billing['lastname']),
-      'billing_company' => Hash::encryptDatatext($this->billing['company']),
-      'billing_street_address' => Hash::encryptDatatext($this->billing['street_address']),
-      'billing_suburb' => Hash::encryptDatatext($this->billing['suburb']),
-      'billing_city' => Hash::encryptDatatext($this->billing['city']),
-      'billing_postcode' => Hash::encryptDatatext($this->billing['poscode']),
+      'billing_name' => $billing_name,
+      'billing_company' => $this->billing['company'],
+      'billing_street_address' => $this->billing['street_address'],
+      'billing_suburb' => $this->billing['suburb'],
+      'billing_city' => $this->billing['city'],
+      'billing_postcode' => $this->billing['postcode'],
       'billing_state' => $this->billing['state'],
       'billing_country' => $this->billing['country']['title'],
       'billing_address_format_id' => (int)$this->billing['format_id'],
@@ -905,7 +917,7 @@ class Order
       'orders_status_invoice' => $this->info['order_status_invoice'],
       'currency' => $this->info['currency'],
       'currency_value' => $this->info['currency_value'],
-      'customers_cellular_phone' => Hash::encryptDatatext($this->customer['cellular_phone'])
+      'customers_cellular_phone' => $this->customer['cellular_phone']
     ];
 
 // recuperation des informations societes pour les clients B2B (voir fichier la classe OrderAdmin)

@@ -102,7 +102,7 @@ class OrderAdmin extends \ClicShopping\Apps\Orders\Orders\Classes\Shop\Order
       'siret' => $Qorder->value('customers_siret'),
       'ape' => $Qorder->value('customers_ape'),
       'tva_intracom' => $Qorder->value('customers_tva_intracom'),
-      'street_address' => $Qorder->value('customers_street_address'),
+      'street_address' =>  Hash::displayDecryptedDataText($Qorder->value('customers_street_address')),
       'suburb' => Hash::displayDecryptedDataText($Qorder->value('customers_suburb')),
       'city' => Hash::displayDecryptedDataText($Qorder->value('customers_city')),
       'postcode' => Hash::displayDecryptedDataText($Qorder->value('customers_postcode')),

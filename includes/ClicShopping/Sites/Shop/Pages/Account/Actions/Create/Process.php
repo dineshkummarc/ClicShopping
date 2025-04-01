@@ -80,14 +80,14 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
 // Clients B2C : Controle entree du prenom
       if (strlen($firstname) < ENTRY_FIRST_NAME_MIN_LENGTH) {
         $error = true;
-        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_first_name_error', ['min_length' => ENTRY_FIRST_NAME_MIN_LENGTH]), 'error');
+        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_first_name_error', ['min_length' => (int)ENTRY_FIRST_NAME_MIN_LENGTH]), 'error');
       }
 
 // Clients B2C : Controle entree du nom de famille
       if (strlen($lastname) < ENTRY_LAST_NAME_MIN_LENGTH) {
         $error = true;
 
-        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_last_name_error', ['min_length' => ENTRY_LAST_NAME_MIN_LENGTH]), 'error');
+        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_last_name_error', ['min_length' => (int)ENTRY_LAST_NAME_MIN_LENGTH]), 'error');
       }
 
 // Clients B2C : Controle entree date de naissance
@@ -105,7 +105,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
       if (Is::EmailAddress($email_address) === false) {
         $error = true;
 
-        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_email_address_check_error', ['min_length' => ENTRY_EMAIL_ADDRESS_MIN_LENGTH]), 'error');
+        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_email_address_check_error', ['min_length' => (int)ENTRY_EMAIL_ADDRESS_MIN_LENGTH]), 'error');
 
       } elseif ($email_address != $email_address_confirm) {
         $error = true;
@@ -129,7 +129,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
       if (strlen($password) < ENTRY_PASSWORD_MIN_LENGTH) {
         $error = true;
 
-        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_password_error', ['min_length' => ENTRY_PASSWORD_MIN_LENGTH]), 'error');
+        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_password_error', ['min_length' => (int)ENTRY_PASSWORD_MIN_LENGTH]), 'error');
 
       } elseif ($password != $confirmation) {
         $error = true;

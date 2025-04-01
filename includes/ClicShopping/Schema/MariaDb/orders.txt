@@ -1,6 +1,6 @@
 orders_id int not_null auto_increment
 customers_id int not_null
-customers_name varchar(255) not_null
+customers_name text not_null
 customers_company varchar(255)
 customers_siret varchar(255)
 customers_ape varchar(255)
@@ -14,7 +14,7 @@ customers_country varchar(255) not_null
 customers_telephone varchar(255)
 customers_email_address varchar(255) not_null
 customers_address_format_id int(5) not_null
-delivery_name varchar(255)
+delivery_name text
 delivery_company varchar(255)
 delivery_street_address varchar(255)
 delivery_suburb varchar(255)
@@ -23,7 +23,7 @@ delivery_postcode varchar(255)
 delivery_state varchar(255)
 delivery_country varchar(255)
 delivery_address_format_id int(5)
-billing_name varchar(255) not_null
+billing_name text not_null
 billing_company varchar(255)
 billing_cf varchar(255)
 billing_piva varchar(255)

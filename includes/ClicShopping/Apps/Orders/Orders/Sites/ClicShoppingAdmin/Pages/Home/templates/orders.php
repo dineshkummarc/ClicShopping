@@ -445,7 +445,7 @@ if (isset($_GET['oID']) && is_numeric($_GET['oID']) && ($_GET['oID'] > 0)) {
         ?>
         <th scope="row"><?php echo $Qorders->valueInt('orders_id'); ?></th>
         <td><?php echo Hash::displayDecryptedDataText($Qorders->value('customers_name')) . '&nbsp;(' . Hash::displayDecryptedDataText($Qorders->value('customers_company')) . ')'; ?></td>
-        <?php
+       <?php
         if ($Qhistory->valueInt('orders_status_support_id') > 1) {
           $QCustomerSupport = $CLICSHOPPING_Orders->db->prepare('select oss.orders_status_support_name
                                                                    from :table_orders_status_history osh,

@@ -47,7 +47,8 @@ class AddressAdmin extends \ClicShopping\Sites\Shop\Address
     $Qaddress = Registry::get('Db')->get('address_format', 'address_format_id', null, 'address_format_id');
 
     while ($Qaddress->fetch()) {
-      $address_format_array[] = ['id' => $Qaddress->valueInt('address_format_id'),
+      $address_format_array[] = [
+        'id' => $Qaddress->valueInt('address_format_id'),
         'text' => $Qaddress->valueInt('address_format_id')
       ];
     }
@@ -63,7 +64,8 @@ class AddressAdmin extends \ClicShopping\Sites\Shop\Address
    */
   public static function setAddressFormatArrayAdmin(): array
   {
-    $address_format_array = ['company' => CLICSHOPPING::getDef('text_address_company'),
+    $address_format_array = [
+      'company' => CLICSHOPPING::getDef('text_address_company'),
       'firstname' => CLICSHOPPING::getDef('text_address_first_name'),
       'lastname' => CLICSHOPPING::getDef('text_address_last_name'),
       'street_address' => CLICSHOPPING::getDef('text_address_street_address'),

@@ -34,9 +34,12 @@ try {
   // Récupération de la clé API OpenAI depuis la configuration
   Gpt::getEnvironment();
 
-  // Deux approches possibles selon la configuration :
 
-  // APPROCHE 1: Utilisation de MultiDBRAGManager (nouvelle implémentation)
+// Deux approches possibles selon la configuration :
+
+//
+// APPROCHE 1: Utilisation de MultiDBRAGManager (nouvelle implémentation)
+//
   if (defined('CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER == 'True') {
     // Initialisation du gestionnaire RAG multi-bases
     // Si aucune table n'est spécifiée, toutes les tables d'embedding seront utilisées automatiquement
@@ -45,21 +48,31 @@ try {
     // Génération de la réponse
     $result = $ragManager->answerQuestion($prompt, 5, 0.7, $languageId);
   } else {
-    // APPROCHE 2: Utilisation de l'approche existante
-    // 1️⃣ Initialisation du générateur d'embedding
+//
+// APPROCHE 2: Utilisation de l'approche existante
+//
+
+//
+// 1️ Initialisation du générateur d'embedding
+// 
     $embeddingGenerator = new OpenAI3LargeEmbeddingGenerator();
 
-    // 2️⃣ Récupérer l'EntityManager de Doctrine via la classe DoctrineOrm
+//
+// 2️ Récupérer l'EntityManager de Doctrine via la classe DoctrineOrm
+//
     $entityManager = DoctrineOrm::getEntityManager();
 
-    // 3️⃣ Récupérer toutes les tables d'embedding disponibles
+//
+// 3️ Récupérer toutes les tables d'embedding disponibles
+//
     $embeddingTables = [];
 
 // Tables principales connues
     $knownTables = [
       'products_embedding',
       'categories_embedding',
-      'pages_manager_embedding'
+      'pages_manager_embedding',
+      'orders_embedding',
     ];
 
     // Ajouter d'abord les tables connues
@@ -100,8 +113,9 @@ try {
       }
     }
 
-
-    // 4️⃣ Recherche dans toutes les bases de données vectorielles
+//
+// 4️⃣ Recherche dans toutes les bases de données vectorielles
+//
     $allResults = [];
     $context = '';
 
@@ -132,12 +146,13 @@ try {
         // Continuer avec les autres tables en cas d'erreur
       }
     }
-
-    // 5️⃣ Si des documents pertinents ont été trouvés, les envoyer à OpenAI pour une réponse enrichie
+//
+// 5️ Si des documents pertinents ont été trouvés, les envoyer à OpenAI pour une réponse enrichie
+//
     if (!empty($context)) {
       $result = Gpt::getGptResponse($context . "\n\nQuestion : " . $prompt);
     } else {
-      // 6️⃣ Si aucune information pertinente n'a été trouvée, poser directement la question à OpenAI
+      // 6 Si aucune information pertinente n'a été trouvée, poser directement la question à OpenAI
       $result = Gpt::getGptResponse($prompt);
     }
 
@@ -148,7 +163,9 @@ try {
     }
   }
 
-  // 8️⃣ Sauvegarder la conversation si demandé
+//    
+// 8️ Sauvegarder la conversation si demandé
+//
   if ($saveGpt === 'true') {
     // Implémentation de la sauvegarde si nécessaire
     // ...
