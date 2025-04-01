@@ -4,11 +4,11 @@ return_status_id int not_null,
 notify tinyint(1) not_null,
 comment text not_null,
 date_added datetime not_null,
-admin_user_name varchar(64) default null
+admin_user_name varchar(255) default null
 
 --
 primary return_history_id
-idx_return_history_id return_id
+idx_return_history_id return_history_id
 ##
 engine innodb
 character_set utf8mb4

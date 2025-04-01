@@ -10,6 +10,7 @@
 
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\OM\Hash;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 use ClicShopping\Apps\Orders\ReturnOrders\Classes\ClicShoppingAdmin\ReturnProduct;
 

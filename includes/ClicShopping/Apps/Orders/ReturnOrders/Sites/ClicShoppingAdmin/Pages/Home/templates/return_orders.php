@@ -14,6 +14,8 @@ use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
+use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
+
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
 $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
@@ -35,15 +37,26 @@ $languages = $CLICSHOPPING_Language->getLanguages();
           <div
             class="col-md-1 logoHeading"><?php echo HTML::image($CLICSHOPPING_Template->getImageDirectory() . 'categories/rma.png', $CLICSHOPPING_ReturnOrders->getDef('heading_title'), '40', '40'); ?></div>
           <div
-            class="col-md-5 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_ReturnOrders->getDef('heading_title'); ?></div>
+            class="col-md-3 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_ReturnOrders->getDef('heading_title'); ?></div>
+
           <div class="col-md-4">
-            <div>
-              <?php
-              echo HTML::form('search', $CLICSHOPPING_ReturnOrders->link('ReturnOrders'), 'post', 'role="form" ', ['session_id' => true]);
-              echo HTML::inputField('search', null, 'id="inputKeywords" placeholder=" ' . $CLICSHOPPING_ReturnOrders->getDef('heading_title_search') . ' "');
-              ?>
+            <?php
+              if (AdministratorAdmin::getAdminIdByAccess() === 1) {
+                echo HTML::button($CLICSHOPPING_ReturnOrders->getDef('button_return_action_status'), null, $CLICSHOPPING_ReturnOrders->link('OrdersAction'), 'primary');
+                echo '&nbsp;';
+                echo HTML::button($CLICSHOPPING_ReturnOrders->getDef('button_return_status'), null, $CLICSHOPPING_ReturnOrders->link('OrdersStatus'), 'primary');
+                echo '&nbsp;';
+                echo HTML::button($CLICSHOPPING_ReturnOrders->getDef('button_return_reason_status'), null, $CLICSHOPPING_ReturnOrders->link('OrdersReason'), 'primary');
+                echo '&nbsp;';
+              }
+            ?>
+          </div>
+          <div class="col-md-2">
+            <?php
+            echo HTML::form('search', $CLICSHOPPING_ReturnOrders->link('ReturnOrders'), 'post', 'role="form" ', ['session_id' => true]);
+            echo HTML::inputField('search', null, 'id="inputKeywords" placeholder=" ' . $CLICSHOPPING_ReturnOrders->getDef('heading_title_search') . ' "');
+            ?>
               </form>
-            </div>
           </div>
           <div class="col-md-2 text-end">
             <?php
@@ -207,7 +220,7 @@ $languages = $CLICSHOPPING_Language->getLanguages();
           <td><?php echo $QstatusName->value('name'); ?></td>
           <td class="text-center">
             <?php
-            if ($Qreturn->valueInt('opened') == 0) {
+            if ($Qreturn->valueInt('opened') === 1) {
               echo '<a href="' . $CLICSHOPPING_ReturnOrders->link('ReturnOrders&SetFlag&flag=0&rID=' . $Qreturn->valueInt('return_id')) . '"><i class="bi-check text-success"></i></a>';
             } else {
               echo '<a href="' . $CLICSHOPPING_ReturnOrders->link('ReturnOrders&SetFlag&flag=1&rID=' . $Qreturn->valueInt('return_id')) . '"><i class="bi bi-x text-danger"></i></a>';

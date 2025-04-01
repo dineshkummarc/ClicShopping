@@ -39,14 +39,14 @@ class SetFlag extends \ClicShopping\OM\PagesActionsAbstract
   {
     $CLICSHOPPING_ReturnOrders = Registry::get('ReturnOrders');
 
-    if ($opened == 1) {
+    if ($opened === 1) {
       return $CLICSHOPPING_ReturnOrders->db->save('return_orders', [
         'opened' => 1,
         'date_modified' => 'now()'
       ],
         ['return_id' => (int)$return_id]
       );
-    } elseif ($opened == 0) {
+    } elseif ($opened === 0) {
       return $CLICSHOPPING_ReturnOrders->db->save('return_orders', [
         'opened' => 0,
         'date_modified' => 'now()'
