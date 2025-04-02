@@ -46,7 +46,7 @@ try {
     $ragManager = new MultiDBRAGManager();
 
     // Génération de la réponse
-    $result = $ragManager->answerQuestion($prompt, 5, 0.7, $languageId);
+    $result = $ragManager->answerQuestion($prompt, 5, 0.5, $languageId);
   } else {
 //
 // APPROCHE 2: Utilisation de l'approche existante
@@ -130,7 +130,7 @@ try {
         }
 
         // Utiliser la nouvelle signature de similaritySearch
-        $results = $vectorStore->similaritySearch($prompt, 2, 0.7, $filter);
+        $results = $vectorStore->similaritySearch($prompt, 2, 0.5, $filter);
 
         foreach ($results as $doc) {
           $entityInfo = '';

@@ -221,7 +221,8 @@ class DoctrineOrm
                 embedding VECTOR(3072) NOT NULL,
                 chunknumber INT DEFAULT 128,
                 date_modified DATETIME DEFAULT NULL,
-                entity_id INT DEFAULT NULL
+                entity_id INT DEFAULT NULL,
+                language_id INT DEFAULT 1
             )
         ");
       }

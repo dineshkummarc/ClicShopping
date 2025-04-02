@@ -107,7 +107,7 @@ class MultiDBRAGManager
       }
 
       public function getEmbeddingLength(): int {
-        return 1536; // Valeur par défaut pour OpenAI
+        return 3072; // Valeur par défaut pour OpenAI
       }
     };
 
@@ -204,7 +204,7 @@ class MultiDBRAGManager
    * @param string|null $entityType Entity type for filtering results
    * @return array Array of matching documents with similarity scores
    */
-  public function searchDocuments(string $query, int $limit = 5, float $minScore = 0.7, int|null $languageId = null, string|null $entityType = null): array {
+  public function searchDocuments(string $query, int $limit = 5, float $minScore = 0.5, int|null $languageId = null, string|null $entityType = null): array {
     try {
       $allResults = [];
 
@@ -309,7 +309,7 @@ class MultiDBRAGManager
    * @param array $modelOptions Additional options for the model
    * @return string Generated answer
    */
-  public function answerQuestion(string $question, int $limit = 5, float $minScore = 0.7, int|null $languageId = null, string|null $entityType = null, array $modelOptions = []): string
+  public function answerQuestion(string $question, int $limit = 5, float $minScore = 0.5, int|null $languageId = null, string|null $entityType = null, array $modelOptions = []): string
   {
     try {
       // Recherche des documents pertinents
@@ -331,7 +331,8 @@ class MultiDBRAGManager
           $routes = [
             'products' => 'A&Catalog\Products&Products',
             'category' => 'A&Catalog\Categories&Categories',
-            'Page Manager' => 'A&Catalog\Communication&PageManager',
+            'page_manager' => 'A&Communication&\PageManager',
+            'orders' => 'A&Orders\Orders',
           ];
 
           if (isset($routes[$doc->metadata['type']])) {
@@ -341,10 +342,8 @@ class MultiDBRAGManager
           }
         }
 
-        // Ajouter au contexte
         $context .= $doc->content . "\n\n";
 
-        // Ajouter aux liens
         if (!empty($link)) {
           $link .= "- {{$doc->metadata['entity_id']}: {$link} \n";
           $score .= "- (accuracy: {$score}%)  \n";
@@ -354,21 +353,9 @@ class MultiDBRAGManager
       // Utiliser la classe Gpt existante pour générer la réponse
       $prompt = str_replace(['{context}', '{question}', '{links}', '{score}'], [$context, $question, $link, $score], $this->systemMessageTemplate);
 
-
-      // Génération de la réponse via la classe Gpt existante
-      // Si des options de modèle sont fournies, les utiliser pour cette requête spécifique
       if (!empty($modelOptions)) {
-        // Sauvegarde de l'état actuel
         $currentChat = Gpt::getOpenAiGpt(null);
-
-        // Utilisation des options spécifiques pour cette requête
-        $specificChat = Gpt::getOpenAiGpt($modelOptions);
-
-        // Génération de la réponse avec les options spécifiques
         $response = Gpt::getGptResponse($prompt);
-
-        // Restauration de l'état précédent si nécessaire
-        // Cette étape pourrait être omise selon l'implémentation de Gpt::getGptResponse
 
         return $response;
       } else {

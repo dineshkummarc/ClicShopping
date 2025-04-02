@@ -92,32 +92,20 @@ class MariaDBVectorStore extends VectorStoreBase
     // Extraction des informations d'entité
     $entity_id = isset($document->metadata['entity_id']) ? $document->metadata['entity_id'] : null;
 
-    // Rétrocompatibilité avec les anciens champs
-    if ($type === null && isset($document->metadata['entity_id']) && $document->metadata['entity_id'] !== null) {
-      $type = 'page_manager';
-      $entity_id = $document->metadata['entity_id'];
-    } elseif ($type === null && isset($document->metadata['entity_id']) && $document->metadata['entity_id'] !== null) {
-      $type = 'category';
-      $entity_id = $document->metadata['entity_id'];
-    } elseif ($type === null && isset($document->metadata['entity_id']) && $document->metadata['entity_id'] !== null) {
-      $type = 'products';
-      $entity_id = $document->metadata['entity_id'];
-    }
-
-    // Conversion de l'embedding en JSON pour stockage
-    $embeddingJson = json_encode($embedding);
+    // Conversion de l'embedding en format texte pour VEC_FromText
+    $embeddingText = '[' . implode(',', $embedding) . ']';
 
     // Insertion dans la base de données
     $this->connection->executeStatement(
       "INSERT INTO {$this->tableName} 
-            (content, type, sourcetype, sourcename, embedding, chunknumber, date_modified, entity_id, language_id) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          (content, type, sourcetype, sourcename, embedding, chunknumber, date_modified, entity_id, language_id) 
+          VALUES (?, ?, ?, ?, VEC_FromText(?), ?, ?, ?, ?)",
       [
         $document->content,
         $type,
         $sourcetype,
         $sourcename,
-        $embeddingJson,
+        $embeddingText,  // Utilisez $embeddingText au lieu de $embeddingJson
         $chunknumber,
         $date_modified,
         $entity_id,
@@ -160,19 +148,19 @@ class MariaDBVectorStore extends VectorStoreBase
       // Déterminer si la requête est déjà un embedding ou un texte à convertir
       $embedding = is_array($query) ? $query : $this->embeddingGenerator->embedText($query);
 
-      // Conversion de l'embedding en JSON pour la requête
-      $embeddingJson = json_encode($embedding);
+// Conversion de l'embedding en format texte pour VEC_FromText
+      $embeddingText = '[' . implode(',', $embedding) . ']';
 
       // Construction de la requête SQL avec filtrage optionnel
       $sql = "SELECT *, 
-                    (embedding <=> ?) AS distance 
-                FROM {$this->tableName} 
-                WHERE 1=1 
-                ORDER BY distance ASC 
-                LIMIT ?";
+              VEC_DISTANCE_COSINE(embedding, VEC_FromText(?)) AS distance 
+          FROM {$this->tableName} 
+          WHERE 1=1 
+          ORDER BY distance ASC 
+          LIMIT ?";
 
-      // Préparation des paramètres
-      $params = [$embeddingJson, $k];
+// Préparation des paramètres
+      $params = [$embeddingText, $k];  // Utilisez $embeddingText au lieu de $embeddingJson
       $types = [ParameterType::STRING, ParameterType::INTEGER];
 
       // Exécution de la requête
@@ -267,7 +255,8 @@ class MariaDBVectorStore extends VectorStoreBase
     try {
       // Génération du nouvel embedding
       $embedding = $this->embeddingGenerator->embedText($content);
-      $embeddingJson = json_encode($embedding);
+       // Conversion de l'embedding en format texte pour VEC_FromText
+      $embeddingText = '[' . implode(',', $embedding) . ']';
 
       // Préparation des métadonnées
       $type = $metadata['type'] ?? null;
@@ -280,31 +269,18 @@ class MariaDBVectorStore extends VectorStoreBase
       // Extraction des informations d'entité
       $entity_id = isset($metadata['entity_id']) ? $metadata['entity_id'] : null;
 
-      // Rétrocompatibilité avec les anciens champs
-      if ($type === null && isset($metadata['entity_id']) && $metadata['entity_id'] !== null) {
-        $type = 'page_manager';
-        $entity_id = $metadata['entity_id'];
-      } elseif ($type === null && isset($metadata['categories_id']) && $metadata['entity_id'] !== null) {
-        $type = 'category';
-        $entity_id = $metadata['entity_id'];
-      } elseif ($type === null && isset($metadata['entity_id']) && $metadata['entity_id'] !== null) {
-        $type = 'products';
-        $entity_id = $metadata['entity_id'];
-      }
-
-      // Mise à jour dans la base de données
       $this->connection->executeStatement(
         "UPDATE {$this->tableName} 
-                SET content = ?, type = ?, sourcetype = ?, sourcename = ?, 
-                embedding = ?, chunknumber = ?, date_modified = ?, 
-                entity_type = ?, entity_id = ?,  language_id = ?,  
-                WHERE id = ?",
+              SET content = ?, type = ?, sourcetype = ?, sourcename = ?, 
+              embedding = VEC_FromText(?), chunknumber = ?, date_modified = ?, 
+              entity_id = ?, language_id = ?
+              WHERE id = ?",
         [
           $content,
           $type,
           $sourcetype,
           $sourcename,
-          $embeddingJson,
+          $embeddingText,
           $chunknumber,
           $date_modified,
           $entity_id,

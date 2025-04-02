@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'def675f56d75340d0b5aa49962fcd60835432ac7',
+        'reference' => '1211d8146140b99316104de296f2e8fcdd83d949',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'def675f56d75340d0b5aa49962fcd60835432ac7',
+            'reference' => '1211d8146140b99316104de296f2e8fcdd83d949',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => 'ea5e66cfcb7a8a5b915924fd8eca542397d6f324',
+            'reference' => 'e0042c6cdcca60db36cb1f836fdf3de4cc30b1f9',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
@@ -385,9 +385,9 @@
             'dev_requirement' => false,
         ),
         'smalot/pdfparser' => array(
-            'pretty_version' => 'v2.11.0',
-            'version' => '2.11.0.0',
-            'reference' => 'ac8e6678b0940e4b2ccd5caadd3fb18e68093be6',
+            'pretty_version' => 'v2.12.0',
+            'version' => '2.12.0.0',
+            'reference' => '8440edbf58c8596074e78ada38dcb0bd041a5948',
             'type' => 'library',
             'install_path' => __DIR__ . '/../smalot/pdfparser',
             'aliases' => array(),
