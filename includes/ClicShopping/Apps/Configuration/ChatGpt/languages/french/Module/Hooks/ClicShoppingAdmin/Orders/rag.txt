@@ -1,0 +1,18 @@
+text_rag_order = Commande ID
+text_rag_customer = Client ayant fait des commandes:
+text_rag_customer_name = Nom client ayant fait la commande:
+text_rag_company = Entreprise ayant fait la commande:
+text_rag_city = Ville de la prise de commande
+text_rag_country = Pays de la prise de commande
+text_rag_payment_method = Méthode de paiement de la commande
+text_rag_status = Statut commande de la commande
+text_rag_product_model = Référence produit de la commande
+
+text_rag_product_caracteristic = Caractéristiques produits de la commande
+text_rag_product_name = Nom du produit de la commande
+text_rag_price = prix achat HT de la commande
+text_rag_product_model = Référence du produit de la commande
+text_rag_qty = quantité de la commande
+text_rag_attribut = Attribut produit:
+
+text_rag_historic = Historique des statuts

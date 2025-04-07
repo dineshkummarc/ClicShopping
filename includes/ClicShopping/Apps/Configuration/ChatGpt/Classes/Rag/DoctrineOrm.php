@@ -237,7 +237,7 @@ class DoctrineOrm
       if (empty($indexExists)) {
         try {
           $connection->executeStatement("
-              CREATE VECTOR INDEX embedding_index ON {$tableName} (embedding)
+            ALTER TABLE {$tableName} ADD VECTOR INDEX embedding_index (embedding)
           ");
         } catch (\Exception $e) {
           if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER ==  'true') {

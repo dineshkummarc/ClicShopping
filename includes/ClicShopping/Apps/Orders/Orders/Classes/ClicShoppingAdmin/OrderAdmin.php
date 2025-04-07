@@ -246,6 +246,7 @@ class OrderAdmin extends \ClicShopping\Apps\Orders\Orders\Classes\Shop\Order
     $CLICSHOPPING_Db->delete('orders_status_history', ['orders_id' => (int)$order_id]);
     $CLICSHOPPING_Db->delete('orders_total', ['orders_id' => (int)$order_id]);
     $CLICSHOPPING_Db->delete('orders_pages_manager', ['orders_id' => (int)$order_id]);
+    $CLICSHOPPING_Db->delete('orders_embedding', ['entity_id' => (int)$order_id]);
 
     $CLICSHOPPING_Hooks->call('OrderAdmin', 'removeOrder');
   }
