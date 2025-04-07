@@ -20,12 +20,12 @@
         "guzzlehttp/guzzle": "^7.9",
         "robthree/twofactorauth": "^3.0",
         "symfony/http-client": "^7.2",
-        "stripe/stripe-php": "^16.6",
         "mattketmo/email-checker": "^2.4",
         "doctrine/orm": "^3.3",
         "symfony/cache": "^7.2",
         "doctrine/migrations": "^3.9",
-        "theodo-group/llphant": "^0.9.9"
+        "theodo-group/llphant": "^0.9.9",
+        "stripe/stripe-php": "^17.1"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"
