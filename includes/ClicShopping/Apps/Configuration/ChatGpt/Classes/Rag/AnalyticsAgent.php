@@ -15,61 +15,41 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 
 /**
- * AnalyticsAgent Class
- *
- * Cette classe utilise LLPhant pour créer un agent intelligent capable
- * d'interpréter des requêtes métiers complexes et de générer des requêtes SQL
- * pour l'analyse de données e-commerce.
- */
+* AnalyticsAgent Class
+*
+* This class uses LLPhant to create an intelligent agent capable
+* of interpreting complex business queries and generating SQL queries
+* for e-commerce data analysis.
+*/
 class AnalyticsAgent
 {
-  protected $chat;
-  private $db;
-  private $languageId;
+  private mixed $chat;
+  private mixed $db;
+  private int $languageId;
 
-  /**
-   * Constructeur pour AnalyticsAgent
-   *
-   * @param int|null $languageId ID de la langue pour le filtrage des résultats
-   */
+/**
+* Constructor for AnalyticsAgent
+*
+* @param int|null $languageId Language ID for filtering results
+*/
   public function __construct(?int $languageId = null)
   {
     $this->db = Registry::get('Db');
     $this->languageId = $languageId ?? Registry::get('Language')->getId();
-    $dbConfig = $this->getDbConfig();
     $this->chat = Gpt::getOpenAiGpt(null);
     $this->setSystemMessage();
   }
 
-  /**
-   * Récupère la configuration de la base de données
-   *
-   * @return array Configuration de la base de données
-   */
-  private function getDbConfig(): array
-  {
-    // Par défaut, utiliser les valeurs de configuration de ClicShopping
-    $dbConfig = [
-      'host' => CLICSHOPPING::getConfig('db_server'),
-      'port' => 3306, // Port par défaut pour MariaDB
-      'dbname' => CLICSHOPPING::getConfig('db_database'),
-      'username' => CLICSHOPPING::getConfig('db_username'),
-      'password' => CLICSHOPPING::getConfig('db_password')
-    ];
-
-    return $dbConfig;
-  }
-
-  /**
-   * Configure le message système pour l'agent LLPhant
-   */
+ /**
+ * Configures the system message for the LLPhant agent
+ */
   private function setSystemMessage(): void
   {
     $systemMessage = "
             Tu es un assistant expert e-commerce spécialisé dans l'analyse de données pour ClicShopping.
             
             Les tables importantes sont :
-            - products: Contient les informations de base des produits (products_id, products_model, products_price, products_quantity, products_date_added)
+            - products: Contient les informations de base des produits (products_id, products_model, products_ean, products_sku, products_price, products_quantity, products_date_added)
             - products_description: Contient les descriptions des produits (products_id, language_id, products_name, products_description)
             - categories: Contient les informations des catégories (categories_id, parent_id)
             - categories_description: Contient les descriptions des catégories (categories_id, language_id, categories_name)
@@ -87,6 +67,7 @@ class AnalyticsAgent
             - 'chiffre d'affaires par mois' → SELECT MONTH(o.date_purchased) AS month, YEAR(o.date_purchased) AS year, SUM(ot.value) AS total_revenue FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' GROUP BY YEAR(o.date_purchased), MONTH(o.date_purchased) ORDER BY year, month
             - 'combien de produits sont disponibles' → SELECT COUNT(products_id) AS total_available_products FROM clic_products WHERE products_status = 1
             - 'Combien de produits dont le statut est sur on dans la catégorie Coutellerie ? ' → SELECT COUNT(cp.products_id) AS total_active_products FROM clic_products cp JOIN clic_products_to_categories ptc ON cp.products_id = ptc.products_id JOIN clic_categories_description cd ON ptc.categories_id = cd.categories_id WHERE cp.products_status = '1' AND cd.categories_name LIKE '%Coutellerie%' AND cd.language_id = 2 
+            - 'Si c'est une référence, il faut fait regarder le sku, ean aussi' →  SELECT pd.products_description FROM clic_products_description pd JOIN clic_products p ON pd.products_id = p.products_id WHERE (p.products_model = 'REF-436224673' OR p.products_sku = 'REF-436224673' OR p.products_ean = 'REF-436224673') AND pd.language_id = 2
             
             Lorsque tu génères une requête SQL :
             1. Utilise toujours les préfixes de table complets (ex: clic_products au lieu de products)
@@ -96,7 +77,7 @@ class AnalyticsAgent
             5. Ajoute des clauses ORDER BY appropriées
             6. Limite les résultats à un nombre raisonnable si nécessaire (LIMIT)
             7. Si un champ texte est impliqué dans une condition (comme un nom ou une description), utilise l'opérateur LIKE avec les caractères génériques (%) pour permettre une recherche partielle
-            8. Assure-toi que la requête est correcte avant de l'exécuter
+            8. Assure-toi que la requête est correcte avant de l'exécuter et qu'il n'y a pas d'injections SQL.
             
             IMPORTANT: Réponds uniquement avec la requête SQL brute, sans aucun formatage, sans balises markdown, sans ```sql, sans commentaires, sans explications.
         ";
@@ -108,70 +89,61 @@ class AnalyticsAgent
     $this->chat->setSystemMessage($systemMessage);
   }
 
-  /**
-   * Analyse une question métier et génère une réponse
-   *
-   * @param string $question Question en langage naturel
-   * @return string Réponse générée
-   */
+/**
+ * Analyzes a business question and generates a response.
+ *
+ * @param string $question The business question in natural language.
+ * @return string The generated response.
+ */
   public function analyserQuestion(string $question): string
   {
     $response = $this->chat->generateText($question);
     return $this->cleanSqlResponse($response);
   }
 
-  /**
-   * Génère uniquement la requête SQL pour une question donnée
-   *
-   * @param string $question Question en langage naturel
-   * @return string Requête SQL générée
-   */
+ /**
+    * Generates only the SQL query for a given question
+    *
+    * @param string $question The question in natural language
+    * @return string The generated SQL query
+    */
   public function getRequeteSQL(string $question): string
   {
     $response = $this->chat->generateText($question);
     $cleanedResponse = $this->cleanSqlResponse($response);
 
-    // Log de la requête SQL pour débogage
-   // if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+    if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
       error_log("Analytics SQL Query for '$question': " . $cleanedResponse);
-   // }
+    }
 
     return $cleanedResponse;
   }
 
-  /**
-   * Nettoie la réponse SQL des balises de formatage et autres éléments indésirables
-   *
-   * @param string $response Réponse brute du modèle
-   * @return string Requête SQL nettoyée
-   */
+/**
+ * Cleans the SQL response by removing formatting tags and other unwanted elements.
+ *
+ * @param string $response Raw response from the model.
+ * @return string Cleaned SQL query.
+ */
   private function cleanSqlResponse(string $response): string
   {
-    // Supprimer les balises de formatage markdown
     $cleaned = preg_replace('/```sql\s*|\s*```/', '', $response);
-
-    // Supprimer les balises HTML potentielles
     $cleaned = strip_tags($cleaned);
-
-    // Supprimer les espaces et retours à la ligne superflus au début et à la fin
     $cleaned = trim($cleaned);
 
     return $cleaned;
   }
 
-  /**
-   * Exécute la requête SQL générée et retourne les résultats
-   *
-   * @param string $question Question en langage naturel
-   * @return array Résultats de la requête
-   */
+/**
+ * Executes the generated SQL query and returns the results.
+ *
+ * @param string $question The business question in natural language.
+ * @return array The query results.
+ */
   public function executeQuery(string $question): array
   {
     try {
-      // Générer la requête SQL
       $sqlQuery = $this->getRequeteSQL($question);
-
-      // Exécuter la requête SQL
       $query = $this->db->prepare($sqlQuery);
       $query->execute();
       $results = $query->fetchAll();
@@ -199,25 +171,22 @@ class AnalyticsAgent
     }
   }
 
-  /**
-   * Traite une requête métier complète (génération SQL + exécution + interprétation)
-   *
-   * @param string $question Question en langage naturel
-   * @param bool $includeSQL Inclure la requête SQL dans la réponse
-   * @return array Résultats complets avec interprétation
-   */
+/**
+* Processes a complete business query (SQL generation + execution + interpretation)
+*
+* @param string $question The business question in natural language
+* @param bool $includeSQL Whether to include the SQL query in the response
+* @return array Complete results with interpretation
+*/
   public function processBusinessQuery(string $question, bool $includeSQL = true): array
   {
     try {
-      // Exécuter la requête
       $results = $this->executeQuery($question);
 
-      // Si une erreur s'est produite
       if ($results['type'] === 'error') {
         return $results;
       }
 
-      // Générer une interprétation des résultats
       $interpretation = $this->interpretResults($question, $results['results']);
 
       // Préparer la réponse
@@ -245,36 +214,33 @@ class AnalyticsAgent
     }
   }
 
-  /**
-   * Interprète les résultats d'une requête en langage naturel
-   *
-   * @param string $question Question originale
-   * @param array $results Résultats de la requête
-   * @return string Interprétation en langage naturel
-   */
+ /**
+  * Interprets the results of a query in natural language.
+  *
+  * @param string $question The original question.
+  * @param array $results The query results.
+  * @return string The interpretation in natural language.
+  */
   private function interpretResults(string $question, array $results): string
   {
-    // Construire un prompt pour le LLM
     $prompt = "Tu es un expert en analyse de données e-commerce. Interprète ces résultats de requête SQL et fournis une explication claire et concise en français.\n\n";
     $prompt .= "Question : {$question}\n\n";
     $prompt .= "Résultats : " . json_encode($results, JSON_PRETTY_PRINT) . "\n\n";
     $prompt .= "Interprétation :";
 
-    // Utiliser le chat pour générer l'interprétation
     $interpretation = $this->chat->generateText($prompt);
 
     return $interpretation;
   }
 
-  /**
-   * Vérifie si une requête est de type analytique
-   *
-   * @param string $query Requête à vérifier
-   * @return bool True si la requête est analytique, false sinon
-   */
+ /**
+ * Checks if a query is of analytical type
+ *
+ * @param string $query Query to check
+ * @return bool True if the query is analytical, false otherwise
+ */
   public function isAnalyticsQuery(string $query): bool
   {
-    // Patterns pour détecter les requêtes d'analyse
     $analyticsPatterns = [
       '/combien|total|nombre|count|somme|sum|moyenne|average|min|max/i',
       '/stock|inventaire|disponible|disponibilité|alerte|niveau|reorder/i',

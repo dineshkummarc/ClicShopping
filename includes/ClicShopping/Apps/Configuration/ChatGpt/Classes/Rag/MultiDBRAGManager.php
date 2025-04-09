@@ -350,15 +350,18 @@ class MultiDBRAGManager
         }
 
         $context .= $doc->content . "\n\n";
-
         if (!empty($link)) {
           $link .= "- {{$doc->metadata['entity_id']}: {$link} \n";
-          $score .= "- (accuracy: {$score}%)  \n";
+            $score .= "- (accuracy: {$score}%)  \n";
         }
       }
 
       // Utiliser la classe Gpt existante pour générer la réponse
-      $prompt = str_replace(['{context}', '{question}', '{links}', '{score}'], [$context, $question, $link, $score], $this->systemMessageTemplate);
+      if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+        $prompt = str_replace(['{context}', '{question}', '{links}', '{score}'], [$context, $question, $link, $score], $this->systemMessageTemplate);
+      } else {
+        $prompt = str_replace(['{context}', '{question}', '{links}'], [$context, $question, $link], $this->systemMessageTemplate);
+      }
 
       if (!empty($modelOptions)) {
         //$currentChat = Gpt::getOpenAiGpt(null);
@@ -376,34 +379,40 @@ class MultiDBRAGManager
   }
 
 
-  /**
-   * Formate les résultats d'analyse pour l'affichage
-   *
-   * @param array $results Résultats d'analyse
-   * @param string $prompt Requête originale
-   * @return string Résultats formatés pour l'affichage
-   */
+/**
+* Formats the analysis results for display
+*
+* @param array $results Analysis results
+* @param string $prompt Original query
+* @return string Formatted results for display
+*/
   public function formatResults(array $results): string
   {
     $formatter = new ResultFormatter();
     $result = $formatter->format($results);
-    $result = $result['content'];
+
+    if (is_array($result)) {
+      $result = $result['content'];
+    } else {
+      $result = 'Arrray error';
+    }
 
     return $result;
   }
 
-  /**
-   * Exécute une requête analytique sur les données e-commerce
-   *
-   * Cette méthode est spécialement conçue pour les requêtes d'analyse
-   * qui nécessitent des calculs, des agrégations ou des recherches précises
-   * sur des données numériques ou structurées.
-   *
-   * @param string $query Question ou requête de l'utilisateur
-   * @param string|null $entityType Type d'entité à analyser (produits, commandes, etc.)
-   * @param int|null $languageId ID de la langue pour le filtrage des résultats
-   * @return array Résultats de l'analyse avec données structurées
-   */
+/**
+* Executes an analytical query on e-commerce data
+*
+* This method is specifically designed for analytical queries
+* that require calculations, aggregations, or precise searches
+* on numerical or structured data.
+*
+* @param string $query User\'s question or query
+* @param string|null $entityType Type of entity to analyze (products, orders, etc.)
+* @param int|null $languageId Language ID for filtering results
+* @return array Analysis results with structured data
+*/
+
   public function executeAnalyticsQuery(string $query, ?string $entityType = null, ?int $languageId = null): array
   {
     try {
@@ -418,10 +427,8 @@ class MultiDBRAGManager
         ];
       }
 
-      // Traiter la requête métier
       $results = $analyticsAgent->processBusinessQuery($query, true);
 
-      // Si une erreur s'est produite
       if ($results['type'] === 'error') {
         return [
           'type' => 'error',
@@ -429,7 +436,6 @@ class MultiDBRAGManager
         ];
       }
 
-      // Retourner les résultats formatés
       return [
         'type' => 'analytics_results',
         'query' => $query,
