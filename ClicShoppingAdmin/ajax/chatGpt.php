@@ -63,8 +63,10 @@ try {
   if ($queryType === 'analytics') {
     // Utiliser la nouvelle méthode pour les requêtes d'analyse numérique
     $analyticsResults = $ragManager->executeAnalyticsQuery($prompt, null, $languageId);
+
     // La mise en forme est maintenant gérée par la classe ResultFormatter dans le répertoire RAG
-    $result = $ragManager->formatResults($analyticsResults, $prompt);
+    $result = $ragManager->formatResults($analyticsResults);
+
   } else {
     // APPROCHE 1 ou 2 selon la configuration existante
     if (defined('CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER == 'True') {

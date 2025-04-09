@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '54048f2014d862fa471c4f5e9bae5de9b4b0eb7a',
+        'reference' => '915ae3a4c0f597c68ef7c140e93fd3df6d2831eb',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '54048f2014d862fa471c4f5e9bae5de9b4b0eb7a',
+            'reference' => '915ae3a4c0f597c68ef7c140e93fd3df6d2831eb',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -56,9 +56,9 @@
             'dev_requirement' => false,
         ),
         'doctrine/deprecations' => array(
-            'pretty_version' => '1.1.4',
-            'version' => '1.1.4.0',
-            'reference' => '31610dbb31faa98e6b5447b62340826f54fbc4e9',
+            'pretty_version' => '1.1.5',
+            'version' => '1.1.5.0',
+            'reference' => '459c2f5dd3d6a4633d3b5f46ee2b1c40f57d3f38',
             'type' => 'library',
             'install_path' => __DIR__ . '/../doctrine/deprecations',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => '975c081c7e430d0316a94047e5d8ab26e0a8f49e',
+            'reference' => '3a9fedb6eaaa962e76b776b9de7c5fc7f1c432df',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
@@ -577,9 +577,9 @@
             'dev_requirement' => false,
         ),
         'theodo-group/llphant' => array(
-            'pretty_version' => '0.9.9',
-            'version' => '0.9.9.0',
-            'reference' => '8160e711287548dc1ff4aab3f682fdf4f3d689fc',
+            'pretty_version' => '0.9.10',
+            'version' => '0.9.10.0',
+            'reference' => 'e499002a415dfd5ebdf9ec7b8d1729314592b29c',
             'type' => 'library',
             'install_path' => __DIR__ . '/../theodo-group/llphant',
             'aliases' => array(),

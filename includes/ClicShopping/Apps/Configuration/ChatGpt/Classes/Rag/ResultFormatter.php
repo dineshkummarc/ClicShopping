@@ -19,200 +19,160 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 class ResultFormatter
 {
   /**
-   * Formate les résultats d'analyse pour l'affichage
+   * Formate les résultats selon leur type
    *
-   * @param array $results Résultats d'analyse
-   * @param string $prompt Requête originale
-   * @return string Résultats formatés pour l'affichage
+   * @param array $results Résultats à formater
+   * @return array Résultats formatés
    */
-  public function formatResults(array $results, string $prompt): string
+  public function format(array $results): array
   {
-    $formattedResponse = "Résultats pour votre requête : \"{$prompt}\"\n\n";
-
-    // Cas spécial : résultat direct d'une recherche par référence (format simplifié)
-    if (isset($results['id']) && isset($results['data'])) {
-      $formattedResponse .= "Produit trouvé par référence :\n\n";
-
-      if (isset($results['data']['products_model'])) {
-        $formattedResponse .= "Référence: {$results['data']['products_model']}\n";
-      }
-
-      if (isset($results['data']['products_sku'])) {
-        $formattedResponse .= "SKU: {$results['data']['products_sku']}\n";
-      }
-
-      if (isset($results['data']['products_ean'])) {
-        $formattedResponse .= "EAN: {$results['data']['products_ean']}\n";
-      }
-
-      if (isset($results['data']['products_quantity'])) {
-        $formattedResponse .= "Stock: {$results['data']['products_quantity']} unités\n";
-      } else {
-        $formattedResponse .= "Information de stock non disponible pour ce produit.\n";
-      }
-
-      if (isset($results['data']['products_price'])) {
-        $formattedResponse .= "Prix: {$results['data']['products_price']}\n";
-      }
-
-      return $formattedResponse;
+    // Si c'est une erreur, la retourner telle quelle
+    if (isset($results['type']) && $results['type'] === 'error') {
+      return $results;
     }
 
-    // Cas spécial : uniquement un count sans type
-    if (!isset($results['type'], $results['count']) && count($results) === 1) {
-      return "Rrésultats : " . $results['count'];
+    // Si c'est un résultat d'analytics, le formater correctement
+    if (isset($results['type']) && ($results['type'] === 'analytics_results' || $results['type'] === 'analytics_response')) {
+      return [
+        'type' => 'formatted_results',
+        'content' => $this->formatAnalyticsResults($results)
+      ];
     }
 
-    // Traitement standard pour les autres types de résultats
-    if (isset($results['type'])) {
-      switch ($results['type']) {
+    // Si c'est un résultat de recherche sémantique, le formater
+    if (isset($results['type']) && $results['type'] === 'semantic_results') {
+      return [
+        'type' => 'formatted_results',
+        'content' => $this->formatSemanticResults($results)
+      ];
+    }
 
-      //  var_dump($results['type']);
+    // Type non géré, retourner un message d'erreur formaté
+    return [
+      'type' => 'formatted_results',
+      'content' => $this->formatUnknownResults($results)
+    ];
+  }
 
-        case 'reference_search':
-        case 'entity_list':
-        // Ok fonctionne
-          $formattedResponse .= "Produits trouvés :\n";
-          if (isset($results['count'], $results['items']) && $results['count'] > 0) {
-            $formattedResponse .= "Nombre de résultats : {$results['count']}\n\n";
+  /**
+   * Formate les résultats d'analytics
+   *
+   * @param array $results Résultats d'analytics
+   * @return string HTML formaté
+   */
+  private function formatAnalyticsResults(array $results): string
+  {
 
-            foreach ($results['items'] as $item) {
-              $formattedResponse .= "- Products Id: {$item['id']}\n";
 
-              if (isset($item['data']['products_name'])) {
-                $formattedResponse .= "- Nom: {$item['data']['products_name']}\n";
-              }
+    $output = "<div class='analytics-results'>";
+    $output .= "<h3>Résultats pour : " . htmlspecialchars($results['question'] ?? $results['query'] ?? 'Requête inconnue') . "</h3>";
 
-              if (isset($item['data']['products_description'])) {
-                $formattedResponse .= "- Description : {$item['data']['products_description']}\n";
-              }
+    // Afficher la requête SQL si disponible
+    if (!empty($results['sql_query'])) {
+      $output .= "<div class='sql-query'><strong>Requête SQL :</strong> <pre>" . htmlspecialchars($results['sql_query']) . "</pre></div>";
+    }
 
-              if (isset($item['data']['products_price'])) {
-                $formattedResponse .= "- Prix HT: {$item['data']['products_price']}\n";
-              }
+    // Afficher l'interprétation
+    if (!empty($results['interpretation'])) {
+      $output .= "<div class='interpretation'><strong>Interprétation :</strong> " . $results['interpretation'] . "</div>";
+    }
 
-              if (isset($item['data']['products_quantity'])) {
-                $formattedResponse .= "- Quantité: {$item['data']['products_quantity']}\n";
-              }
+    // Afficher les résultats sous forme de tableau si disponibles
+    if (!empty($results['results']) && is_array($results['results'])) {
+      $output .= "<div class='results-table'>";
+      $output .= "<h4>Données brutes :</h4>";
+      $output .= "<table class='table table-bordered table-striped'>";
 
-              $formattedResponse .= "\n";
-            }
-          } else {
-            $formattedResponse .= "Aucun produit trouvé pour cette référence.\n";
+      // En-têtes de tableau
+      $output .= "<thead><tr>";
+      $firstRow = reset($results['results']);
+      if (is_array($firstRow)) {
+        foreach (array_keys($firstRow) as $key) {
+          if (!is_numeric($key)) { // Éviter les clés numériques dupliquées
+            $output .= "<th>" . htmlspecialchars($key) . "</th>";
           }
-          break;
-
-
-          // Ok fonctionne
-        case 'stock_alert_info':
-          $formattedResponse .= "Information de stock d'alerte :\n\n";
-          if (isset($results['count'], $results['items']) && $results['count'] > 0) {
-            foreach ($results['items'] as $item) {
-              $formattedResponse .= "- Produit: {$item['data']['products_name']}\n";
-              $formattedResponse .= "- Référence: {$item['data']['products_model']}\n";
-              $formattedResponse .= "- Stock actuel: {$item['data']['products_quantity']} unités\n";
-              $formattedResponse .= "- Niveau d'alerte: {$item['data']['products_quantity_alert']} unités\n";
-
-              if (isset($item['data']['is_below_alert']) && $item['data']['is_below_alert']) {
-                $formattedResponse .= "- ATTENTION: Le stock est inférieur ou égal au niveau d'alerte! : {$item['data']['is_below_alert']} unités \n";
-              }
-
-              $formattedResponse .= "\n";
-            }
-          } else {
-            $formattedResponse .= "Aucune information de stock d'alerte trouvée pour cette référence.\n";
-          }
-          break;
-
-
-
-
-
-
-
-
-        case 'stock_analysis':
-          $formattedResponse .= "Analyse de stock :\n";
-          if (isset($results['count'], $results['items']) && $results['count'] > 0) {
-            $formattedResponse .= "- Nombre de produits : {$results['count']}\n\n";
-            foreach ($results['items'] as $item) {
-              $formattedResponse .= "- {$item['data']['products_name']} : {$item['data']['products_quantity']} en stock\n";
-            }
-          } elseif (isset($results['data']['total_value'])) {
-            $formattedResponse .= "- Valeur totale de l'inventaire : {$results['data']['total_value']}\n";
-          } else {
-            $formattedResponse .= "- Aucune information de stock disponible.\n";
-          }
-          break;
-
-
-
-
-        case 'orders':
-          $formattedResponse .= "Liste des commandes :\n\n";
-          if (isset($results['count'], $results['items']) && $results['count'] > 0) {
-            $formattedResponse .= "Nombre de commandes : {$results['count']}\n\n";
-            foreach ($results['items'] as $item) {
-              $formattedResponse .= "- Commande #{$item['id']}\n";
-              $formattedResponse .= "  Client: {$item['data']['customer_name']}\n";
-              $formattedResponse .= "  Date: {$item['data']['date_purchased']}\n";
-              $formattedResponse .= "  Montant: {$item['data']['order_total']}\n";
-              $formattedResponse .= "  Statut: {$item['data']['status']}\n\n";
-            }
-          } else {
-            $formattedResponse .= "Aucune commande trouvée.\n";
-          }
-          break;
-
-
-
-
-
-        case 'statistical_analysis':
-          $formattedResponse .= "Analyse statistique :\n";
-
-          var_dump($results['data']);
-
-
-          if (isset($results['data']['count'])) {
-            $formattedResponse .= "Nombre total : {$results['data']['count']}\n";
-          }
-          if (isset($results['data']['sum'])) {
-            $formattedResponse .= "Somme : {$results['data']['sum']}\n";
-          }
-          if (isset($results['data']['average'])) {
-            $formattedResponse .= "Moyenne : {$results['data']['average']}\n";
-          }
-          if (isset($results['data']['minimum'])) {
-            $formattedResponse .= "Minimum : {$results['data']['minimum']}\n";
-          }
-          if (isset($results['data']['maximum'])) {
-            $formattedResponse .= "Maximum : {$results['data']['maximum']}\n";
-          }
-          if (empty($results['data'])) {
-            $formattedResponse .= "Aucune donnée statistique disponible.\n";
-          }
-          break;
-
-        case 'error':
-          $formattedResponse .= "Erreur : {$results['message']}\n";
-          break;
-
-        default:
-          $formattedResponse .= "Type de résultat non géré : {$results['type']}\n";
-          $formattedResponse .= "Contenu brut des résultats : " . json_encode($results, JSON_PRETTY_PRINT);
-          break;
+        }
       }
+      $output .= "</tr></thead>";
 
-    } else {
-      // Si le format n'est pas reconnu, afficher le contenu brut pour le débogage
-      $formattedResponse .= "Format de résultat non reconnu. Contenu brut :\n";
-      $formattedResponse .= json_encode($results, JSON_PRETTY_PRINT);
+      // Données
+      $output .= "<tbody>";
+      foreach ($results['results'] as $row) {
+        $output .= "<tr>";
+        foreach ($row as $key => $value) {
+          if (!is_numeric($key)) { // Éviter les clés numériques dupliquées
+            $output .= "<td>" . htmlspecialchars($value) . "</td>";
+          }
+        }
+        $output .= "</tr>";
+      }
+      $output .= "</tbody>";
+
+      $output .= "</table>";
+      $output .= "</div>";
     }
 
-    return $formattedResponse;
+    $output .= "</div>";
+
+    return $output;
+  }
+
+  /**
+   * Formate les résultats de recherche sémantique
+   *
+   * @param array $results Résultats de recherche sémantique
+   * @return string HTML formaté
+   */
+  private function formatSemanticResults(array $results): string
+  {
+    $output = "<div class='semantic-results'>";
+    $output .= "<h3>Résultats pour : " . htmlspecialchars($results['query'] ?? 'Requête inconnue') . "</h3>";
+
+    // Afficher la réponse
+    if (!empty($results['response'])) {
+      $output .= "<div class='response'>" . $results['response'] . "</div>";
+    }
+
+    // Afficher les sources si disponibles
+    if (!empty($results['sources']) && is_array($results['sources'])) {
+      $output .= "<div class='sources'>";
+      $output .= "<h4>Sources :</h4>";
+      $output .= "<ul>";
+      foreach ($results['sources'] as $source) {
+        $output .= "<li>";
+        if (isset($source['title'])) {
+          $output .= "<strong>" . htmlspecialchars($source['title']) . "</strong>";
+        }
+        if (isset($source['content'])) {
+          $output .= "<p>" . htmlspecialchars(substr($source['content'], 0, 200)) . "...</p>";
+        }
+        $output .= "</li>";
+      }
+      $output .= "</ul>";
+      $output .= "</div>";
+    }
+
+    $output .= "</div>";
+    return $output;
+  }
+
+  /**
+   * Formate les résultats de type inconnu
+   *
+   * @param array $results Résultats de type inconnu
+   * @return string HTML formaté
+   */
+  private function formatUnknownResults(array $results): string
+  {
+    $output = "<div class='unknown-results'>";
+    $output .= "<h3>Type de résultat non géré : " . htmlspecialchars($results['type'] ?? 'inconnu') . "</h3>";
+    $output .= "<p>Contenu brut des résultats : </p>";
+    $output .= "<pre>" . htmlspecialchars(json_encode($results, JSON_PRETTY_PRINT)) . "</pre>";
+    $output .= "</div>";
+    return $output;
   }
 }
+
 
 
 

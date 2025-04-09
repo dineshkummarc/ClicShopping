@@ -1,16 +1,18 @@
 version4.00
-This is the last version 3, the next will version 4.x will integrate the embeddings and need to be used with mariaDB 11.8 at least.T
+This is the last version 3, the next will version 4.x will integrate the embeddings and need to be used with mariaDB 11.8 at least.
+The goal is to exploit the Gen AI capacities
 
+small fix
+librairies updated
 Protect customers information by AES-256
 Add embeding for categories
 Add embeding for products
 Add embeding for page manager
 Add product recommendation module for products_info template using the embedding
 Add rag via chatbot
-small fix
-librairies updated
 Allow to use the rag and rerieve the data inside the database or inside the llm
-
+Allow the rag to search as specific information via a text request
+Allow the rag to make statistic via dynamic query
 
 ------------------
 version3.456
