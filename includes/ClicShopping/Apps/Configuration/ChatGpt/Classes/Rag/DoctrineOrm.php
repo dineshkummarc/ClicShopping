@@ -99,7 +99,6 @@ class DoctrineOrm
 
       return $entityManager;
     } catch (\Doctrine\DBAL\Exception $e) {
-      // Gestion des erreurs de connexion
       if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
         error_log('Erreur de connexion Doctrine : ' . $e->getMessage());
       }

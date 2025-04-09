@@ -45,60 +45,8 @@ class AnalyticsAgent
  */
   private function setSystemMessage(): void
   {
-    $systemMessage = "
-            Tu es un assistant expert e-commerce spécialisé dans l'analyse de données pour ClicShopping.
-            
-            Les tables importantes sont :
-            - products: Contient les informations de base des produits (products_id, products_model, products_ean, products_sku, products_price, products_quantity, products_date_added)
-            - products_description: Contient les descriptions des produits (products_id, language_id, products_name, products_description)
-            - categories: Contient les informations des catégories (categories_id, parent_id)
-            - categories_description: Contient les descriptions des catégories (categories_id, language_id, categories_name)
-            - products_to_categories: Table de liaison entre produits et catégories (products_id, categories_id)
-            - orders: Contient les informations des commandes (orders_id, customers_id, date_purchased, orders_status)
-            - orders_products: Contient les produits des commandes (orders_id, products_id, products_quantity, products_price)
-            - orders_total: Contient les totaux des commandes (orders_id, value, class)
-            - customers: Contient les informations des clients (customers_id, customers_name, customers_email_address)
-            
-            Si on te demande :
-            - 'nombre de produits par catégorie' → SELECT cd.categories_name, COUNT(p.products_id) AS product_count FROM clic_products p JOIN clic_products_to_categories ptc ON p.products_id = ptc.products_id JOIN clic_categories c ON ptc.categories_id = c.categories_id JOIN clic_categories_description cd ON c.categories_id = cd.categories_id WHERE cd.language_id = [language_id] GROUP BY c.categories_id, cd.categories_name ORDER BY product_count DESC
-            - 'moyenne des commandes par mois' → SELECT MONTH(o.date_purchased) AS month, YEAR(o.date_purchased) AS year, AVG(ot.value) AS average_order_value FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' GROUP BY YEAR(o.date_purchased), MONTH(o.date_purchased) ORDER BY year, month
-            - 'top produits vendus' → SELECT pd.products_name, SUM(op.products_quantity) AS total_sold FROM clic_orders_products op JOIN clic_products_description pd ON op.products_id = pd.products_id WHERE pd.language_id = [language_id] GROUP BY op.products_id, pd.products_name ORDER BY total_sold DESC LIMIT 10
-            - 'produits en alerte de stock' → SELECT pd.products_name, p.products_quantity, p.products_quantity_alert FROM clic_products p JOIN clic_products_description pd ON p.products_id = pd.products_id WHERE p.products_quantity <= p.products_quantity_alert AND pd.language_id = [language_id] ORDER BY p.products_quantity ASC
-            - 'chiffre d'affaires par mois' → SELECT MONTH(o.date_purchased) AS month, YEAR(o.date_purchased) AS year, SUM(ot.value) AS total_revenue FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' GROUP BY YEAR(o.date_purchased), MONTH(o.date_purchased) ORDER BY year, month
-            - 'combien de produits sont disponibles' → SELECT COUNT(products_id) AS total_available_products FROM clic_products WHERE products_status = 1
-            - 'Combien de produits dont le statut est sur on dans la catégorie Coutellerie ? ' → SELECT COUNT(cp.products_id) AS total_active_products FROM clic_products cp JOIN clic_products_to_categories ptc ON cp.products_id = ptc.products_id JOIN clic_categories_description cd ON ptc.categories_id = cd.categories_id WHERE cp.products_status = '1' AND cd.categories_name LIKE '%Coutellerie%' AND cd.language_id = 2 
-            - 'Si c'est une référence, il faut fait regarder le sku, ean aussi' →  SELECT pd.products_description FROM clic_products_description pd JOIN clic_products p ON pd.products_id = p.products_id WHERE (p.products_model = 'REF-436224673' OR p.products_sku = 'REF-436224673' OR p.products_ean = 'REF-436224673') AND pd.language_id = 2
-            
-            Lorsque tu génères une requête SQL :
-            1. Utilise toujours les préfixes de table complets (ex: clic_products au lieu de products)
-            2. Ajoute des jointures appropriées pour les tables liées
-            3. Filtre par language_id lorsque c'est pertinent
-            4. Optimise la requête pour de bonnes performances
-            5. Ajoute des clauses ORDER BY appropriées
-            6. Limite les résultats à un nombre raisonnable si nécessaire (LIMIT)
-            7. Si un champ texte est impliqué dans une condition (comme un nom ou une description), utilise l'opérateur LIKE avec les caractères génériques (%) pour permettre une recherche partielle
-            8. Assure-toi que la requête est correcte avant de l'exécuter et qu'il n'y a pas d'injections SQL.
-            
-            IMPORTANT: Réponds uniquement avec la requête SQL brute, sans aucun formatage, sans balises markdown, sans ```sql, sans commentaires, sans explications.
-        ";
-
-    // Remplacer [language_id] par l'ID de langue actuel
-    $systemMessage = str_replace('[language_id]', $this->languageId, $systemMessage);
-
-    // Définir le message système pour l'agent
+    $systemMessage = CLICSHOPPING::getDef('text_system_message', ['language_id' => $this->languageId]);
     $this->chat->setSystemMessage($systemMessage);
-  }
-
-/**
- * Analyzes a business question and generates a response.
- *
- * @param string $question The business question in natural language.
- * @return string The generated response.
- */
-  public function analyserQuestion(string $question): string
-  {
-    $response = $this->chat->generateText($question);
-    return $this->cleanSqlResponse($response);
   }
 
  /**
@@ -223,10 +171,12 @@ class AnalyticsAgent
   */
   private function interpretResults(string $question, array $results): string
   {
-    $prompt = "Tu es un expert en analyse de données e-commerce. Interprète ces résultats de requête SQL et fournis une explication claire et concise en français.\n\n";
-    $prompt .= "Question : {$question}\n\n";
-    $prompt .= "Résultats : " . json_encode($results, JSON_PRETTY_PRINT) . "\n\n";
-    $prompt .= "Interprétation :";
+    $array = [
+      'question' => $question,
+      'results' => json_encode($results, JSON_PRETTY_PRINT)
+    ];
+
+    $prompt = CLICSHOPPING::getDef('text_interpret_results', $array);
 
     $interpretation = $this->chat->generateText($prompt);
 

@@ -18,7 +18,6 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\EmbeddedTableManager;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\AnalyticsAgent;
 
 use LLPhant\Embeddings\Document;
@@ -49,7 +48,6 @@ class MultiDBRAGManager
   private array $vectorStores = [];
 
   private string $systemMessageTemplate;
-  private EmbeddedTableManager $embeddedTableManager;
 
   /**
    * Constructor for MultiDBRAGManager
@@ -71,8 +69,6 @@ class MultiDBRAGManager
     $this->db = Registry::get('Db');
     $this->systemMessageTemplate = CLICSHOPPING::getDef('text_rag_system_message_template');
     $this->language = Registry::get('Language');
-// Dans le constructeur, ajouter :
-    $this->embeddedTableManager = new EmbeddedTableManager();
 
     // Préparation des paramètres pour getOpenAiGpt
     $parameters = null;
@@ -364,7 +360,6 @@ class MultiDBRAGManager
       }
 
       if (!empty($modelOptions)) {
-        //$currentChat = Gpt::getOpenAiGpt(null);
         $response = Gpt::getGptResponse($prompt);
 
         return $response;
@@ -379,13 +374,12 @@ class MultiDBRAGManager
   }
 
 
-/**
-* Formats the analysis results for display
-*
-* @param array $results Analysis results
-* @param string $prompt Original query
-* @return string Formatted results for display
-*/
+  /**
+   * Formats the analysis results for display
+   *
+   * @param array $results Analysis results
+   * @return string Formatted results for display
+   */
   public function formatResults(array $results): string
   {
     $formatter = new ResultFormatter();
@@ -394,7 +388,7 @@ class MultiDBRAGManager
     if (is_array($result)) {
       $result = $result['content'];
     } else {
-      $result = 'Arrray error';
+      $result = 'Array error';
     }
 
     return $result;
@@ -423,7 +417,7 @@ class MultiDBRAGManager
       if (!$analyticsAgent->isAnalyticsQuery($query)) {
         return [
           'type' => 'not_analytics',
-          'message' => 'Cette requête ne semble pas être une requête d\'analyse.'
+          'message' => CLICSHOPPING::getDef('text_not_analytics')
         ];
       }
 
