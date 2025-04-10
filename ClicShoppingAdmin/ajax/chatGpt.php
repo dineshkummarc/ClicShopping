@@ -10,12 +10,14 @@
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
+use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MultiDBRAGManager;
 use \ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 
 define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../includes/ClicShopping/')  . DIRECTORY_SEPARATOR);
 
@@ -29,62 +31,43 @@ try {
   // Sanitize the incoming message from the AJAX request
   $prompt = HTML::sanitize($_POST['message']);
   $saveGpt = isset($_POST['saveGpt']) ? HTML::sanitize($_POST['saveGpt']) : null;
-  $languageId = isset($_POST['languageId']) ? (int)$_POST['languageId'] : null;
-  // Nouveau paramètre pour identifier le type de requête
+  $languageId = Registry::get('Language')->getId();
   $queryType = isset($_POST['queryType']) ? HTML::sanitize($_POST['queryType']) : 'semantic';
 
-  // Détection côté serveur comme solution de secours
   if ($queryType === 'semantic') {
-    // Patterns pour détecter les requêtes d'analyse
-    $analyticsPatterns = [
-      '/combien|total|nombre|count|somme|sum|moyenne|average|min|max/i',
-      '/stock|inventaire|disponible|disponibilité|alerte|niveau|reorder/i',
-      '/REF[-\s]?\d+|SKU[-\s]?\d+|EAN[-\s]?\d+|\b\d{8,13}\b|ID\s*:\s*\d+/i',
-      '/prix\s*(>|<|>=|<=|=)\s*(\d+[\.,]?\d*)/i',
-      '/quantité\s*(>|<|>=|<=|=)\s*(\d+)/i'
-    ];
+    // Patterns to detect the analysis request
+    $analyticsPatterns = Semantics::analyticsPatterns();
 
-    foreach ($analyticsPatterns as $pattern) {
-      if (preg_match($pattern, $prompt)) {
-        $queryType = 'analytics';
-       // error_log("Type de requête corrigé côté serveur: analytics");
-        break;
+    foreach ($analyticsPatterns as $category => $patterns) {
+      foreach ($patterns as $pattern) {
+        if (preg_match($pattern, $prompt)) {
+          $queryType = 'analytics';
+          // error_log("Type de requête corrigé côté serveur: analytics");
+          break;
+        }
       }
     }
   }
 
-  // Récupération de la clé API OpenAI depuis la configuration
   Gpt::getEnvironment();
 
-  // Initialisation du gestionnaire RAG multi-bases
   $ragManager = new MultiDBRAGManager();
 
-  // Traitement selon le type de requête
   if ($queryType === 'analytics') {
-    // Utiliser la nouvelle méthode pour les requêtes d'analyse numérique
     $analyticsResults = $ragManager->executeAnalyticsQuery($prompt, null, $languageId);
-
-    // La mise en forme est maintenant gérée par la classe ResultFormatter dans le répertoire RAG
     $result = $ragManager->formatResults($analyticsResults);
 
   } else {
-    // APPROCHE 1 ou 2 selon la configuration existante
+    // Approach 1 or 2 with the current configuration
     if (defined('CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER == 'True') {
-      // Génération de la réponse avec l'approche 1
       $result = $ragManager->answerQuestion($prompt, 5, 0.5, $languageId);
     } else {
-      // APPROCHE 2: Utilisation de l'approche existante
-
-      // 1️ Initialisation du générateur d'embedding
+      // Approach 2: Use the current aborescence
       $embeddingGenerator = new OpenAI3LargeEmbeddingGenerator();
-
-      // 2️ Récupérer l'EntityManager de Doctrine via la classe DoctrineOrm
       $entityManager = DoctrineOrm::getEntityManager();
-
-      // 3️ Récupérer toutes les tables d'embedding disponibles
       $embeddingTables = [];
 
-      // Tables principales connues
+      // Main tables known
       $knownTables = [
         'products_embedding',
         'categories_embedding',
@@ -92,10 +75,9 @@ try {
         'orders_embedding',
       ];
 
-      // Ajouter d'abord les tables connues
+      // Add first the known table
       foreach ($knownTables as $tableName) {
         try {
-          // Utiliser notre implémentation personnalisée MariaDBVectorStore au lieu de DoctrineVectorStore
           $vectorStore = new MariaDBVectorStore($embeddingGenerator, $tableName);
           $embeddingTables[$tableName] = $vectorStore;
         } catch (\Exception $e) {
@@ -106,7 +88,7 @@ try {
         }
       }
 
-      // Rechercher d'autres tables d'embedding dans la base de données
+      // Other table search inside the DB
       try {
         $tables = DoctrineOrm::getEmbeddingTables();
 
@@ -118,7 +100,7 @@ try {
             } catch (\Exception $e) {
               if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
                 error_log("Erreur lors de l'initialisation de la table {$tableName} : " . $e->getMessage());
-                // Continuer avec les autres tables en cas d'erreur
+                // If error continue
               }
             }
           }
@@ -126,17 +108,17 @@ try {
       } catch (\Exception $e) {
         if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
           error_log("Erreur lors de la recherche des tables d'embedding : " . $e->getMessage());
-          // Continuer avec les tables connues en cas d'erreur
+          // If error continue
         }
       }
 
-      // 4️⃣ Recherche dans toutes les bases de données vectorielles
+      // 4️⃣ Search in all vector table inside the DB
       $allResults = [];
       $context = '';
 
       foreach ($embeddingTables as $tableName => $vectorStore) {
         try {
-          // Créer un filtre pour la langue si spécifié
+          // Language filter if specified
           $filter = null;
           if ($languageId !== null) {
             $filter = function ($metadata) use ($languageId) {
@@ -144,7 +126,7 @@ try {
             };
           }
 
-          // Utiliser la nouvelle signature de similaritySearch
+          // UUSe similaritySearch signature
           $results = $vectorStore->similaritySearch($prompt, 2, 0.5, $filter);
 
           foreach ($results as $doc) {
@@ -158,7 +140,7 @@ try {
           }
         } catch (\Exception $e) {
           error_log("Erreur lors de la recherche dans la table {$tableName} : " . $e->getMessage());
-          // Continuer avec les autres tables en cas d'erreur
+          // If error continue
         }
       }
 
@@ -166,11 +148,10 @@ try {
       if (!empty($context)) {
         $result = Gpt::getGptResponse($context . "\n\nQuestion : " . $prompt);
       } else {
-        // 6 Si aucune information pertinente n'a été trouvée, poser directement la question à OpenAI
+        //If no information found, use openAI directly
         $result = Gpt::getGptResponse($prompt);
       }
 
-      // 7️⃣ Traitement de la réponse d'OpenAI
       $pos = strstr($result, ':');
       if ($pos !== false) {
         $result = substr($pos, 2);
@@ -184,11 +165,9 @@ try {
     // ...
   }
 
-  // 9️⃣ Afficher la réponse formatée avec les sauts de ligne HTML
   echo nl2br($result);
 
 } catch (\Exception $e) {
-  // Gestion des erreurs
   error_log('Erreur dans le traitement AJAX : ' . $e->getMessage());
   echo "Une erreur s'est produite lors du traitement de votre requête : " . $e->getMessage();
 }
