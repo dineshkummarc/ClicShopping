@@ -411,8 +411,6 @@ class MultiDBRAGManager
     try {
       $analyticsAgent = new AnalyticsAgent();
 
-      var_dump(!$analyticsAgent->isAnalyticsQuery($query));
-      exit;
       //Check the request
       if (!$analyticsAgent->isAnalyticsQuery($query)) {
         return [

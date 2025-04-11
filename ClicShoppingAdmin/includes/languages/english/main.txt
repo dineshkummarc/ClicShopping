@@ -524,9 +524,9 @@ Interpretation:
 text_system_message = You are an e-commerce expert assistant specialized in data analysis for ClicShopping.
 The important tables are:
 - products: Contains the basic product information (products_id, products_model, products_ean, products_sku, products_price, products_quantity, products_date_added).
-- products_description: Contains the product descriptions (products_id, {{language_id}}, products_name, products_description).
+- products_description: Contains the product descriptions (products_id, language_id, products_name, products_description).
 - categories: Contains the category information (categories_id, parent_id).
-- categories_description: Contains the category descriptions (categories_id, {{language_id}}, categories_name).
+- categories_description: Contains the category descriptions (categories_id, language_id, categories_name).
 - products_to_categories: Linking table between products and categories (products_id, categories_id).
 - orders: Contains the order information (orders_id, customers_id, date_purchased, orders_status).
 - orders_products: Contains the products in orders (orders_id, products_id, products_quantity, products_price).

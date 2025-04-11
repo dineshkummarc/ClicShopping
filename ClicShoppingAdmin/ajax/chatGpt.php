@@ -35,21 +35,7 @@ try {
   $queryType = isset($_POST['queryType']) ? HTML::sanitize($_POST['queryType']) : 'semantic';
 
   if ($queryType === 'semantic') {
-    // Patterns to detect the analysis request
-    $analyticsPatterns = Semantics::analyticsPatterns();
-
-    $prompt = Semantics::translateToEnglish($prompt);
-
-    foreach ($analyticsPatterns as $category => $patterns) {
-      foreach ($patterns as $pattern) {
-        if (preg_match($pattern, $prompt)) {
-          $queryType = 'analytics';
-          error_log("Match trouvé dans la catégorie $category avec le pattern : $pattern");
-          // error_log("Type de requête corrigé côté serveur: analytics");
-          break;
-        }
-      }
-    }
+    $queryType = Semantics::classifyQuery($prompt); // gère la traduction + détection
   }
 
   Gpt::getEnvironment();

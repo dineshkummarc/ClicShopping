@@ -12,7 +12,7 @@ class Semantics {
    * @param int|null $token
    * @return string
    */
-  public static function translateToEnglish(string $text, int|null $token = 50): string
+  public static function translateToEnglish(string $text, int|null $token = 80): string
   {
     $question = "Translate the following query to English: {$text}";
     $query = Gpt::getGptResponse($question, $token);
@@ -20,11 +20,71 @@ class Semantics {
     return $query;
   }
 
+  /**
+   * Classify the query as 'analytics', 'semantic' or fallback to 'semantic' if unclear.
+   * @param string $text
+   * @return string
+   */
+  public static function checkSemantics(string $text): string
+  {
+    $prompt = "Type: analytics or semantic?\nQ: {$text}\nAnswer:";
+    $type = Gpt::getGptResponse($prompt, 20);
+
+    return in_array(strtolower(trim($type)), ['analytics', 'semantic']) ? strtolower(trim($type)) : 'semantic';
+  }
 
   /**
-   * Retrieves the regex patterns used to identify analytics-related queries.
+   * Try to classify based on patterns first, fallback to semantic check.
+   * @param string $text
+   * @return string
+   */
+  public static function classifyQuery(string $text): string
+  {
+    $translated = self::translateToEnglish($text);
+    $analyticsPatterns = self::analyticsPatterns();
+
+    foreach ($analyticsPatterns as $category => $patterns) {
+      foreach ($patterns as $pattern) {
+        if (preg_match($pattern, $translated)) {
+          error_log("Match trouvé dans la catégorie $category avec le pattern : $pattern");
+          return 'analytics';
+        }
+      }
+    }
+
+    // Aucun match clair → GPT fallback
+    return self::checkSemantics($translated);
+  }
+
+  /**
+   * Defines and returns regex patterns for parsing analytics-related queries.
    *
-   * @return array An associative array of categories and their corresponding regex patterns.
+   * Patterns are organized into categories:
+   * - entity: Basic query types for products, orders, customers, etc.
+   * - time: Date and time period expressions
+   * - stock: Inventory-related queries
+   * - reference: Product identifiers (SKU, EAN, etc.)
+   * - price: Price-related expressions and comparisons
+   * - quantity: Quantity expressions and comparisons
+   * - performance: Sales and business metrics
+   * - comparison: Comparative analysis expressions
+   * - category: Product categorization queries
+   * - customer: Customer-related queries
+   * - calculation: Mathematical operations
+   * - filters: Query filtering expressions
+   * - sorting: Result ordering expressions
+   *
+   * @return array<string, array<string>> Associative array where:
+   *                                     - key: pattern category (string)
+   *                                     - value: array of regex patterns (string[])
+   *
+   * @example
+   * $patterns = Semantics::analyticsPatterns();
+   * foreach ($patterns['price'] as $pattern) {
+   *     if (preg_match($pattern, $query)) {
+   *         // Handle price-related query
+   *     }
+   * }
    */
   public static function analyticsPatterns() : array
   {
