@@ -514,7 +514,8 @@ text_rag_answer_question_not_found = I couldn’t find any specific information 
 text_rag_answer_question_error = Sorry, an error hab been created during the process. Please try more late.
 
 
-text_interpret_results = You are an expert in e-commerce data analysis. Interpret these SQL query results and provide a clear and concise explanation in English.\n\n
+text_interpret_results = You are an expert in e-commerce data analysis.
+Interpret these SQL query results and provide a clear and concise explanation in English.\n\n
 Question: {{question}}\n\n
 Results: {{results}} \n\n
 Interpretation:
@@ -531,6 +532,14 @@ The important tables are:
 - orders_products: Contains the products in orders (orders_id, products_id, products_quantity, products_price).
 - orders_total: Contains the order totals (orders_id, value, class). The class contains 'ST' for the order subtotal excluding tax, 'SH' for the shipping amount, 'TX' for the tax amount, 'TO' for the total amount excluding tax of the order.
 - customers: Contains the customer information (customers_id, customers_name, customers_email_address).
+- products_specials: Contains all current promotions (products_id, specials_new_products_price, specials_date_added, specials_last_modified)
+- products_favorites: Contains customers' favorite products (products_id, products_favorites_date_added)
+- products_featured: Contains featured products (products_id, products_featured_date_added)
+- reviews: Contains customer reviews on products (products_id, customers_name, reviews_rating, reviews_date_added, status)
+- reviews_description: Contains the descriptions of reviews (products_id, languages_id, reviews_text)
+- reviews_votes: Contains votes on reviews (products_id, reviews_id, customers_id, vote, sentiment)
+- reviews_sentiment: Contains the sentiment of reviews (products_id, reviews_id, date_added)
+- reviews_sentiment_description: Contains the descriptions of sentiments (id, languages_id, description)
 
 If you are asked:
 - 'number of products per category' → SELECT cd.categories_name, COUNT(p.products_id) AS product_count FROM clic_products p JOIN clic_products_to_categories ptc ON p.products_id = ptc.products_id JOIN clic_categories c ON ptc.categories_id = c.categories_id JOIN clic_categories_description cd ON c.categories_id = cd.categories_id WHERE cd.language_id = [language_id] GROUP BY c.categories_id, cd.categories_name ORDER BY product_count DESC
@@ -541,6 +550,7 @@ If you are asked:
 - 'how many products are available' → SELECT COUNT(products_id) AS total_available_products FROM clic_products WHERE products_status = 1
 - 'How many products are active in the category Cutlery?' → SELECT COUNT(cp.products_id) AS total_active_products FROM clic_products cp JOIN clic_products_to_categories ptc ON cp.products_id = ptc.products_id JOIN clic_categories_description cd ON ptc.categories_id = cd.categories_id WHERE cp.products_status = '1' AND cd.categories_name LIKE '%Cutlery%' AND cd.language_id = 2
 - 'If it is a reference, you must also check the sku, ean' → SELECT pd.products_description FROM clic_products_description pd JOIN clic_products p ON pd.products_id = p.products_id WHERE (p.products_model = 'REF-436224673' OR p.products_sku = 'REF-436224673' OR p.products_ean = 'REF-436224673') AND pd.language_id = 2
+- 'If the question contains a dynamic time expression (such as "the last 30 days", "the past week", "since X days", or "this year") — for example: "What orders have been placed in the last 30 days?" — then convert it into SQL using NOW() - INTERVAL X DAY. Prioritize this approach over fixed MONTH() filters when the expression refers to a number of days rather than a calendar month.' →  SELECT SUM(ot.value) AS total_sales  FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' AND o.date_purchased >= NOW() - INTERVAL [X] DAY
 
 When generating an SQL query:
 1. Always use the full table prefixes (e.g., clic_products instead of products).
@@ -551,8 +561,8 @@ When generating an SQL query:
 6. Limit the results to a reasonable number if necessary (LIMIT).
 7. If a text field is involved in a condition (like a name or description), use the LIKE operator with wildcard characters (%) to allow partial searches.
 8. Ensure the query is correct before executing it and that there are no SQL injections.
-9. Provide the result in english.
 
 IMPORTANT: Respond only with the raw SQL query, without any formatting, without markdown tags, without ```sql, without comments, without explanations.
+
 
 text_not_analytics = This query does not appear to be an analytical query.

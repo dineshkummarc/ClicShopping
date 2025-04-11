@@ -38,10 +38,13 @@ try {
     // Patterns to detect the analysis request
     $analyticsPatterns = Semantics::analyticsPatterns();
 
+    $prompt = Semantics::translateToEnglish($prompt);
+
     foreach ($analyticsPatterns as $category => $patterns) {
       foreach ($patterns as $pattern) {
         if (preg_match($pattern, $prompt)) {
           $queryType = 'analytics';
+          error_log("Match trouvé dans la catégorie $category avec le pattern : $pattern");
           // error_log("Type de requête corrigé côté serveur: analytics");
           break;
         }
@@ -54,12 +57,12 @@ try {
   $ragManager = new MultiDBRAGManager();
 
   if ($queryType === 'analytics') {
-    $analyticsResults = $ragManager->executeAnalyticsQuery($prompt, null, $languageId);
+    $analyticsResults = $ragManager->executeAnalyticsQuery($prompt, null);
     $result = $ragManager->formatResults($analyticsResults);
 
   } else {
     // Approach 1 or 2 with the current configuration
-    if (defined('CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER == 'True') {
+    if (defined('CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER == 'False') {
       $result = $ragManager->answerQuestion($prompt, 5, 0.5, $languageId);
     } else {
       // Approach 2: Use the current aborescence

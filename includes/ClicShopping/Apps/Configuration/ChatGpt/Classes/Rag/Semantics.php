@@ -2,7 +2,24 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+
 class Semantics {
+
+  /**
+   * Translate a given text to English using the OpenAI API.
+   * @param string $text
+   * @param int|null $token
+   * @return string
+   */
+  public static function translateToEnglish(string $text, int|null $token = 50): string
+  {
+    $question = "Translate the following query to English: {$text}";
+    $query = Gpt::getGptResponse($question, $token);
+
+    return $query;
+  }
+
 
   /**
    * Retrieves the regex patterns used to identify analytics-related queries.
@@ -13,7 +30,7 @@ class Semantics {
   {
     $analyticsPatterns = [
       'entity' => [
-        '/\b(which|what|all|list of)\s+(products?|orders?|promotions?|customers?|sales|returns?|stock|inventory|items?)\b/i',
+        '/\b(which|what|all|list of)\s+(products?|orders?|specials?|customers?|sales|returns?|stock|inventory|items?)\b/i',
       ],
       'time' => [
         '/\b(in|during|over|for|the|last|past|recent)\s+(\d*)\s+(days?|months?|weeks?|years?|quarters?|hours?)\b/i',
@@ -69,7 +86,15 @@ class Semantics {
         '/\b(calculate|calculation|sum|total|average|median|minimum|maximum|min|max|avg|sum|count)\b/i',
         '/\b(add|subtract|multiply|divide)\b/i',
         '/\b(percentage|ratio|proportion|share)\s+of\b/i',
-      ]
+      ],
+      'filters' => [
+        '/\b(where|only|except|excluding)\b/i',
+        '/\b(active|enabled|disabled|published)\b/i',
+      ],
+      'sorting' => [
+        '/\b(order by|sort by|ranked by)\b/i',
+        '/\b(ascending|descending|asc|desc)\b/i',
+      ],
     ];
 
     return $analyticsPatterns;

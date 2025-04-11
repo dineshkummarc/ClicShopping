@@ -183,31 +183,52 @@ class AnalyticsAgent
     return $interpretation;
   }
 
- /**
- * Checks if a query is of analytical type
- *
- * @param string $query Query to check
- * @return bool True if the query is analytical, false otherwise
- */
+
+  /**
+   * Checks if a query is of analytical type
+   *
+   * @param string $query Query to check
+   * @return bool True if the query is analytical, false otherwise
+   */
   public function isAnalyticsQuery(string $query): bool
   {
-    $analyticsPatterns = [
-      '/combien|total|nombre|count|somme|sum|moyenne|average|min|max/i',
-      '/stock|inventaire|disponible|disponibilité|alerte|niveau|reorder/i',
-      '/REF[-\s]?\d+|SKU[-\s]?\d+|EAN[-\s]?\d+|\b\d{8,13}\b|ID\s*:\s*\d+/i',
-      '/prix\s*(>|<|>=|<=|=)\s*(\d+[\.,]?\d*)/i',
-      '/quantité\s*(>|<|>=|<=|=)\s*(\d+)/i',
-      '/par catégorie|par client|par produit|par mois|par jour|par semaine|par an/i',
-      '/top|meilleur|plus vendu|best seller|populaire/i',
-      '/chiffre d\'affaires|ca|revenu|vente/i'
-    ];
+    $analyticsPatterns = Semantics::analyticsPatterns();
 
-    foreach ($analyticsPatterns as $pattern) {
-      if (preg_match($pattern, $query)) {
-        return true;
+    foreach ($analyticsPatterns as $category => $patterns) {
+      foreach ($patterns as $pattern) {
+        if (preg_match($pattern, $query)) {
+          return true; // ← on retourne true dès qu'on match
+        }
+
+        if (preg_match($pattern, $query)) {
+          return true;
+        }
       }
     }
 
-    return false;
+    return false; // aucun match → pas analytique
+  }
+
+  /**
+   * Retrieves the categories of an analytical query
+   *
+   * @param string $query Query to check
+   * @return array Categories of the query
+   */
+  public function getAnalyticsCategories(string $query): array
+  {
+    $analyticsPatterns = Semantics::analyticsPatterns();
+    $matchedCategories = [];
+
+    foreach ($analyticsPatterns as $category => $patterns) {
+      foreach ($patterns as $pattern) {
+        if (preg_match($pattern, $query)) {
+          $matchedCategories[] = $category;
+          break; // éviter les doublons
+        }
+      }
+    }
+
+    return array_unique($matchedCategories);
   }
 }

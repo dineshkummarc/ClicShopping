@@ -509,7 +509,8 @@ text_rag_answer_question_not_found = Je n'ai pas trouvé d'informations spécifi
 text_rag_answer_question_error = Désolé, une erreur s'est produite lors du traitement de votre question. Veuillez réessayer ultérieurement.
 
 
-text_interpret_results = Tu es un expert en analyse de données e-commerce. Interprète ces résultats de requête SQL et fournis une explication claire et concise en français.\n\n
+text_interpret_results = Tu es un expert en analyse de données e-commerce.
+Interprète ces résultats de requête SQL et fournis une explication claire et concise en français.\n\n
 Question : {{question}}\n\n
 Résultats : {{results}} \n\n
 Interprétation :
@@ -523,10 +524,18 @@ Les tables importantes sont :
 - categories: Contient les informations des catégories (categories_id, parent_id)
 - categories_description: Contient les descriptions des catégories (categories_id, {{language_id}}, categories_name)
 - products_to_categories: Table de liaison entre produits et catégories (products_id, categories_id)
-- orders: Contient les informations des commandes (orders_id, customers_id, date_purchased, orders_status)
+- orders: Contient les informations des commandes (orders_id, customers_id, date_purchased, orders_status, customers_name)
 - orders_products: Contient les produits des commandes (orders_id, products_id, products_quantity, products_price)
 - orders_total: Contient les totaux des commandes (orders_id, value, class) . class contient 'ST' pour le sous-total hors-taxea de la commande, 'SH' le montant des frais de port, 'TX'  pour le montant de la taxe, 'TO' pour le montant total hors taxes de la commande
 - customers: Contient les informations des clients (customers_id, customers_name, customers_email_address)
+- products_specials : Contient toutes les promotions en cours (products_id, specials_new_products_price, specials_date_added, specials_last_modified)
+- products_favorites : Contient les produits favoris des clients (products_id, products_favorities_date_added)
+- products_featured : Contient les produits en avant (products_id, products_featured_date_added)
+- reviews : Contient les avis des clients sur les produits (products_id, customers_name, reviews_rating reviews_date_added, status)
+- reviews_description : Contient les descriptions des avis (products_id, languages_id, reviews_text)
+- reviews_votes : Contient les votes des avis (products_id, reviews_id, customers_id, vote, sentiment)
+- reviews_sentiment : Contient le sentiment des avis (products_id, reviews_id, date_added
+- reviews_sentiment_description : Contient les descriptions des avis (id, languages_id, description))
 
 Si on te demande :
 - 'nombre de produits par catégorie' → SELECT cd.categories_name, COUNT(p.products_id) AS product_count FROM clic_products p JOIN clic_products_to_categories ptc ON p.products_id = ptc.products_id JOIN clic_categories c ON ptc.categories_id = c.categories_id JOIN clic_categories_description cd ON c.categories_id = cd.categories_id WHERE cd.language_id = [language_id] GROUP BY c.categories_id, cd.categories_name ORDER BY product_count DESC
@@ -537,6 +546,7 @@ Si on te demande :
 - 'combien de produits sont disponibles' → SELECT COUNT(products_id) AS total_available_products FROM clic_products WHERE products_status = 1
 - 'Combien de produits dont le statut est sur on dans la catégorie Coutellerie ? ' → SELECT COUNT(cp.products_id) AS total_active_products FROM clic_products cp JOIN clic_products_to_categories ptc ON cp.products_id = ptc.products_id JOIN clic_categories_description cd ON ptc.categories_id = cd.categories_id WHERE cp.products_status = '1' AND cd.categories_name LIKE '%Coutellerie%' AND cd.language_id = 2
 - 'Si c'est une référence, il faut fait regarder le sku, ean aussi' →  SELECT pd.products_description FROM clic_products_description pd JOIN clic_products p ON pd.products_id = p.products_id WHERE (p.products_model = 'REF-436224673' OR p.products_sku = 'REF-436224673' OR p.products_ean = 'REF-436224673') AND pd.language_id = 2
+- 'Si la question contient une expression temporelle dynamique (comme "les 30 derniers jours", "la semaine passée", "depuis X jours" ou année) comme Quelles commandes ont été faites depuis 30 jours ? alors convertis-la en SQL en utilisant NOW() - INTERVAL X DAY. Priorise cette approche par rapport aux filtres fixes de type MONTH() si l'expression fait référence à un nombre de jours et non à un mois calendaire.'  →  SELECT SUM(ot.value) AS total_sales  FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' AND o.date_purchased >= NOW() - INTERVAL [X] DAY
 
 Lorsque tu génères une requête SQL :
 1. Utilise toujours les préfixes de table complets (ex: clic_products au lieu de products)
@@ -549,5 +559,6 @@ Lorsque tu génères une requête SQL :
 8. Assure-toi que la requête est correcte avant de l'exécuter et qu'il n'y a pas d'injections SQL.
 
 IMPORTANT: Réponds uniquement avec la requête SQL brute, sans aucun formatage, sans balises markdown, sans ```sql, sans commentaires, sans explications.
+
 
 text_not_analytics = Cette requête ne semble pas être une requête d'analyse.

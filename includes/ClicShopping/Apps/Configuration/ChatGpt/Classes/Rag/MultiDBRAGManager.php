@@ -403,17 +403,17 @@ class MultiDBRAGManager
 *
 * @param string $query User\'s question or query
 * @param string|null $entityType Type of entity to analyze (products, orders, etc.)
-* @param int|null $languageId Language ID for filtering results
 * @return array Analysis results with structured data
 */
 
-  public function executeAnalyticsQuery(string $query, ?string $entityType = null, ?int $languageId = null): array
+  public function executeAnalyticsQuery(string $query, string|null $entityType = null): array
   {
     try {
-      // Initialiser l'agent analytics avec l'ID de langue approprié
-      $analyticsAgent = new AnalyticsAgent($languageId);
+      $analyticsAgent = new AnalyticsAgent();
 
-      // Vérifier si la requête est de type analytique
+      var_dump(!$analyticsAgent->isAnalyticsQuery($query));
+      exit;
+      //Check the request
       if (!$analyticsAgent->isAnalyticsQuery($query)) {
         return [
           'type' => 'not_analytics',
@@ -421,7 +421,7 @@ class MultiDBRAGManager
         ];
       }
 
-      $results = $analyticsAgent->processBusinessQuery($query, true);
+      $results = $analyticsAgent->processBusinessQuery($query);
 
       if ($results['type'] === 'error') {
         return [
@@ -430,9 +430,12 @@ class MultiDBRAGManager
         ];
       }
 
+      $matchedCategories = $analyticsAgent->getAnalyticsCategories($query);
+
       return [
         'type' => 'analytics_results',
         'query' => $query,
+        'matched_categories' => $matchedCategories,
         'sql_query' => $results['query'] ?? '',
         'interpretation' => $results['interpretation'],
         'count' => $results['count'],

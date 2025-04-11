@@ -10,6 +10,8 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
+use ClicShopping\OM\Hash;
+
 /**
  * ResultFormatter Class
  *
@@ -100,7 +102,7 @@ class ResultFormatter
         $output .= "<tr>";
         foreach ($row as $key => $value) {
           if (!is_numeric($key)) { // Avoid duplicate numeric keys
-            $output .= "<td>" . htmlspecialchars($value) . "</td>";
+            $output .= "<td>" . htmlspecialchars(Hash::displayDecryptedDataText($value)) . "</td>";
           }
         }
         $output .= "</tr>";
