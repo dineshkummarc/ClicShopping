@@ -334,7 +334,7 @@ class MultiDBRAGManager
           $routes = [
             'products' => 'A&Catalog\Products&Products',
             'category' => 'A&Catalog\Categories&Categories',
-            'page_manager' => 'A&Communication&\PageManager',
+            'page_manager' => 'A&Communication\PageManager',
             'orders' => 'A&Orders\Orders',
           ];
 
@@ -394,18 +394,17 @@ class MultiDBRAGManager
     return $result;
   }
 
-/**
-* Executes an analytical query on e-commerce data
-*
-* This method is specifically designed for analytical queries
-* that require calculations, aggregations, or precise searches
-* on numerical or structured data.
-*
-* @param string $query User\'s question or query
-* @param string|null $entityType Type of entity to analyze (products, orders, etc.)
-* @return array Analysis results with structured data
-*/
-
+  /**
+   * Executes an analytical query on e-commerce data
+   *
+   * This method is specifically designed for analytical queries
+   * that require calculations, aggregations, or precise searches
+   * on numerical or structured data.
+   *
+   * @param string $query User\'s question or query
+   * @param string|null $entityType Type of entity to analyze (products, orders, etc.)
+   * @return array Analysis results with structured data
+   */
   public function executeAnalyticsQuery(string $query, string|null $entityType = null): array
   {
     try {
@@ -413,10 +412,12 @@ class MultiDBRAGManager
 
       //Check the request
       if (!$analyticsAgent->isAnalyticsQuery($query)) {
-        return [
+        $array = [
           'type' => 'not_analytics',
           'message' => CLICSHOPPING::getDef('text_not_analytics')
         ];
+	
+        return $array;
       }
 
       $results = $analyticsAgent->processBusinessQuery($query);
@@ -430,7 +431,7 @@ class MultiDBRAGManager
 
       $matchedCategories = $analyticsAgent->getAnalyticsCategories($query);
 
-      return [
+      $array = [
         'type' => 'analytics_results',
         'query' => $query,
         'matched_categories' => $matchedCategories,
@@ -439,10 +440,12 @@ class MultiDBRAGManager
         'count' => $results['count'],
         'results' => $results['results']
       ];
+
+      return $array;
     } catch (\Exception $e) {
       return [
         'type' => 'error',
-        'message' => $e->getMessage()
+        'message' => 'Error executing analytics query: ' . $e->getMessage()
       ];
     }
   }

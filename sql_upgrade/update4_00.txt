@@ -1,4 +1,4 @@
- CREATE TABLE IF NOT EXISTS :table_categories_embedding (
+ CREATE TABLE IF NOT EXISTS clic_categories_embedding (
           id SERIAL PRIMARY KEY,
           content text DEFAULT NULL,
           type text DEFAULT NULL,
@@ -11,9 +11,9 @@
           language_id INT
         );
 -- Add vector index separately
-CREATE VECTOR INDEX embedding_index ON :table_categories_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_categories_embedding (embedding);
 
- CREATE TABLE IF NOT EXISTS :table_products_embedding (
+ CREATE TABLE IF NOT EXISTS clic_products_embedding (
           id SERIAL PRIMARY KEY,
           content text DEFAULT NULL,
           type text DEFAULT NULL,
@@ -26,9 +26,9 @@ CREATE VECTOR INDEX embedding_index ON :table_categories_embedding (embedding);
           language_id INT
         );
 -- Add vector index separately
-CREATE VECTOR INDEX embedding_index ON :table_products_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_products_embedding (embedding);
 
-CREATE TABLE IF NOT EXISTS :table_page_manager_embedding (
+CREATE TABLE IF NOT EXISTS clic_page_manager_embedding (
     id SERIAL PRIMARY KEY,
     content TEXT DEFAULT NULL,
     type TEXT DEFAULT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS :table_page_manager_embedding (
 );
 
 -- Add vector index separately
-CREATE VECTOR INDEX embedding_index ON :table_page_manager_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_page_manager_embedding (embedding);
 
 
 ALTER TABLE `clic_orders` CHANGE `customers_name` `customers_name` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;

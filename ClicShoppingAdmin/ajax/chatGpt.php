@@ -43,9 +43,8 @@ try {
   $ragManager = new MultiDBRAGManager();
 
   if ($queryType === 'analytics') {
-    $analyticsResults = $ragManager->executeAnalyticsQuery($prompt, null);
+    $analyticsResults = $ragManager->executeAnalyticsQuery($prompt);
     $result = $ragManager->formatResults($analyticsResults);
-
   } else {
     // Approach 1 or 2 with the current configuration
     if (defined('CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER == 'False') {

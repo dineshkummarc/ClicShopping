@@ -170,6 +170,7 @@ class ResultFormatter
     $output .= "<p>Contenu brut des résultats : </p>";
     $output .= "<pre>" . htmlspecialchars(json_encode($results, JSON_PRETTY_PRINT)) . "</pre>";
     $output .= "</div>";
+
     return $output;
   }
 }

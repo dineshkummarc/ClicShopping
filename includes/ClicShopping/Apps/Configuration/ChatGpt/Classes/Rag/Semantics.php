@@ -27,10 +27,11 @@ class Semantics {
    */
   public static function checkSemantics(string $text): string
   {
-    $prompt = "Type: analytics or semantic?\nQ: {$text}\nAnswer:";
+    $prompt = "La question est de type: analytics or semantic? Rèpond uniquement analytics ou semantic\nQ: {$text}\nAnswer:";
     $type = Gpt::getGptResponse($prompt, 20);
+    $result = in_array(strtolower(trim($type)), ['analytics', 'semantic']) ? strtolower(trim($type)) : 'semantic';
 
-    return in_array(strtolower(trim($type)), ['analytics', 'semantic']) ? strtolower(trim($type)) : 'semantic';
+    return $result;
   }
 
   /**
@@ -78,13 +79,6 @@ class Semantics {
    *                                     - key: pattern category (string)
    *                                     - value: array of regex patterns (string[])
    *
-   * @example
-   * $patterns = Semantics::analyticsPatterns();
-   * foreach ($patterns['price'] as $pattern) {
-   *     if (preg_match($pattern, $query)) {
-   *         // Handle price-related query
-   *     }
-   * }
    */
   public static function analyticsPatterns() : array
   {

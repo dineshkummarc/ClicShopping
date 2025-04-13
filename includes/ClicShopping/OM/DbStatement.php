@@ -184,9 +184,12 @@ class DbStatement extends \PDOStatement
     if ($this->cache_read === true) {
       $this->result = $this->cache_data;
     } else {
-// fetchAll() fails if second argument is passed in a fetch style that does not
-// use the optional argument
-      if (in_array($fetch_style, [PDO::FETCH_COLUMN, PDO::FETCH_CLASS, PDO::FETCH_FUNC])) {
+      $fetch_argument = $args[0] ?? null;
+      $ctor_args = $args[1] ?? [];
+
+      if (in_array($fetch_style, [PDO::FETCH_COLUMN])) {
+        $this->result = parent::fetchAll($fetch_style, $fetch_argument);
+      } elseif (in_array($fetch_style, [PDO::FETCH_CLASS, PDO::FETCH_FUNC])) {
         $this->result = parent::fetchAll($fetch_style, $fetch_argument, $ctor_args);
       } else {
         $this->result = parent::fetchAll($fetch_style);

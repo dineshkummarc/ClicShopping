@@ -31,17 +31,18 @@ class Listing
    */
   public static function getFilenameTemplateProducts(): ?array
   {
-    if (isset($_POST['directory_html'])) {
-      $directory_selected = HTML::sanitize($_POST['directory_html']) . '/';
-    } else {
-      $directory_selected = HTML::sanitize(['directory_html']) . '/';
-    }
+    $directory_selected = '';
 
-    if (file_exists(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'sources/template/' . SITE_THEMA . '/modules/' . $directory_selected . '/template_html/')) {
-      $template_directory = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'sources/template/' . SITE_THEMA . '/modules/' . $directory_selected . '/template_html/';
+    if (isset($_POST['directory_html'])) {
+      if (file_exists(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'sources/template/' . SITE_THEMA . '/modules/' . $directory_selected . '/template_html/')) {
+        $template_directory = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'sources/template/' . SITE_THEMA . '/modules/' . $directory_selected . '/template_html/';
+      } else {
+        $template_directory = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'sources/template/' . SITE_THEMA . '/modules/';
+      }
     } else {
       $template_directory = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'sources/template/' . SITE_THEMA . '/modules/';
     }
+
 
     $found = []; //initialize an array for matching files
     $fileTypes = ['php']; // Create an array of file types

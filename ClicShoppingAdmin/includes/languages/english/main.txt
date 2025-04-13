@@ -564,5 +564,47 @@ When generating an SQL query:
 
 IMPORTANT: Respond only with the raw SQL query, without any formatting, without markdown tags, without ```sql, without comments, without explanations.
 
+text_sql_format_instructions = IMPORTANT: For analytical queries, please follow these strict rules:
+1. ONLY respond with the SQL query, with no explanatory text before or after.
+2. DO NOT use placeholders like [language_id], use the value {{language_id}} directly.
+3. If multiple queries are needed, clearly separate them with semicolons.
+4. Make sure each query is syntactically correct and complete.
+5. Use only column names that exist in the database schema.
+
+text_table_structure_instructions = IMPORTANT: Regarding the structure of the e-commerce tables, please note the following details:
+1. Table clic_orders:
+   - Contains orders with customers_name (full customer name).
+   - Linked to clic_customers via customers_id.
+   - Linked to clic_orders_products via orders_id.
+2. Table clic_customers:
+   - Contains customer information with customers_firstname and customers_lastname (separate).
+   - Do not confuse customers_name (in orders) with customers_firstname/customers_lastname.
+3. Table clic_products:
+   - Contains basic product information.
+   - Linked to clic_products_description via products_id for multilingual descriptions.
+4. Important relationships:
+   - A customer (customers) can have multiple orders (orders).
+   - An order (orders) can contain multiple products (via orders_products).
+   - Product descriptions are stored by language in products_description.
+When generating SQL queries, strictly follow these table structures and do not invent columns.
+
 
 text_not_analytics = This query does not appear to be an analytical query.
+text_parentheses_mismatch_error = Mismatched parentheses: {{openParenCount}} opening vs {{closeParenCount}} closing.
+text_invalid_column_alias_error = Invalid column alias (contains a dot).
+text_select_without_from_error = SELECT query without FROM clause.
+text_unresolved_placeholders_error = Unresolved placeholders detected.
+text_no_correction_applied = No correction applied.
+text_parentheses_mismatch = Parentheses mismatch
+text_correction_invalid_column_aliases = Correction of invalid column aliases
+text_resolution_placeholders = Resolution of placeholders
+text_syntax error corrected = Syntax error corrected
+text_problematic_part_removed = Problematic part {{problematicPart}} removed
+text_problematic_part_everything_following_removed = Problematic part {{$problematicPart}} and everything following it removed
+text_colum_reference_does_not_exist = It seems there is a reference to a column that does not exist in the database. Try rephrasing your query using more general terms.
+text_sql_query_generated_error = There is a syntax error in the generated SQL query. Try rephrasing your question in a clearer and more precise manner.
+text_table_referenced_does_not_exist = A table referenced in the query does not exist. Try rephrasing your question using more general terms.
+text_error_executing_query = An error occurred while executing the query. Try rephrasing your question in a clearer and more precise manner.
+text_no_valid_sql_query_could_extracted = No valid SQL query could be extracted from the response.
+text_correction_cancelled = Corrections canceled as they did not resolve all issues
+text_no_applied_confidence = Not applied – insufficient confidence
