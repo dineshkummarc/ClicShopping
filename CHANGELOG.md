@@ -13,6 +13,7 @@ Add rag via chatbot
 Allow to use the rag and rerieve the data inside the database or inside the llm
 Allow the rag to search as specific information via a text request
 Allow the rag to make statistic via dynamic query
+Intelligent rag with agent BI 
 
 ------------------
 version3.456
