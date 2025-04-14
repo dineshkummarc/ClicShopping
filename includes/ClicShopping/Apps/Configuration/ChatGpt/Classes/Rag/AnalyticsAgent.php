@@ -16,12 +16,10 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Cache;
 
 /**
-* AnalyticsAgent Class
-*
-* This class uses LLPhant to create an intelligent agent capable
-* of interpreting complex business queries and generating SQL queries
-* for e-commerce data analysis.
-*/
+ * Class AnalyticsAgent
+ * Handles database analytics and query processing with AI assistance
+ * Manages table relationships, schema validation, and query optimization
+ */
 class AnalyticsAgent
 {
   private mixed $chat;
@@ -35,28 +33,39 @@ class AnalyticsAgent
   private array $columnIndex = [];
   private mixed $cache;
   private bool $enablePromptCache;
+  private bool $debug = false;
 
-/**
-* Constructor for AnalyticsAgent
-*
-* @param int|null $languageId Language ID for filtering results
-* @param bool $enablePromptCache Whether to enable local prompt caching
-*/
+  /**
+   * Constructor for AnalyticsAgent
+   * Initializes database connection, language settings, and AI chat interface
+   * Sets up schema caching and table relationships
+   *
+   * @param int|null $languageId Language ID for filtering results
+   * @param bool $enablePromptCache Whether to enable local prompt caching
+   */
   public function __construct(?int $languageId = null, bool $enablePromptCache = true)
   {
     $this->db = Registry::get('Db');
     $this->languageId = $languageId ?? Registry::get('Language')->getId();
     $this->chat = Gpt::getOpenAiGpt(null);
+
+
     $this->cache = new Cache($enablePromptCache);
+    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
+
+
     $this->enablePromptCache = $enablePromptCache;
     $this->setSystemMessage();
     $this->initializeTableRelationships();
     $this->buildDatabaseSchema();
   }
 
- /**
- * Configures the system message for the LLPhant agent with improved instructions
- */
+  /**
+   * Configures the system message for the LLPhant agent with improved instructions
+   * Combines base system message, SQL formatting instructions, and table structure guidelines
+   *
+   * @return void
+   */
   private function setSystemMessage(): void
   {
     $baseSystemMessage = CLICSHOPPING::getDef('text_system_message', ['language_id' => $this->languageId]);
@@ -66,10 +75,14 @@ class AnalyticsAgent
     $this->chat->setSystemMessage($baseSystemMessage . $sqlFormatInstructions . $tableStructureInstructions);
   }
 
- /**
-  * Initializes table relationships based on database schema
-  * This helps in determining which tables are related and how
-  */
+  /**
+   * Initializes table relationships based on database schema
+   * Analyzes table structures to identify foreign key relationships
+   * Builds relationship mappings and column synonyms dictionary
+   *
+   * @throws \Exception When database queries fail
+   * @return void
+   */
   private function initializeTableRelationships(): void
   {
     try {
@@ -100,19 +113,23 @@ class AnalyticsAgent
       $this->buildColumnSynonyms($tables);
       
     } catch (\Exception $e) {
-      if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log("Error initializing table relationships: " . $e->getMessage());
       }
     }
   }
 
-/**
- * Builds a comprehensive database schema for validation and correction
- */
+  /**
+   * Builds a comprehensive database schema for validation and correction
+   * Creates detailed mapping of table structures including column properties
+   * Generates an inverse index for quick column lookups
+   *
+   * @throws \Exception When schema building encounters errors
+   * @return void
+   */
   private function buildDatabaseSchema(): void
   {
     try {
-      // Récupérer toutes les tables de la base de données
       $query = $this->db->prepare("SHOW TABLES");
       $query->execute();
       $tables = $query->fetchAll(\PDO::FETCH_COLUMN);
@@ -151,17 +168,20 @@ class AnalyticsAgent
       }
     } catch (\Exception $e) {
       // Journaliser l'erreur
-      if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log("Error while building the database schema: " . $e->getMessage());
       }
     }
   }
 
- /**
-  * Builds a dictionary of column synonyms based on similar column names across tables
-  * 
-  * @param array $tables List of database tables
-  */
+  /**
+   * Builds column synonyms dictionary by analyzing table schemas
+   * Identifies columns with similar names across different tables
+   * Groups related columns based on common naming patterns
+   *
+   * @param array $tables List of database tables to analyze
+   * @return void
+   */
   private function buildColumnSynonyms(array $tables): void
   {
     $allColumns = [];
@@ -191,12 +211,15 @@ class AnalyticsAgent
     }
   }
 
- /**
-  * Extracts valid SQL queries from text that may contain explanatory content
-  *
-  * @param string $response Raw response from the model
-  * @return array Array of extracted SQL queries
-  */
+  /**
+   * Extracts valid SQL queries from text that may contain explanatory content
+   * Identifies and isolates SQL statements using regex patterns
+   * Supports multiple query types (SELECT, INSERT, UPDATE, DELETE, etc.)
+   * Falls back to treating entire input as query if no matches found
+   *
+   * @param string $response Raw response from the model containing SQL queries
+   * @return array Array of extracted SQL queries
+   */
   private function extractSqlQueries(string $response): array {
     $queries = [];
     
@@ -227,12 +250,14 @@ class AnalyticsAgent
     return $queries;
   }
 
- /**
-  * Resolves placeholders in SQL queries with their actual values
-  *
-  * @param string $sqlQuery SQL query with placeholders
-  * @return string SQL query with resolved placeholders
-  */
+  /**
+   * Resolves placeholders in SQL queries with their actual values
+   * Replaces [placeholder] syntax with corresponding values
+   * Handles common placeholders like language_id
+   *
+   * @param string $sqlQuery SQL query with placeholders
+   * @return string SQL query with resolved placeholders
+   */
   private function resolvePlaceholders(string $sqlQuery): string {
     // Détecter les placeholders au format [nom_placeholder]
     preg_match_all('/\[([^\]]+)\]/', $sqlQuery, $matches);
@@ -252,12 +277,16 @@ class AnalyticsAgent
     return $resolvedQuery;
   }
 
- /**
-  * Gets the value for a specific placeholder
-  *
-  * @param string $placeholder Placeholder name
-  * @return string Value to replace the placeholder
-  */
+
+  /**
+   * Gets the value for a specific placeholder
+   * Maps common placeholders to their corresponding values
+   * Provides fallback value for unknown placeholders
+   * Logs unknown placeholders when debug mode is enabled
+   *
+   * @param string $placeholder Name of the placeholder to resolve
+   * @return string Value to replace the placeholder
+   */
   private function getPlaceholderValue(string $placeholder): string {
     // Mapper les placeholders courants à leurs valeurs
     $placeholderMap = [
@@ -270,7 +299,7 @@ class AnalyticsAgent
     }
     
     // Journaliser les placeholders inconnus
-    if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+    if ($this->debug == 'True') {
       error_log("Placeholder unknown: [$placeholder]");
     }
     
@@ -278,12 +307,17 @@ class AnalyticsAgent
     return '1'; // Valeur sécuritaire par défaut
   }
 
- /**
-  * Validates SQL syntax and identifies potential issues
-  *
-  * @param string $sqlQuery SQL query to validate
-  * @return array Validation results with issues
-  */
+  /**
+   * Validates SQL syntax and identifies potential issues
+   * Checks for:
+   * - Balanced parentheses
+   * - Required SQL clauses
+   * - Valid column aliases
+   * - Unresolved placeholders
+   *
+   * @param string $sqlQuery SQL query to validate
+   * @return array Validation results with 'is_valid' boolean and array of 'issues'
+   */
   private function validateSqlSyntax(string $sqlQuery): array {
     $issues = [];
     
@@ -317,13 +351,15 @@ class AnalyticsAgent
     ];
   }
 
- /**
-  * Applies conservative corrections to SQL queries based on detected issues
-  *
-  * @param string $sqlQuery SQL query to correct
-  * @param array $detectedIssues Issues detected in the query
-  * @return string Corrected SQL query
-  */
+  /**
+   * Applies conservative corrections to SQL queries based on detected issues
+   * Only applies corrections with high confidence (>=0.8)
+   * Maintains correction log for tracking changes
+   *
+   * @param string $sqlQuery SQL query to correct
+   * @param array $detectedIssues Array of issues found in the query
+   * @return string Corrected SQL query
+   */
   private function applyConservativeCorrections(string $sqlQuery, array $detectedIssues): string {
     $correctedQuery = $sqlQuery;
     $this->correctionLog = [];
@@ -351,13 +387,21 @@ class AnalyticsAgent
     return $correctedQuery;
   }
 
- /**
-  * Determines the appropriate correction for a specific issue
-  *
-  * @param string $sqlQuery SQL query with issues
-  * @param string $issue Description of the issue
-  * @return array Correction details with confidence level
-  */
+  /**
+   * Determines the appropriate correction for a specific issue
+   * Handles different types of issues:
+   * - Parentheses mismatches
+   * - Invalid column aliases
+   * - Unresolved placeholders
+   * Returns correction details with confidence level
+   *
+   * @param string $sqlQuery SQL query with issues
+   * @param string $issue Description of the issue to correct
+   * @return array Correction details including:
+   *               - query: corrected query string
+   *               - description: explanation of correction
+   *               - confidence: confidence level (0.0-1.0)
+   */
   private function determineCorrection(string $sqlQuery, string $issue): array {
     // Initialiser avec des valeurs par défaut
     $correction = [
@@ -424,14 +468,20 @@ class AnalyticsAgent
     return $correction;
   }
 
- /**
-  * Attempts to recover from SQL execution errors
-  *
-  * @param \Exception $error The exception that occurred
-  * @param string $failedQuery The query that failed
-  * @param string $originalQuery The original query before corrections
-  * @return array Recovery result with success status and data
-  */
+  /**
+   * Attempts to recover from SQL execution errors
+   * Handles specific error types:
+   * - Unknown column errors
+   * - Syntax errors
+   * Implements recovery strategies and returns execution results
+   *
+   * @param \Exception $error The exception that occurred
+   * @param string $failedQuery The query that failed
+   * @param string $originalQuery The original query before corrections
+   * @return array Recovery result containing:
+   *               - success: boolean indicating recovery success
+   *               - data: array with error details, queries, and results
+   */
   private function attemptErrorRecovery(\Exception $error, string $failedQuery, string $originalQuery): array {
     $errorMessage = $error->getMessage();
     
@@ -512,13 +562,15 @@ class AnalyticsAgent
     return $result;
   }
 
- /**
-  * Corrects unknown column errors in SQL queries
-  *
-  * @param string $sqlQuery SQL query with unknown column
-  * @param string $unknownColumn The unknown column name
-  * @return string Corrected SQL query
-  */
+  /**
+   * Corrects unknown column errors in SQL queries
+   * Handles both aliased (table.column) and non-aliased column references
+   * Attempts to find similar column names and correct table aliases
+   *
+   * @param string $sqlQuery Original SQL query containing unknown column
+   * @param string $unknownColumn Name of the unknown column to correct
+   * @return string Corrected SQL query or original if no correction possible
+   */
   private function correctUnknownColumn(string $sqlQuery, string $unknownColumn): string {
     // Vérifier si la colonne contient un point (alias.colonne)
     if (strpos($unknownColumn, '.') !== false) {
@@ -580,13 +632,18 @@ class AnalyticsAgent
     return $sqlQuery;
   }
 
- /**
-  * Corrects syntax errors in SQL queries
-  *
-  * @param string $sqlQuery SQL query with syntax error
-  * @param string $errorMessage Error message from database
-  * @return string Corrected SQL query
-  */
+  /**
+   * Corrects syntax errors in SQL queries
+   * Handles common syntax issues including:
+   * - Consecutive commas
+   * - Malformed comparison operators
+   * - Invalid WHERE/GROUP BY/ORDER BY clauses
+   * - Unresolved placeholders
+   *
+   * @param string $sqlQuery SQL query with syntax error
+   * @param string $errorMessage Error message from database
+   * @return string Corrected SQL query
+   */
   private function correctSyntaxError(string $sqlQuery, string $errorMessage): string {
     // Extraire la partie problématique de la requête
     preg_match("/near '([^']+)'/", $errorMessage, $matches);
@@ -670,12 +727,15 @@ class AnalyticsAgent
     return $correctedQuery;
   }
 
- /**
-  * Finds a similar column name in the database schema
-  *
-  * @param string $column Column name to find similar for
-  * @return string Similar column name or original if none found
-  */
+  /**
+   * Finds a similar column name in the database schema
+   * Uses text similarity matching and common prefix/suffix analysis
+   * Returns original column name if no similar column found
+   * Requires similarity threshold > 70% for matches
+   *
+   * @param string $column Column name to find similar for
+   * @return string Similar column name or original if none found
+   */
   private function findSimilarColumn(string $column): string {
     // Vérifier si la colonne existe déjà dans l'index
     if (isset($this->columnIndex[$column])) {
@@ -717,12 +777,14 @@ class AnalyticsAgent
     return $column;
   }
 
- /**
-  * Finds tables that contain a specific column
-  *
-  * @param string $column Column name to search for
-  * @return array Tables containing the column
-  */
+  /**
+   * Finds tables that contain a specific column
+   * Uses columnIndex to lookup tables containing the column
+   * Returns empty array if column not found in any table
+   *
+   * @param string $column Column name to search for
+   * @return array Array of table names containing the column
+   */
   private function findTablesWithColumn(string $column): array {
     if (isset($this->columnIndex[$column])) {
       return $this->columnIndex[$column];
@@ -731,13 +793,15 @@ class AnalyticsAgent
     return [];
   }
 
- /**
-  * Finds the correct alias for a table in a query
-  *
-  * @param string $alias Alias to correct
-  * @param array $availableAliases Available aliases in the query
-  * @return string Corrected alias or original if none found
-  */
+  /**
+   * Finds the correct alias for a table in a query
+   * Uses text similarity matching to find the best match
+   * Requires similarity threshold > 70% for matches
+   *
+   * @param string $alias Alias to correct
+   * @param array $availableAliases List of valid aliases in the query
+   * @return string Corrected alias or original if no match found
+   */
   private function findCorrectAlias(string $alias, array $availableAliases): string {
     // Si l'alias est déjà dans la liste, le retourner tel quel
     if (in_array($alias, $availableAliases)) {
@@ -766,12 +830,14 @@ class AnalyticsAgent
     return $alias;
   }
 
- /**
-  * Extracts tables and their aliases from a SQL query
-  *
-  * @param string $sqlQuery SQL query to analyze
-  * @return array Associative array of aliases and table names
-  */
+  /**
+   * Extracts tables and their aliases from a SQL query
+   * Parses FROM clause and JOIN statements
+   * Handles AS keyword in alias definitions
+   *
+   * @param string $sqlQuery SQL query to analyze
+   * @return array Associative array where keys are aliases and values are table names
+   */
   private function extractTablesFromQuery(string $sqlQuery): array {
     $tables = [];
     
@@ -793,13 +859,18 @@ class AnalyticsAgent
     return $tables;
   }
 
- /**
-  * Generates a suggestion for fixing an error
-  *
-  * @param string $errorMessage Error message from database
-  * @param string $question Original question
-  * @return string Suggestion for fixing the error
-  */
+  /**
+   * Generates a suggestion for fixing an error
+   * Provides context-specific suggestions based on error type
+   * Includes suggestions for:
+   * - Unknown column errors
+   * - Syntax errors
+   * - Missing table errors
+   *
+   * @param string $errorMessage Error message from database
+   * @param string $question Original question that generated the query
+   * @return string User-friendly suggestion for fixing the error
+   */
   private function generateErrorSuggestion(string $errorMessage, string $question): string {
     // Suggestions basées sur le type d'erreur
     if (strpos($errorMessage, 'Unknown column') !== false) {
@@ -818,12 +889,20 @@ class AnalyticsAgent
     return CLICSHOPPING::getDef('text_error_executing_query');
   }
 
-/**
- * Executes the generated SQL query and returns the results.
- *
- * @param string $question The business question in natural language.
- * @return array The query results.
- */
+  /**
+   * Executes the generated SQL query and handles errors
+   * Implements error recovery mechanisms
+   * Logs errors when debug mode is enabled
+   * Provides fallback responses on complete failure
+   *
+   * @param string $question The business question in natural language
+   * @return array Results array containing:
+   *               - type: 'success' or 'error'
+   *               - message: Result message or error description
+   *               - query: Original question
+   *               - suggestion: Error fix suggestion if applicable
+   *               - recovery_attempted: Boolean indicating if recovery was attempted
+   */
   public function executeQuery(string $question): array
   {
     try {
@@ -831,7 +910,7 @@ class AnalyticsAgent
       return $this->executeQueryWithRecovery($question);
     } catch (\Exception $e) {
       // Journaliser l'erreur
-      if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log("Erreur d'exécution de requête: " . $e->getMessage());
       }
       
@@ -847,10 +926,13 @@ class AnalyticsAgent
   }
 
   /**
-   * Cleans the SQL response by removing formatting tags and other unwanted elements.
+   * Cleans the SQL response by removing formatting tags
+   * Removes SQL code block markers
+   * Strips HTML tags
+   * Trims whitespace
    *
-   * @param string $response Raw response from the model.
-   * @return string Cleaned SQL query.
+   * @param string $response Raw response from the model
+   * @return string Cleaned SQL query ready for execution
    */
   private function cleanSqlResponse(string $response): string
   {
@@ -862,11 +944,21 @@ class AnalyticsAgent
   }
 
   /**
- * Executes a query with recovery mechanisms in case of failure
- *
- * @param string $question The business question in natural language
- * @return array The query results
- */
+   * Executes a query with error recovery mechanisms
+   * Implements caching, query generation, validation, and error handling
+   * Supports multiple query execution and result aggregation
+   *
+   * @param string $question The business question to process
+   * @return array Results containing:
+   *               - type: 'analytics_results'
+   *               - query: Original question
+   *               - sql_query: Executed SQL query
+   *               - original_sql_query: Pre-correction SQL query
+   *               - corrections: Array of applied corrections
+   *               - results: Query results
+   *               - count: Number of results
+   * @throws \Exception When query execution fails after recovery attempts
+   */
   private function executeQueryWithRecovery(string $question): array
   {
     try {
@@ -880,7 +972,7 @@ class AnalyticsAgent
       if ($cachedSql !== null) {
         $sqlQueries = [$cachedSql];
         
-        if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+        if ($this->debug == 'True') {
           error_log("Using cached SQL for question: " . substr($question, 0, 50) . "...");
         }
       } else {
@@ -982,12 +1074,15 @@ class AnalyticsAgent
     }
   }
 
-/**
- * Récupère le schéma d'une table (colonnes et types)
- * 
- * @param string $tableName Nom de la table
- * @return array Schéma de la table [colonne => type]
- */
+  /**
+   * Retrieves and caches the schema of a database table
+   * Returns column names and their corresponding data types
+   * Uses cache to minimize database queries
+   *
+   * @param string $tableName Name of the table to get schema for
+   * @return array Associative array of column names and their types
+   *               Format: ['column_name' => 'data_type']
+   */
   private function getTableSchema(string $tableName): array
   {
     // Utiliser le cache si disponible
@@ -1011,7 +1106,7 @@ class AnalyticsAgent
       $this->tableSchemaCache[$tableName] = $schema;
     } catch (\Exception $e) {
       // En cas d'erreur, retourner un schéma vide
-      if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log("Error getting schema for table $tableName: " . $e->getMessage());
       }
       $schema = [];
@@ -1020,13 +1115,22 @@ class AnalyticsAgent
     return $schema;
   }
 
-/**
-* Processes a complete business query (SQL generation + execution + interpretation)
-*
-* @param string $question The business question in natural language
-* @param bool $includeSQL Whether to include the SQL query in the response
-* @return array Complete results with interpretation
-*/
+  /**
+   * Processes a complete business query including SQL generation, execution, and interpretation
+   * Handles multiple query results and provides natural language interpretation
+   * Includes error handling and recovery mechanisms
+   *
+   * @param string $question The business question in natural language
+   * @param bool $includeSQL Whether to include SQL queries in the response (default: true)
+   * @return array Response containing:
+   *               - type: 'analytics_response' or 'error'
+   *               - question: Original question
+   *               - interpretation: Natural language interpretation of results
+   *               - count: Number of results
+   *               - sql_query: Executed SQL (if includeSQL is true)
+   *               - results: Query results
+   *               - corrections: Any applied corrections
+   */
   public function processBusinessQuery(string $question, bool $includeSQL = true): array
   {
     try {
@@ -1072,7 +1176,7 @@ class AnalyticsAgent
       return $response;
     } catch (\Exception $e) {
       // Log de l'erreur pour débogage
-      if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log("Analytics Processing Error: " . $e->getMessage());
       }
 
@@ -1085,13 +1189,15 @@ class AnalyticsAgent
     }
   }
 
- /**
-  * Interprets the results of a query in natural language.
-  *
-  * @param string $question The original question.
-  * @param array $results The query results.
-  * @return string The interpretation in natural language.
-  */
+  /**
+   * Interprets query results in natural language
+   * Uses AI to generate human-readable interpretations
+   * Implements caching for performance optimization
+   *
+   * @param string $question The original business question
+   * @param array $results The query results to interpret
+   * @return string Natural language interpretation of the results
+   */
   private function interpretResults(string $question, array $results): string
   {
     // Créer une clé de cache spécifique pour l'interprétation
@@ -1099,7 +1205,7 @@ class AnalyticsAgent
     
     // Vérifier si l'interprétation est dans le cache
     if ($this->enablePromptCache && isset($this->promptCache[$interpretCacheKey])) {
-      if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log("Using cached interpretation for question: " . substr($question, 0, 50) . "...");
       }
       
@@ -1135,10 +1241,12 @@ class AnalyticsAgent
   }
 
   /**
-   * Checks if a query is of analytical type
+   * Determines if a query is analytical in nature
+   * Uses semantic analysis to classify query type
+   * Checks against predefined analytical patterns
    *
-   * @param string $query Query to check
-   * @return bool True if the query is analytical, false otherwise
+   * @param string $query Query to analyze
+   * @return bool True if query is analytical, false otherwise
    */
   public function isAnalyticsQuery(string $query): bool
   {
@@ -1152,10 +1260,13 @@ class AnalyticsAgent
   }
 
   /**
-   * Retrieves the categories of an analytical query
+   * Identifies the analytical categories of a query
+   * Matches query against predefined pattern categories
+   * Supports multiple category classification
    *
-   * @param string $query Query to check
-   * @return array Categories of the query
+   * @param string $query Query to analyze
+   * @return array List of matched analytical categories
+   *               Returns empty array if no categories match
    */
   public function getAnalyticsCategories(string $query): array
   {

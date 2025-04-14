@@ -43,7 +43,8 @@ class MariaDBVectorStore extends VectorStoreBase
   private Connection $connection;
   private string $tableName;
   private EmbeddingGeneratorInterface $embeddingGenerator;
-
+  private bool $debug = false;
+  
   /**
    * Constructor for MariaDBVectorStore
    *
@@ -62,6 +63,7 @@ class MariaDBVectorStore extends VectorStoreBase
     // Récupération de la connexion Doctrine
     $entityManager = DoctrineOrm::getEntityManager();
     $this->connection = $entityManager->getConnection();
+    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
 
     // Vérification et création de la structure de la base de données si nécessaire
     DoctrineOrm::createTableStructure($this->tableName);
@@ -208,7 +210,7 @@ class MariaDBVectorStore extends VectorStoreBase
 
       return $documents;
     } catch (\Exception $e) {
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log('Error while searching in the table ' . $this->tableName . ' : ' . $e->getMessage());
       }
       return [];
@@ -232,7 +234,7 @@ class MariaDBVectorStore extends VectorStoreBase
       );
       return true;
     } catch (\Exception $e) {
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log('Error while deleting the document: ' . $e->getMessage());
       }
       return false;
@@ -290,7 +292,7 @@ class MariaDBVectorStore extends VectorStoreBase
       );
       return true;
     } catch (\Exception $e) {
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log('Error while updating the document: ' . $e->getMessage());
       }
       return false;

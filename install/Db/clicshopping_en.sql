@@ -211,6 +211,7 @@ INSERT INTO administrator_menu VALUES(800, 'index.php?A&Marketing\\Recommendatio
 INSERT INTO administrator_menu VALUES(801, 'index.php?A&Customers\\Reviews&Reviews', 587, 1, 0, '', 0, 'app_customers_reviews', 1);
 INSERT INTO administrator_menu VALUES(802, 'index.php?A&Customers\\Reviews&ReviewsSentiment', 587, 2, 0, '', 0, 'app_customers_reviews', 1);
 INSERT INTO administrator_menu VALUES(803, 'index.php?A&Customers\\Reviews&StatsCustomersVote', 98, 4, 0, '', 0, 'app_customers_reviews', 1);
+INSERT INTO administrator_menu VALUES(804, 'index.php?A&Configuration\\Settings&Settings&gID=11', 21, 2, 0, '', 1, 'app_configuration_cache', 1);
 
 
 INSERT INTO administrator_menu_description VALUES(0, '', 1);
@@ -584,7 +585,8 @@ INSERT INTO administrator_menu_description VALUES(802, 'Reviews sentiment', 1);
 INSERT INTO administrator_menu_description VALUES(802, 'Sentiments commentaires', 2);
 INSERT INTO administrator_menu_description VALUES(803, 'Products Reviews Vote', 1);
 INSERT INTO administrator_menu_description VALUES(803, 'Vote commentaires produits', 2);
-
+INSERT INTO administrator_menu_description VALUES(804, 'Cache Setup', 1);
+INSERT INTO administrator_menu_description VALUES(804, 'Gestion du Cache', 2);
 
 INSERT INTO api VALUES(1, 'Default', 'd0a36b839700b60727fe13998e22aa0af197c61d8b371e26114c133ca51c4864bd0da73ad6d1e5090b02b55cff42b8a0cd23866e64e78fc8884eb6228d32f5e9d76bed468869dd89ee6bb8a3208c5077e88560d0bc238f67cfc732efcf5313a0cb361e297c29c8d82d050d770ed7dee972af6445e801fa9af12e3d478bf5346a', 0, '2022-09-18 14:25:54', '2022-09-18 14:25:54', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 INSERT INTO api_ip VALUES(1, 1, '127.0.0.1', 'localhost');
@@ -1696,6 +1698,7 @@ INSERT INTO configuration VALUES(1747, 'Do you want to use the embeddging OpenAI
 INSERT INTO configuration VALUES(1748, 'Do you want to use the embeddging OpenAI ?', 'CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING', 'False', 'If you want to use the embedding (3072), you must have at least mariaDb 11.8 version', 6, 0, NULL, '2023-09-15 09:16:47', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1749, 'Do you want to use the OpenAI rag approach ?', 'CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER', 'False', 'If you want to use the rag to look some information inside ClicShopping,please choose True via the chatbot', 6, 0, NULL, '2023-09-15 09:16:47', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1750, 'Do you want to OpenAI rag debug approach ?', 'CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER', 'False', 'If you want to see the error log about the process, please choose True', 6, 0, NULL, '2023-09-15 09:16:47', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1794, 'Do you want to enable Rag cache ?', 'CLICSHOPPING_APP_CHATGPT_CH_CACHE_RAG_MANAGER', 'True', 'Allow to cache the request, please choose True', 6, 0, NULL, '2025-04-14 09:28:10', NULL, NULL);
 
 
 INSERT INTO configuration_group VALUES(1, 'Store Setup', 'General Information on the Store.', 1, 1);

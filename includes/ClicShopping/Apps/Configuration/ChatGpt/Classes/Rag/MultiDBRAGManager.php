@@ -48,7 +48,8 @@ class MultiDBRAGManager
   private array $vectorStores = [];
 
   private string $systemMessageTemplate;
-
+  private bool $debug = false;
+  
   /**
    * Constructor for MultiDBRAGManager
    * Initializes the RAG system with specified model and tables
@@ -69,6 +70,8 @@ class MultiDBRAGManager
     $this->db = Registry::get('Db');
     $this->systemMessageTemplate = CLICSHOPPING::getDef('text_rag_system_message_template');
     $this->language = Registry::get('Language');
+    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
+
 
     // Préparation des paramètres pour getOpenAiGpt
     $parameters = null;
@@ -118,11 +121,11 @@ class MultiDBRAGManager
     if (empty($tableNames)) {
       try {
         $tableNames = DoctrineOrm::getEmbeddingTables();
-        if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+        if ($this->debug == 'True') {
           error_log("Embedding tables found: " . implode(", ", $tableNames));
         }
       } catch (\Exception $e) {
-        if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+        if ($this->debug == 'True') {
           error_log("Error while retrieving the embedding tables: " . $e->getMessage());
         }
         $tableNames = [];
@@ -133,11 +136,11 @@ class MultiDBRAGManager
     foreach ($tableNames as $tableName) {
       try {
         $this->vectorStores[$tableName] = new MariaDBVectorStore($this->embeddingGenerator, $tableName);
-        if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+        if ($this->debug == 'True') {
           error_log("Vector store initialized for the table: " . $tableName);
         }
       } catch (\Exception $e) {
-        if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+        if ($this->debug == 'True') {
           error_log("Error while initializing the vector store for the table {$tableName}: " . $e->getMessage());
         }
       }
@@ -211,33 +214,33 @@ class MultiDBRAGManager
     try {
       $allResults = [];
 
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log("Starting document search for query: " . $query);
       }
       // Vérifier si des vector stores sont disponibles
 
       if (empty($this->vectorStores)) {
-        if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+        if ($this->debug == 'True') {
           error_log("No vector store available");
         }
         return [];
       }
 
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log("Found embedding tables: " . implode(", ", array_keys($this->vectorStores)));
       }
 
       // Génération de l'embedding pour la requête
       $queryEmbedding = $this->embeddingGenerator->embedText($query);
 
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log("Generated embedding for query, length: " . count($queryEmbedding));
       }
 
       // Rechercher dans chaque vector store
       foreach ($this->vectorStores as $tableName => $vectorStore) {
         try {
-          if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+          if ($this->debug == 'True') {
             error_log("Table search: " . $tableName);
           }
           // Création d'une fonction de filtrage basée sur les critères
@@ -258,7 +261,7 @@ class MultiDBRAGManager
           };
 
           $results = $vectorStore->similaritySearch($queryEmbedding, $limit, $minScore, $filter);
-          if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+          if ($this->debug == 'True') {
             error_log("Results found in table {$tableName}: " . count($results));
           }
           // Ajouter les résultats à la liste complète
@@ -266,7 +269,7 @@ class MultiDBRAGManager
             $allResults[] = $document;
           }
         } catch (\Exception $e) {
-          if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+          if ($this->debug == 'True') {
             error_log("Error while searching in table {$tableName}: " . $e->getMessage());
             // Continuer avec les autres tables en cas d'erreur
           }
@@ -282,13 +285,13 @@ class MultiDBRAGManager
 
       // Limiter le nombre total de résultats
       $finalResults = array_slice($allResults, 0, $limit);
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log("Total number of results found: " . count($finalResults));
       }
 
       return $finalResults;
     } catch (\Exception $e) {
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if ($this->debug == 'True') {
         error_log('Error while searching documents: ' . $e->getMessage());
       }
       return [];
@@ -353,7 +356,7 @@ class MultiDBRAGManager
       }
 
       // Utiliser la classe Gpt existante pour générer la réponse
-      if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+     if ($this->debug == 'True') {
         $prompt = str_replace(['{context}', '{question}', '{links}', '{score}'], [$context, $question, $link, $score], $this->systemMessageTemplate);
       } else {
         $prompt = str_replace(['{context}', '{question}', '{links}'], [$context, $question, $link], $this->systemMessageTemplate);
