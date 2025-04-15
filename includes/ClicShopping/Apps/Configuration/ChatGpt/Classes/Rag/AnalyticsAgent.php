@@ -14,11 +14,17 @@ use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Cache;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\InputValidator;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\RateLimit;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\DbSecurity;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 
 /**
  * Class AnalyticsAgent
  * Handles database analytics and query processing with AI assistance
  * Manages table relationships, schema validation, and query optimization
+ * Implements comprehensive security measures
  */
 class AnalyticsAgent
 {
@@ -34,35 +40,64 @@ class AnalyticsAgent
   private mixed $cache;
   private bool $enablePromptCache;
   private bool $debug = false;
+  private SecurityLogger $securityLogger;
+  private RateLimit $rateLimit;
+  private string $userId;
+  private DbSecurity $dbSecurity;
 
   /**
    * Constructor for AnalyticsAgent
    * Initializes database connection, language settings, and AI chat interface
-   * Sets up schema caching and table relationships
+   * Sets up schema caching, table relationships, and security components
    *
    * @param int|null $languageId Language ID for filtering results
    * @param bool $enablePromptCache Whether to enable local prompt caching
+   * @param string $userId User identifier for rate limiting and auditing
    */
-  public function __construct(?int $languageId = null, bool $enablePromptCache = true)
+  public function __construct(?int $languageId = null, bool $enablePromptCache = true, string $userId = 'system')
   {
     $this->db = Registry::get('Db');
     $this->languageId = $languageId ?? Registry::get('Language')->getId();
     $this->chat = Gpt::getOpenAiGpt(null);
+    $this->userId = $userId;
 
+    // Initialize security components
+    $this->securityLogger = new SecurityLogger();
+    $this->rateLimit = new RateLimit('analytics_agent', 50, 60); // 50 requests per minute
+    $this->dbSecurity = new DbSecurity();
 
     $this->cache = new Cache($enablePromptCache);
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
 
-
     $this->enablePromptCache = $enablePromptCache;
+
+    // Log initialization
+    $this->securityLogger->logSecurityEvent(
+      "AnalyticsAgent initialized for user {$this->userId}",
+      'info'
+    );
+
     $this->setSystemMessage();
-    $this->initializeTableRelationships();
-    $this->buildDatabaseSchema();
+
+    try {
+      $this->initializeTableRelationships();
+      $this->buildDatabaseSchema();
+    } catch (\Exception $e) {
+      $this->securityLogger->logSecurityEvent(
+        "Error during AnalyticsAgent initialization: " . $e->getMessage(),
+        'error'
+      );
+
+      if ($this->debug) {
+        error_log("Error during AnalyticsAgent initialization: " . $e->getMessage());
+      }
+    }
   }
 
   /**
    * Configures the system message for the LLPhant agent with improved instructions
    * Combines base system message, SQL formatting instructions, and table structure guidelines
+   * Includes security guidelines for query generation
    *
    * @return void
    */
@@ -72,35 +107,87 @@ class AnalyticsAgent
     $sqlFormatInstructions = CLICSHOPPING::getDef('text_sql_format_instructions', ['language_id' => $this->languageId]);
     $tableStructureInstructions = CLICSHOPPING::getDef('text_table_structure_instructions');
 
-    $this->chat->setSystemMessage($baseSystemMessage . $sqlFormatInstructions . $tableStructureInstructions);
+    // Add security guidelines
+    $securityGuidelines = "
+    IMPORTANT SECURITY GUIDELINES:
+    1. Never generate queries that modify database structure (CREATE, ALTER, DROP)
+    2. Never generate queries that delete data without explicit WHERE clauses
+    3. Always use parameterized queries when user input is involved
+    4. Avoid using INFORMATION_SCHEMA or accessing system tables
+    5. Do not include sensitive data in query comments
+    6. Limit result sets to prevent excessive data exposure
+    7. Validate all table and column names against the schema
+    ";
+
+    $this->chat->setSystemMessage($baseSystemMessage . $sqlFormatInstructions . $tableStructureInstructions . $securityGuidelines);
   }
 
   /**
    * Initializes table relationships based on database schema
    * Analyzes table structures to identify foreign key relationships
    * Builds relationship mappings and column synonyms dictionary
+   * Implements security checks and error handling
    *
-   * @throws \Exception When database queries fail
    * @return void
+   * @throws \Exception When database queries fail
    */
   private function initializeTableRelationships(): void
   {
     try {
-      // Récupérer toutes les tables de la base de données
+      // Check rate limiting
+      if (!$this->rateLimit->checkLimit($this->userId)) {
+        $this->securityLogger->logSecurityEvent(
+          "Rate limit exceeded for user {$this->userId} during table relationship initialization",
+          'warning'
+        );
+        throw new \Exception("Rate limit exceeded for user {$this->userId}");
+      }
+
+      // Retrieve all tables from the database
       $query = $this->db->prepare("SHOW TABLES");
       $query->execute();
       $tables = $query->fetchAll(\PDO::FETCH_COLUMN);
-      
+
       // Pour chaque table, analyser les colonnes pour détecter les relations potentielles
       foreach ($tables as $table) {
+        // Validate table name
+        $safeTable = InputValidator::sanitizeIdentifier($table);
+        if ($safeTable !== $table) {
+          $this->securityLogger->logSecurityEvent(
+            "Suspicious table name sanitized: {$table} -> {$safeTable}",
+            'warning'
+          );
+          $table = $safeTable;
+        }
+
         $schema = $this->getTableSchema($table);
-        
+
         foreach ($schema as $column => $type) {
-          // Détecter les colonnes d'ID qui pourraient être des clés étrangères
+          // Validate column name
+          $safeColumn = InputValidator::sanitizeIdentifier($column);
+          if ($safeColumn !== $column) {
+            $this->securityLogger->logSecurityEvent(
+              "Suspicious column name sanitized: {$column} -> {$safeColumn}",
+              'warning'
+            );
+            $column = $safeColumn;
+          }
+
+          // Detect ID columns that could be foreign keys
           if (preg_match('/_id$/', $column) && strpos($type, 'int') !== false) {
             $relatedTable = str_replace('_id', '', $column);
-            
-            // Vérifier si la table liée existe
+
+            // Validate related table name
+            $safeRelatedTable = InputValidator::sanitizeIdentifier($relatedTable);
+            if ($safeRelatedTable !== $relatedTable) {
+              $this->securityLogger->logSecurityEvent(
+                "Suspicious related table name sanitized: {$relatedTable} -> {$safeRelatedTable}",
+                'warning'
+              );
+              $relatedTable = $safeRelatedTable;
+            }
+
+            // Check if the related table exists
             if (in_array($relatedTable, $tables) || in_array('clic_' . $relatedTable, $tables)) {
               $actualTable = in_array('clic_' . $relatedTable, $tables) ? 'clic_' . $relatedTable : $relatedTable;
               $this->tableRelationships[$table][$column] = $actualTable;
@@ -108,14 +195,21 @@ class AnalyticsAgent
           }
         }
       }
-      
-      // Construire un dictionnaire de synonymes de colonnes basé sur les noms similaires
+
+      // Build a dictionary of column synonyms based on similar names
       $this->buildColumnSynonyms($tables);
-      
     } catch (\Exception $e) {
-      if ($this->debug == 'True') {
+      $this->securityLogger->logSecurityEvent(
+        "Error initializing table relationships: " . $e->getMessage(),
+        'error'
+      );
+
+      if ($this->debug) {
         error_log("Error initializing table relationships: " . $e->getMessage());
       }
+
+      // Re-throw for higher-level handling
+      throw $e;
     }
   }
 
@@ -123,27 +217,47 @@ class AnalyticsAgent
    * Builds a comprehensive database schema for validation and correction
    * Creates detailed mapping of table structures including column properties
    * Generates an inverse index for quick column lookups
+   * Implements security checks and error handling
    *
-   * @throws \Exception When schema building encounters errors
    * @return void
+   * @throws \Exception When schema building encounters errors
    */
   private function buildDatabaseSchema(): void
   {
     try {
+      // Check rate limiting
+      if (!$this->rateLimit->checkLimit($this->userId)) {
+        $this->securityLogger->logSecurityEvent(
+          "Rate limit exceeded for user {$this->userId} during database schema building",
+          'warning'
+        );
+        throw new \Exception("Rate limit exceeded for user {$this->userId}");
+      }
+
       $query = $this->db->prepare("SHOW TABLES");
       $query->execute();
       $tables = $query->fetchAll(\PDO::FETCH_COLUMN);
-      
+
       $this->databaseSchema = [];
-      
+
       foreach ($tables as $table) {
-        // Récupérer les colonnes de chaque table
+        // Validate table name
+        $safeTable = InputValidator::sanitizeIdentifier($table);
+        if ($safeTable !== $table) {
+          $this->securityLogger->logSecurityEvent(
+            "Suspicious table name sanitized in buildDatabaseSchema: {$table} -> {$safeTable}",
+            'warning'
+          );
+          $table = $safeTable;
+        }
+
+        // Retrieve columns for each table
         $columnsQuery = $this->db->prepare("DESCRIBE " . $table);
         $columnsQuery->execute();
         $columns = $columnsQuery->fetchAll(\PDO::FETCH_ASSOC);
-        
+
         $this->databaseSchema[$table] = [];
-        
+
         foreach ($columns as $column) {
           $this->databaseSchema[$table][$column['Field']] = [
             'type' => $column['Type'],
@@ -154,10 +268,10 @@ class AnalyticsAgent
           ];
         }
       }
-      
+
       // Construire un index inversé pour rechercher rapidement les colonnes
       $this->columnIndex = [];
-      
+
       foreach ($this->databaseSchema as $table => $columns) {
         foreach (array_keys($columns) as $column) {
           if (!isset($this->columnIndex[$column])) {
@@ -166,11 +280,24 @@ class AnalyticsAgent
           $this->columnIndex[$column][] = $table;
         }
       }
+
+      $this->securityLogger->logSecurityEvent(
+        "Database schema built successfully: " . count($this->databaseSchema) . " tables indexed",
+        'info'
+      );
+
     } catch (\Exception $e) {
-      // Journaliser l'erreur
-      if ($this->debug == 'True') {
+      $this->securityLogger->logSecurityEvent(
+        "Error building database schema: " . $e->getMessage(),
+        'error'
+      );
+
+      if ($this->debug) {
         error_log("Error while building the database schema: " . $e->getMessage());
       }
+
+      // Re-throw for higher-level handling
+      throw $e;
     }
   }
 
@@ -185,8 +312,8 @@ class AnalyticsAgent
   private function buildColumnSynonyms(array $tables): void
   {
     $allColumns = [];
-    
-    // Collecter toutes les colonnes de toutes les tables
+
+    // Collect all columns from all tables
     foreach ($tables as $table) {
       $schema = $this->getTableSchema($table);
       foreach ($schema as $column => $type) {
@@ -196,13 +323,13 @@ class AnalyticsAgent
         $allColumns[$column][] = $table;
       }
     }
-    
-    // Identifier les synonymes potentiels basés sur des parties communes de noms
+
+    // Identify potential synonyms based on common name parts
     foreach ($allColumns as $column => $tables) {
-      // Extraire la partie significative du nom de colonne (sans préfixes/suffixes communs)
+      // Extract the significant part of the column name (without common prefixes/suffixes)
       $baseName = preg_replace('/^(.*?)_|_(.*?)$/', '', $column);
-      
-      if (strlen($baseName) >= 3) { // Ignorer les noms trop courts
+
+      if (strlen($baseName) >= 3) { // ignore names that are too short
         if (!isset($this->columnSynonyms[$baseName])) {
           $this->columnSynonyms[$baseName] = [];
         }
@@ -222,8 +349,18 @@ class AnalyticsAgent
    */
   private function extractSqlQueries(string $response): array {
     $queries = [];
-    
-    // Rechercher les requêtes SQL commençant par SELECT, INSERT, UPDATE, DELETE, etc.
+
+    // Validate input
+    $safeResponse = InputValidator::validateParameter($response, 'string');
+    if ($safeResponse !== $response) {
+      $this->securityLogger->logSecurityEvent(
+        "Response sanitized in extractSqlQueries",
+        'warning'
+      );
+      $response = $safeResponse;
+    }
+
+    // Search for SQL queries starting with SELECT, INSERT, UPDATE, DELETE, etc.
     $sqlPatterns = [
       '/\b(SELECT\s+.*?)(;|\Z)/is',
       '/\b(INSERT\s+.*?)(;|\Z)/is',
@@ -233,7 +370,46 @@ class AnalyticsAgent
       '/\b(ALTER\s+.*?)(;|\Z)/is',
       '/\b(DROP\s+.*?)(;|\Z)/is'
     ];
-    
+
+    foreach ($sqlPatterns as $pattern) {
+      if (preg_match_all($pattern, $response, $matches, PREG_SET_ORDER)) {
+        foreach ($matches as $match) {
+          $query = trim($match[1]);
+
+          // Validate extracted query
+          $validation = InputValidator::validateSqlQuery($query);
+          if (!$validation['valid']) {
+            $this->securityLogger->logSecurityEvent(
+              "Potentially malicious SQL pattern detected in extracted query: " . implode(', ', $validation['issues']),
+              'warning',
+              ['query' => $query]
+            );
+            continue; // Skip this query
+          }
+
+          $queries[] = $query;
+        }
+      }
+    }
+
+    // If no query was found, check if the entire response is an SQL query
+    if (empty($queries) && preg_match('/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\s+/i', trim($response))) {
+      $query = trim($response);
+
+      // Validate full response as query
+      $validation = InputValidator::validateSqlQuery($query);
+
+      if ($validation['valid']) {
+        $queries[] = $query;
+      } else {
+        $this->securityLogger->logSecurityEvent(
+          "Potentially malicious SQL pattern detected in full response: " . implode(', ', $validation['issues']),
+          'warning',
+          ['query' => $query]
+        );
+      }
+    }
+
     foreach ($sqlPatterns as $pattern) {
       if (preg_match_all($pattern, $response, $matches, PREG_SET_ORDER)) {
         foreach ($matches as $match) {
@@ -246,7 +422,7 @@ class AnalyticsAgent
     if (empty($queries) && preg_match('/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\s+/i', trim($response))) {
       $queries[] = trim($response);
     }
-    
+
     return $queries;
   }
 
@@ -258,25 +434,36 @@ class AnalyticsAgent
    * @param string $sqlQuery SQL query with placeholders
    * @return string SQL query with resolved placeholders
    */
-  private function resolvePlaceholders(string $sqlQuery): string {
+  private function resolvePlaceholders(string $sqlQuery): string 
+  {
+    // Validate input
+    $safeSqlQuery = InputValidator::validateParameter($sqlQuery, 'string');
+
+    if ($safeSqlQuery !== $sqlQuery) {
+      $this->securityLogger->logSecurityEvent(
+        "SQL query sanitized in resolvePlaceholders",
+        'warning'
+      );
+      $sqlQuery = $safeSqlQuery;
+    }
+
     // Détecter les placeholders au format [nom_placeholder]
     preg_match_all('/\[([^\]]+)\]/', $sqlQuery, $matches);
-    
+
     if (empty($matches[1])) {
       return $sqlQuery;
     }
-    
+
     $placeholders = array_unique($matches[1]);
     $resolvedQuery = $sqlQuery;
-    
+
     foreach ($placeholders as $placeholder) {
       $value = $this->getPlaceholderValue($placeholder);
       $resolvedQuery = str_replace("[$placeholder]", $value, $resolvedQuery);
     }
-    
+
     return $resolvedQuery;
   }
-
 
   /**
    * Gets the value for a specific placeholder
@@ -287,18 +474,24 @@ class AnalyticsAgent
    * @param string $placeholder Name of the placeholder to resolve
    * @return string Value to replace the placeholder
    */
-  private function getPlaceholderValue(string $placeholder): string {
+  private function getPlaceholderValue(string $placeholder): string
+  {
     // Mapper les placeholders courants à leurs valeurs
     $placeholderMap = [
       'language_id' => $this->languageId,
       // Ajouter d'autres mappings selon les besoins
     ];
-    
+
     if (isset($placeholderMap[$placeholder])) {
       return $placeholderMap[$placeholder];
     }
-    
+
     // Journaliser les placeholders inconnus
+    $this->securityLogger->logSecurityEvent(
+      "Unknown placeholder encountered: [{$placeholder}]",
+      'info'
+    );
+
     if ($this->debug == 'True') {
       error_log("Placeholder unknown: [$placeholder]");
     }
@@ -361,12 +554,22 @@ class AnalyticsAgent
    * @return string Corrected SQL query
    */
   private function applyConservativeCorrections(string $sqlQuery, array $detectedIssues): string {
+    // Validate input
+    $safeSqlQuery = InputValidator::validateParameter($sqlQuery, 'string');
+    if ($safeSqlQuery !== $sqlQuery) {
+      $this->securityLogger->logSecurityEvent(
+        "SQL query sanitized in applyConservativeCorrections",
+        'warning'
+      );
+      $sqlQuery = $safeSqlQuery;
+    }
+
     $correctedQuery = $sqlQuery;
     $this->correctionLog = [];
-    
+
     foreach ($detectedIssues as $issue) {
       $correction = $this->determineCorrection($sqlQuery, $issue);
-      
+
       if ($correction['confidence'] >= 0.8) { // Seuil de confiance élevé
         $correctedQuery = $correction['query'];
         $this->correctionLog[] = [
@@ -374,6 +577,12 @@ class AnalyticsAgent
           'correction' => $correction['description'],
           'confidence' => $correction['confidence']
         ];
+
+        $this->securityLogger->logSecurityEvent(
+          "Applied SQL correction: " . $correction['description'],
+          'info',
+          ['original' => $sqlQuery, 'corrected' => $correction['query']]
+        );
       } else {
         // Journaliser les corrections de faible confiance sans les appliquer
         $this->correctionLog[] = [
@@ -381,9 +590,15 @@ class AnalyticsAgent
           'correction' => CLICSHOPPING::getDef('text_no_applied_confidence'),
           'confidence' => $correction['confidence']
         ];
+
+        $this->securityLogger->logSecurityEvent(
+          "Low confidence correction not applied: " . $correction['description'],
+          'info',
+          ['confidence' => $correction['confidence']]
+        );
       }
     }
-    
+
     return $correctedQuery;
   }
 
@@ -402,30 +617,31 @@ class AnalyticsAgent
    *               - description: explanation of correction
    *               - confidence: confidence level (0.0-1.0)
    */
-  private function determineCorrection(string $sqlQuery, string $issue): array {
-    // Initialiser avec des valeurs par défaut
+  private function determineCorrection(string $sqlQuery, string $issue): array
+  {
+    // Initialize with default values
     $correction = [
       'query' => $sqlQuery,
       'description' => CLICSHOPPING::getDef('text_no_correction_applied'),
       'confidence' => 0.0
     ];
-    
-    // Corriger les déséquilibres de parenthèses
+
+    // Correct unbalanced parentheses
     if (strpos($issue, ' Parentheses mismatch') === 0) {
       preg_match('/(\d+) opening vs (\d+) closing/', $issue, $matches);
       $openCount = (int)$matches[1];
       $closeCount = (int)$matches[2];
-      
+
       if ($openCount > $closeCount) {
-        // Ajouter les parenthèses fermantes manquantes
+        // Add missing closing parentheses
         $correctedQuery = $sqlQuery . str_repeat(')', $openCount - $closeCount);
         $correction = [
           'query' => $correctedQuery,
-          'description' => "Added : " . ($openCount - $closeCount) . " closing parenthesiss",
+          'description' => "Added: " . ($openCount - $closeCount) . " closing parenthesis",
           'confidence' => 0.9
         ];
       } elseif ($closeCount > $openCount) {
-        // Supprimer les parenthèses fermantes excédentaires
+        // Remove excess closing parentheses
         $correctedQuery = $sqlQuery;
         for ($i = 0; $i < $closeCount - $openCount; $i++) {
           $pos = strrpos($correctedQuery, ')');
@@ -435,40 +651,36 @@ class AnalyticsAgent
         }
         $correction = [
           'query' => $correctedQuery,
-          'description' => "Remove : " . ($closeCount - $openCount) . " excess closing parenthesis",
+          'description' => "Removed: " . ($closeCount - $openCount) . " excess closing parenthesis",
           'confidence' => 0.8
         ];
       }
-    }
-    
-    // Corriger les alias de colonnes invalides
-    elseif (strpos($issue, 'Alias de colonne invalide') === 0) {
-      $correctedQuery = preg_replace_callback('/\bAS\s+(\w+)\.(\w+)/i', function($matches) {
-        return 'AS ' . $matches[2]; // Utiliser uniquement la partie après le point
+    } // Fix invalid column aliases
+    elseif (strpos($issue, 'Invalid column alias') === 0) {
+      $correctedQuery = preg_replace_callback('/\bAS\s+(\w+)\.(\w+)/i', function ($matches) {
+        return 'AS ' . $matches[2]; // Use only the part after the dot
       }, $sqlQuery);
-      
+
       $correction = [
         'query' => $correctedQuery,
         'description' => CLICSHOPPING::getDef('text_correction_invalid_column_aliases'),
         'confidence' => 0.95
       ];
-    }
-    
-    // Corriger les placeholders non résolus
-    elseif (strpos($issue, 'Placeholders non résolus') === 0) {
+    } // Fix unresolved placeholders
+    elseif (strpos($issue, 'Unresolved placeholders') === 0) {
       $correctedQuery = $this->resolvePlaceholders($sqlQuery);
-      
+
       $correction = [
         'query' => $correctedQuery,
         'description' => CLICSHOPPING::getDef('text_resolution_placeholders'),
         'confidence' => 0.9
       ];
     }
-    
+
     return $correction;
   }
 
-  /**
+    /**
    * Attempts to recover from SQL execution errors
    * Handles specific error types:
    * - Unknown column errors
@@ -484,7 +696,14 @@ class AnalyticsAgent
    */
   private function attemptErrorRecovery(\Exception $error, string $failedQuery, string $originalQuery): array {
     $errorMessage = $error->getMessage();
-    
+
+    // Log recovery attempt
+    $this->securityLogger->logSecurityEvent(
+      "Attempting to recover from SQL error: " . $errorMessage,
+      'info',
+      ['failed_query' => $failedQuery]
+    );
+
     // Initialiser le résultat
     $result = [
       'success' => false,
@@ -494,71 +713,110 @@ class AnalyticsAgent
         'failed_query' => $failedQuery
       ]
     ];
-    
-    // Traiter les erreurs de colonne inconnue
+
+    // Handle unknown column errors
     if (strpos($errorMessage, 'Unknown column') !== false) {
       preg_match("/Unknown column '([^']+)'/", $errorMessage, $matches);
-      
+
       if (!empty($matches[1])) {
         $unknownColumn = $matches[1];
         $correctedQuery = $this->correctUnknownColumn($failedQuery, $unknownColumn);
-        
+
         if ($correctedQuery !== $failedQuery) {
           try {
-            $query = $this->db->prepare($correctedQuery);
-            $query->execute();
-            $queryResults = $query->fetchAll();
-            
+            // Use DbSecurity to execute the corrected query
+            $secureResult = $this->dbSecurity->executeSecureQuery($correctedQuery, [], $this->userId);
+
+            if ($secureResult['success']) {
+              $result = [
+                'success' => true,
+                'data' => [
+                  'original_query' => $originalQuery,
+                  'failed_query' => $failedQuery,
+                  'executed_query' => $correctedQuery,
+                  'results' => $secureResult['data'] ?? [],
+                  'count' => $secureResult['row_count'] ?? 0,
+                  'corrections' => $this->correctionLog,
+                  'recovery' => "Unknown column '$unknownColumn' corrected"
+                ]
+              ];
+
+              $this->securityLogger->logSecurityEvent(
+                "Successfully recovered from unknown column error",
+                'info',
+                ['unknown_column' => $unknownColumn, 'corrected_query' => $correctedQuery]
+              );
+            } else {
+              $result['data']['recovery_error'] = $secureResult['error'] ?? 'Unknown error during recovery';
+
+              $this->securityLogger->logSecurityEvent(
+                "Recovery attempt failed: " . ($secureResult['error'] ?? 'Unknown error'),
+                'warning'
+              );
+            }
+          } catch (\Exception $recoveryError) {
+            // Recovery failed
+            $result['data']['recovery_error'] = $recoveryError->getMessage();
+
+            $this->securityLogger->logSecurityEvent(
+              "Recovery attempt failed: " . $recoveryError->getMessage(),
+              'warning'
+            );
+          }
+        }
+      }
+    }
+
+
+    // Handle syntax errors
+    elseif (strpos($errorMessage, 'syntax error') !== false) {
+      // Attempt a more aggressive syntax correction
+      $correctedQuery = $this->correctSyntaxError($failedQuery, $errorMessage);
+
+      if ($correctedQuery !== $failedQuery) {
+        try {
+          // Use DbSecurity to execute the corrected query
+          $secureResult = $this->dbSecurity->executeSecureQuery($correctedQuery, [], $this->userId);
+
+          if ($secureResult['success']) {
             $result = [
               'success' => true,
               'data' => [
                 'original_query' => $originalQuery,
                 'failed_query' => $failedQuery,
                 'executed_query' => $correctedQuery,
-                'results' => $queryResults,
-                'count' => count($queryResults),
+                'results' => $secureResult['data'] ?? [],
+                'count' => $secureResult['row_count'] ?? 0,
                 'corrections' => $this->correctionLog,
-                'recovery' => "Unknown column '$unknownColumn' corrected"
+                'recovery' => CLICSHOPPING::getDef('text_syntax error corrected')
               ]
             ];
-          } catch (\Exception $recoveryError) {
-            // La récupération a échoué
-            $result['data']['recovery_error'] = $recoveryError->getMessage();
+
+            $this->securityLogger->logSecurityEvent(
+              "Successfully recovered from syntax error",
+              'info',
+              ['corrected_query' => $correctedQuery]
+            );
+          } else {
+            $result['data']['recovery_error'] = $secureResult['error'] ?? 'Unknown error during recovery';
+
+            $this->securityLogger->logSecurityEvent(
+              "Recovery attempt failed: " . ($secureResult['error'] ?? 'Unknown error'),
+              'warning'
+            );
           }
-        }
-      }
-    }
-    
-    // Traiter les erreurs de syntaxe
-    elseif (strpos($errorMessage, 'syntax error') !== false) {
-      // Tentative de correction de syntaxe plus agressive
-      $correctedQuery = $this->correctSyntaxError($failedQuery, $errorMessage);
-      
-      if ($correctedQuery !== $failedQuery) {
-        try {
-          $query = $this->db->prepare($correctedQuery);
-          $query->execute();
-          $queryResults = $query->fetchAll();
-          
-          $result = [
-            'success' => true,
-            'data' => [
-              'original_query' => $originalQuery,
-              'failed_query' => $failedQuery,
-              'executed_query' => $correctedQuery,
-              'results' => $queryResults,
-              'count' => count($queryResults),
-              'corrections' => $this->correctionLog,
-              'recovery' => CLICSHOPPING::getDef('text_syntax error corrected')
-            ]
-          ];
         } catch (\Exception $recoveryError) {
-          // La récupération a échoué
+          // The recovery failed
           $result['data']['recovery_error'] = $recoveryError->getMessage();
+
+          $this->securityLogger->logSecurityEvent(
+            "Recovery attempt failed: " . $recoveryError->getMessage(),
+            'warning'
+          );
         }
       }
     }
-    
+
     return $result;
   }
 
@@ -572,47 +830,47 @@ class AnalyticsAgent
    * @return string Corrected SQL query or original if no correction possible
    */
   private function correctUnknownColumn(string $sqlQuery, string $unknownColumn): string {
-    // Vérifier si la colonne contient un point (alias.colonne)
+    // Check if the column contains a dot (alias.column)
     if (strpos($unknownColumn, '.') !== false) {
       list($alias, $column) = explode('.', $unknownColumn);
-      
-      // Chercher une colonne similaire dans les tables du schéma
+
+      // Look for a similar column in the schema's tables
       $similarColumn = $this->findSimilarColumn($column);
-      
+
       if ($similarColumn !== $column) {
         $correctedQuery = str_replace($unknownColumn, "$alias.$similarColumn", $sqlQuery);
         $this->correctionLog[] = "Column '$unknownColumn' corrected in '$alias.$similarColumn'";
         return $correctedQuery;
       }
-      
-      // Si aucune colonne similaire n'est trouvée, essayer de corriger l'alias
+
+      // If no similar column is found, try to correct the alias
       $tables = $this->extractTablesFromQuery($sqlQuery);
       $correctAlias = $this->findCorrectAlias($alias, array_keys($tables));
-      
+
       if ($correctAlias !== $alias) {
         $correctedQuery = str_replace("$alias.$column", "$correctAlias.$column", $sqlQuery);
         $this->correctionLog[] = "Alias '$alias' corrected in '$correctAlias'";
         return $correctedQuery;
       }
     } else {
-      // Colonne sans alias
+      // Column without alias
       $similarColumn = $this->findSimilarColumn($unknownColumn);
-      
+
       if ($similarColumn !== $unknownColumn) {
-        // Trouver les tables qui contiennent cette colonne
+        // Find the tables that contain this column
         $tables = $this->findTablesWithColumn($similarColumn);
-        
+
         if (!empty($tables)) {
-          // Extraire les alias de tables de la requête
+          // Extract table aliases from the query
           $queryTables = $this->extractTablesFromQuery($sqlQuery);
-          
-          // Chercher une table commune
+
+          // Look for a common table
           $commonTables = array_intersect($tables, array_values($queryTables));
-          
+
           if (!empty($commonTables)) {
             $table = reset($commonTables);
             $alias = array_search($table, $queryTables);
-            
+
             if ($alias) {
               $correctedQuery = str_replace($unknownColumn, "$alias.$similarColumn", $sqlQuery);
               $this->correctionLog[] = "Column '$unknownColumn' corrected in '$alias.$similarColumn'";
@@ -620,15 +878,15 @@ class AnalyticsAgent
             }
           }
         }
-        
-        // Si aucune table commune n'est trouvée, simplement remplacer le nom de colonne
+
+        // If no common table is found, simply replace the column name
         $correctedQuery = str_replace($unknownColumn, $similarColumn, $sqlQuery);
         $this->correctionLog[] = "Column '$unknownColumn' corrected in '$similarColumn'";
         return $correctedQuery;
       }
     }
-    
-    // Si aucune correction n'est possible, retourner la requête originale
+
+    // If no correction is possible, return the original query
     return $sqlQuery;
   }
 
@@ -645,55 +903,55 @@ class AnalyticsAgent
    * @return string Corrected SQL query
    */
   private function correctSyntaxError(string $sqlQuery, string $errorMessage): string {
-    // Extraire la partie problématique de la requête
+    // Extract the problematic part of the query
     preg_match("/near '([^']+)'/", $errorMessage, $matches);
-    
+
     if (empty($matches[1])) {
       return $sqlQuery;
     }
-    
+
     $problematicPart = $matches[1];
     $correctedQuery = $sqlQuery;
-    
-    // Corriger les erreurs courantes de syntaxe
-    
-    // 1. Corriger les virgules consécutives
+
+    // Correct common syntax errors
+
+    // 1. Correct consecutive commas
     $correctedQuery = preg_replace('/,\s*,/', ',', $correctedQuery);
-    
-    // 2. Corriger les opérateurs de comparaison mal formés
+
+    // 2. Correct malformed comparison operators
     $correctedQuery = preg_replace('/\s+=\s+=\s+/', ' = ', $correctedQuery);
-    
-    // 3. Corriger les clauses WHERE mal formées
+
+    // 3. Correct malformed WHERE clauses
     if (strpos($problematicPart, 'WHERE') === 0) {
       $correctedQuery = preg_replace('/\bWHERE\s+AND\b/i', 'WHERE', $correctedQuery);
       $correctedQuery = preg_replace('/\bWHERE\s+OR\b/i', 'WHERE', $correctedQuery);
     }
-    
-    // 4. Corriger les clauses GROUP BY mal formées
+
+    // 4. Correct malformed GROUP BY clauses
     if (strpos($problematicPart, 'GROUP BY') === 0) {
       $correctedQuery = preg_replace('/\bGROUP\s+BY\s+,/i', 'GROUP BY', $correctedQuery);
     }
-    
-    // 5. Corriger les clauses ORDER BY mal formées
+
+    // 5. Correct malformed ORDER BY clauses
     if (strpos($problematicPart, 'ORDER BY') === 0) {
       $correctedQuery = preg_replace('/\bORDER\s+BY\s+,/i', 'ORDER BY', $correctedQuery);
     }
-    
-    // 6. Corriger les placeholders non résolus
+
+    // 6. Correct unresolved placeholders
     if (strpos($problematicPart, '[') !== false) {
       $correctedQuery = $this->resolvePlaceholders($correctedQuery);
     }
-    
-    // Si la requête n'a pas été modifiée, essayer une approche plus générique
+
+    // If the query has not been modified, try a more generic approach
     if ($correctedQuery === $sqlQuery) {
-      // Supprimer la partie problématique et tout ce qui suit
+      // Remove the problematic part and everything following it
       $pos = strpos($sqlQuery, $problematicPart);
       if ($pos !== false) {
-        // Trouver la clause précédente
+        // Find the previous clause
         $previousClauses = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT'];
         $lastClausePos = 0;
         $lastClause = '';
-        
+
         foreach ($previousClauses as $clause) {
           $clausePos = stripos($sqlQuery, $clause, 0);
           if ($clausePos !== false && $clausePos < $pos && $clausePos > $lastClausePos) {
@@ -701,29 +959,29 @@ class AnalyticsAgent
             $lastClause = $clause;
           }
         }
-        
-        // Trouver la clause suivante
+
+        // Find the next clause
         $nextClausePos = PHP_INT_MAX;
-        
+
         foreach ($previousClauses as $clause) {
           $clausePos = stripos($sqlQuery, $clause, $pos + strlen($problematicPart));
           if ($clausePos !== false && $clausePos < $nextClausePos) {
             $nextClausePos = $clausePos;
           }
         }
-        
+
         if ($nextClausePos !== PHP_INT_MAX) {
-          // Remplacer la partie problématique jusqu'à la clause suivante
+          // Replace the problematic part up to the next clause
           $correctedQuery = substr($sqlQuery, 0, $pos) . substr($sqlQuery, $nextClausePos);
           $this->correctionLog[] = CLICSHOPPING::getDef('text_problematic_part_removed', ['problematicPart' => $problematicPart]);
         } else {
-          // Supprimer la partie problématique jusqu'à la fin
+          // Remove the problematic part and everything following it
           $correctedQuery = substr($sqlQuery, 0, $pos);
           $this->correctionLog[] = CLICSHOPPING::getDef('text_problematic_part_everything_following_removed', ['problematicPart' => $problematicPart]);
         }
       }
     }
-    
+
     return $correctedQuery;
   }
 
@@ -737,43 +995,43 @@ class AnalyticsAgent
    * @return string Similar column name or original if none found
    */
   private function findSimilarColumn(string $column): string {
-    // Vérifier si la colonne existe déjà dans l'index
+    // Check if the column already exists in the index
     if (isset($this->columnIndex[$column])) {
       return $column;
     }
-    
-    // Recherche par similarité textuelle
+
+    // Search by textual similarity
     $bestMatch = '';
     $maxSimilarity = 0;
-    
+
     foreach (array_keys($this->columnIndex) as $existingColumn) {
       $similarity = similar_text($column, $existingColumn, $percent);
-      
+
       if ($percent > $maxSimilarity) {
         $maxSimilarity = $percent;
         $bestMatch = $existingColumn;
       }
     }
-    
-    // Retourner la colonne la plus similaire si la similarité est suffisante
+
+    // Return the most similar column if the similarity is sufficient
     if ($maxSimilarity > 70) {
       return $bestMatch;
     }
-    
-    // Recherche par préfixe/suffixe commun
+
+    // Search by common prefix/suffix
     foreach (array_keys($this->columnIndex) as $existingColumn) {
-      // Vérifier si la colonne existante contient la colonne recherchée
+      // Check if the existing column contains the searched column
       if (strpos($existingColumn, $column) !== false) {
         return $existingColumn;
       }
-      
-      // Vérifier si la colonne recherchée contient la colonne existante
+
+      // Check if the searched column contains the existing column
       if (strpos($column, $existingColumn) !== false && strlen($existingColumn) > 3) {
         return $existingColumn;
       }
     }
-    
-    // Si aucune colonne similaire n'est trouvée, retourner la colonne originale
+
+    // If no similar column is found, return the original column
     return $column;
   }
 
@@ -785,11 +1043,12 @@ class AnalyticsAgent
    * @param string $column Column name to search for
    * @return array Array of table names containing the column
    */
-  private function findTablesWithColumn(string $column): array {
+  private function findTablesWithColumn(string $column): array
+  {
     if (isset($this->columnIndex[$column])) {
       return $this->columnIndex[$column];
     }
-    
+
     return [];
   }
 
@@ -802,31 +1061,32 @@ class AnalyticsAgent
    * @param array $availableAliases List of valid aliases in the query
    * @return string Corrected alias or original if no match found
    */
-  private function findCorrectAlias(string $alias, array $availableAliases): string {
-    // Si l'alias est déjà dans la liste, le retourner tel quel
+  private function findCorrectAlias(string $alias, array $availableAliases): string
+  {
+    // If the alias is already in the list, return it as is
     if (in_array($alias, $availableAliases)) {
       return $alias;
     }
-    
-    // Recherche par similarité textuelle
+
+    // Search by textual similarity
     $bestMatch = '';
     $maxSimilarity = 0;
-    
+
     foreach ($availableAliases as $availableAlias) {
       $similarity = similar_text($alias, $availableAlias, $percent);
-      
+
       if ($percent > $maxSimilarity) {
         $maxSimilarity = $percent;
         $bestMatch = $availableAlias;
       }
     }
-    
-    // Retourner l'alias le plus similaire si la similarité est suffisante
+
+    // Return the most similar alias if the similarity is sufficient
     if ($maxSimilarity > 70) {
       return $bestMatch;
     }
-    
-    // Si aucun alias similaire n'est trouvé, retourner l'alias original
+
+    // If no similar alias is found, return the original alias
     return $alias;
   }
 
@@ -838,24 +1098,25 @@ class AnalyticsAgent
    * @param string $sqlQuery SQL query to analyze
    * @return array Associative array where keys are aliases and values are table names
    */
-  private function extractTablesFromQuery(string $sqlQuery): array {
+  private function extractTablesFromQuery(string $sqlQuery): array
+  {
     $tables = [];
-    
-    // Extraire la table principale dans FROM
+
+    // Extract the main table in FROM
     if (preg_match('/FROM\s+(\w+)(?:\s+(?:AS\s+)?(\w+))?/i', $sqlQuery, $matches)) {
       $tableName = $matches[1];
       $alias = !empty($matches[2]) ? $matches[2] : $tableName;
       $tables[$alias] = $tableName;
     }
-    
-    // Extraire les tables dans les JOINs
+
+    // Extract tables in JOINs
     preg_match_all('/JOIN\s+(\w+)(?:\s+(?:AS\s+)?(\w+))?/i', $sqlQuery, $joinMatches, PREG_SET_ORDER);
     foreach ($joinMatches as $match) {
       $tableName = $match[1];
       $alias = !empty($match[2]) ? $match[2] : $tableName;
       $tables[$alias] = $tableName;
     }
-    
+
     return $tables;
   }
 
@@ -871,21 +1132,22 @@ class AnalyticsAgent
    * @param string $question Original question that generated the query
    * @return string User-friendly suggestion for fixing the error
    */
-  private function generateErrorSuggestion(string $errorMessage, string $question): string {
-    // Suggestions basées sur le type d'erreur
+  private function generateErrorSuggestion(string $errorMessage, string $question): string
+  {
+    // Suggestions based on the type of error
     if (strpos($errorMessage, 'Unknown column') !== false) {
       return CLICSHOPPING::getDef('text_colum_reference_does_not_exist');
     }
-    
+
     if (strpos($errorMessage, 'syntax error') !== false) {
       return CLICSHOPPING::getDef('text_sql_query_generated_error');
     }
-    
+
     if (strpos($errorMessage, 'Table') !== false && strpos($errorMessage, 'doesn\'t exist') !== false) {
       return CLICSHOPPING::getDef('text_table_referenced_does_not_exist');
     }
-    
-    // Suggestion générique
+
+    // Generic suggestion
     return CLICSHOPPING::getDef('text_error_executing_query');
   }
 
@@ -905,16 +1167,41 @@ class AnalyticsAgent
    */
   public function executeQuery(string $question): array
   {
+    // Check rate limiting
+    if (!$this->rateLimit->checkLimit($this->userId)) {
+      $this->securityLogger->logSecurityEvent(
+        "Rate limit exceeded for user {$this->userId} in executeQuery",
+        'warning'
+      );
+
+      return [
+        'type' => 'error',
+        'message' => 'Rate limit exceeded. Please try again later.',
+        'query' => $question,
+        'error_code' => 'RATE_LIMIT_EXCEEDED'
+      ];
+    }
+
+    // Validate input
+    $safeQuestion = InputValidator::validateParameter($question, 'string');
+    if ($safeQuestion !== $question) {
+      $this->securityLogger->logSecurityEvent(
+        "Question sanitized in executeQuery",
+        'warning'
+      );
+      $question = $safeQuestion;
+    }
+
     try {
-      // Tentative principale
-      return $this->executeQueryWithRecovery($question);
+      // Main attempt
+      return $this->processAnalyticsQuery($question);
     } catch (\Exception $e) {
-      // Journaliser l'erreur
+      // Log the error
       if ($this->debug == 'True') {
-        error_log("Erreur d'exécution de requête: " . $e->getMessage());
+        error_log("Query execution error: " . $e->getMessage());
       }
-      
-      // Réponse de fallback en cas d'échec complet
+
+      // Fallback response in case of complete failure
       return [
         'type' => 'error',
         'message' => $e->getMessage(),
@@ -923,24 +1210,6 @@ class AnalyticsAgent
         'recovery_attempted' => true
       ];
     }
-  }
-
-  /**
-   * Cleans the SQL response by removing formatting tags
-   * Removes SQL code block markers
-   * Strips HTML tags
-   * Trims whitespace
-   *
-   * @param string $response Raw response from the model
-   * @return string Cleaned SQL query ready for execution
-   */
-  private function cleanSqlResponse(string $response): string
-  {
-    $cleaned = preg_replace('/```sql\s*|\s*```/', '', $response);
-    $cleaned = strip_tags($cleaned);
-    $cleaned = trim($cleaned);
-
-    return $cleaned;
   }
 
   /**
@@ -959,61 +1228,75 @@ class AnalyticsAgent
    *               - count: Number of results
    * @throws \Exception When query execution fails after recovery attempts
    */
-  private function executeQueryWithRecovery(string $question): array
+  private function processAnalyticsQuery(string $question): array
   {
+    // Check rate limiting
+    if (!$this->rateLimit->checkLimit($this->userId)) {
+      $this->securityLogger->logSecurityEvent(
+        "Rate limit exceeded for user {$this->userId} in processAnalyticsQuery",
+        'warning'
+      );
+
+      return [
+        'success' => false,
+        'error' => 'Rate limit exceeded. Please try again later.',
+        'error_code' => 'RATE_LIMIT_EXCEEDED'
+      ];
+    }
+
     try {
-      // Vérifier si la question est dans le cache
+      // Check if the question is in the cache
       $cachedSql = null;
       if ($this->cache->isPromptInCache($question)) {
         $cachedSql = $this->cache->getCachedResponse($question);
       }
-      
-      // Génération et nettoyage de la requête SQL
+
+      // SQL query generation and cleaning
       if ($cachedSql !== null) {
         $sqlQueries = [$cachedSql];
-        
+
         if ($this->debug == 'True') {
           error_log("Using cached SQL for question: " . substr($question, 0, 50) . "...");
         }
       } else {
         $rawResponse = $this->chat->generateText($question);
-        
-        // Extraire les requêtes SQL du texte
+
+        // Extract SQL queries from the text
         $sqlQueries = $this->extractSqlQueries($rawResponse);
-        
+
         if (empty($sqlQueries)) {
-          // Si aucune requête SQL n'est trouvée, utiliser le nettoyage traditionnel
+          // If no SQL query is found, use the traditional cleaning
           $sqlQueries = [$this->cleanSqlResponse($rawResponse)];
         }
-        
-        // Mettre en cache la première requête SQL
+
+        // Cache the first SQL query
         if (!empty($sqlQueries[0])) {
           $this->cache->cacheResponse($question, $sqlQueries[0]);
         }
       }
-      
+
       if (empty($sqlQueries[0])) {
         throw new \Exception(CLICSHOPPING::getDef('text_no_valid_sql_query_could_extracted'));
       }
-      
+
       $results = [];
-      
+
       foreach ($sqlQueries as $sqlQuery) {
-        // Résolution des placeholders
+        // Resolve placeholders
         $resolvedQuery = $this->resolvePlaceholders($sqlQuery);
-        
-        // Validation syntaxique
-        $validation = $this->validateSqlSyntax($resolvedQuery);
-        
-        if (!$validation['is_valid']) {
-          // Tentative de correction
+
+        // Syntax validation
+        $validation = InputValidator::validateSqlQuery($resolvedQuery);
+
+        if (!$validation['valid']) {
+          // Attempt correction
           $correctedQuery = $this->applyConservativeCorrections($resolvedQuery, $validation['issues']);
-          
-          // Nouvelle validation après correction
-          $revalidation = $this->validateSqlSyntax($correctedQuery);
-          
-          if (!$revalidation['is_valid']) {
-            // Si toujours invalide, utiliser la requête originale
+
+          // Re-validation after correction
+          $revalidation = InputValidator::validateSqlQuery($correctedQuery);
+
+          if (!$revalidation['valid']) {
+            // If still invalid, use the original query
             $finalQuery = $sqlQuery;
             $this->correctionLog[] = CLICSHOPPING::getDef('text_correction_cancelled');
           } else {
@@ -1022,13 +1305,13 @@ class AnalyticsAgent
         } else {
           $finalQuery = $resolvedQuery;
         }
-        
-        // Exécution de la requête
+
+        // Execute the query
         try {
           $query = $this->db->prepare($finalQuery);
           $query->execute();
           $queryResults = $query->fetchAll();
-          
+
           $results[] = [
             'original_query' => $sqlQuery,
             'executed_query' => $finalQuery,
@@ -1037,18 +1320,24 @@ class AnalyticsAgent
             'corrections' => $this->correctionLog
           ];
         } catch (\Exception $e) {
-          // Tentative de récupération spécifique à l'erreur
+          // Try to recover from error
           $recoveryResult = $this->attemptErrorRecovery($e, $finalQuery, $sqlQuery);
-          
+
           if ($recoveryResult['success']) {
             $results[] = $recoveryResult['data'];
+
+            $this->securityLogger->logSecurityEvent(
+              "Analytics query recovered successfully for user {$this->userId}",
+              'info',
+              ['original_error' => $e->getMessage()]
+            );
           } else {
             throw new \Exception("Execution failed after recovery attempt:" . $e->getMessage());
           }
         }
       }
-      
-      // Si une seule requête a été exécutée, retourner un format compatible avec l'existant
+
+      // If only one query was executed, return a format compatible with the existing one
       if (count($results) === 1) {
         return [
           'type' => 'analytics_results',
@@ -1060,8 +1349,8 @@ class AnalyticsAgent
           'count' => $results[0]['count']
         ];
       }
-      
-      // Sinon, retourner les résultats multiples
+
+      // Otherwise, return multiple results
       return [
         'type' => 'analytics_results',
         'query' => $question,
@@ -1069,50 +1358,63 @@ class AnalyticsAgent
         'count' => count($results)
       ];
     } catch (\Exception $e) {
-      // Remonter l'exception pour la gestion d'erreurs de niveau supérieur
+      // Propagate the exception for higher-level error handling
       throw $e;
     }
   }
 
   /**
-   * Retrieves and caches the schema of a database table
-   * Returns column names and their corresponding data types
-   * Uses cache to minimize database queries
+   * Gets the schema for a specific table
+   * Uses caching to improve performance
+   * Handles table name validation and error logging
    *
-   * @param string $tableName Name of the table to get schema for
-   * @return array Associative array of column names and their types
-   *               Format: ['column_name' => 'data_type']
+   * @param string $table Table name to get schema for
+   * @return array Associative array where keys are column names and values are column types
    */
-  private function getTableSchema(string $tableName): array
+  private function getTableSchema(string $table): array
   {
-    // Utiliser le cache si disponible
-    if (isset($this->tableSchemaCache[$tableName])) {
-      return $this->tableSchemaCache[$tableName];
+    // Validate table name
+    $safeTable = InputValidator::sanitizeIdentifier($table);
+    if ($safeTable !== $table) {
+      $this->securityLogger->logSecurityEvent(
+        "Suspicious table name sanitized in getTableSchema: {$table} -> {$safeTable}",
+        'warning'
+      );
+      $table = $safeTable;
     }
-    
-    $schema = [];
-    
+
+    // Check cache first
+    if (isset($this->tableSchemaCache[$table])) {
+      return $this->tableSchemaCache[$table];
+    }
+
     try {
-      // Requête pour obtenir les informations sur les colonnes
-      $query = $this->db->prepare("DESCRIBE " . $tableName);
+      // Retrieve the table schema
+      $query = $this->db->prepare("DESCRIBE " . $table);
       $query->execute();
       $columns = $query->fetchAll(\PDO::FETCH_ASSOC);
-      
+
+      $schema = [];
       foreach ($columns as $column) {
         $schema[$column['Field']] = $column['Type'];
       }
-      
-      // Mettre en cache le schéma
-      $this->tableSchemaCache[$tableName] = $schema;
+
+      // Cache the schema
+      $this->tableSchemaCache[$table] = $schema;
+
+      return $schema;
     } catch (\Exception $e) {
-      // En cas d'erreur, retourner un schéma vide
-      if ($this->debug == 'True') {
-        error_log("Error getting schema for table $tableName: " . $e->getMessage());
+      $this->securityLogger->logSecurityEvent(
+        "Error getting schema for table {$table}: " . $e->getMessage(),
+        'error'
+      );
+
+      if ($this->debug) {
+        error_log("Error getting schema for table {$table}: " . $e->getMessage());
       }
-      $schema = [];
+
+      return [];
     }
-    
-    return $schema;
   }
 
   /**
@@ -1140,7 +1442,7 @@ class AnalyticsAgent
         return $results;
       }
 
-      // Adapter pour gérer les résultats multiples
+      // Adjust to handle multiple results
       if (isset($results['multi_query_results'])) {
         $allResults = [];
         foreach ($results['multi_query_results'] as $result) {
@@ -1151,23 +1453,23 @@ class AnalyticsAgent
         $interpretation = $this->interpretResults($question, $results['results']);
       }
 
-      // Préparer la réponse
+      // Prepare the response
       $response = [
         'type' => 'analytics_response',
         'question' => $question,
         'interpretation' => $interpretation,
         'count' => $results['count']
       ];
-      
-      // Ajouter les détails de requête selon le type de résultat
+
+      // Add query details based on result type
       if (isset($results['multi_query_results'])) {
         $response['multi_query_results'] = $results['multi_query_results'];
       } else {
         $response['sql_query'] = $results['sql_query'];
         $response['original_sql_query'] = $results['original_sql_query'] ?? $results['sql_query'];
         $response['results'] = $results['results'];
-        
-        // Ajouter les informations de correction si disponibles
+
+        // Add correction information if available
         if (isset($results['corrections']) && !empty($results['corrections'])) {
           $response['corrections'] = $results['corrections'];
         }
@@ -1175,19 +1477,20 @@ class AnalyticsAgent
 
       return $response;
     } catch (\Exception $e) {
-      // Log de l'erreur pour débogage
+      // Log the error for debugging
       if ($this->debug == 'True') {
         error_log("Analytics Processing Error: " . $e->getMessage());
       }
 
       return [
         'type' => 'error',
-        'message' => $e->getMessage(),
+        'message' => 'Error processing business query: ' . $e->getMessage(),
         'question' => $question,
         'suggestion' => $this->generateErrorSuggestion($e->getMessage(), $question)
       ];
     }
   }
+
 
   /**
    * Interprets query results in natural language
@@ -1200,31 +1503,42 @@ class AnalyticsAgent
    */
   private function interpretResults(string $question, array $results): string
   {
-    // Créer une clé de cache spécifique pour l'interprétation
-    $interpretCacheKey = "interpret_" . $this->cache->generateCacheKey($question . json_encode($results));
-    
-    // Vérifier si l'interprétation est dans le cache
+    // Clean before encode
+    $cleanResults = $this->sanitizeResultsForPrompt($results);
+
+    // Secure the question
+    $safeQuestion = InputValidator::validateParameter($question, 'string');
+    if ($safeQuestion !== $question) {
+      $this->securityLogger->logSecurityEvent(
+        "Question sanitized in generateSqlQuery",
+        'warning'
+      );
+      $question = $safeQuestion;
+    }
+
+    // Cache key generation
+    $interpretCacheKey = "interpret_" . $this->cache->generateCacheKey($question . json_encode($cleanResults));
+
+    // Check the cache
     if ($this->enablePromptCache && isset($this->promptCache[$interpretCacheKey])) {
       if ($this->debug == 'True') {
         error_log("Using cached interpretation for question: " . substr($question, 0, 50) . "...");
       }
-      
-      // Mettre à jour le timestamp pour indiquer que cette entrée est toujours utilisée
       $this->promptCache[$interpretCacheKey]['last_used'] = time();
-      
       return $this->promptCache[$interpretCacheKey]['response'];
     }
-    
+
+    //  Promptpreparation
     $array = [
       'question' => $question,
-      'results' => json_encode($results, JSON_PRETTY_PRINT)
+      'results' => json_encode($cleanResults, JSON_PRETTY_PRINT)
     ];
-
     $prompt = CLICSHOPPING::getDef('text_interpret_results', $array);
 
+    // interpretation generation
     $interpretation = $this->chat->generateText($prompt);
-    
-    // Mettre en cache l'interprétation
+
+    // create the cache
     if ($this->enablePromptCache) {
       $this->promptCache[$interpretCacheKey] = [
         'prompt' => $prompt,
@@ -1232,8 +1546,6 @@ class AnalyticsAgent
         'created' => time(),
         'last_used' => time()
       ];
-      
-      // Sauvegarder le cache
       $this->cache->savePromptCache();
     }
 
@@ -1283,5 +1595,59 @@ class AnalyticsAgent
     }
 
     return array_unique($matchedCategories);
+  }
+  
+  /**
+   * Cleans the SQL response by removing formatting tags
+   * Removes SQL code block markers
+   * Strips HTML tags
+   * Trims whitespace
+   *
+   * @param string $response Raw response from the model
+   * @return string Cleaned SQL query ready for execution
+   */
+  private function cleanSqlResponse(string $response): string
+  {
+    $cleaned = preg_replace('/```sql\s*|\s*```/', '', $response);
+    $cleaned = strip_tags($cleaned);
+    $cleaned = trim($cleaned);
+
+    return $cleaned;
+  }
+
+/**
+ * Sanitizes results for inclusion in a prompt
+ * Handles nested arrays, objects, and various data types
+ * Implements error handling and logging
+ *
+ * @param array $results Results to sanitize
+ * @return array Sanitized results
+ */
+  private function sanitizeResultsForPrompt(array $results): array
+  {
+    $cleanedResults = [];
+
+    foreach ($results as $rowKey => $row) {
+      if (!is_array($row)) {
+        // Simple encoding for scalar values
+        $cleanedResults[$rowKey] = htmlspecialchars((string)$row, ENT_QUOTES, 'UTF-8');
+        continue;
+      }
+
+      $cleanedRow = [];
+      foreach ($row as $key => $value) {
+        // Clean each cell value
+        if (is_array($value)) {
+          $cleanedRow[$key] = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } elseif (is_object($value)) {
+          $cleanedRow[$key] = '[object]';
+        } else {
+          $cleanedRow[$key] = htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+        }
+      }
+      $cleanedResults[$rowKey] = $cleanedRow;
+    }
+
+    return $cleanedResults;
   }
 }
