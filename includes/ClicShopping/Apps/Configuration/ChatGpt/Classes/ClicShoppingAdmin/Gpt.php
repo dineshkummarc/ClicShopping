@@ -15,6 +15,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
+use LLPhant\Chat\MistralAIChat;
 use LLPhant\Chat\OllamaChat;
 use LLPhant\Chat\OpenAIChat;
 use LLPhant\Exception\MissingParameterExcetion;
@@ -89,6 +90,8 @@ class Gpt {
   public static function getGptModel(): array
   {
     $array = [
+      ['id' => 'GPT‑4.1-mini', 'text' => 'OpenAi gpt 4.1-mini'],
+      ['id' => 'GPT‑4.1-nano', 'text' => 'OpenAi gpt-4.1-nano'],
       ['id' => 'gpt-4o-mini', 'text' => 'OpenAi gpt-4o-mini'],
       ['id' => 'gpt-4o', 'text' => 'OpenAi gpt-4o'],
       ['id' => 'gpt-3o-mini', 'text' => 'OpenAi gpt-3o-mini'],
@@ -100,6 +103,7 @@ class Gpt {
       ['id' => 'anth-sonnet', 'text' => 'Anthropic Claude Sonnet 3.5'],
       ['id' => 'anth-opus', 'text' => 'Anthropic Claude Opus'],
       ['id' => 'anth-haiku', 'text' => 'Anthropic Claude Haiku'],
+      ['id' => 'mistral', 'text' => 'Mistral'],
     ];
 
     return $array;
@@ -125,11 +129,15 @@ class Gpt {
    * @param array|null $parameters Optional parameters for configuring the OpenAI model, such as model type and options.
    * @return mixed The configured OpenAIChat instance.
    */
-  public static function getOpenAiGpt(array|null $parameters): mixed
+  public static function getOpenAiGpt(array|null $parameters, string|null $api_key = null): mixed
   {
-
      $config = new OpenAIConfig();
-     $config->apiKey = CLICSHOPPING_APP_CHATGPT_CH_API_KEY;
+
+     if (is_null($api_key)) {
+        $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY;
+     }
+
+     $config->apiKey = $api_key;
 
      if (!is_null($parameters)) {
         $config->model = $parameters['model'];
@@ -226,19 +234,60 @@ class Gpt {
   public static function getAnthropicChat(string $model, int|null $maxtoken = null, array|null $modelOptions = null): mixed
   {
     $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_ANTHROPIC;
+
+    if (is_null($modelOptions)){
+      $modelOptions = [
+        'temperature' => (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE,
+        'top_p' => (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P,
+        'max_tokens_to_sample' => (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN,
+        'stop_sequences' => ['\n']
+      ];
+    }
+
+    $result = false;
+
+    if (!empty($api_key)) {
+      if ($model === 'anth-sonnet') {
+        $result = new AnthropicChat(
+          new AnthropicConfig(AnthropicConfig::CLAUDE_3_5_SONNET, $maxtoken, $modelOptions, $api_key)
+        );
+      } elseif ($model === 'anth-opus') {
+        $result = new AnthropicChat(
+          new AnthropicConfig(AnthropicConfig::CLAUDE_3_OPUS, $maxtoken, $modelOptions, $api_key)
+        );
+      } else {
+        $result = new AnthropicChat(
+          new AnthropicConfig(AnthropicConfig::CLAUDE_3_HAIKU, $maxtoken, $modelOptions, $api_key)
+        );
+      }
+    }
+
+    return $result;
+  }
+
+
+  /**
+   * Creates an instance of the MistralAIChat class based on the specified model and configuration options.
+   *
+   * @param string $model The specific model identifier to use for the MistralAIChat instance.
+   * @param int|null $maxtoken The maximum number of tokens the model can output.
+   *                           Defaults to the configured max token if not provided.
+   * @return mixed An instance of MistralAIChat initialized with the provided parameters, or false on failure.
+   */
+  public static function getMistralChat(string $model, int|null $maxtoken = null): mixed
+  {
+    $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL;
     $result = false;
 
     if (is_null($maxtoken)) {
       $maxtoken = (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN;
     }
 
-    if (!empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_ANTHROPIC)) {
-      if ($model = 'anth-sonnet') {
-        $result = new AnthropicChat(new AnthropicConfig(AnthropicConfig::CLAUDE_3_5_SONNET, $maxtoken, $modelOptions, $api_key));
-      } elseif ($model = 'anth-opus') {
-        $result = new AnthropicChat(new AnthropicConfig(AnthropicConfig::CLAUDE_3_OPUS, $maxtoken, $modelOptions, $api_key));
-      } else {
-        $result = new AnthropicChat(new AnthropicConfig(AnthropicConfig::CLAUDE_3_HAIKU, $maxtoken, $modelOptions, $api_key));
+    if (!empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL)) {
+      if ($model = 'mistral') {
+        $config = new OpenAIConfig();
+        $config->apiKey = $api_key;
+        $result = new MistralAIChat($config);
       }
     }
 
@@ -261,6 +310,8 @@ class Gpt {
       $client = self::getOpenAIChat($question, $maxtoken, $temperature, $engine, $max);
     } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'anth') === 0) {
        $client = self::getAnthropicChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL, $maxtoken);
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'mistral') === 0) {
+      $client = self::getMistralChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL, $maxtoken);
     } else {
       $client = self::getOllamaChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL);
     }

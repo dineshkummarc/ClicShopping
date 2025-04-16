@@ -10,10 +10,10 @@ Add embeding for products
 Add embeding for page manager
 Add product recommendation module for products_info template using the embedding
 Add rag via chatbot
-Allow to use the rag and retrieve the data inside the database or inside the llm
+Allow to use the rag and rerieve the data inside the database or inside the llm
 Allow the rag to search as specific information via a text request
 Allow the rag to make statistic via dynamic query
-Intelligent rag with agent BI 
+Intelligent rag with agent BI allowing to use diffrent embedding model
 
 ------------------
 version3.456

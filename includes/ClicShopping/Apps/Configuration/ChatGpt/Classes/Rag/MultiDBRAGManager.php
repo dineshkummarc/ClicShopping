@@ -11,6 +11,7 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
@@ -72,8 +73,6 @@ class MultiDBRAGManager
     $this->language = Registry::get('Language');
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
 
-
-    // Préparation des paramètres pour getOpenAiGpt
     $parameters = null;
     if (!is_null($model) || !empty($modelOptions)) {
       $parameters = $modelOptions;
@@ -84,11 +83,10 @@ class MultiDBRAGManager
       }
     }
 
-    // Initialisation de l'environnement OpenAI via la classe Gpt existante
     Gpt::getOpenAiGpt($parameters);
 
-    // Création d'un adaptateur pour utiliser gptOpenAiEmbeddings comme générateur d'embeddings
-    $this->embeddingGenerator = new class(Gpt::class) implements EmbeddingGeneratorInterface {
+    $this->embeddingGenerator = new class(Gpt::class) implements EmbeddingGeneratorInterface
+    {
       private $gptClass;
 
       public function __construct(string $gptClass) {
@@ -113,14 +111,15 @@ class MultiDBRAGManager
       }
 
       public function getEmbeddingLength(): int {
-        return 3072; // Valeur par défaut pour OpenAI
+        return NewVector::getEmbeddingLength();
       }
     };
 
-    // Si aucune table n'est spécifiée, récupérer toutes les tables d'embedding disponibles
+// If no table is specified, retrieve all available embedding tables
     if (empty($tableNames)) {
       try {
         $tableNames = DoctrineOrm::getEmbeddingTables();
+
         if ($this->debug == 'True') {
           error_log("Embedding tables found: " . implode(", ", $tableNames));
         }
@@ -132,10 +131,11 @@ class MultiDBRAGManager
       }
     }
 
-    // Initialisation des vector stores pour chaque table
+    // Vector stores initializing for every table
     foreach ($tableNames as $tableName) {
       try {
         $this->vectorStores[$tableName] = new MariaDBVectorStore($this->embeddingGenerator, $tableName);
+
         if ($this->debug == 'True') {
           error_log("Vector store initialized for the table: " . $tableName);
         }
@@ -163,11 +163,11 @@ class MultiDBRAGManager
   public function addDocument(string $content, string $tableName, string $type = 'text', string $sourceType = 'manual', string $sourceName = 'manual', string|null $entityType = null, int|null $entityId = null, int|null $languageId = null): bool
   {
     try {
-      // Vérifier si la table existe dans les vector stores
+      // Check the table if the vector exist
       if (!isset($this->vectorStores[$tableName])) {
-        // Si la table n'existe pas, vérifier si elle existe dans la base de données
+        // If the table does not exist, chack if exist inside the db
         if (!DoctrineOrm::checkTableStructure($tableName)) {
-          // Si la table n'existe pas dans la base de données, la créer
+          // Id the table does not existe, create it
           if (!DoctrineOrm::createTableStructure($tableName)) {
             throw new \Exception("Unable to create the table {$tableName}");
           }
@@ -177,7 +177,7 @@ class MultiDBRAGManager
         $this->vectorStores[$tableName] = new MariaDBVectorStore($this->embeddingGenerator, $tableName);
       }
 
-      // Création du document avec les métadonnées appropriées
+      // meta data creation
       $document = new Document();
       $document->content = $content;
       $document->sourceType = $sourceType;
@@ -271,19 +271,19 @@ class MultiDBRAGManager
         } catch (\Exception $e) {
           if ($this->debug == 'True') {
             error_log("Error while searching in table {$tableName}: " . $e->getMessage());
-            // Continuer avec les autres tables en cas d'erreur
+            //Continue with other table is if error
           }
         }
       }
 
-      // Trier les résultats par score de similarité (du plus élevé au plus bas)
+      // Sort the result by similarity score (High to low)
       if (!empty($allResults)) {
         usort($allResults, function ($a, $b) {
           return $b->metadata['score'] <=> $a->metadata['score'];
         });
       }
 
-      // Limiter le nombre total de résultats
+      // litmit the total result
       $finalResults = array_slice($allResults, 0, $limit);
       if ($this->debug == 'True') {
         error_log("Total number of results found: " . count($finalResults));
@@ -318,14 +318,14 @@ class MultiDBRAGManager
   public function answerQuestion(string $question, int $limit = 5, float $minScore = 0.5, int|null $languageId = null, string|null $entityType = null, array $modelOptions = []): string
   {
     try {
-      // Recherche des documents pertinents
+      // research document
       $documents = $this->searchDocuments($question, $limit, $minScore, $languageId, $entityType);
 
       if (empty($documents)) {
         return CLICSHOPPING::getDef('text_rag_answer_question_not_found');
       }
 
-      // Préparation du contexte et des liens
+      // contact preparation and links
       $context = '';
 
       foreach ($documents as $doc) {
@@ -355,7 +355,7 @@ class MultiDBRAGManager
         }
       }
 
-      // Utiliser la classe Gpt existante pour générer la réponse
+      // Use the existing classe to create the response
      if ($this->debug == 'True') {
         $prompt = str_replace(['{context}', '{question}', '{links}', '{score}'], [$context, $question, $link, $score], $this->systemMessageTemplate);
       } else {
@@ -367,7 +367,7 @@ class MultiDBRAGManager
 
         return $response;
       } else {
-        // Utilisation standard sans options spécifiques
+        // Use the standard without specific options
         return Gpt::getGptResponse($prompt);
       }
     } catch (\Exception $e) {

@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 
@@ -53,7 +54,7 @@ class VectorType extends Type
    */
   public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
   {
-    $dimension = $column['dimension'] ?? 3072;
+    $dimension = $column['dimension'] ?? NewVector::getEmbeddingLength();
 
     return "VECTOR({$dimension})";
   }

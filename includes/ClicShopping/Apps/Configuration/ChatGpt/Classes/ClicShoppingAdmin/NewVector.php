@@ -10,74 +10,205 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin;
 
-use ClicShopping\Custom\Common\DivisionByZeroError;
-use ClicShopping\Custom\Common\InvalidArgumentException;
-use ClicShopping\OM\CLICSHOPPING;
 use LLPhant\Chat\OpenAIChat;
 use LLPhant\Embeddings\DataReader\FileDataReader;
 use LLPhant\Embeddings\Document;
 use LLPhant\Embeddings\DocumentSplitter\DocumentSplitter;
 use LLPhant\Embeddings\EmbeddingFormatter\EmbeddingFormatter;
 use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
+use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3SmallEmbeddingGenerator;
+use LLPhant\Embeddings\EmbeddingGenerator\Mistral\MistralEmbeddingGenerator;
+use LLPhant\Embeddings\EmbeddingGenerator\Ollama\OllamaEmbeddingGenerator;
+use LLPhant\Embeddings\EmbeddingGenerator\VoyageAI\Voyage3EmbeddingGenerator;
+use LLPhant\Embeddings\EmbeddingGenerator\VoyageAI\Voyage3LargeEmbeddingGenerator;
+use LLPhant\Embeddings\EmbeddingGenerator\VoyageAI\Voyage3LiteEmbeddingGenerator;
+use LLPhant\OpenAIConfig;
+use LLPhant\VoyageAIConfig;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-
-use Doctrine\ORM\EntityManager;
-use Doctrine\DBAL\DriverManager;
-use Doctrine\ORM\ORMSetup;
 
 class NewVector
 {
   /**
+   * Retourne la clé API appropriée en fonction du modèle configuré
+   * 
+   * @return string La clé API correspondant au modèle configuré
+   */
+  private static function getApiKey(): string
+  {
+    $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY;
+
+    // Déterminer quelle clé API utiliser en fonction du modèle
+    if (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'mistral') === 0) {
+      $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL;
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'voyage') === 0) {
+      $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_VOYAGE_AI;
+    }
+
+    return $api_key;
+  }
+
+  /**
+   * Vérifie si les clés API nécessaires sont disponibles pour le modèle sélectionné
+   * 
+   * @param string $model Le modèle d'embedding à vérifier
+   * @return bool True si les clés API sont disponibles, false sinon
+   */
+  private static function checkApiKeys(string $model): bool
+  {
+    if (strpos($model, 'gpt') === 0) {
+      return !empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY);
+    } elseif (strpos($model, 'mistral') === 0) {
+      return !empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL);
+    } elseif (strpos($model, 'voyage') === 0) {
+      return !empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_VOYAGE_AI);
+    } elseif (strpos($model, 'ollama') === 0) {
+      return true; // Ollama n'a pas besoin de clé API
+    }
+    
+    return false;
+  }
+
+  /**
+   * Retourne la liste des modèles d'embedding disponibles
+   * 
+   * @return array Tableau des modèles d'embedding disponibles
+   */
+  public static function getEmbeddingModel(): array
+  {
+    $array = [
+      ['id' => 'gpt-large', 'text' => 'OpenAI Large embedding (3072 dimensions)'],
+      ['id' => 'gpt-medium', 'text' => 'OpenAI Medium embedding (1536 dimensions)'],
+      ['id' => 'ollama', 'text' => 'Ollama embedding (1536 dimensions)'],
+      ['id' => 'mistral', 'text' => 'Mistral embedding (1024 dimensions)'],
+      ['id' => 'voyage3', 'text' => 'Voyage 3 embedding (1024 dimensions)'],
+      ['id' => 'voyage3-large', 'text' => 'Voyage 3 Large embedding (4096 dimensions)'],
+      ['id' => 'voyage3-lite', 'text' => 'Voyage 3 Lite embedding (384 dimensions)'],
+    ];
+
+    return $array;
+  }
+
+  /**
+   * Retourne le générateur d'embeddings approprié en fonction du modèle configuré.
+   *
+   * @return object|null Instance du générateur d'embeddings approprié ou null si la clé API est manquante
+   */
+  private static function getEmbeddingGenerator()
+  {
+    Gpt::getEnvironment();
+    
+    $model = CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL;
+    
+    // Vérifier si les clés API nécessaires sont disponibles
+    if (!self::checkApiKeys($model)) {
+      return null;
+    }
+    
+    // Obtenir la clé API appropriée
+    $api_key = self::getApiKey();
+    
+    if (strpos($model, 'gpt-large') === 0) {
+      $config = new OpenAIConfig();
+      $config->apiKey = $api_key;
+      return new OpenAI3LargeEmbeddingGenerator($config);
+    } elseif (strpos($model, 'gpt-medium') === 0) {
+      $config = new OpenAIConfig();
+      $config->apiKey = $api_key;
+      return new OpenAI3SmallEmbeddingGenerator($config);
+    } elseif (strpos($model, 'mistral') === 0) {
+      $config = new OpenAIConfig();
+      $config->apiKey = $api_key;
+      return new MistralEmbeddingGenerator($config);
+    } elseif (strpos($model, 'voyage3-large') === 0) {
+      $config = new VoyageAIConfig();
+      $config->apiKey = $api_key;
+      return new Voyage3LargeEmbeddingGenerator($config);
+    } elseif (strpos($model, 'voyage3-lite') === 0) {
+      $config = new VoyageAIConfig();
+      $config->apiKey = $api_key;
+      return new Voyage3LiteEmbeddingGenerator($config);
+    } elseif (strpos($model, 'voyage3') === 0) {
+      $config = new VoyageAIConfig();
+      $config->apiKey = $api_key;
+      return new Voyage3EmbeddingGenerator($config);
+    } else {
+      // Par défaut, utiliser Ollama pour les embeddings
+      return new OllamaEmbeddingGenerator($model);
+    }
+  }
+
+  /**
    * Generates embeddings for a set of documents or a text description. If a file path is provided, the content of the file
    * is read and converted into embeddings. If a text description is provided instead, it is directly processed for embedding generation.
+   * 
+   * @param string|null $path_file_upload Le chemin du fichier à traiter
+   * @param string|null $text_description Le texte à traiter
+   * @param int $document_number Nombre de documents à traiter
+   * @return array|null Les embeddings générés ou null en cas d'erreur
    */
  public static function createEmbedding(string|null $path_file_upload, string|null $text_description, int $document_number = 3)
  {
-   Gpt::getEnvironment();
+    // Obtenir le générateur d'embeddings approprié
+    $embeddingGenerator = self::getEmbeddingGenerator();
+    
+    // Vérifier si le générateur d'embeddings est disponible
+    if ($embeddingGenerator === null) {
+      return null;
+    }
 
-     if (is_file($path_file_upload)) {
-       $filePath = $path_file_upload;
-       $reader = new FileDataReader($filePath);
-       $documents = $reader->getDocuments();
-       $splitDocuments = DocumentSplitter::splitDocuments($documents, 128);
-       $formattedDocuments = EmbeddingFormatter::formatEmbeddings($splitDocuments);
-       $embeddingGenerator = new OpenAI3LargeEmbeddingGenerator();
-       $embeddedDocuments = $embeddingGenerator->embedDocuments($formattedDocuments);
-     } else {
-       // Branche pour traitement d'un texte brut
-       $embeddingGenerator = new OpenAI3LargeEmbeddingGenerator();
-       $embedded = $embeddingGenerator->embedText($text_description);
+    try {
+      if (is_file($path_file_upload)) {
+        $filePath = $path_file_upload;
+        $reader = new FileDataReader($filePath);
+        $documents = $reader->getDocuments();
+        $splitDocuments = DocumentSplitter::splitDocuments($documents, 128);
+        $formattedDocuments = EmbeddingFormatter::formatEmbeddings($splitDocuments);
+        $embeddingGenerator = self::getEmbeddingGenerator();
+        $embeddedDocuments = $embeddingGenerator->embedDocuments($formattedDocuments);
+      } else {
+        // Branche pour traitement d'un texte brut
+        $embeddingGenerator = self::getEmbeddingGenerator();
+        $embedded = $embeddingGenerator->embedText($text_description);
 
-       $document = new Document();
-       $document->content = $text_description;
-       $document->embedding = $embedded;
-       $document->sourceName = 'manual';
-       $document->sourceType = 'manual';
+        $document = new Document();
+        $document->content = $text_description;
+        $document->embedding = $embedded;
+        $document->sourceName = 'manual';
+        $document->sourceType = 'manual';
 
-       $splitDocuments = DocumentSplitter::splitDocument($document, 128);
-       $formattedDocuments = EmbeddingFormatter::formatEmbeddings($splitDocuments);
+        $splitDocuments = DocumentSplitter::splitDocument($document, 128);
+        $formattedDocuments = EmbeddingFormatter::formatEmbeddings($splitDocuments);
 
-       // Génération des embeddings sur le document découpé
-       $embeddedDocuments = $embeddingGenerator->embedDocuments($formattedDocuments);
-     }
+        // Generation of embeddings on the split document.
+        $embeddedDocuments = $embeddingGenerator->embedDocuments($formattedDocuments);
+      }
 
-     return $embeddedDocuments;
+      return $embeddedDocuments;
+    } catch (\Exception $e) {
+      // Gérer les erreurs potentielles lors de la génération d'embeddings
+      error_log('Erreur lors de la génération d\'embeddings: ' . $e->getMessage());
+      return null;
+    }
  }
-
-
 
   /**
    * Initializes and returns an OpenAIChat instance configured with specified parameters.
    *
-   * @return OpenAIChat An instance of the OpenAIChat class configured for GPT functionality.
+   * @return mixed An instance of the OpenAIChat class configured for GPT functionality.
    */
-  private static function chat(): OpenAIChat
+  private static function chat(): mixed // Not use currently
   {
-    $parameters = ['model' => 'gpt-4o'];
-    $chat = Gpt::getOpenAiGpt($parameters);
+    $api_key = self::getApiKey();
+    $parameters = ['model' => CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL];
+    
+    $config = new OpenAIConfig();
+    $config->apiKey = $api_key;
+    $config->model = $parameters['model'];
+    $config->modelOptions = $parameters;
+    
+    $chat = new OpenAIChat($config);
     return $chat;
   }
-
 
   /**
    * Retrieves the content of a document either from a specified file path or from a text description.
@@ -187,5 +318,30 @@ class NewVector
     }
 
     return $dot_product / (sqrt($magnitude_vec1) * sqrt($magnitude_vec2));
+  }
+
+  /**
+   * Retourne la longueur des embeddings en fonction du modèle utilisé.
+   * 
+   * @param int $vector Valeur par défaut pour OpenAI (3072)
+   * @return int La longueur des embeddings
+   */
+  public static function getEmbeddingLength(): int
+  {
+    if (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'gpt-large') === 0) {
+      return 3072; // OpenAI Large
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'gpt-medium') === 0) {
+      return 1536; // OpenAI Medium
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'mistral') === 0) {
+      return 1024; // Mistral
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'voyage3-large') === 0) {
+      return 4096; // Voyage3 Large
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'voyage3-lite') === 0) {
+      return 384; // Voyage3 Lite
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'voyage3') === 0) {
+      return 1024; // Voyage3 standard
+    } else {
+      return 1536; // Ollama (valeur par défaut)
+    }
   }
 }

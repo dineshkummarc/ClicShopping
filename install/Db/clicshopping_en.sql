@@ -1698,7 +1698,12 @@ INSERT INTO configuration VALUES(1747, 'Do you want to use the embeddging OpenAI
 INSERT INTO configuration VALUES(1748, 'Do you want to use the embeddging OpenAI ?', 'CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING', 'False', 'If you want to use the embedding (3072), you must have at least mariaDb 11.8 version', 6, 0, NULL, '2023-09-15 09:16:47', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1749, 'Do you want to use the OpenAI rag approach ?', 'CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER', 'False', 'If you want to use the rag to look some information inside ClicShopping,please choose True via the chatbot', 6, 0, NULL, '2023-09-15 09:16:47', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1750, 'Do you want to OpenAI rag debug approach ?', 'CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER', 'False', 'If you want to see the error log about the process, please choose True', 6, 0, NULL, '2023-09-15 09:16:47', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
-INSERT INTO configuration VALUES(1794, 'Do you want to enable Rag cache ?', 'CLICSHOPPING_APP_CHATGPT_CH_CACHE_RAG_MANAGER', 'True', 'Allow to cache the request, please choose True', 6, 0, NULL, '2025-04-14 09:28:10', NULL, NULL);
+INSERT INTO configuration VALUES(1751, 'Do you want to enable Rag cache ?', 'CLICSHOPPING_APP_CHATGPT_CH_CACHE_RAG_MANAGER', 'True', 'Allow to cache the request, please choose True', 6, 0, NULL, '2025-04-14 09:28:10', NULL, NULL);
+INSERT INTO configuration VALUES(1752, 'Mistral Api Key', 'CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL', '', 'Please insert the api key (https://www.mistral.ai)', 6, 0, NULL, '2025-04-16 13:09:02', NULL, NULL);
+INSERT INTO configuration VALUES(1753, 'Default embedding model', 'CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL', 'gpt-large', ' Please, please select the embedding model you want to apply. <br />All the embedding_models does not have the same parameters and can generate an error on the response. <br />Please before to use an embedding, please inform yourself.', 6, 0, NULL, '2025-04-16 13:25:29', NULL, NULL);
+INSERT INTO configuration VALUES(1754, 'cfg_chatgpt_api_key_voyage_ai_title', 'VoyageAI Api Key', '', 'Please, insert the Api Key (https://www.voyageai.com)<br />Only for the embedding.', 6, 0, NULL, '2025-04-16 13:40:54', NULL, NULL);
+
+
 
 
 INSERT INTO configuration_group VALUES(1, 'Store Setup', 'General Information on the Store.', 1, 1);
