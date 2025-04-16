@@ -39,7 +39,7 @@ class RateLimit
         $this->namespace = $namespace;
         $this->maxRequests = $maxRequests;
         $this->timeWindow = $timeWindow;
-        $this->storageFile = CLICSHOPPING::BASE_DIR . 'Work/Cache/rate_limits.cache';
+        $this->storageFile = CLICSHOPPING::BASE_DIR . 'Work/Cache/rag_rate_limits.cache';
         
         // Initialize storage
         $this->loadStorage();
@@ -232,7 +232,7 @@ class RateLimit
         
         // Write to security log file
         file_put_contents(
-            $logDir . '/rate_limit.log',
+            $logDir . '/rag_rate_limits.cache',
             $logEntry,
             FILE_APPEND
         );

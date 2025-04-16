@@ -159,7 +159,7 @@ class InputValidator
         
         // Write to security log file
         file_put_contents(
-            $logDir . '/security.log',
+            $logDir . '/rag_security.cache',
             $logEntry,
             FILE_APPEND
         );

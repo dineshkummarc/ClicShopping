@@ -24,7 +24,7 @@ class Cache
   private array $promptCache = [];
   private bool $enablePromptCache = false;
   private bool $debug = false;
-
+  private bool $cache = false;
   /**
    * Cache constructor.
    * Initializes the cache system and loads existing cached prompts
@@ -34,9 +34,10 @@ class Cache
   public function __construct($enablePromptCache = true)
   {
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
+    $this->cache = defined('CLICSHOPPING_APP_CHATGPT_CH_CACHE_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_CACHE_RAG_MANAGER === 'True';
 
     // Active le cache si autorisé par la config
-    if ($this->debug == 'True') {
+    if ($this->cache == 'True') {
       $this->enablePromptCache = true;
       $this->setPromptCacheEnabled($enablePromptCache);
     }
@@ -74,7 +75,7 @@ class Cache
       $this->loadPromptCache();
     }
 
-    if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+    if ($this->debug == 'True') {
       error_log("Prompt cache " . ($enable ? "enabled" : "disabled"));
     }
   }

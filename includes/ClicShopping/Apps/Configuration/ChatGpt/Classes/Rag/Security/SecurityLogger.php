@@ -37,7 +37,7 @@ class SecurityLogger
     public function __construct(string $logLevel = 'info', int $maxLogSize = 10485760, int $logRotations = 5)
     {
         $this->logDir = CLICSHOPPING::BASE_DIR . 'Work/Logs';
-        $this->logFile = $this->logDir . '/security.log';
+        $this->logFile = $this->logDir . '/rag_security.cache';
         $this->maxLogSize = $maxLogSize;
         $this->logRotations = $logRotations;
         $this->logLevel = $logLevel;
