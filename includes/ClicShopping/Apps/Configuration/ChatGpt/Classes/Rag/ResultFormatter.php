@@ -69,12 +69,12 @@ class ResultFormatter
 
     // Display the SQL query if available
     if (!empty($results['sql_query'])) {
-      $output .= "<div class='sql-query'><strong>Requête SQL :</strong> <pre>" . htmlspecialchars($results['sql_query']) . "</pre></div>";
+      $output .= "<div class='sql-query'><strong>SQL request :</strong> <pre>" . htmlspecialchars($results['sql_query']) . "</pre></div>";
     }
 
     // Display the interpretation
     if (!empty($results['interpretation'])) {
-      $output .= "<div class='interpretation'><strong>Interprétation :</strong> " . $results['interpretation'] . "</div>";
+      $output .= "<div class='interpretation'><strong>Interpretation :</strong> " . $results['interpretation'] . "</div>";
     }
 
     // Display the results as a table if available

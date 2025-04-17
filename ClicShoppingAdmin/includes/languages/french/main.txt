@@ -478,7 +478,6 @@ success_migration_done = La migration a été un succés
 text_rag_system_message_template = Utilise les informations suivantes pour répondre à la question de l'utilisateur.
 Si la réponse n’est pas explicitement présente dans les informations fournies, indique-le clairement.
 Dans ce cas, propose une réponse basée sur tes connaissances générales, tout en précisant que la source n’a pas été trouvée dans le contexte.
-
 ----------------------------
 Contexte (sources disponibles) :
 {context}
@@ -538,14 +537,14 @@ Les tables importantes sont :
 - reviews_sentiment_description : Contient les descriptions des avis (id, languages_id, description))
 
 Si on te demande :
-- 'nombre de produits par catégorie' → SELECT cd.categories_name, COUNT(p.products_id) AS product_count FROM clic_products p JOIN clic_products_to_categories ptc ON p.products_id = ptc.products_id JOIN clic_categories c ON ptc.categories_id = c.categories_id JOIN clic_categories_description cd ON c.categories_id = cd.categories_id WHERE cd.language_id = [language_id] GROUP BY c.categories_id, cd.categories_name ORDER BY product_count DESC
+- 'nombre de produits par catégorie' → SELECT cd.categories_name, COUNT(p.products_id) AS product_count FROM clic_products p JOIN clic_products_to_categories ptc ON p.products_id = ptc.products_id JOIN clic_categories c ON ptc.categories_id = c.categories_id JOIN clic_categories_description cd ON c.categories_id = cd.categories_id WHERE cd.language_id = {{language_id}} GROUP BY c.categories_id, cd.categories_name ORDER BY product_count DESC
 - 'moyenne des commandes par mois' → SELECT MONTH(o.date_purchased) AS month, YEAR(o.date_purchased) AS year, AVG(ot.value) AS average_order_value FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' GROUP BY YEAR(o.date_purchased), MONTH(o.date_purchased) ORDER BY year, month
-- 'top produits vendus' → SELECT pd.products_name, SUM(op.products_quantity) AS total_sold FROM clic_orders_products op JOIN clic_products_description pd ON op.products_id = pd.products_id WHERE pd.language_id = [language_id] GROUP BY op.products_id, pd.products_name ORDER BY total_sold DESC LIMIT 10
-- 'produits en alerte de stock' → SELECT pd.products_name, p.products_quantity, p.products_quantity_alert FROM clic_products p JOIN clic_products_description pd ON p.products_id = pd.products_id WHERE p.products_quantity <= p.products_quantity_alert AND pd.language_id = [language_id] ORDER BY p.products_quantity ASC
+- 'top produits vendus' → SELECT pd.products_name, SUM(op.products_quantity) AS total_sold FROM clic_orders_products op JOIN clic_products_description pd ON op.products_id = pd.products_id WHERE pd.language_id = {{language_id}} GROUP BY op.products_id, pd.products_name ORDER BY total_sold DESC LIMIT 10
+- 'produits en alerte de stock' → SELECT pd.products_name, p.products_quantity, p.products_quantity_alert FROM clic_products p JOIN clic_products_description pd ON p.products_id = pd.products_id WHERE p.products_quantity <= p.products_quantity_alert AND pd.language_id = {{language_id}} ORDER BY p.products_quantity ASC
 - 'chiffre d'affaires par mois' → SELECT MONTH(o.date_purchased) AS month, YEAR(o.date_purchased) AS year, SUM(ot.value) AS total_revenue FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' GROUP BY YEAR(o.date_purchased), MONTH(o.date_purchased) ORDER BY year, month
 - 'combien de produits sont disponibles' → SELECT COUNT(products_id) AS total_available_products FROM clic_products WHERE products_status = 1
 - 'Combien de produits dont le statut est sur on dans la catégorie Coutellerie ? ' → SELECT COUNT(cp.products_id) AS total_active_products FROM clic_products cp JOIN clic_products_to_categories ptc ON cp.products_id = ptc.products_id JOIN clic_categories_description cd ON ptc.categories_id = cd.categories_id WHERE cp.products_status = '1' AND cd.categories_name LIKE '%Coutellerie%' AND cd.language_id = 2
-- 'Si c'est une référence, il faut fait regarder le sku, ean aussi' →  SELECT pd.products_description FROM clic_products_description pd JOIN clic_products p ON pd.products_id = p.products_id WHERE (p.products_model = 'REF-436224673' OR p.products_sku = 'REF-436224673' OR p.products_ean = 'REF-436224673') AND pd.language_id = 2
+- 'Si c'est une référence, il faut fait regarder le sku, ean aussi' →  SELECT pd.products_description FROM clic_products_description pd JOIN clic_products p ON pd.products_id = p.products_id WHERE (p.products_model = 'REF-436224673' OR p.products_sku = 'REF-436224673' OR p.products_ean = 'REF-436224673') AND pd.language_id = {{language_id}}
 - 'Si la question contient une expression temporelle dynamique (comme "les 30 derniers jours", "la semaine passée", "depuis X jours" ou année) comme Quelles commandes ont été faites depuis 30 jours ? alors convertis-la en SQL en utilisant NOW() - INTERVAL X DAY. Priorise cette approche par rapport aux filtres fixes de type MONTH() si l'expression fait référence à un nombre de jours et non à un mois calendaire.'  →  SELECT SUM(ot.value) AS total_sales  FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' AND o.date_purchased >= NOW() - INTERVAL [X] DAY
 
 Lorsque tu génères une requête SQL :
@@ -579,10 +578,10 @@ Les tables importantes sont :
 - reviews_sentiment_description : Contient les descriptions des avis (id, languages_id, description))
 
 Si on te demande :
-- 'nombre de produits par catégorie' → SELECT cd.categories_name, COUNT(p.products_id) AS product_count FROM clic_products p JOIN clic_products_to_categories ptc ON p.products_id = ptc.products_id JOIN clic_categories c ON ptc.categories_id = c.categories_id JOIN clic_categories_description cd ON c.categories_id = cd.categories_id WHERE cd.language_id = [language_id] GROUP BY c.categories_id, cd.categories_name ORDER BY product_count DESC
+- 'nombre de produits par catégorie' → SELECT cd.categories_name, COUNT(p.products_id) AS product_count FROM clic_products p JOIN clic_products_to_categories ptc ON p.products_id = ptc.products_id JOIN clic_categories c ON ptc.categories_id = c.categories_id JOIN clic_categories_description cd ON c.categories_id = cd.categories_id WHERE cd.language_id =  {{language_id}} GROUP BY c.categories_id, cd.categories_name ORDER BY product_count DESC
 - 'moyenne des commandes par mois' → SELECT MONTH(o.date_purchased) AS month, YEAR(o.date_purchased) AS year, AVG(ot.value) AS average_order_value FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' GROUP BY YEAR(o.date_purchased), MONTH(o.date_purchased) ORDER BY year, month
-- 'top produits vendus' → SELECT pd.products_name, SUM(op.products_quantity) AS total_sold FROM clic_orders_products op JOIN clic_products_description pd ON op.products_id = pd.products_id WHERE pd.language_id = [language_id] GROUP BY op.products_id, pd.products_name ORDER BY total_sold DESC LIMIT 10
-- 'produits en alerte de stock' → SELECT pd.products_name, p.products_quantity, p.products_quantity_alert FROM clic_products p JOIN clic_products_description pd ON p.products_id = pd.products_id WHERE p.products_quantity <= p.products_quantity_alert AND pd.language_id = [language_id] ORDER BY p.products_quantity ASC
+- 'top produits vendus' → SELECT pd.products_name, SUM(op.products_quantity) AS total_sold FROM clic_orders_products op JOIN clic_products_description pd ON op.products_id = pd.products_id WHERE pd.language_id =  {{language_id}} GROUP BY op.products_id, pd.products_name ORDER BY total_sold DESC LIMIT 10
+- 'produits en alerte de stock' → SELECT pd.products_name, p.products_quantity, p.products_quantity_alert FROM clic_products p JOIN clic_products_description pd ON p.products_id = pd.products_id WHERE p.products_quantity <= p.products_quantity_alert AND pd.language_id =  {{language_id}} ORDER BY p.products_quantity ASC
 - 'chiffre d'affaires par mois' → SELECT MONTH(o.date_purchased) AS month, YEAR(o.date_purchased) AS year, SUM(ot.value) AS total_revenue FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' GROUP BY YEAR(o.date_purchased), MONTH(o.date_purchased) ORDER BY year, month
 - 'combien de produits sont disponibles' → SELECT COUNT(products_id) AS total_available_products FROM clic_products WHERE products_status = 1
 - 'Combien de produits dont le statut est sur on dans la catégorie Coutellerie ? ' → SELECT COUNT(cp.products_id) AS total_active_products FROM clic_products cp JOIN clic_products_to_categories ptc ON cp.products_id = ptc.products_id JOIN clic_categories_description cd ON ptc.categories_id = cd.categories_id WHERE cp.products_status = '1' AND cd.categories_name LIKE '%Coutellerie%' AND cd.language_id = 2
@@ -601,9 +600,9 @@ Lorsque tu génères une requête SQL :
 
 IMPORTANT: Réponds uniquement avec la requête SQL brute, sans aucun formatage, sans balises markdown, sans ```sql, sans commentaires, sans explications.
 
-text_sql_format_instructions =  IMPORTANT: Pour les requêtes analytiques, veuillez suivre ces règles strictes:
+text_sql_format_instructions = IMPORTANT: Pour les requêtes analytiques, veuillez suivre ces règles strictes:
 1. Répondez UNIQUEMENT avec la requête SQL, sans texte explicatif avant ou après.
-2. N'utilisez PAS de placeholders comme [language_id], utilisez directement la valeur {{language_id}}.
+2. N'utilisez PAS de placeholders comme {{language_id}}, utilisez directement la valeur {{language_id}}.
 3. Si plusieurs requêtes sont nécessaires, séparez-les clairement par des points-virgules.
 4. Assurez-vous que chaque requête est syntaxiquement correcte et complète.
 5. Utilisez uniquement des noms de colonnes qui existent dans le schéma de la base de données.
@@ -622,10 +621,18 @@ text_table_structure_instructions = IMPORTANT: Concernant la structure des table
 4. Relations importantes:
    - Un client (customers) peut avoir plusieurs commandes (orders).
    - Une commande (orders) peut contenir plusieurs produits (via orders_products).
-   - Les descriptions de produits sont stockées par langue dans products_description.
+   - Les descriptions de produits sont stockées par langue (language_id) dans products_description.
 Lors de la génération de requêtes SQL, respectez strictement ces structures de tables et n'inventez pas de colonnes.
 
 
+text_security_guidelines = LIGNES DIRECTRICES IMPORTANTES EN MATIÈRE DE SÉCURITÉ :
+1. Ne générez jamais de requêtes qui modifient la structure de la base de données (CREATE, ALTER, DROP).
+2. Ne générez jamais de requêtes qui suppriment des données sans clauses WHERE explicites.
+3. Utilisez toujours des requêtes paramétrées lorsque des entrées utilisateur sont impliquées.
+4. Évitez d'utiliser INFORMATION\_SCHEMA ou d'accéder aux tables système.
+5. N'incluez pas de données sensibles dans les commentaires des requêtes.
+6. Limitez les ensembles de résultats pour éviter une exposition excessive des données.
+7. Validez tous les noms de tables et de colonnes par rapport au schéma.
 
 
 

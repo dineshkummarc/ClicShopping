@@ -28,134 +28,150 @@ CLICSHOPPING::initialize();
 CLICSHOPPING::loadSite('ClicShoppingAdmin');
 
 try {
-  // Sanitize the incoming message from the AJAX request
+  Gpt::getEnvironment();
   $prompt = HTML::sanitize($_POST['message']);
   $saveGpt = isset($_POST['saveGpt']) ? HTML::sanitize($_POST['saveGpt']) : null;
   $languageId = Registry::get('Language')->getId();
-  $queryType = isset($_POST['queryType']) ? HTML::sanitize($_POST['queryType']) : 'semantic';
-
-  if ($queryType === 'semantic') {
-    $queryType = Semantics::classifyQuery($prompt); // gère la traduction + détection
-  }
-
-  Gpt::getEnvironment();
 
   $ragManager = new MultiDBRAGManager();
 
-  if ($queryType === 'analytics') {
-    $analyticsResults = $ragManager->executeAnalyticsQuery($prompt);
-    $result = $ragManager->formatResults($analyticsResults);
-  } else {
-    // Approach 1 or 2 with the current configuration
-    if (defined('CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER == 'False') {
-      $result = $ragManager->answerQuestion($prompt, 5, 0.5, $languageId);
+  if (defined('CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER == 'True') {
+    $queryType = isset($_POST['queryType']) ? HTML::sanitize($_POST['queryType']) : 'semantic';
+
+    if ($queryType === 'semantic') {
+      $queryType = Semantics::classifyQuery($prompt); // gère la traduction + détection
+    }
+
+    if ($queryType === 'analytics') {
+      $analyticsResults = $ragManager->executeAnalyticsQuery($prompt);
+      $result = $ragManager->formatResults($analyticsResults);
     } else {
-      // Approach 2: Use the current aborescence
-      $embeddingGenerator = new OpenAI3LargeEmbeddingGenerator();
-      $entityManager = DoctrineOrm::getEntityManager();
-      $embeddingTables = [];
+      if ($queryType === 'semantic') {
+        $result = $ragManager->answerQuestion($prompt, 5, 0.5, $languageId);
+      } else {
+        // Approach 2: Use the current aborescence
 
-      // Main tables known
-      $knownTables = [
-        'products_embedding',
-        'categories_embedding',
-        'pages_manager_embedding',
-        'orders_embedding',
-      ];
+        $embeddingGenerator = new OpenAI3LargeEmbeddingGenerator();
+        $entityManager = DoctrineOrm::getEntityManager();
+        $embeddingTables = [];
 
-      // Add first the known table
-      foreach ($knownTables as $tableName) {
-        try {
-          $vectorStore = new MariaDBVectorStore($embeddingGenerator, $tableName);
-          $embeddingTables[$tableName] = $vectorStore;
-        } catch (\Exception $e) {
-          if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
-            error_log("Erreur lors de l'initialisation de la table {$tableName} : " . $e->getMessage());
-            // Continuer avec les autres tables en cas d'erreur
+        // Main tables known
+        $knownTables = [
+          'products_embedding',
+          'categories_embedding',
+          'pages_manager_embedding',
+          'orders_embedding',
+          'manufacturers_embedding',
+          'suppliers_embedding',
+        ];
+
+        // Add first the known table
+        foreach ($knownTables as $tableName) {
+          try {
+            $vectorStore = new MariaDBVectorStore($embeddingGenerator, $tableName);
+            $embeddingTables[$tableName] = $vectorStore;
+          } catch (\Exception $e) {
+            if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+              error_log("Erreur lors de l'initialisation de la table {$tableName} : " . $e->getMessage());
+              // Continuer avec les autres tables en cas d'erreur
+            }
           }
         }
-      }
 
-      // Other table search inside the DB
-      try {
-        $tables = DoctrineOrm::getEmbeddingTables();
+        // Other table search inside the DB
+        try {
+          $tables = DoctrineOrm::getEmbeddingTables();
 
-        foreach ($tables as $tableName) {
-          if (!in_array($tableName, $knownTables)) {
-            try {
-              $vectorStore = new MariaDBVectorStore($embeddingGenerator, $tableName);
-              $embeddingTables[$tableName] = $vectorStore;
-            } catch (\Exception $e) {
-              if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
-                error_log("Erreur lors de l'initialisation de la table {$tableName} : " . $e->getMessage());
-                // If error continue
+          foreach ($tables as $tableName) {
+            if (!in_array($tableName, $knownTables)) {
+              try {
+                $vectorStore = new MariaDBVectorStore($embeddingGenerator, $tableName);
+                $embeddingTables[$tableName] = $vectorStore;
+              } catch (\Exception $e) {
+                if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+                  error_log("Erreur lors de l'initialisation de la table {$tableName} : " . $e->getMessage());
+                  // If error continue
+                }
               }
             }
           }
-        }
-      } catch (\Exception $e) {
-        if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
-          error_log("Erreur lors de la recherche des tables d'embedding : " . $e->getMessage());
-          // If error continue
-        }
-      }
-
-      // 4️⃣ Search in all vector table inside the DB
-      $allResults = [];
-      $context = '';
-
-      foreach ($embeddingTables as $tableName => $vectorStore) {
-        try {
-          // Language filter if specified
-          $filter = null;
-          if ($languageId !== null) {
-            $filter = function ($metadata) use ($languageId) {
-              return isset($metadata['language_id']) && $metadata['language_id'] == $languageId;
-            };
+        } catch (\Exception $e) {
+          if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+            error_log("Erreur lors de la recherche des tables d'embedding : " . $e->getMessage());
+            // If error continue
           }
+        }
 
-          // UUSe similaritySearch signature
-          $results = $vectorStore->similaritySearch($prompt, 2, 0.5, $filter);
+        // 4️⃣ Search in all vector table inside the DB
+        $allResults = [];
+        $context = '';
 
-          foreach ($results as $doc) {
-            $entityInfo = '';
-            if (isset($doc->metadata['entity_type']) && isset($doc->metadata['entity_id'])) {
-              $entityInfo = " ({$doc->metadata['entity_type']} #{$doc->metadata['entity_id']})";
+        foreach ($embeddingTables as $tableName => $vectorStore) {
+          // Check if the table is valid
+          try {
+            // Language filter if specified
+            $filter = null;
+
+            if ($languageId !== null) {
+              $filter = function ($metadata) use ($languageId) {
+                return isset($metadata['language_id']) && $metadata['language_id'] == $languageId;
+              };
             }
 
-            $context .= "Source: {$tableName}{$entityInfo}\n";
-            $context .= $doc->content . "\n\n";
+            // USe similaritySearch signature
+            $results = $vectorStore->similaritySearch($prompt, 2, 0.5, $filter);
+
+            foreach ($results as $doc) {
+              $entityInfo = '';
+              if (isset($doc->metadata['entity_type']) && isset($doc->metadata['entity_id'])) {
+                $entityInfo = " ({$doc->metadata['entity_type']} #{$doc->metadata['entity_id']})";
+              }
+
+              $context .= "Source: {$tableName}{$entityInfo}\n";
+              $context .= $doc->content . "\n\n";
+            }
+          } catch (\Exception $e) {
+            error_log("Erreur lors de la recherche dans la table {$tableName} : " . $e->getMessage());
+            // If error continue
           }
-        } catch (\Exception $e) {
-          error_log("Erreur lors de la recherche dans la table {$tableName} : " . $e->getMessage());
-          // If error continue
+        }
+
+        // 5️ Si des documents pertinents ont été trouvés, les envoyer à OpenAI pour une réponse enrichie
+        if (!empty($context)) {
+          $result = Gpt::getGptResponse($context . "\n\nQuestion : " . $prompt);
+        } else {
+          //If no information found, use openAI directly
+          $result = Gpt::getGptResponse($prompt);
+        }
+
+        $pos = strstr($result, ':');
+        if ($pos !== false) {
+          $result = substr($pos, 2);
         }
       }
+    }
 
-      // 5️ Si des documents pertinents ont été trouvés, les envoyer à OpenAI pour une réponse enrichie
-      if (!empty($context)) {
-        $result = Gpt::getGptResponse($context . "\n\nQuestion : " . $prompt);
-      } else {
-        //If no information found, use openAI directly
-        $result = Gpt::getGptResponse($prompt);
-      }
+    // 8️ Sauvegarder la conversation si demandé
+    if ($saveGpt === 'true') {
+      // Implémentation de la sauvegarde si nécessaire
+      // ...
+    }
 
-      $pos = strstr($result, ':');
-      if ($pos !== false) {
-        $result = substr($pos, 2);
-      }
+    echo nl2br($result);
+  } else {
+    $result = Gpt::getGptResponse($prompt);
+
+    $pos = strstr($result, ':');
+
+    if ($pos !== false) {
+      $result = substr($pos, 2); // Pour enlever les deux-points et l'espace
+      echo nl2br($result);
+    } else {
+      echo nl2br($result); // Si "Keywords:" n'est pas trouvé, imprimez la chaîne d'origine.
     }
   }
-
-  // 8️ Sauvegarder la conversation si demandé
-  if ($saveGpt === 'true') {
-    // Implémentation de la sauvegarde si nécessaire
-    // ...
+} catch
+  (\Exception $e) {
+    error_log('Erreur dans le traitement AJAX : ' . $e->getMessage());
+    echo "Une erreur s'est produite lors du traitement de votre requête : " . $e->getMessage();
   }
-
-  echo nl2br($result);
-
-} catch (\Exception $e) {
-  error_log('Erreur dans le traitement AJAX : ' . $e->getMessage());
-  echo "Une erreur s'est produite lors du traitement de votre requête : " . $e->getMessage();
-}

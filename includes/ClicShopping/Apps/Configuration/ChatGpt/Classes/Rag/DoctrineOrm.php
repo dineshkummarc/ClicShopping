@@ -30,7 +30,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\VectorType;
  * - Vector embedding table operations
 *
  * Requirements:
- * - MariaDB version 11.8.0 or higher
+ * - MariaDB version 11.7.0 or higher
 * - Proper database credentials configuration
 * - Vector support in MariaDB
 *
@@ -47,10 +47,10 @@ class DoctrineOrm
    */
   private static function Orm(): array
   {
-    // Configuration de Doctrine avec un pilote de métadonnées minimal
+    // Set the Doctrine with a minimal metadata pilot
     $config = ORMSetup::createConfiguration(true, null, null);
 
-    // Ajouter un pilote de métadonnées minimal (requis par Doctrine)
+    // Add a pilot of minimal metadata (require by Doctrine)
     $config->setMetadataDriverImpl(new \Doctrine\ORM\Mapping\Driver\SimplifiedXmlDriver([]));
 
     // Paramètres de connexion pour MariaDB
@@ -65,7 +65,7 @@ class DoctrineOrm
         \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
         \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
       ],
-      // Options spécifiques pour MariaDB Vector
+      //MariaDB Vector option
       'serverVersion' => '11.8.0' //$mariadbVersion, // Version exacte de MariaDB
     ];
 
@@ -86,7 +86,7 @@ class DoctrineOrm
     $config = $orm['config'];
 
     try {
-      // Création de la connexion avec gestion des erreurs
+      // connexion with error management
       $connection = DriverManager::getConnection($connectionParams, $config);
 
       // Enregistrement du type personnalisé pour les vecteurs si nécessaire
@@ -94,7 +94,7 @@ class DoctrineOrm
         Type::addType('vector', VectorType::class);
       }
 
-      // Création de l'EntityManager
+      // EntityManager creation
       $entityManager = new EntityManager($connection, $config);
 
       return $entityManager;
@@ -119,7 +119,14 @@ class DoctrineOrm
       $entityManager = self::getEntityManager();
       $connection = $entityManager->getConnection();
 
-      // Vérifier si la table existe
+//    check if prefix is on $$tableName or not
+      $prefix = CLICSHOPPING::getConfig('db_prefix');
+
+      if (strpos($tableName, $prefix) !== 0) {
+          $tableName = $prefix . $tableName;
+      }
+      
+      // Check if the vector index exits
       $tableExists = $connection->executeQuery("
         SELECT COUNT(*) 
         FROM information_schema.tables 
@@ -131,7 +138,7 @@ class DoctrineOrm
         return false;
       }
 
-      // Vérifier si l'index vectoriel existe
+      // Check if the vector index exits
       $indexExists = $connection->executeQuery("
         SHOW INDEX FROM {$tableName} 
         WHERE Key_name = 'embedding_index'
@@ -159,7 +166,7 @@ class DoctrineOrm
       $entityManager = self::getEntityManager();
       $connection = $entityManager->getConnection();
 
-      // Rechercher toutes les tables qui ont une colonne embedding de type VECTOR
+      //Seach inside all tables for the embedding column
       $tables = $connection->executeQuery("
         SELECT table_name 
         FROM information_schema.columns 
@@ -187,10 +194,19 @@ class DoctrineOrm
    */
   public static function createTableStructure(string $tableName): bool
   {
+     return false;
+    /*
     try {
       $entityManager = self::getEntityManager();
       $connection = $entityManager->getConnection();
-/*
+
+//    check if prefix is on $$tableName or not
+      $prefix = CLICSHOPPING::getConfig('db_prefix');
+
+      if (strpos($tableName, $prefix) !== 0) {
+          $tableName = $prefix . $tableName;
+      }
+
       // Vérifier si la table existe déjà
       $tableExists = $connection->executeQuery("
           SELECT COUNT(*) 
@@ -198,9 +214,8 @@ class DoctrineOrm
           WHERE table_schema = DATABASE() 
           AND table_name = ?
       ", [$tableName])->fetchOne();
-*/
-
-      // Vérifier si la table existe
+      
+      // Check if table exist
       $tableExists = $connection->executeQuery("
           SELECT COUNT(*) 
           FROM information_schema.tables 
@@ -209,7 +224,7 @@ class DoctrineOrm
       ", [$tableName], [ParameterType::STRING])->fetchOne();
 
       if (!$tableExists) {
-        // Création de la table avec la structure recommandée
+        // Create the table if it doesn't exist
         $connection->executeStatement("
             CREATE TABLE IF NOT EXISTS {$tableName} (
                 id SERIAL PRIMARY KEY,
@@ -226,13 +241,13 @@ class DoctrineOrm
         ");
       }
 
-      // Vérifier si l'index vectoriel existe déjà
+      // check if the vector table exists
       $indexExists = $connection->executeQuery("
           SHOW INDEX FROM {$tableName} 
           WHERE Key_name = 'embedding_index'
       ")->fetchAllAssociative();
 
-      // Créer l'index vectoriel seulement s'il n'existe pas déjà
+      //Create the vector index if it doesn't exist
       if (empty($indexExists)) {
         try {
           $connection->executeStatement("
@@ -241,7 +256,7 @@ class DoctrineOrm
         } catch (\Exception $e) {
           if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER ==  'true') {
             error_log("Warning: Unable to create the vector index on {$tableName}: " . $e->getMessage());
-            // Continuer même si la création de l'index échoue
+            // Contiune if the index creation fails
           }
         }
       }
@@ -253,5 +268,6 @@ class DoctrineOrm
       }
       return false;
     }
+    */
   }
 }

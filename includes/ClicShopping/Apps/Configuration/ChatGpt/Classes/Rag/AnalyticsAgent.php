@@ -57,9 +57,14 @@ class AnalyticsAgent
   public function __construct(?int $languageId = null, bool $enablePromptCache = true, string $userId = 'system')
   {
     $this->db = Registry::get('Db');
-    $this->languageId = $languageId ?? Registry::get('Language')->getId();
     $this->chat = Gpt::getOpenAiGpt(null);
     $this->userId = $userId;
+
+    if (is_null($languageId)){
+      $this->languageId = Registry::get('Language')->getId();
+    } else {
+      $this->languageId = $languageId;
+    }
 
     // Initialize security components
     $this->securityLogger = new SecurityLogger();
@@ -108,16 +113,7 @@ class AnalyticsAgent
     $tableStructureInstructions = CLICSHOPPING::getDef('text_table_structure_instructions');
 
     // Add security guidelines
-    $securityGuidelines = "
-    IMPORTANT SECURITY GUIDELINES:
-    1. Never generate queries that modify database structure (CREATE, ALTER, DROP)
-    2. Never generate queries that delete data without explicit WHERE clauses
-    3. Always use parameterized queries when user input is involved
-    4. Avoid using INFORMATION_SCHEMA or accessing system tables
-    5. Do not include sensitive data in query comments
-    6. Limit result sets to prevent excessive data exposure
-    7. Validate all table and column names against the schema
-    ";
+    $securityGuidelines =  CLICSHOPPING::getDef('text_security_guidelines');
 
     $this->chat->setSystemMessage($baseSystemMessage . $sqlFormatInstructions . $tableStructureInstructions . $securityGuidelines);
   }
@@ -148,7 +144,7 @@ class AnalyticsAgent
       $query->execute();
       $tables = $query->fetchAll(\PDO::FETCH_COLUMN);
 
-      // Pour chaque table, analyser les colonnes pour détecter les relations potentielles
+      // For each table, analyze the columns to detect potential relationships
       foreach ($tables as $table) {
         // Validate table name
         $safeTable = InputValidator::sanitizeIdentifier($table);
@@ -418,7 +414,7 @@ class AnalyticsAgent
       }
     }
     
-    // Si aucune requête n'a été trouvée, vérifier si la réponse entière est une requête SQL
+    // If no query was found, check if the entire response is an SQL query
     if (empty($queries) && preg_match('/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\s+/i', trim($response))) {
       $queries[] = trim($response);
     }
@@ -447,7 +443,7 @@ class AnalyticsAgent
       $sqlQuery = $safeSqlQuery;
     }
 
-    // Détecter les placeholders au format [nom_placeholder]
+    // Detect placeholders in the format [placeholder_name]
     preg_match_all('/\[([^\]]+)\]/', $sqlQuery, $matches);
 
     if (empty($matches[1])) {
@@ -476,17 +472,17 @@ class AnalyticsAgent
    */
   private function getPlaceholderValue(string $placeholder): string
   {
-    // Mapper les placeholders courants à leurs valeurs
+    // Map common placeholders to their values
     $placeholderMap = [
       'language_id' => $this->languageId,
-      // Ajouter d'autres mappings selon les besoins
+      // Add other mappings as needed
     ];
 
     if (isset($placeholderMap[$placeholder])) {
       return $placeholderMap[$placeholder];
     }
 
-    // Journaliser les placeholders inconnus
+   // Log unknown placeholders
     $this->securityLogger->logSecurityEvent(
       "Unknown placeholder encountered: [{$placeholder}]",
       'info'
@@ -514,26 +510,26 @@ class AnalyticsAgent
   private function validateSqlSyntax(string $sqlQuery): array {
     $issues = [];
     
-    // Vérifier l'équilibre des parenthèses
+    // Check the balance of parentheses
     $openParenCount = substr_count($sqlQuery, '(');
     $closeParenCount = substr_count($sqlQuery, ')');
     if ($openParenCount !== $closeParenCount) {
       $issues[] = CLICSHOPPING::getDef('text_parentheses_mismatch_error', ['openParenCount' => $openParenCount, 'closeParenCount' => $closeParenCount]);
     }
     
-    // Vérifier les clauses essentielles pour SELECT
+    // Check essential clauses for SELECT
     if (stripos($sqlQuery, 'SELECT') === 0) {
       if (stripos($sqlQuery, 'FROM') === false) {
         $issues[] = CLICSHOPPING::getDef('text_select_without_from_error');
       }
     }
     
-    // Vérifier les alias de colonnes invalides
+    // Check for invalid column aliases
     if (preg_match('/\bAS\s+\w+\.\w+/i', $sqlQuery)) {
       $issues[] = CLICSHOPPING::getDef('text_invalid_column_alias_error');
     }
     
-    // Vérifier les placeholders non résolus
+   // Check for unresolved placeholders
     if (preg_match('/\[[^\]]+\]/', $sqlQuery)) {
       $issues[] =  CLICSHOPPING::getDef('text_unresolved_placeholders_error');;
     }
@@ -556,6 +552,7 @@ class AnalyticsAgent
   private function applyConservativeCorrections(string $sqlQuery, array $detectedIssues): string {
     // Validate input
     $safeSqlQuery = InputValidator::validateParameter($sqlQuery, 'string');
+
     if ($safeSqlQuery !== $sqlQuery) {
       $this->securityLogger->logSecurityEvent(
         "SQL query sanitized in applyConservativeCorrections",
@@ -680,7 +677,36 @@ class AnalyticsAgent
     return $correction;
   }
 
-    /**
+  /**
+   * Estimates the confidence score for a corrected SQL query
+   * Compares the original and corrected queries to determine confidence
+   * Uses length and number of corrections as indicators
+   *
+   * @param string $originalQuery Original SQL query before corrections
+   * @param string $correctedQuery Corrected SQL query after modifications
+   * @return int Confidence score (0-100)
+   */
+  private function estimateConfidenceScore(string $originalQuery, string $correctedQuery): int
+  {
+   // Compare the length and the number of corrections made
+    $originalLength = strlen($originalQuery);
+    $correctedLength = strlen($correctedQuery);
+
+    $diff = abs($originalLength - $correctedLength);
+
+    // Little difference big confidence
+    if ($diff < 10) {
+      return 95;
+    }
+    if ($diff < 50) {
+      return 85;
+    }
+
+    // If big difference, medium confidence
+    return 70;
+  }
+
+  /**
    * Attempts to recover from SQL execution errors
    * Handles specific error types:
    * - Unknown column errors
@@ -694,17 +720,16 @@ class AnalyticsAgent
    *               - success: boolean indicating recovery success
    *               - data: array with error details, queries, and results
    */
-  private function attemptErrorRecovery(\Exception $error, string $failedQuery, string $originalQuery): array {
+  private function attemptErrorRecovery(\Exception $error, string $failedQuery, string $originalQuery): array
+  {
     $errorMessage = $error->getMessage();
 
-    // Log recovery attempt
     $this->securityLogger->logSecurityEvent(
       "Attempting to recover from SQL error: " . $errorMessage,
       'info',
       ['failed_query' => $failedQuery]
     );
 
-    // Initialiser le résultat
     $result = [
       'success' => false,
       'data' => [
@@ -714,111 +739,188 @@ class AnalyticsAgent
       ]
     ];
 
-    // Handle unknown column errors
-    if (strpos($errorMessage, 'Unknown column') !== false) {
-      preg_match("/Unknown column '([^']+)'/", $errorMessage, $matches);
-
-      if (!empty($matches[1])) {
-        $unknownColumn = $matches[1];
-        $correctedQuery = $this->correctUnknownColumn($failedQuery, $unknownColumn);
-
-        if ($correctedQuery !== $failedQuery) {
-          try {
-            // Use DbSecurity to execute the corrected query
-            $secureResult = $this->dbSecurity->executeSecureQuery($correctedQuery, [], $this->userId);
-
-            if ($secureResult['success']) {
-              $result = [
-                'success' => true,
-                'data' => [
-                  'original_query' => $originalQuery,
-                  'failed_query' => $failedQuery,
-                  'executed_query' => $correctedQuery,
-                  'results' => $secureResult['data'] ?? [],
-                  'count' => $secureResult['row_count'] ?? 0,
-                  'corrections' => $this->correctionLog,
-                  'recovery' => "Unknown column '$unknownColumn' corrected"
-                ]
-              ];
-
-              $this->securityLogger->logSecurityEvent(
-                "Successfully recovered from unknown column error",
-                'info',
-                ['unknown_column' => $unknownColumn, 'corrected_query' => $correctedQuery]
-              );
-            } else {
-              $result['data']['recovery_error'] = $secureResult['error'] ?? 'Unknown error during recovery';
-
-              $this->securityLogger->logSecurityEvent(
-                "Recovery attempt failed: " . ($secureResult['error'] ?? 'Unknown error'),
-                'warning'
-              );
-            }
-          } catch (\Exception $recoveryError) {
-            // Recovery failed
-            $result['data']['recovery_error'] = $recoveryError->getMessage();
-
-            $this->securityLogger->logSecurityEvent(
-              "Recovery attempt failed: " . $recoveryError->getMessage(),
-              'warning'
-            );
-          }
-        }
-      }
-    }
-
-
-    // Handle syntax errors
-    elseif (strpos($errorMessage, 'syntax error') !== false) {
-      // Attempt a more aggressive syntax correction
-      $correctedQuery = $this->correctSyntaxError($failedQuery, $errorMessage);
+    if (preg_match('/Unknown column|Unknown table/i', $errorMessage) || preg_match('/syntax error|You have an error in your SQL syntax/i', $errorMessage)) {
+      return $this->attemptRecoveryWithRollback($failedQuery, $originalQuery);
+    } elseif (strpos($errorMessage, 'is not in GROUP BY clause') !== false) {
+      // Spécial traitement GROUP BY
+      $correctedQuery = $this->correctGroupByError($failedQuery, $errorMessage);
 
       if ($correctedQuery !== $failedQuery) {
-        try {
-          // Use DbSecurity to execute the corrected query
-          $secureResult = $this->dbSecurity->executeSecureQuery($correctedQuery, [], $this->userId);
-
-          if ($secureResult['success']) {
-            $result = [
-              'success' => true,
-              'data' => [
-                'original_query' => $originalQuery,
-                'failed_query' => $failedQuery,
-                'executed_query' => $correctedQuery,
-                'results' => $secureResult['data'] ?? [],
-                'count' => $secureResult['row_count'] ?? 0,
-                'corrections' => $this->correctionLog,
-                'recovery' => CLICSHOPPING::getDef('text_syntax error corrected')
-              ]
-            ];
-
-            $this->securityLogger->logSecurityEvent(
-              "Successfully recovered from syntax error",
-              'info',
-              ['corrected_query' => $correctedQuery]
-            );
-          } else {
-            $result['data']['recovery_error'] = $secureResult['error'] ?? 'Unknown error during recovery';
-
-            $this->securityLogger->logSecurityEvent(
-              "Recovery attempt failed: " . ($secureResult['error'] ?? 'Unknown error'),
-              'warning'
-            );
-          }
-        } catch (\Exception $recoveryError) {
-          // The recovery failed
-          $result['data']['recovery_error'] = $recoveryError->getMessage();
-
-          $this->securityLogger->logSecurityEvent(
-            "Recovery attempt failed: " . $recoveryError->getMessage(),
-            'warning'
-          );
-        }
+        return $this->retryCorrectedQuery($correctedQuery, $originalQuery, $failedQuery, "Group By clause corrected");
       }
     }
 
     return $result;
   }
+
+/**
+   * Attempts to recover from SQL execution errors with rollback
+   * Handles specific error types and applies multiple correction attempts
+   * Returns execution results or error details
+   *
+   * @param string $failedQuery The query that failed
+   * @param string $originalQuery The original query before corrections
+   * @return array Recovery result containing:
+   *               - success: boolean indicating recovery success
+   *               - data: array with error details, queries, and results
+   */
+  private function attemptRecoveryWithRollback(string $failedQuery, string $originalQuery): array
+  {
+    $this->securityLogger->logSecurityEvent(
+      "First correction attempt",
+      'info',
+      ['failed_query' => $failedQuery]
+    );
+
+    $firstAttempt = $this->retryCorrectedQuery($failedQuery, $originalQuery, $failedQuery, "First correction attempt");
+
+    if ($firstAttempt['success']) {
+      return $firstAttempt;
+    }
+
+    $this->securityLogger->logSecurityEvent(
+      "First correction failed, trying a second correction attempt",
+      'warning'
+    );
+
+    // Deuxième tentative : peut-être re-corriger encore une fois
+    $secondCorrection = $this->correctSyntaxError($failedQuery, "second_attempt");
+
+    if ($secondCorrection !== $failedQuery) {
+      $secondAttempt = $this->retryCorrectedQuery($secondCorrection, $originalQuery, $failedQuery, "Second correction attempt");
+
+      if ($secondAttempt['success']) {
+        return $secondAttempt;
+      }
+    }
+
+    $this->securityLogger->logSecurityEvent(
+      "Both correction attempts failed. Rolling back.",
+      'error'
+    );
+
+    return [
+      'success' => false,
+      'data' => [
+        'error' => "Automatic correction failed after two attempts. Please revise your query.",
+        'original_query' => $originalQuery,
+        'failed_query' => $failedQuery,
+        'recovery' => 'rollback',
+        'confidence_score' => 0.0
+      ]
+    ];
+  }
+
+
+  /**
+   * Corrects syntax errors in SQL queries
+   * Handles specific error messages and applies corrections
+   * Returns the corrected SQL query
+   *
+   * @param string $query The SQL query to correct
+   * @param string $errorMessage The error message from the failed query execution
+   * @return string The corrected SQL query
+   */
+  private function correctGroupByError(string $query, string $errorMessage): string
+  {
+    // Extraire la colonne manquante à ajouter au GROUP BY
+    if (preg_match("/Unknown column '([^']+)' in 'group statement'/i", $errorMessage, $matches) ||
+      preg_match("/.*?column '([^']+)' in 'group by clause'/i", $errorMessage, $matches)) {
+
+      $missingColumn = $matches[1] ?? '';
+
+      if (!empty($missingColumn)) {
+        $this->correctionLog[] = "Added missing column to GROUP BY: {$missingColumn}";
+
+        // Ajouter automatiquement la colonne au GROUP BY
+        $query = preg_replace_callback('/GROUP BY (.+?)\s+ORDER BY/si', function ($match) use ($missingColumn) {
+          $currentGroupBy = trim($match[1]);
+
+          // Éviter d'ajouter 2 fois la même colonne
+          if (stripos($currentGroupBy, $missingColumn) === false) {
+            $newGroupBy = $currentGroupBy . ', ' . $missingColumn;
+            return 'GROUP BY ' . $newGroupBy . ' ORDER BY';
+          }
+
+          return $match[0]; // Rien à faire si déjà présent
+        }, $query);
+
+        return $query;
+      }
+    }
+
+    return $query;
+  }
+
+/**
+   * Retries the SQL query with the corrected version
+   * Logs the recovery attempt and its outcome
+   * Returns the result of the executed query or error details
+   *
+   * @param string $correctedQuery The corrected SQL query to execute
+   * @param string $originalQuery The original SQL query before corrections
+   * @param string $failedQuery The failed SQL query that triggered recovery
+   * @param string $recoveryMessage Message describing the recovery action taken
+   * @return array Result of the executed query or error details
+   */
+  private function retryCorrectedQuery(string $correctedQuery, string $originalQuery, string $failedQuery, string $recoveryMessage): array
+  {
+    try {
+      $secureResult = $this->dbSecurity->executeSecureQuery($correctedQuery, [], $this->userId);
+
+      if ($secureResult['success']) {
+        $this->securityLogger->logSecurityEvent(
+          "Successfully recovered: {$recoveryMessage}",
+          'info',
+          ['corrected_query' => $correctedQuery]
+        );
+
+        return [
+          'success' => true,
+          'data' => [
+            'original_query' => $originalQuery,
+            'failed_query' => $failedQuery,
+            'executed_query' => $correctedQuery,
+            'results' => $secureResult['data'] ?? [],
+            'count' => $secureResult['row_count'] ?? 0,
+            'corrections' => $this->correctionLog,
+            'recovery' => $recoveryMessage,
+            'confidence_score' => $this->estimateConfidenceScore($originalQuery, $correctedQuery),
+            'message' => 'The request has been corrected automatically'
+          ]
+        ];
+      } else {
+        $this->securityLogger->logSecurityEvent(
+          "Recovery attempt failed: " . ($secureResult['error'] ?? 'Unknown error'),
+          'warning'
+        );
+
+        return [
+          'success' => false,
+          'data' => [
+            'error' => $secureResult['error'] ?? 'Unknown error during recovery',
+            'original_query' => $originalQuery,
+            'failed_query' => $failedQuery
+          ]
+        ];
+      }
+    } catch (\Exception $recoveryError) {
+      $this->securityLogger->logSecurityEvent(
+        "Recovery attempt failed: " . $recoveryError->getMessage(),
+        'warning'
+      );
+
+      return [
+        'success' => false,
+        'data' => [
+          'error' => $recoveryError->getMessage(),
+          'original_query' => $originalQuery,
+          'failed_query' => $failedQuery
+        ]
+      ];
+    }
+  }
+
 
   /**
    * Corrects unknown column errors in SQL queries
@@ -1309,8 +1411,31 @@ class AnalyticsAgent
         // Execute the query
         try {
           $query = $this->db->prepare($finalQuery);
+
+          // ① inject DISTINCT to remove duplication
+          if (preg_match('/^\s*SELECT\s+/i', $finalQuery)) {
+            $finalQuery = preg_replace(
+              '/^\s*SELECT\s+/i',
+              'SELECT DISTINCT ',
+              $finalQuery,
+              1
+            );
+          }
+
           $query->execute();
-          $queryResults = $query->fetchAll();
+          // ② fetch associative only
+          $rows = $query->fetchAll(\PDO::FETCH_ASSOC);
+
+          // ③ optional PHP dedupe by row‑hash
+          $unique = [];
+          foreach ($rows as $r) {
+            $h = md5(json_encode($r, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE));
+            if (!isset($unique[$h])) {
+              $unique[$h] = $r;
+            }
+          }
+
+          $queryResults = array_values($unique);
 
           $results[] = [
             'original_query' => $sqlQuery,
@@ -1524,7 +1649,9 @@ class AnalyticsAgent
       if ($this->debug == 'True') {
         error_log("Using cached interpretation for question: " . substr($question, 0, 50) . "...");
       }
+
       $this->promptCache[$interpretCacheKey]['last_used'] = time();
+
       return $this->promptCache[$interpretCacheKey]['response'];
     }
 
@@ -1533,6 +1660,7 @@ class AnalyticsAgent
       'question' => $question,
       'results' => json_encode($cleanResults, JSON_PRETTY_PRINT)
     ];
+
     $prompt = CLICSHOPPING::getDef('text_interpret_results', $array);
 
     // interpretation generation

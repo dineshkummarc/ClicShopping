@@ -97,23 +97,25 @@ class Cache
     $cacheFile = $this->getPromptCacheFilePath();
 
     if (file_exists($cacheFile)) {
-      try {
-        $cacheData = file_get_contents($cacheFile);
-        $this->promptCache = json_decode($cacheData, true) ?? [];
+      $json = @file_get_contents($cacheFile);
+      $this->promptCache = json_decode($json, true) ?: [];
+      // prune expired
+      $now = time();
 
-        if ($this->debug) {
-          error_log("Prompt cache loaded with " . count($this->promptCache) . " entries");
+      foreach ($this->promptCache as $k => $entry) {
+        if ($now - $entry['last_used'] > $entry['ttl']) {
+          unset($this->promptCache[$k]);
         }
-      } catch (\Exception $e) {
-        if ($this->debug) {
-          error_log("Error loading prompt cache: " . $e->getMessage());
-        }
-        $this->promptCache = [];
+      }
+
+      if ($this->debug) {
+        error_log("Prompt cache loaded with " . count($this->promptCache) . " live entries");
       }
     } else {
       $this->promptCache = [];
     }
   }
+
 
   /**
    * Saves the current prompt cache data to the cache file
@@ -168,13 +170,19 @@ class Cache
    * @param string $prompt The prompt text to generate a key for
    * @return string MD5 hash of the normalized prompt
    */
-  public function generateCacheKey(string $prompt): string
-  {
-    // Normaliser le prompt (supprimer les espaces supplémentaires, mettre en minuscules)
-    $normalizedPrompt = strtolower(trim(preg_replace('/\s+/', ' ', $prompt)));
 
-    // Générer un hash pour le prompt normalisé
-    return md5($normalizedPrompt);
+  public function generateCacheKey(string $prompt): string {
+    // strip tags, collapse whitespace, remove punctuation, lowercase, strip accents
+    $clean = strip_tags($prompt);
+    $clean = strtolower($clean);
+    $clean = preg_replace('/[^\p{L}\p{N}\s]/u', '', $clean);
+    $clean = preg_replace('/\s+/', ' ', $clean);
+    $clean = mb_strtolower($clean, 'UTF-8');
+
+    // remove accents
+    $clean = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $clean);
+
+    return md5(trim($clean));
   }
 
 /**
@@ -246,16 +254,27 @@ class Cache
 
     $cacheKey = $this->generateCacheKey($prompt);
 
-    if (isset($this->promptCache[$cacheKey])) {
-      $this->promptCache[$cacheKey]['last_used'] = time();
-
-      if ($this->debug == 'True') {
-        error_log("Cache hit for prompt: " . substr($prompt, 0, 50) . "...");
-      }
-
-      return $this->promptCache[$cacheKey]['response'];
+    if (!isset($this->promptCache[$cacheKey])) {
+      return null;
     }
 
-    return null;
+    $entry = $this->promptCache[$cacheKey];
+
+    // Has it expired?
+    if (time() - $entry['last_used'] > $entry['ttl']) {
+      // remove it
+      unset($this->promptCache[$cacheKey]);
+      $this->savePromptCache();
+      return null;
+    }
+
+    // still valid—bump last_used and return it
+    $this->promptCache[$cacheKey]['last_used'] = time();
+    if ($this->debug) {
+      error_log("Cache hit for prompt: " . substr($prompt, 0, 50) . "...");
+    }
+
+    return $entry['response'];
   }
+
 }

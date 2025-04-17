@@ -90,8 +90,8 @@ class Gpt {
   public static function getGptModel(): array
   {
     $array = [
-      ['id' => 'GPT‑4.1-mini', 'text' => 'OpenAi gpt 4.1-mini'],
-      ['id' => 'GPT‑4.1-nano', 'text' => 'OpenAi gpt-4.1-nano'],
+      ['id' => 'gpt-4.1-mini', 'text' => 'OpenAi gpt 4.1-mini'],
+      ['id' => 'gpt-4.1-nano', 'text' => 'OpenAi gpt-4.1-nano'],
       ['id' => 'gpt-4o-mini', 'text' => 'OpenAi gpt-4o-mini'],
       ['id' => 'gpt-4o', 'text' => 'OpenAi gpt-4o'],
       ['id' => 'gpt-3o-mini', 'text' => 'OpenAi gpt-3o-mini'],

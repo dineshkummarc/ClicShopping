@@ -356,11 +356,7 @@ class MultiDBRAGManager
       }
 
       // Use the existing classe to create the response
-     if ($this->debug == 'True') {
         $prompt = str_replace(['{context}', '{question}', '{links}', '{score}'], [$context, $question, $link, $score], $this->systemMessageTemplate);
-      } else {
-        $prompt = str_replace(['{context}', '{question}', '{links}'], [$context, $question, $link], $this->systemMessageTemplate);
-      }
 
       if (!empty($modelOptions)) {
         $response = Gpt::getGptResponse($prompt);

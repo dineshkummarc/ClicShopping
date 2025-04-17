@@ -542,10 +542,10 @@ The important tables are:
 - reviews_sentiment_description: Contains the descriptions of sentiments (id, languages_id, description)
 
 If you are asked:
-- 'number of products per category' → SELECT cd.categories_name, COUNT(p.products_id) AS product_count FROM clic_products p JOIN clic_products_to_categories ptc ON p.products_id = ptc.products_id JOIN clic_categories c ON ptc.categories_id = c.categories_id JOIN clic_categories_description cd ON c.categories_id = cd.categories_id WHERE cd.language_id = [language_id] GROUP BY c.categories_id, cd.categories_name ORDER BY product_count DESC
+- 'number of products per category' → SELECT cd.categories_name, COUNT(p.products_id) AS product_count FROM clic_products p JOIN clic_products_to_categories ptc ON p.products_id = ptc.products_id JOIN clic_categories c ON ptc.categories_id = c.categories_id JOIN clic_categories_description cd ON c.categories_id = cd.categories_id WHERE cd.language_id =  {{language_id}} GROUP BY c.categories_id, cd.categories_name ORDER BY product_count DESC
 - 'average orders per month' → SELECT MONTH(o.date_purchased) AS month, YEAR(o.date_purchased) AS year, AVG(ot.value) AS average_order_value FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' GROUP BY YEAR(o.date_purchased), MONTH(o.date_purchased) ORDER BY year, month
-- 'top sold products' → SELECT pd.products_name, SUM(op.products_quantity) AS total_sold FROM clic_orders_products op JOIN clic_products_description pd ON op.products_id = pd.products_id WHERE pd.language_id = [language_id] GROUP BY op.products_id, pd.products_name ORDER BY total_sold DESC LIMIT 10
-- 'products in stock alert' → SELECT pd.products_name, p.products_quantity, p.products_quantity_alert FROM clic_products p JOIN clic_products_description pd ON p.products_id = pd.products_id WHERE p.products_quantity <= p.products_quantity_alert AND pd.language_id = [language_id] ORDER BY p.products_quantity ASC
+- 'top sold products' → SELECT pd.products_name, SUM(op.products_quantity) AS total_sold FROM clic_orders_products op JOIN clic_products_description pd ON op.products_id = pd.products_id WHERE pd.language_id =  {{language_id}} GROUP BY op.products_id, pd.products_name ORDER BY total_sold DESC LIMIT 10
+- 'products in stock alert' → SELECT pd.products_name, p.products_quantity, p.products_quantity_alert FROM clic_products p JOIN clic_products_description pd ON p.products_id = pd.products_id WHERE p.products_quantity <= p.products_quantity_alert AND pd.language_id =  {{language_id}} ORDER BY p.products_quantity ASC
 - 'monthly revenue' → SELECT MONTH(o.date_purchased) AS month, YEAR(o.date_purchased) AS year, SUM(ot.value) AS total_revenue FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' GROUP BY YEAR(o.date_purchased), MONTH(o.date_purchased) ORDER BY year, month
 - 'how many products are available' → SELECT COUNT(products_id) AS total_available_products FROM clic_products WHERE products_status = 1
 - 'How many products are active in the category Cutlery?' → SELECT COUNT(cp.products_id) AS total_active_products FROM clic_products cp JOIN clic_products_to_categories ptc ON cp.products_id = ptc.products_id JOIN clic_categories_description cd ON ptc.categories_id = cd.categories_id WHERE cp.products_status = '1' AND cd.categories_name LIKE '%Cutlery%' AND cd.language_id = 2
@@ -566,7 +566,7 @@ IMPORTANT: Respond only with the raw SQL query, without any formatting, without 
 
 text_sql_format_instructions = IMPORTANT: For analytical queries, please follow these strict rules:
 1. ONLY respond with the SQL query, with no explanatory text before or after.
-2. DO NOT use placeholders like [language_id], use the value {{language_id}} directly.
+2. DO NOT use placeholders like {{language_id}}, use the value {{language_id}} directly.
 3. If multiple queries are needed, clearly separate them with semicolons.
 4. Make sure each query is syntactically correct and complete.
 5. Use only column names that exist in the database schema.
@@ -585,8 +585,19 @@ text_table_structure_instructions = IMPORTANT: Regarding the structure of the e-
 4. Important relationships:
    - A customer (customers) can have multiple orders (orders).
    - An order (orders) can contain multiple products (via orders_products).
-   - Product descriptions are stored by language in products_description.
+   - Product descriptions are stored by language (language_id) in products_description.
 When generating SQL queries, strictly follow these table structures and do not invent columns.
+
+
+text_security_guidelines = IMPORTANT SECURITY GUIDELINES:
+1. Never generate queries that modify database structure (CREATE, ALTER, DROP).
+2. Never generate queries that delete data without explicit WHERE clauses.
+3. Always use parameterized queries when user input is involved.
+4. Avoid using INFORMATION_SCHEMA or accessing system tables.
+5. Do not include sensitive data in query comments.
+6. Limit result sets to prevent excessive data exposure.
+7. Validate all table and column names against the schema.
+
 
 
 text_not_analytics = This query does not appear to be an analytical query.

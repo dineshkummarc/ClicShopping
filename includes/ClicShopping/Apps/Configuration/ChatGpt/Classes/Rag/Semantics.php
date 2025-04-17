@@ -27,7 +27,7 @@ class Semantics {
    */
   public static function checkSemantics(string $text): string
   {
-    $prompt = "La question est de type: analytics or semantic? Rèpond uniquement analytics ou semantic\nQ: {$text}\nAnswer:";
+    $prompt = "Determine whether the following question is of type 'analytics' or 'semantic'. Respond with only one word: 'analytics' or 'semantic'.\nQ: {$text}\nAnswer:";
     $type = Gpt::getGptResponse($prompt, 20);
     $result = in_array(strtolower(trim($type)), ['analytics', 'semantic']) ? strtolower(trim($type)) : 'semantic';
 
@@ -47,7 +47,7 @@ class Semantics {
     foreach ($analyticsPatterns as $category => $patterns) {
       foreach ($patterns as $pattern) {
         if (preg_match($pattern, $translated)) {
-          error_log("Match trouvé dans la catégorie $category avec le pattern : $pattern");
+          error_log("Match found in category $category with the pattern: $pattern");
           return 'analytics';
         }
       }
