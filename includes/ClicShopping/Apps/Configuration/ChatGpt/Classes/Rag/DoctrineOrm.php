@@ -10,10 +10,8 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
-use Doctrine\DBAL\ParameterType;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
-use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Types\Type;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\VectorType;
@@ -47,13 +45,13 @@ class DoctrineOrm
    */
   private static function Orm(): array
   {
-    // Set the Doctrine with a minimal metadata pilot
+    // Set the Doctrine with a minimal metadata driver
     $config = ORMSetup::createConfiguration(true, null, null);
 
-    // Add a pilot of minimal metadata (require by Doctrine)
+    // Add a minimal metadata driver (required by Doctrine)
     $config->setMetadataDriverImpl(new \Doctrine\ORM\Mapping\Driver\SimplifiedXmlDriver([]));
 
-    // Paramètres de connexion pour MariaDB
+    // Connection parameters for MariaDB
     $connectionParams = [
       'driver' => 'pdo_mysql',
       'user' => CLICSHOPPING::getConfig('db_server_username'),
@@ -65,9 +63,28 @@ class DoctrineOrm
         \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
         \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
       ],
-      //MariaDB Vector option
-      'serverVersion' => '11.8.0' //$mariadbVersion, // Version exacte de MariaDB
     ];
+
+    // Dynamically get the version of the database
+    try {
+      // Create a temporary DBAL connection (only to fetch the server version)
+      $connectionParams['driver'] = 'pdo_mysql';  // Explicitly set the driver here for DBAL connection
+      $temporaryConnection = \Doctrine\DBAL\DriverManager::getConnection($connectionParams);
+
+      // Fetch the version of the database
+      $serverVersion = $temporaryConnection->fetchOne("SELECT VERSION()");
+
+      // Only add serverVersion if successfully fetched
+      if ($serverVersion) {
+        $connectionParams['serverVersion'] = $serverVersion;
+      } else {
+        error_log('Unable to fetch a valid server version, proceeding without it.');
+      }
+    } catch (\Exception $e) {
+      error_log('Unable to fetch server version, defaulting to version 11.7.0: ' . $e->getMessage());
+      // Optionally, you can allow the user to configure the version or leave it out
+      $connectionParams['serverVersion'] = '11.7.0'; // Default version
+    }
 
     return ['connectionParams' => $connectionParams, 'config' => $config];
   }
@@ -85,25 +102,15 @@ class DoctrineOrm
     $connectionParams = $orm['connectionParams'];
     $config = $orm['config'];
 
-    try {
-      // connexion with error management
-      $connection = DriverManager::getConnection($connectionParams, $config);
+    // Create the connection using the correct driver (pdo_mysql in this case)
+    $connection = \Doctrine\DBAL\DriverManager::getConnection($connectionParams, $config);
 
-      // Enregistrement du type personnalisé pour les vecteurs si nécessaire
-      if (!Type::hasType('vector')) {
-        Type::addType('vector', VectorType::class);
-      }
-
-      // EntityManager creation
-      $entityManager = new EntityManager($connection, $config);
-
-      return $entityManager;
-    } catch (\Doctrine\DBAL\Exception $e) {
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
-        error_log('Erreur de connexion Doctrine : ' . $e->getMessage());
-      }
-      throw $e;
+    if (!Type::hasType('vector')) {
+      Type::addType('vector', VectorType::class);
     }
+
+    // EntityManager creation
+    return new EntityManager($connection, $config);
   }
 
   /**
@@ -113,45 +120,38 @@ class DoctrineOrm
    * @param string $tableName Name of the table to check
    * @return bool True if the structure is correct, false otherwise
    */
-  public static function checkTableStructure(string $tableName): bool
-  {
-    try {
-      $entityManager = self::getEntityManager();
-      $connection = $entityManager->getConnection();
+   public static function checkTableStructure(string $tableName): bool
+   {
+     try {
+       $entityManager = self::getEntityManager();
+       $connection = $entityManager->getConnection();
 
 //    check if prefix is on $tableName or not
-      $prefix = CLICSHOPPING::getConfig('db_prefix');
+       $prefix = CLICSHOPPING::getConfig('db_prefix');
+       if (strpos($tableName, $prefix) !== 0) {
+         $tableName = $prefix . $tableName;
+       }
 
-      if (strpos($tableName, $prefix) !== 0) {
-          $tableName = $prefix . $tableName;
-      }
-      
-      // Check if the vector index exits
-      $tableExists = $connection->executeQuery("
-        SELECT COUNT(*) 
-        FROM information_schema.tables 
-        WHERE table_schema = DATABASE() 
-        AND table_name = ?
-      ", [$tableName])->fetchOne();
+       // Check table existence
+       $sql = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?";
+       $tableExists = $connection->fetchOne($sql, [$tableName]);
 
-      if (!$tableExists) {
-        return false;
-      }
+       if ((int)$tableExists === 0) {
+         return false;
+       }
 
-      // Check if the vector index exits
-      $indexExists = $connection->executeQuery("
-        SHOW INDEX FROM {$tableName} 
-        WHERE Key_name = 'embedding_index'
-      ")->fetchAllAssociative();
+       // Check index existence
+       $sql = "SHOW INDEX FROM `$tableName` WHERE Key_name = ?";
+       $indexExists = $connection->fetchAllAssociative($sql, ['embedding_index']);
 
-      return !empty($indexExists);
-    } catch (\Exception $e) {
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER ==  'true') {
-        error_log('Error while checking the structure of the table ' . $tableName . ' : ' . $e->getMessage());
-      }
-      return false;
-    }
-  }
+       return !empty($indexExists);
+     } catch (\Exception $e) {
+       if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+         error_log('Error while checking structure for table ' . $tableName . ': ' . $e->getMessage());
+       }
+       return false;
+     }
+   }
 
   /**
    * Returns a list of all available embedding tables in the database.
@@ -167,18 +167,17 @@ class DoctrineOrm
       $connection = $entityManager->getConnection();
 
       //Seach inside all tables for the embedding column
-      $tables = $connection->executeQuery("
-        SELECT table_name 
-        FROM information_schema.columns 
-        WHERE table_schema = DATABASE() 
-        AND column_name = 'embedding' 
-        AND data_type LIKE '%vector%'
-      ")->fetchFirstColumn();
-
-      return $tables;
+      $sql = "
+        SELECT table_name
+        FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND column_name = 'embedding'
+          AND data_type LIKE '%vector%'
+      ";
+      return $connection->fetchFirstColumn($sql);
     } catch (\Exception $e) {
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER ==  'true') {
-        error_log('Error while retrieving the embedding tables: ' . $e->getMessage());
+      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+        error_log('Error while retrieving embedding tables: ' . $e->getMessage());
       }
       return [];
     }
