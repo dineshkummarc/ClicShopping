@@ -119,7 +119,7 @@ class DoctrineOrm
       $entityManager = self::getEntityManager();
       $connection = $entityManager->getConnection();
 
-//    check if prefix is on $$tableName or not
+//    check if prefix is on $tableName or not
       $prefix = CLICSHOPPING::getConfig('db_prefix');
 
       if (strpos($tableName, $prefix) !== 0) {
@@ -195,79 +195,5 @@ class DoctrineOrm
   public static function createTableStructure(string $tableName): bool
   {
      return false;
-    /*
-    try {
-      $entityManager = self::getEntityManager();
-      $connection = $entityManager->getConnection();
-
-//    check if prefix is on $$tableName or not
-      $prefix = CLICSHOPPING::getConfig('db_prefix');
-
-      if (strpos($tableName, $prefix) !== 0) {
-          $tableName = $prefix . $tableName;
-      }
-
-      // Vérifier si la table existe déjà
-      $tableExists = $connection->executeQuery("
-          SELECT COUNT(*) 
-          FROM information_schema.tables 
-          WHERE table_schema = DATABASE() 
-          AND table_name = ?
-      ", [$tableName])->fetchOne();
-      
-      // Check if table exist
-      $tableExists = $connection->executeQuery("
-          SELECT COUNT(*) 
-          FROM information_schema.tables 
-          WHERE table_schema = DATABASE() 
-          AND table_name = ?
-      ", [$tableName], [ParameterType::STRING])->fetchOne();
-
-      if (!$tableExists) {
-        // Create the table if it doesn't exist
-        $connection->executeStatement("
-            CREATE TABLE IF NOT EXISTS {$tableName} (
-                id SERIAL PRIMARY KEY,
-                content TEXT DEFAULT NULL,
-                type TEXT DEFAULT NULL,
-                sourcetype TEXT DEFAULT 'manual',
-                sourcename TEXT DEFAULT 'manual',
-                embedding VECTOR(3072) NOT NULL,
-                chunknumber INT DEFAULT 128,
-                date_modified DATETIME DEFAULT NULL,
-                entity_id INT DEFAULT NULL,
-                language_id INT DEFAULT 1
-            )
-        ");
-      }
-
-      // check if the vector table exists
-      $indexExists = $connection->executeQuery("
-          SHOW INDEX FROM {$tableName} 
-          WHERE Key_name = 'embedding_index'
-      ")->fetchAllAssociative();
-
-      //Create the vector index if it doesn't exist
-      if (empty($indexExists)) {
-        try {
-          $connection->executeStatement("
-            ALTER TABLE {$tableName} ADD VECTOR INDEX embedding_index (embedding)
-          ");
-        } catch (\Exception $e) {
-          if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER ==  'true') {
-            error_log("Warning: Unable to create the vector index on {$tableName}: " . $e->getMessage());
-            // Contiune if the index creation fails
-          }
-        }
-      }
-
-      return true;
-    } catch (\Exception $e) {
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER ==  'true') {
-        error_log('Error while creating the structure of the table ' . $tableName . ' : ' . $e->getMessage());
-      }
-      return false;
-    }
-    */
   }
 }
