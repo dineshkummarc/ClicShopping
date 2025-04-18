@@ -532,14 +532,16 @@ The important tables are:
 - orders_products: Contains the products in orders (orders_id, products_id, products_quantity, products_price).
 - orders_total: Contains the order totals (orders_id, value, class). The class contains 'ST' for the order subtotal excluding tax, 'SH' for the shipping amount, 'TX' for the tax amount, 'TO' for the total amount excluding tax of the order.
 - customers: Contains the customer information (customers_id, customers_name, customers_email_address).
-- products_specials: Contains all current promotions (products_id, specials_new_products_price, specials_date_added, specials_last_modified)
-- products_favorites: Contains customers' favorite products (products_id, products_favorites_date_added)
-- products_featured: Contains featured products (products_id, products_featured_date_added)
-- reviews: Contains customer reviews on products (products_id, customers_name, reviews_rating, reviews_date_added, status)
-- reviews_description: Contains the descriptions of reviews (products_id, languages_id, reviews_text)
-- reviews_votes: Contains votes on reviews (products_id, reviews_id, customers_id, vote, sentiment)
-- reviews_sentiment: Contains the sentiment of reviews (products_id, reviews_id, date_added)
-- reviews_sentiment_description: Contains the descriptions of sentiments (id, languages_id, description)
+- manufacturers: Contains the brand information of product (manufacturers_id, manufacturers_name, suppliers_id).
+- manufacturers_info : Contains the brand descriptions of product (manufacturers_id, language_id, manufacturers_description).
+- products_specials: Contains all current promotions (products_id, specials_new_products_price, specials_date_added, specials_last_modified).
+- products_favorites: Contains customers' favorite products (products_id, products_favorites_date_added).
+- products_featured: Contains featured products (products_id, products_featured_date_added).
+- reviews: Contains customer reviews on products (products_id, customers_name, reviews_rating, reviews_date_added, status).
+- reviews_description: Contains the descriptions of reviews (products_id, languages_id, reviews_text).
+- reviews_votes: Contains votes on reviews (products_id, reviews_id, customers_id, vote, sentiment).
+- reviews_sentiment: Contains the sentiment of reviews (products_id, reviews_id, date_added).
+- reviews_sentiment_description: Contains the descriptions of sentiments (id, languages_id, description).
 
 If you are asked:
 - 'number of products per category' → SELECT cd.categories_name, COUNT(p.products_id) AS product_count FROM clic_products p JOIN clic_products_to_categories ptc ON p.products_id = ptc.products_id JOIN clic_categories c ON ptc.categories_id = c.categories_id JOIN clic_categories_description cd ON c.categories_id = cd.categories_id WHERE cd.language_id =  {{language_id}} GROUP BY c.categories_id, cd.categories_name ORDER BY product_count DESC
@@ -561,6 +563,7 @@ When generating an SQL query:
 6. Limit the results to a reasonable number if necessary (LIMIT).
 7. If a text field is involved in a condition (like a name or description), use the LIKE operator with wildcard characters (%) to allow partial searches.
 8. Ensure the query is correct before executing it and that there are no SQL injections.
+9. If you detect inconsistencies (duplicates, incorrect sums, missing data), alert the user with a specific recommendation on data validation or improving SQL queries.
 
 IMPORTANT: Respond only with the raw SQL query, without any formatting, without markdown tags, without ```sql, without comments, without explanations.
 

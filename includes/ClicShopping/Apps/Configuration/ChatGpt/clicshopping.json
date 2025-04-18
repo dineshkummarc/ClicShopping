@@ -36,11 +36,14 @@
       },
       "ClicShoppingAdmin/Manufacturers": {
         "ManufacturersTab4": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\SeoChatGpt",
-        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\Insert"
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\DeleteAll"
       },
       "ClicShoppingAdmin/PageManager": {
         "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\PageManager\\SeoChatGpt",
-        "Save": "Module\\Hooks\\ClicShoppingAdmin\\PageManager\\Save"
+        "Save": "Module\\Hooks\\ClicShoppingAdmin\\PageManager\\Save",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\PageManager\\DeleteAll"
       },
       "ClicShoppingAdmin/SEO": {
         "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\SEO\\SeoChatGpt"

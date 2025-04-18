@@ -69,8 +69,7 @@ class DoctrineOrm
     try {
       // Create a temporary DBAL connection (only to fetch the server version)
       $connectionParams['driver'] = 'pdo_mysql';  // Explicitly set the driver here for DBAL connection
-      $temporaryConnection = \Doctrine\DBAL\DriverManager::getConnection($connectionParams);
-
+      $temporaryConnection = \Doctrine\DBAL\DriverManager::getConnection($connectionParams, $config);
       // Fetch the version of the database
       $serverVersion = $temporaryConnection->fetchOne("SELECT VERSION()");
 

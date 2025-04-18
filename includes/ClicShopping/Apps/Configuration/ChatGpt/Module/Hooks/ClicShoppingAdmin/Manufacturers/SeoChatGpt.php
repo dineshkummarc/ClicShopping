@@ -56,7 +56,7 @@ class SeoChatGpt implements \ClicShopping\OM\Modules\HooksInterface
       $id = HTML::sanitize($_GET['mID']);
       $manufacturer_name = ManufacturerAdmin::getManufacturerNameById($id);
 
-      $question = $this->app->getDef('text_seo_page_title_question', ['brand_name' => $manufacturer_name]);
+      $question_title = $this->app->getDef('text_seo_page_title_question', ['brand_name' => $manufacturer_name]);
       $question_keywords = $this->app->getDef('text_seo_page_keywords_question', ['brand_name' => $manufacturer_name]);
       $question_summary_description = $this->app->getDef('text_seo_page_summary_description_question', ['brand_name' => $manufacturer_name]);
       $translate_language = $this->app->getDef('text_seo_page_translate_language', ['brand_name' => $manufacturer_name]);
@@ -69,7 +69,7 @@ class SeoChatGpt implements \ClicShopping\OM\Modules\HooksInterface
       $content .= '<i class="bi-chat-square-dots" title="' . $this->app->getDef('text_seo_action') . '"></i>';
       $content .= '</button>';
 
-      $getManufacturerSeoTitle = ChatJsAdminSeo::getManufacturerSeoTitle($content, $urlMultilanguage, $translate_language, $question, $manufacturer_name, $url);
+      $getManufacturerSeoTitle = ChatJsAdminSeo::getManufacturerSeoTitle($content, $urlMultilanguage, $translate_language, $question_title, $manufacturer_name, $url);
       $getManufacturerSeoDescription = ChatJsAdminSeo::getManufacturerSeoDescription($content, $urlMultilanguage, $translate_language, $question_summary_description, $manufacturer_name, $url);
       $getManufacturerSeoKeywords = ChatJsAdminSeo::getManufacturerSeoKeywords($content, $urlMultilanguage, $translate_language, $question_keywords, $manufacturer_name, $url);
 
