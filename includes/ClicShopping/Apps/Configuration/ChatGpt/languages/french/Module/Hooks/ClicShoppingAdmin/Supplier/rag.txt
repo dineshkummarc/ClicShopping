@@ -1,0 +1,5 @@
+text_supplier_name = Nomdu fournisseur
+text_supplier_date_added = Date ajout
+text_supplier_city = Villedu fournisseur
+supplier_status = Statut du fournisseur
+text_supplier_country_id = country id du fournisseur

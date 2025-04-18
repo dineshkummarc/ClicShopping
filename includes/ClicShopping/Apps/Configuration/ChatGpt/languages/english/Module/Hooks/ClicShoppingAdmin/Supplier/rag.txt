@@ -1,0 +1,5 @@
+text_supplier_name = Supplier name
+text_supplier_date_added = Date added
+text_supplier_city = Supplier city
+supplier_status = Supplier statut
+text_supplier_country_id = Supplier country id

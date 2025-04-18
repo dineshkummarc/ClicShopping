@@ -35,6 +35,8 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/SEO/review_sentiment');
+    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/SEO/rag');
   }
 
   /**
@@ -90,21 +92,19 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     // Split the message into words
     $words = preg_split('/\s+/', $text_reviews, -1, PREG_SPLIT_NO_EMPTY);
 
-// Check if the message exceeds 300 words
+    // Check if the message exceeds 300 words
     if (count($words) > 2250) {
       $words = array_slice($words, 0, 300);
       $text_reviews = implode(' ', $words);
     }
 
-    $message = 'Could you give me a summary about the customer sentiment analysis concerning this product reviews ' . $products_name . ' below. 
-    remove the prompt engine message.
-    remove the question of this request.
-    Give me only the brut response.
-    Write the answer in this language : ' . $language_name . '.
-    Write the answer in 300 worlds maximum.
-    Here customers products reviews for sentiment analysis : ';
+    $language_array = [
+      'products_name' => $products_name,
+      'language_name' => $language_name,
+      'text_reviews' => $text_reviews
+    ];
 
-    $prompt = $message . $text_reviews;
+    $prompt = $this->app->getDef('text_sentiment', $language_array);
 
     $sentiment = Gpt::getGptResponse($prompt, 2300, 0.5);
 
@@ -126,8 +126,6 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     if (Gpt::checkGptStatus() === false) {
       return false;
     }
-
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/SEO/seo_chat_gpt');
 
     $id = HTML::sanitize($_GET['rID']);
     $user_admin = AdministratorAdmin::getUserAdmin();

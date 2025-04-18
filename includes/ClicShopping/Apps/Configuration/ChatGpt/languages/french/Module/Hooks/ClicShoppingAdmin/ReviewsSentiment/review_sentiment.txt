@@ -1,0 +1,7 @@
+text_sentiment = Veuillez fournir un résumé de l'analyse du sentiment client basée sur les avis concernant {{$products_name}}.
+Écrivez la réponse en {{$language_name}}.
+Limitez la réponse à 300 mots maximum.
+N'incluez aucun message système ou message de l'invite.
+Ne répétez pas la demande ou la question d'origine.
+Ne donnez que la réponse finale brute.
+Voici les avis clients pour l'analyse du sentiment : {{text_reviews}}.

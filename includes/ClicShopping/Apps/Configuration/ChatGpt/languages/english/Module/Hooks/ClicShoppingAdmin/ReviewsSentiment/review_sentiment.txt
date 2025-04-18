@@ -1,0 +1,7 @@
+text_sentiment = Please provide a summary of the customer sentiment analysis based on the product reviews for {{$products_name}}.
+Write the answer in {{$language_name}}.
+Limit the response to 300 words maximum.
+Do not include any system or prompt messages.
+Do not repeat the original request or question.
+Only output the pure final response.
+Here are the customer product reviews for sentiment analysis: {{text_reviews}}.
