@@ -15,7 +15,8 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
+use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use function count;
 
 class Update implements \ClicShopping\OM\Modules\HooksInterface
@@ -144,7 +145,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
       $this->app->db->save('reviews_sentiment', $sql_data_array, ['id' => (int)$Qchek->valueInt('id')]);
 
-      for ($i = 0, $n = count($languages); $i < $n; $i++) {
+      for ($i = 0, $n = \count($languages); $i < $n; $i++) {
         $language_id = $languages[$i]['id'];
         $products_name = $CLICSHOPPING_ProductsAdmin->getProductsName($products_id, $language_id);
 
@@ -172,7 +173,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       $this->app->db->save('reviews_sentiment', $sql_data_array);
       $last_id = $this->app->db->lastInsertId();
 
-      for ($i = 0, $n = count($languages); $i < $n; $i++) {
+      for ($i = 0, $n = \count($languages); $i < $n; $i++) {
         $language_id = $languages[$i]['id'];
         $products_name = $CLICSHOPPING_ProductsAdmin->getProductsName($products_id, $language_id);
 
@@ -188,6 +189,118 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         $sql_data_array = array_merge($sql_data_array, $insert_sql_data);
 
         $this->app->db->save('reviews_sentiment_description ', $sql_data_array);
+      }
+    }
+    //
+    // embedding
+    //
+
+    if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'True') {
+      $Qcheck = $this->app->db->prepare('select id
+                                           from :table_pages_manager_embedding
+                                           where entity_id = :entity_id
+                                          ');
+      $Qcheck->bindInt(':entity_id', $id);
+      $Qcheck->execute();
+
+      $insert_embedding = false;
+
+      if ($Qcheck->fetch() === false) {
+        $insert_embedding = true;
+      }
+
+      $QreviewSentiment = $this->app->db->prepare('SELECT distinct rs.id,
+                                                                    rs.sentiment_status,
+                                                                    rs.sentiment_approved,
+                                                                    rs.date_added,
+                                                                    rs.products_id,
+                                                                    rs.reviews_id,
+                                                                    rsd.language_id,
+                                                                    rsd.description,
+                                                                    rv.vote,
+                                                                    rv.customer_id,
+                                                                    rv.sentiment AS vote_sentiment
+                                                      FROM 
+                                                          :table_reviews_sentiment rs
+                                                      INNER JOIN 
+                                                          :table_reviews_sentiment_description rsd 
+                                                          ON rs.id = rsd.sentiment_id
+                                                      LEFT JOIN
+                                                          :table_reviews_vote rv
+                                                          ON rs.reviews_id = rv.reviews_id
+                                                          AND rs.products_id = rv.products_id
+                                                      WHERE 
+                                                          rs.id = :id
+                                                  ');
+      $QreviewSentiment->bindInt(':id', $id);
+      $QreviewSentiment->execute();
+
+      $review_sentiment_array = $QreviewSentiment->fetchAll();
+
+      if (is_array($review_sentiment_array)) {
+        foreach ($review_sentiment_array as $item) {
+          $products_id = $item['products_id'];
+          $reviews_id = $item['reviews_id'];
+          $language_id = $item['language_id'];
+          $sentiment_status = isset($item['sentiment_status']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['sentiment_status']) : '';
+          $sentiment_approved = isset($item['sentiment_approved']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['sentiment_approved']) : '';
+          $date_added = isset($item['date_added']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['date_added']) : '';
+          $description = isset($item['description']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['description']) : '';
+          $vote = isset($item['vote']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['vote']) : '0';
+          $customer_id = isset($item['customer_id']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['customer_id']) : '';
+          $vote_sentiment = isset($item['vote_sentiment']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['vote_sentiment']) : '';
+
+          $embedding_data = $this->app->getDef('text_review_sentiment_products_id') . ' : ' . $products_id . '\n';
+          $embedding_data .= $this->app->getDef('text_review_sentiment_review_id') . ' : ' . $reviews_id . '\n';
+          $embedding_data .= $this->app->getDef('text_review_sentiment_language_id') . ' : ' . $language_id . '\n';
+          $embedding_data .= $this->app->getDef('text_review_sentiment_sentiment_status') . ' : ' . $sentiment_status . '\n';
+          $embedding_data .= $this->app->getDef('text_review_sentiment_sentiment_approved') . ' : ' . $sentiment_approved . '\n';
+          $embedding_data .= $this->app->getDef('text_review_sentiment_date_added') . ' : ' . $date_added . '\n';
+          $embedding_data .= $this->app->getDef('text_review_sentiment_vote') . ' : ' . $vote . '\n';
+          $embedding_data .= $this->app->getDef('text_review_sentiment_customer_id') . ' : ' . $customer_id . '\n';
+          $embedding_data .= $this->app->getDef('text_review_sentiment_vote_sentiment') . ' : ' . $vote_sentiment . '\n';
+          $embedding_data .= $this->app->getDef('text_review_sentiment_description') . ' : ' . $description . '\n';
+
+
+          $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+
+          $embeddings = [];
+
+          foreach ($embeddedDocuments as $embeddedDocument) {
+            if (is_array($embeddedDocument->embedding)) {
+              $embeddings[] = $embeddedDocument->embedding;
+            }
+          }
+
+          if (!empty($embeddings)) {
+            $flattened_embedding = $embeddings[0];
+            $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
+
+            $sql_data_array_embedding = [
+              'content' => $embedding_data,
+              'type' => 'review_sentiment',
+              'sourcetype' => 'manual',
+              'sourcename' => 'manual',
+              'date_modified' => 'now()',
+              'language_id' => $language_id
+            ];
+
+            $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+
+            if ($insert_embedding === true) {
+              $sql_data_array_embedding['entity_id'] = $item['id'];
+              $sql_data_array_embedding['language_id'] = $language_id;
+              $this->app->db->save('reviews_sentiment_embedding', $sql_data_array_embedding);
+            } else {
+              $update_sql_data = [
+                'language_id' => $language_id,
+                'entity_id' => $item['id']
+              ];
+
+              $this->app->db->save('reviews_sentiment_embedding', $sql_data_array_embedding, $update_sql_data);
+            }
+          }
+        }
       }
     }
   }

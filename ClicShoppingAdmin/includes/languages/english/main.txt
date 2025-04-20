@@ -581,7 +581,7 @@ text_table_structure_instructions = IMPORTANT: Regarding the structure of the e-
    - Linked to clic_orders_products via orders_id.
 2. Table clic_customers:
    - Contains customer information with customers_firstname and customers_lastname (separate).
-   - Do not confuse customers_name (in orders) with customers_firstname/customers_lastname.
+   - Do not confuse customers_name (in orders) with customers_firstname and customers_lastname.
 3. Table clic_products:
    - Contains basic product information.
    - Linked to clic_products_description via products_id for multilingual descriptions.
@@ -589,6 +589,29 @@ text_table_structure_instructions = IMPORTANT: Regarding the structure of the e-
    - A customer (customers) can have multiple orders (orders).
    - An order (orders) can contain multiple products (via orders_products).
    - Product descriptions are stored by language (language_id) in products_description.
+5. Table clic_manufacturers:
+   - Contains basic brand information.
+   - Linked to clic_manufacturers_info via manufacturers_id for multilingual descriptions.
+   - linked to clic_products via manufacturers_id.
+   - linked to clic_suppliers via suppliers_id.
+6. Table clic_suppliers:
+   - Contains basic suppliers information.
+   - A supplier can have multiple brand (manufacturers).
+   - A supplier can have multiple products (products).
+   - Linked to clic_suppliers_info via suppliers_id for multilingual descriptions.
+   - linked to clic_products via suppliers_id.
+ 7. Table clic_sentiment:
+   - Contains sentiment information, customers reviews.
+   - Linked to clic_reviews via products_id and reviews_id and id (which is the sentiment id).
+   - Linked to products via products_id.
+   - linked to clic_reviews_description via reviews_id and language_id.
+   - linked to clic_reviews_votes via products_id and reviews_id.
+8. Table clic_reviews:
+   - Contains customer reviews on products.
+   - Linked to clic_products via products_id.
+   - Linked to clic_reviews_description via reviews_id and language_id.
+   - linked to clic_sentiment via products_id and reviews_id.
+   - linked to clic_reviews_votes via products_id and reviews_id.
 When generating SQL queries, strictly follow these table structures and do not invent columns.
 
 

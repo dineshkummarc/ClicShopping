@@ -15,7 +15,7 @@ use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Catalog\Suppliers\Suppliers as SuppliersApp;
 
-class Save implements \ClicShopping\OM\Modules\HooksInterface
+class Update implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
 

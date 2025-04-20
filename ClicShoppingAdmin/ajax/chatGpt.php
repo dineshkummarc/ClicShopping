@@ -63,6 +63,8 @@ try {
           'orders_embedding',
           'manufacturers_embedding',
           'suppliers_embedding',
+          'reviews_embedding',
+          'reviews_sentiment_embedding',
         ];
 
         // Add first the known table

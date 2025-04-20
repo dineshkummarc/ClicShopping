@@ -139,8 +139,9 @@ class Update extends \ClicShopping\OM\PagesActionsAbstract
 
       $sql_data_array = ['suppliers_url' => HTML::sanitize($suppliers_url_array[$language_id])];
 
-      $this->app->db->save('suppliers_info', $sql_data_array, ['suppliers_id' => (int)$suppliers_id,
-          'languages_id' => (int)$language_id
+      $this->app->db->save('suppliers_info', $sql_data_array, [
+        'suppliers_id' => (int)$suppliers_id,
+        'languages_id' => (int)$language_id
         ]
       );
     }

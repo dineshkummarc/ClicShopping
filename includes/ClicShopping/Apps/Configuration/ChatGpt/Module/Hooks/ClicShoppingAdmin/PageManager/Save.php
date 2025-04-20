@@ -38,7 +38,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
     $this->app = Registry::get('ChatGpt');
 
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Products/rag');
+    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/PageManager/rag');
   }
 
   /**
@@ -86,7 +86,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
                                                  from :table_pages_manager_description
                                                  where pages_id = :pages_id
                                                 ');
-        $QpageManager->bindInt(':pages_id',$pages_id);
+        $QpageManager->bindInt(':pages_id', $pages_id);
         $QpageManager->execute();
 
         $page_manager_array = $QpageManager->fetchAll();
@@ -98,11 +98,6 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
             $seo_page_manager_title = isset($item['page_manager_head_title_tag']) ? HtmlOverrideCommon::cleanHtmlForSEO($item['page_manager_head_title_tag']) : '';
             $seo_page_manager_description = isset($item['page_manager_head_desc_tag']) ? HtmlOverrideCommon::cleanHtmlForSEO($item['page_manager_head_desc_tag']) : '';
             $seo_page_manager_keywords = isset($item['page_manager_head_keywords_tag']) ? HtmlOverrideCommon::cleanHtmlForSEO($item['page_manager_head_keywords_tag']) : '';
-
-            $update_sql_data = [
-              'language_id' => $item['language_id'],
-              'pages_id' => $item['pages_id']
-            ];
 
 //********************
 // add embedding
@@ -152,12 +147,14 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
               if ($insert_embedding === true) {
                 $sql_data_array_embedding['entity_id'] = $item['pages_id'];
                 $sql_data_array_embedding['language_id'] =  $item['language_id'];
+		
                 $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding);
               } else {
                 $update_sql_data = [
                   'language_id' => $item['language_id'],
                   'entity_id' => $item['pages_id']
                 ];
+		
                 $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding, $update_sql_data);
               }
             }

@@ -580,10 +580,33 @@ text_table_structure_instructions = IMPORTANT: Concernant la structure des table
 3. Table clic_products:
    - Contient les informations produits de base.
    - Liée à clic_products_description via products_id pour les descriptions multilingues.
-4. Relations importantes:
+4. Table clic_customers:
    - Un client (customers) peut avoir plusieurs commandes (orders).
    - Une commande (orders) peut contenir plusieurs produits (via orders_products).
    - Les descriptions de produits sont stockées par langue (language_id) dans products_description.
+5. Table clic_manufacturers:
+   - Contient les informations de la marque.
+   - Une marque peut avoir plusieurs produits.
+   - Liée à clic_manufacturers_info via manufacturers_id for multilingual descriptions.
+   - Liée à clic_products via manufacturers_id.
+   - Liée à clic_suppliers via suppliers_id.
+6. Table clic_suppliers:
+   - Contient les informations de du fournisseur.
+   - Un fourniseurs peut avoir plusieurs marques (manufacturers).
+   - Un fournisseurs peut avoir plusieurs produits (products).
+   - Liée à clic_suppliers_info via suppliers_id for multilingual descriptions.
+   - Liée à clic_products via suppliers_id.
+7. Table clic_sentiment:
+   - Contient les informations de sentiment des avis - commentaire des clients.
+   - Liée à clic_reviews via products_id et via reviews_id et id (qui est àquivalent au sentiment id).
+   - Liée à products via products_id.
+   - Liée à clic_reviews_description via reviews_id et language_id.
+   - Liée à clic_reviews_votes via products_id et reviews_id.
+8. Table clic_reviews:
+   - Contient les avis des clients sur les produits.
+   - Liée à clic_products via products_id.
+   - Liée à clic_reviews_description via products_id et language_id.
+   - Liée à clic_reviews_votes via products_id et reviews_id.
 Lors de la génération de requêtes SQL, respectez strictement ces structures de tables et n'inventez pas de colonnes.
 
 

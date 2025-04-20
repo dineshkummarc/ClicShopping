@@ -1,0 +1,11 @@
+text_reviews = Avis du client:
+text_reviews_description = Description du commentaire
+text_reviews_rating = Évaluation du commentaire
+text_reviews_date_added = Date d'ajout du commentaire
+text_reviews_read = Nombre de lecture du commentaire
+text_reviews_status = Statut du commentaire
+text_reviews_customer_id = customer id
+text_reviews_customer_tag = Tag du client
+text_reviews_customer_vote = Vote du client
+text_reviews_customer_sentiment = Sentiment du client
+text_reviews_products_id = profucts id

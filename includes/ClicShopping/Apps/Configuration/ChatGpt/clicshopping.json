@@ -40,6 +40,11 @@
         "Update": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\Update",
         "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\DeleteAll"
       },
+      "ClicShoppingAdmin/Suppliers": {
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Suppliers\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Suppliers\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Suppliers\\DeleteAll"
+      },
       "ClicShoppingAdmin/PageManager": {
         "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\PageManager\\SeoChatGpt",
         "Save": "Module\\Hooks\\ClicShoppingAdmin\\PageManager\\Save",
@@ -51,11 +56,18 @@
       "ClicShoppingAdmin/Recommendations": {
         "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\SEO\\SeoChatGpt"
       },
+      "ClicShoppingAdmin/Reviews": {
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Reviews\\DeleteAll"
+      },
+      "ClicShoppingAdmin/ReviewsSentiment": {
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\DeleteAll"
+      },
       "Shop/Reviews": {
         "SaveEntry": "Module\\Hooks\\Shop\\Reviews\\SaveEntry"
       },
-      "ClicShoppingAdmin/ReviewsSentiment": {
-        "Update": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\Update"
+      "Shop/ReviewsWrite": {
+        "Process": "Module\\Hooks\\Shop\\ReviewsWrite\\Process"
       }
     }
   },
