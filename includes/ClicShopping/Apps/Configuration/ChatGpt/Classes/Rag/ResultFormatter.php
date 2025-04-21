@@ -11,6 +11,7 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
 use ClicShopping\OM\Hash;
+use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
 /**
  * ResultFormatter Class
@@ -87,6 +88,7 @@ class ResultFormatter
       // Table headers
       $output .= "<thead><tr>";
       $firstRow = reset($results['results']);
+
       if (is_array($firstRow)) {
         foreach (array_keys($firstRow) as $key) {
           if (!is_numeric($key)) { // Avoid duplicate numeric keys
@@ -94,14 +96,17 @@ class ResultFormatter
           }
         }
       }
+
       $output .= "</tr></thead>";
 
       // Table data
       $output .= "<tbody>";
       foreach ($results['results'] as $row) {
         $output .= "<tr>";
+
         foreach ($row as $key => $value) {
           if (!is_numeric($key)) { // Avoid duplicate numeric keys
+            $value = HTMLOverrideCommon::removeInvisibleCharacters($value); // replace non-breaking space
             $output .= "<td>" . htmlspecialchars(Hash::displayDecryptedDataText($value)) . "</td>";
           }
         }
@@ -139,11 +144,14 @@ class ResultFormatter
       $output .= "<div class='sources'>";
       $output .= "<h4>Sources :</h4>";
       $output .= "<ul>";
+
       foreach ($results['sources'] as $source) {
         $output .= "<li>";
+
         if (isset($source['title'])) {
           $output .= "<strong>" . htmlspecialchars($source['title']) . "</strong>";
         }
+
         if (isset($source['content'])) {
           $output .= "<p>" . htmlspecialchars(substr($source['content'], 0, 200)) . "...</p>";
         }

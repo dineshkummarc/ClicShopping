@@ -21,6 +21,37 @@ use function strlen;
 class HTMLOverrideCommon extends HTML
 {
   /**
+   * Removes invisible characters from a given text.
+   *
+   * @param string $text The text to clean.
+   * @return string The cleaned text without invisible characters.
+   */
+  public static function removeInvisibleCharacters(string $text): string
+  {
+    // Liste des caractères invisibles à supprimer (espaces non-coupables, zéros largeur, etc.)
+    $invisibleChars = [
+      '\u200b',  // Zero Width Space
+      '\u200c',  // Zero Width Non-Joiner
+      '\u200d',  // Zero Width Joiner
+      '\u200e',  // Left-to-Right Mark
+      '\u200f',  // Right-to-Left Mark
+      '\u00a0',  // Non-breaking space
+      '\u202f',  // Narrow non-breaking space
+      '\u2060',  // Word joiner
+      '\u2028',  // Line separator
+      '\u2029',  // Paragraph separator
+    ];
+
+    // Remplacer chaque caractère invisible par une chaîne vide
+    foreach ($invisibleChars as $char) {
+      $text = preg_replace('/' . preg_quote($char, '/') . '/u', '', $text);
+    }
+
+    // Retourne le texte nettoyé des caractères invisibles
+    return $text;
+  }
+
+  /**
    * Nettoie une chaîne HTML en supprimant les balises, le JavaScript et les entités HTML.
    *
    * @param string $html Le contenu HTML à nettoyer.
@@ -38,7 +69,7 @@ class HTMLOverrideCommon extends HTML
 
     // Décodage des entités HTML pour récupérer du texte lisible
     $clean = html_entity_decode($clean, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
+    $clean = self::removeInvisibleCharacters($clean);
     // Normalisation des espaces
     $clean = preg_replace('/\s+/', ' ', trim($clean));
 
@@ -73,7 +104,7 @@ class HTMLOverrideCommon extends HTML
 
     // Décodage des entités HTML
     $clean = html_entity_decode($clean, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
+    $clean = self::removeInvisibleCharacters($clean);
     // Supprime les caractères non alphanumériques inutiles
     $clean = preg_replace('/[^\p{L}\p{N}\s,.!?-]/u', '', $clean);
 
@@ -108,7 +139,7 @@ class HTMLOverrideCommon extends HTML
 
     // Décodage des entités HTML
     $clean = html_entity_decode($clean, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
+    $clean = self::removeInvisibleCharacters($clean);
     // Supprime uniquement les caractères spéciaux non pertinents (évite de supprimer - , / |)
     $clean = preg_replace('/[^\p{L}\p{N}\s,\/|.-]/u', '', $clean);
 

@@ -3,6 +3,7 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\OM\Registry;
 
 class Semantics {
 
@@ -14,8 +15,15 @@ class Semantics {
    */
   public static function translateToEnglish(string $text, int|null $token = 80): string
   {
-    $question = "Translate the following query to English: {$text}";
-    $query = Gpt::getGptResponse($question, $token);
+    $language_id = Registry::get('Language')->getId();
+    $language_name = Registry::get('Language')->getLanguagesName($language_id);
+
+    if (strtolower($language_name) !== 'english') {
+      $question = "Translate the following query to English: {$text}";
+      $query = Gpt::getGptResponse($question, $token);
+    } else {
+      $query = $text;
+    }
 
     return $query;
   }
@@ -35,7 +43,7 @@ class Semantics {
   }
 
   /**
-   * Try to classify based on patterns first, fallback to semantic check.
+   * Classify the query as 'analytics' or 'semantic' based on regex patterns.
    * @param string $text
    * @return string
    */
@@ -43,17 +51,48 @@ class Semantics {
   {
     $translated = self::translateToEnglish($text);
     $analyticsPatterns = self::analyticsPatterns();
+    $score = 0;
+
+    // Pondérations par catégorie (ajustables facilement)
+    $weights = [
+      'reference' => 10,
+      'stock' => 8,
+      'price' => 7,
+      'quantity' => 6,
+      'performance' => 6,
+      'time' => 5,
+      'customer' => 4,
+      'category' => 4,
+      'comparison' => 3,
+      'entity' => 3,
+      'calculation' => 2,
+      'filters' => 1,
+      'sorting' => 1,
+    ];
 
     foreach ($analyticsPatterns as $category => $patterns) {
       foreach ($patterns as $pattern) {
         if (preg_match($pattern, $translated)) {
-          error_log("Match found in category $category with the pattern: $pattern");
-          return 'analytics';
+          error_log("Pattern match detected: Category: $category | Pattern: $pattern");
+          $score += $weights[$category] ?? 1; // Default poids 1 si non défini
         }
       }
     }
 
-    // Aucun match clair → GPT fallback
+    if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      error_log("Total score: {$score}");
+    }
+
+    // Définir un seuil (threshold) arbitraire pour déterminer analytics
+    $threshold = 5;
+
+    if ($score >= $threshold) {
+      return 'analytics';
+    }
+    if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      error_log("No analytics pattern matched. Falling back to semantic analysis.");
+    }
+
     return self::checkSemantics($translated);
   }
 
@@ -92,6 +131,7 @@ class Semantics {
         '/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{4})\b/i',
         '/\bQ[1-4]\s+\d{4}\b/i', // Q1 2023, etc.
         '/\b(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{2,4})\b/i', // Dates in format 01/01/2023
+        '/\b(last|latest|most recent)\s/i',
       ],
       'stock' => [
         '/\b(stock|inventory|available|availability|alert|level|levels|threshold|thresholds|reorder|shortage|out of stock|alert|discountinued)\b/i',
