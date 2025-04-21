@@ -63,11 +63,19 @@
         "Update": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\Update",
         "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\DeleteAll"
       },
+      "ClicShoppingAdmin/Orders": {
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\Update",
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\DeleteConfirm",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\DeleteAll"
+      },
       "Shop/Reviews": {
         "SaveEntry": "Module\\Hooks\\Shop\\Reviews\\SaveEntry"
       },
       "Shop/ReviewsWrite": {
         "Process": "Module\\Hooks\\Shop\\ReviewsWrite\\Process"
+      },
+      "Shop/Orders": {
+        "Process": "Module\\Hooks\\Shop\\Orders\\Process"
       }
     }
   },

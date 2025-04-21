@@ -1,18 +1,38 @@
-text_rag_order = Commande ID
-text_rag_customer = Client ayant fait des commandes:
-text_rag_customer_name = Nom client ayant fait la commande:
-text_rag_company = Entreprise ayant fait la commande:
-text_rag_city = Ville de la prise de commande
-text_rag_country = Pays de la prise de commande
-text_rag_payment_method = Méthode de paiement de la commande
-text_rag_status = Statut commande de la commande
-text_rag_product_model = Référence produit de la commande
+text_order_information = --- Information du client ayant fait la commande ---
+text_order_information_order_id = Commande ID
+text_order_customer_name = Nom client ayant fait la commande
+text_order_company = Entreprise ayant fait la commande
+text_order_customer_city = Ville client de la commande
+text_order_customer_country = Pays de la prise de commande
+text_order_customer_payment_method = Méthode de paiement de la commande
+text_order_customer_status = Statut commande de la commande
+text_order_customer_date_purchased = Date d'achat de la prise de commande
+text_order_customer_delivery_city = Ville de livraison de la commande
+text_order_customer_delivery_country = Pays de livraison de la commande
+text_order_customer_currency = Devise de la commande
 
-text_rag_product_caracteristic = Caractéristiques produits de la commande
-text_rag_product_name = Nom du produit de la commande
-text_rag_price = prix achat HT de la commande
-text_rag_product_model = Référence du produit de la commande
-text_rag_qty = quantité de la commande
-text_rag_attribut = Attribut produit:
+text_order_products_details = --- Caractéristiques de la commande produits ---
+text_order_products_name = Nom du produit de la commande
+text_order_products_model = Référence produit de la commande
+text_order_products_price = Prix d'achat hors taxe de la commande
+text_order_products_qty = Quantité de la commande
+text_order_products_taxe = Taux de taxe de la commande
+text_order_products_final_price = Prix final hors taxe de la commande
 
-text_rag_historic = Historique des statuts
+text_products_attributes_details = --- Détails des attributs produits de la commande ---
+text_products_attributes_products_reference = Référence Attribut du produit de la commande
+text_products_attributes_products_option = Nom option de l'attribut produit de la commande
+text_products_attributes_products_value = Valeur de l'attribut produit de la commande
+text_products_attributes_products_price = Prix de l'attribut produit de la commande
+
+text_products_order_history = --- Historique des statuts de la commande ---
+text_products_order_history_comment = Commentaire de l'historique de la commande
+text_products_order_history_status = Statut de l'historique de la commande
+text_products_order_history_admin = Administrateur de l'historique de la commande
+text_products_order_history_tracking = Tracking de la commande
+text_products_order_history_date = Date historique de la commande
+
+text_orders_total = --- Total de la commande ---
+text_orders_total_title = Titre du total de la commande
+text_orders_total_value = Valeur du total de la commande
+
