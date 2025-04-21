@@ -1090,10 +1090,10 @@ class Order
     $CLICSHOPPING_Hooks->call('Orders', 'PreActionProcess');
 
     $Qproducts = $this->db->prepare('select products_id,
-                                              products_quantity
-                                        from :table_orders_products
-                                        where orders_id = :orders_id
-                                       ');
+                                            products_quantity
+                                      from :table_orders_products
+                                      where orders_id = :orders_id
+                                     ');
     $Qproducts->bindInt(':orders_id', $last_order_id);
     $Qproducts->execute();
 
@@ -1128,10 +1128,10 @@ class Order
           $Qstock->execute();
         } else {
           $Qstock = $this->db->prepare('select products_quantity,
-                                                  products_quantity_alert
-                                          from :table_products
-                                          where products_id = :products_id
-                                          ');
+                                                products_quantity_alert
+                                        from :table_products
+                                        where products_id = :products_id
+                                        ');
 
           $Qstock->bindInt(':products_id', $CLICSHOPPING_Prod::getProductID($Qproducts->valueInt('products_id')));
           $Qstock->execute();

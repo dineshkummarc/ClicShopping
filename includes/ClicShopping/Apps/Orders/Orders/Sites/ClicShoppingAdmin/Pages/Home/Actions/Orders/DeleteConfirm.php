@@ -32,20 +32,21 @@ class DeleteConfirm extends \ClicShopping\OM\PagesActionsAbstract
   {
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
+    if (isset($_GET['DeleteConfirm'], $_GET['oID'])) {
+      if ($this->oID != 0) {
+        if (isset($_POST['restock'])) {
+          $restock = true;
+        } else {
+          $restock = false;
+        }
 
-    if ($this->oID != 0) {
-      if (isset($_POST['restock'])) {
-        $restock = true;
+        OrderAdmin::removeOrder($this->oID, $restock);
       } else {
-        $restock = false;
+        $CLICSHOPPING_MessageStack->add($this->app->getDef('warning_order_not_updated'), 'warning');
       }
 
-      OrderAdmin::removeOrder($this->oID, $restock);
-    } else {
-      $CLICSHOPPING_MessageStack->add($this->app->getDef('warning_order_not_updated'), 'warning');
+      $CLICSHOPPING_Hooks->call('Orders', 'DeleteConfirm');
     }
-
-    $CLICSHOPPING_Hooks->call('Orders', 'DeleteConfirm');
 
     $this->app->redirect('Orders');
   }

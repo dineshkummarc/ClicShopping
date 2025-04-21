@@ -10,6 +10,7 @@
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
+use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 
 ?>
@@ -54,7 +55,7 @@ use ClicShopping\OM\HTML;
                 <div
                   class="col-md-6"><?php echo '<strong>' . CLICSHOPPING::getDef('module_account_customers_history_order_date') . '</strong> ' . DateTime::toLong($order['date_purchased']); ?></div>
                 <div class="col-md-6 text-end">
-                  <strong><?php echo $order_type; ?></strong> <?php echo HTML::outputProtected($order_name); ?></div>
+                  <strong><?php echo $order_type; ?></strong> <?php echo Hash::displayDecryptedDataText($order_name); ?></div>
               </div>
             </div>
             <div class="col-md-12">
