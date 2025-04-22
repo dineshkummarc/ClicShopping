@@ -3,7 +3,7 @@
   "app": "ChatGpt",
   "vendor": "ChatGpt",
   "version": "1.1",
-  "req_core_version": "3.4",
+  "req_core_version": "4.0",
   "license": "GPL-2",
   "authors": [
     {
@@ -68,6 +68,10 @@
         "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\DeleteConfirm",
         "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\DeleteAll"
       },
+      "ClicShoppingAdmin/ReturnOrders": {
+        "Save": "Module\\Hooks\\ClicShoppingAdmin\\ReturnOrders\\Save",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\ReturnOrders\\DeleteAll"
+      },
       "Shop/Reviews": {
         "SaveEntry": "Module\\Hooks\\Shop\\Reviews\\SaveEntry"
       },
@@ -76,6 +80,9 @@
       },
       "Shop/Orders": {
         "Process": "Module\\Hooks\\Shop\\Orders\\Process"
+      },
+      "Shop/ReturnOrders": {
+        "Process": "Module\\Hooks\\Shop\\ReturnOrders\\Process"
       }
     }
   },

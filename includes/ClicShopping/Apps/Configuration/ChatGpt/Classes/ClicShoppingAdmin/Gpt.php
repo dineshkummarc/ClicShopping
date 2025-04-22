@@ -45,11 +45,11 @@ class Gpt {
    */
   public static function checkGptStatus(): bool
   {
-    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_STATUS') || CLICSHOPPING_APP_CHATGPT_CH_STATUS == 'False' || empty('CLICSHOPPING_APP_CHATGPT_CH_API_KEY')) {
+    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_STATUS') || CLICSHOPPING_APP_CHATGPT_CH_STATUS == 'False' || empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY)) {
       return false;
-    } else {
-      return true;
     }
+
+    return true;
   }
 
   /**
@@ -152,14 +152,14 @@ class Gpt {
   /**
    * Generates a response from the OpenAI chat model based on input parameters.
    *
-   * @param string $question The question or input text to be sent to the OpenAI chat model.
+   * @param string|null $question The question or input text to be sent to the OpenAI chat model.
    * @param int|null $maxtoken Optional. Maximum number of tokens to generate in the response. Defaults to the configured application value if null.
    * @param float|null $temperature Optional. Controls the creativity or randomness of the model's response. Defaults to the configured application value if null.
    * @param string|null $engine Optional. Specifies the model engine to use. Defaults to the configured application value if null.
    * @param int|null $max Optional. Number of responses to generate. Defaults to the configured application value if null.
    * @return mixed Returns the generated chat response from OpenAI if successful, or false if the application API key is unavailable.
    */
-   public static function getOpenAIChat(string $question,  int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null,  int|null $max = 1): mixed
+   public static function getOpenAIChat(string|null $question,  int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null,  int|null $max = 1): mixed
    {
     if (!empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY)) {
       $top = ['\n'];
@@ -177,14 +177,14 @@ class Gpt {
       }
 
       $parameters = [
-        'temperature' => $temperature, // Contrôle de la créativité du modèle
+   'temperature' => $temperature, // Controls the model's creativity
         'top_p' => (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P,
-        'frequency_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY, //pénalité de fréquence pour encourager le modèle à générer des réponses plus variées
-        'presence_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY, //pénalité de présence pour encourager le modèle à générer des réponses avec des mots qui n'ont pas été utilisés dans l'amorce
-        'max_tokens' => $maxtoken, //nombre maximum de jetons à générer dans la réponse
-        'stop' => $top, //caractères pour arrêter la réponse
-        'n' => $max, // nombre de réponses à générer
-        'user' => AdministratorAdmin::getUserAdmin(), // nom de l'utilisateur
+        'frequency_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY, // Frequency penalty to encourage the model to generate more varied responses
+        'presence_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY, // Presence penalty to encourage the model to generate responses with words not used in the prompt
+        'max_tokens' => $maxtoken, // Maximum number of tokens to generate in the response
+        'stop' => $top, // Characters to stop the response
+        'n' => $max, // Number of responses to generate
+        'user' => AdministratorAdmin::getUserAdmin(), // User's name
         'messages' => [
                         'role' => 'system',
                         'content' => 'You are an e-commerce expert in marketing.'
@@ -345,7 +345,12 @@ class Gpt {
     $chat = self::getChat($question, $maxtoken, $temperature, $engine, $max);
 
     // Generate text using the chat instance
-    $result = $chat->generateText($prompt);
+    try {
+      $result = $chat->generateText($prompt);
+    } catch (Exception $e) {
+      error_log($e->getMessage());
+      return false;
+    }
 
     if (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'gpt') === 0) {
       $lastResponse = $chat->getLastResponse();
@@ -417,7 +422,19 @@ class Gpt {
 
     $CLICSHOPPING_Db->save('gpt_usage', $array_usage_sql);
   }
-  
+
+  /**
+   * Sets the environment variable for the OpenAI API key.
+   *
+   * @return string The environment variable setting result.
+   */
+  public static function getEnvironment(): string
+  {
+    $env = putenv('OPENAI_API_KEY=' . CLICSHOPPING_APP_CHATGPT_CH_API_KEY);
+
+    return $env;
+  }
+
   /*****************************************
    * Statistics
    ****************************************/
@@ -633,18 +650,10 @@ class Gpt {
 
     return $script;
   }
-
-  /**
-   * Sets the environment variable for the OpenAI API key.
-   *
-   * @return string The environment variable setting result.
-   */
-  public static function getEnvironment(): string
-  {
-    $env = putenv('OPENAI_API_KEY=' . CLICSHOPPING_APP_CHATGPT_CH_API_KEY);
-
-    return $env;
-  }
+  
+  /*****************************************
+   * Embedding
+   ****************************************/
 
   /**
    * Generates embeddings for the given text using OpenAI.

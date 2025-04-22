@@ -113,6 +113,28 @@ CREATE TABLE IF NOT EXISTS clic_reviews_sentiment_embedding (
 CREATE VECTOR INDEX embedding_index ON clic_reviews_sentiment_embedding (embedding);
 
 
+
+CREATE TABLE IF NOT EXISTS clic_return_orders_embedding (
+    id SERIAL PRIMARY KEY,
+    content TEXT DEFAULT NULL,
+    type TEXT DEFAULT NULL,
+    sourcetype TEXT DEFAULT 'manual',
+    sourcename TEXT DEFAULT 'manual',
+    embedding VECTOR(3072) NOT NULL,
+    chunknumber INT DEFAULT 128,
+    date_modified DATETIME DEFAULT NULL,
+    entity_id INT
+);
+
+-- Add vector index separately
+CREATE VECTOR INDEX embedding_index ON clic_return_orders_embedding (embedding);
+
+
+
+
+
+
+
 ALTER TABLE `clic_orders` CHANGE `customers_name` `customers_name` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;
 ALTER TABLE `clic_orders` CHANGE `delivery_name` `delivery_name` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL;
 ALTER TABLE `clic_orders` CHANGE `billing_name` `billing_name` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;

@@ -288,7 +288,6 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
-
     if (!isset($_GET['Checkout'], $_GET['Process'])) {
       return false;
     }

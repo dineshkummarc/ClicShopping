@@ -1,0 +1,16 @@
+text_orders_products_return = --- Retour produit de la commande ---
+text_orders_products_return_ref = Référence du retour
+text_orders_products_return_model = Référence du modèle du
+text_orders_products_return_name = Nom du
+text_orders_products_return_qty = Quantité du retour
+text_orders_products_reason = Raison du retour
+text_orders_products_reason_id = ID de la raison du retour
+text_orders_products_status_id = Id du statut de la raison du retour
+text_orders_products_comment = Commentaire du retour du produit
+text_orders_products_date_added = Date ajout du retour
+text_orders_products_date_ordered = Date de la commande du retour
+text_orders_products_return_order_id = ID de la commande du retour
+
+text_orders_products_return_history = --- Historique du retour produit de la commande ---
+text_orders_products_return_history_comment = Commentaire de l'historique du retour
+text_orders_products_return_history_date_added = Date ajout de l'historique du retour

@@ -65,6 +65,7 @@ try {
           'suppliers_embedding',
           'reviews_embedding',
           'reviews_sentiment_embedding',
+          'return_orders_embedding',
         ];
 
         // Add first the known table

@@ -604,14 +604,22 @@ text_table_structure_instructions = IMPORTANT: Regarding the structure of the e-
    - Contains sentiment information, customers reviews.
    - Linked to clic_reviews via products_id and reviews_id and id (which is the sentiment id).
    - Linked to products via products_id.
-   - linked to clic_reviews_description via reviews_id and language_id.
-   - linked to clic_reviews_votes via products_id and reviews_id.
+   - linked to clic_reviews_sentiment_description via reviews_id (which is the sentiment id).
 8. Table clic_reviews:
    - Contains customer reviews on products.
    - Linked to clic_products via products_id.
-   - Linked to clic_reviews_description via reviews_id and language_id.
+   - Linked to clic_customer via customers_id.
+   - Linked to clic_reviews_description via reviews_id.
    - linked to clic_sentiment via products_id and reviews_id.
-   - linked to clic_reviews_votes via products_id and reviews_id.
+   - linked to clic_reviews_votes via products_id and reviews_id and customers_id.
+9.9. Table clic_return_orders
+   - Contains returns orders.
+   - Linked to clic_orders via order_id.
+   - Linked to clic_products via products_id.
+   - Linked to clic_customers via customers_id.
+   - Linked to clic_return_orders_history via return_id.
+   - Linked to clic_return_orders_reason via return_reason_id.
+   - Linked to clic_return_orders_status via return_status_id.
 When generating SQL queries, strictly follow these table structures and do not invent columns.
 
 

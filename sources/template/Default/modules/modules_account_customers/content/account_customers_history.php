@@ -65,7 +65,7 @@ use ClicShopping\OM\HTML;
                 </div>
                 <div class="col-md-2">
                   <p
-                    class="float-end"><?php echo HTML::button(CLICSHOPPING::getDef('button_view'), null, CLICSHOPPING::link(null, (isset($_GET['page']) ? 'page=' . (int)$_GET['page'] . '&' : '') . 'Account&HistoryInfo&order_id=' . (int)$order['orders_id']), 'info', null, 'sm'); ?></p>
+                    class="float-end"><?php echo HTML::button(CLICSHOPPING::getDef('button_view'), null, CLICSHOPPING::link(null,'Account&HistoryInfo&order_id=' . (int)$order['orders_id']), 'info', null, 'sm'); ?></p>
                 </div>
               </div>
             </div>

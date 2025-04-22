@@ -19,6 +19,7 @@ class Save extends \ClicShopping\OM\PagesActionsAbstract
   public function execute()
   {
     $CLICSHOPPING_ReturnOrders = Registry::get('ReturnOrders');
+    $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
     $return_id = HTML::sanitize($_POST['rId']);
     $return_status_id = HTML::sanitize($_POST['return_status']);
@@ -44,7 +45,6 @@ class Save extends \ClicShopping\OM\PagesActionsAbstract
       'admin_user_name' => AdministratorAdmin::getUserAdmin()
     ];
 
-
     $CLICSHOPPING_ReturnOrders->db->save('return_orders_history ', $sql_data_array);
 
     $Qupdate = $CLICSHOPPING_ReturnOrders->db->prepare('update :table_return_orders
@@ -60,6 +60,7 @@ class Save extends \ClicShopping\OM\PagesActionsAbstract
     $Qupdate->bindInt(':return_reason_opened', $return_reason_opened);
     $Qupdate->execute();
 
+    $CLICSHOPPING_Hooks->call('ReturnOrders', 'Save');
 
     $CLICSHOPPING_ReturnOrders->redirect('ReturnOrders&' . (isset($_GET['page']) ? 'page=' . (int)$_GET['page'] . '' : ''));
   }

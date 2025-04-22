@@ -5,7 +5,8 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\OM\Registry;
 
-class Semantics {
+class Semantics
+{
 
   /**
    * Translate a given text to English using the OpenAI API.
@@ -22,7 +23,7 @@ class Semantics {
       $question = "Translate the following query to English: {$text}";
       $query = Gpt::getGptResponse($question, $token);
     } else {
-      $query = $text;
+      $query = trim($text);
     }
 
     return $query;
@@ -40,60 +41,6 @@ class Semantics {
     $result = in_array(strtolower(trim($type)), ['analytics', 'semantic']) ? strtolower(trim($type)) : 'semantic';
 
     return $result;
-  }
-
-  /**
-   * Classify the query as 'analytics' or 'semantic' based on regex patterns.
-   * @param string $text
-   * @return string
-   */
-  public static function classifyQuery(string $text): string
-  {
-    $translated = self::translateToEnglish($text);
-    $analyticsPatterns = self::analyticsPatterns();
-    $score = 0;
-
-    // Pondérations par catégorie (ajustables facilement)
-    $weights = [
-      'reference' => 10,
-      'stock' => 8,
-      'price' => 7,
-      'quantity' => 6,
-      'performance' => 6,
-      'time' => 5,
-      'customer' => 4,
-      'category' => 4,
-      'comparison' => 3,
-      'entity' => 3,
-      'calculation' => 2,
-      'filters' => 1,
-      'sorting' => 1,
-    ];
-
-    foreach ($analyticsPatterns as $category => $patterns) {
-      foreach ($patterns as $pattern) {
-        if (preg_match($pattern, $translated)) {
-          error_log("Pattern match detected: Category: $category | Pattern: $pattern");
-          $score += $weights[$category] ?? 1; // Default poids 1 si non défini
-        }
-      }
-    }
-
-    if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
-      error_log("Total score: {$score}");
-    }
-
-    // Définir un seuil (threshold) arbitraire pour déterminer analytics
-    $threshold = 5;
-
-    if ($score >= $threshold) {
-      return 'analytics';
-    }
-    if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
-      error_log("No analytics pattern matched. Falling back to semantic analysis.");
-    }
-
-    return self::checkSemantics($translated);
   }
 
   /**
@@ -119,7 +66,7 @@ class Semantics {
    *                                     - value: array of regex patterns (string[])
    *
    */
-  public static function analyticsPatterns() : array
+  public static function analyticsPatterns(): array
   {
     $analyticsPatterns = [
       'entity' => [
@@ -192,5 +139,106 @@ class Semantics {
     ];
 
     return $analyticsPatterns;
+  }
+
+  /**
+   * Classify the query as 'analytics' or 'semantic'.
+   * This method first translates the text to English, then checks for critical patterns,
+   * calculates a score based on matched patterns, and finally classifies the query.
+   *
+   * @param string $text The text to classify.
+   * @return string The classification result: 'analytics' or 'semantic'.
+   */
+  public static function classifyQuery(string $text): string
+  {
+    $translated = self::translateToEnglish($text);
+
+    if (self::hasCriticalMatch($translated)) {
+      return 'analytics';
+    }
+
+    $score = self::calculateScore($translated);
+
+    if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      error_log("Total score: {$score}");
+    }
+
+    $threshold = 2;
+
+    if ($score >= $threshold) {
+      return 'analytics';
+    }
+
+    if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      error_log("No analytics pattern matched. Falling back to semantic analysis.");
+    }
+
+    return self::checkSemantics($translated);
+  }
+
+  /**
+   * Check if the text contains any critical patterns that indicate a high level of risk.
+   * This method checks for patterns that are considered critical for analytics.
+   *
+   * @param string $text The text to analyze.
+   * @return bool True if a critical pattern is found, false otherwise.
+   */
+  private static function hasCriticalMatch(string $text): bool
+  {
+    $analyticsPatterns = self::analyticsPatterns();
+    $criticalCategories = ['reference', 'stock', 'price', 'quantity', 'performance', 'time'];
+
+    foreach ($analyticsPatterns as $category => $patterns) {
+      if (in_array($category, $criticalCategories)) {
+        foreach ($patterns as $pattern) {
+          if (preg_match($pattern, $text)) {
+            error_log("Critical pattern match detected: Category: $category | Pattern: $pattern");
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Calculate a score based on the number of matched patterns in the text.
+   * The more patterns matched, the higher the score.
+   *
+   * @param string $text The text to analyze.
+   * @return int The calculated score.
+   */
+  private static function calculateScore(string $text): int
+  {
+    $analyticsPatterns = self::analyticsPatterns();
+    $weights = [
+      'reference' => 10,
+      'stock' => 8,
+      'price' => 7,
+      'quantity' => 6,
+      'performance' => 6,
+      'time' => 5,
+      'customer' => 4,
+      'category' => 4,
+      'comparison' => 3,
+      'entity' => 3,
+      'calculation' => 2,
+      'filters' => 2,
+      'sorting' => 2,
+    ];
+
+    $score = 0;
+
+    foreach ($analyticsPatterns as $category => $patterns) {
+      foreach ($patterns as $pattern) {
+        if (preg_match($pattern, $text)) {
+          error_log("Pattern match detected: Category: $category | Pattern: $pattern");
+          $score += $weights[$category] ?? 1; // Si jamais un poids manque
+        }
+      }
+    }
+
+    return $score;
   }
 }

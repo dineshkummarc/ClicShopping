@@ -598,15 +598,23 @@ text_table_structure_instructions = IMPORTANT: Concernant la structure des table
    - Liée à clic_products via suppliers_id.
 7. Table clic_sentiment:
    - Contient les informations de sentiment des avis - commentaire des clients.
-   - Liée à clic_reviews via products_id et via reviews_id et id (qui est àquivalent au sentiment id).
+   - Liée à clic_reviews via products_id et via reviews_id et id (qui est équivalent au sentiment id).
    - Liée à products via products_id.
-   - Liée à clic_reviews_description via reviews_id et language_id.
-   - Liée à clic_reviews_votes via products_id et reviews_id.
+   - Liée à clic_reviews_description via reviews_id (qui est équivalent au sentiment id).
 8. Table clic_reviews:
    - Contient les avis des clients sur les produits.
    - Liée à clic_products via products_id.
-   - Liée à clic_reviews_description via products_id et language_id.
-   - Liée à clic_reviews_votes via products_id et reviews_id.
+   - Liée to clic_customer via customers_id.
+   - Liée à clic_reviews_description via reviews_id.
+   - liée à clic_sentiment via products_id et reviews_id.
+   - Liée à clic_reviews_votes via products_id et reviews_id et customers_id.
+9. Table clic_return_orders
+   - Contient les retours de produits.
+   - Liée à clic_orders via order_id.
+   - Liée à clic_products via products_id.
+   - Liée à clic_return_orders_history via return_id.
+   - Liée à clic_return_orders_reason via return_reason_id.
+   - Liée à clic_return_orders_status via return_status_id.
 Lors de la génération de requêtes SQL, respectez strictement ces structures de tables et n'inventez pas de colonnes.
 
 
