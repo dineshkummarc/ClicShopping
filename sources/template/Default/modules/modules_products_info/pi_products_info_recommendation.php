@@ -27,8 +27,8 @@ class pi_products_info_recommendation
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
 
-    $this->title = CLICSHOPPING::getDef('module_products_info_recommendationd_title');
-    $this->description = CLICSHOPPING::getDef('module_products_info_recommendationd_description');
+    $this->title = CLICSHOPPING::getDef('module_products_info_recommendation_title');
+    $this->description = CLICSHOPPING::getDef('module_products_info_recommendation_description');
 
     if (\defined('MODULE_PRODUCTS_INFO_RECOMMENDATION_STATUS')) {
       $this->sort_order = (int)MODULE_PRODUCTS_INFO_RECOMMENDATION_SORT_ORDER ?? 0;
@@ -54,6 +54,7 @@ class pi_products_info_recommendation
       $CLICSHOPPING_Reviews = Registry::get('Reviews');
       $CLICSHOPPING_Language = Registry::get('Language');
       $cosinus = (float)MODULE_PRODUCTS_INFO_RECOMMENDATION_COSINUS;
+
       if ($CLICSHOPPING_Customer->getCustomersGroupID() == 0) {
         $Qproducts = $CLICSHOPPING_Db->prepare('SELECT DISTINCT p.products_id, 
                                                                 p.products_image, 
@@ -75,7 +76,7 @@ class pi_products_info_recommendation
                                                 WHERE p.products_status = 1
                                                   AND p.products_archive = 0
                                                   AND p.products_view = 1
-                                                  AND p.products_id != :products_id
+                                                  AND p.products_id <> :products_id
                                                   AND pe.language_id = :language_id
                                                   AND c.status = 1
                                                   AND p2c.categories_id NOT IN (
@@ -86,7 +87,7 @@ class pi_products_info_recommendation
                                                   AND VEC_DISTANCE_COSINE(pe.embedding, 
                                                     (SELECT pe3.embedding 
                                                      FROM :table_products_embedding pe3 
-                                                     WHERE pe3.entity_id = 10
+                                                     WHERE pe3.entity_id = :products_id
                                                      LIMIT 1)
                                                   ) < :cosinus 
                                                 ORDER BY cosine_distance
@@ -123,7 +124,7 @@ class pi_products_info_recommendation
                                                   AND g.customers_group_id = :customers_group_id
                                                   AND g.products_group_view = 1
                                                   AND g.price_group_view = 1
-                                                  AND p.products_id != :products_id
+                                                  AND p.products_id <> :products_id
                                                   AND pe.language_id = :language_id
                                                   AND c.status = 1
                                                   AND p2c.categories_id NOT IN (
@@ -134,7 +135,7 @@ class pi_products_info_recommendation
                                                   AND VEC_DISTANCE_COSINE(pe.embedding, 
                                                     (SELECT pe3.embedding 
                                                      FROM :table_products_embedding pe3 
-                                                     WHERE pe3.entity_id = 10 
+                                                     WHERE pe3.entity_id = :products_id 
                                                      LIMIT 1)
                                                   ) < :cosinus 
                                                 ORDER BY cosine_distance
@@ -389,7 +390,7 @@ class pi_products_info_recommendation
     $CLICSHOPPING_Db->save('configuration', [
         'configuration_title' => 'Select appropriate cosine distance',
         'configuration_key' => 'MODULE_PRODUCTS_INFO_RECOMMENDATION_COSINUS',
-        'configuration_value' => '0.35',
+        'configuration_value' => '0.5',
         'configuration_description' => 'The cosine distance is the distance between the products. More the cosinus is close to 0, best is the recommendation. <br /> <br /> <i> - 0.35 is a good value </i>',
         'configuration_group_id' => '6',
         'sort_order' => '3',
