@@ -85,7 +85,6 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
                                                      p.products_ordered,
                                                      p.products_quantity,                                                    
                                                      p.products_quantity_alert,
-                                                     p.products_discountinued, 
                                                      pd.products_name,
                                                      pd.products_description,
                                                      pd.products_head_title_tag,
@@ -118,7 +117,6 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             $products_quantity = $item['products_quantity']; //product stock
             $products_stock_reorder_level = (int)STOCK_REORDER_LEVEL; //alert stock  fixfor all  products
             $products_quantity_alert = $item['products_quantity_alert']; // alert stock fix
-            $products_discountinued = $item['products_discountinued']; // alert stock dynamic
             $manufacturer_name =  HTML::sanitize($_POST['manufacturers_name']);
             $products_description = $item['products_description'];
             $seo_product_title = $item['products_head_title_tag'];
@@ -183,10 +181,6 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
             if (!empty($products_quantity_alert)) {
               $embedding_data .= $this->app->getDef('text_product_stock_alert') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_quantity_alert) . '\n';
-            }
-
-            if (!empty($products_discountinued)) {
-              $embedding_data .= $this->app->getDef('text_product_stock_dynamic_alert') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_discountinued) . '\n';
             }
 
             if (!empty($products_description)) {
