@@ -38,10 +38,6 @@
         "DeleteConfirm": "Module\\Hooks\\ClicShoppingAdmin\\Langues\\DeleteConfirm",
         "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Langues\\Insert"
       },
-      "ClicShoppingAdmin/Products": {
-        "ProductsContentTab2": "Module\\Hooks\\ClicShoppingAdmin\\Products\\ProductDiscountinued\\ProductsContentTab2",
-        "Save": "Module\\Hooks\\ClicShoppingAdmin\\Products\\ProductDiscountinued\\SaveProductDiscountinued"
-      },
       "ClicShoppingAdmin/Categories": {
         "PageTabContent": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\PageTabContentProducts"
       },

@@ -81,7 +81,7 @@ class Semantics
         '/\b(last|latest|most recent)\s/i',
       ],
       'stock' => [
-        '/\b(stock|inventory|available|availability|alert|level|levels|threshold|thresholds|reorder|shortage|out of stock|alert|discountinued)\b/i',
+        '/\b(stock|inventory|available|availability|alert|level|levels|threshold|thresholds|reorder|shortage|out of stock|stock)\b/i',
         '/\b(available|remaining)\s+(quantity|quantities|stock)\b/i',
         '/\b(products?)\s+(out of stock|unavailable|to order|to restock)\b/i',
       ],

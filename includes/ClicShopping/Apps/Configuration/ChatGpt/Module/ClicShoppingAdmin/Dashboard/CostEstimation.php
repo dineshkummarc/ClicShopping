@@ -16,7 +16,6 @@ use ClicShopping\OM\Registry;
 
 class CostEstimation extends \ClicShopping\OM\Modules\AdminDashboardAbstract
 {
-  private mixed $lang;
   public mixed $app;
   public $group;
 
@@ -34,7 +33,6 @@ class CostEstimation extends \ClicShopping\OM\Modules\AdminDashboardAbstract
     }
 
     $this->app = Registry::get('ChatGpt');
-    $this->lang = Registry::get('Language');
 
     $this->app->loadDefinitions('Module/ClicShoppingAdmin/Dashboard/cost_estimation');
 
@@ -59,35 +57,86 @@ class CostEstimation extends \ClicShopping\OM\Modules\AdminDashboardAbstract
    */
   public function getOutput(): string
   {
-    $price = MODULE_ADMIN_DASHBOARD_TOTAL_COST_ESTIMATION_APP_PRICE;
+    $modelPrices = [
+      'gpt-4.1-mini'   => 0.0012,
+      'gpt-4.1-nano'   => 0.0008,
+      'gpt-4o-mini'    => 0.0010,
+      'gpt-4o'         => 0.0025,
+      'gpt-3o-mini'    => 0.0007,
+      'gpt-o1-mini'    => 0.0006,
+      'gpt-3.5-turbo'  => 0.0005,
+    ];
 
-    $Qorders = $this->app->db->query("SELECT DATE_FORMAT(date_added, '%Y-%m') as month, 
-                                      SUM(totalTokens) as total
-                                      FROM :table_gpt_usage
-                                      WHERE date_sub(curdate(), interval 12 month) <= date_added
-                                      GROUP BY month 
-                                      ORDER BY month desc
-                                    ");
+    $colors = [
+      'gpt-4.1-mini'   => 'rgba(255, 99, 132, 0.5)',    // Red-ish
+      'gpt-4.1-nano'   => 'rgba(54, 162, 235, 0.5)',    // Blue
+      'gpt-4o-mini'    => 'rgba(255, 206, 86, 0.5)',    // Yellow
+      'gpt-4o'         => 'rgba(75, 192, 192, 0.5)',    // Teal
+      'gpt-3o-mini'    => 'rgba(153, 102, 255, 0.5)',   // Purple
+      'gpt-o1-mini'    => 'rgba(255, 159, 64, 0.5)',    // Orange
+      'gpt-3.5-turbo'  => 'rgba(100, 255, 218, 0.5)',   // Aqua Green
+    ];
 
-    $months = [];
+    // Query by month *and* model
+    $Qorders = $this->app->db->query("
+        SELECT DATE_FORMAT(date_added, '%Y-%m') as month, 
+               model,
+               SUM(totalTokens) as total
+        FROM :table_gpt_usage
+        WHERE date_added >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+        GROUP BY month, model
+        ORDER BY month ASC
+    ");
+
+    $rawData = [];
 
     while ($Qorders->fetch()) {
+      $month = $Qorders->value('month');
+      $model = $Qorders->value('model');
       $totalTokens = $Qorders->valueInt('total');
-      $months[$Qorders->value('month')] = ($totalTokens / 100) * $price;
+
+      if (!isset($rawData[$model])) {
+        $rawData[$model] = [];
+      }
+
+      $rawData[$model][$month] = ($totalTokens) * ($modelPrices[$model] ?? 0.0005);
     }
 
-    $months = array_reverse($months, true);
+    // Collect all months (even missing for some models)
+    $allMonths = [];
 
-    $data_labels = json_encode(array_keys($months));
-    $data = json_encode(array_values($months));
+    foreach ($rawData as $modelData) {
+      foreach ($modelData as $month => $value) {
+        $allMonths[$month] = true;
+      }
+    }
 
+    ksort($allMonths); // sort months ascending
+    $labels = array_keys($allMonths);
 
-    //$chart_label_link = HTML::link('index.php?A&Configuration\ChatGpt&ChatGpt', $this->app->getDef('module_admin_dashboard_total_cost_estimation_app_chart_link'));
+    $datasets = [];
+
+    foreach ($rawData as $model => $data) {
+      $modelData = [];
+
+      foreach ($labels as $month) {
+        $modelData[] = $data[$month] ?? 0; // fill missing months with 0
+      }
+
+      $datasets[] = [
+        'label' => $model,
+        'data' => $modelData,
+        'backgroundColor' => $colors[$model] ?? 'rgba(0,0,0,0.3)',
+      ];
+    }
+
+    $data_labels = json_encode($labels);
+    $data_datasets = json_encode($datasets);
+
     $chart_label_link = $this->app->getDef('module_admin_dashboard_total_cost_estimation_app_chart_link');
-
     $content_width = 'col-md-' . (int)MODULE_ADMIN_DASHBOARD_TOTAL_COST_ESTIMATION_APP_CONTENT_WIDTH;
 
-$output = <<<EOD
+    $output = <<<EOD
 <div class="col-12 {$content_width} d-flex" style="padding-right:0.5rem; padding-top:0.5rem">
   <div class="card flex-fill h-215">
     <div class="card-block">
@@ -104,56 +153,39 @@ $output = <<<EOD
 </div>
 
 <script>
-var ctx = document.getElementById('d_total_cost_estimation_app');
+var ctx = document.getElementById('d_total_cost_estimation_app').getContext('2d');
 var myChart = new Chart(ctx, {
-    type: 'bar', // Change 'bar' to 'line'
+    type: 'bar',
     data: {
         labels: $data_labels,
-        datasets: [{
-            label: 'Gpt Token',
-            data: $data,
-            backgroundColor: 'rgba(0, 0, 255, 0.2)',
-        }]
+        datasets: $data_datasets
     },
     options: {
         maintainAspectRatio: true,
-        legend: {
-          display: false
-        },        
+        responsive: true,
         scales: {
             y: {
                 beginAtZero: true
+            },
+            x: {
+                stacked: true
+            },
+            y: {
+                stacked: true
             }
         },
-        x: { // Change xAxes to x
-          reverse: true,
-          gridLines: {
-            color: "rgba(0,0,0,0.05)"
-          }
-        },
-        y: { // Change yAxes to y
-          ticks: {
-            stepSize: 1
-          },
-          display: true,
-          borderDash: [5, 5],
-          gridLines: {
-            color: "rgba(0,0,0,0.050)",
-            fontColor: "#fff"
+        plugins: {
+          legend: {
+            display: true
           }
         }
     }
 });
-
-function beforePrintHandler () {
-    for (var id in Chart.instances) {
-        Chart.instances[id].resize();
-    }
-}
 </script>
 EOD;
     return $output;
   }
+
 
   /**
    * Installs the module by saving necessary configuration settings to the database.
