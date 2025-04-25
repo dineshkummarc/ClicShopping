@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '9f345c44ab85e43e4568da66d5c385246a3c135e',
+        'reference' => 'd9e04d7fc5a26d4dc6a8cb4c6c242f6fc71e4bcb',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '9f345c44ab85e43e4568da66d5c385246a3c135e',
+            'reference' => 'd9e04d7fc5a26d4dc6a8cb4c6c242f6fc71e4bcb',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -218,9 +218,9 @@
             'dev_requirement' => false,
         ),
         'phpmailer/phpmailer' => array(
-            'pretty_version' => 'v6.9.3',
-            'version' => '6.9.3.0',
-            'reference' => '2f5c94fe7493efc213f643c23b1b1c249d40f47e',
+            'pretty_version' => 'v6.10.0',
+            'version' => '6.10.0.0',
+            'reference' => 'bf74d75a1fde6beaa34a0ddae2ec5fce0f72a144',
             'type' => 'library',
             'install_path' => __DIR__ . '/../phpmailer/phpmailer',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => '0aed63042cf8f0e7801a3277d4b088dd04a982e7',
+            'reference' => '3fe23dd6d9c692ec019ba1cff225f960699a0da3',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
