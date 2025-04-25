@@ -295,10 +295,10 @@ INSERT INTO administrator_menu_description VALUES(50, 'Minimum values', 1);
 INSERT INTO administrator_menu_description VALUES(50, 'Valeurs minimum', 2);
 INSERT INTO administrator_menu_description VALUES(51, 'Maximum values', 1);
 INSERT INTO administrator_menu_description VALUES(51, 'Valeurs maximum', 2);
-INSERT INTO administrator_menu_description VALUES(54, 'Shipping sort order', 1);
-INSERT INTO administrator_menu_description VALUES(54, 'Ordre de tri expéditions', 2);
-INSERT INTO administrator_menu_description VALUES(55, 'Sort Order total order', 1);
-INSERT INTO administrator_menu_description VALUES(55, 'Ordre de tri total commandes', 2);
+INSERT INTO administrator_menu_description VALUES(54, 'Shipping sort order / Install', 1);
+INSERT INTO administrator_menu_description VALUES(54, 'Ordre de tri expéditions / Installation', 2);
+INSERT INTO administrator_menu_description VALUES(55, 'Sort Order total order / Install', 1);
+INSERT INTO administrator_menu_description VALUES(55, 'Ordre de tri total commandes / Installation', 2);
 INSERT INTO administrator_menu_description VALUES(58, 'Social network modules', 1);
 INSERT INTO administrator_menu_description VALUES(58, 'Modules réseaux sociaux', 2);
 INSERT INTO administrator_menu_description VALUES(59, 'Metas modules', 1);
@@ -499,8 +499,8 @@ INSERT INTO administrator_menu_description VALUES(727, 'Other modules', 1);
 INSERT INTO administrator_menu_description VALUES(727, 'Autres modules', 2);
 INSERT INTO administrator_menu_description VALUES(728, 'Modules Hooks', 1);
 INSERT INTO administrator_menu_description VALUES(728, 'Modules Hooks', 2);
-INSERT INTO administrator_menu_description VALUES(730, 'Payment sort order', 1);
-INSERT INTO administrator_menu_description VALUES(730, 'Ordre de tri des paiements', 2);
+INSERT INTO administrator_menu_description VALUES(730, 'Payment sort order / Install', 1);
+INSERT INTO administrator_menu_description VALUES(730, 'Ordre de tri des paiements / Installation', 2);
 INSERT INTO administrator_menu_description VALUES(736, 'Languages', 1);
 INSERT INTO administrator_menu_description VALUES(736, 'Langages', 2);
 INSERT INTO administrator_menu_description VALUES(737, 'Actions recorder', 1);
@@ -1702,6 +1702,15 @@ INSERT INTO configuration VALUES(1751, 'Do you want to enable Rag cache ?', 'CLI
 INSERT INTO configuration VALUES(1752, 'Clef Api Mistral', 'CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL', '', 'Veuillez insérer la clef API (https://www.mistral.ai)', 6, 0, NULL, '2025-04-16 13:09:02', NULL, NULL);
 INSERT INTO configuration VALUES(1753, 'Embedding modéle à appliquer', 'CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL', 'gpt-large', 'Veuillez sélectionner le modéle d''embedding par défaut que vous souhaitez appliquer.<br />Tous les modéles n''utilisent pas les mêmes paramétres et peuvent générer une erreur dans la rèponse<br />Veuillez vous informer avant d''utiliser un modéle.', 6, 0, NULL, '2025-04-16 13:25:29', NULL, NULL);
 INSERT INTO configuration VALUES(1754, 'Clef Api VoyageAi', 'CLICSHOPPING_APP_CHATGPT_CH_API_KEY_VOYAGE_AI', '', 'Veuillez insérer la clef API (https://www.voyageai.com)<br />(uniquement pour les embedding)', 6, 0, NULL, '2025-04-16 13:40:54', NULL, NULL);
+
+
+INSERT INTO configuration VALUES(1755, 'Ordre de tri d\'affichage', 'CLICSHOPPING_APP_ADMINISTRATORS_AD_SORT_ORDER', '30', 'Ordre de tri pour l\'affichage (Le plus petit nombre est montré en premier)', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO configuration VALUES(1756, 'Statut', 'CLICSHOPPING_APP_ADMINISTRATORS_AD_STATUS', 'True', 'Souhaitez vous activer cette APP', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO configuration VALUES(1756, 'Parameter [Administrators App]', 'MODULE_MODULES_ADMINISTRATORS_INSTALLED', 'Configuration\\Administrators\\AD', 'Parameter [Administrators App]', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
+
+
+
+
 
 
 INSERT INTO configuration_group VALUES(1, 'Gestion de ma boutique', 'Informations générales sur la boutique.', 1, 1);

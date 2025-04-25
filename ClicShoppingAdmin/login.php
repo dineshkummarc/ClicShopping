@@ -601,7 +601,7 @@ if ($action != 'password') {
               <span class="input-group-addon" id="basic-addon1">@</span>
               <?php echo HTML::inputField('username', '', 'size="150" placeholder="' . CLICSHOPPING::getDef('text_email_lost_password') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
             </div>
-            <div class="mt-1"></div>
+           <div class="mt-1"></div>
           </div>
         </div>
         <div class="row col-md-12">
