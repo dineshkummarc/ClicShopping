@@ -14,6 +14,7 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\Sites\Shop\EmailVerification;
 
 class LogIn extends \ClicShopping\OM\PagesActionsAbstract
 {
@@ -27,7 +28,7 @@ class LogIn extends \ClicShopping\OM\PagesActionsAbstract
 
     $this->page->setFile('login.php');
 
-// redirect the customer to a friendly cookie-must-be-enabled page if cookies are disabled (or the session has not started)
+    // redirect the customer to a friendly cookie-must-be-enabled page if cookies are disabled (or the session has not started)
     if (Registry::get('Session')->hasStarted() === false) {
       if (!isset($_GET['cookie_test'])) {
         $all_get = CLICSHOPPING::getAllGET([
@@ -50,11 +51,16 @@ class LogIn extends \ClicShopping\OM\PagesActionsAbstract
       $email_address = HTML::sanitize($_POST['email_address']);
       $password = HTML::sanitize($_POST['password']);
 
-      if (CLICSHOPPING_TOTP_CATALOG == 'True') {
-        $_SESSION['email_address'] = $email_address;
-        $_SESSION['password'] = $password;
 
-        CLICSHOPPING::redirect(null, 'Account&LogInAuth');
+      // Vérifier si la vérification par email est activée pour ce client
+      if (defined('EMAIL_VERIFICATION_ENABLED_SHOP') && EMAIL_VERIFICATION_ENABLED_SHOP == 'True') {
+        if (EmailVerification::isEnabledForCustomer($email_address)) {
+          $_SESSION['email_address'] = $email_address;
+          $_SESSION['password'] = $password;
+
+          // Rediriger vers la vérification par email
+          CLICSHOPPING::redirect(null, 'Account&LogInAuth');
+        }
       }
 
 // Check if email exists

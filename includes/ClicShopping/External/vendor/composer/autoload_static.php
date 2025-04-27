@@ -41,10 +41,6 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
             'Symfony\\Component\\Cache\\' => 24,
             'Stripe\\' => 7,
         ),
-        'R' => 
-        array (
-            'RobThree\\Auth\\' => 14,
-        ),
         'P' => 
         array (
             'Psr\\Log\\' => 8,
@@ -171,10 +167,6 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
         'Stripe\\' => 
         array (
             0 => __DIR__ . '/..' . '/stripe/stripe-php/lib',
-        ),
-        'RobThree\\Auth\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/robthree/twofactorauth/lib',
         ),
         'Psr\\Log\\' => 
         array (

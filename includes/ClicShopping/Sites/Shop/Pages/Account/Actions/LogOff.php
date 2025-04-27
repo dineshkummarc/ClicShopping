@@ -50,6 +50,10 @@ class LogOff extends \ClicShopping\OM\PagesActionsAbstract
       unset($_SESSION['login_customer_id']);
     }
 
+    if (isset($_SESSION['email_code'])) {
+      unset($_SESSION['email_code']);
+    }
+
     $CLICSHOPPING_ShoppingCart->reset();
 
     Registry::get('Hooks')->call('Account', 'Logout');

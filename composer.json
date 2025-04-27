@@ -18,7 +18,6 @@
         "ext-xml": "*",
         "phpxmlrpc/phpxmlrpc": "^4.11",
         "guzzlehttp/guzzle": "^7.9",
-        "robthree/twofactorauth": "^3.0",
         "symfony/http-client": "^7.2",
         "mattketmo/email-checker": "^2.4",
         "doctrine/orm": "^3.3",

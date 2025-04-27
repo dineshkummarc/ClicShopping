@@ -213,7 +213,18 @@ class NavigationHistory
   public function getSnapshotURL()
   {
     if ($this->hasSnapshot()) {
-      $target = CLICSHOPPING::redirect(null, $this->snapshot['application'] . '&' . $this->snapshot['action'] . '&' . $this->parseParameters($this->snapshot['get']));
+      $url = $this->snapshot['application'];
+
+      if (!empty($this->snapshot['action'])) {
+        $url .= '&' . $this->snapshot['action'];
+      }
+
+      $params = $this->parseParameters($this->snapshot['get']);
+      if (!empty($params)) {
+        $url .= '&' . $params;
+      }
+
+      $target = CLICSHOPPING::redirect(null, $url);
     } else {
       $target = CLICSHOPPING::redirect();
     }

@@ -99,7 +99,7 @@ class CostEstimation extends \ClicShopping\OM\Modules\AdminDashboardAbstract
         $rawData[$model] = [];
       }
 
-      $rawData[$model][$month] = ($totalTokens) * ($modelPrices[$model] ?? 0.0005);
+      $rawData[$model][$month] = ($totalTokens) * (($modelPrices[$model] ?? 0.0005) / 10);
     }
 
     // Collect all months (even missing for some models)

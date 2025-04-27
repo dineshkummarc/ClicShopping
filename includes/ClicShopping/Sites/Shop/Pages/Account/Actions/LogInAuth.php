@@ -12,8 +12,9 @@ namespace ClicShopping\Sites\Shop\Pages\Account\Actions;
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
+use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
-use ClicShopping\Sites\Common\Topt;
+use ClicShopping\Sites\Shop\EmailVerification;
 
 class LogInAuth extends \ClicShopping\OM\PagesActionsAbstract
 {
@@ -22,18 +23,19 @@ class LogInAuth extends \ClicShopping\OM\PagesActionsAbstract
     $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_Breadcrumb = Registry::get('Breadcrumb');
     $CLICSHOPPING_Template = Registry::get('Template');
-    $CLICSHOPPING_Language = Registry::get('Language');
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
+    $CLICSHOPPING_Language = Registry::get('Language');
 
-    $this->page->setFile('LogInAuth.php');
+    $this->page->setFile('login_auth.php');
 
-    if (CLICSHOPPING_TOTP_CATALOG == 'False') {
+    if (EMAIL_VERIFICATION_ENABLED_SHOP == 'False') {
       CLICSHOPPING::redirect('Account&LogIn');
     }
 
     if (!isset($_SESSION['email_address']) || !isset($_SESSION['password'])) {
       unset($_SESSION['email_address']);
       unset($_SESSION['password']);
+
       CLICSHOPPING::redirect('Account&LogIn');
     } else {
       $email_address = $_SESSION['email_address'];
@@ -55,12 +57,12 @@ class LogInAuth extends \ClicShopping\OM\PagesActionsAbstract
       CLICSHOPPING::redirect(null, 'Info&CookieUsage');
     }
 
+    $CLICSHOPPING_Language->loadDefinitions('login_auth');
 // Check if email exists
-    $array_sql = [
-      'customers_id',
-      'customers_password',
-      'double_authentification_secret'
-    ];
+      $array_sql = [
+        'customers_id',
+        'customers_password'
+      ];
 
     $Qcheck = $CLICSHOPPING_Db->get('customers', $array_sql, ['customers_email_address' => $email_address], null, 1);
 
@@ -85,24 +87,51 @@ class LogInAuth extends \ClicShopping\OM\PagesActionsAbstract
       CLICSHOPPING::redirect(null, 'Account&LogIn');
     }
 
-    $Qcheck = $CLICSHOPPING_Db->get('customers', 'double_authentification_secret', ['customers_email_address' => $email_address]);
+    // activate the login session or not
+    if (isset($_POST['action']) && $_POST['action'] == 'process') {
+      if (isset($_POST['email_code'])) {
+        $email_code = HTML::sanitize($_POST['email_code']);
+        $check = EmailVerification::verifyCode($email_address, $email_code);
 
-    if (empty(Topt::checkToptloginCustomer($email_address))) {
-      $_SESSION['tfa_secret'] = Topt::getTfaSecret();
+        if ($check === true) {
+          $array_sql = [
+            'customers_id',
+            'customers_password',
+          ];
 
-      $update_array = ['double_authentification_secret' => $_SESSION['tfa_secret']];
+          $Qcheck = $CLICSHOPPING_Db->get('customers', $array_sql, ['customers_email_address' => $email_address], null, 1);
 
-      $CLICSHOPPING_Db->save('customers', $update_array, ['customers_email_address' => $email_address]);
-    } else if (empty($_SESSION['tfa_secret'])) {
-      $_SESSION['tfa_secret'] = $Qcheck->value('double_authentification_secret');
+          if ($Qcheck->fetch()) {
+            CLICSHOPPING::redirect(null, 'Account&LoginAuth&Process');
+          }
+        } else {
+          $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('text_email_code_invalid'), 'error');
+        }
+      } else {
+        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('text_email_code_required'), 'error');
+        }
+    } elseif (isset($_GET['action']) && $_GET['action'] == 'resend') {
+      if (EmailVerification::sendVerificationCode($email_address)) {
+        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('success_email_verification_code_sent'), 'success');
+      } else {
+        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_email_verification_failed'), 'error');
+      }
+    } else if (isset($_GET['action']) && $_GET['action'] == 'logoff') {
+      unset($_SESSION['email_code']);
+      CLICSHOPPING::redirect(null, 'Account&LogOff');
+    } else {
+      // first visit send email
+      if (!isset($_SESSION['email_code']) || $_SESSION['email_code'] !== true) {
+        if (EmailVerification::sendVerificationCode($email_address)) {
+          $_SESSION['email_code'] = true;
+        } else {
+          $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_email_verification_failed'), 'error');
+          CLICSHOPPING::redirect(null, 'Account&LogIn');
+        }
+      }
     }
 
-// templates
-    $this->page->setFile('login_auth.php');
-//Content
     $this->page->data['content'] = $CLICSHOPPING_Template->getTemplateFiles('login_auth');
-//language
-    $CLICSHOPPING_Language->loadDefinitions('login_auth');
 
     $CLICSHOPPING_Breadcrumb->add(CLICSHOPPING::getDef('navbar_title'), CLICSHOPPING::link(null, 'Account&LogInAuth'));
   }

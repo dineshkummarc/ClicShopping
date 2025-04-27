@@ -30,7 +30,6 @@ CLICSHOPPING::loadSite('ClicShoppingAdmin');
 try {
   Gpt::getEnvironment();
   $prompt = HTML::sanitize($_POST['message']);
-  $saveGpt = isset($_POST['saveGpt']) ? HTML::sanitize($_POST['saveGpt']) : null;
   $languageId = Registry::get('Language')->getId();
 
   $ragManager = new MultiDBRAGManager();
@@ -67,6 +66,14 @@ try {
           'reviews_sentiment_embedding',
           'return_orders_embedding',
         ];
+
+/*
+
+clic_customers (infos sur les clients)
+clic_customers_info (détails supplémentaires)
+clic_customers_notes (notes internes sur les clients ?)
+ */
+
 
         // Add first the known table
         foreach ($knownTables as $tableName) {
@@ -152,12 +159,6 @@ try {
           $result = substr($pos, 2);
         }
       }
-    }
-
-    // 8️ Sauvegarder la conversation si demandé
-    if ($saveGpt === 'true') {
-      // Implémentation de la sauvegarde si nécessaire
-      // ...
     }
 
     echo nl2br($result);

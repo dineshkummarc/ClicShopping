@@ -80,6 +80,11 @@ text_rights_visitor = Visitor
 text_all_rights_admin = Administrator
 text_rights_employee = Employee
 
+text_email_verification_title = Email Verification
+text_email_verification = Allow email verification
+text_email_verification_code = Verification code
+text_email_verification_expiry = Expiry date
+
 text_help = Administrator rights
 text_help_note = Note :
 Admin Rights : All menus, edit, save, delete

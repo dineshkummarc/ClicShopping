@@ -102,7 +102,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
     $CLICSHOPPING_Hooks->call('Login', 'Process');
 
     if ($CLICSHOPPING_NavigationHistory->hasSnapshot()) {
-      $CLICSHOPPING_NavigationHistory->redirectToSnapshot();
+      CLICSHOPPING::redirect(null, 'Account&Main');
     } else {
       CLICSHOPPING::redirect();
     }

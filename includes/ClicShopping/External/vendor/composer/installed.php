@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '5d8a5cd2c29cd055439a3dcb73c909a6e047284a',
+        'reference' => '97e4942e05e039e856e83ac300bed53ba8e0ce6b',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '5d8a5cd2c29cd055439a3dcb73c909a6e047284a',
+            'reference' => '97e4942e05e039e856e83ac300bed53ba8e0ce6b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -365,15 +365,6 @@
                 0 => '9999999-dev',
             ),
             'dev_requirement' => true,
-        ),
-        'robthree/twofactorauth' => array(
-            'pretty_version' => 'v3.0.2',
-            'version' => '3.0.2.0',
-            'reference' => '6d70f9ca8e25568f163a7b3b3ff77bd8ea743978',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../robthree/twofactorauth',
-            'aliases' => array(),
-            'dev_requirement' => false,
         ),
         'setasign/fpdf' => array(
             'pretty_version' => '1.8.6',

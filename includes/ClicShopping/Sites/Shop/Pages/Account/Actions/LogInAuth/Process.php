@@ -11,60 +11,67 @@
 namespace ClicShopping\Sites\Shop\Pages\Account\Actions\LogInAuth;
 
 use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\HTML;
-use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
-use ClicShopping\Sites\Common\Topt;
 
 use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
 
 class Process extends \ClicShopping\OM\PagesActionsAbstract
 {
-  private mixed $Customer;
-  private mixed $Db;
+  private mixed $customer;
+  private mixed $db;
 
   public function __construct()
   {
-    $this->Db = Registry::get('Db');
-    $this->Customer = Registry::get('Customer');
+    $this->db = Registry::get('Db');
+    $this->customer = Registry::get('Customer');
   }
 
   /**
    * Send mail
    * @return void
    */
-  public function sentEmail(): void
+  private function sentEmail(): void
   {
     $CLICSHOPPING_Mail = Registry::get('Mail');
 
     if (CONFIGURATION_EMAIL_CUSTOMER_SECURITY == 'true') {
-      if ($this->customer->getCustomerIp() != HTTP::getIpAddress()) {
-// Content email
-        $template_email_signature = TemplateEmail::getTemplateEmailSignature();
-        $template_email_footer = TemplateEmail::getTemplateEmailTextFooter();
-        $email_subject = CLICSHOPPING::getDef('email_subject', ['store_name' => STORE_NAME]);
-        $message = CLICSHOPPING::getDef('text_message', ['address_ip' => HTTP::getIpAddress(), 'provider' => HTTP::getProviderNameCustomer()]);
-        $email_text = STORE_NAME . ',<br /><br />' . $message . '<br /><br />' . $template_email_signature . '<br /><br />' . $template_email_footer;
+      $body_subject = CLICSHOPPING::getDef('email_text_warning_login_subject', ['store_name' => STORE_NAME]);
 
-// Email send
-        $message = $email_text;
-        $message = str_replace('src="/', 'src="' . HTTP::typeUrlDomain() . '/', $message);
-        $CLICSHOPPING_Mail->addHtmlCkeditor($message);
-        $from = STORE_OWNER_EMAIL_ADDRESS;
+      $email_body = CLICSHOPPING::getDef('email_text_warning_login_message', ['store_name' => STORE_NAME]);
+      $email_body .= TemplateEmail::getTemplateEmailSignature() . "\n";
+      $email_body .= TemplateEmail::getTemplateEmailTextFooter();
 
-        $CLICSHOPPING_Mail->send($this->customer->getEmailAddress(), $this->customer->getName(), null, $from, $email_subject);
-      }
+      $to_addr = $this->customer->getEmailAddress();
+
+      $from_name = STORE_OWNER;
+      $from_addr = STORE_OWNER_EMAIL_ADDRESS;
+      $to_name = NULL;
+      $subject = $body_subject;
+
+      $CLICSHOPPING_Mail->addHtml($email_body);
+      $CLICSHOPPING_Mail->send($to_addr, $from_name, $from_addr, $to_name, $subject);
     }
   }
 
   public function execute()
   {
-    $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
     $CLICSHOPPING_ShoppingCart = Registry::get('ShoppingCart');
     $CLICSHOPPING_NavigationHistory = Registry::get('NavigationHistory');
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
+    $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
+
+    $error =false;
 
     $CLICSHOPPING_Hooks->call('LogInAuth', 'postProcess');
+
+    if (EMAIL_VERIFICATION_ENABLED_SHOP == 'False') {
+      CLICSHOPPING::redirect(null, 'Account&LogIn');
+    }
+
+    if(!isset($_SESSION['email_code'])) {
+      $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_email_verification_failed'), 'error');
+      CLICSHOPPING::redirect(null, 'Account&LogInAuth');
+    }
 
     // redirect the customer to a friendly cookie-must-be-enabled page if cookies are disabled (or the session has not started)
     if (Registry::get('Session')->hasStarted() === false) {
@@ -83,46 +90,17 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
       CLICSHOPPING::redirect('Account&LogIn');
     }
 
-    $error = true;
-
-// Check the topt
-    if (isset($_POST['tfa_code'])) {
-      $tfaCode = HTML::sanitize($_POST['tfa_code']);
-
-      if (empty($tfaCode)) {
-        CLICSHOPPING::redirect(null, 'Account&LogInAuth');
-      } else {
-        if (!empty(Topt::checkToptloginCustomer($_SESSION['email_address']))) {
-          if (Topt::getVerifyAuth($_SESSION['tfa_secret'], $tfaCode) === true) {
-            $sql_data_array = ['client_computer_ip' => HTTP::getIpAddress()];
-
-            $this->Db->save('customers', $sql_data_array, ['customers_id' => (int)$_SESSION['customer_id']]);
-            $error = false;
-          } else {
-            $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('text_code_auth_invalid'), 'error');
-            $error = true;
-            unset($_SESSION['user_secret']);
-          }
-        } else {
-          $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('text_code_auth_invalid'), 'error');
-          $error = true;
-
-          unset($_SESSION['user_secret']);
-        }
-      }
-    } else {
-      CLICSHOPPING::redirect(null, 'Account&LogInAuth');
-    }
-
 // activate the login session or not
-    if (isset($_SESSION['email_address']) && isset($_SESSION['password']) && $error === false) {
-// Check if email exists
-      $array_sql = ['customers_id'];
+    if (isset($_SESSION['email_address']) && isset($_SESSION['password'])) {
+      $array_sql =  ['customers_id'];
 
-      $Qcheck = $this->Db->get('customers', $array_sql, ['customers_email_address' => $_SESSION['email_address']], null, 1);
+      $Qcheck = $this->db->get('customers', $array_sql, ['customers_email_address' => $_SESSION['email_address']], null, 1);
 
-      if ($Qcheck->fetch()) {
-        $_SESSION['login_customer_id'] = $Qcheck->valueInt('customers_id');
+      if ($Qcheck->valueInt('customers_id') === 0) {
+        $error = true;
+      } else {
+        $login_customer_id = $Qcheck->valueInt('customers_id');
+        $_SESSION['login_customer_id'] = $login_customer_id;
       }
     } else {
       CLICSHOPPING::redirect(null, 'Account&LogInAuth');
@@ -134,19 +112,22 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
       $login_customer_id = 0;
     }
 
-    if (is_numeric($login_customer_id) && ($login_customer_id > 0)) {
+    if (is_numeric($login_customer_id) && ($login_customer_id > 0) && $error === false) {
       if ($login_customer_id > 0) {
-        $this->Customer->setData($login_customer_id);
-        Topt::resetAll();
+        $this->customer->setData($login_customer_id);
+	
+        if (isset($_SESSION['email_code'])) {
+          unset($_SESSION['email_code']);
+        }
       }
 
-      $Qupdate = $this->Db->prepare('update :table_customers_info
-                                          set customers_info_date_of_last_logon = now(),
-                                              customers_info_number_of_logons = customers_info_number_of_logons+1,
-                                              password_reset_key = null,
-                                              password_reset_date = null
-                                          where customers_info_id = :customers_info_id
-                                        ');
+      $Qupdate = $this->db->prepare('update :table_customers_info
+                                      set customers_info_date_of_last_logon = now(),
+                                          customers_info_number_of_logons = customers_info_number_of_logons+1,
+                                          password_reset_key = null,
+                                          password_reset_date = null
+                                      where customers_info_id = :customers_info_id
+                                    ');
       $Qupdate->bindInt(':customers_info_id', $login_customer_id);
       $Qupdate->execute();
 
@@ -164,7 +145,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
     $CLICSHOPPING_Hooks->call('LogInAuth', 'Process');
 
     if ($CLICSHOPPING_NavigationHistory->hasSnapshot()) {
-      $CLICSHOPPING_NavigationHistory->redirectToSnapshot();
+      CLICSHOPPING::redirect(null, 'Account&Main');
     } else {
       CLICSHOPPING::redirect();
     }
