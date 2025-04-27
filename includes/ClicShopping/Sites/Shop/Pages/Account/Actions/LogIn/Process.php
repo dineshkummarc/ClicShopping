@@ -95,17 +95,16 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
     }
 
 // restore cart contents
-      $CLICSHOPPING_ShoppingCart->getRestoreContents();
+    $CLICSHOPPING_ShoppingCart->getRestoreContents();
 
-      $CLICSHOPPING_NavigationHistory->removeCurrentPage();
+    $CLICSHOPPING_NavigationHistory->removeCurrentPage();
 
-      $CLICSHOPPING_Hooks->call('Login', 'Process');
+    $CLICSHOPPING_Hooks->call('Login', 'Process');
 
-      if ($CLICSHOPPING_NavigationHistory->hasSnapshot()) {
-        $CLICSHOPPING_NavigationHistory->redirectToSnapshot();
-      } else {
-        CLICSHOPPING::redirect();
-      }
+    if ($CLICSHOPPING_NavigationHistory->hasSnapshot()) {
+      $CLICSHOPPING_NavigationHistory->redirectToSnapshot();
+    } else {
+      CLICSHOPPING::redirect();
     }
   }
 }
