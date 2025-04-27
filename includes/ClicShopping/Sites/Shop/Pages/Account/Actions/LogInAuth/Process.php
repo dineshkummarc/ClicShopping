@@ -30,28 +30,30 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
   }
 
   /**
+   * Send mail
    * @return void
    */
   public function sentEmail(): void
   {
     $CLICSHOPPING_Mail = Registry::get('Mail');
 
-    if ($this->Customer->getCustomerIp() != HTTP::getIpAddress()) {
+    if (CONFIGURATION_EMAIL_CUSTOMER_SECURITY == 'true') {
+      if ($this->customer->getCustomerIp() != HTTP::getIpAddress()) {
 // Content email
-      $template_email_signature = TemplateEmail::getTemplateEmailSignature();
-      $template_email_footer = TemplateEmail::getTemplateEmailTextFooter();
-      $email_subject = CLICSHOPPING::getDef('email_subject', ['store_name' => STORE_NAME]);
-      $message = CLICSHOPPING::getDef('text_message', ['address_ip' => HTTP::getIpAddress(), 'provider' => HTTP::getProviderNameCustomer()]);
-      $email_text = STORE_NAME . ',<br /><br />' . $message . '<br /><br />' . $template_email_signature . '<br /><br />' . $template_email_footer;
+        $template_email_signature = TemplateEmail::getTemplateEmailSignature();
+        $template_email_footer = TemplateEmail::getTemplateEmailTextFooter();
+        $email_subject = CLICSHOPPING::getDef('email_subject', ['store_name' => STORE_NAME]);
+        $message = CLICSHOPPING::getDef('text_message', ['address_ip' => HTTP::getIpAddress(), 'provider' => HTTP::getProviderNameCustomer()]);
+        $email_text = STORE_NAME . ',<br /><br />' . $message . '<br /><br />' . $template_email_signature . '<br /><br />' . $template_email_footer;
 
 // Email send
-      $message = $email_text;
-      $message = str_replace('src="/', 'src="' . HTTP::typeUrlDomain() . '/', $message);
-      $CLICSHOPPING_Mail->addHtmlCkeditor($message);
+        $message = $email_text;
+        $message = str_replace('src="/', 'src="' . HTTP::typeUrlDomain() . '/', $message);
+        $CLICSHOPPING_Mail->addHtmlCkeditor($message);
+        $from = STORE_OWNER_EMAIL_ADDRESS;
 
-      $from = STORE_OWNER_EMAIL_ADDRESS;
-
-      $CLICSHOPPING_Mail->send($this->Customer->getEmailAddress(), $this->Customer->getName(), null, $from, $email_subject);
+        $CLICSHOPPING_Mail->send($this->customer->getEmailAddress(), $this->customer->getName(), null, $from, $email_subject);
+      }
     }
   }
 

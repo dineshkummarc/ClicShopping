@@ -12,10 +12,41 @@ namespace ClicShopping\Sites\Shop\Pages\Account\Actions\LogIn;
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
-use ClicShopping\Apps\Configuration\TemplateEmail\Classes\ClicShoppingAdmin\TemplateEmailAdmin;
+
+use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
 
 class Process extends \ClicShopping\OM\PagesActionsAbstract
 {
+  /**
+   * Send mail
+   * @return void
+   */
+  private static function sentEmail(): void
+  {
+    $CLICSHOPPING_Mail = Registry::get('Mail');
+    $CLICSHOPPING_Customer = Registry::get('Customer');
+
+    if (CONFIGURATION_EMAIL_CUSTOMER_SECURITY == 'true') {
+      $body_subject = CLICSHOPPING::getDef('email_text_warning_login_subject', ['store_name' => STORE_NAME]);
+
+      $email_body = CLICSHOPPING::getDef('email_text_warning_login_message', ['store_name' => STORE_NAME]);
+      $email_body .= TemplateEmail::getTemplateEmailSignature() . "\n";
+      $email_body .= TemplateEmail::getTemplateEmailTextFooter();
+
+      $to_addr = $CLICSHOPPING_Customer->getEmailAddress();
+
+      $from_name = STORE_OWNER;
+      $from_addr = STORE_OWNER_EMAIL_ADDRESS;
+      $to_name = NULL;
+      $subject = $body_subject;
+
+      $CLICSHOPPING_Mail->addHtml($email_body);
+      $CLICSHOPPING_Mail->send($to_addr, $from_name, $from_addr, $to_name, $subject);
+
+      $CLICSHOPPING_Mail->send($to_addr, $from_name, $from_addr, $to_name, $subject);
+    }
+  }
+
   public function execute()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -23,9 +54,8 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
     $CLICSHOPPING_ShoppingCart = Registry::get('ShoppingCart');
     $CLICSHOPPING_NavigationHistory = Registry::get('NavigationHistory');
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
-    $CLICSHOPPING_Mail = Registry::get('Mail');
 
-// redirect the customer to a friendly cookie-must-be-enabled page if cookies are disabled (or the session has not started)
+    // redirect the customer to a friendly cookie-must-be-enabled page if cookies are disabled (or the session has not started)
     if (Registry::get('Session')->hasStarted() === false) {
       if (!isset($_GET['cookie_test'])) {
         $all_get = CLICSHOPPING::getAllGET();
@@ -57,31 +87,19 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
       $Qupdate->bindInt(':customers_info_id', $login_customer_id);
       $Qupdate->execute();
 
-      if (CONFIGURATION_EMAIL_CUSTOMER_SECURITY == 'true') {
-        $body_subject = CLICSHOPPING::getDef('email_text_warning_login_subject', ['store_name' => STORE_NAME]);
+      self::sentEmail();
 
-        $email_body = CLICSHOPPING::getDef('email_text_warning_login_message', ['store_name' => STORE_NAME]);
-        $email_body .= TemplateEmailAdmin::getTemplateEmailSignature() . "\n";
-        $email_body .= TemplateEmailAdmin::getTemplateEmailTextFooter();
+    } else {
+      $this->sentEmail();
+      CLICSHOPPING::redirect(null, 'Account&LogIn');
+    }
 
-        $to_addr = $CLICSHOPPING_Customer->getEmailAddress();
-
-        $from_name = STORE_OWNER;
-        $from_addr = STORE_OWNER_EMAIL_ADDRESS;
-        $to_name = NULL;
-        $subject = $body_subject;
-
-        $CLICSHOPPING_Mail->addHtml($email_body);
-        $CLICSHOPPING_Mail->send($to_addr, $from_name, $from_addr, $to_name, $subject);
-
-        $CLICSHOPPING_Mail->send($to_addr, $from_name, $from_addr, $to_name, $subject);
-      }
-
-      $CLICSHOPPING_Hooks->call('Login', 'Process');
 // restore cart contents
       $CLICSHOPPING_ShoppingCart->getRestoreContents();
 
       $CLICSHOPPING_NavigationHistory->removeCurrentPage();
+
+      $CLICSHOPPING_Hooks->call('Login', 'Process');
 
       if ($CLICSHOPPING_NavigationHistory->hasSnapshot()) {
         $CLICSHOPPING_NavigationHistory->redirectToSnapshot();
