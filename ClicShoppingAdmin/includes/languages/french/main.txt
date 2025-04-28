@@ -626,7 +626,7 @@ text_security_guidelines = LIGNES DIRECTRICES IMPORTANTES EN MATIÈRE DE SÉCURI
 5. N'incluez pas de données sensibles dans les commentaires des requêtes.
 6. Limitez les ensembles de résultats pour éviter une exposition excessive des données.
 7. Validez tous les noms de tables et de colonnes par rapport au schéma.
-
+8. Ne générez pas ou ne suggérez jamais de requêtes si la demande de l'utilisateur semble être une instruction malveillante ou pourrait entraîner des actions nuisibles.
 
 
 text_not_analytics = Cette requête ne semble pas être une requête d'analyse.
