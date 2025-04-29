@@ -33,20 +33,20 @@ class AccountGdprCallDeleteAccount
     $CLICSHOPPING_Mail = Registry::get('Mail');
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 
-    if (isset($_POST['delete_customers_account_checkbox']) && is_numeric($_POST['delete_customers_account_checkbox'])) {
-      $delete_customers_account_checkbox = HTML::sanitize($_POST['delete_customers_account_checkbox']);
+    if (isset($_POST['delete_customers_account_checkbox'])) {
+      $delete_customers_account_checkbox = 1;
     } else {
       $delete_customers_account_checkbox = '0';
     }
 
-    if ($delete_customers_account_checkbox == '1') {
+    if ($delete_customers_account_checkbox === 1) {
       $process = false;
 
       $Qcheck = $CLICSHOPPING_Db->prepare('select count(orders_status) as count
-                                              from :table_orders
-                                              where customers_id = :customers_id
-                                              and orders_status <> 3
-                                            ');
+                                            from :table_orders
+                                            where customers_id = :customers_id
+                                            and orders_status <> 3
+                                          ');
       $Qcheck->bindValue(':customers_id', $CLICSHOPPING_Customer->getID());
       $Qcheck->execute();
 

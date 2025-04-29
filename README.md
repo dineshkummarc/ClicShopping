@@ -2,23 +2,41 @@
   <img src="https://www.clicshopping.org/images/logonew.png">
 </p>
 
-# ClicShoppingAI
-Unlock the potential of your online business with ClicShoppingAI(tm), a powerful open-source Ecommerce solution that supports B2B, B2C, and B2B-B2C. Now integrated with cutting-edge generative artificial intelligence systems like Gpt and Ollama, ClicShoppingAI takes your store to new heights!
+#The Future of Ecommerce, Powered by the GEN AI
 
-Boost Your Competitiveness - Absolutely Free!
-ClicShoppingAI helps merchants increase their turnover and competitiveness and the best part is, it's completely free! With AI on your side, you can optimize inventory, offer personalized recommendations, and provide top-notch customer service, all without breaking the bank.
+Unlock the full potential of your online business with ClicShoppingAI™, a powerful, open-source Ecommerce platform designed for B2B, B2C, and B2B-B2C.
 
-Seamless, Responsive Design for All Devices:
-Say goodbye to website worries with ClicShoppingAI's modern, responsive design. Customers will enjoy a delightful shopping experience across all devices, including mobile and desktop, without sacrificing speed or performance.
+ClicShoppingAI helps you deliver a seamless shopping experience for your customers while giving you the tools you need to manage your store efficiently.
 
-Lightweight, User-Friendly Installation:
-Don't waste time on complicated setups! Installing ClicShoppingAI is a breeze - just a few clicks on your server or computer, and you're good to go. It's a lightweight, customizable, and user-friendly solution, consuming minimal server resources.
+Easily integrate ClicShoppingAI with the most powerful Generative AI technologies:
 
-Empowering Ongoing Development:
-At ClicShoppingAI, we thrive on community support. By operating on donations, contributions, and financial backing, we ensure continuous platform development, guaranteeing you stay ahead of the competition.
+    Use advanced AI systems like GPT and Ollama to boost your store’s capabilities.
+    Leverage RAG Big Data and AI to enhance customer experience, optimize inventory management, and drive more sales.
+    Take your Ecommerce business to the next level with AI-powered features.
 
-Embrace the Future of Ecommerce - Today!
-Take the leap into the future of Ecommerce with ClicShoppingAI. With AI-driven capabilities and an easy installation process, you can revolutionize your online store in no time. Don't wait - seize the opportunity with ClicShopping now!
+Built for Everyone 
+    
+    Designed  small businesses to large enterprises — ClicShoppingAI’s modular architecture makes it easy to customize, extend, and adapt your store to your unique needs.
+
+Boost Your Business — For Free!
+
+    ClicShoppingAI helps you increase sales and stay competitive — at no cost. With built-in AI tools, you can optimize inventory, deliver personalized recommendations, and enhance customer service effortlessly.
+
+Responsive Design on Any Device
+
+    Offer a seamless shopping experience everywhere. ClicShoppingAI’s modern, responsive design ensures fast, smooth performance across desktops, tablets, and smartphones.
+
+Easy, Lightweight Installation
+
+    Set up your store quickly and easily. ClicShoppingAI installs in just a few clicks, uses minimal server resources, and offers full customization to fit your needs.
+
+Driven by Community Support
+
+    ClicShoppingAI is powered by its community. Donations and contributions help drive continuous improvements, keeping your platform innovative and competitive.
+
+Get Started Today
+Use the Artificial Intlligence to your Ecommerce business with ClicShoppingAI. Fast setup, powerful features, and a vibrant community — all completely free.
+
 
 ## Table of Contents
 
@@ -122,7 +140,8 @@ More information in the Wiki
 - 
 
 - Generative AI functionalities :
-- Generative artificial Intelligence included with Gpt, Ollama and Anthropic
+- Generative artificial Intelligence included with Gpt, Ollama and Anthropic.
+- Intelligent RAG BI (business intelligence) with agent
 - Generative artificial products customers recommendations
 - Generative artificial intelligence for All content (product,categories...)
 - Generative artificial intelligence for SEO
@@ -132,7 +151,8 @@ More information in the Wiki
 - Generative artificial Intelligence Automated review tagging
 - Generative artificial Intelligence product automation
 - Real time safety stock predictive (AI)
-- 
+
+
 - WYSIWYG to create your products description, content with CKeditor
 - Image Editor management with El-Finder 2.x - drag and drop - webp
 - Full SEO functionalities optimization and url

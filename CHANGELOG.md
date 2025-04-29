@@ -1,19 +1,19 @@
 version4.00
-This is the last version 3, the next will version 4.x will integrate the embeddings and need to be used with mariaDB 11.8 at least.
-The goal is to exploit the Gen AI capacities
+Tthe version 4.x will integrate the embeddings and need to be used with mariaDB 11.8 at least.
+The goal is to exploit the Gen AI capacities with the rag creating a RAG BI Agent.
 
 small fix
 librairies updated
-Protect customers information by AES-256
-Add embeding for categories
-Add embeding for products
-Add embeding for page manager
+Protect data information by AES-256
+Add embeding for some table
+new double authentification approach by code
 Add product recommendation module for products_info template using the embedding
 Add rag via chatbot
-Allow to use the rag and rerieve the data inside the database or inside the llm
-Allow the rag to search as specific information via a text request
-Allow the rag to make statistic via dynamic query
-Intelligent rag with agent BI allowing to use diffrent embedding model
+Rag with agent BI
+ - Allow to use the rag and retieve the data inside the database
+ - Allow the rag to search as specific information via a text request
+ - Allow the rag to make statistic via dynamic query
+ - Intelligent rag with agent BI allowing to use different embedding model
 
 ------------------
 version3.456
