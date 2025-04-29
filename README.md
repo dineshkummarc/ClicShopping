@@ -77,8 +77,8 @@ Use the Artificial Intlligence to your Ecommerce business with ClicShoppingAI. F
 
 #Requirement (more information in the wiki)
  - Apache 2.4<br>
- - MYSQL 7.x / MariaDb 10.x<br>
- - PHP >= 8.3 or 8.4
+ - MYSQL 7.x / MariaDb 11.7<br>
+ - PHP >= 8.4
  - More information in the Wiki
 
 #Installation
@@ -141,7 +141,7 @@ More information in the Wiki
 
 - Generative AI functionalities :
 - Generative artificial Intelligence included with Gpt, Ollama and Anthropic.
-- Intelligent RAG BI (business intelligence) with agent
+- Intelligent RAG BI (business intelligence) with some agents
 - Generative artificial products customers recommendations
 - Generative artificial intelligence for All content (product,categories...)
 - Generative artificial intelligence for SEO
