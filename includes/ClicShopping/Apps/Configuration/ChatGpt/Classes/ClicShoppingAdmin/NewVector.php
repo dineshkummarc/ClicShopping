@@ -78,7 +78,7 @@ class NewVector
     $array = [
       ['id' => 'gpt-large', 'text' => 'OpenAI Large embedding (3072 dimensions)'],
       ['id' => 'gpt-medium', 'text' => 'OpenAI Medium embedding (1536 dimensions)'],
-      ['id' => 'ollama', 'text' => 'Ollama embedding (1536 dimensions)'],
+      ['id' => 'nomic-embed-text', 'text' => 'Ollama embedding nomic-embed-text (1536 dimensions)'],
       ['id' => 'mistral', 'text' => 'Mistral embedding (1024 dimensions)'],
       ['id' => 'voyage3', 'text' => 'Voyage 3 embedding (1024 dimensions)'],
       ['id' => 'voyage3-large', 'text' => 'Voyage 3 Large embedding (4096 dimensions)'],
