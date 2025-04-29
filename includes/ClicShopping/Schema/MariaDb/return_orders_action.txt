@@ -1,5 +1,5 @@
-return_action_id int not_null DEFAULT 0,
-language_id int default(1) not_null,
+return_action_id int not_null default(0)
+language_id int default(1) not_null
 name varchar(255) not_null
 --
 primary return_action_id language_id

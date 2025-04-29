@@ -319,7 +319,7 @@ class NavigationHistory
       $string = substr($string, 0, -1);
     }
 
-    return $string;
+    return $string;    
   }
 
   /**

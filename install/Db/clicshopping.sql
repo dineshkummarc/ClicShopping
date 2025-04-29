@@ -213,6 +213,7 @@ INSERT INTO administrator_menu VALUES(802, 'index.php?A&Customers\\Reviews&Revie
 INSERT INTO administrator_menu VALUES(803, 'index.php?A&Customers\\Reviews&StatsCustomersVote', 98, 4, 0, '', 0, 'app_customers_reviews', 1);
 INSERT INTO administrator_menu VALUES(804, 'index.php?A&Configuration\\Settings&Settings&gID=11', 21, 2, 0, '', 1, 'app_configuration_cache', 1);
 
+
 INSERT INTO administrator_menu_description VALUES(0, '', 1);
 INSERT INTO administrator_menu_description VALUES(0, '', 2);
 INSERT INTO administrator_menu_description VALUES(1, 'Home', 1);
@@ -1703,12 +1704,11 @@ INSERT INTO configuration VALUES(1754, 'Clef Api VoyageAi', 'CLICSHOPPING_APP_CH
 
 INSERT INTO configuration VALUES(1755, 'Ordre de tri d\'affichage', 'CLICSHOPPING_APP_ADMINISTRATORS_AD_SORT_ORDER', '30', 'Ordre de tri pour l\'affichage (Le plus petit nombre est montré en premier)', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
 INSERT INTO configuration VALUES(1756, 'Statut', 'CLICSHOPPING_APP_ADMINISTRATORS_AD_STATUS', 'True', 'Souhaitez vous activer cette APP', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
-INSERT INTO configuration VALUES(1756, 'Parameter [Administrators App]', 'MODULE_MODULES_ADMINISTRATORS_INSTALLED', 'Configuration\\Administrators\\AD', 'Parameter [Administrators App]', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
-INSERT INTO configuration VALUES(1757, 'Activer la vérification de l\'email par code d\'accés à l\'administration', 'EMAIL_VERIFICATION_ENABLED_ADMIN', 'False', 'Activer ou désactiver la vérification par code pour l\'accès administrateur. <br> Veuillez vérifier que l\'administrateur peut accéder à cette vérification', 46, 5, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
-INSERT INTO configuration VALUES(1758, 'Activer la vérification par l\'email par code d\'accés pour la boutique', 'EMAIL_VERIFICATION_ENABLED_SHOP', 'False', 'Activer ou désactiver la vérification par code pour l\'accès àla boutique. <br> Veuillez vérifier que l\'administrateur peut accéder à cette vérification', 46, 6, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
-INSERT INTO configuration VALUES(1759, 'Durée de validité du code de la vérification par email (minutes)', 'EMAIL_VERIFICATION_CODE_EXPIRY', '5', 'Durée de validité du code de vérification en minutes', 46, 7, NULL, '2025-04-23 15:01:20', NULL, NULL);
-INSERT INTO configuration VALUES(1759, 'Longueur du code de vérification de la vérification par email ', 'EMAIL_VERIFICATION_CODE_LENGTH', '6', 'Nombre de chiffres dans le code de vérification (4-8)', 46, 8, NULL, '2025-04-23 15:01:20', NULL, NULL);
-
+INSERT INTO configuration VALUES(1757, 'Parameter [Administrators App]', 'MODULE_MODULES_ADMINISTRATORS_INSTALLED', 'Configuration\\Administrators\\AD', 'Parameter [Administrators App]', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO configuration VALUES(1758, 'Activer la vérification de l\'email par code d\'accés à l\'administration', 'EMAIL_VERIFICATION_ENABLED_ADMIN', 'False', 'Activer ou désactiver la vérification par code pour l\'accès administrateur. <br> Veuillez vérifier que l\'administrateur peut accéder à cette vérification', 46, 5, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1759, 'Activer la vérification par l\'email par code d\'accés pour la boutique', 'EMAIL_VERIFICATION_ENABLED_SHOP', 'False', 'Activer ou désactiver la vérification par code pour l\'accès àla boutique. <br> Veuillez vérifier que l\'administrateur peut accéder à cette vérification', 46, 6, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1760, 'Durée de validité du code de la vérification par email (minutes)', 'EMAIL_VERIFICATION_CODE_EXPIRY', '5', 'Durée de validité du code de vérification en minutes', 46, 7, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO configuration VALUES(1761, 'Longueur du code de vérification de la vérification par email ', 'EMAIL_VERIFICATION_CODE_LENGTH', '6', 'Nombre de chiffres dans le code de vérification (4-8)', 46, 8, NULL, '2025-04-23 15:01:20', NULL, NULL);
 
 
 
@@ -3019,4 +3019,14 @@ INSERT INTO zones_to_geo_zones VALUES(82, 38, 77, 14, NULL, '2015-02-09 16:12:14
 INSERT INTO zones_to_geo_zones VALUES(83, 38, 76, 9, NULL, '2015-02-09 18:53:27');
 
 #full text index
-ALTER TABLE products_description ADD FULLTEXT description (products_description);
+ALTER TABLE clic_products_description ADD FULLTEXT description (products_description);
+CREATE VECTOR INDEX embedding_index ON clic_categories_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_manufacturers_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_orders_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_pages_manager_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_products_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_return_orders_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_reviews_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_reviews_sentiment_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_suppliers_embedding (embedding);
+

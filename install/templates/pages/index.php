@@ -50,7 +50,7 @@ foreach ($directory_array as $key => $d) {
 
 $warning_array = [];
 
-if (version_compare(phpversion(), '8.4', '<')) {
+if (version_compare(phpversion(), '8.3', '<')) {
   $warning_array[] = 'The minimum required PHP version is v8.4 and Mariadb 11.7 at least. Please ask your host or server administrator to upgrade the PHP version to continue installation.';
 }
 
@@ -143,7 +143,7 @@ if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
           </td>
           <td class="text-center">PHP 8.2</td>
           <td
-            class="text-end"><?php echo((version_compare(phpversion(), '8.4', '>')) ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-danger"></i>'); ?></td>
+            class="text-end"><?php echo((version_compare(phpversion(), '8.3', '>')) ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-danger"></i>'); ?></td>
         </tr>
         <tr>
           <td>File Upload</td>

@@ -11,7 +11,6 @@
 
   --
   primary id
-  VECTOR INDEX idx_embedding (embedding)
   ##
   engine innodb
   character_set utf8mb4

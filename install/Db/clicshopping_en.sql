@@ -588,6 +588,7 @@ INSERT INTO administrator_menu_description VALUES(803, 'Vote commentaires produi
 INSERT INTO administrator_menu_description VALUES(804, 'Cache Setup', 1);
 INSERT INTO administrator_menu_description VALUES(804, 'Gestion du Cache', 2);
 
+
 INSERT INTO api VALUES(1, 'Default', 'd0a36b839700b60727fe13998e22aa0af197c61d8b371e26114c133ca51c4864bd0da73ad6d1e5090b02b55cff42b8a0cd23866e64e78fc8884eb6228d32f5e9d76bed468869dd89ee6bb8a3208c5077e88560d0bc238f67cfc732efcf5313a0cb361e297c29c8d82d050d770ed7dee972af6445e801fa9af12e3d478bf5346a', 0, '2022-09-18 14:25:54', '2022-09-18 14:25:54', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 INSERT INTO api_ip VALUES(1, 1, '127.0.0.1', 'localhost');
 
@@ -1702,11 +1703,11 @@ INSERT INTO configuration VALUES(1754, 'cfg_chatgpt_api_key_voyage_ai_title', 'V
 
 INSERT INTO configuration VALUES(1755, 'Sort Order', 'CLICSHOPPING_APP_ADMINISTRATORS_AD_SORT_ORDER', '30', 'Sort order of display. Lowest is displayed first.', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
 INSERT INTO configuration VALUES(1756, 'Status', 'CLICSHOPPING_APP_ADMINISTRATORS_AD_STATUS', 'True', 'SDo you want to enable this App ?', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
-INSERT INTO configuration VALUES(1756, 'Parameter [Administrators App]', 'MODULE_MODULES_ADMINISTRATORS_INSTALLED', 'Configuration\\Administrators\\AD', 'Parameter [Administrators App]', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
-INSERT INTO configuration VALUES(1757, 'Enable email verification by code for admin access', 'EMAIL_VERIFICATION_ENABLED_ADMIN', 'False', 'Enable or disable code verification for admin access. <br> Please ensure the administrator can access this verification', 46, 5, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
-INSERT INTO configuration VALUES(1758, 'Enable email verification by code for store access', 'EMAIL_VERIFICATION_ENABLED_SHOP', 'False', 'Enable or disable code verification for store access. <br> Please ensure the administrator can access this verification', 46, 6, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
-INSERT INTO configuration VALUES(1759, 'Email verification code validity duration (minutes)', 'EMAIL_VERIFICATION_CODE_EXPIRY', '5', 'Duration of the verification code validity in minutes', 46, 7, NULL, '2025-04-23 15:01:20', NULL, NULL);
-INSERT INTO configuration VALUES(1760, 'Email verification code length', 'EMAIL_VERIFICATION_CODE_LENGTH', '6', 'Number of digits in the verification code (4-8)', 46, 8, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO configuration VALUES(1757, 'Parameter [Administrators App]', 'MODULE_MODULES_ADMINISTRATORS_INSTALLED', 'Configuration\\Administrators\\AD', 'Parameter [Administrators App]', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO configuration VALUES(1758, 'Enable email verification by code for admin access', 'EMAIL_VERIFICATION_ENABLED_ADMIN', 'False', 'Enable or disable code verification for admin access. <br> Please ensure the administrator can access this verification', 46, 5, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1759, 'Enable email verification by code for store access', 'EMAIL_VERIFICATION_ENABLED_SHOP', 'False', 'Enable or disable code verification for store access. <br> Please ensure the administrator can access this verification', 46, 6, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1760, 'Email verification code validity duration (minutes)', 'EMAIL_VERIFICATION_CODE_EXPIRY', '5', 'Duration of the verification code validity in minutes', 46, 7, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO configuration VALUES(1761, 'Email verification code length', 'EMAIL_VERIFICATION_CODE_LENGTH', '6', 'Number of digits in the verification code (4-8)', 46, 8, NULL, '2025-04-23 15:01:20', NULL, NULL);
 
 
 
@@ -3015,4 +3016,14 @@ INSERT INTO zones_to_geo_zones VALUES(82, 38, 77, 14, NULL, '2015-02-09 16:12:14
 INSERT INTO zones_to_geo_zones VALUES(83, 38, 76, 9, NULL, '2015-02-09 18:53:27');
 
 #full text index
-ALTER TABLE products_description ADD FULLTEXT description (products_description);
+ALTER TABLE clic_products_description ADD FULLTEXT description (products_description);
+CREATE VECTOR INDEX embedding_index ON clic_categories_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_manufacturers_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_orders_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_pages_manager_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_products_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_return_orders_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_reviews_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_reviews_sentiment_embedding (embedding);
+CREATE VECTOR INDEX embedding_index ON clic_suppliers_embedding (embedding);
+
