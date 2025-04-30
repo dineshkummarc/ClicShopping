@@ -1,5 +1,9 @@
+version3.4571
+Add table schema missed
+
+----------------
 version3.457
-Fix bug
+fix bug
 DB improvment
 Librairies updated
 
