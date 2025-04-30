@@ -211,6 +211,7 @@ INSERT INTO administrator_menu VALUES(800, 'index.php?A&Marketing\\Recommendatio
 INSERT INTO administrator_menu VALUES(801, 'index.php?A&Customers\\Reviews&Reviews', 587, 1, 0, '', 0, 'app_customers_reviews', 1);
 INSERT INTO administrator_menu VALUES(802, 'index.php?A&Customers\\Reviews&ReviewsSentiment', 587, 2, 0, '', 0, 'app_customers_reviews', 1);
 INSERT INTO administrator_menu VALUES(803, 'index.php?A&Customers\\Reviews&StatsCustomersVote', 98, 4, 0, '', 0, 'app_customers_reviews', 1);
+INSERT INTO administrator_menu VALUES(804, 'index.php?A&Configuration\\Settings&Settings&gID=11', 21, 2, 0, '', 1, 'app_configuration_cache', 1);
 
 
 INSERT INTO administrator_menu_description VALUES(0, '', 1);
@@ -295,10 +296,10 @@ INSERT INTO administrator_menu_description VALUES(50, 'Minimum values', 1);
 INSERT INTO administrator_menu_description VALUES(50, 'Valeurs minimum', 2);
 INSERT INTO administrator_menu_description VALUES(51, 'Maximum values', 1);
 INSERT INTO administrator_menu_description VALUES(51, 'Valeurs maximum', 2);
-INSERT INTO administrator_menu_description VALUES(54, 'Shipping sort order', 1);
-INSERT INTO administrator_menu_description VALUES(54, 'Ordre de tri expéditions', 2);
-INSERT INTO administrator_menu_description VALUES(55, 'Sort Order total order', 1);
-INSERT INTO administrator_menu_description VALUES(55, 'Ordre de tri total commandes', 2);
+INSERT INTO administrator_menu_description VALUES(54, 'Shipping sort order / Install', 1);
+INSERT INTO administrator_menu_description VALUES(54, 'Ordre de tri expéditions / Installation', 2);
+INSERT INTO administrator_menu_description VALUES(55, 'Sort Order total order / Install', 1);
+INSERT INTO administrator_menu_description VALUES(55, 'Ordre de tri total commandes / Installation', 2);
 INSERT INTO administrator_menu_description VALUES(58, 'Social network modules', 1);
 INSERT INTO administrator_menu_description VALUES(58, 'Modules réseaux sociaux', 2);
 INSERT INTO administrator_menu_description VALUES(59, 'Metas modules', 1);
@@ -499,8 +500,8 @@ INSERT INTO administrator_menu_description VALUES(727, 'Other modules', 1);
 INSERT INTO administrator_menu_description VALUES(727, 'Autres modules', 2);
 INSERT INTO administrator_menu_description VALUES(728, 'Modules Hooks', 1);
 INSERT INTO administrator_menu_description VALUES(728, 'Modules Hooks', 2);
-INSERT INTO administrator_menu_description VALUES(730, 'Payment sort order', 1);
-INSERT INTO administrator_menu_description VALUES(730, 'Ordre de tri des paiements', 2);
+INSERT INTO administrator_menu_description VALUES(730, 'Payment sort order / Install', 1);
+INSERT INTO administrator_menu_description VALUES(730, 'Ordre de tri des paiements / Installation', 2);
 INSERT INTO administrator_menu_description VALUES(736, 'Languages', 1);
 INSERT INTO administrator_menu_description VALUES(736, 'Langages', 2);
 INSERT INTO administrator_menu_description VALUES(737, 'Actions recorder', 1);
@@ -584,6 +585,8 @@ INSERT INTO administrator_menu_description VALUES(802, 'Reviews sentiment', 1);
 INSERT INTO administrator_menu_description VALUES(802, 'Sentiments commentaires', 2);
 INSERT INTO administrator_menu_description VALUES(803, 'Products Reviews Vote', 1);
 INSERT INTO administrator_menu_description VALUES(803, 'Vote commentaires produits', 2);
+INSERT INTO administrator_menu_description VALUES(804, 'Cache Setup', 1);
+INSERT INTO administrator_menu_description VALUES(804, 'Gestion du Cache', 2);
 
 
 INSERT INTO api VALUES(1, 'Default', 'd0a36b839700b60727fe13998e22aa0af197c61d8b371e26114c133ca51c4864bd0da73ad6d1e5090b02b55cff42b8a0cd23866e64e78fc8884eb6228d32f5e9d76bed468869dd89ee6bb8a3208c5077e88560d0bc238f67cfc732efcf5313a0cb361e297c29c8d82d050d770ed7dee972af6445e801fa9af12e3d478bf5346a', 0, '2022-09-18 14:25:54', '2022-09-18 14:25:54', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -1622,7 +1625,7 @@ INSERT INTO configuration VALUES(1576, 'Statut', 'CLICSHOPPING_APP_CHATGPT_CH_ST
 INSERT INTO configuration VALUES(1577, 'Clef Api', 'CLICSHOPPING_APP_CHATGPT_CH_API_KEY', '', 'Veuillez insérer la clef API (https://platform.openai.com/account/api-keys)', 6, 0, NULL, '2023-02-22 17:17:04', NULL, NULL);
 INSERT INTO configuration VALUES(1578, 'Best of', 'CLICSHOPPING_APP_CHATGPT_CH_BESTOFF', '1', 'Génère le best_of des complétions côté serveur et renvoie le \"meilleur\". Utiliser un entier', 6, 0, NULL, '2023-03-05 12:10:25', NULL, NULL);
 INSERT INTO configuration VALUES(1579, 'Top P', 'CLICSHOPPING_APP_CHATGPT_CH_TOP_P', '1', 'Veuillez insérer un nombre<br />\nUne alternative à l\'échantillonnage avec la température, appelée échantillonnage par noyau, où le modèle considère les résultats des jetons avec une masse de probabilité top_p. Ainsi, 0,1 signifie que seuls les jetons comprenant la masse de probabilité supérieure de 10 % sont pris en compte.', 6, 0, NULL, '2023-03-05 12:10:25', NULL, NULL);
-INSERT INTO configuration VALUES(1580, 'Modéle à appliquer', 'CLICSHOPPING_APP_CHATGPT_CH_MODEL', 'text-davinci-003', 'Please, veuillez sélectionner le modéle par défaut que vous souhaitez appliquer.<br />\nTous les modéles n\'utilisent pas les mêmes paramétres et peuvent générer une erreur dans la rèponse<br />\nLE WYSWIWYG est impacté sur le type de modéle que vous souhaiter utiliser', 6, 0, NULL, '2023-03-05 12:10:25', NULL, NULL);
+INSERT INTO configuration VALUES(1580, 'Modéle à appliquer', 'CLICSHOPPING_APP_CHATGPT_CH_MODEL', 'gpt-4o-mini', 'Please, veuillez sélectionner le modéle par défaut que vous souhaitez appliquer.<br />\nTous les modéles n\'utilisent pas les mêmes paramétres et peuvent générer une erreur dans la rèponse<br />\nLE WYSWIWYG est impacté sur le type de modéle que vous souhaiter utiliser', 6, 0, NULL, '2023-03-05 12:10:25', NULL, NULL);
 INSERT INTO configuration VALUES(1581, 'Présence de la penalité', 'CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY', '0.1', 'Veuillez insérer un nombre<br />\nNombre entre -2.0 et 2.0. Les valeurs positives pénalisent les nouveaux jetons en fonction de leur fréquence existante dans le texte jusqu\'à présent, diminuant ainsi la probabilité que le modèle répète la même phrase exactement.', 6, 0, NULL, '2023-03-05 12:10:25', NULL, NULL);
 INSERT INTO configuration VALUES(1582, 'Clef Organisation', 'CLICSHOPPING_APP_CHATGPT_CH_ORGANIZATION', '', 'Clef Organisation (voir votre administration OpenIA)', 6, 0, NULL, '2023-03-05 12:10:25', NULL, NULL);
 INSERT INTO configuration VALUES(1583, 'Information Email connexion sécurité client (catalogue)', 'CONFIGURATION_EMAIL_CUSTOMER_SECURITY', 'false', 'Envoyer un email d\'alerte au client si une connexion est faite dans son administration.<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 12, 12, '2008-09-16 10:52:38', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
@@ -2972,4 +2975,4 @@ INSERT INTO zones_to_geo_zones VALUES(82, 38, 77, 14, NULL, '2015-02-09 16:12:14
 INSERT INTO zones_to_geo_zones VALUES(83, 38, 76, 9, NULL, '2015-02-09 18:53:27');
 
 #full text index
-ALTER TABLE products_description ADD FULLTEXT description (products_description);
+ALTER TABLE clic_products_description ADD FULLTEXT description (products_description);
