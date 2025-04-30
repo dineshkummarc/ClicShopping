@@ -69,15 +69,10 @@ use ClicShopping\OM\HTML;
                     <?php echo HTML::inputField('DB_DATABASE', null, 'required aria-required="true" id="dbName"'); ?>
                     <span class="help-block"><?php echo TEXT_DATABASE_HELP; ?></span>
                   </div>
-                  <div class="form-group col-3">
-                    <label for="input-db-prefix" class="col-form-label">Table Prefix</label>
-                    <?php echo HTML::inputField('DB_TABLE_PREFIX', 'clic_', 'id="dbTablePrefix"'); ?>
-                    <span
-                      class="help-block"><?php echo 'Prefix all table names in the database with this value'; ?></span>
-                  </div>
                 </div>
               </div>
             </div>
+            <?php echo HTML::hiddenField('DB_TABLE_PREFIX', 'clic_', 'id="dbTablePrefix"'); ?>
           </fieldset>
 
           <br/><br/>
