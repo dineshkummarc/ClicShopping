@@ -16,6 +16,12 @@ Rag with agent BI
  - Intelligent rag with agent BI allowing to use different embedding model
 
 ------------------
+version3.457
+Fix bug
+DB improvment
+Librairies updated
+
+----------------
 version3.456
 Librairies updated
 fix categories gpt call js

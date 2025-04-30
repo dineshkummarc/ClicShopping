@@ -80,7 +80,7 @@ class ac_account_product_return
 
       $reason_return = ReturnProduct::getDropDownReason();
 
-      if (\defined('CLICSHOPPING_APP_RETURN_ORDERS_RO_WITHDRAWAL')) {
+      if (defined('CLICSHOPPING_APP_RETURN_ORDERS_RO_WITHDRAWAL')) {
         $withdrawal = (int)CLICSHOPPING_APP_RETURN_ORDERS_RO_WITHDRAWAL;
       } else {
         $withdrawal = '';

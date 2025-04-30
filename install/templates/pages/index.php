@@ -51,7 +51,7 @@ foreach ($directory_array as $key => $d) {
 $warning_array = [];
 
 if (version_compare(phpversion(), '8.3', '<')) {
-  $warning_array[] = 'The minimum required PHP version is v8.4 and Mariadb 11.7 at least. Please ask your host or server administrator to upgrade the PHP version to continue installation.';
+  $warning_array[] = 'The minimum required PHP version is v8.3 and Mariadb 11.7 at least. Please ask your host or server administrator to upgrade the PHP version to continue installation.';
 }
 
 if (!extension_loaded('pdo') || !extension_loaded('pdo_mysql')) {
