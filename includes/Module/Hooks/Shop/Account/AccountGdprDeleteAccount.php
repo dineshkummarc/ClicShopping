@@ -34,7 +34,7 @@ class AccountGdprDeleteAccount
                       <blockquote>
                          ' . CLICSHOPPING::getDef('module_account_customers_gdpr_checkbox') . '
                         <label class="switch">
-                          ' . HTML::checkboxField('delete_all_reviews', null, null, 'class="success"') . '
+                          ' . HTML::checkboxField('delete_customers_account_checkbox', null, null, 'class="success"') . '
                           <span class="slider"></span>
                         </label>                           
                       </blockquote>

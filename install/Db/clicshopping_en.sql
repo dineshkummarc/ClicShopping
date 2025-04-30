@@ -2193,6 +2193,33 @@ INSERT INTO products_to_categories VALUES(8, 0);
 INSERT INTO products_to_categories VALUES(9, 0);
 INSERT INTO products_to_categories VALUES(10, 5);
 
+INSERT INTO return_orders_status VALUES(1, 1, 'Pending');
+INSERT INTO return_orders_status VALUES(1, 2, 'En attente');
+INSERT INTO return_orders_status VALUES(2, 1, 'Awaiting Products');
+INSERT INTO return_orders_status VALUES(2, 2, 'en attente du retour du produit');
+INSERT INTO return_orders_status VALUES(3, 1, 'Complete');
+INSERT INTO return_orders_status VALUES(3, 2, 'Complété');
+
+INSERT INTO return_orders_reason VALUES(1, 1, 'No-compliant package');
+INSERT INTO return_orders_reason VALUES(1, 2, 'Colis non conforme');
+INSERT INTO return_orders_reason VALUES(2, 1, 'Received Wrong Item');
+INSERT INTO return_orders_reason VALUES(2, 2, 'Mauvais produit reçu');
+INSERT INTO return_orders_reason VALUES(3, 1, 'Order Error');
+INSERT INTO return_orders_reason VALUES(3, 2, 'Erreur commande');
+INSERT INTO return_orders_reason VALUES(4, 1, 'Do not meet my expectations');
+INSERT INTO return_orders_reason VALUES(4, 2, 'Ne répond pas à mes attentes');
+INSERT INTO return_orders_reason VALUES(5, 1, 'Others');
+INSERT INTO return_orders_reason VALUES(5, 2, 'Autres');
+
+INSERT INTO return_orders_action VALUES(1, 1, 'no action');
+INSERT INTO return_orders_action VALUES(1, 2, 'Aucune action');
+INSERT INTO return_orders_action VALUES(2, 1, 'Refunded');
+INSERT INTO return_orders_action VALUES(2, 2, 'Produit à Rembourser');
+INSERT INTO return_orders_action VALUES(3, 1, 'Credit Issued');
+INSERT INTO return_orders_action VALUES(3, 2, 'Problème crédit');
+INSERT INTO return_orders_action VALUES(4, 1, 'Replacement Sent');
+INSERT INTO return_orders_action VALUES(4, 2, 'Remplacement envoyé');
+
 INSERT INTO sec_directory_whitelist VALUES(1, 'includes/ClicShopping/Work/Backups');
 INSERT INTO sec_directory_whitelist VALUES(2, 'ext/images');
 INSERT INTO sec_directory_whitelist VALUES(4, 'sources');

@@ -18,7 +18,7 @@ class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
   {
     $CLICSHOPPING_ReturnOrders = Registry::get('ReturnOrders');
 
-    if (isset($_POST['selected'])) {
+    if (isset($_POST['selected'], $_POST['DeleteAll']) && is_array($_POST['selected'])) {
       foreach ($_POST['selected'] as $id) {
         $Qdelete = $CLICSHOPPING_ReturnOrders->db->prepare('delete
                                                               from :table_return_orders 

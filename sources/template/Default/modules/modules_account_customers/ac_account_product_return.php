@@ -78,7 +78,8 @@ class ac_account_product_return
       $purchased_date = DateTime::toShort($info_customer['date_purchased']);
 
       $reason_return = ReturnProduct::getDropDownReason();
-      if (\is_defined('CLICSHOPPING_APP_RETURN_ORDERS_RO_WITHDRAWAL')) {
+
+      if (defined('CLICSHOPPING_APP_RETURN_ORDERS_RO_WITHDRAWAL')) {
         $withdrawal = (int)CLICSHOPPING_APP_RETURN_ORDERS_RO_WITHDRAWAL;
       } else {
         $withdrawal = '';

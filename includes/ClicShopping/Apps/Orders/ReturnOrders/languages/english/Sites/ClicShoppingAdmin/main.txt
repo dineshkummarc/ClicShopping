@@ -72,7 +72,7 @@ text_ref_return_orders_customer_lastname = Last name
 text_ref_return_orders_customer_email = Email
 
 text_description_customer = Customer informations
-text_description_order_return = IProduct information and return reason
+text_description_order_return = Product information and return reason
 
 text_ref_return_orders_product_name = Product name
 text_ref_return_orders_product_model = product model
@@ -85,7 +85,7 @@ text_ref_return_orders_customer_phone = Phone
 
 text_ref_return_orders_add_history = add an history
 text_ref_return_orders_notify = Notify the customer
-text_ref_return_orders_comment = <comment on order return
+text_ref_return_orders_comment = Comment on order return
 
 text_opened = Open
 text_unopened = Closed

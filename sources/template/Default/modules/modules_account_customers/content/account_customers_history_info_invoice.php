@@ -62,7 +62,7 @@ use ClicShopping\Sites\Shop\Tax;
         }
 
         for ($i = 0, $n = \count($CLICSHOPPING_Order->products); $i < $n; $i++) {
-          $link_product_return = CLICSHOPPING::link(null, 'Account&ProductReturn&product_id=' . $CLICSHOPPING_Order->products[$i]['id'] . '&order_id=' . HTML::sanitize($_GET['order_id']) . '"');
+          $link_product_return = CLICSHOPPING::link(null, 'Account&ProductReturn&product_id=' . $CLICSHOPPING_Order->products[$i]['id'] . '&order_id=' . HTML::sanitize($_GET['order_id']));
           $link_product_return_history = CLICSHOPPING::link(null, 'Account&ProductReturnHistory&order_id=' . HTML::sanitize($_GET['order_id']));
           $result = ReturnProduct::removeButtonHistoryInfo($_GET['order_id'], $CLICSHOPPING_Order->products[$i]['id']);
 
