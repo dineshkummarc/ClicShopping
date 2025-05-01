@@ -57,6 +57,35 @@ class ResultFormatter
     ];
   }
 
+  private function generateTableHeaders(array $firstRow): string
+  {
+    $headers = "<thead><tr>";
+    foreach (array_keys($firstRow) as $key) {
+      if (!is_numeric($key)) {
+        $headers .= "<th>" . htmlspecialchars($key) . "</th>";
+      }
+    }
+    $headers .= "</tr></thead>";
+    return $headers;
+  }
+
+  private function generateTableRows(array $data): string
+  {
+    $rows = "<tbody>";
+    foreach ($data as $row) {
+      $rows .= "<tr>";
+      foreach ($row as $key => $value) {
+        if (!is_numeric($key)) {
+          $value = HTMLOverrideCommon::removeInvisibleCharacters($value);
+          $rows .= "<td>" . htmlspecialchars(Hash::displayDecryptedDataText($value)) . "</td>";
+        }
+      }
+      $rows .= "</tr>";
+    }
+    $rows .= "</tbody>";
+    return $rows;
+  }
+
   /**
    * Formats analytics results for display.
    *
@@ -68,58 +97,31 @@ class ResultFormatter
     $output = "<div class='analytics-results'>";
     $output .= "<h4>Résultats pour : " . htmlspecialchars($results['question'] ?? $results['query'] ?? 'Requête inconnue') . "</h4>";
 
-    // Display the SQL query if available
-    if (!empty($results['sql_query'])) {
+    if (isset($results['sql_query'])) {
       $output .= "<div class='sql-query'><strong>SQL request :</strong> <pre>" . htmlspecialchars($results['sql_query']) . "</pre></div>";
     }
 
-    // Display the interpretation
-    if (!empty($results['interpretation'])) {
+    if (isset($results['interpretation'])) {
       $output .= "<div class='interpretation'><strong>Interpretation :</strong> " . $results['interpretation'] . "</div>";
     }
 
-    // Display the results as a table if available
-    if (!empty($results['results']) && is_array($results['results'])) {
+    if (isset($results['results']) && is_array($results['results'])) {
       $output .= "<div class='results-table'>";
       $output .= "<div class='mt-1'></div>";
       $output .= "<h5>Données brutes :</h5>";
       $output .= "<table class='table table-bordered table-striped'>";
 
-      // Table headers
-      $output .= "<thead><tr>";
-      $firstRow = reset($results['results']);
-
+      $firstRow = !empty($results['results']) ? array_values($results['results'])[0] : null;
       if (is_array($firstRow)) {
-        foreach (array_keys($firstRow) as $key) {
-          if (!is_numeric($key)) { // Avoid duplicate numeric keys
-            $output .= "<th>" . htmlspecialchars($key) . "</th>";
-          }
-        }
+        $output .= $this->generateTableHeaders($firstRow);
       }
 
-      $output .= "</tr></thead>";
-
-      // Table data
-      $output .= "<tbody>";
-      foreach ($results['results'] as $row) {
-        $output .= "<tr>";
-
-        foreach ($row as $key => $value) {
-          if (!is_numeric($key)) { // Avoid duplicate numeric keys
-            $value = HTMLOverrideCommon::removeInvisibleCharacters($value); // replace non-breaking space
-            $output .= "<td>" . htmlspecialchars(Hash::displayDecryptedDataText($value)) . "</td>";
-          }
-        }
-        $output .= "</tr>";
-      }
-      $output .= "</tbody>";
-
+      $output .= $this->generateTableRows($results['results']);
       $output .= "</table>";
       $output .= "</div>";
     }
 
     $output .= "</div>";
-
     return $output;
   }
 

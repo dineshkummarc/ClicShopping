@@ -20,6 +20,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\AnalyticsAgent;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
 
 use LLPhant\Embeddings\Document;
 use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
@@ -72,21 +73,37 @@ class MultiDBRAGManager
     $this->systemMessageTemplate = CLICSHOPPING::getDef('text_rag_system_message_template');
     $this->language = Registry::get('Language');
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
+    $this->securityLogger = new SecurityLogger();
 
     $parameters = null;
-    if (!is_null($model) || !empty($modelOptions)) {
-      $parameters = $modelOptions;
-      if (!is_null($model)) {
-        $parameters['model'] = $model;
-      } elseif (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL')) {
-        $parameters['model'] = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
-      }
-    }
+    $model = $model ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL  : 'default_model');
 
     Gpt::getOpenAiGpt($parameters);
 
-    $this->embeddingGenerator = new class(Gpt::class) implements EmbeddingGeneratorInterface
-    {
+    // Initialize vector stores
+    $this->initializeVectorStores($tableNames);
+    $this->embeddingGenerator = $this->createEmbeddingGenerator();
+  }
+
+  /**
+   * Returns the embedding generator instance
+   *
+   * @return EmbeddingGeneratorInterface Instance of the embedding generator
+   */
+  private function getEmbeddingGenerator(): EmbeddingGeneratorInterface {
+    if (!isset($this->embeddingGenerator)) {
+      $this->embeddingGenerator = $this->createEmbeddingGenerator();
+    }
+    return $this->embeddingGenerator;
+  }
+
+  /**
+   * Creates an embedding generator using the specified Gpt class
+   *
+   * @return EmbeddingGeneratorInterface Instance of the embedding generator
+   */
+  private function createEmbeddingGenerator(): EmbeddingGeneratorInterface {
+    return new class(Gpt::class) implements EmbeddingGeneratorInterface {
       private $gptClass;
 
       public function __construct(string $gptClass) {
@@ -114,35 +131,31 @@ class MultiDBRAGManager
         return NewVector::getEmbeddingLength();
       }
     };
+  }
 
-// If no table is specified, retrieve all available embedding tables
+  /**
+   * Initializes vector stores for the specified tables
+   *
+   * @param array $tableNames List of table names to initialize
+   */
+  private function initializeVectorStores(array $tableNames): void
+  {
     if (empty($tableNames)) {
       try {
         $tableNames = DoctrineOrm::getEmbeddingTables();
-
-        if ($this->debug == 'True') {
-          error_log("Embedding tables found: " . implode(", ", $tableNames));
-        }
+        $this->securityLogger->logSecurityEvent("Embedding tables found: " . implode(", ", $tableNames), 'info');
       } catch (\Exception $e) {
-        if ($this->debug == 'True') {
-          error_log("Error while retrieving the embedding tables: " . $e->getMessage());
-        }
+        $this->securityLogger->logSecurityEvent("Error while retrieving the embedding tables: " . $e->getMessage(), 'error');
         $tableNames = [];
       }
     }
 
-    // Vector stores initializing for every table
     foreach ($tableNames as $tableName) {
       try {
-        $this->vectorStores[$tableName] = new MariaDBVectorStore($this->embeddingGenerator, $tableName);
-
-        if ($this->debug == 'True') {
-          error_log("Vector store initialized for the table: " . $tableName);
-        }
+        $this->vectorStores[$tableName] = new MariaDBVectorStore($this->getEmbeddingGenerator(), $tableName);
+        $this->securityLogger->logSecurityEvent("Vector store initialized for the table: " . $tableName, 'info');
       } catch (\Exception $e) {
-        if ($this->debug == 'True') {
-          error_log("Error while initializing the vector store for the table {$tableName}: " . $e->getMessage());
-        }
+        $this->securityLogger->logSecurityEvent("Error while initializing the vector store for the table {$tableName}: " . $e->getMessage(), 'error');
       }
     }
   }
@@ -193,9 +206,11 @@ class MultiDBRAGManager
       ];
 
       $this->vectorStores[$tableName]->addDocument($document);
+
       return true;
     } catch (\Exception $e) {
-      error_log('Error while adding the document: ' . $e->getMessage());
+      $this->securityLogger->logSecurityEvent('Error while adding the document: ' . $e->getMessage(), 'error');
+
       return false;
     }
   }
@@ -215,33 +230,33 @@ class MultiDBRAGManager
       $allResults = [];
 
       if ($this->debug == 'True') {
-        error_log("Starting document search for query: " . $query);
+        $this->securityLogger->logSecurityEvent("Starting document search for query: " . $query, 'info');
       }
       // Vérifier si des vector stores sont disponibles
 
       if (empty($this->vectorStores)) {
         if ($this->debug == 'True') {
-          error_log("No vector store available");
+          $this->securityLogger->logSecurityEvent("No vector store available", 'error');
         }
         return [];
       }
 
       if ($this->debug == 'True') {
-        error_log("Found embedding tables: " . implode(", ", array_keys($this->vectorStores)));
+        $this->securityLogger->logSecurityEvent("Found embedding tables: " . implode(", ", array_keys($this->vectorStores)), 'info');
       }
 
       // Génération de l'embedding pour la requête
       $queryEmbedding = $this->embeddingGenerator->embedText($query);
 
       if ($this->debug == 'True') {
-        error_log("Generated embedding for query, length: " . count($queryEmbedding));
+        $this->securityLogger->logSecurityEvent("Generated embedding for query, length: " . count($queryEmbedding), 'info');
       }
 
       // Rechercher dans chaque vector store
       foreach ($this->vectorStores as $tableName => $vectorStore) {
         try {
           if ($this->debug == 'True') {
-            error_log("Table search: " . $tableName);
+            $this->securityLogger->logSecurityEvent("Table search: " . $tableName, 'info');
           }
           // Création d'une fonction de filtrage basée sur les critères
           $filter = function($metadata) use ($languageId, $entityType) {
@@ -262,7 +277,7 @@ class MultiDBRAGManager
 
           $results = $vectorStore->similaritySearch($queryEmbedding, $limit, $minScore, $filter);
           if ($this->debug == 'True') {
-            error_log("Results found in table {$tableName}: " . count($results));
+            $this->securityLogger->logSecurityEvent("Results found in table {$tableName}: " . count($results), 'info');
           }
           // Ajouter les résultats à la liste complète
           foreach ($results as $document) {
@@ -270,7 +285,7 @@ class MultiDBRAGManager
           }
         } catch (\Exception $e) {
           if ($this->debug == 'True') {
-            error_log("Error while searching in table {$tableName}: " . $e->getMessage());
+            $this->securityLogger->logSecurityEvent("Error while searching in table {$tableName}: " . $e->getMessage(), 'error');
             //Continue with other table is if error
           }
         }
@@ -286,14 +301,15 @@ class MultiDBRAGManager
       // litmit the total result
       $finalResults = array_slice($allResults, 0, $limit);
       if ($this->debug == 'True') {
-        error_log("Total number of results found: " . count($finalResults));
+        $this->securityLogger->logSecurityEvent("Total number of results found: " . count($finalResults), 'info');
       }
 
       return $finalResults;
     } catch (\Exception $e) {
       if ($this->debug == 'True') {
-        error_log('Error while searching documents: ' . $e->getMessage());
+        $this->securityLogger->logSecurityEvent('Error while searching documents: ' . $e->getMessage(), 'error');
       }
+
       return [];
     }
   }
@@ -367,7 +383,8 @@ class MultiDBRAGManager
         return Gpt::getGptResponse($prompt);
       }
     } catch (\Exception $e) {
-      error_log('Erreur lors de la génération de réponse : ' . $e->getMessage());
+      $this->securityLogger->logSecurityEvent('Erreur lors de la génération de réponse : ' . $e->getMessage(), 'error');
+
       return CLICSHOPPING::getDef('text_rag_answer_question_error');
     }
   }

@@ -116,6 +116,23 @@ class Cache
     }
   }
 
+  /**
+   * Returns the file path for the log file
+   * The log file is stored in the Work/Rag directory
+   *
+   * @return string The file path for the log file
+   */
+  public static function getLogFilePath(): string
+  {
+    $logDir = CLICSHOPPING::BASE_DIR . 'Work/Rag';
+
+    // Ensure log directory exists
+    if (!is_dir($logDir)) {
+      mkdir($logDir, 0755, true);
+    }
+
+    return $logDir . '/rag_security.cache';
+  }
 
   /**
    * Saves the current prompt cache data to the cache file
@@ -159,7 +176,7 @@ class Cache
    */
   private function getPromptCacheFilePath(): string
   {
-    return CLICSHOPPING::BASE_DIR . 'Work/Cache/rag_cache.cache';
+    return CLICSHOPPING::BASE_DIR . 'Work/Rag/rag_cache.cache';
   }
 
   /**

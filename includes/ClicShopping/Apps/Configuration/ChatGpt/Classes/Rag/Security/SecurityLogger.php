@@ -11,7 +11,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security;
 
-use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Cache;
 
 /**
  * Class SecurityLogger
@@ -20,7 +20,7 @@ use ClicShopping\OM\CLICSHOPPING;
  */
 class SecurityLogger
 {
-    private $logDir;
+
     private $logFile;
     private $maxLogSize;
     private $logRotations;
@@ -36,16 +36,10 @@ class SecurityLogger
      */
     public function __construct(string $logLevel = 'info', int $maxLogSize = 10485760, int $logRotations = 5)
     {
-        $this->logDir = CLICSHOPPING::BASE_DIR . 'Work/Logs';
-        $this->logFile = $this->logDir . '/rag_security.cache';
+        $this->logFile = Cache::getLogFilePath();
         $this->maxLogSize = $maxLogSize;
         $this->logRotations = $logRotations;
         $this->logLevel = $logLevel;
-        
-        // Ensure log directory exists
-        if (!is_dir($this->logDir)) {
-            mkdir($this->logDir, 0755, true);
-        }
     }
 
     /**

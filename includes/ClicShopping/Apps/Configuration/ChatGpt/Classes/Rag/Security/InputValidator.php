@@ -11,6 +11,9 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security;
 
+use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Cache;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
 /**
  * Class InputValidator
  * Provides comprehensive input validation for database operations
@@ -18,6 +21,39 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security;
  */
 class InputValidator
 {
+  private static ?SecurityLogger $logger = null;
+
+  /**
+   * Returns a singleton instance of the SecurityLogger
+   * Initializes the logger with specified parameters if not already created
+   *
+   * @param string $logLevel Minimum log level to record (debug, info, warning, error)
+   * @param int $maxLogSize Maximum log file size in bytes before rotation
+   * @param int $logRotations Number of log rotations to maintain
+   * @return SecurityLogger Instance of SecurityLogger
+   */
+  private static function getLogger(): SecurityLogger
+  {
+    if (self::$logger === null) {
+      self::$logger = new SecurityLogger();
+    }
+    return self::$logger;
+  }
+
+  /**
+   * Logs security-related events
+   * Delegates logging to the SecurityLogger instance
+   *
+   * @param string $message Security event message
+   * @param string $level Log level (info, warning, error)
+   * @return void
+   */
+
+  private static function logSecurityEvent(string $message, string $level = 'warning'): void
+  {
+    self::getLogger()->logSecurityEvent($message, $level);
+  }
+
     /**
      * Validates SQL query string
      * Checks for potentially dangerous SQL patterns and injection attempts
@@ -163,30 +199,4 @@ class InputValidator
         }
     }
 
-    /**
-     * Logs security-related events
-     * Creates standardized log entries for security monitoring
-     *
-     * @param string $message Security event message
-     * @param string $level Log level (info, warning, error)
-     * @return void
-     */
-    private static function logSecurityEvent(string $message, string $level = 'warning'): void
-    {
-        $timestamp = date('Y-m-d H:i:s');
-        $logEntry = "[{$timestamp}] [{$level}] Security: {$message}" . PHP_EOL;
-        
-        // Ensure log directory exists
-        $logDir = CLICSHOPPING::BASE_DIR . 'Work/Logs';
-        if (!is_dir($logDir)) {
-            mkdir($logDir, 0755, true);
-        }
-        
-        // Write to security log file
-        file_put_contents(
-            $logDir . '/rag_security.cache',
-            $logEntry,
-            FILE_APPEND
-        );
-    }
 }

@@ -46,7 +46,6 @@ class AnalyticsAgent
   private RateLimit $rateLimit;
   private string $userId;
   private DbSecurity $dbSecurity;
-  private mixed $logger;
 
   /**
    * Constructor for AnalyticsAgent

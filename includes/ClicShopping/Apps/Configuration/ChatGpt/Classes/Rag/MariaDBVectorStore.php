@@ -16,6 +16,7 @@ use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
 use LLPhant\Embeddings\VectorStores\VectorStoreBase;
 use Doctrine\DBAL\Connection;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
 
 /**
  * MariaDBVectorStore Class
@@ -65,8 +66,63 @@ class MariaDBVectorStore extends VectorStoreBase
     $this->connection = $entityManager->getConnection();
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
 
+    // Initialize security components
+    $this->securityLogger = new SecurityLogger();
+
     // Vérification et création de la structure de la base de données si nécessaire
     DoctrineOrm::createTableStructure($this->tableName);
+  }
+
+
+  /**
+   * Validates the format of the embedding
+   *
+   * Ensures that the embedding is an array and contains only numeric values.
+   *
+   * @param array $embedding The embedding to validate
+   * @throws \InvalidArgumentException If the embedding format is invalid
+   */
+  private function validateEmbeddingFormat(array $embedding): void {
+    if (!is_array($embedding)) {
+      throw new \InvalidArgumentException('Embedding must be an array.');
+    }
+
+    foreach ($embedding as $value) {
+      if (!is_numeric($value)) {
+        throw new \InvalidArgumentException('Embedding contains non-numeric values.');
+      }
+    }
+
+    // Optional: Check for specific length or range of values
+    if (empty($embedding)) {
+      throw new \InvalidArgumentException('Embedding array cannot be empty.');
+    }
+  }
+
+  /**
+  * * Prepares the embedding and metadata for storage
+   *
+   * Generates the embedding for the given content and prepares the metadata
+   * for insertion into the database.
+   *
+   * @param string $content The content to embed
+   * @param array $metadata Metadata associated with the content
+   * @return array Prepared data including embedding and metadata
+   */
+  private function prepareEmbeddingAndMetadata(string $content, array $metadata): array {
+    $embedding = $this->embeddingGenerator->embedText($content);
+    $embeddingText = '[' . implode(',', $embedding) . ']';
+
+    return [
+      'embeddingText' => $embeddingText,
+      'type' => $metadata['type'] ?? null,
+      'sourcetype' => $metadata['sourcetype'] ?? 'manual',
+      'sourcename' => $metadata['sourcename'] ?? 'manual',
+      'chunknumber' => $metadata['chunknumber'] ?? 128,
+      'language_id' => $metadata['language_id'] ?? 1,
+      'date_modified' => date('Y-m-d H:i:s'),
+      'entity_id' => $metadata['entity_id'] ?? null,
+    ];
   }
 
   /**
@@ -82,20 +138,10 @@ class MariaDBVectorStore extends VectorStoreBase
   {
     // Génération de l'embedding pour le document
     $embedding = $this->embeddingGenerator->embedText($document->content);
-
-    // Préparation des métadonnées
-    $type = $document->sourceType ?? null;
-    $sourcetype = $document->sourceType ?? 'manual';
-    $sourcename = $document->sourceName ?? 'manual';
-    $chunknumber = $document->chunkNumber ?? 128;
-    $language_id = $document->language_id ?? 1;
-    $date_modified = date('Y-m-d H:i:s');
-
-    // Extraction des informations d'entité
-    $entity_id = isset($document->metadata['entity_id']) ? $document->metadata['entity_id'] : null;
+    $this->validateEmbeddingFormat($embedding);
 
     // Conversion de l'embedding en format texte pour VEC_FromText
-    $embeddingText = '[' . implode(',', $embedding) . ']';
+    $preparedData = $this->prepareEmbeddingAndMetadata($document->content, $document->metadata);
 
     // Insertion dans la base de données
     $this->connection->executeStatement(
@@ -211,7 +257,7 @@ class MariaDBVectorStore extends VectorStoreBase
       return $documents;
     } catch (\Exception $e) {
       if ($this->debug == 'True') {
-        error_log('Error while searching in the table ' . $this->tableName . ' : ' . $e->getMessage());
+        $this->securityLogger->logSecurityEvent('Error while searching in the table ' . $this->tableName . ' : ' . $e->getMessage(), 'error');
       }
       return [];
     }
@@ -232,11 +278,13 @@ class MariaDBVectorStore extends VectorStoreBase
         "DELETE FROM {$this->tableName} WHERE id = ?",
         [$id]
       );
+
       return true;
     } catch (\Exception $e) {
       if ($this->debug == 'True') {
-        error_log('Error while deleting the document: ' . $e->getMessage());
+        $this->securityLogger->logSecurityEvent('Error while deleting the document: ' . $e->getMessage(), 'error');
       }
+
       return false;
     }
   }
@@ -257,44 +305,35 @@ class MariaDBVectorStore extends VectorStoreBase
     try {
       // Génération du nouvel embedding
       $embedding = $this->embeddingGenerator->embedText($content);
-       // Conversion de l'embedding en format texte pour VEC_FromText
-      $embeddingText = '[' . implode(',', $embedding) . ']';
 
-      // Préparation des métadonnées
-      $type = $metadata['type'] ?? null;
-      $sourcetype = $metadata['sourcetype'] ?? 'manual';
-      $sourcename = $metadata['sourcename'] ?? 'manual';
-      $chunknumber = $metadata['chunknumber'] ?? 128;
-      $language_id = $metadata['language_id'] ?? 1;
-      $date_modified = date('Y-m-d H:i:s');
-
-      // Extraction des informations d'entité
-      $entity_id = isset($metadata['entity_id']) ? $metadata['entity_id'] : null;
+      $preparedData = $this->prepareEmbeddingAndMetadata($content, $metadata);
 
       $this->connection->executeStatement(
-        "UPDATE {$this->tableName} 
-              SET content = ?, type = ?, sourcetype = ?, sourcename = ?, 
-              embedding = VEC_FromText(?), chunknumber = ?, date_modified = ?, 
-              entity_id = ?, language_id = ?
-              WHERE id = ?",
+        "UPDATE {$this->tableName}
+        SET content = ?, type = ?, sourcetype = ?, sourcename = ?,
+        embedding = VEC_FromText(?), chunknumber = ?, date_modified = ?,
+        entity_id = ?, language_id = ?
+        WHERE id = ?",
         [
           $content,
-          $type,
-          $sourcetype,
-          $sourcename,
-          $embeddingText,
-          $chunknumber,
-          $date_modified,
-          $entity_id,
-          $language_id,
+          $preparedData['type'],
+          $preparedData['sourcetype'],
+          $preparedData['sourcename'],
+          $preparedData['embeddingText'],
+          $preparedData['chunknumber'],
+          $preparedData['date_modified'],
+          $preparedData['entity_id'],
+          $preparedData['language_id'],
           $id
         ]
       );
+
       return true;
     } catch (\Exception $e) {
       if ($this->debug == 'True') {
-        error_log('Error while updating the document: ' . $e->getMessage());
+        $this->securityLogger->logSecurityEvent('Error while updating the document: ' . $e->getMessage(), 'error');
       }
+
       return false;
     }
   }
