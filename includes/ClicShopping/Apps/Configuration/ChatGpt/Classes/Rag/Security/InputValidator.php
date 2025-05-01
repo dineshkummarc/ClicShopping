@@ -198,5 +198,4 @@ class InputValidator
                 return $default;
         }
     }
-
 }
