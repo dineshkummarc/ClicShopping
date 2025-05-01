@@ -25,45 +25,70 @@ class InputValidator
      * @param string $query SQL query to validate
      * @return array Validation result with 'valid' boolean and 'issues' array
      */
-    public static function validateSqlQuery(string $query): array
-    {
-        $issues = [];
-        $dangerousPatterns = [
-            '/;\s*DROP\s+/i',           // Prevent DROP statements
-            '/;\s*DELETE\s+/i',          // Prevent DELETE statements outside of proper context
-            '/UNION\s+SELECT/i',         // Prevent UNION-based injections
-            '/INTO\s+OUTFILE/i',         // Prevent file operations
-            '/INFORMATION_SCHEMA/i',     // Prevent schema exploration
-            '/SLEEP\s*\(/i',             // Prevent time-based attacks
-            '/BENCHMARK\s*\(/i',         // Prevent benchmark-based attacks
-            '/LOAD_FILE\s*\(/i',         // Prevent file loading
-            '/--\s/',                    // SQL comment indicators
-            '/\/\*.*\*\//i'              // Multi-line comment blocks
-        ];
+  public static function validateSqlQuery(string $query): array
+  {
+    $issues = [];
 
-        foreach ($dangerousPatterns as $pattern) {
-            if (preg_match($pattern, $query)) {
-                $issues[] = "Potentially malicious SQL pattern detected: " . htmlspecialchars($pattern);
-            }
-        }
+    // Define dangerous SQL patterns
+    $dangerousPatterns = self::getDangerousPatterns();
 
-        // Check for balanced quotes
-        $singleQuotes = substr_count($query, "'") - substr_count($query, "\\'");
-        $doubleQuotes = substr_count($query, "\"") - substr_count($query, "\\\"");
-        
-        if ($singleQuotes % 2 !== 0) {
-            $issues[] = "Unbalanced single quotes in query";
-        }
-        
-        if ($doubleQuotes % 2 !== 0) {
-            $issues[] = "Unbalanced double quotes in query";
-        }
-
-        return [
-            'valid' => empty($issues),
-            'issues' => $issues
-        ];
+    // Check for dangerous patterns
+    foreach ($dangerousPatterns as $pattern) {
+      if (preg_match($pattern, $query)) {
+        $issues[] = "Potentially malicious SQL pattern detected: " . htmlspecialchars($pattern);
+      }
     }
+
+    // Check for balanced quotes
+    if (!self::areQuotesBalanced($query, "'")) {
+      $issues[] = "Unbalanced single quotes in query";
+    }
+
+    if (!self::areQuotesBalanced($query, "\"")) {
+      $issues[] = "Unbalanced double quotes in query";
+    }
+
+    return [
+      'valid' => empty($issues),
+      'issues' => $issues
+    ];
+  }
+
+  /**
+   * Returns an array of dangerous SQL patterns.
+   *
+   * @return array
+   */
+  private static function getDangerousPatterns(): array
+  {
+    return [
+      '/;\s*DROP\s+/i',           // Prevent DROP statements
+      '/;\s*DELETE\s+/i',         // Prevent DELETE statements outside of proper context
+      '/UNION\s+SELECT/i',        // Prevent UNION-based injections
+      '/INTO\s+OUTFILE/i',        // Prevent file operations
+      '/INFORMATION_SCHEMA/i',    // Prevent schema exploration
+      '/SLEEP\s*\(/i',            // Prevent time-based attacks
+      '/BENCHMARK\s*\(/i',        // Prevent benchmark-based attacks
+      '/LOAD_FILE\s*\(/i',        // Prevent file loading
+      '/--\s/',                   // SQL comment indicators
+      '/\/\*.*\*\//i'             // Multi-line comment blocks
+    ];
+  }
+
+  /**
+   * Checks if quotes are balanced in a string.
+   *
+   * @param string $query
+   * @param string $quoteType
+   * @return bool
+   */
+  private static function areQuotesBalanced(string $query, string $quoteType): bool
+  {
+    $escapedQuoteCount = substr_count($query, "\\{$quoteType}");
+    $totalQuoteCount = substr_count($query, $quoteType);
+
+    return ($totalQuoteCount - $escapedQuoteCount) % 2 === 0;
+  }
 
     /**
      * Sanitizes table and column names

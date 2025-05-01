@@ -13,11 +13,13 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Cache;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\InputValidator;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\RateLimit;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\DbSecurity;
+
+
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Cache;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 
 /**
@@ -44,6 +46,7 @@ class AnalyticsAgent
   private RateLimit $rateLimit;
   private string $userId;
   private DbSecurity $dbSecurity;
+  private mixed $logger;
 
   /**
    * Constructor for AnalyticsAgent
@@ -77,10 +80,7 @@ class AnalyticsAgent
     $this->enablePromptCache = $enablePromptCache;
 
     // Log initialization
-    $this->securityLogger->logSecurityEvent(
-      "AnalyticsAgent initialized for user {$this->userId}",
-      'info'
-    );
+    $this->securityLogger->logSecurityEvent("AnalyticsAgent initialized for user {$this->userId}", 'info');
 
     $this->setSystemMessage();
 
@@ -88,13 +88,10 @@ class AnalyticsAgent
       $this->initializeTableRelationships();
       $this->buildDatabaseSchema();
     } catch (\Exception $e) {
-      $this->securityLogger->logSecurityEvent(
-        "Error during AnalyticsAgent initialization: " . $e->getMessage(),
-        'error'
-      );
+      $this->securityLogger->logSecurityEvent("Error during AnalyticsAgent initialization: " . $e->getMessage(), 'error');
 
       if ($this->debug) {
-        error_log("Error during AnalyticsAgent initialization: " . $e->getMessage());
+        $this->securityLogger->logSecurityEvent("Error during AnalyticsAgent initialization: " . $e->getMessage(), 'error');
       }
     }
   }
@@ -183,9 +180,10 @@ class AnalyticsAgent
               $relatedTable = $safeRelatedTable;
             }
 
+            $prefix = CLICSHOPPING::getConfig('prefix_table'); // '_clic'
             // Check if the related table exists
-            if (in_array($relatedTable, $tables) || in_array('clic_' . $relatedTable, $tables)) {
-              $actualTable = in_array('clic_' . $relatedTable, $tables) ? 'clic_' . $relatedTable : $relatedTable;
+            if (in_array($relatedTable, $tables) || in_array($prefix . $relatedTable, $tables)) {
+              $actualTable = in_array($prefix . $relatedTable, $tables) ? $prefix . $relatedTable : $relatedTable;
               $this->tableRelationships[$table][$column] = $actualTable;
             }
           }
@@ -201,7 +199,7 @@ class AnalyticsAgent
       );
 
       if ($this->debug) {
-        error_log("Error initializing table relationships: " . $e->getMessage());
+        $this->securityLogger->logSecurityEvent("Error initializing table relationships: " . $e->getMessage(), 'error');
       }
 
       // Re-throw for higher-level handling
@@ -289,7 +287,7 @@ class AnalyticsAgent
       );
 
       if ($this->debug) {
-        error_log("Error while building the database schema: " . $e->getMessage());
+        $this->securityLogger->logSecurityEvent("Error while building the database schema: " . $e->getMessage(), 'error');
       }
 
       // Re-throw for higher-level handling
@@ -335,18 +333,18 @@ class AnalyticsAgent
   }
 
   /**
-   * Extracts valid SQL queries from text that may contain explanatory content
-   * Identifies and isolates SQL statements using regex patterns
-   * Supports multiple query types (SELECT, INSERT, UPDATE, DELETE, etc.)
-   * Falls back to treating entire input as query if no matches found
+   * Extracts SQL queries from a response string
+   * Uses regex patterns to identify and validate SQL queries
+   * Handles potential security issues and logs suspicious patterns
    *
-   * @param string $response Raw response from the model containing SQL queries
+   * @param string $response The response string containing SQL queries
+   * @param bool $AllowSqlPattern Whether to allow specific SQL patterns (default: false)
    * @return array Array of extracted SQL queries
    */
-  private function extractSqlQueries(string $response): array {
+  private function extractSqlQueries(string $response, bool $AllowSqlPattern = false): array
+  {
     $queries = [];
 
-    // Validate input
     $safeResponse = InputValidator::validateParameter($response, 'string');
     if ($safeResponse !== $response) {
       $this->securityLogger->logSecurityEvent(
@@ -356,23 +354,32 @@ class AnalyticsAgent
       $response = $safeResponse;
     }
 
-    // Search for SQL queries starting with SELECT, INSERT, UPDATE, DELETE, etc.
-    $sqlPatterns = [
-      '/\b(SELECT\s+.*?)(;|\Z)/is',
-      '/\b(INSERT\s+.*?)(;|\Z)/is',
-      '/\b(UPDATE\s+.*?)(;|\Z)/is',
-      '/\b(DELETE\s+.*?)(;|\Z)/is',
-      '/\b(CREATE\s+.*?)(;|\Z)/is',
-      '/\b(ALTER\s+.*?)(;|\Z)/is',
-      '/\b(DROP\s+.*?)(;|\Z)/is'
+    $array = [
+      '/\\b(SELECT\\s+.*?)(;|\\Z)/is',
+      '/\\b(INSERT\\s+.*?)(;|\\Z)/is',
+      '/\\b(UPDATE\\s+.*?)(;|\\Z)/is',
+      '/\\b(DELETE\\s+.*?)(;|\\Z)/is',
+      '/\\b(CREATE\\s+.*?)(;|\\Z)/is',
+      '/\\b(ALTER\\s+.*?)(;|\\Z)/is',
+      '/\\b(DROP\\s+.*?)(;|\\Z)/is'
     ];
+
+    $sqlPatterns = $AllowSqlPattern === false  ? ['/\\b(SELECT\\s+.*?)(;|\\Z)/is'] : $array;
 
     foreach ($sqlPatterns as $pattern) {
       if (preg_match_all($pattern, $response, $matches, PREG_SET_ORDER)) {
         foreach ($matches as $match) {
           $query = trim($match[1]);
 
-          // Validate extracted query
+          if (preg_match('/(--|#|\/\*|\bunion\b|\bsleep\b|\bbenchmark\b|\bxp_|;)/i', $query)) {
+            $this->securityLogger->logSecurityEvent(
+              "Rejected query due to suspicious SQL pattern",
+              'warning',
+              ['query' => $query]
+            );
+            continue;
+          }
+
           $validation = InputValidator::validateSqlQuery($query);
           if (!$validation['valid']) {
             $this->securityLogger->logSecurityEvent(
@@ -380,7 +387,7 @@ class AnalyticsAgent
               'warning',
               ['query' => $query]
             );
-            continue; // Skip this query
+            continue;
           }
 
           $queries[] = $query;
@@ -388,35 +395,33 @@ class AnalyticsAgent
       }
     }
 
-    // If no query was found, check if the entire response is an SQL query
-    if (empty($queries) && preg_match('/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\s+/i', trim($response))) {
-      $query = trim($response);
+    if (empty($queries)) {
+      $fullPattern = $AllowSqlPattern === false
+        ? '/^\s*(SELECT)\s+/i'
+        : '/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\s+/i';
 
-      // Validate full response as query
-      $validation = InputValidator::validateSqlQuery($query);
+      if (preg_match($fullPattern, trim($response))) {
+        $query = trim($response);
 
-      if ($validation['valid']) {
-        $queries[] = $query;
-      } else {
-        $this->securityLogger->logSecurityEvent(
-          "Potentially malicious SQL pattern detected in full response: " . implode(', ', $validation['issues']),
-          'warning',
-          ['query' => $query]
-        );
-      }
-    }
-
-    foreach ($sqlPatterns as $pattern) {
-      if (preg_match_all($pattern, $response, $matches, PREG_SET_ORDER)) {
-        foreach ($matches as $match) {
-          $queries[] = trim($match[1]);
+        if (preg_match('/(--|#|\/\*|\bunion\b|\bsleep\b|\bbenchmark\b|\bxp_|;)/i', $query)) {
+          $this->securityLogger->logSecurityEvent(
+            "Rejected full response due to suspicious SQL pattern",
+            'warning',
+            ['query' => $query]
+          );
+        } else {
+          $validation = InputValidator::validateSqlQuery($query);
+          if ($validation['valid']) {
+            $queries[] = $query;
+          } else {
+            $this->securityLogger->logSecurityEvent(
+              "Potentially malicious SQL pattern detected in full response: " . implode(', ', $validation['issues']),
+              'warning',
+              ['query' => $query]
+            );
+          }
         }
       }
-    }
-    
-    // If no query was found, check if the entire response is an SQL query
-    if (empty($queries) && preg_match('/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\s+/i', trim($response))) {
-      $queries[] = trim($response);
     }
 
     return $queries;
@@ -430,7 +435,7 @@ class AnalyticsAgent
    * @param string $sqlQuery SQL query with placeholders
    * @return string SQL query with resolved placeholders
    */
-  private function resolvePlaceholders(string $sqlQuery): string 
+  private function resolvePlaceholders(string $sqlQuery): string
   {
     // Validate input
     $safeSqlQuery = InputValidator::validateParameter($sqlQuery, 'string');
@@ -455,6 +460,15 @@ class AnalyticsAgent
 
     foreach ($placeholders as $placeholder) {
       $value = $this->getPlaceholderValue($placeholder);
+
+      if ($value === null) {
+        $this->securityLogger->logSecurityEvent(
+          "Unknown placeholder encountered: [{$placeholder}]",
+          'warning'
+        );
+        $value = "'UNKNOWN_PLACEHOLDER_{$placeholder}'"; // Descriptive default value
+      }
+
       $resolvedQuery = str_replace("[$placeholder]", $value, $resolvedQuery);
     }
 
@@ -489,7 +503,7 @@ class AnalyticsAgent
     );
 
     if ($this->debug == 'True') {
-      error_log("Placeholder unknown: [$placeholder]");
+      $this->securityLogger->logSecurityEvent("Placeholder unknown: [$placeholder]", 'error');
     }
     
     // Valeur par défaut pour les placeholders inconnus
@@ -1300,7 +1314,7 @@ class AnalyticsAgent
     } catch (\Exception $e) {
       // Log the error
       if ($this->debug == 'True') {
-        error_log("Query execution error: " . $e->getMessage());
+        $this->securityLogger->logSecurityEvent("Query execution error: " . $e->getMessage(), 'error');
       }
 
       // Fallback response in case of complete failure
@@ -1312,6 +1326,51 @@ class AnalyticsAgent
         'recovery_attempted' => true
       ];
     }
+  }
+
+  /**
+   * Validates SQL syntax using SqlSecurity class
+   * Logs security events for invalid syntax
+   *
+   * @param array $validation
+   * @param string $query
+   * @return bool True if valid, false otherwise
+   */
+  private function isSqlSyntaxValid(array $validation, string $query): bool
+  {
+    if (!$validation['valid']) {
+      $this->securityLogger->logSecurityEvent(
+        "Rejected query due to invalid SQL syntax (parse failure)",
+        'warning',
+        ['query' => $query]
+      );
+      return false;
+    }
+    return true;
+  }
+
+/**
+   * Deduplicates rows in a result set
+   * Uses a hash function to identify unique rows
+   * Returns an array of unique rows
+   *
+   * @param array $rows Array of rows to deduplicate
+   * @return array Array of unique rows
+   */
+  private function deduplicateRows(array $rows): array
+  {
+    $seen = [];
+    $unique = [];
+
+    foreach ($rows as $r) {
+      $h = md5(json_encode($r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+      if (!isset($seen[$h])) {
+        $seen[$h] = true;
+        $unique[] = $r;
+      }
+    }
+
+    return $unique;
   }
 
   /**
@@ -1358,7 +1417,7 @@ class AnalyticsAgent
         $sqlQueries = [$cachedSql];
 
         if ($this->debug == 'True') {
-          error_log("Using cached SQL for question: " . substr($question, 0, 50) . "...");
+          $this->securityLogger->logSecurityEvent("Using cached SQL for question: " . substr($question, 0, 50) . "...", 'info');
         }
       } else {
         $rawResponse = $this->chat->generateText($question);
@@ -1382,6 +1441,7 @@ class AnalyticsAgent
       }
 
       $results = [];
+      $this->correctionLog = [];
 
       foreach ($sqlQueries as $sqlQuery) {
         // Resolve placeholders
@@ -1390,12 +1450,20 @@ class AnalyticsAgent
         // Syntax validation
         $validation = InputValidator::validateSqlQuery($resolvedQuery);
 
+        if (!$this->isSqlSyntaxValid($validation, $resolvedQuery)) {
+          continue;
+        }
+
         if (!$validation['valid']) {
           // Attempt correction
           $correctedQuery = $this->applyConservativeCorrections($resolvedQuery, $validation['issues']);
 
           // Re-validation after correction
           $revalidation = InputValidator::validateSqlQuery($correctedQuery);
+
+          if (!$this->isSqlSyntaxValid($revalidation, $correctedQuery)) {
+            continue;
+          }
 
           if (!$revalidation['valid']) {
             // If still invalid, use the original query
@@ -1410,8 +1478,6 @@ class AnalyticsAgent
 
         // Execute the query
         try {
-          $query = $this->db->prepare($finalQuery);
-
           // ① inject DISTINCT to remove duplication
           if (preg_match('/^\s*SELECT\s+/i', $finalQuery)) {
             $finalQuery = preg_replace(
@@ -1422,20 +1488,21 @@ class AnalyticsAgent
             );
           }
 
+          $query = $this->db->prepare($finalQuery);
+
+          if (!$query) {
+            throw new \Exception("Failed to prepare query.");
+          }
+
+          if ($this->debug === 'True') {
+            $this->logExplainPlan($finalQuery);
+          }
+
           $query->execute();
           // ② fetch associative only
           $rows = $query->fetchAll(\PDO::FETCH_ASSOC);
 
-          // ③ optional PHP dedupe by row‑hash
-          $unique = [];
-          foreach ($rows as $r) {
-            $h = md5(json_encode($r, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE));
-            if (!isset($unique[$h])) {
-              $unique[$h] = $r;
-            }
-          }
-
-          $queryResults = array_values($unique);
+          $queryResults = $this->deduplicateRows($rows);
 
           $results[] = [
             'original_query' => $sqlQuery,
@@ -1489,6 +1556,28 @@ class AnalyticsAgent
   }
 
   /**
+   * Logs the EXPLAIN plan for a SQL query
+   * Uses error_log for debugging purposes
+   *
+   * @param string $sql SQL query to explain
+   */
+  private function logExplainPlan(string $sql): void
+  {
+    try {
+      $stmt = $this->db->prepare('EXPLAIN ' . $sql);
+      $stmt->execute();
+      $plan = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+      $this->securityLogger->logSecurityEvent("EXPLAIN PLAN for SQL:\n" . $sql, 'info');
+
+      foreach ($plan as $row) {
+        $this->securityLogger->logSecurityEvent(print_r($row, true), 'info');
+      }
+    } catch (\Exception $e) {
+      $this->securityLogger->logSecurityEvent("Failed to EXPLAIN query: " . $e->getMessage(), 'error');
+    }
+  }
+
+  /**
    * Gets the schema for a specific table
    * Uses caching to improve performance
    * Handles table name validation and error logging
@@ -1500,6 +1589,7 @@ class AnalyticsAgent
   {
     // Validate table name
     $safeTable = InputValidator::sanitizeIdentifier($table);
+
     if ($safeTable !== $table) {
       $this->securityLogger->logSecurityEvent(
         "Suspicious table name sanitized in getTableSchema: {$table} -> {$safeTable}",
@@ -1535,7 +1625,7 @@ class AnalyticsAgent
       );
 
       if ($this->debug) {
-        error_log("Error getting schema for table {$table}: " . $e->getMessage());
+        $this->securityLogger->logSecurityEvent("Error getting schema for table {$table}: " . $e->getMessage(), 'error');
       }
 
       return [];
@@ -1570,9 +1660,13 @@ class AnalyticsAgent
       // Adjust to handle multiple results
       if (isset($results['multi_query_results'])) {
         $allResults = [];
-        foreach ($results['multi_query_results'] as $result) {
-          $allResults = array_merge($allResults, $result['results']);
+
+        foreach ($results as $result) {
+          foreach ($result['results'] as $item) {
+            $allResults[] = $item; // Append items directly
+          }
         }
+
         $interpretation = $this->interpretResults($question, $allResults);
       } else {
         $interpretation = $this->interpretResults($question, $results['results']);
@@ -1604,7 +1698,7 @@ class AnalyticsAgent
     } catch (\Exception $e) {
       // Log the error for debugging
       if ($this->debug == 'True') {
-        error_log("Analytics Processing Error: " . $e->getMessage());
+        $this->securityLogger->logSecurityEvent("Analytics Processing Error: " . $e->getMessage(), 'error');
       }
 
       return [
@@ -1616,22 +1710,18 @@ class AnalyticsAgent
     }
   }
 
-
   /**
-   * Interprets query results in natural language
-   * Uses AI to generate human-readable interpretations
-   * Implements caching for performance optimization
+   * Interprets the results of a SQL query
+   * Generates a natural language interpretation of the results
+   * Uses caching to improve performance
    *
-   * @param string $question The original business question
-   * @param array $results The query results to interpret
+   * @param string $question The business question in natural language
+   * @param array $results The results of the SQL query
    * @return string Natural language interpretation of the results
    */
   private function interpretResults(string $question, array $results): string
   {
-    // Clean before encode
     $cleanResults = $this->sanitizeResultsForPrompt($results);
-
-    // Secure the question
     $safeQuestion = InputValidator::validateParameter($question, 'string');
     if ($safeQuestion !== $question) {
       $this->securityLogger->logSecurityEvent(
@@ -1641,38 +1731,39 @@ class AnalyticsAgent
       $question = $safeQuestion;
     }
 
-    // Cache key generation
     $interpretCacheKey = "interpret_" . $this->cache->generateCacheKey($question . json_encode($cleanResults));
 
-    // Check the cache
+    // Check the cache with expiration logic
     if ($this->enablePromptCache && isset($this->promptCache[$interpretCacheKey])) {
-      if ($this->debug == 'True') {
-        error_log("Using cached interpretation for question: " . substr($question, 0, 50) . "...");
+      $cacheItem = $this->promptCache[$interpretCacheKey];
+      if (time() < $cacheItem['ttl']) {
+        if ($this->debug == 'True') {
+          $this->securityLogger->logSecurityEvent("Using cached interpretation for question: " . substr($question, 0, 50) . "...", 'info');
+        }
+        $this->promptCache[$interpretCacheKey]['last_used'] = time();
+        return $cacheItem['response'];
+      } else {
+        // Remove expired cache
+        unset($this->promptCache[$interpretCacheKey]);
       }
-
-      $this->promptCache[$interpretCacheKey]['last_used'] = time();
-
-      return $this->promptCache[$interpretCacheKey]['response'];
     }
 
-    //  Promptpreparation
     $array = [
       'question' => $question,
       'results' => json_encode($cleanResults, JSON_PRETTY_PRINT)
     ];
 
     $prompt = CLICSHOPPING::getDef('text_interpret_results', $array);
-
-    // interpretation generation
     $interpretation = $this->chat->generateText($prompt);
 
-    // create the cache
+    // Create the cache with expiration
     if ($this->enablePromptCache) {
       $this->promptCache[$interpretCacheKey] = [
         'prompt' => $prompt,
         'response' => $interpretation,
         'created' => time(),
-        'last_used' => time()
+        'last_used' => time(),
+        'ttl' => time() + 3600 // Cache expires in 1 hour
       ];
       $this->cache->savePromptCache();
     }

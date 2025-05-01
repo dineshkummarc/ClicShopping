@@ -2,6 +2,8 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin;
 
+use ClicShopping\OM\Registry;
+
 class Statistics {
 
   /**
