@@ -45,13 +45,9 @@ class DoctrineOrm
    */
   private static function Orm(): array
   {
-    // Set the Doctrine with a minimal metadata driver
     $config = ORMSetup::createConfiguration(true, null, null);
-
-    // Add a minimal metadata driver (required by Doctrine)
     $config->setMetadataDriverImpl(new \Doctrine\ORM\Mapping\Driver\SimplifiedXmlDriver([]));
 
-    // Connection parameters for MariaDB
     $connectionParams = [
       'driver' => 'pdo_mysql',
       'user' => CLICSHOPPING::getConfig('db_server_username'),
@@ -61,32 +57,35 @@ class DoctrineOrm
       'charset' => 'utf8mb4',
       'driverOptions' => [
         \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
-        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
+        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+        \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
       ],
     ];
 
-    // Dynamically get the version of the database
     try {
-      // Create a temporary DBAL connection (only to fetch the server version)
-      $connectionParams['driver'] = 'pdo_mysql';  // Explicitly set the driver here for DBAL connection
       $temporaryConnection = \Doctrine\DBAL\DriverManager::getConnection($connectionParams, $config);
-      // Fetch the version of the database
       $serverVersion = $temporaryConnection->fetchOne("SELECT VERSION()");
 
-      // Only add serverVersion if successfully fetched
       if ($serverVersion) {
-        $connectionParams['serverVersion'] = $serverVersion;
+        $serverVersion = strtolower($serverVersion);
+        if (strpos($serverVersion, 'mariadb') !== false) {
+          $connectionParams['serverVersion'] = 'mariadb';
+        } else {
+          $connectionParams['serverVersion'] = 'mysql9';
+        }
       } else {
         error_log('Unable to fetch a valid server version, proceeding without it.');
+        $connectionParams['serverVersion'] = 'mysql8'; // Default version
       }
     } catch (\Exception $e) {
-      error_log('Unable to fetch server version, defaulting to version 11.7.0: ' . $e->getMessage());
-      // Optionally, you can allow the user to configure the version or leave it out
-      $connectionParams['serverVersion'] = '11.7.0'; // Default version
+      error_log('Unable to fetch server version, defaulting to version mysql8: ' . $e->getMessage());
+      $connectionParams['serverVersion'] = 'mysql8'; // Default version
     }
 
     return ['connectionParams' => $connectionParams, 'config' => $config];
   }
+
+
 
   /**
    * Creates and returns an instance of the EntityManager.
@@ -141,9 +140,9 @@ class DoctrineOrm
 
        // Check index existence
        $sql = "SHOW INDEX FROM `$tableName` WHERE Key_name = ?";
-       $indexExists = $connection->fetchAllAssociative($sql, ['embedding_index']);
+       $indexExists = $connection->fetchOne($sql, ['embedding_index']);
 
-       return !empty($indexExists);
+       return $indexExists !== false;
      } catch (\Exception $e) {
        if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
          error_log('Error while checking structure for table ' . $tableName . ': ' . $e->getMessage());
@@ -166,6 +165,7 @@ class DoctrineOrm
       $connection = $entityManager->getConnection();
 
       //Seach inside all tables for the embedding column
+
       $sql = "
         SELECT table_name
         FROM information_schema.columns
@@ -173,6 +173,7 @@ class DoctrineOrm
           AND column_name = 'embedding'
           AND data_type LIKE '%vector%'
       ";
+
       return $connection->fetchFirstColumn($sql);
     } catch (\Exception $e) {
       if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
@@ -182,6 +183,13 @@ class DoctrineOrm
     }
   }
 
+  private static function logError($message)
+  {
+    if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+      error_log($message);
+    }
+  }
+  
   /**
    * Creates the necessary database structure for RAG if it doesn't exist.
    * Sets up tables with appropriate columns and vector indices for embedding storage.
