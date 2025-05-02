@@ -51,13 +51,13 @@ class HTMLOverrideCommon extends HTML
     return $text;
   }
 
-  /**
-   * Nettoie une chaîne HTML en supprimant les balises, le JavaScript et les entités HTML.
-   *
-   * @param string $html Le contenu HTML à nettoyer.
-   * @param int|null $maxLength Longueur maximale du texte nettoyé.
-   * @return string Texte nettoyé et éventuellement tronqué.
-   */
+ /**
+  * Cleans an HTML string by removing tags, JavaScript, and HTML entities.
+  *
+  * @param string $html The HTML content to clean.
+  * @param int|null $maxLength Maximum length of the cleaned text.
+  * @return string Cleaned and optionally truncated text.
+  */
   public static function cleanHtmlOptimized(string $html, ?int $maxLength = null): string
   {
     // Supprime les balises <script> et <style>
@@ -82,47 +82,64 @@ class HTMLOverrideCommon extends HTML
     return htmlspecialchars($clean, ENT_QUOTES | ENT_HTML5, 'UTF-8');
   }
 
-  /**
-   * Nettoie un texte HTML en supprimant le contenu inutile pour l'embedding.
-   * - Supprime les scripts, styles, images, iframes, liens externes.
-   * - Conserve uniquement le texte utile pour l'indexation et la recherche.
+ /**
+   * Cleans an HTML text by removing unnecessary content for embedding.
+   * - Removes scripts, styles, images, iframes, external links.
+   * - Retains only the text useful for indexing and searching.
    *
-   * @param string $html Le contenu HTML à nettoyer.
-   * @return string Texte nettoyé et structuré pour l'embedding.
+   * @param string $html The HTML content to clean.
+   * @return string Cleaned and structured text for embedding.
    */
-  public static function cleanHtmlForEmbedding(string $html): string
-  {
-    // Supprime les scripts, styles, iframes, objets et balises inutiles
-    $clean = preg_replace('/<(script|style|iframe|object|embed|noscript|svg|canvas|meta|link|form|button|input|select|textarea)[^>]*>.*?<\/\1>/is', '', $html);
+ public static function cleanHtmlForEmbedding(string $html): string
+ {
+     if (empty($html)) {
+         return '';
+     }
 
-    // Supprime les balises <img> (images) et les balises de liens (<a>)
-    $clean = preg_replace('/<img[^>]*>/i', '', $clean);
-    $clean = preg_replace('/<a\b[^>]*>(.*?)<\/a>/i', '\1', $clean); // Conserve le texte du lien
+     // Pre-process: Convert common encoded characters
+     $html = str_replace(['&nbsp;', '&amp;', '&quot;', '&lt;', '&gt;'], [' ', '&', '"', '<', '>'], $html);
 
-    // Supprime toutes les autres balises HTML
-    $clean = strip_tags($clean);
+     // Preserve meaningful line breaks before stripping tags
+     $html = str_replace(['</p>', '</div>', '</h1>', '</h2>', '</h3>', '</h4>', '</h5>', '</h6>', '<br>', '<br/>', '<hr>'], "\n", $html);
 
-    // Décodage des entités HTML
-    $clean = html_entity_decode($clean, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-    $clean = self::removeInvisibleCharacters($clean);
-    // Supprime les caractères non alphanumériques inutiles
-    $clean = preg_replace('/[^\p{L}\p{N}\s,.!?-]/u', '', $clean);
+     // Strip all non-content elements while preserving meaningful structure
+     $clean = preg_replace([
+         // Remove scripts, styles and other non-content elements
+         '/<(script|style|iframe|object|embed|noscript|svg|canvas|meta|link|form|button|input|select|textarea)[^>]*>.*?<\/\1>/is',
+         // Remove images but preserve alt text
+         '/<img[^>]*alt=["\']([^"\']*)["\'][^>]*>/i',
+         // Replace links with their text content
+         '/<a\b[^>]*>(.*?)<\/a>/i',
+         // Remove all remaining HTML tags
+         '/<[^>]*>/'
+     ], [
+         '',
+         '$1',
+         '$1',
+         ' '
+     ], $html);
 
-    // Normalisation des espaces
-    $clean = preg_replace('/\s+/', ' ', trim($clean));
+     // Convert HTML entities and clean text
+     $clean = html_entity_decode($clean, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+     $clean = self::removeInvisibleCharacters($clean);
 
-    return $clean;
-  }
+     // Normalize whitespace while preserving meaningful breaks
+     $clean = preg_replace('/\s*\n\s*/', "\n", $clean);
+     $clean = preg_replace('/[ \t]+/', ' ', $clean);
+     $clean = preg_replace('/\n{3,}/', "\n\n", $clean);
 
-  /**
-   * Nettoie un texte HTML pour l'optimisation SEO.
-   * - Supprime scripts, styles, iframes et balises inutiles.
-   * - Conserve les titres, descriptions et mots-clés.
-   * - Garde certains caractères spéciaux utiles pour le SEO (- , / |).
-   *
-   * @param string $html Le contenu HTML à nettoyer.
-   * @return string Texte nettoyé et structuré pour le SEO.
-   */
+     // Keep only valid text characters while preserving structure
+     $clean = preg_replace('/[^\p{L}\p{N}\p{P}\s]/u', '', $clean);
+
+     return trim($clean);
+ }
+
+ /**
+  * Cleans HTML text for SEO by removing harmful tags and normalizing the content.
+  *
+  * @param string $html The HTML content to clean.
+  * @return string Cleaned and optimized text for SEO.
+  */
   public static function cleanHtmlForSEO(string $html): string
   {
     // Supprime les balises nuisibles au SEO (scripts, styles, iframes, objets, boutons)
