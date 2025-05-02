@@ -11,9 +11,8 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Cache;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
+
 /**
  * Class InputValidator
  * Provides comprehensive input validation for database operations
@@ -134,68 +133,68 @@ class InputValidator
      * @param string $identifier Table or column name to sanitize
      * @return string Sanitized identifier
      */
-    public static function sanitizeIdentifier(string $identifier): string
-    {
-        // Only allow alphanumeric characters, underscores, and specific patterns
-        if (!preg_match('/^[a-zA-Z0-9_]+$/', $identifier)) {
-            // If invalid characters found, strip them and log the attempt
-            $sanitized = preg_replace('/[^a-zA-Z0-9_]/', '', $identifier);
-            self::logSecurityEvent("Invalid identifier sanitized: {$identifier} -> {$sanitized}");
-            return $sanitized;
-        }
-        
-        return $identifier;
+  public static function sanitizeIdentifier(string $identifier): string
+  {
+      // Only allow alphanumeric characters, underscores, and specific patterns
+      if (!preg_match('/^[a-zA-Z0-9_]+$/', $identifier)) {
+          // If invalid characters found, strip them and log the attempt
+          $sanitized = preg_replace('/[^a-zA-Z0-9_]/', '', $identifier);
+          self::logSecurityEvent("Invalid identifier sanitized: {$identifier} -> {$sanitized}");
+          return $sanitized;
+      }
+
+      return $identifier;
+  }
+
+  /**
+   * Validates and sanitizes input parameters
+   * Applies type-specific validation rules
+   * Provides safe default values for invalid inputs
+   *
+   * @param mixed $input Input value to validate
+   * @param string $type Expected data type
+   * @param mixed $default Default value if validation fails
+   * @return mixed Validated and sanitized input
+   */
+  public static function validateParameter($input, string $type, $default = null)
+  {
+    switch ($type) {
+      case 'int':
+          if (!is_numeric($input)) {
+              self::logSecurityEvent("Invalid integer parameter sanitized: " . var_export($input, true));
+              return $default ?? 0;
+          }
+          return (int)$input;
+
+      case 'float':
+          if (!is_numeric($input)) {
+              self::logSecurityEvent("Invalid float parameter sanitized: " . var_export($input, true));
+              return $default ?? 0.0;
+          }
+          return (float)$input;
+
+      case 'string':
+          if (!is_string($input)) {
+              self::logSecurityEvent("Invalid string parameter sanitized: " . var_export($input, true));
+              return $default ?? '';
+          }
+          $input = trim($input); // pas de htmlspecialchars !
+          //return htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
+          return $input;
+
+      case 'bool':
+          return (bool)$input;
+
+      case 'array':
+          if (!is_array($input)) {
+              self::logSecurityEvent("Invalid array parameter sanitized: " . var_export($input, true));
+              return $default ?? [];
+          }
+          return $input;
+
+      default:
+          self::logSecurityEvent("Unknown parameter type: {$type}");
+          return $default;
     }
-
-    /**
-     * Validates and sanitizes input parameters
-     * Applies type-specific validation rules
-     * Provides safe default values for invalid inputs
-     *
-     * @param mixed $input Input value to validate
-     * @param string $type Expected data type
-     * @param mixed $default Default value if validation fails
-     * @return mixed Validated and sanitized input
-     */
-    public static function validateParameter($input, string $type, $default = null)
-    {
-        switch ($type) {
-            case 'int':
-                if (!is_numeric($input)) {
-                    self::logSecurityEvent("Invalid integer parameter sanitized: " . var_export($input, true));
-                    return $default ?? 0;
-                }
-                return (int)$input;
-                
-            case 'float':
-                if (!is_numeric($input)) {
-                    self::logSecurityEvent("Invalid float parameter sanitized: " . var_export($input, true));
-                    return $default ?? 0.0;
-                }
-                return (float)$input;
-
-            case 'string':
-                if (!is_string($input)) {
-                    self::logSecurityEvent("Invalid string parameter sanitized: " . var_export($input, true));
-                    return $default ?? '';
-                }
-                $input = trim($input); // pas de htmlspecialchars !
-                //return htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
-                return $input;
-
-            case 'bool':
-                return (bool)$input;
-                
-            case 'array':
-                if (!is_array($input)) {
-                    self::logSecurityEvent("Invalid array parameter sanitized: " . var_export($input, true));
-                    return $default ?? [];
-                }
-                return $input;
-                
-            default:
-                self::logSecurityEvent("Unknown parameter type: {$type}");
-                return $default;
-        }
-    }
+ }
 }

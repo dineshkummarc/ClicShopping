@@ -2,11 +2,44 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\OM\Registry;
 
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 class Semantics
 {
+  private static ?SecurityLogger $logger = null;
+  public function __construct()
+  {
+    self::initializeLogger();
+  }
+
+  /**
+   * Returns a singleton instance of the SecurityLogger
+   * Initializes the logger with specified parameters if not already created
+   *
+   * @return void Instance of SecurityLogger
+   */
+  private static function initializeLogger(): void
+  {
+    if (self::$logger === null) {
+      self::$logger = new SecurityLogger();
+    }
+  }
+
+  /**
+   * Logs security-related events
+   * Delegates logging to the SecurityLogger instance
+   *
+   * @param string $text
+   * @param string $alert
+   * @return void
+   */
+  private static function logSecurityEvent(string $text, string $alert): void
+  {
+    self::initializeLogger(); // Ensure logger is initialized
+    self::$logger->logSecurityEvent($text, $alert); // Call the logger's method
+  }
 
   /**
    * Translate a given text to English using the OpenAI API.
@@ -159,8 +192,8 @@ class Semantics
 
     $score = self::calculateScore($translated);
 
-    if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
-      error_log("Total score: {$score}");
+    if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+      self::logSecurityEvent("Total score: {$score}", 'info');
     }
 
     $threshold = 2;
@@ -169,8 +202,8 @@ class Semantics
       return 'analytics';
     }
 
-    if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
-      error_log("No analytics pattern matched. Falling back to semantic analysis.");
+    if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+      self::logSecurityEvent("No analytics pattern matched. Falling back to semantic analysis.", 'info');
     }
 
     return self::checkSemantics($translated);
@@ -192,7 +225,7 @@ class Semantics
       if (in_array($category, $criticalCategories)) {
         foreach ($patterns as $pattern) {
           if (preg_match($pattern, $text)) {
-            error_log("Critical pattern match detected: Category: $category | Pattern: $pattern");
+            self::logSecurityEvent("Critical pattern match detected: Category: $category | Pattern: $pattern", 'info');
             return true;
           }
         }
@@ -233,7 +266,7 @@ class Semantics
     foreach ($analyticsPatterns as $category => $patterns) {
       foreach ($patterns as $pattern) {
         if (preg_match($pattern, $text)) {
-          error_log("Pattern match detected: Category: $category | Pattern: $pattern");
+          self::logSecurityEvent("Pattern match detected: Category: $category | Pattern: $pattern", 'info');
           $score += $weights[$category] ?? 1; // Si jamais un poids manque
         }
       }

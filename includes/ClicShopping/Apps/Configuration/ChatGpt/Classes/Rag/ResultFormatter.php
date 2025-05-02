@@ -44,6 +44,7 @@ class ResultFormatter
 
     // If it's a semantic search result, format it
     if (isset($results['type']) && $results['type'] === 'semantic_results') {
+
       return [
         'type' => 'formatted_results',
         'content' => $this->formatSemanticResults($results)
@@ -102,7 +103,7 @@ class ResultFormatter
     }
 
     if (isset($results['interpretation'])) {
-      $output .= "<div class='interpretation'><strong>Interpretation :</strong> " . $results['interpretation'] . "</div>";
+      $output .= "<div class='interpretation'><strong>Interpretation :</strong> " . Hash::displayDecryptedDataText($results['interpretation']) . "</div>";
     }
 
     if (isset($results['results']) && is_array($results['results'])) {
@@ -122,6 +123,7 @@ class ResultFormatter
     }
 
     $output .= "</div>";
+
     return $output;
   }
 
@@ -164,6 +166,7 @@ class ResultFormatter
     }
 
     $output .= "</div>";
+
     return $output;
   }
 

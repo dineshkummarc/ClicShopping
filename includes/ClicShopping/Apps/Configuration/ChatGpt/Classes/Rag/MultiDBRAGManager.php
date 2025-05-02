@@ -13,6 +13,7 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
@@ -49,7 +50,6 @@ class MultiDBRAGManager
   private mixed $embeddingGenerator;
   private array $vectorStores = [];
 
-  private string $systemMessageTemplate;
   private bool $debug = false;
   
   /**
@@ -70,13 +70,19 @@ class MultiDBRAGManager
 
     $this->app = Registry::get('ChatGpt');
     $this->db = Registry::get('Db');
-    $this->systemMessageTemplate = CLICSHOPPING::getDef('text_rag_system_message_template');
+
     $this->language = Registry::get('Language');
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
     $this->securityLogger = new SecurityLogger();
 
     $parameters = null;
     $model = $model ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL  : 'default_model');
+
+    if (!is_null($model)) {
+      $parameters['model'] = $model;
+    } elseif (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL')) {
+      $parameters['model'] = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
+    }
 
     Gpt::getOpenAiGpt($parameters);
 
@@ -102,24 +108,53 @@ class MultiDBRAGManager
    *
    * @return EmbeddingGeneratorInterface Instance of the embedding generator
    */
-  private function createEmbeddingGenerator(): EmbeddingGeneratorInterface {
-    return new class(Gpt::class) implements EmbeddingGeneratorInterface {
+  private function createEmbeddingGenerator(): EmbeddingGeneratorInterface
+  {
+    return new class(Gpt::class) implements EmbeddingGeneratorInterface
+    {
       private $gptClass;
 
-      public function __construct(string $gptClass) {
+      /**
+       * Constructor for the embedding generator
+       *
+       * @param string $gptClass Class name of the Gpt instance
+       */
+      public function __construct(string $gptClass)
+      {
         $this->gptClass = $gptClass;
       }
 
-      public function embedText(string $text): array {
+      /**
+       * Embeds a single text string
+       *
+       * @param string $text Text to embed
+       * @return array Embedding vector
+       */
+      public function embedText(string $text): array
+      {
         return call_user_func([$this->gptClass, 'gptOpenAiEmbeddings'], $text);
       }
 
-      public function embedDocument(Document $document): Document {
+      /**
+       * Embeds a single document
+       *
+       * @param Document $document Document object to embed
+       * @return Document Embedded Document object
+       */
+      public function embedDocument(Document $document): Document
+      {
         $document->embedding = $this->embedText($document->content);
         return $document;
       }
 
-      public function embedDocuments(array $documents): array {
+      /**
+       * Embeds multiple documents
+       *
+       * @param array $documents Array of Document objects to embed
+       * @return array Array of embedded Document objects
+       */
+      public function embedDocuments(array $documents): array
+      {
         $results = [];
         foreach ($documents as $document) {
           $results[] = $this->embedDocument($document);
@@ -127,6 +162,11 @@ class MultiDBRAGManager
         return $results;
       }
 
+      /**
+       * Returns the length of the embedding vector
+       *
+       * @return int Length of the embedding vector
+       */
       public function getEmbeddingLength(): int {
         return NewVector::getEmbeddingLength();
       }
@@ -258,6 +298,7 @@ class MultiDBRAGManager
           if ($this->debug == 'True') {
             $this->securityLogger->logSecurityEvent("Table search: " . $tableName, 'info');
           }
+
           // Création d'une fonction de filtrage basée sur les critères
           $filter = function($metadata) use ($languageId, $entityType) {
             $match = true;
@@ -276,6 +317,7 @@ class MultiDBRAGManager
           };
 
           $results = $vectorStore->similaritySearch($queryEmbedding, $limit, $minScore, $filter);
+
           if ($this->debug == 'True') {
             $this->securityLogger->logSecurityEvent("Results found in table {$tableName}: " . count($results), 'info');
           }
@@ -294,12 +336,14 @@ class MultiDBRAGManager
       // Sort the result by similarity score (High to low)
       if (!empty($allResults)) {
         usort($allResults, function ($a, $b) {
+
           return $b->metadata['score'] <=> $a->metadata['score'];
         });
       }
 
       // litmit the total result
       $finalResults = array_slice($allResults, 0, $limit);
+
       if ($this->debug == 'True') {
         $this->securityLogger->logSecurityEvent("Total number of results found: " . count($finalResults), 'info');
       }
@@ -343,10 +387,13 @@ class MultiDBRAGManager
 
       // contact preparation and links
       $context = '';
+      $score = '';
+      $link = '';
 
       foreach ($documents as $doc) {
         //$tableName = $doc->metadata['table_name'] ?? 'inconnu';
         $score = round(($doc->metadata['score'] ?? 0) * 100, 2);
+
         $link = '';
 
         if (!empty($doc->metadata['entity_id']) && !empty($doc->metadata['type'])) {
@@ -355,6 +402,8 @@ class MultiDBRAGManager
             'category' => 'A&Catalog\Categories&Categories',
             'page_manager' => 'A&Communication\PageManager',
             'orders' => 'A&Orders\Orders',
+            'suppliers' => 'A&Catalog\Suppliers&Suppliers',
+            'manufacturers' => 'A&Catalog\Manufacturers&Manufacturers',
           ];
 
           if (isset($routes[$doc->metadata['type']])) {
@@ -365,14 +414,22 @@ class MultiDBRAGManager
         }
 
         $context .= $doc->content . "\n\n";
+
         if (!empty($link)) {
           $link .= "- {{$doc->metadata['entity_id']}: {$link} \n";
-            $score .= "- (accuracy: {$score}%)  \n";
         }
+
+          $score .= "- (accuracy: {$score} %)  \n";
       }
 
-      // Use the existing classe to create the response
-        $prompt = str_replace(['{context}', '{question}', '{links}', '{score}'], [$context, $question, $link, $score], $this->systemMessageTemplate);
+      $array = [
+        'context' => $context,
+        'question' => $question,
+        'links' => $link,
+        'score' => $score
+      ];
+
+      $prompt = CLICSHOPPING::getDef('text_rag_system_message_template' , $array);
 
       if (!empty($modelOptions)) {
         $response = Gpt::getGptResponse($prompt);
@@ -452,7 +509,7 @@ class MultiDBRAGManager
         'query' => $query,
         'matched_categories' => $matchedCategories,
         'sql_query' => $results['query'] ?? '',
-        'interpretation' => $results['interpretation'],
+        'interpretation' => Hash::displayDecryptedDataText($results['interpretation']),
         'count' => $results['count'],
         'results' => $results['results']
       ];

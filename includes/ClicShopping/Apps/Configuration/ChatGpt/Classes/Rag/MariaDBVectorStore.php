@@ -217,9 +217,10 @@ class MariaDBVectorStore extends VectorStoreBase
 
       // Conversion des résultats en objets Document
       $documents = [];
+
       foreach ($results as $result) {
-        // Vérification du score minimum
         $similarity = 1 - $result['distance'];
+
         if ($similarity < $minScore) {
           continue;
         }

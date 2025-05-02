@@ -11,6 +11,7 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
 
 /**
  * Class Cache
@@ -25,6 +26,8 @@ class Cache
   private bool $enablePromptCache = false;
   private bool $debug = false;
   private bool $cache = false;
+  private SecurityLogger $securityLogger;
+
   /**
    * Cache constructor.
    * Initializes the cache system and loads existing cached prompts
@@ -35,6 +38,7 @@ class Cache
   {
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
     $this->cache = defined('CLICSHOPPING_APP_CHATGPT_CH_CACHE_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_CACHE_RAG_MANAGER === 'True';
+    $this->securityLogger = new SecurityLogger();
 
     // Active le cache si autorisé par la config
     if ($this->cache == 'True') {
@@ -76,7 +80,7 @@ class Cache
     }
 
     if ($this->debug == 'True') {
-      error_log("Prompt cache " . ($enable ? "enabled" : "disabled"));
+      $this->securityLogger->logSecurityEvent("Prompt cache " . ($enable ? "enabled" : "disabled"), 'info');
     }
   }
 
@@ -109,7 +113,7 @@ class Cache
       }
 
       if ($this->debug) {
-        error_log("Prompt cache loaded with " . count($this->promptCache) . " live entries");
+        $this->securityLogger->logSecurityEvent("Prompt cache loaded with " . count($this->promptCache) . " live entries", 'info');
       }
     } else {
       $this->promptCache = [];
@@ -124,7 +128,7 @@ class Cache
    */
   public static function getLogFilePath(): string
   {
-    $logDir = CLICSHOPPING::BASE_DIR . 'Work/Rag';
+    $logDir = CLICSHOPPING::BASE_DIR . 'Work/Cache/Rag';
 
     // Ensure log directory exists
     if (!is_dir($logDir)) {
@@ -159,24 +163,24 @@ class Cache
       file_put_contents($cacheFile, json_encode($this->promptCache));
 
       if ($this->debug) {
-        error_log("Prompt cache saved with " . count($this->promptCache) . " entries");
+        $this->securityLogger->logSecurityEvent("Prompt cache saved with " . count($this->promptCache) . " entries", 'info');
       }
     } catch (\Exception $e) {
       if ($this->debug) {
-        error_log("Error saving prompt cache: " . $e->getMessage());
+        $this->securityLogger->logSecurityEvent("Error saving prompt cache: " . $e->getMessage(), 'error');
       }
     }
   }
 
 /**
    * Returns the file path for the prompt cache
-   * The cache file is stored in the Work/Cache directory
+   * The cache file is stored in the Work/Cache/Rag directory
    *
    * @return string The file path for the prompt cache
    */
   private function getPromptCacheFilePath(): string
   {
-    return CLICSHOPPING::BASE_DIR . 'Work/Rag/rag_cache.cache';
+    return CLICSHOPPING::BASE_DIR . 'Work/Cache/Rag/rag_cache.cache';
   }
 
   /**
@@ -288,10 +292,9 @@ class Cache
     // still valid—bump last_used and return it
     $this->promptCache[$cacheKey]['last_used'] = time();
     if ($this->debug) {
-      error_log("Cache hit for prompt: " . substr($prompt, 0, 50) . "...");
+      $this->securityLogger->logSecurityEvent("Cache hit for prompt: " . substr($prompt, 0, 50) . "...", 'info');
     }
 
     return $entry['response'];
   }
-
 }

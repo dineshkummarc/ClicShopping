@@ -480,30 +480,32 @@ text_warning_group = Please update our customers group to see this module inside
 no_access_warning = You do not have access at this fonctionnality.
 success_migration_done = The migration has been a success
 
-text_rag_system_message_template = Use the following information to answer the user's question.
+text_rag_system_message_template = ### RAG systeme instruction
+Use the following information to answer the user's question.
 If the answer is not explicitly found in the provided information, state that clearly.
 In that case, provide an answer based on your general knowledge, while also indicating that the source was not found in the context.
 
 ----------------------------
 Context (available sources):
-{context}
+{{context}}
 
 Question:
-{question}
+{{question}}
 
 Instructions:
 - Answer in English, in a clear, structured, and concise manner.
 - Prioritize answers that are relevant to the context, taking into account the overall meaning and semantic similarities, even if the words are not exactly the same.
 - If you extract information from the context:
-  - Indicate its source (origin or document name)
-  - Mention the reference link if provided: {links}
-  - Add the relevance score if available: {score}
+  - Indicate its source (origin or document name).
+  - Mention the reference link if provided: {{links}}.
+  - Add the relevance score if available: {{score}}.
 - If the answer is based on your general knowledge, state this explicitly and avoid implying it comes from the context.
 
 Response format:
-1. Direct answer
-2. Justification (if useful, whether linked to the context or not)
-3. Sources and scores (if applicable)
+1. Direct answer.
+2. Justification (if useful, whether linked to the context or not).
+3. Sources (if applicable).
+4. Scores (if applicable).
 
 ---
 

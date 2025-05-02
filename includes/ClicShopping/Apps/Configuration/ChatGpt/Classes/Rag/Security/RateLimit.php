@@ -39,7 +39,7 @@ class RateLimit
     $this->namespace = $namespace;
     $this->maxRequests = $maxRequests;
     $this->timeWindow = $timeWindow;
-    $this->storageFile = CLICSHOPPING::BASE_DIR . 'Work/Rag/rag_rate_limits.cache';
+    $this->storageFile = CLICSHOPPING::BASE_DIR . 'Work/Cache/Rag/rag_rate_limits.cache';
 
     if (!function_exists('apcu_fetch')) {
       $this->loadStorage();
@@ -183,7 +183,7 @@ class RateLimit
     $timestamp = date('Y-m-d H:i:s');
     $logEntry = "[{$timestamp}] [warning] Rate limit exceeded: {$key} made {$count} requests in {$this->namespace} (limit: {$this->maxRequests}/{$this->timeWindow}s)" . PHP_EOL;
 
-    $logDir = CLICSHOPPING::BASE_DIR . 'Work/Rag';
+    $logDir = CLICSHOPPING::BASE_DIR . 'Work/Cache/Rag';
     if (!is_dir($logDir)) {
       mkdir($logDir, 0755, true);
     }
