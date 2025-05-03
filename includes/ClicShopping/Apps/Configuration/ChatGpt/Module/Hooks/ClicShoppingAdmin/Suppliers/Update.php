@@ -20,6 +20,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 class Update implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
+
   /**
    * Constructor method for initializing the ChatGpt application.
    * It ensures that the ChatGpt instance is registered in the Registry.
@@ -50,7 +51,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     if (Gpt::checkGptStatus() === false) {
       return false;
     }
-    
+
     if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'False') {
       return false;
     }
@@ -168,3 +169,4 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       }
     }
   }
+}
