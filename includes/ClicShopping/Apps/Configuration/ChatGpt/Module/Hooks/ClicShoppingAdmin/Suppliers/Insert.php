@@ -50,6 +50,10 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
     if (Gpt::checkGptStatus() === false) {
       return false;
     }
+    
+    if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'False') {
+      return false;
+    }
 
     if (isset($_GET['Insert'], $_GET['Suppliers'])) {
       $Qcheck = $this->app->db->prepare('select suppliers_id,
@@ -147,11 +151,11 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
             $sql_data_array_embedding = [
               'content' => $embedding_data,
-              'type' => 'Suppliers_id',
+              'type' => 'suppliers',
               'sourcetype' => 'manual',
               'sourcename' => 'manual',
               'date_modified' => 'now()',
-              'entity_id' => $suppliers_id,
+              'entity_id' => $suppliers_id
             ];
 
             $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
@@ -162,28 +166,6 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
           }
         }
       }
-
-
-//-------------------
-//image
-//-------------------
-/*
-      if (isset($_POST['option_gpt_create_image'])) {
-        $image = Gpt::createImageChatGpt($suppliers_name, 'Suppliers_id');
-
-        if (!empty($image) || $image !== false) {
-          $sql_data_array = [
-            'suppliers_image' => $image ?? '',
-          ];
-
-          $update_sql_data = [
-            'suppliers_id' => $Qcheck->valueInt('suppliers_id')
-          ];
-
-          $this->app->db->save('Suppliers_id', $sql_data_array, $update_sql_data);
-        }
-      }
-*/
     }
   }
 }

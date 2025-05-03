@@ -299,19 +299,19 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
               }
 
               if (!empty($seo_product_title)) {
-                $embedding_data .= $this->app->getDef('text_product_seo_title') . ': ' . HtmlOverrideCommon::cleanHtmlForSEO($seo_product_title) . "\n";
+                $embedding_data .= $this->app->getDef('text_product_seo_title') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_product_title) . "\n";
               }
 
               if (!empty($seo_product_description)) {
-                $embedding_data .= $this->app->getDef('text_product_seo_description') . ': ' . HtmlOverrideCommon::cleanHtmlForSEO($seo_product_description) . "\n";
+                $embedding_data .= $this->app->getDef('text_product_seo_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_product_description) . "\n";
               }
 
               if (!empty($seo_product_keywords)) {
-                $embedding_data .= $this->app->getDef('text_product_seo_keywords') . ': ' . HtmlOverrideCommon::cleanHtmlForSEO($seo_product_keywords) . "\n";
+                $embedding_data .= $this->app->getDef('text_product_seo_keywords') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_product_keywords) . "\n";
               }
 
               if (!empty($seo_product_tag)) {
-                $embedding_data .= $this->app->getDef('text_product_seo_tag') . ': ' . HtmlOverrideCommon::cleanHtmlForSEO($seo_product_tag) . "\n";
+                $embedding_data .= $this->app->getDef('text_product_seo_tag') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_product_tag) . "\n";
               }
 
               $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
