@@ -166,26 +166,28 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
             // add embedding
             //********************
             if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'True') {
-              $embedding_data = $this->app->getDef('text_manufacturer_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_name) . '\n';
+              $embedding_data =  "\n" . $this->app->getDef('text_manufacturer_embedded') . "\n";
+
+              $embedding_data .= $this->app->getDef('text_manufacturer_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_name) . "\n";
 
               if (!empty($manufacturers_description)) {
-                $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . '\n';
+                $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
               }
 
               if (!empty($seo_manufacturer_title)) {
-                $embedding_data .= $this->app->getDef('text_manufacturer_seo_title') . ' : ' . HtmlOverrideCommon::cleanHtmlForSEO($seo_manufacturer_title) . '\n';
+                $embedding_data .= $this->app->getDef('text_manufacturer_seo_title') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_title) . "\n";
               }
 
               if (!empty($seo_manufacturer_description)) {
-                $embedding_data .= $this->app->getDef('text_manufacturer_seo_description') . ': ' . HtmlOverrideCommon::cleanHtmlForSEO($seo_manufacturer_description) . '\n';
+                $embedding_data .= $this->app->getDef('text_manufacturer_seo_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_description) . "\n";
               }
 
               if (!empty($seo_manufacturer_keywords)) {
-                $embedding_data .= $this->app->getDef('text_manufacturer_seo_keywords') . ' : ' . HtmlOverrideCommon::cleanHtmlForSEO($seo_manufacturer_keywords) . '\n';
+                $embedding_data .= $this->app->getDef('text_manufacturer_seo_keywords') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_keywords) . "\n";
               }
 
               if (!empty($suppliers_id)) {
-                $embedding_data .= $this->app->getDef('text_manufacturer_suppliers_id') . ' : ' . $suppliers_id . '\n';
+                $embedding_data .= $this->app->getDef('text_manufacturer_suppliers_id') . ' : ' . $suppliers_id . "\n";
               }
 
               $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);

@@ -44,6 +44,10 @@ try {
     if ($queryType === 'analytics') {
       $analyticsResults = $ragManager->executeAnalyticsQuery($prompt);
       $result = $ragManager->formatResults($analyticsResults);
+
+      If (is_null($result)) {
+        error_log("Erreur, result null for analytic query : " . $e->getMessage());
+      }
     } else {
       if ($queryType === 'semantic') {
         $result = $ragManager->answerQuestion($prompt, 5, 0.5, $languageId);

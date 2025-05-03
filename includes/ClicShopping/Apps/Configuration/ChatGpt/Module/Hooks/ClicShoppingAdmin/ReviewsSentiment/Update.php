@@ -250,16 +250,16 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
           $customer_id = isset($item['customer_id']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['customer_id']) : '';
           $vote_sentiment = isset($item['vote_sentiment']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['vote_sentiment']) : '';
 
-          $embedding_data = $this->app->getDef('text_review_sentiment_products_id') . ' : ' . $products_id . '\n';
-          $embedding_data .= $this->app->getDef('text_review_sentiment_review_id') . ' : ' . $reviews_id . '\n';
-          $embedding_data .= $this->app->getDef('text_review_sentiment_language_id') . ' : ' . $language_id . '\n';
-          $embedding_data .= $this->app->getDef('text_review_sentiment_sentiment_status') . ' : ' . $sentiment_status . '\n';
-          $embedding_data .= $this->app->getDef('text_review_sentiment_sentiment_approved') . ' : ' . $sentiment_approved . '\n';
-          $embedding_data .= $this->app->getDef('text_review_sentiment_date_added') . ' : ' . $date_added . '\n';
-          $embedding_data .= $this->app->getDef('text_review_sentiment_vote') . ' : ' . $vote . '\n';
-          $embedding_data .= $this->app->getDef('text_review_sentiment_customer_id') . ' : ' . $customer_id . '\n';
-          $embedding_data .= $this->app->getDef('text_review_sentiment_vote_sentiment') . ' : ' . $vote_sentiment . '\n';
-          $embedding_data .= $this->app->getDef('text_review_sentiment_description') . ' : ' . $description . '\n';
+          $embedding_data = $this->app->getDef('text_review_sentiment_products_id') . ' : ' . $products_id . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_review_id') . ' : ' . $reviews_id . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_language_id') . ' : ' . $language_id . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_sentiment_status') . ' : ' . $sentiment_status . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_sentiment_approved') . ' : ' . $sentiment_approved . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_date_added') . ' : ' . $date_added . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_vote') . ' : ' . $vote . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_customer_id') . ' : ' . $customer_id . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_vote_sentiment') . ' : ' . $vote_sentiment . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_description') . ' : ' . $description . "\n";
 
 
           $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);

@@ -9,14 +9,13 @@
  */
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
-
-use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
 
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
@@ -100,6 +99,7 @@ class MultiDBRAGManager
     if (!isset($this->embeddingGenerator)) {
       $this->embeddingGenerator = $this->createEmbeddingGenerator();
     }
+
     return $this->embeddingGenerator;
   }
 
@@ -144,6 +144,7 @@ class MultiDBRAGManager
       public function embedDocument(Document $document): Document
       {
         $document->embedding = $this->embedText($document->content);
+
         return $document;
       }
 
@@ -156,9 +157,11 @@ class MultiDBRAGManager
       public function embedDocuments(array $documents): array
       {
         $results = [];
+
         foreach ($documents as $document) {
           $results[] = $this->embedDocument($document);
         }
+
         return $results;
       }
 
@@ -440,7 +443,7 @@ class MultiDBRAGManager
         return Gpt::getGptResponse($prompt);
       }
     } catch (\Exception $e) {
-      $this->securityLogger->logSecurityEvent('Erreur lors de la génération de réponse : ' . $e->getMessage(), 'error');
+      $this->securityLogger->logSecurityEvent('Error during response generation: ' . $e->getMessage(), 'error');
 
       return CLICSHOPPING::getDef('text_rag_answer_question_error');
     }
@@ -453,7 +456,7 @@ class MultiDBRAGManager
    * @param array $results Analysis results
    * @return string Formatted results for display
    */
-  public function formatResults(array $results): string
+  public function formatResults(array $results): string|null
   {
     $formatter = new ResultFormatter();
     $result = $formatter->format($results);

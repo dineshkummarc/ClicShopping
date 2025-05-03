@@ -260,6 +260,7 @@ class MariaDBVectorStore extends VectorStoreBase
       if ($this->debug == 'True') {
         $this->securityLogger->logSecurityEvent('Error while searching in the table ' . $this->tableName . ' : ' . $e->getMessage(), 'error');
       }
+
       return [];
     }
   }
@@ -304,9 +305,6 @@ class MariaDBVectorStore extends VectorStoreBase
   public function updateDocument(int $id, string $content, array $metadata = []): bool
   {
     try {
-      // Génération du nouvel embedding
-      $embedding = $this->embeddingGenerator->embedText($content);
-
       $preparedData = $this->prepareEmbeddingAndMetadata($content, $metadata);
 
       $this->connection->executeStatement(

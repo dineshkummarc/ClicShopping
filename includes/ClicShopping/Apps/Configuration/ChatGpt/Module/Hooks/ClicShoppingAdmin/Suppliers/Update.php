@@ -78,21 +78,21 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         //********************
         // add embedding
         //********************
-          $embedding_data = $this->app->getDef('text_supplier_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_name) . '\n';
+          $embedding_data = $this->app->getDef('text_supplier_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_name) . "\n";
 
           if (!empty($date_added)) {
-            $embedding_data .= $this->app->getDef('text_supplier_date_added') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($date_added) . '\n';
+            $embedding_data .= $this->app->getDef('text_supplier_date_added') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";
           }
           if (!empty($suppliers_city)) {
-            $embedding_data .= $this->app->getDef('text_supplier_city') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_city) . '\n';
+            $embedding_data .= $this->app->getDef('text_supplier_city') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_city) . "\n";
           }
 
           if (!empty($suppliers_status)) {
-            $embedding_data .= $this->app->getDef('text_supplier_status') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_status) . '\n';
+            $embedding_data .= $this->app->getDef('text_supplier_status') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_status) . "\n";
           }
 
           if (!empty($suppliers_country_id)) {
-            $embedding_data .= $this->app->getDef('text_supplier_country_id') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_country_id) . '\n';
+            $embedding_data .= $this->app->getDef('text_supplier_country_id') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_country_id) . "\n";
           }
 
           $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);

@@ -57,40 +57,78 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                                                 date_added,
                                                 suppliers_city,
                                                 suppliers_country_id,
-                                                suppliers_status
+                                                suppliers_status,
+                                                suppliers_image, 
+                                                date_added,
+                                                last_modified,
+                                                suppliers_manager,
+                                                suppliers_phone,
+                                                suppliers_email_address,
+                                                suppliers_fax,
+                                                suppliers_address,
+                                                suppliers_suburb,
+                                                suppliers_postcode,
+                                                suppliers_city,
+                                                suppliers_states,
+                                                suppliers_country_id,
+                                                suppliers_notes,
+                                                suppliers_status      
                                           from :table_suppliers
                                           order by suppliers_id desc
                                           limit 1
                                         ');
       $Qcheck->execute();
 
-      $suppliers_name = $Qcheck->value('suppliers_name');
+      $supplier_name = $Qcheck->value('suppliers_name');
       $suppliers_id = $Qcheck->valueInt('suppliers_id');
       $date_added = $Qcheck->valueInt('date_added');
-      $suppliers_city = $Qcheck->valueInt('suppliers_city');
       $suppliers_country_id = $Qcheck->valueInt('suppliers_country_id');
       $suppliers_status = $Qcheck->valueInt('suppliers_status');
+
+      if ($suppliers_status == 0) {
+        $suppliers_status = $this->app->getDef('text_status_active');
+      } else {
+        $suppliers_status = $this->app->getDef('text_status_inactive');
+      }
+
+      $suppliers_city = $Qcheck->value('suppliers_city');
+      $suppliers_notes = $Qcheck->value('suppliers_notes');
+      $suppliers_payment_terms = $Qcheck->value('suppliers_payment_terms');
+      $suppliers_states = $Qcheck->value('suppliers_states');
 
       if ($suppliers_id !== null) {
         //********************
         // add embedding
         //********************
         if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'True') {
-          $embedding_data = $this->app->getDef('text_supplier_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_name) . '\n';
+          $embedding_data = $this->app->getDef('text_supplier_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($supplier_name) . "\n";
 
           if (!empty($date_added)) {
-            $embedding_data .= $this->app->getDef('text_supplier_date_added') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($date_added) . '\n';
-          }
-          if (!empty($suppliers_city)) {
-            $embedding_data .= $this->app->getDef('text_supplier_city') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_city) . '\n';
+            $embedding_data .= $this->app->getDef('text_supplier_date_added', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";
           }
 
           if (!empty($suppliers_status)) {
-            $embedding_data .= $this->app->getDef('text_supplier_status') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_status) . '\n';
+            $embedding_data .= $this->app->getDef('text_supplier_status', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_status) . "\n";
+          }
+
+          if (!empty($suppliers_states)) {
+            $embedding_data .= $this->app->getDef('text_suppliers_states', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_states) . "\n";
+          }
+
+          if (!empty($suppliers_city)) {
+            $embedding_data .= $this->app->getDef('text_supplier_city', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_city) . "\n";
           }
 
           if (!empty($suppliers_country_id)) {
-            $embedding_data .= $this->app->getDef('text_supplier_country_id') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_country_id) . '\n';
+            $embedding_data .= $this->app->getDef('text_supplier_country_id', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_country_id) . "\n";
+          }
+
+          if (!empty($suppliers_notes)) {
+            $embedding_data .= $this->app->getDef('text_suppliers_notes', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_notes) . "\n";
+          }
+
+          if (!empty($suppliers_payment_terms)) {
+            $embedding_data .= $this->app->getDef('text_suppliers_payment_terms', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_payment_terms) . "\n";
           }
 
           $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
