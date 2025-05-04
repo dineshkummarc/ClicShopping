@@ -71,6 +71,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         $Qcheck->execute();
 
         $insert_embedding = false;
+	
         if ($Qcheck->fetch() === false) {
           $insert_embedding = true;
         }

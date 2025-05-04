@@ -19,6 +19,14 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
+/**
+ * Class Insert
+ * @package ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\Products
+ *
+ * This class handles the insertion of product data into the database.
+ * It generates SEO metadata, summaries, and translations based on product information,
+ * and also creates product-related images if specified.
+ */
 class Insert implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
