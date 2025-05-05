@@ -132,7 +132,7 @@ class MultiDBRAGManager
        */
       public function embedText(string $text): array
       {
-        return call_user_func([$this->gptClass, 'gptOpenAiEmbeddings'], $text);
+        return call_user_func([$this->gptClass, 'gptEmbeddingsModel'], $text);
       }
 
       /**
@@ -143,7 +143,7 @@ class MultiDBRAGManager
        */
       public function embedDocument(Document $document): Document
       {
-        $document->embedding = $this->embedText($document->content);
+        $document->embedding = NewVector::createEmbedding(null, $document);
 
         return $document;
       }

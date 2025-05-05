@@ -183,6 +183,12 @@ class DoctrineOrm
     }
   }
 
+  /**
+   * Logs an error message if debugging is enabled.
+   * This function is used to log errors related to database operations.
+   *
+   * @param string $message The error message to log
+   */
   private static function logError($message)
   {
     if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {

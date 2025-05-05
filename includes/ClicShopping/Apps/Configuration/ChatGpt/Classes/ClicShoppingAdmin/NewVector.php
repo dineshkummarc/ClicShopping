@@ -93,7 +93,7 @@ class NewVector
    *
    * @return object|null Instance du générateur d'embeddings approprié ou null si la clé API est manquante
    */
-  private static function getEmbeddingGenerator()
+  public static function gptEmbeddingsModel(): object|null
   {
     Gpt::getEnvironment();
     
@@ -140,18 +140,17 @@ class NewVector
   /**
    * Generates embeddings for a set of documents or a text description. If a file path is provided, the content of the file
    * is read and converted into embeddings. If a text description is provided instead, it is directly processed for embedding generation.
-   * 
+   *
    * @param string|null $path_file_upload Le chemin du fichier à traiter
    * @param string|null $text_description Le texte à traiter
-   * @param int $document_number Nombre de documents à traiter
+   * @param int $token_length
    * @return array|null Les embeddings générés ou null en cas d'erreur
+   * @throws ClientExceptionInterface
    */
- public static function createEmbedding(string|null $path_file_upload, string|null $text_description, int $document_number = 3)
+ public static function createEmbedding(string|null $path_file_upload, string|null $text_description, int $token_length = 128)
  {
-    // Obtenir le générateur d'embeddings approprié
-    $embeddingGenerator = self::getEmbeddingGenerator();
+    $embeddingGenerator = self::gptEmbeddingsModel();
     
-    // Vérifier si le générateur d'embeddings est disponible
     if ($embeddingGenerator === null) {
       return null;
     }
@@ -161,13 +160,13 @@ class NewVector
         $filePath = $path_file_upload;
         $reader = new FileDataReader($filePath);
         $documents = $reader->getDocuments();
-        $splitDocuments = DocumentSplitter::splitDocuments($documents, 128);
+        $splitDocuments = DocumentSplitter::splitDocuments($documents, $token_length);
         $formattedDocuments = EmbeddingFormatter::formatEmbeddings($splitDocuments);
-        $embeddingGenerator = self::getEmbeddingGenerator();
+        $embeddingGenerator = self::gptEmbeddingsModel();
         $embeddedDocuments = $embeddingGenerator->embedDocuments($formattedDocuments);
       } else {
-        // Branche pour traitement d'un texte brut
-        $embeddingGenerator = self::getEmbeddingGenerator();
+        // Raw data only (text)
+        $embeddingGenerator = self::gptEmbeddingsModel();
         $embedded = $embeddingGenerator->embedText($text_description);
 
         $document = new Document();
@@ -176,7 +175,7 @@ class NewVector
         $document->sourceName = 'manual';
         $document->sourceType = 'manual';
 
-        $splitDocuments = DocumentSplitter::splitDocument($document, 128);
+        $splitDocuments = DocumentSplitter::splitDocument($document, $token_length);
         $formattedDocuments = EmbeddingFormatter::formatEmbeddings($splitDocuments);
 
         // Generation of embeddings on the split document.

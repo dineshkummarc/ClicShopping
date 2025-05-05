@@ -26,28 +26,28 @@ class HTMLOverrideCommon extends HTML
    * @param string $text The text to clean.
    * @return string The cleaned text without invisible characters.
    */
-  public static function removeInvisibleCharacters(string $text): string
+  public static function removeInvisibleCharacters(string|null $text): string|null
   {
-    // Liste des caractères invisibles à supprimer (espaces non-coupables, zéros largeur, etc.)
-    $invisibleChars = [
-      '\u200b',  // Zero Width Space
-      '\u200c',  // Zero Width Non-Joiner
-      '\u200d',  // Zero Width Joiner
-      '\u200e',  // Left-to-Right Mark
-      '\u200f',  // Right-to-Left Mark
-      '\u00a0',  // Non-breaking space
-      '\u202f',  // Narrow non-breaking space
-      '\u2060',  // Word joiner
-      '\u2028',  // Line separator
-      '\u2029',  // Paragraph separator
-    ];
+    if (!is_null($text)) {
+    // List of invisible characters to remove (non-breaking spaces, zero-width characters, etc.)
+      $invisibleChars = [
+        '\u200b',  // Zero Width Space
+        '\u200c',  // Zero Width Non-Joiner
+        '\u200d',  // Zero Width Joiner
+        '\u200e',  // Left-to-Right Mark
+        '\u200f',  // Right-to-Left Mark
+        '\u00a0',  // Non-breaking space
+        '\u202f',  // Narrow non-breaking space
+        '\u2060',  // Word joiner
+        '\u2028',  // Line separator
+        '\u2029',  // Paragraph separator
+      ];
 
-    // Remplacer chaque caractère invisible par une chaîne vide
-    foreach ($invisibleChars as $char) {
-      $text = preg_replace('/' . preg_quote($char, '/') . '/u', '', $text);
+      foreach ($invisibleChars as $char) {
+        $text = preg_replace('/' . preg_quote($char, '/') . '/u', '', $text);
+      }
     }
 
-    // Retourne le texte nettoyé des caractères invisibles
     return $text;
   }
 

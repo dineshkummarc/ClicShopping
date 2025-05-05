@@ -73,8 +73,10 @@ class ResultFormatter
   private function generateTableRows(array $data): string
   {
     $rows = "<tbody>";
+
     foreach ($data as $row) {
       $rows .= "<tr>";
+
       foreach ($row as $key => $value) {
         if (!is_numeric($key)) {
           $value = HTMLOverrideCommon::removeInvisibleCharacters($value);
