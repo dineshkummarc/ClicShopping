@@ -10,13 +10,13 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\Manufacturers;
 
-
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 
 class Insert implements \ClicShopping\OM\Modules\HooksInterface
 {
@@ -172,6 +172,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               if (!empty($manufacturers_description)) {
                 $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
+                $embedding_data .= $this->app->getDef('text_manufacturer_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($manufacturers_description) . "\n";
               }
 
               if (!empty($seo_manufacturer_title)) {

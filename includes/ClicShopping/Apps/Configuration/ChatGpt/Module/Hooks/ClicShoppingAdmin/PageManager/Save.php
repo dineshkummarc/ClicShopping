@@ -11,12 +11,14 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\PageManager;
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
+
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\HTML;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 
 class Save implements \ClicShopping\OM\Modules\HooksInterface
 {
@@ -110,6 +112,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
               if (!empty($page_manager_description)) {
                 $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_title' => $page_manager_name]) . ' : ' . $page_manager_description . "\n";
+                $embedding_data .= $this->app->getDef('text_page_manager_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($page_manager_description) . "\n";
               }
 
               if (!empty($seo_page_manager_title)) {

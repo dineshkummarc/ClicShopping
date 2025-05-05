@@ -17,6 +17,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 
 class Update implements \ClicShopping\OM\Modules\HooksInterface
 {
@@ -107,19 +108,20 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             $embedding_data .= $this->app->getDef('text_category_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_name) . "\n";
 
             if (!empty($categories_description)) {
-              $embedding_data .= $this->app->getDef('text_category_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_description) . "\n";;
+              $embedding_data .= $this->app->getDef('text_category_description', ['category_name' => $categories_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_description) . "\n";;
+              $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($categories_description) . "\n";
             }
 
             if (!empty($seo_categories_title)) {
-              $embedding_data .= $this->app->getDef('text_category_seo_title') . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_title) . "\n";;
+              $embedding_data .= $this->app->getDef('text_category_seo_title', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_title) . "\n";;
             }
 
             if (!empty($seo_categories_description)) {
-              $embedding_data .= $this->app->getDef('text_category_seo_description') . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_description) . "\n";;
+              $embedding_data .= $this->app->getDef('text_category_seo_description', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_description) . "\n";;
             }
 
             if (!empty($seo_categories_keywords)) {
-              $embedding_data .= $this->app->getDef('text_seo_keywords') . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_keywords) . "\n";;
+              $embedding_data .= $this->app->getDef('text_seo_keywords', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_keywords) . "\n";;
             }
 
 

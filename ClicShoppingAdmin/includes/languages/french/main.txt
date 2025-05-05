@@ -631,7 +631,13 @@ text_security_guidelines = LIGNES DIRECTRICES IMPORTANTES EN MATIÈRE DE SÉCURI
 6. Limitez les ensembles de résultats pour éviter une exposition excessive des données.
 7. Validez tous les noms de tables et de colonnes par rapport au schéma.
 
-
+text_create_taxonomy = Tu es un système d’analyse documentaire. Extrait une taxonomie conceptuelle structurée du texte suivant.
+Format attendu :
+[domaine]: xxx
+[type]: yyy
+[sujet]: zzz
+etc
+\n\nTexte : {{document_text}}
 
 text_not_analytics = Cette requête ne semble pas être une requête d'analyse.
 text_parentheses_mismatch_error = Parenthèses non correspondantes : {{openParenCount}} ouvrantes contre {{closeParenCount}} fermantes.

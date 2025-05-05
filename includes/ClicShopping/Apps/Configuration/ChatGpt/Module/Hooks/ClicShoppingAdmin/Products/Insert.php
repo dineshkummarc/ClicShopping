@@ -18,6 +18,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 
 /**
  * Class Insert
@@ -258,6 +259,11 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               if (!empty($manufacturer_name)) {
                 $embedding_data .= $this->app->getDef('text_product_brand_name') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturer_name) . "\n";
+              }
+
+              if (!empty($products_description)) {
+                $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
+                $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($products_description) . "\n";
               }
 
               if (!empty($products_ean)) {

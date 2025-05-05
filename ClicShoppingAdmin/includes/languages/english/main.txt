@@ -647,6 +647,13 @@ text_security_guidelines = IMPORTANT SECURITY GUIDELINES:
 6. Limit result sets to prevent excessive data exposure.
 7. Validate all table and column names against the schema.
 
+text_create_taxonomy = You are a document analysis system. Extract a structured conceptual taxonomy from the following text.
+Expected format:
+[domain]: xxx
+[type]: yyy
+[subject]: zzz
+etc
+\n\nText: {{document_text}}
 
 
 text_not_analytics = This query does not appear to be an analytical query.

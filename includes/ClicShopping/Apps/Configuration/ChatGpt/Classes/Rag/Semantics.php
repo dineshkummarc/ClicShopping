@@ -2,6 +2,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
+use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
@@ -273,5 +274,21 @@ class Semantics
     }
 
     return $score;
+  }
+
+    /**
+   * Create a taxonomy from the given text.
+   * The taxonomy is structured as [domain]: xxx, [type]: yyy, [subject]: zzz, etc.
+   *
+   * @param string $text The text to analyze.
+   * @return string The generated taxonomy.
+   */
+  public static function createTaxonomy(string $text): string
+  {
+    $prompt = CLICSHOPPING::getDef('text_create_taxonomy', ['document_text' => $text]);
+
+    $result = Gpt::getGptResponse($prompt);
+
+    return trim($result);
   }
 }

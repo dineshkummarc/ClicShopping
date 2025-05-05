@@ -16,6 +16,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 
 class Insert implements \ClicShopping\OM\Modules\HooksInterface
 {
@@ -168,24 +169,25 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
   // add embedding
   //********************
             if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'True') {
-              $embedding_data =  "\n" . $this->app->getDef('text_category_embedded') . "\n";
+              $embedding_data = "\n" . $this->app->getDef('text_category_embedded') . "\n";
 
               $embedding_data .= $this->app->getDef('text_category_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_name) . "\n";
 
               if (!empty($categories_description)) {
-                $embedding_data .= $this->app->getDef('text_category_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_description) . "\n";
+                $embedding_data .= $this->app->getDef('text_category_description', ['category_name' => $categories_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_description) . "\n";
+                $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($categories_description) . "\n";
               }
 
               if (!empty($seo_categories_title)) {
-                $embedding_data .= $this->app->getDef('text_category_seo_title') . ' : ' .  HtmlOverrideCommon::cleanHtmlForSEO($seo_categories_title) . "\n";
+                $embedding_data .= $this->app->getDef('text_category_seo_title', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForSEO($seo_categories_title) . "\n";
               }
 
               if (!empty($seo_categories_description)) {
-                $embedding_data .= $this->app->getDef('text_category_seo_description') . ': ' .  HtmlOverrideCommon::cleanHtmlForSEO($seo_categories_description) . "\n";
+                $embedding_data .= $this->app->getDef('text_category_seo_description', ['category_name' => $categories_name]) . ': ' .  HtmlOverrideCommon::cleanHtmlForSEO($seo_categories_description) . "\n";
               }
 
               if (!empty($seo_categories_keywords)) {
-                $embedding_data .= $this->app->getDef('text_seo_keywords') . ' : ' .  HtmlOverrideCommon::cleanHtmlForSEO($seo_categories_keywords) . "\n";
+                $embedding_data .= $this->app->getDef('text_category_seo_keywords', ['category_name' => $categories_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForSEO($seo_categories_keywords) . "\n";
               }
 
               $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
