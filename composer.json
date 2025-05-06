@@ -23,8 +23,8 @@
         "doctrine/orm": "^3.3",
         "symfony/cache": "^7.2",
         "doctrine/migrations": "^3.9",
-        "stripe/stripe-php": "^17.1",
-        "theodo-group/llphant": "^0.9.10"
+        "stripe/stripe-php": "^17.2",
+        "theodo-group/llphant": "^0.10.1"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"
