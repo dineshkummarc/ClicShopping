@@ -632,11 +632,15 @@ text_security_guidelines = LIGNES DIRECTRICES IMPORTANTES EN MATIÈRE DE SÉCURI
 7. Validez tous les noms de tables et de colonnes par rapport au schéma.
 
 text_create_taxonomy = Tu es un système d’analyse documentaire. Extrait une taxonomie conceptuelle structurée du texte suivant.
-Format attendu :
-[domaine]: xxx
-[type]: yyy
-[sujet]: zzz
-etc
+Traduit en francais.
+Format attendu via un exemple :
+[domaine]: Arts de la table
+[type_produit]: Produits
+[sujet_produit]: Assiettes, verres
+[type_usage]: Utilisation
+[sujet_usage]: Dîner, réception
+[type_objectif]: Objectif
+[sujet_objectif]: Raffinement, expérience
 \n\nTexte : {{document_text}}
 
 text_not_analytics = Cette requête ne semble pas être une requête d'analyse.

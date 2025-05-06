@@ -102,7 +102,7 @@ class ApiGetOrder
         'billing_country' => $value['billing_country'],
         'payment_method' => $value['payment_method'],
 //order
-        'date_modifed' => $value['billing_country'],
+        'date_modifed' => $value['date_modifed'],
         'date_purchased' => $value['date_purchased'],
         'orders_status' => $value['orders_status'],
         'orders_status_invoice' => $value['orders_status_invoice'],

@@ -26,7 +26,7 @@ class ApiGetCustomer
    * @return array An array of customer data, including fields such as customers_id,
    *               customers_firstname, customers_lastname, and address details.
    */
-  private static function getcustomer(int|string $id)
+  private static function getCustomer(int|string $id)
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
@@ -37,12 +37,11 @@ class ApiGetCustomer
     }
 
     $Qapi = $CLICSHOPPING_Db->prepare('select c.*,
-                                                 a.*
-                                          from :table_customers c left join :table_address_book a on c.customers_default_address_id = a.address_book_id
-                                          where a.customers_id = c.customers_id
-                                          ' . $sql_request . '
-                                        ');
-
+                                              a.*
+                                    from :table_customers c
+                                    left join :table_address_book a on c.customers_default_address_id = a.address_book_id
+                                    where 1 = 1
+                                    ' . $sql_request);
     if (is_numeric($id)) {
       $Qapi->bindInt(':customers_id', $id);
     }
@@ -94,7 +93,7 @@ class ApiGetCustomer
         return json_encode(['error' => 'Invalid ID format']);
       }
 
-      return static::getcustomer($id);
+      return static::getCustomer($id);
     } else {
       return false;
     }

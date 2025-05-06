@@ -22,66 +22,59 @@ class ApiGetSupplier
    * @param int|string $language_id The language ID. This can be an integer or a string.
    * @return array An array of supplier information, including supplier details such as name, contact information, and status.
    */
-  private static function suppliers(int|string $id, int|string $language_id): array
+  private static function suppliers(mixed $id = null, mixed $language_id = null): array
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
-    if (is_numeric($id)) {
-      $sql_request = ' and s.suppliers_id = :suppliers_id';
-    } else {
-      $sql_request = '';
+    $sql = 'SELECT s.*, si.*
+          FROM :table_suppliers s
+          JOIN :table_suppliers_info si ON s.suppliers_id = si.suppliers_id
+          WHERE 1';
+
+    $params = [];
+
+    if ($id !== null && $id !== 'All' && is_numeric($id)) {
+      $sql .= ' AND s.suppliers_id = :suppliers_id';
+      $params[':suppliers_id'] = (int)$id;
     }
 
-    if (is_numeric($language_id)) {
-      $sql_language_request = ' and si.languages_id = :language_id';
-    } else {
-      $sql_language_request = '';
+    if ($language_id !== null && is_numeric($language_id)) {
+      $sql .= ' AND si.languages_id = :language_id';
+      $params[':language_id'] = (int)$language_id;
     }
 
-    $Qapi = $CLICSHOPPING_Db->prepare('select s.*,
-                                                si.*
-                                         from :table_suppliers s,
-                                              :table_suppliers_info si
-                                         where s.suppliers_id = si.suppliers_id     
-                                         ' . $sql_request . '
-                                          ' . $sql_language_request . '
-                                      ');
-    if (is_numeric($id)) {
-      $Qapi->bindInt(':suppliers_id', $id);
-    }
+    $Qapi = $CLICSHOPPING_Db->prepare($sql);
 
-    if (is_numeric($language_id)) {
-      $Qapi->bindInt(':language_id', $language_id);
+    foreach ($params as $key => $value) {
+      $Qapi->bindInt($key, $value);
     }
 
     $Qapi->execute();
 
     $suppliers_data = [];
 
-    $result = $Qapi->fetchAll();
-
-    foreach ($result as $value) {
+    foreach ($Qapi->fetchAll() as $row) {
       $suppliers_data[] = [
-        'suppliers_id' => $value['suppliers_id'],
-        'languages_id' => $value['languages_id'],
-        'suppliers_name' => $value['suppliers_name'],
-        'date_added' => $value['date_added'],
-        'last_modified' => $value['last_modified'],
-        'suppliers_manager' => $value['suppliers_manager'],
-        'suppliers_phone' => $value['suppliers_phone'],
-        'suppliers_email_address' => $value['suppliers_email_address'],
-        'suppliers_fax' => $value['suppliers_fax'],
-        'suppliers_address' => $value['suppliers_address'],
-        'suppliers_suburb' => $value['suppliers_suburb'],
-        'suppliers_postcode' => $value['suppliers_postcode'],
-        'suppliers_city' => $value['suppliers_city'],
-        'suppliers_states' => $value['suppliers_states'],
-        'suppliers_country_id' => $value['suppliers_country_id'],
-        'suppliers_notes' => $value['suppliers_notes'],
-        'suppliers_status' => $value['suppliers_status'],
-        'suppliers_url' => $value['suppliers_url'],
-        'url_clicked' => $value['url_clicked'],
-        'date_last_click' => $value['date_last_click'],
+        'suppliers_id' => $row['suppliers_id'],
+        'languages_id' => $row['languages_id'],
+        'suppliers_name' => $row['suppliers_name'],
+        'date_added' => $row['date_added'],
+        'last_modified' => $row['last_modified'],
+        'suppliers_manager' => $row['suppliers_manager'],
+        'suppliers_phone' => $row['suppliers_phone'],
+        'suppliers_email_address' => $row['suppliers_email_address'],
+        'suppliers_fax' => $row['suppliers_fax'],
+        'suppliers_address' => $row['suppliers_address'],
+        'suppliers_suburb' => $row['suppliers_suburb'],
+        'suppliers_postcode' => $row['suppliers_postcode'],
+        'suppliers_city' => $row['suppliers_city'],
+        'suppliers_states' => $row['suppliers_states'],
+        'suppliers_country_id' => $row['suppliers_country_id'],
+        'suppliers_notes' => $row['suppliers_notes'],
+        'suppliers_status' => $row['suppliers_status'],
+        'suppliers_url' => $row['suppliers_url'],
+        'url_clicked' => $row['url_clicked'],
+        'date_last_click' => $row['date_last_click'],
       ];
     }
 
@@ -89,32 +82,20 @@ class ApiGetSupplier
   }
 
   /**
-   * Executes the function to process request data and retrieve supplier information.
+   * Executes the API call to retrieve supplier data.
    *
-   * Validates the presence of required query parameters 'sId' and 'token', sanitizes inputs,
-   * and ensures that 'lId', if provided, is numeric. If validation fails, returns an error response.
-   *
-   * @return false|string Returns supplier data as a JSON-encoded string, or false if the required parameters are missing.
+   * @return array|false An array of supplier data or false if the token is not set.
    */
   public function execute()
   {
-    if (isset($_GET['sId'], $_GET['token'])) {
-      $id = HTML::sanitize($_GET['sId']);
-
-      if (isset($_GET['lId'])) {
-        $language_id = HTML::sanitize($_GET['lId']);
-      } else {
-        $language_id = '';
-      }
-
-      if (!is_numeric($language_id)) {
-        http_response_code(400);
-        return json_encode(['error' => 'Invalid ID format']);
-      }
-
-      return static::suppliers($id, $language_id);
-    } else {
+    if (!isset($_GET['sId'], $_GET['token'])) {
       return false;
     }
+
+    $id = HTML::sanitize($_GET['sId']);
+    $language_id = isset($_GET['lId']) ? HTML::sanitize($_GET['lId']) : null;
+
+    return static::suppliers($id, $language_id);
   }
+
 }

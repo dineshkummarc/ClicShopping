@@ -16,57 +16,51 @@ use ClicShopping\OM\Registry;
 class ApiGetCategories
 {
   /**
-   * Retrieves category data based on the provided category ID and language ID.
+   * Retrieves category data based on category ID and language ID.
    *
-   * @param int|string $id The category ID. Can be an integer or a string.
-   * @param int|string $language_id The language ID. Can be an integer or a string.
-   * @return array An array containing category data, including categories ID, parent ID, language ID, name, and description.
+   * @param int|string $id The category ID. If numeric, it is used to filter the query.
+   * @param int|string $language_id The language ID. If numeric, it is used to filter the query.
+   * @return array Returns an array of category information including various attributes
+   *               such as name, description, and parent ID.
    */
-  private static function categories(int|string $id, int|string $language_id)
+  private static function categories(mixed $id = null, mixed $language_id = null): array
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
-    if (is_numeric($id)) {
-      $sql_request = ' and c.categories_id = :categories_id';
-    } else {
-      $sql_request = '';
+    $sql = 'SELECT c.*, cd.*
+            FROM :table_categories c
+            JOIN :table_categories_description cd ON c.categories_id = cd.categories_id
+            WHERE 1';
+
+    $params = [];
+
+    if ($id !== null && $id !== 'All' && is_numeric($id)) {
+      $sql .= ' AND c.categories_id = :categories_id';
+      $params[':categories_id'] = (int)$id;
     }
 
-    if (is_numeric($language_id)) {
-      $sql_language_request = ' and cd.language_id = :language_id';
-    } else {
-      $sql_language_request = '';
+    if ($language_id !== null && is_numeric($language_id)) {
+      $sql .= ' AND cd.language_id = :language_id';
+      $params[':language_id'] = (int)$language_id;
     }
 
-    $Qapi = $CLICSHOPPING_Db->prepare('select c.*,
-                                                cd.*
-                                         from :table_categories c,
-                                              :table_categories_description cd 
-                                         where c.categories_id = cd.categories_id
-                                         ' . $sql_request . '
-                                         ' . $sql_language_request . '
-                                      ');
-    if (is_numeric($id)) {
-      $Qapi->bindInt(':categories_id', $id);
-    }
+    $Qapi = $CLICSHOPPING_Db->prepare($sql);
 
-    if (is_numeric($language_id)) {
-      $Qapi->bindInt(':language_id', $language_id);
+    foreach ($params as $key => $value) {
+      $Qapi->bindInt($key, $value);
     }
 
     $Qapi->execute();
 
     $categories_data = [];
 
-    $result = $Qapi->fetchAll();
-
-    foreach ($result as $value) {
+    foreach ($Qapi->fetchAll() as $row) {
       $categories_data[] = [
-        'categories_id' => $value['categories_id'],
-        'parent_id' => $value['parent_id'],
-        'language_id' => $value['language_id'],
-        'categories_name' => $value['categories_name'],
-        'categories_description' => $value['categories_description'],
+        'categories_id' => $row['categories_id'],
+        'parent_id' => $row['parent_id'],
+        'language_id' => $row['language_id'],
+        'categories_name' => $row['categories_name'],
+        'categories_description' => $row['categories_description'],
       ];
     }
 
@@ -74,31 +68,19 @@ class ApiGetCategories
   }
 
   /**
-   * Executes the required process based on the provided GET parameters.
+   * Executes the API call to retrieve category data.
    *
-   * @return string|bool Returns a JSON-encoded string containing the categories data if the parameters are valid.
-   *                     Returns a JSON-encoded error message if the language ID format is invalid.
-   *                     Returns false if required parameters are missing.
+   * @return array|false An array containing category data or false if the token is not set.
    */
   public function execute()
   {
-    $id = HTML::sanitize($_GET['cId']);
-
-    if (isset($_GET['cId'], $_GET['token'])) {
-      if (isset($_GET['lId'])) {
-        $language_id = HTML::sanitize($_GET['lId']);
-      } else {
-        $language_id = '';
-      }
-
-      if (!is_numeric($language_id)) {
-        http_response_code(400);
-        return json_encode(['error' => 'Invalid ID format']);
-      }
-
-      return static::categories($id, $language_id);
-    } else {
+    if (!isset($_GET['token'])) {
       return false;
     }
+
+    $id = isset($_GET['cId']) ? HTML::sanitize($_GET['cId']) : null;
+    $language_id = isset($_GET['lId']) ? HTML::sanitize($_GET['lId']) : null;
+
+    return static::categories($id, $language_id);
   }
 }
