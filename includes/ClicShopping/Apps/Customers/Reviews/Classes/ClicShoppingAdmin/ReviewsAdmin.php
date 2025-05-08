@@ -208,7 +208,7 @@ class ReviewsAdmin
     $Qvote = $CLICSHOPPING_Db->prepare('select count(vote) as vote_yes
                                         from :table_reviews_vote
                                         where sentiment = 1
-                                        and reviews_id = 0
+                                        and reviews_id <> 0
                                         and products_id = :products_id
                                         ');
 
@@ -231,7 +231,7 @@ class ReviewsAdmin
     $Qvote = $CLICSHOPPING_Db->prepare('select count(vote) as vote_no
                                         from :table_reviews_vote
                                         where sentiment = 0
-                                        and reviews_id = 0
+                                        and reviews_id  <> 0
                                         and products_id = :products_id
                                       ');
     $Qvote->bindInt(':products_id', $products_id);

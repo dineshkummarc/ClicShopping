@@ -1,146 +1,52 @@
-document.addEventListener("DOMContentLoaded", function () {
-  // Check if the user has already voted or not
-  function hasUserVoted(reviewId) {
-    const votedReviews = getVotedReviews();
-    return votedReviews.includes(reviewId);
-  }
+$(document).ready(function () {
+  $('.toggleButton').on('click', function () {
+    const $button = $(this);
+    const uniqueId = $button.data('unique-id');
+    const productId = $button.data('product-id');
+    const customerId = $button.data('customer-id');
+    const ajaxUrl = $button.data('ajax-url');
+    const isYes = $button.hasClass('yesButton');
 
-  // Get local voted review to take the id storage
-  function getVotedReviews() {
-    const votedReviews = localStorage.getItem('votedReviews');
-    return votedReviews ? JSON.parse(votedReviews) : [];
-  }
+    const vote = isYes ? 1 : 0;
+    const reviewsId = uniqueId !== 0 ? uniqueId : 0;
+    const sentiment = reviewsId === 0 ? vote : 0;
 
-  // Save function
-  function markReviewAsVoted(reviewId) {
-    const votedReviews = getVotedReviews();
-    if (!votedReviews.includes(reviewId)) {
-      votedReviews.push(reviewId);
-      localStorage.setItem('votedReviews', JSON.stringify(votedReviews));
-
-      // Retrieving data from localStorage using the key "reviewVote"
-      const storedData = JSON.parse(localStorage.getItem("reviewVote"));
-    }
-  }
-
-  // Find all "Oui" buttons and attach the click event handler
-  const yesButtons = document.querySelectorAll('.yesButton');
-
-  yesButtons.forEach(function (yesButton) {
-    yesButton.addEventListener("click", handleButtonClickYes);
-  });
-
-// Function to handle the button click for "Oui"
-  function handleButtonClickYes() {
-    const reviewId = this.getAttribute('data-unique-id');
-    const productId = this.getAttribute('data-product-id');
-    const customerId = this.getAttribute('data-customer-id');
-    const ajaxUrl = this.dataset.ajaxUrl;
-
-    if (productId) {
-      if (!hasUserVoted(reviewId)) {
-        const parentDiv = this.closest(".moduleProductsInfoReviewCustomersNotice");
-        const noButton = parentDiv.querySelector(".noButton");
-        const yesValue = parentDiv.querySelector(".yesValue");
-        const noValue = parentDiv.querySelector(".noValue");
-        const thankYouMessage = parentDiv.querySelector(".thankYouMessage");
-
-        noButton.style.display = "none";
-        noValue.style.display = "none";
-        yesValue.style.display = "none";
-        thankYouMessage.style.display = "inline";
-
-        markReviewAsVoted(reviewId);
-
-        // Make an AJAX call to save the vote to the server
-        saveVoteToServer(reviewId, 1, productId, customerId, ajaxUrl);
-      }
-    } else {
-      console.error("Product ID element not found.");
-    }
-  }
-
-// Find all "Non" buttons and attach the click event handler
-  const noButtons = document.querySelectorAll('.noButton');
-
-  noButtons.forEach(function (noButton) {
-    noButton.addEventListener("click", handleButtonClickNo);
-  });
-
-// Function to handle the button click for "Non"
-  function handleButtonClickNo() {
-    const reviewId = this.getAttribute('data-unique-id');
-    const productId = this.getAttribute('data-product-id');
-    const customerId = this.getAttribute('data-customer-id');
-    const ajaxUrl = this.dataset.ajaxUrl;
-
-    if (productId) {
-      if (!hasUserVoted(reviewId)) {
-        const parentDiv = this.closest(".moduleProductsInfoReviewCustomersNotice");
-        const yesButton = parentDiv.querySelector(".yesButton");
-        const yesValue = parentDiv.querySelector(".yesValue");
-        const noValue = parentDiv.querySelector(".noValue");
-        const thankYouMessage = parentDiv.querySelector(".thankYouMessage");
-
-        yesButton.style.display = "none";
-        yesValue.style.display = "none";
-        noValue.style.display = "none";
-        thankYouMessage.style.display = "inline";
-
-        markReviewAsVoted(reviewId);
-
-        // Make an AJAX call to save the vote to the server
-        saveVoteToServer(reviewId, 0, productId, customerId, ajaxUrl);
-      }
-    } else {
-      console.error("Product ID element not found.");
-    }
-  }
-
-  // Function to send an AJAX request to save the vote to the server
-  function saveVoteToServer(reviewId, vote, productId, customerId, ajaxUrl) {
-
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", ajaxUrl, true);
-    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            // Handle the response from the server if needed
-            console.log('Vote saved for review ' + reviewId + ': vote=' + vote + "&product_id=" + productId + "&customer_id=" + customerId);
-        }
+    // Préparation des données à envoyer
+    const postData = {
+      product_id: productId,
+      customer_id: customerId,
+      vote: vote,
+      reviewId: reviewsId,
+      sentiment: sentiment
     };
-    xhr.send("reviewId=" + reviewId + "&vote=" + vote + "&product_id=" + productId + "&customer_id=" + customerId);
-  }
 
-  // Select all elements with the uniqueId attribute
-  const reviewButtons = document.querySelectorAll('[data-unique-id]'); // Update to 'data-unique-id'
+    // Envoi de la requête AJAX
+    $.ajax({
+      type: 'POST',
+      url: ajaxUrl,
+      data: postData,
+      success: function (response) {
+        // Mise à jour de l'interface utilisateur
+        const $yesValue = $(`#${uniqueId}_yesButton`).siblings('.yesValue');
+        const $noValue = $(`#${uniqueId}_noButton`).siblings('.noValue');
+        const $thankYou = $(`#${uniqueId}_noButton`).siblings('.thankYouMessage');
 
-  // Add event listeners to each button
-  reviewButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      const reviewId = this.getAttribute('data-unique-id'); // Update to 'data-unique-id'
-      if (!hasUserVoted(reviewId)) {
-        const parentDiv = this.closest(".moduleProductsInfoReviewCustomersNotice");
-        const yesButton = parentDiv.querySelector(".yesButton");
-        const noButton = parentDiv.querySelector(".noButton");
-        const yesValue = parentDiv.querySelector(".yesValue");
-        const noValue = parentDiv.querySelector(".noValue");
-        const thankYouMessage = parentDiv.querySelector(".thankYouMessage");
-
-        if (this === yesButton) {
-          noButton.style.display = "none";
-          noValue.style.display = "none";
+        if (isYes) {
+          const currentYes = parseInt($yesValue.text().replace(/\D/g, ''), 10) || 0;
+          $yesValue.text(`(${currentYes + 1})`);
         } else {
-          yesButton.style.display = "none";
-          yesValue.style.display = "none";
+          const currentNo = parseInt($noValue.text().replace(/\D/g, ''), 10) || 0;
+          $noValue.text(`(${currentNo + 1})`);
         }
 
-        thankYouMessage.style.display = "inline";
+        // Affichage du message de remerciement
+        $thankYou.show();
 
-        markReviewAsVoted(reviewId);
-
-        // Make an AJAX call to save the vote to the server
-        saveVoteToServer(reviewId, this === yesButton ? 1 : 0);
+        // Désactivation des boutons pour éviter les votes multiples
+        $(`#${uniqueId}_yesButton, #${uniqueId}_noButton`).off('click').addClass('disabled');
+      },
+      error: function (xhr, status, error) {
+        console.error('Erreur lors de l\'envoi du vote :', error);
       }
     });
   });

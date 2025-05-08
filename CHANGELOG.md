@@ -5,7 +5,7 @@ The goal is to exploit the Gen AI capacities with the rag creating a RAG BI Agen
 small fix and improvment
 librairies updated
 Protect data information by AES-256
-Add embegding for some table
+Add embedding for some table
 new double authentification approach by code
 Add product recommendation module for products_info template using the embedding
 Add rag via chatbot
