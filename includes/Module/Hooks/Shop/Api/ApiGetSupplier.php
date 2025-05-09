@@ -95,7 +95,6 @@ class ApiGetSupplier
     $id = HTML::sanitize($_GET['sId']);
     $language_id = isset($_GET['lId']) ? HTML::sanitize($_GET['lId']) : null;
 
-    return static::suppliers($id, $language_id);
+    return self::suppliers($id, $language_id);
   }
-
 }

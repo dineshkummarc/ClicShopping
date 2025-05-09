@@ -21,7 +21,7 @@ class Login extends \ClicShopping\OM\PagesAbstract
   protected ?string $file = null;
   protected bool $use_site_template = false;
   private mixed $lang;
-  private mixed $db;
+  private mixed $Db;
 
   /**
    * Initializes the API request handling process. This method retrieves necessary dependencies and processes

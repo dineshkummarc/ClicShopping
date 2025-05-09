@@ -90,7 +90,7 @@ class ApiDeleteProduct
         return json_encode(['error' => 'Invalid ID format']);
       }
 
-      return static::deleteProducts($id);
+      return self::deleteProducts($id);
     } else {
       return false;
     }

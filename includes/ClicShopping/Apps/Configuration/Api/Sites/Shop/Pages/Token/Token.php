@@ -18,8 +18,6 @@ class Token extends \ClicShopping\OM\PagesAbstract
 {
   protected ?string $file = null;
   protected bool $use_site_template = false;
-  private mixed $lang;
-  private mixed $db;
 
   /**
    * Initializes the API AI module by sanitizing input data, creating a login instance,

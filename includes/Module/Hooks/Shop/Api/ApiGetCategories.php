@@ -81,6 +81,6 @@ class ApiGetCategories
     $id = isset($_GET['cId']) ? HTML::sanitize($_GET['cId']) : null;
     $language_id = isset($_GET['lId']) ? HTML::sanitize($_GET['lId']) : null;
 
-    return static::categories($id, $language_id);
+    return self::categories($id, $language_id);
   }
 }

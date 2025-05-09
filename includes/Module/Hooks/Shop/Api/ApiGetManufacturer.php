@@ -88,7 +88,6 @@ class ApiGetManufacturer
     $id = HTML::sanitize($_GET['mId']);
     $language_id = isset($_GET['lId']) ? HTML::sanitize($_GET['lId']) : null;
 
-    return static::manufacturers($id, $language_id);
+    return self::manufacturers($id, $language_id);
   }
-
 }

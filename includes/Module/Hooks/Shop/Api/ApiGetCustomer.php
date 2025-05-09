@@ -93,7 +93,7 @@ class ApiGetCustomer
         return json_encode(['error' => 'Invalid ID format']);
       }
 
-      return static::getCustomer($id);
+      return self::getCustomer($id);
     } else {
       return false;
     }

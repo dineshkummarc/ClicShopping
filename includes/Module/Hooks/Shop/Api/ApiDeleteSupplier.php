@@ -79,7 +79,7 @@ class ApiDeleteSupplier
         return json_encode(['error' => 'Invalid ID format']);
       }
 
-      static::deleteSupplier($id);
+      self::deleteSupplier($id);
     } else {
       return false;
     }

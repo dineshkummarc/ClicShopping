@@ -19,7 +19,7 @@ class Orders extends \ClicShopping\OM\PagesAbstract
   protected ?string $file = null;
   protected bool $use_site_template = false;
   private mixed $lang;
-  private mixed $db;
+  private mixed $Db;
 
   /**
    * Initializes the order handling process by determining the request method,

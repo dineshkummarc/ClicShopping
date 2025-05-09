@@ -140,7 +140,7 @@ class ApiGetOrder
         return json_encode(['error' => 'Invalid ID format']);
       }
 
-      return static::getOrder($id);
+      return self::getOrder($id);
     } else {
       return false;
     }

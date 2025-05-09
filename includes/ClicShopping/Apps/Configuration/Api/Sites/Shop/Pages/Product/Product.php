@@ -19,7 +19,7 @@ class Product extends \ClicShopping\OM\PagesAbstract
   protected ?string $file = null;
   protected bool $use_site_template = false;
   private mixed $lang;
-  private mixed $db;
+  private mixed $Db;
 
   /**
    * Initializes the API handling logic based on the HTTP request method.
@@ -52,7 +52,7 @@ class Product extends \ClicShopping\OM\PagesAbstract
           $response = ApiShop::notFoundResponse();
           Registry::get('Session')->kill();
         } else {
-          $response = static::getProduct();
+          $response = self::getProduct();
         }
         break;
       case 'DELETE':
