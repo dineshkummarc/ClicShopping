@@ -16,7 +16,7 @@ use ClicShopping\OM\Registry;
 
 class Suppliers extends \ClicShopping\OM\PagesAbstract
 {
-  protected ?string $file = null;
+  protected string|null $file = null;
   protected bool $use_site_template = false;
   private mixed $lang;
   private mixed $Db;
@@ -51,7 +51,7 @@ class Suppliers extends \ClicShopping\OM\PagesAbstract
           $response = ApiShop::notFoundResponse();
           Registry::get('Session')->kill();
         } else {
-          $response = static::getSupplier();
+          $response = self::getSupplier();
         }
         break;
       case 'DELETE':

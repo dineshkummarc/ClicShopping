@@ -16,7 +16,7 @@ use ClicShopping\OM\Registry;
 
 class Orders extends \ClicShopping\OM\PagesAbstract
 {
-  protected ?string $file = null;
+  protected string|null $file = null;
   protected bool $use_site_template = false;
   private mixed $lang;
   private mixed $Db;

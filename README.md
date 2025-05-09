@@ -77,7 +77,7 @@ Use the Artificial Intlligence to your Ecommerce business with ClicShoppingAI. F
 
 #Requirement (more information in the wiki)
  - Apache 2.4<br>
- - MYSQL 7.x / MariaDb 11.7<br>
+ - MYSQL 9.x / MariaDb 11.7<br>
  - PHP >= 8.3
  - More information in the Wiki
 

@@ -8,13 +8,13 @@
  *
  */
 
-namespace ClicShopping\Apps\Configuration\Api\Sites\Shop\Pages\Product;
+namespace ClicShopping\Apps\Configuration\Api\Sites\Shop\Pages\ProductGpt;
 
 use ClicShopping\Apps\Configuration\Api\Classes\Shop\ApiShop;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class Product extends \ClicShopping\OM\PagesAbstract
+class ProductGpt extends \ClicShopping\OM\PagesAbstract
 {
   protected string|null $file = null;
   protected bool $use_site_template = false;
@@ -52,45 +52,12 @@ class Product extends \ClicShopping\OM\PagesAbstract
           $response = ApiShop::notFoundResponse();
           Registry::get('Session')->kill();
         } else {
-          $response = self::getProduct();
+          $response = self::getProductGpt();
         }
         break;
       case 'DELETE':
-        $token = HTML::sanitize($_GET['token']);
-        $result = ApiShop::checkToken($token);
-
-        $check = $this->statusCheck('delete_product_status', $token);
-
-        if (empty($result) || $check == 0) {
-          $response = ApiShop::notFoundResponse();
-          Registry::get('Session')->kill();
-        } else {
-          $response = static::deleteProduct();
-        }
         break;
       case 'POST':
-        $token = HTML::sanitize($_GET['token']);
-        $result = ApiShop::checkToken($token);
-
-        if (isset($_GET['update'])) {
-          $check = $this->statusCheck('update_product_status', $token);
-
-          if (empty($result) || $check == 0) {
-            $response = ApiShop::notFoundResponse();
-            Registry::get('Session')->kill();
-          } else {
-            $response = static::saveProduct();  
-          }
-        } elseif (isset($_GET['update'])) {
-          $check = $this->statusCheck('insert_product_status', $token);
-
-          if (empty($result) || $check == 0) {
-            $response = ApiShop::notFoundResponse();
-            Registry::get('Session')->kill();
-          } else {
-            $response = static::saveProduct();  
-          }
-        }
         break;
       case 'PUT':
         break;
@@ -112,59 +79,11 @@ class Product extends \ClicShopping\OM\PagesAbstract
    *
    * @return array The HTTP response containing either the product data or a not-found message.
    */
-  private static function getProduct(): array
+  private static function getProductGpt(): array
   {
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
-    $result = $CLICSHOPPING_Hooks->call('Api', 'ApiGetProduct');
-
-    if (empty($result)) {
-      $response = ApiShop::notFoundResponse();
-    } else {
-      $response = ApiShop::HttpResponseOk($result);
-    }
-
-    ApiShop::clearCache();
-
-    return $response;
-  }
-
-  /**
-   * Deletes a product by calling the appropriate API hooks and generates a corresponding HTTP response.
-   *
-   * The method utilizes the ApiDeleteProduct hook to handle the product deletion logic. If the hook returns
-   * no result, a "Not Found" HTTP response is generated. Otherwise, a successful HTTP response with the result
-   * data is returned. The method also clears the cache after the operation.
-   *
-   * @return array Returns an HTTP response representing the outcome of the product deletion operation.
-   */
-  private static function deleteProduct(): array
-  {
-    $CLICSHOPPING_Hooks = Registry::get('Hooks');
-
-    $result = $CLICSHOPPING_Hooks->call('Api', 'ApiDeleteProduct');
-
-    if (empty($result)) {
-      $response = ApiShop::notFoundResponse();
-    } else {
-      $response = ApiShop::HttpResponseOk($result);
-    }
-
-    ApiShop::clearCache();
-
-    return $response;
-  }
-
-  /**
-   * Saves a product by invoking the appropriate hooks and processes the result to return a standardized API response.
-   *
-   * @return array Returns an array containing the API response, which could either be a not-found response or a successful HTTP response with the processed result.
-   */
-  private static function saveProduct(): array
-  {
-    $CLICSHOPPING_Hooks = Registry::get('Hooks');
-
-    $result = $CLICSHOPPING_Hooks->call('Api', 'ApiSaveProduct');
+    $result = $CLICSHOPPING_Hooks->call('Api', 'ApiGetProductGpt');
 
     if (empty($result)) {
       $response = ApiShop::notFoundResponse();
