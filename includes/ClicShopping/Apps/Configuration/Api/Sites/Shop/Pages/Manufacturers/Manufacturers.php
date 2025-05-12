@@ -18,171 +18,202 @@ class Manufacturers extends \ClicShopping\OM\PagesAbstract
 {
   protected string|null $file = null;
   protected bool $use_site_template = false;
-  private mixed $lang;
   private mixed $Db;
 
   /**
-   * Initializes and handles API requests based on the HTTP request method.
-   * This includes interacting with the database to validate tokens and
-   * performing operations such as GET, DELETE, POST, or PUT for manufacturers.
-   *
-   * @return bool|void Returns false if the API application status is not enabled,
-   *                   otherwise it processes the request and exits.
-   */
+    * Initializes the Manufacturers API page, handling authentication, request method routing,
+    * and permission checks for Manufacturer-related API actions (GET, POST, DELETE).
+    */
   protected function init()
   {
-    $this->lang = Registry::get('Language');
     $this->Db = Registry::get('Db');
 
-    if (!\defined('CLICSHOPPING_APP_API_AI_STATUS') && CLICSHOPPING_APP_API_AI_STATUS == 'False') {
-      return false;
+    if (!\defined('CLICSHOPPING_APP_API_AI_STATUS') || CLICSHOPPING_APP_API_AI_STATUS == 'False') {
+      return $this->sendErrorResponse('API is disabled');
     }
 
     $requestMethod = ApiShop::requestMethod();
+    $token = HTML::sanitize($_GET['token'] ?? null);
 
-// Handle the event
+    if (!$token || !ApiShop::checkToken($token)) {
+      return $this->sendErrorResponse('Invalid or missing token');
+    }
+
+    // Handle request method logic
+    $statusCheck = $this->getStatusCheck($token);
+
     switch ($requestMethod) {
       case 'GET':
-        $token = HTML::sanitize($_GET['token']);
-        $result = ApiShop::checkToken($token);
-        $check = $this->statusCheck('get_manufacturer_status', $token);
-
-        if (empty($result) || $check == 0) {
-          $response = ApiShop::notFoundResponse();
-          Registry::get('Session')->kill();
-        } else {
-          $response = self::getManufacturer();
-        }
-        break;
+        return $this->handleGetRequest($statusCheck);
       case 'DELETE':
-        $token = HTML::sanitize($_GET['token']);
-        $result = ApiShop::checkToken($token);
-
-        $check = $this->statusCheck('delete_manufacturer_status', $token);
-
-        if (empty($result) || $check == 0) {
-          $response = ApiShop::notFoundResponse();
-          Registry::get('Session')->kill();
-        } else {
-          $response = static::deleteManufacturer();
-        }
-        break;
+        return $this->handleDeleteRequest($statusCheck);
       case 'POST':
-        $token = HTML::sanitize($_GET['token']);
-        $result = ApiShop::checkToken($token);
-
-        if (isset($_GET['update'])) {
-          $check = $this->statusCheck('update_manufacturer_status', $token);
-
-          if (empty($result) || $check == 0) {
-            $response = ApiShop::notFoundResponse();
-            Registry::get('Session')->kill();
-          } else {
-            $response = static::saveManufacturer();  
-          }
-        } elseif (isset($_GET['update'])) {
-          $check = $this->statusCheck('insert_manufacturer_status', $token);
-
-          if (empty($result) || $check == 0) {
-            $response = ApiShop::notFoundResponse();
-            Registry::get('Session')->kill();
-          } else {
-            $response = static::saveManufacturer();  
-          }
-        }
-        break;
+        return $this->handlePostRequest($statusCheck);
       case 'PUT':
-        break;
+        return $this->handlePutRequest($statusCheck);
       default:
-        $response = ApiShop::notFoundResponse();
-        Registry::get('Session')->kill();
-        break;
+        return $this->sendErrorResponse('Unsupported request method');
+    }
+  }
+
+  /**
+   * Get status check for various actions
+   *
+   * @param string $token The session token used for identifying the API session.
+   * @return array An associative array containing the status checks for various actions.
+   */
+  private function getStatusCheck(string $token): array
+  {
+    return [
+      'get' => $this->statusCheck('get_manufacturer_status', $token),
+      'delete' => $this->statusCheck('delete_manufacturer_status', $token),
+      'update' => $this->statusCheck('update_manufacturer_status', $token),
+      'insert' => $this->statusCheck('insert_manufacturer_status', $token)
+    ];
+  }
+
+  /**
+   * Handle GET request
+   */
+  private function handleGetRequest(array $statusCheck)
+  {
+    if ($statusCheck['get'] == 0) {
+      return $this->sendErrorResponse('Manufacturer fetch not allowed');
     }
 
-    if ($response['body']) {
-      echo $response['body'];
+    return $this->sendSuccessResponse(static::getManufacturers());
+  }
+
+  /**
+   * Handle PUT request
+   */
+  private function handlePutRequest(array $statusCheck)
+  {
+    if (!$statusCheck['update']) {
+      return $this->sendErrorResponse('Update not allowed');
     }
 
+    // Lire le corps PUT brut
+    $data = json_decode(file_get_contents('php://input'), true);
+
+
+    if (!isset($data['manufacturers_id'], $data['language_id'])) {
+      return $this->sendErrorResponse('Missing parameters');
+    }
+
+    // Effectue la mise à jour dans la base de données ici...
+
+    return $this->sendSuccessResponse('Manufacturer updated successfully');
+  }
+
+  /**
+   * Handle DELETE request
+   */
+  private function handleDeleteRequest(array $statusCheck)
+  {
+    if ($statusCheck['delete'] == 0) {
+      return $this->sendErrorResponse('Manufacturer deletion not allowed');
+    }
+
+    return $this->sendSuccessResponse(static::deleteManufacturers());
+  }
+
+  /**
+   * Handle POST request
+   */
+  private function handlePostRequest(array $statusCheck)
+  {
+    if (isset($_GET['update']) && $statusCheck['update'] == 0) {
+      return $this->sendErrorResponse('Manufacturer update not allowed');
+    }
+
+    if (isset($_GET['insert']) && $statusCheck['insert'] == 0) {
+      return $this->sendErrorResponse('Manufacturer insertion not allowed');
+    }
+
+    return $this->sendSuccessResponse(self::saveManufacturers());
+  }
+
+  /**
+   * Sends a success response with the provided data.
+   *
+   * @param mixed $data The data to be included in the success response.
+   * @return array The HTTP response indicating success.
+   */
+  private function sendSuccessResponse(mixed $data): array
+  {
+    echo json_encode(['status' => 'success', 'data' => $data]);
     exit;
   }
 
   /**
-   * Retrieves the manufacturer information by calling the appropriate API hook and handles the response.
+   * Sends an error response with the provided message.
    *
-   * @return array Returns an array containing the API response, which could either be the data for the manufacturer
-   *               or a response indicating that the requested data was not found.
+   * @param string $message The error message to be included in the response.
+   * @return array The HTTP response indicating an error.
    */
-  private static function getManufacturer(): array
+  private function sendErrorResponse(string $message): array
   {
-    $CLICSHOPPING_Hooks = Registry::get('Hooks');
-
-    $result = $CLICSHOPPING_Hooks->call('Api', 'ApiGetManufacturer');
-
-    if (empty($result)) {
-      $response = ApiShop::notFoundResponse();
-    } else {
-      $response = ApiShop::HttpResponseOk($result);
-    }
-
-    ApiShop::clearCache();
-
-    return $response;
+    echo json_encode(['status' => 'error', 'message' => $message]);
+    exit;
   }
 
   /**
-   * Executes the deletion of a manufacturer via the API and returns the HTTP response.
+   * Retrieves a list of Manufacturers through the API.
    *
-   * The method interacts with the Hooks system to perform the manufacturer deletion
-   * and generates an appropriate HTTP response based on the result. It also clears
-   * the cache after the operation.
-   *
-   * @return array The HTTP response indicating the result of the operation.
+   * @return array The API response containing the manufacturers or an error response.
    */
-  private static function deleteManufacturer(): array
+  private static function getManufacturers(): array
   {
-    $CLICSHOPPING_Hooks = Registry::get('Hooks');
-
-    $result = $CLICSHOPPING_Hooks->call('Api', 'ApiDeleteManufacturer');
-
-    if (empty($result)) {
-      $response = ApiShop::notFoundResponse();
-    } else {
-      $response = ApiShop::HttpResponseOk($result);
-    }
-
-    ApiShop::clearCache();
-
-    return $response;
+    return self::handleManufacturersAction('ApiGetManufacturer');
   }
 
   /**
-   * Saves the manufacturer data by calling the associated hook and returns the appropriate response.
+   * Deletes Manufacturer by invoking the 'ApiDeleteManufacturers' hook.
+   * Clears the API cache after the operation is completed.
    *
-   * @return array Returns an HTTP response array indicating the status of the operation or the result data.
+   * @return array The HTTP response indicating the success or failure of the operation.
    */
-  private static function saveManufacturer(): array
+  private static function deleteManufacturers(): array
   {
-    $CLICSHOPPING_Hooks = Registry::get('Hooks');
-
-    $result = $CLICSHOPPING_Hooks->call('Api', 'ApiSaveManufacturer');
-
-    if (empty($result)) {
-      $response = ApiShop::notFoundResponse();
-    } else {
-      $response = ApiShop::HttpResponseOk($result);
-    }
-
-    ApiShop::clearCache();
-
-    return $response;
+    return self::handleManufacturersAction('ApiDeleteManufacturer');
   }
 
   /**
-   * Executes a database query to check the status of a specific column tied to a session.
+   * Saves the provided Manufacturer data through the API call and handles the response.
    *
-   * @param string $string The name of the column to be selected from the database.
-   * @param string $token The session identifier used to retrieve the associated data.
-   * @return int Returns the integer value of the specified column resulting from the query.
+   * @return array The API response, either an HTTP OK response with the results or a not found response if the operation fails.
+   */
+  private static function saveManufacturers(): array
+  {
+    return self::handleManufacturersAction('ApiSaveManufacturer');
+  }
+
+  /**
+   * Handles the Manufacturer action by invoking the appropriate hook and clearing the cache.
+   *
+   * @param string $action The action to be performed (e.g., 'ApiGetManufacturer', 'ApiDeleteManufacturer', etc.).
+   * @return array The HTTP response indicating the success or failure of the operation.
+   */
+  private static function handleManufacturersAction(string $action): array
+  {
+    $CLICSHOPPING_Hooks = Registry::get('Hooks');
+    $result = $CLICSHOPPING_Hooks->call('Api', $action);
+
+    if (empty($result)) {
+      return ApiShop::notFoundResponse();
+    }
+
+    ApiShop::clearCache();
+    return ApiShop::HttpResponseOk($result);
+  }
+
+  /**
+   * Checks the status based on the provided string and token.
+   *
+   * @param string $string The column name to be selected from the database.
+   * @param string $token The session token used for identifying the API session.
+   * @return int The integer value associated with the specified column.
    */
   private function statusCheck(string $string, string $token): int
   {
@@ -193,11 +224,8 @@ class Manufacturers extends \ClicShopping\OM\PagesAbstract
                                           and ase.session_id = :session_id  
                                         ');
     $QstatusCheck->bindValue('session_id', $token);
-
     $QstatusCheck->execute();
 
-    $result = $QstatusCheck->valueInt($string);
-
-    return $result;
+    return $QstatusCheck->valueInt($string);
   }
 }
