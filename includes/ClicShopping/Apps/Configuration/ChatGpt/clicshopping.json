@@ -21,6 +21,9 @@
       "CostEstimation": "Module\\ClicShoppingAdmin\\Dashboard\\CostEstimation"
     },
     "Hooks": {
+      "ClicShoppingAdmin/Language": {
+        "DeleteConfirm": "Module\\Hooks\\ClicShoppingAdmin\\Langues\\DeleteConfirm"
+      },
       "ClicShoppingAdmin/Products": {
         "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\Products\\SeoChatGpt",
         "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Insert",
@@ -57,7 +60,8 @@
         "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\SEO\\SeoChatGpt"
       },
       "ClicShoppingAdmin/Reviews": {
-        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Reviews\\DeleteAll"
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Reviews\\DeleteAll",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Reviews\\Update"
       },
       "ClicShoppingAdmin/ReviewsSentiment": {
         "Update": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\Update",

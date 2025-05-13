@@ -439,15 +439,20 @@ class CategoriesAdmin
    */
   public function getCategoryTree($parent_id = '0', string $spacing = '', $exclude = '', $category_tree_array = '', bool $include_itself = false)
   {
-
-    if (!is_array($category_tree_array)) $category_tree_array = [];
-    if ((count($category_tree_array) < 1) && ($exclude != '0')) $category_tree_array[] = ['id' => '0', 'text' => CLICSHOPPING::getDef('text_top')];
+    if (!is_array($category_tree_array)) {
+      $category_tree_array = [];
+    }
+    if ((count($category_tree_array) < 1) && ($exclude != '0')) {
+      $category_tree_array[] = ['id' => '0', 'text' => CLICSHOPPING::getDef('text_top')];
+    }
 
     if ($include_itself) {
-      $Qcategory = $this->db->get('categories_description', 'categories_name', ['language_id' => $this->lang->getId(),
-          'categories_id' => (int)$parent_id
-        ]
-      );
+      $sql_array = [
+        'language_id' => $this->lang->getId(),
+        'categories_id' => (int)$parent_id
+      ];
+
+      $Qcategory = $this->db->get('categories_description', 'categories_name', $sql_array);
 
       $category_tree_array[] = [
         'id' => $parent_id,
@@ -475,7 +480,13 @@ class CategoriesAdmin
 
 
     while ($Qcategories->fetch()) {
-      if ($exclude != $Qcategories->valueInt('categories_id')) $category_tree_array[] = array('id' => $Qcategories->valueInt('categories_id'), 'text' => $spacing . $Qcategories->value('categories_name'));
+      if ($exclude != $Qcategories->valueInt('categories_id')) {
+        $category_tree_array[] = [
+          'id' => $Qcategories->valueInt('categories_id'),
+          'text' => $spacing . $Qcategories->value('categories_name')
+        ];
+      }
+
       $category_tree_array = $this->getCategoryTree($Qcategories->valueInt('categories_id'), $spacing . '&nbsp;&nbsp;&nbsp;', $exclude, $category_tree_array);
     }
 
@@ -602,7 +613,8 @@ class CategoriesAdmin
         ]
       );
 
-      $categories_array[$index][] = ['id' => (int)$id,
+      $categories_array[$index][] = [
+        'id' => (int)$id,
         'text' => $Qcategory->value('categories_name')
       ];
 
@@ -638,7 +650,9 @@ class CategoriesAdmin
 
     $calculated_category_path_string = substr($calculated_category_path_string, 0, -6);
 
-    if (strlen($calculated_category_path_string) < 1) $calculated_category_path_string = CLICSHOPPING::getDef('text_top');
+    if (strlen($calculated_category_path_string) < 1) {
+      $calculated_category_path_string = CLICSHOPPING::getDef('text_top');
+    }
 
     return $calculated_category_path_string;
   }

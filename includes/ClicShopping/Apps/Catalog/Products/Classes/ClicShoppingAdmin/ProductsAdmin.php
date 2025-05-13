@@ -30,7 +30,6 @@ use function is_null;
  */
 class ProductsAdmin
 {
-  private $id;
   private mixed $db;
   private mixed $template;
   private mixed $hooks;
