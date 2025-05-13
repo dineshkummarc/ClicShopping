@@ -186,7 +186,7 @@ class Manufacturers extends \ClicShopping\OM\PagesAbstract
    */
   private static function saveManufacturers(): array
   {
-    return self::handleManufacturersAction('ApiSaveManufacturer');
+    return self::handleManufacturersAction('ApiPutManufacturer');
   }
 
   /**

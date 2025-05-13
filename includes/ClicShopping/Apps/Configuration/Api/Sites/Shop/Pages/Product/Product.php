@@ -185,7 +185,7 @@ class Product extends \ClicShopping\OM\PagesAbstract
    */
   private static function saveProducts(): array
   {
-    return self::handleProductAction('ApiSaveProduct');
+    return self::handleProductAction('ApiPutProduct');
   }
 
   /**

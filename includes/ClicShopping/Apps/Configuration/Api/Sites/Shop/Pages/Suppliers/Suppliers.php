@@ -185,7 +185,7 @@ class Suppliers extends \ClicShopping\OM\PagesAbstract
    */
   private static function saveSuppliers(): array
   {
-    return self::handleSuppliersAction('ApiSaveSupplier');
+    return self::handleSuppliersAction('ApiPutSupplier');
   }
 
   /**

@@ -10,9 +10,10 @@
 
 namespace ClicShopping\Apps\Configuration\Api\Sites\Shop\Pages\Category;
 
-use ClicShopping\Apps\Configuration\Api\Classes\Shop\ApiShop;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+
+use ClicShopping\Apps\Configuration\Api\Classes\Shop\ApiShop;
 
 class Category extends \ClicShopping\OM\PagesAbstract
 {
@@ -89,18 +90,9 @@ class Category extends \ClicShopping\OM\PagesAbstract
    */
   private function handlePutRequest(array $statusCheck)
   {
-    if (!$statusCheck['update']) {
+    if (!$statusCheck['update'] == 0) {
       return $this->sendErrorResponse('Update not allowed');
     }
-
-    // Lire le corps PUT brut
-    $data = json_decode(file_get_contents('php://input'), true);
-
-    if (!isset($data['categories_id'], $data['language_id'])) {
-      return $this->sendErrorResponse('Missing parameters');
-    }
-
-    // Effectue la mise à jour dans la base de données ici...
 
     return $this->sendSuccessResponse('Category updated successfully');
   }
@@ -185,7 +177,7 @@ class Category extends \ClicShopping\OM\PagesAbstract
    */
   private static function saveCategories(): array
   {
-    return self::handleCategoryAction('ApiSaveCategories');
+    return self::handleCategoryAction('ApiPutCategories');
   }
 
   /**

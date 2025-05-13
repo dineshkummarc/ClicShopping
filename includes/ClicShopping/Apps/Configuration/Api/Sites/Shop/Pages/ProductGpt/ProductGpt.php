@@ -185,7 +185,7 @@ class ProductGpt extends \ClicShopping\OM\PagesAbstract
    */
   private static function saveProductsGpt(): array
   {
-    return self::handleProductGptAction('ApiSaveProduct');
+    return self::handleProductGptAction('ApiPutProduct');
   }
 
   /**

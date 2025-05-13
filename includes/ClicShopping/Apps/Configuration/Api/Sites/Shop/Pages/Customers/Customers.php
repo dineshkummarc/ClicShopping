@@ -185,7 +185,7 @@ class Customers extends \ClicShopping\OM\PagesAbstract
    */
   private static function saveCustomers(): array
   {
-    return self::handleCustomersAction('ApiSaveCustomer');
+    return self::handleCustomersAction('ApiPutCustomer');
   }
 
   /**

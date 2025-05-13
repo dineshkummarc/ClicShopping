@@ -185,7 +185,7 @@ class Orders extends \ClicShopping\OM\PagesAbstract
    */
   private static function saveOrders(): array
   {
-    return self::handleOrderAction('ApiSaveOrder');
+    return self::handleOrderAction('ApiPutOrder');
   }
 
   /**

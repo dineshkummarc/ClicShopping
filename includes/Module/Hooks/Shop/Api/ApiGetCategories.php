@@ -27,7 +27,8 @@ class ApiGetCategories
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
-    $sql = 'SELECT c.*, cd.*
+    $sql = 'SELECT c.*, 
+                   cd.*
             FROM :table_categories c
             JOIN :table_categories_description cd ON c.categories_id = cd.categories_id
             WHERE 1';
@@ -61,6 +62,10 @@ class ApiGetCategories
         'language_id' => $row['language_id'],
         'categories_name' => $row['categories_name'],
         'categories_description' => $row['categories_description'],
+        'categories_seo_url' => $row['categories_seo_url'],
+        'categories_head_title_tag' => $row['categories_head_title_tag'],
+        'categories_head_desc_tag' => $row['categories_head_desc_tag'],
+        'categories_head_keywords_tag' => $row['categories_head_keywords_tag']
       ];
     }
 

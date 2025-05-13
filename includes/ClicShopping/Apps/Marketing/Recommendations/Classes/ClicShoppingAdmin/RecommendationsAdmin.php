@@ -89,7 +89,7 @@ class RecommendationsAdmin
     }
 
     // Normalize the user feedback to a value between -1 and 1
-    $userFeedback = static::calculateUserFeedbackScore($userFeedback);
+    $userFeedback = self::calculateUserFeedbackScore($userFeedback);
 
     // If the review rate is low (e.g., 1), give more weight to the sentiment score
     if ($reviewRate <= 0.2) {
@@ -117,28 +117,25 @@ class RecommendationsAdmin
    *
    * @param float|null $productsRateWeight The weight of the product rating in score calculation. Defaults to 0.8.
    * @param float|null $reviewRate The review rate of the product, adjusted to a scale of 0 to 1. Defaults to 0.
-   * @param int|null $userFeedback The numeric feedback provided by the user, normalized between -1 and 1. Defaults to 0.
+   * @param float|null $userFeedback The numeric feedback provided by the user, normalized between -1 and 1. Defaults to 0.
    * @param string|null $strategy The scoring strategy to be applied (e.g., 'Range' or other strategies). Defaults to 'Range'.
    * @param float|null $sentimentScore The sentiment score associated with product feedback, if available.
    *
    * @return float The calculated recommendation score based on the provided inputs and strategy.
    */
-  public function calculateRecommendationScore(?float $productsRateWeight = 0.8, ?float $reviewRate = 0,  int|null $userFeedback = 0, ?string $strategy = 'Range', ?float $sentimentScore = null): float
+  public function calculateRecommendationScore(float $productsRateWeight =  0.8, float|null $reviewRate = 0, float|null $userFeedback = 0, string|null $strategy = 'Range', float|null $sentimentScore = null): float
   {
-    // Adjust the review rate to be between 0 and 1
     $maxReviewRate = 5; // Maximum possible review rate
     $reviewRate = $reviewRate / $maxReviewRate;
 
     // Normalize the user feedback to a value between -1 and 1
-    $userFeedback = static::calculateUserFeedbackScore($userFeedback);
+    $userFeedback = self::calculateUserFeedbackScore($userFeedback);
 
     if ($strategy == 'Range') {
-      return static::calculateRecommendationScoreBasedOnRange($productsRateWeight, $reviewRate, $userFeedback, null, $sentimentScore);
+      return self::calculateRecommendationScoreBasedOnRange($productsRateWeight, $reviewRate, $userFeedback, null, $sentimentScore);
     } else {
-      return static::calculateRecommendationScoreWithMultipleSources($productsRateWeight, $reviewRate, $userFeedback, $sentimentScore);
+      return self::calculateRecommendationScoreWithMultipleSources($productsRateWeight, $reviewRate, $userFeedback, $sentimentScore);
     }
-
-    return $score;
   }
 
   /**
@@ -153,12 +150,12 @@ class RecommendationsAdmin
    * @return array Returns an array of the most recommended products, each containing the product ID,
    *               recommendation count, recommendation date, and maximum score.
    */
-  public function getMostRecommendedProducts(int $limit = 10, string|int $customers_group_id = 99, ?string $date): array
+  public function getMostRecommendedProducts(int $limit = 10, string|int $customers_group_id = 99, string|null $date): array
   {
     if ($customers_group_id == 99) {
       $customers_group = 'AND customers_group_id >= 0';
     } elseif ($customers_group_id > 0) {
-      $customers_group = 'AND customers_group_id = ' . $customers_group_id;
+      $customers_group = 'AND customers_group_id = ' . (int)$customers_group_id;
     } else {
       $customers_group = 'AND customers_group_id = 0';
     }
@@ -203,12 +200,12 @@ class RecommendationsAdmin
    * @param ?string $date The date range filter for retrieving rejected products. Defaults to null for no date filtering.
    * @return array The list of rejected products, including their IDs, rejection count, recommendation dates, and scores.
    */
-  public function getRejectedProducts(int $limit = 10, string|int $customers_group_id = 99, ?string $date): array
+  public function getRejectedProducts(int $limit = 10, int $customers_group_id = 99, string|null $date): array
   {
     if ($customers_group_id == 99) {
       $customers_group = '';
     } elseif ($customers_group_id > 0) {
-      $customers_group = ' AND customers_group_id = ' . $customers_group_id;
+      $customers_group = ' AND customers_group_id = ' . (int)$customers_group_id;
     } else {
       $customers_group = ' AND customers_group_id = 0';
     }
@@ -216,6 +213,7 @@ class RecommendationsAdmin
     $maxRejectedScore = (float)CLICSHOPPING_APP_RECOMMENDATIONS_PR_MAX_SCORE;
 
     $currentDate = date('Y-m-d');
+
     if (empty($date)) {
       $date_analyse = '';
     } else {
@@ -250,7 +248,7 @@ class RecommendationsAdmin
    * @param float|null $userFeedback The feedback score provided by the user, which may fall outside the range of -1 to 1 or be null.
    * @return float The normalized feedback score, ensuring it is within the range of -1 and 1.
    */
-  public static function calculateUserFeedbackScore(?float $userFeedback): float
+  public static function calculateUserFeedbackScore(float|null $userFeedback): float
   {
     $normalizedFeedback = max(-1, min(1, $userFeedback));
 
