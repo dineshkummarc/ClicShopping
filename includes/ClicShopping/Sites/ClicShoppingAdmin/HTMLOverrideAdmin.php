@@ -72,7 +72,7 @@ class HTMLOverrideAdmin extends HTML
 
     if (!empty($class)) $select_string .= ' class="' . $class . '"';
 
-    $select_string .= ' />';
+    $select_string .= ' >';
 
     $all_groups = [];
 

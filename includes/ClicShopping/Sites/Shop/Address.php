@@ -318,7 +318,7 @@ class Address
    * @return array An array of zones, where each zone includes the zone ID, name, country ID, and country name.
    */
 
-  public static function getZones($id = null): array
+  public static function getZones(int|null $id = null): array
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
@@ -358,9 +358,9 @@ class Address
         'country_id' => $Qzones->valueInt('zone_country_id'),
         'country_name' => $Qzones->value('countries_name')
       ];
-
-      return $zones_array;
     }
+
+    return $zones_array;
   }
 
   /**

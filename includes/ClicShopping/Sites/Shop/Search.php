@@ -167,6 +167,8 @@ class Search
   public function setDateFrom(string $timestamp): string
   {
     $this->_date_from = $timestamp;
+
+    return $this->_date_from;
   }
 
   /**
@@ -427,12 +429,13 @@ class Search
    *
    * @return int|null The sanitized category ID if present, null otherwise.
    */
-  private function getCategoryID():  int|null
+  private function getCategoryID(): int|null
   {
+    $category_id = null;
     if (isset($_POST['categories_id']) && !empty($_POST['categories_id'])) {
-      $category_id = HTML::sanitize($_POST['categories_id']);
+      $category_id = (int)HTML::sanitize($_POST['categories_id']);
     } elseif (isset($_GET['categories_id']) && !empty($_GET['categories_id'])) {
-      $category_id = HTML::sanitize($_GET['categories_id']);
+      $category_id = (int)HTML::sanitize($_GET['categories_id']);
     }
     return $category_id;
   }
@@ -513,6 +516,8 @@ class Search
 
       return $column_list;
     }
+
+    return [];
   }
 
   /*

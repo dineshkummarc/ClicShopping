@@ -76,6 +76,11 @@ class Shop extends \ClicShopping\OM\SitesAbstract
                                              configuration_value as v
                                          from :table_configuration
                                        ');
+
+    if ($Qcfg === false || !is_object($Qcfg)) {
+      throw new \RuntimeException('Database prepare failed');
+    }
+
     $Qcfg->setCache('configuration');
 
     $Qcfg->execute();

@@ -31,16 +31,16 @@ class HTMLOverrideCommon extends HTML
     if (!is_null($text)) {
     // List of invisible characters to remove (non-breaking spaces, zero-width characters, etc.)
       $invisibleChars = [
-        '\u200b',  // Zero Width Space
-        '\u200c',  // Zero Width Non-Joiner
-        '\u200d',  // Zero Width Joiner
-        '\u200e',  // Left-to-Right Mark
-        '\u200f',  // Right-to-Left Mark
-        '\u00a0',  // Non-breaking space
-        '\u202f',  // Narrow non-breaking space
-        '\u2060',  // Word joiner
-        '\u2028',  // Line separator
-        '\u2029',  // Paragraph separator
+        "\u{200B}", // Zero Width Space
+        "\u{200C}", // Zero Width Non-Joiner
+        "\u{200D}", // Zero Width Joiner
+        "\u{200E}", // Left-to-Right Mark
+        "\u{200F}", // Right-to-Left Mark
+        "\u{00A0}", // Non-breaking space
+        "\u{202F}", // Narrow non-breaking space
+        "\u{2060}", // Word joiner
+        "\u{2028}", // Line separator
+        "\u{2029}", // Paragraph separator
       ];
 
       foreach ($invisibleChars as $char) {

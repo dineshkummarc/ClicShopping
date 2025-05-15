@@ -134,7 +134,10 @@ class Breadcrumb implements \Iterator
    */
   public function setSeparator(string $separator): ?string
   {
+    $previous = $this->_separator;
     $this->_separator = $separator;
+
+    return $previous;
   }
 
   /**
@@ -195,7 +198,7 @@ class Breadcrumb implements \Iterator
    * @return string|bool Returns the generated breadcrumb result as a string if successful,
    *                     or false if no categories or manufacturers are found.
    */
-  public function getCategoriesManufacturer(): string
+  public function getCategoriesManufacturer(): string|bool
   {
     $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_Language = Registry::get('Language');

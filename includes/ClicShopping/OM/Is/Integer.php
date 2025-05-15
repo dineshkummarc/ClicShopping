@@ -25,7 +25,7 @@ class Integer implements \ClicShopping\OM\IsInterface
    * @param int|null $max Optional. The maximum allowable value, inclusive.
    * @return bool Returns true if the value is a valid integer within the range, otherwise false.
    */
-  public static function execute($value, int $min = null, int $max = null): bool
+  public static function execute(mixed $value, int|null $min = null, int|null $max = null): bool
   {
     $options = [];
 

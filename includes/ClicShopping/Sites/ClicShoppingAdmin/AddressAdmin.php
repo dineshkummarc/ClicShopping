@@ -94,11 +94,11 @@ class AddressAdmin extends \ClicShopping\Sites\Shop\Address
    * Retrieves the name of a geo zone based on its ID.
    *
    * @param int $geo_zone_id The ID of the geo zone to fetch the name for.
-   * @return int|null Returns the geo zone name as a string if found,
+   * @return string|null Returns the geo zone name as a string if found,
    *                  or the provided geo zone ID as an integer if not found,
    *                  or null on failure.
    */
-  public static function getGeoZoneName(int $geo_zone_id):  int|null
+  public static function getGeoZoneName(int $geo_zone_id):  string|null
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
@@ -106,7 +106,7 @@ class AddressAdmin extends \ClicShopping\Sites\Shop\Address
                                            from :table_geo_zones
                                            where geo_zone_id = :geo_zone_id
                                            ');
-    $Qzones->bindInt(':geo_zone_id', (int)$geo_zone_id);
+    $Qzones->bindInt(':geo_zone_id', $geo_zone_id);
     $Qzones->execute();
 
     if ($Qzones->fetch() === false) {

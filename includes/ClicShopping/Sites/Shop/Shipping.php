@@ -168,25 +168,28 @@ class Shipping
    *                    details such as 'id', 'title', 'info', and 'cost'. Returns null
    *                    if no valid shipping method is found.
    */
-  public function getFirst()
+  public function getFirst():array|null
   {
     foreach ($this->modules as $value) {
       if (str_contains($value, '\\')) {
         $obj = Registry::get('Shipping_' . str_replace('\\', '_', $value));
-      }
-      if ($obj->enabled) {
-        foreach ($obj->quotes['methods'] as $method) {
-          if (isset($method['cost']) && !is_null($method['cost'])) {
-            return [
-              'id' => $obj->quotes['id'] . '_' . $method['id'],
-              'title' => $obj->quotes['module'] . (isset($method['title']) && !empty($method['title']) ? ' (' . $method['title'] . ')' : ''),
-              'info' => $obj->quotes['info'] . (isset($method['info']) && !empty($method['info']) ? ' (' . $method['info'] . ')' : ''),
-              'cost' => $method['cost']
-            ];
+
+        if ($obj->enabled) {
+          foreach ($obj->quotes['methods'] as $method) {
+            if (isset($method['cost']) && !is_null($method['cost'])) {
+              return [
+                'id' => $obj->quotes['id'] . '_' . $method['id'],
+                'title' => $obj->quotes['module'] . (isset($method['title']) && !empty($method['title']) ? ' (' . $method['title'] . ')' : ''),
+                'info' => $obj->quotes['info'] . (isset($method['info']) && !empty($method['info']) ? ' (' . $method['info'] . ')' : ''),
+                'cost' => $method['cost']
+              ];
+            }
           }
         }
       }
     }
+
+    return null;
   }
 
   /**
@@ -199,30 +202,29 @@ class Shipping
    *                     (including 'id', 'title', 'info', and 'cost')
    *                     or false if no rates are available.
    */
-  public function getCheapest()
+
+  public function getCheapest(): array|false
   {
     if (is_array($this->modules)) {
       $rates = [];
-      $obj = [];
+      $obj = null;
 
       foreach ($this->modules as $value) {
         if (str_contains($value, '\\')) {
           $obj = Registry::get('Shipping_' . str_replace('\\', '_', $value));
         }
 
-        if (!array($obj)) {
-          if ($obj->enabled) {
-            $quotes = $obj->quotes;
+        if (is_object($obj) && $obj->enabled) {
+          $quotes = $obj->quotes;
 
-            for ($i = 0, $n = count($quotes['methods'] ?: []); $i < $n; $i++) {
-              if (isset($quotes['methods'][$i]['cost']) && !is_null($quotes['methods'][$i]['cost'])) {
-                $rates[] = [
-                  'id' => $quotes['id'] . '_' . $quotes['methods'][$i]['id'],
-                  'title' => $quotes['module'] . (isset($quotes['methods'][$i]['title']) && !empty($quotes['methods'][$i]['title']) ? ' (' . $quotes['methods'][$i]['title'] . ')' : ''),
-                  'info' => $quotes['info'] . (isset($quotes['methods'][$i]['info']) && !empty($quotes['methods'][$i]['info']) ? ' (' . $quotes['methods'][$i]['info'] . ')' : ''),
-                  'cost' => $quotes['methods'][$i]['cost']
-                ];
-              }
+          for ($i = 0, $n = count($quotes['methods'] ?: []); $i < $n; $i++) {
+            if (isset($quotes['methods'][$i]['cost']) && !is_null($quotes['methods'][$i]['cost'])) {
+              $rates[] = [
+                'id' => $quotes['id'] . '_' . $quotes['methods'][$i]['id'],
+                'title' => $quotes['module'] . (isset($quotes['methods'][$i]['title']) && !empty($quotes['methods'][$i]['title']) ? ' (' . $quotes['methods'][$i]['title'] . ')' : ''),
+                'info' => $quotes['info'] . (isset($quotes['methods'][$i]['info']) && !empty($quotes['methods'][$i]['info']) ? ' (' . $quotes['methods'][$i]['info'] . ')' : ''),
+                'cost' => $quotes['methods'][$i]['cost']
+              ];
             }
           }
         }
@@ -242,6 +244,8 @@ class Shipping
 
       return $cheapest;
     }
+
+    return false;
   }
 
   /**

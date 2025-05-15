@@ -32,7 +32,7 @@ class IpAddress implements \ClicShopping\OM\IsInterface
    *
    * @return bool Returns true if the value is a valid IP address of the specified type. Returns false otherwise.
    */
-  public static function execute($value, string $type = 'any'): bool
+  public static function execute(mixed $value, string $type = 'any'): bool
   {
     if (empty($value)) {
       return false;

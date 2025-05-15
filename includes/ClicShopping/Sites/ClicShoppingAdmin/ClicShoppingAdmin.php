@@ -64,18 +64,18 @@ class ClicShoppingAdmin extends \ClicShopping\OM\SitesAbstract
 
 // set the application parameters
     $Qcfg = $CLICSHOPPING_Db->prepare('select configuration_key as k,
-                                                configuration_value as v
-                                         from :table_configuration
-                                       ');
+                                            configuration_value as v
+                                     from :table_configuration
+                                   ');
 
-    $Qcfg->setCache('configuration');
+    if (is_object($Qcfg)) {
+      $Qcfg->setCache('configuration');
+      $Qcfg->execute();
 
-    $Qcfg->execute();
-
-    while ($Qcfg->fetch()) {
-      define($Qcfg->value('k'), $Qcfg->value('v'));
+      while ($Qcfg->fetch()) {
+        define($Qcfg->value('k'), $Qcfg->value('v'));
+      }
     }
-
 // Used in the "Backup Manager" to compress backups
     define('LOCAL_EXE_GZIP', 'gzip');
     define('LOCAL_EXE_GUNZIP', 'gunzip');
@@ -186,7 +186,13 @@ class ClicShoppingAdmin extends \ClicShopping\OM\SitesAbstract
         if (str_contains($app, '\\')) {
           list($vendor, $app) = explode('\\', $app);
 
-          if (Apps::exists($vendor . '\\' . $app) && ($page = Apps::getRouteDestination(null, $vendor . '\\' . $app)) !== null) {
+          $page = Apps::getRouteDestination(null, $vendor . '\\' . $app);
+
+          if (is_array($page)) {
+            $page = (string)reset($page);
+          }
+
+          if (Apps::exists($vendor . '\\' . $app) && $page!== null) {
 // get controller class name from namespace
             $page_namespace = explode('\\', $page);
             $page_code = $page_namespace[count($page_namespace) - 1];

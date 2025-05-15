@@ -27,7 +27,7 @@ class Tax extends \ClicShopping\Sites\Shop\Tax
    *
    * @return float The tax rate for the specified parameters.
    */
-  public function getTaxRate($class_id, $country_id = null, $zone_id = null)
+  public function getTaxRate(int|null $class_id, int|null $country_id = null, int|null $zone_id = null): float
   {
     if (!isset($country_id) && !isset($zone_id)) {
       $country_id = HTML::sanitize(STORE_COUNTRY);
@@ -57,12 +57,14 @@ class Tax extends \ClicShopping\Sites\Shop\Tax
   }
 
   /**
+   * Calculates the tax amount based on the provided price and tax rate.
    *
-   * @param float $price The initial price of the product or service.
-   * @param float $tax The tax rate to be applied, expressed as a percentage.
-   * @param bool $override An optional flag to force tax calculation regardless of settings.
+   * @param mixed $price The price to calculate the tax for.
+   * @param mixed $tax The tax rate to apply.
+   * @param bool $override Optional. If true, forces the calculation even if DISPLAY_PRICE_WITH_TAX is false.
+   * @return mixed The calculated tax amount.
    */
-  public static function addTax($price, $tax, $override = false)
+  public static function addTax(mixed $price, mixed $tax, bool $override = false): mixed
   {
     if (((DISPLAY_PRICE_WITH_TAX == 'true') || ($override === true)) && ($tax > 0)) {
       return $price + parent::calculate($price, $tax);

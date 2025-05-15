@@ -136,7 +136,7 @@ class Composer
    * @param string|null $library The name of the library whose version is to be checked. If null, the function will return false.
    * @return string|false The version information of the specified library if successful, or false if an error occurs or the library is not provided.
    */
-  public static function checkOnlineVersion($library = null)
+  public static function checkOnlineVersion(null|string $library = null): bool|string
   {
     if (self::checkExecute() === true) {
       if (!is_null($library)) {
@@ -156,6 +156,7 @@ class Composer
         return false;
       }
     }
+    return false; // <-- Add this line
   }
 
   /**
@@ -182,7 +183,7 @@ class Composer
    * @param string|null $library The name of the specific library to update. If null, updates all dependencies.
    * @return string The output message from the update operation, typically the third line of the composer output.
    */
-  public static function update($library = null)
+  public static function update(null|string $library = null): string
   {
     $result = '';
 
@@ -203,6 +204,8 @@ class Composer
 
       return $result;
     }
+
+    return ''; // <-- Add this line
   }
 
 
@@ -212,7 +215,7 @@ class Composer
    * @param string|null $library The name of the library to install. If null, installation will not proceed.
    * @return string|bool Returns the output message of the installation process or false if the library parameter is null.
    */
-  public static function install($library = null)
+  public static function install(null|string $library = null):string|bool
   {
     $result = '';
 
@@ -230,6 +233,8 @@ class Composer
 
       return $result;
     }
+
+    return false; // <-- Add this line
   }
 
   /**
@@ -239,13 +244,13 @@ class Composer
    * @param string|null $library The name of the library to remove. Defaults to null.
    * @return string The result message from the remove operation.
    */
-  public static function remove($library = null): string
+  public static function remove(string|null $library = null): string
   {
     if (self::checkExecute() === true) {
       $result = '';
 
       $cmd = 'cd ' . self::$root . ' && composer remove ' . $library . ' 2>&1';
-      exec($cmd, $output, $return); // update dependencies
+      exec($cmd, $output, $return);
 
       if (isset($output)) {
         $result = $output[2];
@@ -253,7 +258,9 @@ class Composer
 
       return $result;
     }
+    return ''; // Ensure a string is always returned
   }
+
 
   /**
    * Clears the cache by executing the composer clearcache command.
@@ -274,5 +281,7 @@ class Composer
 
       return $result;
     }
+
+    return ''; // Ensure a string is always returned
   }
 }
