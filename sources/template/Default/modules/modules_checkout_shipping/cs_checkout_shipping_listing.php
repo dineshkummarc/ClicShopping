@@ -147,11 +147,13 @@ class cs_checkout_shipping_listing
           $data .= '</table>';
         }
 
-        ob_start();
-        require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/checkout_shipping_listing'));
+        if (!empty($data)) {
+          ob_start();
+          require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/checkout_shipping_listing'));
 
-        $shipping_listing .= ob_get_clean();
-
+          $shipping_listing .= ob_get_clean();
+        }
+	
         $shipping_listing .= '<!--  end checkout_shipping_listing -->' . "\n";
 
         $CLICSHOPPING_Template->addBlock($shipping_listing, $this->group);

@@ -30,15 +30,15 @@ class HeaderTags
    * @return string The formatted footer tag content with links created for each keyword.
    */
 
-  public static function geFooterTag(): string
+  public static function getFooterTag(): string
   {
     $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_Language = Registry::get('Language');
 
     $Qsubmit_footer = $CLICSHOPPING_Db->prepare('select seo_defaut_language_footer
-                                                    from :table_seo
-                                                    where language_id = :language_id
-                                                  ');
+                                                  from :table_seo
+                                                  where language_id = :language_id
+                                                ');
     $Qsubmit_footer->bindInt(':language_id', (int)$CLICSHOPPING_Language->getId());
     $Qsubmit_footer->execute();
 
@@ -57,6 +57,8 @@ class HeaderTags
 
       return $footer_content;
     }
+
+    return '';
   }
 
   /**
