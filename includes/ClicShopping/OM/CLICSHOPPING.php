@@ -35,6 +35,7 @@ class CLICSHOPPING
   protected static string $site = 'Shop';
   protected static array $cfg = [];
   protected static ?string $application;
+  protected static string $directoryVersion;
 
   /**
    * Initializes the system by setting up configuration, error handling, HTTP settings, and the site application.

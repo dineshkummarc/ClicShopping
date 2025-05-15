@@ -15,14 +15,14 @@ namespace ClicShopping\OM;
  */
 class Cookies
 {
-  protected ?string $domain;
-  protected ?string $path;
+  protected string|null $domain;
+  protected string|null $path;
 
   protected string $name;
-  protected ?string $value;
+  protected string|null $value;
   protected int $expire;
   protected bool $secure;
-  protected bool $httpOnly;
+
   protected ?string $sameSite;
 
   /**
@@ -106,9 +106,12 @@ class Cookies
    * @param string $domain The domain to be set.
    * @return string|null The previously set domain, or null if none was set.
    */
-  public function setDomain(string $domain): ?string
+  public function setDomain(string $domain): string|null
   {
+    $previous = $this->domain;
     $this->domain = $domain;
+
+    return $previous;
   }
 
   /**
@@ -117,9 +120,12 @@ class Cookies
    * @param string|null $path The new value for the path, or null.
    * @return string|null The updated path value, or null if not set.
    */
-  public function setPath(?string $path): ?string
+  public function setPath(string|null $path): string|null
   {
+    $previous = $this->path;
     $this->path = $path;
+
+    return $previous;
   }
 
   /**
@@ -128,9 +134,12 @@ class Cookies
    * @param string|null $same_site The SameSite attribute value, or null to unset it.
    * @return string|null The previously set SameSite attribute value, or null if none was set.
    */
-  public function setSameSite(?string $same_site): ?string
+  public function setSameSite(string|null $same_site): string|null
   {
+    $previous = $this->sameSite;
     $this->sameSite = $same_site;
+
+    return $previous;
   }
 
 

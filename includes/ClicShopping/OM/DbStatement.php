@@ -238,7 +238,7 @@ class DbStatement extends \PDOStatement
    * Fetches a single column from the next row of the result set.
    *
    * @param int $column_number The column number to fetch (default: 0).
-   * @return mixed The value of the specified column or false on failure.
+   * @return bool The value of the specified column or false on failure.
    */
   public function check()
   {

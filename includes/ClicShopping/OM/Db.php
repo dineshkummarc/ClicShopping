@@ -36,9 +36,9 @@ class Db extends PDO
   protected string $database;
   protected string $table_prefix;
   protected int|null $port;
-  protected ?array $driver_options = [];
-  protected ?array $options = [];
-  protected $query_call;
+  protected array|null $driver_options = [];
+  protected array|null $options = [];
+
 
   /**
    * Initializes a database connection.
@@ -159,7 +159,7 @@ class Db extends PDO
    * @param mixed ...$params Optional parameters to bind to the query.
    * @return PDOStatement|false Returns the PDOStatement object if the query was successful, or false on failure.
    */
-  public function query(string $statement, ...$params): PDOStatement|false
+  public function query(string $statement, ?int $fetchMode = null, ...$fetchModeArgs): PDOStatement|false
   {
     $statement = $this->autoPrefixTables($statement);
 

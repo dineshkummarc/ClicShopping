@@ -91,6 +91,7 @@ class Apps
 
     if (is_dir($vendor_directory)) {
       if ($vdir = new DirectoryIterator($vendor_directory)) {
+        $tempResults = [];
         foreach ($vdir as $vendor) {
           if (!$vendor->isDot() && $vendor->isDir() && (!isset($filter_vendor) || ($vendor->getFilename() == $filter_vendor))) {
             if ($adir = new DirectoryIterator($vendor->getPath() . DIRECTORY_SEPARATOR . $vendor->getFilename())) {
@@ -104,8 +105,10 @@ class Apps
                     }
 
                     foreach ($modules as $key => $data) {
-                      $result = array_merge($result, $CLICSHOPPING_Type->getInfo($vendor->getFilename() . '\\' . $app->getFilename(), $key, $data));
+                      $tempResults[] = $CLICSHOPPING_Type->getInfo($vendor->getFilename() . '\\' . $app->getFilename(), $key, $data);
                     }
+
+                    $result = array_merge(...$tempResults);
                   }
                 }
               }
