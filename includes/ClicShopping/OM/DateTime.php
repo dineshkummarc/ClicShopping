@@ -93,13 +93,16 @@ class DateTime
    */
   public function get(string|null $pattern = null): bool|string
   {
+    if (!$this->isValid()) {
+      return false;
+    }
+
     if (isset($pattern)) {
       return $this->datetime->format($pattern);
     }
 
     return $this->datetime;
   }
-
   /**
    * Generates a formatted date string based on the specified configuration.
    *
@@ -109,11 +112,12 @@ class DateTime
 
   public function getShort(bool $with_time = false): string
   {
+    if (!$this->isValid()) {
+      return '';
+    }
     $pattern = ($with_time === false) ? CLICSHOPPING::getDef('date_format_short') : CLICSHOPPING::getDef('date_time_format');
 
-    $date = new DateTime($pattern, true, true);
-
-    return date($pattern, $date->getTimestamp());
+    return $this->datetime->format($pattern);
   }
 
   /**
@@ -181,9 +185,13 @@ class DateTime
    */
   public function getLong(): string
   {
-    $pattern = new DateTime(CLICSHOPPING::getDef('date_format_long'), true, true);
+    if (!$this->isValid()) {
+      return '';
+    }
 
-    return date($pattern, $this->getTimestamp());
+    $pattern = CLICSHOPPING::getDef('date_format_long');
+
+    return $this->datetime->format($pattern);
   }
 
   /**
@@ -319,9 +327,13 @@ class DateTime
    */
   public function getDateReferenceShort(): string
   {
-    $pattern = new DateTime(CLICSHOPPING::getDef('date_format'), true, true);
+    if (!$this->isValid()) {
+      return '';
+    }
 
-    return date($pattern, $this->getTimestamp());
+    $pattern = CLICSHOPPING::getDef('date_format');
+
+    return $this->datetime->format($pattern);
   }
 
   /**
