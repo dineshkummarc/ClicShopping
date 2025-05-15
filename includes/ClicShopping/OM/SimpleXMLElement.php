@@ -27,8 +27,8 @@ class SimpleXMLElement extends \SimpleXMLElement
    */
   public function addChildCData(string $name, string $value)
   {
-//      $child = $this->addChild($name);
-    static::addCData($value);
+    $child = $this->addChild($name);
+    $child->addCData($value);
   }
 
   /**

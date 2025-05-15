@@ -107,7 +107,7 @@ class HTTP
    *                    - 'certificate' (string): Optional. Path to the certificate file for SSL authentication.
    * @return mixed The response body. If 'format' is set to 'json', the response will be decoded into an array. Returns false if an error occurs.
    */
-  public static function getResponse(array $data, array|null $allowed_hosts): mixed
+  public static function getResponse(array $data, array|null $allowed_hosts = null): mixed
   {
     if (!isset($data['header']) || !\is_array($data['header'])) {
       $data['header'] = [];
