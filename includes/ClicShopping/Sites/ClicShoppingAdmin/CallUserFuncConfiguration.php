@@ -20,7 +20,9 @@ use function call_user_func;
 class CallUserFuncConfiguration
 {
   /**
-   * Executes a function or a class method based on the provided string.
+   * Executes a specified function or method and returns the result.
+   * The function can be a standalone function or a class method.
+   * If the specified function does not exist, it attempts to include a corresponding configuration file.
    *
    * @param string $function The name of the function or class method to execute.
    * @param array|string|null $default Optional default parameters to pass to the function.
@@ -31,33 +33,32 @@ class CallUserFuncConfiguration
   {
     if (str_contains($function, '::')) {
       $class_method = explode('::', $function);
-      return call_user_func_array([$class_method[0], $class_method[1]], array_filter([$default, $key], fn($v) => $v !== null));
-    } else {
-      $function_name = preg_replace('/[^a-zA-Z0-9_]/', '', $function);
-      $params = [];
 
-      if (preg_match('/^([a-zA-Z0-9_]+)\((.*)\)$/', $function, $matches)) {
-        $function_name = $matches[1];
-        $param_string = $matches[2];
-        $params = str_getcsv($param_string);
+      return call_user_func(array($class_method[0], $class_method[1]), $default, $key);
+    } else {
+      $function_name = $function;
+      $function_parameter = '';
+
+      if (str_contains($function, '(')) {
+        $function_array = explode('(', $function, 2);
+
+        $function_name = $function_array[0];
+        $function_parameter = substr($function_array[1], 0, -1);
       }
 
       if (!function_exists($function_name)) {
-        $file1 = CLICSHOPPING::BASE_DIR . 'Sites/ClicShoppingAdmin/Assets/CfgParameters/' . $function_name . '.php';
-        $file2 = CLICSHOPPING::BASE_DIR . 'Custom/SitesClicShoppingAdmin/Assets/CfgParameters/' . $function_name . '.php';
-
-        if (is_file($file1)) {
-          include($file1);
-        } elseif (is_file($file2)) {
-          include($file2);
+        if (is_file(CLICSHOPPING::BASE_DIR . 'Sites/ClicShoppingAdmin/Assets/CfgParameters/' . $function_name . '.php')) {
+          include(CLICSHOPPING::BASE_DIR . 'Sites/ClicShoppingAdmin/Assets/CfgParameters/' . $function_name . '.php');
+        } else {
+          include(CLICSHOPPING::BASE_DIR . 'Custom/SitesClicShoppingAdmin/Assets/CfgParameters/' . $function_name . '.php');
         }
       }
 
-      // Add $default and $key if provided
-      if ($default !== null) $params[] = $default;
-      if ($key !== null) $params[] = $key;
-
-      return call_user_func_array($function_name, $params);
+      if (!empty($function_parameter)) {
+        return call_user_func($function_name, $function_parameter, $default, $key);
+      } else {
+        return call_user_func($function_name, $default, $key);
+      }
     }
   }
 }
