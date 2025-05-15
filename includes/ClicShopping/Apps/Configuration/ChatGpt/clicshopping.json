@@ -2,7 +2,7 @@
   "title": "ChatGpt App",
   "app": "ChatGpt",
   "vendor": "ChatGpt",
-  "version": "1.1",
+  "version": "1.2",
   "req_core_version": "4.0",
   "license": "GPL-2",
   "authors": [
@@ -21,6 +21,9 @@
       "CostEstimation": "Module\\ClicShoppingAdmin\\Dashboard\\CostEstimation"
     },
     "Hooks": {
+      "ClicShoppingAdmin/Cronjob": {
+        "Process": "Module\\Hooks\\ClicShoppingAdmin\\Cronjob\\Process"
+      },
       "ClicShoppingAdmin/Language": {
         "DeleteConfirm": "Module\\Hooks\\ClicShoppingAdmin\\Langues\\DeleteConfirm"
       },

@@ -79,6 +79,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
         }
 
         $QpageManager = $this->app->db->prepare('select pm.pages_id,
+                                                        pm.page_type,       
                                                        pmd.pages_title,
                                                        pmd.pages_html_text,
                                                        pmd.page_manager_head_title_tag,
@@ -96,73 +97,75 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
         $page_manager_array = $QpageManager->fetchAll();
 
-        if (is_array($page_manager_array)) {
+        if (is_array($page_manager_array) ) {
           foreach ($page_manager_array as $item) {
-            $page_manager_name = isset($item['pages_title']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['pages_title']) : '';
-            $page_manager_description = isset($item['pages_html_text']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['pages_html_text']) : '';
-            $seo_page_manager_title = isset($item['page_manager_head_title_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_title_tag']) : '';
-            $seo_page_manager_description = isset($item['page_manager_head_desc_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_desc_tag']) : '';
-            $seo_page_manager_keywords = isset($item['page_manager_head_keywords_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_keywords_tag']) : '';
+            if ($item['page_type'] === 4) {
+              $page_manager_name = isset($item['pages_title']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['pages_title']) : '';
+              $page_manager_description = isset($item['pages_html_text']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['pages_html_text']) : '';
+              $seo_page_manager_title = isset($item['page_manager_head_title_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_title_tag']) : '';
+              $seo_page_manager_description = isset($item['page_manager_head_desc_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_desc_tag']) : '';
+              $seo_page_manager_keywords = isset($item['page_manager_head_keywords_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_keywords_tag']) : '';
 
-//********************
-// add embedding
-//********************
-            if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'True') {
-              $embedding_data = "\n" . $this->app->getDef('text_page_manager_name', ['page_title' => $page_manager_name]) . "\n";
+              //********************
+              // add embedding
+              //********************
+              if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'True') {
+                $embedding_data = "\n" . $this->app->getDef('text_page_manager_name', ['page_title' => $page_manager_name]) . "\n";
 
-              if (!empty($page_manager_description)) {
-                $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_title' => $page_manager_name]) . ' : ' . $page_manager_description . "\n";
-                $embedding_data .= $this->app->getDef('text_page_manager_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($page_manager_description) . "\n";
-              }
-
-              if (!empty($seo_page_manager_title)) {
-                $embedding_data .= $this->app->getDef('text_page_manager_seo_title', ['page_title' => $page_manager_name]) . ' : ' . $seo_page_manager_title . "\n";
-              }
-
-              if (!empty($seo_page_manager_description)) {
-                $embedding_data .= $this->app->getDef('text_page_manager_seo_description', ['page_title' => $page_manager_name]) . ' : ' . $seo_page_manager_description . "\n";
-              }
-
-              if (!empty($seo_page_manager_keywords)) {
-                $embedding_data .= $this->app->getDef('text_page_manager_seo_keywords', ['page_title' => $page_manager_name]) . ' : ' . $seo_page_manager_keywords . "\n";
-              }
-
-              $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
-
-              $embeddings = [];
-
-              foreach ($embeddedDocuments as $embeddedDocument) {
-                if (is_array($embeddedDocument->embedding)) {
-                  $embeddings[] = $embeddedDocument->embedding;
+                if (!empty($page_manager_description)) {
+                  $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_title' => $page_manager_name]) . ' : ' . $page_manager_description . "\n";
+                  $embedding_data .= $this->app->getDef('text_page_manager_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($page_manager_description) . "\n";
                 }
-              }
 
-              if (!empty($embeddings)) {
-                $flattened_embedding = $embeddings[0];
-                $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
+                if (!empty($seo_page_manager_title)) {
+                  $embedding_data .= $this->app->getDef('text_page_manager_seo_title', ['page_title' => $page_manager_name]) . ' : ' . $seo_page_manager_title . "\n";
+                }
 
-                $sql_data_array_embedding = [
-                  'content' => $embedding_data,
-                  'type' => 'page_manager',
-                  'sourcetype' => 'manual',
-                  'sourcename' => 'manual',
-                  'date_modified' => 'now()'
-                ];
+                if (!empty($seo_page_manager_description)) {
+                  $embedding_data .= $this->app->getDef('text_page_manager_seo_description', ['page_title' => $page_manager_name]) . ' : ' . $seo_page_manager_description . "\n";
+                }
 
-                $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+                if (!empty($seo_page_manager_keywords)) {
+                  $embedding_data .= $this->app->getDef('text_page_manager_seo_keywords', ['page_title' => $page_manager_name]) . ' : ' . $seo_page_manager_keywords . "\n";
+                }
 
-                if ($insert_embedding === true) {
-                  $sql_data_array_embedding['entity_id'] = $item['pages_id'];
-                  $sql_data_array_embedding['language_id'] = $item['language_id'];
+                $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-                  $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding);
-                } else {
-                  $update_sql_data = [
-                    'language_id' => $item['language_id'],
-                    'entity_id' => $item['pages_id']
+                $embeddings = [];
+
+                foreach ($embeddedDocuments as $embeddedDocument) {
+                  if (is_array($embeddedDocument->embedding)) {
+                    $embeddings[] = $embeddedDocument->embedding;
+                  }
+                }
+
+                if (!empty($embeddings)) {
+                  $flattened_embedding = $embeddings[0];
+                  $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
+
+                  $sql_data_array_embedding = [
+                    'content' => $embedding_data,
+                    'type' => 'page_manager',
+                    'sourcetype' => 'manual',
+                    'sourcename' => 'manual',
+                    'date_modified' => 'now()'
                   ];
 
-                  $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding, $update_sql_data);
+                  $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+
+                  if ($insert_embedding === true) {
+                    $sql_data_array_embedding['entity_id'] = $item['pages_id'];
+                    $sql_data_array_embedding['language_id'] = $item['language_id'];
+
+                    $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding);
+                  } else {
+                    $update_sql_data = [
+                      'language_id' => $item['language_id'],
+                      'entity_id' => $item['pages_id']
+                    ];
+
+                    $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding, $update_sql_data);
+                  }
                 }
               }
             }
