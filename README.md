@@ -65,11 +65,11 @@ Use the Artificial Intlligence to your Ecommerce business with ClicShoppingAI. F
 #Solution
  - The solution is built on modules and APP to have a very big flexibility.
  - The approach is completely modular on the catalog / administration with simple code to understand, to customize and to update at need.
- - All informations are available at the forum https://www.clicshopping or look the [Wiki](https://github.com/ClicShopping/ClicShopping_V3/wiki)
+ - All informations are available at the forum https://www.clicshopping.org or look the [Wiki](https://github.com/ClicShopping/ClicShopping_V3/wiki) for the technical documentation.
  - The modules are available on Github (Official and Community) or by an internal install.
 
 #Marketplace
-  - A markeplace is also available on the : 
+    - A marketplace is also available on the : 
     - For all App : [community](https://www.clicshopping.org/forum/files/) 
     - Or github :
         - Community : https://github.com/ClicShoppingV3Community

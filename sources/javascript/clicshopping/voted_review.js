@@ -1,53 +1,69 @@
-$(document).ready(function () {
-  $('.toggleButton').on('click', function () {
-    const $button = $(this);
-    const uniqueId = $button.data('unique-id');
-    const productId = $button.data('product-id');
-    const customerId = $button.data('customer-id');
-    const ajaxUrl = $button.data('ajax-url');
-    const isYes = $button.hasClass('yesButton');
+document.addEventListener("DOMContentLoaded", function () {
+  function getVotedReviews() {
+    const votedReviews = localStorage.getItem('votedReviews');
+    return votedReviews ? JSON.parse(votedReviews) : [];
+  }
 
-    const vote = isYes ? 1 : 0;
-    const reviewsId = uniqueId !== 0 ? uniqueId : 0;
-    const sentiment = reviewsId === 0 ? vote : 0;
+  function hasUserVoted(reviewId) {
+    return getVotedReviews().includes(reviewId);
+  }
 
-    // Préparation des données à envoyer
-    const postData = {
-      product_id: productId,
-      customer_id: customerId,
-      vote: vote,
-      reviewId: reviewsId,
-      sentiment: sentiment
-    };
+  function markReviewAsVoted(reviewId) {
+    const votedReviews = getVotedReviews();
+    if (!votedReviews.includes(reviewId)) {
+      votedReviews.push(reviewId);
+      localStorage.setItem('votedReviews', JSON.stringify(votedReviews));
+    }
+  }
 
-    // Envoi de la requête AJAX
-    $.ajax({
-      type: 'POST',
-      url: ajaxUrl,
-      data: postData,
-      success: function (response) {
-        // Mise à jour de l'interface utilisateur
-        const $yesValue = $(`#${uniqueId}_yesButton`).siblings('.yesValue');
-        const $noValue = $(`#${uniqueId}_noButton`).siblings('.noValue');
-        const $thankYou = $(`#${uniqueId}_noButton`).siblings('.thankYouMessage');
-
-        if (isYes) {
-          const currentYes = parseInt($yesValue.text().replace(/\D/g, ''), 10) || 0;
-          $yesValue.text(`(${currentYes + 1})`);
+  function saveVoteToServer(reviewId, vote, productId, customerId, ajaxUrl) {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", ajaxUrl, true);
+    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          console.log('Vote enregistré pour review ' + reviewId);
         } else {
-          const currentNo = parseInt($noValue.text().replace(/\D/g, ''), 10) || 0;
-          $noValue.text(`(${currentNo + 1})`);
+          console.error('Erreur serveur vote : ' + xhr.statusText);
         }
-
-        // Affichage du message de remerciement
-        $thankYou.show();
-
-        // Désactivation des boutons pour éviter les votes multiples
-        $(`#${uniqueId}_yesButton, #${uniqueId}_noButton`).off('click').addClass('disabled');
-      },
-      error: function (xhr, status, error) {
-        console.error('Erreur lors de l\'envoi du vote :', error);
       }
+    };
+    xhr.send("reviewId=" + reviewId + "&vote=" + vote + "&product_id=" + productId + "&customer_id=" + customerId);
+  }
+
+  document.querySelectorAll('.yesButton, .noButton').forEach(function (button) {
+    button.addEventListener("click", function () {
+      const reviewId = this.getAttribute('data-unique-id');
+      const productId = this.getAttribute('data-product-id');
+      const customerId = this.getAttribute('data-customer-id');
+      const ajaxUrl = this.dataset.ajaxUrl;
+
+      if (!reviewId || !productId || !ajaxUrl) {
+        console.error('Attributs manquants sur le bouton.');
+        return;
+      }
+
+      if (hasUserVoted(reviewId)) return;
+
+      const parentDiv = this.closest(".moduleProductsInfoReviewCustomersNotice");
+      const yesButton = parentDiv.querySelector(".yesButton");
+      const noButton = parentDiv.querySelector(".noButton");
+      const yesValue = parentDiv.querySelector(".yesValue");
+      const noValue = parentDiv.querySelector(".noValue");
+      const thankYouMessage = parentDiv.querySelector(".thankYouMessage");
+
+      yesButton.style.display = "none";
+      noButton.style.display = "none";
+      yesValue.style.display = "none";
+      noValue.style.display = "none";
+      thankYouMessage.style.display = "inline";
+
+      markReviewAsVoted(reviewId);
+      const vote = this.classList.contains("yesButton") ? 1 : 0;
+      saveVoteToServer(reviewId, vote, productId, customerId, ajaxUrl);
     });
   });
 });
+
+

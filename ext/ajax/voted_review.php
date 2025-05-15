@@ -24,12 +24,7 @@ CLICSHOPPING::loadSite('Shop');
 if (isset($_POST['reviewId'], $_POST['product_id'])) {
   $CLICSHOPPING_Db = Registry::get('Db');
 
-  if (!is_null($_POST['reviewId'])) {
-    $reviews_id = HTML::sanitize($_POST['reviewId']);
-  } else {
-    $reviews_id = 0;
-  }
-
+  $reviews_id = is_numeric($_POST['reviewId']) ? (int)HTML::sanitize($_POST['reviewId']) : 0;
   $products_id = HTML::sanitize($_POST['product_id']);
   $vote = HTML::sanitize($_POST['vote']);
   $customer_id = HTML::sanitize($_POST['customer_id']);
