@@ -10,6 +10,7 @@
 
 namespace ClicShopping\OM;
 
+use \InvalidArgumentException;
 /**
  * Class Session
  *
@@ -42,9 +43,11 @@ class Session
     }
 
     if (!class_exists(__NAMESPACE__ . '\\Session\\' . static::$driver)) {
-      throw new InvalidArgumentException('ClicShopping\OM\Session::load(): Driver "' . static::$driver . '" does not exist, using default "' . static::$default_driver . '"');
-
       static::$driver = static::$default_driver;
+
+      if (!class_exists(__NAMESPACE__ . '\\Session\\' . static::$driver)) {
+        throw new InvalidArgumentException('ClicShopping\OM\Session::load(): Neither specified nor default driver exists.');
+      }
     }
 
     $class_name = __NAMESPACE__ . '\\Session\\' . static::$driver;

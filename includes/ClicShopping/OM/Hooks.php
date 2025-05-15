@@ -22,7 +22,7 @@ use function is_string;
  */
 class Hooks
 {
-  protected ?string $site;
+  protected string|null $site;
   protected array $hooks = [];
   protected array $watches = [];
 

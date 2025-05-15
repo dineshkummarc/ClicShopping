@@ -28,7 +28,6 @@ class Mail
   protected string $text;
   protected string $html_text;
   protected string $lf;
-  public string $Debugoutput;
   protected string $fileError;
 
 //Enable SMTP debugging

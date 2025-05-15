@@ -51,7 +51,7 @@ class Hash
 
     self::$key = hex2bin(self::$key);
 
-    if (self::$key === false || strlen(self::$key) !== 16) {
+    if (self::$key === false || strlen(self::$key) !== 32) {
       throw new Exception('Clé d’encryption invalide');
     }
   }
@@ -343,7 +343,12 @@ class Hash
   public static function encryptDatatext(string|null $data): string
   {
     if (!empty($data) || is_null($data)) {
-    $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(self::$cipher));
+      $strong = false;
+      $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(self::$cipher), $strong);
+
+      if ($iv === false || $strong === false) {
+        throw new Exception('IV generation failed or is not cryptographically strong');
+      }
 
     $encrypted = openssl_encrypt($data, self::$cipher, self::$key, 0, $iv);
     if ($encrypted === false) {
@@ -428,7 +433,13 @@ class Hash
    * @return string The hashed email address.
    */
   public static function encryptEmail(string $email): string {
-    $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(self::$cipher));
+    $strong = false;
+    $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(self::$cipher), $strong);
+
+    if ($iv === false || $strong === false) {
+      throw new Exception('IV generation failed or is not cryptographically strong');
+    }
+
     $encrypted = openssl_encrypt($email, self::$cipher, self::$key, 0, $iv);
     return base64_encode($iv . $encrypted);
   }
@@ -446,4 +457,25 @@ class Hash
     $encrypted = substr($data, $ivLength);
     return openssl_decrypt($encrypted, self::$cipher, self::$key, 0, $iv);
   }
+/*
+
+// Exemple d'utilisation
+$email = "user@example.com";
+
+// Chiffrement (première fois)
+$encryptedEmail = Hash::encryptEmail($email);
+echo "Email chiffré : " . $encryptedEmail . "\n";
+
+// Stockage du hash pour vérification plus tard
+$hashedEmail = Hash::hashEmail($email);
+echo "Hash de l'email : " . $hashedEmail . "\n";
+
+// Déchiffrement
+$decryptedEmail = Hash::displayDecrypteEmail($encryptedEmail);
+echo "Email déchiffré : " . $decryptedEmail . "\n";
+
+// Vérification d'un email
+$isValid = Hash::verifyEmail("user@example.com", $hashedEmail);
+echo "L'email est valide ? " . ($isValid ? "Oui" : "Non") . "\n";
+*/
 }

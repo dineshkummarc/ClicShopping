@@ -90,7 +90,7 @@ class FileSystem
     if (is_dir($dir)) {
       foreach (static::getDirectoryContents($dir, false) as $file) {
         if (is_dir($file)) {
-          $result = array_merge($result, static::rmdir($file, $dry_run));
+          $result = [...$result, ...static::rmdir($file, $dry_run)];
         } else {
           $result[] = [
             'type' => 'file',
@@ -235,7 +235,9 @@ class FileSystem
     $target_dir = dirname($destination);
 
     if (!is_dir($target_dir)) {
-      mkdir($target_dir, 0777, true);
+      if (!mkdir($target_dir, 0777, true) && !is_dir($target_dir)) {
+        throw new \RuntimeException(sprintf('Directory "%s" was not created', $target_dir));
+      }
     }
 
     return copy($source, $destination);
@@ -253,7 +255,9 @@ class FileSystem
     $target_dir = dirname($destination);
 
     if (!is_dir($target_dir)) {
-      mkdir($target_dir, 0777, true);
+      if (!mkdir($target_dir, 0777, true) && !is_dir($target_dir)) {
+        throw new \RuntimeException(sprintf('Directory "%s" was not created', $target_dir));
+      }
     }
 
     if (copy($source, $destination)) {

@@ -538,7 +538,12 @@ class Language
 
 
   /**
+   * Retrieves the language code from the URL or session.
    *
+   * This method checks if a language code is provided in the URL and sets it in the session.
+   * If no code is provided, it retrieves the code from the session.
+   *
+   * @return string|false The language code if found, false otherwise.
    */
   public function getLanguageCode()
   {
@@ -610,8 +615,10 @@ class Language
     return $languages_string;
   }
 
-  /**
+/**
+   * Generates a string containing links to available languages with their respective flags.
    *
+   * @return string A string containing the language links with flags.
    */
   public function getFlag()
   {
@@ -739,4 +746,24 @@ class Language
 
     return $values_languages_id;
   }
+
+/**
+ * Retrieves the language code based on the language ID.
+ *
+ * @param int $language_id The ID of the language
+ * @return string|null The language code if found, null otherwise
+ */
+public function getLanguageCodeById(int $language_id): string
+{
+    $Qlanguage = $this->db->prepare('select code 
+                                    from :table_languages 
+                                    where languages_id = :languages_id
+                                   ');
+
+    $Qlanguage->bindInt(':languages_id', $language_id);
+    $Qlanguage->execute();
+
+    return $Qlanguage->value('code');
+}
+
 }
