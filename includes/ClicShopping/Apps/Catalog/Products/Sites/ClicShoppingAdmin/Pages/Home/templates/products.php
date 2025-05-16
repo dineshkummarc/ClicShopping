@@ -230,7 +230,7 @@ if (!FileSystem::isWritable($CLICSHOPPING_Template->getDirectoryPathTemplateShop
               echo '<a href="' . HTTP::getShopUrlDomain() . 'index.php?Products&Description&products_id=' . $Qproducts->valueInt('products_id') . '" target="_blank" rel="noreferrer"><h4><i class="bi bi-easil3" title="' . $CLICSHOPPING_Products->getDef('icon_preview') . '"></i></h4></a>';
             }
             ?>
-            <?php echo HTML::link($CLICSHOPPING_Products->link('Preview&pID=' . $Qproducts->valueInt('products_id') . '?page=' . $page . '&cPath=' . $cPath), '<h4><i class="bi bi-easil3" title="' . $CLICSHOPPING_Products->getDef('icon_preview') . '"></i></h4>'); ?>
+            <?php echo HTML::link($CLICSHOPPING_Products->link('Preview&pID=' . $Qproducts->valueInt('products_id')), '<h4><i class="bi bi-easil3" title="' . $CLICSHOPPING_Products->getDef('icon_preview') . '"></i></h4>'); ?>
             <?php echo $CLICSHOPPING_Image->getSmallImageAdmin($Qproducts->valueInt('products_id')); ?>
           </td>
           <td><?php echo $Qproducts->value('products_name') . ' [' . $Qproducts->value('products_model') . ']'; ?></td>
