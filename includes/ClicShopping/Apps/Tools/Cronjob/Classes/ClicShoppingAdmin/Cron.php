@@ -68,6 +68,7 @@ class Cron
                                                                       cycle,
                                                                       action,
                                                                       status,
+                                                                      description,
                                                                       date_added,
                                                                       date_modified
                                              from :table_cron

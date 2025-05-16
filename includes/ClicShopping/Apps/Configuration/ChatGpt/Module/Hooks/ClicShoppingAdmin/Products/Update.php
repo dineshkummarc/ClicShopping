@@ -147,11 +147,6 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               $embedding_data .= $this->app->getDef('text_product_brand_name') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturer_name) . "\n";
             }
 
-            if (!empty($products_description)) {
-              $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
-              $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($products_description) . "\n";
-            }
-
             if (!empty($products_ean)) {
               $embedding_data .= $this->app->getDef('text_product_ean') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_ean) . "\n";
             }
@@ -214,6 +209,11 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               $embedding_data .= $this->app->getDef('text_product_seo_tag') . ': ' . HtmlOverrideCommon::cleanHtmlForSEO($seo_product_tag) . "\n";
             }
 
+            if (!empty($products_description)) {
+              $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
+              $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($products_description) . "\n";
+            }
+	    
             $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
             $embeddings = [];
 

@@ -202,7 +202,7 @@ class Shipping
    *                     (including 'id', 'title', 'info', and 'cost')
    *                     or false if no rates are available.
    */
-  public function getCheapest(): array|false
+  public function getCheapest()
   {
     if (is_array($this->modules)) {
       $rates = [];

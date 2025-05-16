@@ -40,12 +40,14 @@ $languages = $CLICSHOPPING_Language->getLanguages();
           <span class="col-md-9 text-end">
             <?php
             echo HTML::form('cronjob', $CLICSHOPPING_Cronjob->link('Cronjob&' . $form_action));
+            $cron = [];
 
             if (isset($_GET['Update'])) {
               $Qcron = $CLICSHOPPING_Cronjob->db->prepare('select code,
                                                                     cycle,
                                                                     action,
-                                                                    status
+                                                                    status,
+                                                                    description
                                                              from :table_cron
                                                              where cron_id = :cron_id
                                                             ');
@@ -86,9 +88,11 @@ $languages = $CLICSHOPPING_Language->getLanguages();
           <div class="row">
             <div class="col-md-12">
               <div class="form-group row">
+                <div class="mt-5"></div>
+
                 <div class="mt-1"></div>
                 <div class="row">
-                  <div class="col-md-5" id="code">
+                  <div class="col-md-5" id="code1">
                     <div class="form-group row">
                       <label for="<?php echo $CLICSHOPPING_Cronjob->getDef('text_cronjob_code'); ?>"
                              class="col-5 col-form-label"><?php echo $CLICSHOPPING_Cronjob->getDef('text_cronjob_code'); ?></label>
@@ -144,6 +148,20 @@ $languages = $CLICSHOPPING_Language->getLanguages();
                     </div>
                   </div>
                 </div>
+
+                <div class="mt-1"></div>
+                <div class="row">
+                  <div class="col-md-8" id="description">
+                    <div class="form-group row">
+                      <label for="<?php echo $CLICSHOPPING_Cronjob->getDef('text_cronjob_description'); ?>"
+                             class="col-3 col-form-label"><?php echo $CLICSHOPPING_Cronjob->getDef('text_cronjob_description'); ?></label>
+                      <div class="col-md-7">
+                        <?php echo HTML::textAreaField('description', $cron['description'] ?? '', 'placeholder="' . $CLICSHOPPING_Cronjob->getDef('text_cronjob_description') . '"');?>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>

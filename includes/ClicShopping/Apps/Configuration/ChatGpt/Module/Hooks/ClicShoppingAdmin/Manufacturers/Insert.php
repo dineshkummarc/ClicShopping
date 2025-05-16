@@ -56,6 +56,10 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
+    if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'False') {
+      return false;
+    }
+
     if (isset($_GET['Insert'], $_GET['Manufacturers'])) {
       $translate_language = $this->app->getDef('text_seo_page_translate_language');
 
@@ -212,13 +216,13 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                   'sourcename' => 'manual',
                   'date_modified' => 'now()',
                   'entity_id' => $item['manufacturers_id'],
-                  'language_id' => $item['language_id']
+                  'language_id' => $item['languages_id']
                 ];
 
                 $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
 
                 $update_sql_data = [
-                  'language_id' => $item['language_id'],
+                  'language_id' => $item['languages_id'],
                   'entity_id' => $item['manufacturers_id']
                 ];
 

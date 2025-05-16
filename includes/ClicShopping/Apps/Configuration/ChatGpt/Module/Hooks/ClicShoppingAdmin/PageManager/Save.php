@@ -80,12 +80,12 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
         $QpageManager = $this->app->db->prepare('select pm.pages_id,
                                                         pm.page_type,       
-                                                       pmd.pages_title,
-                                                       pmd.pages_html_text,
-                                                       pmd.page_manager_head_title_tag,
-                                                       pmd.page_manager_head_desc_tag,
-                                                       pmd.page_manager_head_keywords_tag,
-                                                       pmd.language_id
+                                                        pmd.pages_title,
+                                                        pmd.pages_html_text,
+                                                        pmd.page_manager_head_title_tag,
+                                                        pmd.page_manager_head_desc_tag,
+                                                        pmd.page_manager_head_keywords_tag,
+                                                        pmd.language_id
                                                  from  :table_pages_manager pm,
                                                        :table_pages_manager_description pmd
                                                  where pm.pages_id = :pages_id
@@ -112,11 +112,6 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
               if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'True') {
                 $embedding_data = "\n" . $this->app->getDef('text_page_manager_name', ['page_title' => $page_manager_name]) . "\n";
 
-                if (!empty($page_manager_description)) {
-                  $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_title' => $page_manager_name]) . ' : ' . $page_manager_description . "\n";
-                  $embedding_data .= $this->app->getDef('text_page_manager_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($page_manager_description) . "\n";
-                }
-
                 if (!empty($seo_page_manager_title)) {
                   $embedding_data .= $this->app->getDef('text_page_manager_seo_title', ['page_title' => $page_manager_name]) . ' : ' . $seo_page_manager_title . "\n";
                 }
@@ -127,6 +122,11 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
                 if (!empty($seo_page_manager_keywords)) {
                   $embedding_data .= $this->app->getDef('text_page_manager_seo_keywords', ['page_title' => $page_manager_name]) . ' : ' . $seo_page_manager_keywords . "\n";
+                }
+
+                if (!empty($page_manager_description)) {
+                  $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_title' => $page_manager_name]) . ' : ' . $page_manager_description . "\n";
+                  $embedding_data .= $this->app->getDef('text_page_manager_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($page_manager_description) . "\n";
                 }
 
                 $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
@@ -148,7 +148,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
                     'type' => 'page_manager',
                     'sourcetype' => 'manual',
                     'sourcename' => 'manual',
-                    'date_modified' => 'now()'
+                    'date_modified' => 'now()',
                   ];
 
                   $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;

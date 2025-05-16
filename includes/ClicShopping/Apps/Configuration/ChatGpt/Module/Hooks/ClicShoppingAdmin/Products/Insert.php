@@ -68,6 +68,10 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
+    if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'False') {
+      return false;
+    }
+
     if (isset($_GET['Insert'], $_GET['Products'])) {
       $translate_language = $this->app->getDef('text_seo_page_translate_language');
 
@@ -246,7 +250,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
             // add embedding
             //********************
 
-            if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'False') {
+
               $embedding_data = $this->app->getDef('text_product_name') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_name) . "\n";
 
               if (!empty($products_model)) {
@@ -259,11 +263,6 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               if (!empty($manufacturer_name)) {
                 $embedding_data .= $this->app->getDef('text_product_brand_name') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturer_name) . "\n";
-              }
-
-              if (!empty($products_description)) {
-                $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
-                $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($products_description) . "\n";
               }
 
               if (!empty($products_ean)) {
@@ -285,7 +284,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                   $products_status = $this->app->getDef('text_product_disable');
                 }
 
-                $embedding_data .=  $this->app->getDef('text_product_status') . ': ' . $products_status . "\n";
+                $embedding_data .= $this->app->getDef('text_product_status') . ': ' . $products_status . "\n";
               }
 
               if (!empty($products_ordered)) {
@@ -328,6 +327,12 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                 $embedding_data .= $this->app->getDef('text_product_seo_tag') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_product_tag) . "\n";
               }
 
+              if (!empty($products_description)) {
+                $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
+                $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($products_description) . "\n";
+              }
+
+
               $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
               $embeddings = [];
 
@@ -359,7 +364,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('products_embedding', $sql_data_array_embedding, $update_sql_data);
               }
-            }
+            
           }
         }
 //-------------------
