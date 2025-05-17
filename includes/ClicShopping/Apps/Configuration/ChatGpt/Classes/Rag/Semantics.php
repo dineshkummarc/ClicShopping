@@ -7,6 +7,11 @@ use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+
+/*
+ * This class is responsible for semantic analysis and classification of queries.
+ * It uses the OpenAI API to translate and classify queries, and also logs security events.
+ */
 class Semantics
 {
   private static ?SecurityLogger $logger = null;
@@ -72,6 +77,7 @@ class Semantics
   {
     $prompt = "Determine whether the following question is of type 'analytics' or 'semantic'. Respond with only one word: 'analytics' or 'semantic'.\nQ: {$text}\nAnswer:";
     $type = Gpt::getGptResponse($prompt, 20);
+
     $result = in_array(strtolower(trim($type)), ['analytics', 'semantic']) ? strtolower(trim($type)) : 'semantic';
 
     return $result;
@@ -181,13 +187,14 @@ class Semantics
    * calculates a score based on matched patterns, and finally classifies the query.
    *
    * @param string $text The text to classify.
+   * @param int threshold Adjust this threshold based on your needs
    * @return string The classification result: 'analytics' or 'semantic'.
    */
-  public static function classifyQuery(string $text): string
+ public static function classifyQuery(string $text, int|null $threshold = 3): string
   {
     $translated = self::translateToEnglish($text);
 
-    if (self::hasCriticalMatch($translated)) {
+    if (self::hasCriticalMatch($translated) === true) {
       return 'analytics';
     }
 
@@ -197,7 +204,9 @@ class Semantics
       self::logSecurityEvent("Total score: {$score}", 'info');
     }
 
-    $threshold = 2;
+    if (is_null($threshold)) {
+      $threshold = 3;
+    }
 
     if ($score >= $threshold) {
       return 'analytics';
@@ -211,24 +220,37 @@ class Semantics
   }
 
   /**
-   * Check if the text contains any critical patterns that indicate a high level of risk.
-   * This method checks for patterns that are considered critical for analytics.
+   * Check if the text contains any critical patterns that indicate an analytics query.
+   * This method uses regex patterns to identify specific keywords and phrases.
    *
    * @param string $text The text to analyze.
    * @return bool True if a critical pattern is found, false otherwise.
    */
   private static function hasCriticalMatch(string $text): bool
   {
-    $analyticsPatterns = self::analyticsPatterns();
-    $criticalCategories = ['reference', 'stock', 'price', 'quantity', 'performance', 'time'];
+    $patterns = self::analyticsPatterns();
 
-    foreach ($analyticsPatterns as $category => $patterns) {
-      if (in_array($category, $criticalCategories)) {
-        foreach ($patterns as $pattern) {
-          if (preg_match($pattern, $text)) {
-            self::logSecurityEvent("Critical pattern match detected: Category: $category | Pattern: $pattern", 'info');
-            return true;
-          }
+    $criticalPatterns = [
+      'performance',
+      'price',
+      'quantity',
+      'comparison',
+      'calculation',
+      'filters',
+      'sorting',
+      'time',
+      'stock',
+      'reference'
+    ];
+
+    foreach ($criticalPatterns as $type) {
+      if (!isset($patterns[$type])) {
+        continue;
+      }
+
+      foreach ($patterns[$type] as $pattern) {
+        if (preg_match($pattern, $text)) {
+          return true;
         }
       }
     }
@@ -246,20 +268,17 @@ class Semantics
   private static function calculateScore(string $text): int
   {
     $analyticsPatterns = self::analyticsPatterns();
+
     $weights = [
-      'reference' => 10,
-      'stock' => 8,
-      'price' => 7,
-      'quantity' => 6,
-      'performance' => 6,
-      'time' => 5,
-      'customer' => 4,
-      'category' => 4,
-      'comparison' => 3,
-      'entity' => 3,
+      'performance' => 2,
+      'price' => 2,
+      'comparison' => 2,
       'calculation' => 2,
-      'filters' => 2,
-      'sorting' => 2,
+      'filters' => 1,
+      'sorting' => 1,
+      'entity' => 0.5,
+      'category' => 0.5,
+      'customer' => 0.5,
     ];
 
     $score = 0;
@@ -273,10 +292,10 @@ class Semantics
       }
     }
 
-    return $score;
+    return (int)$score;
   }
 
-    /**
+  /**
    * Create a taxonomy from the given text.
    * The taxonomy is structured as [domain]: xxx, [type]: yyy, [subject]: zzz, etc.
    *

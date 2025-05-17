@@ -287,6 +287,7 @@ class MultiDBRAGManager
         if ($this->debug == 'True') {
           $this->securityLogger->logSecurityEvent("No vector store available", 'error');
         }
+
         return [];
       }
 
@@ -350,7 +351,7 @@ class MultiDBRAGManager
         });
       }
 
-      // litmit the total result
+      // limit the total result
       $finalResults = array_slice($allResults, 0, $limit);
 
       if ($this->debug == 'True') {
@@ -390,7 +391,7 @@ class MultiDBRAGManager
       // research document
       $documents = $this->searchDocuments($question, $limit, $minScore, $languageId, $entityType);
 
-      if (empty($documents)) {
+      if (empty($documents) || !is_array($documents)) {
         return CLICSHOPPING::getDef('text_rag_answer_question_not_found');
       }
 
@@ -460,17 +461,17 @@ class MultiDBRAGManager
    * Formats the analysis results for display
    *
    * @param array $results Analysis results
-   * @return string Formatted results for display
+   * @return string|null Formatted results for display
    */
   public function formatResults(array $results): string|null
   {
     $formatter = new ResultFormatter();
     $result = $formatter->format($results);
 
-    if (is_array($result)) {
+    if (is_array($result) && array_key_exists('content', $result)) {
       $result = $result['content'];
     } else {
-      $result = 'Array error';
+      $result = 'Error : please change or adapt your question';
     }
 
     return $result;

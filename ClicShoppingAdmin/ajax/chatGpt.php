@@ -38,20 +38,18 @@ try {
     $queryType = isset($_POST['queryType']) ? HTML::sanitize($_POST['queryType']) : 'semantic';
 
     if ($queryType === 'semantic') {
-      $queryType = Semantics::classifyQuery($prompt); // gère la traduction + détection
+      $queryType = Semantics::classifyQuery($prompt);
     }
 
     if ($queryType === 'analytics') {
       $analyticsResults = $ragManager->executeAnalyticsQuery($prompt);
       $result = $ragManager->formatResults($analyticsResults);
 
-      If (is_null($result)) {
-        error_log("Erreur, result null for analytic query : " . $e->getMessage());
+      if (is_null($result)) {
+        error_log("Error: result is null for analytic query.");
       }
     } else {
       if ($queryType === 'semantic') {
-        $result = $ragManager->answerQuestion($prompt, 5, 0.5, $languageId);
-      } else {
         // Approach 2: Use the current aborescence
 
         $embeddingGenerator = new OpenAI3LargeEmbeddingGenerator();
@@ -69,16 +67,8 @@ try {
           'reviews_embedding',
           'reviews_sentiment_embedding',
           'return_orders_embedding',
+          'suppliers_embedding'
         ];
-
-/*
-
-clic_customers (infos sur les clients)
-clic_customers_info (détails supplémentaires)
-clic_customers_notes (notes internes sur les clients ?)
- */
-
-
         // Add first the known table
         foreach ($knownTables as $tableName) {
           try {
@@ -116,7 +106,7 @@ clic_customers_notes (notes internes sur les clients ?)
           }
         }
 
-        // 4️⃣ Search in all vector table inside the DB
+        // 4️ Search in all vector table inside the DB
         $allResults = [];
         $context = '';
 
