@@ -61,7 +61,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     if (isset($_GET['Update'], $_GET['Reviews'])) {
       if (isset($_GET['rID'])) {
         $rID = HTML::sanitize($_GET['rID']);
-        $CLICSHOPPING_Products = Registry::get('Products');
+        $CLICSHOPPING_ProductsAdmin = Registry::get('ProductsAdmin');
         $CLICSHOPPING_Language = Registry::get('Language');
         $language_id = $CLICSHOPPING_Language->getId();
 
@@ -116,7 +116,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
           $vote = $item['vote'];
           $sentiment = $item['sentiment'];
 
-          $products_name = $CLICSHOPPING_Products->getName($products_id, $language_id);
+          $products_name = $CLICSHOPPING_ProductsAdmin->getProductsName($products_id, $language_id);
 
           //********************
           // add embedding

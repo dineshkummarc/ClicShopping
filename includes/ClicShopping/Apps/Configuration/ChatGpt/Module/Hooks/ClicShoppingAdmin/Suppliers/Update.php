@@ -98,7 +98,6 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
       $suppliers_city = $Qcheck->value('suppliers_city');
       $suppliers_notes = $Qcheck->value('suppliers_notes');
-      $suppliers_payment_terms = $Qcheck->value('suppliers_payment_terms');
       $suppliers_states = $Qcheck->value('suppliers_states');
 
       if ($suppliers_id !== null) {
@@ -130,10 +129,6 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
           if (!empty($suppliers_notes)) {
             $embedding_data .= $this->app->getDef('text_suppliers_notes', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_notes) . "\n";
-          }
-
-          if (!empty($suppliers_payment_terms)) {
-            $embedding_data .= $this->app->getDef('text_suppliers_payment_terms', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_payment_terms) . "\n";
           }
 
           $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);

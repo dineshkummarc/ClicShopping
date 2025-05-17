@@ -160,7 +160,8 @@ ALTER TABLE `clic_orders` CHANGE `customers_name` `customers_name` TEXT CHARACTE
 ALTER TABLE `clic_orders` CHANGE `delivery_name` `delivery_name` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL;
 ALTER TABLE `clic_orders` CHANGE `billing_name` `billing_name` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;
 
-
+#embeddings
+INSERT INTO `clic_cron` VALUES(5, 'embeddings', 'update the embeddings table if it not exist', 'weekly', 'embeddings', 1, '2025-05-15 20:14:27', '2025-05-15 20:19:06');
 
 
 #Faire la mise du schema de clicshopping

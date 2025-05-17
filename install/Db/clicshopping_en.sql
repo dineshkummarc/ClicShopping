@@ -1996,6 +1996,7 @@ INSERT INTO cron VALUES(1, 'currency', 'Update the currencies', 'day', 'currency
 INSERT INTO cron VALUES(2, 'gdpr', 'Customer Legislation', 'monthly', 'gdpr', 0, '2014-09-01 14:40:00', '2022-10-08 18:04:38');
 INSERT INTO cron VALUES(3, 'backup', 'database backup', 'weekly', 'backup', 1, '1900-01-01 00:00:00', '2022-10-08 17:31:47');
 INSERT INTO cron VALUES(4, 'marketplace', 'Apps marketplace', 'monthly', 'marketplace', 1, '2023-01-06 15:51:34', '2023-01-06 18:19:19');
+INSERT INTO cron VALUES(5, 'embeddings', 'Update the embeddings table if it not exist<br>Table updated : categories_embedding, manufacturers_embedding, products_embedding, pages_manager_embedding, reviews_embedding,suppliers_embedding.<br>Table not updated : orders_embedding,return_orders_embedding, reviews_sentiment_embeddings', 'weekly', 'embeddings', 1, '2025-05-15 20:14:27', '2025-05-15 20:19:06');
 
 INSERT INTO currencies VALUES(1, 'Euro', 'EUR', '', 'EUR', '.', ',', '2', 1.00000000, '2008-09-13 18:02:35', 1, 0);
 INSERT INTO currencies VALUES(2, 'Dollard', 'USD', 'USD', '', '.', ',', '2', 1.40750003, '2008-09-13 18:02:36', 1, 0);

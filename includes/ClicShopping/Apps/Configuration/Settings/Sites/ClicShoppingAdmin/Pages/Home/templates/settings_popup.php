@@ -76,7 +76,7 @@ if ($cInfo->set_function) {
   $value_field = HTML::inputField('configuration[' . $cInfo->configuration_key . ']', $cInfo->configuration_value);
 }
 
-echo HTML::form('configuration', $CLICSHOPPING_Settings->link('SettingsPopUp&Update&gID=' . $_GET['gID'] . '&cID=' . $cInfo->configuration_id));
+echo HTML::form('configuration', $CLICSHOPPING_Settings->link('SettingsPopUp&Update&gID=' . (int)$_GET['gID'] . '&cID=' . (int)$cInfo->configuration_id));
 
 ?>
 <div class="clearfix"></div>
@@ -105,3 +105,4 @@ echo HTML::form('configuration', $CLICSHOPPING_Settings->link('SettingsPopUp&Upd
 </div>
 
 </form>
+  <div class="py-2"></div>
