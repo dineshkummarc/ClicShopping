@@ -64,8 +64,8 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
 
     if (isset($_GET['cronId'])) {
       $cron_id = HTML::sanitize($_GET['cronId']);
-      // Only proceed if the cronId is valid
-      if ($cron_id !== null && !empty($cron_id)) {
+      
+      if ($cron_id !== null && !empty($cron_id) && is_integer($cron_id)) {
         Cronjob::updateCron($cron_id);
 
         if ($cron_id_embedding == $cron_id) {

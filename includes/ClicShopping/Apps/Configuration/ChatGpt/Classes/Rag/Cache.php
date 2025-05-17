@@ -11,7 +11,7 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
 use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
 
 /**
  * Class Cache

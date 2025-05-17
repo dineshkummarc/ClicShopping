@@ -9,7 +9,7 @@
  *
  */
 
-namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security;
+namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Security;
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Cache;
 

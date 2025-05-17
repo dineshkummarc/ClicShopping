@@ -374,7 +374,8 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
     }
 
     $prompt = HTML::sanitize($question);
-
+    $prompt = HTMLOverrideCommon::removeInvisibleCharacters($prompt);
+ 
     // Get the chat instance
     $chat = self::getChat($question, $maxtoken, $temperature, $engine, $max);
 
@@ -399,9 +400,9 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
         statistics::saveStats($usage, $engine);
       }
 
-      $saveData = isset($_POST['saveGpt']) ? HTML::sanitize($_POST['saveGpt']) : null;
+      $saveData = isset($_POST['saveGpt']) ? HTML::sanitize($_POST['saveGpt']) : 0;
 
-      if ($saveData === 1 && !is_null($saveData)) {
+      if ($saveData === 1) {
         self::saveData($question, $result);
       }
     }

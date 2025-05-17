@@ -13,10 +13,10 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\InputValidator;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\RateLimit;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\DbSecurity;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\InputValidator;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\RateLimit;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\DbSecurity;
 
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Cache;

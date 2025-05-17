@@ -20,7 +20,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\AnalyticsAgent;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
 
 use LLPhant\Embeddings\Document;
 use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;

@@ -5,7 +5,7 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 
 /*
@@ -287,7 +287,7 @@ class Semantics
       foreach ($patterns as $pattern) {
         if (preg_match($pattern, $text)) {
           self::logSecurityEvent("Pattern match detected: Category: $category | Pattern: $pattern", 'info');
-          $score += $weights[$category] ?? 1; // Si jamais un poids manque
+          $score += $weights[$category] ?? 1;
         }
       }
     }

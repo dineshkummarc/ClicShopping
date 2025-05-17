@@ -9,11 +9,12 @@
  *
  */
 
-namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security;
+namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Security;
 
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\RateLimit;
 use ClicShopping\OM\Registry;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\InputValidator;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\InputValidator;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
 
 /**
  * Class DbSecurity

@@ -16,7 +16,7 @@ use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
 use LLPhant\Embeddings\VectorStores\VectorStoreBase;
 use Doctrine\DBAL\Connection;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Security\SecurityLogger;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
 
 /**
  * MariaDBVectorStore Class
