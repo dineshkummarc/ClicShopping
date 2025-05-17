@@ -132,7 +132,13 @@ class MultiDBRAGManager
        */
       public function embedText(string $text): array
       {
-        return call_user_func([$this->gptClass, 'gptEmbeddingsModel'], $text);
+        $generator = NewVector::gptEmbeddingsModel();
+	
+        if (!$generator) {
+          throw new \RuntimeException('Embedding generator non initialisé');
+        }
+
+        return $generator->embedText($text);
       }
 
       /**

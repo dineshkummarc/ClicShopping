@@ -15,19 +15,24 @@ use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Cron;
+use ClicShopping\Apps\Tools\Cronjob\Classes\ClicShoppingAdmin\Cron as Cronjob;
 
 class Process implements \ClicShopping\OM\Modules\HooksInterface
 {
   private mixed $app;
   private mixed $cron;
-  
+
   public function __construct()
   {
     if (!Registry::exists('ChatGpt')) {
       Registry::set('ChatGpt', new ChatGptApp());
     }
-
     $this->app = Registry::get('ChatGpt');
+
+    if (!Registry::exists('Cron')) {
+      Registry::set('Cron', new Cron());
+    }
+    $this->cron = Registry::get('Cron');
   }
 
   /**
@@ -38,14 +43,8 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
    *
    * @return void
    */
-  public function updateAllEmbedding(): void
+  public function updateAllEmbeddings(): void
   {
-    if (!Registry::exists('Cron')) {
-      Registry::set('Cron', new Cron());
-    }
-
-    $this->cron = Registry::get('Cron');
-
     $this->cron->updateAllEmbedding();
   }
 
@@ -61,21 +60,26 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
    */
   private function cronJob(): void
   {
-    $cron_id_embedding = Cron::getCronCode('embeddings');
+    $cron_id_embedding = Cronjob::getCronCode('embeddings');
 
     if (isset($_GET['cronId'])) {
       $cron_id = HTML::sanitize($_GET['cronId']);
+      // Only proceed if the cronId is valid
+      if ($cron_id !== null && !empty($cron_id)) {
+        Cronjob::updateCron($cron_id);
 
-      Cron::updateCron($cron_id);
-
-      if (isset($cron_id) && $cron_id_embedding == $cron_id) {
-        $this->cron->updateAllEmbedding();
+        if ($cron_id_embedding == $cron_id) {
+          $this->cron->updateAllEmbeddings();
+        }
+      } else {
+        // Log invalid cronId attempt
+        error_log('Invalid cronId parameter detected: ' . (isset($_GET['cronId']) ? htmlspecialchars($_GET['cronId']) : 'empty'));
       }
     } else {
-      Cron::updateCron($cron_id_embedding);
+      Cronjob::updateCron($cron_id_embedding);
 
       if (isset($cron_id_embedding)) {
-        $this->cron->updateAllEmbedding();
+        $this->cron->updateAllEmbeddings();
       }
     }
   }

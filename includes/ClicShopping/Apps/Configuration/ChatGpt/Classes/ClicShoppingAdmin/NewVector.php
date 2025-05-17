@@ -64,7 +64,7 @@ class NewVector
     } elseif (strpos($model, 'ollama') === 0) {
       return true; // Ollama n'a pas besoin de clé API
     }
-    
+
     return false;
   }
 
@@ -96,17 +96,21 @@ class NewVector
   public static function gptEmbeddingsModel(): object|null
   {
     Gpt::getEnvironment();
-    
+
     $model = CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL;
-    
+
+    if (!$model) {
+      return null;
+    }
+
     // Vérifier si les clés API nécessaires sont disponibles
     if (!self::checkApiKeys($model)) {
       return null;
     }
-    
+
     // Obtenir la clé API appropriée
     $api_key = self::getApiKey();
-    
+
     if (strpos($model, 'gpt-large') === 0) {
       $config = new OpenAIConfig();
       $config->apiKey = $api_key;
@@ -150,12 +154,12 @@ class NewVector
  public static function createEmbedding(string|null $path_file_upload, string|null $text_description, int $token_length = 128)
  {
     $embeddingGenerator = self::gptEmbeddingsModel();
-    
+
     if ($embeddingGenerator === null) {
       return null;
     }
 
-    try {
+   try {
       if (is_file($path_file_upload)) {
         $filePath = $path_file_upload;
         $reader = new FileDataReader($filePath);
@@ -199,12 +203,12 @@ class NewVector
   {
     $api_key = self::getApiKey();
     $parameters = ['model' => CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL];
-    
+
     $config = new OpenAIConfig();
     $config->apiKey = $api_key;
     $config->model = $parameters['model'];
     $config->modelOptions = $parameters;
-    
+
     $chat = new OpenAIChat($config);
     return $chat;
   }
