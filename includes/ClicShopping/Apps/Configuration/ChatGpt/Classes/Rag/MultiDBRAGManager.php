@@ -13,8 +13,8 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
-use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
 
+use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
@@ -22,6 +22,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\AnalyticsAgent;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
 
+use LLPhant\Query\SemanticSearch\LLMReranker;
 use LLPhant\Embeddings\Document;
 use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
 
@@ -343,12 +344,17 @@ class MultiDBRAGManager
         }
       }
 
-      // Sort the result by similarity score (High to low)
       if (!empty($allResults)) {
-        usort($allResults, function ($a, $b) {
+        $array_parameters = [
+          'model' => CLICSHOPPING_APP_CHATGPT_CH_MODEL,
+          'max_tokens' => 128
+        ];
 
-          return $b->metadata['score'] <=> $a->metadata['score'];
-        });
+        $chat = Gpt::getOpenAiGpt($array_parameters);
+
+        $reranker = new LLMReranker($chat, $limit);
+
+        $allResults = $reranker->transformDocuments([$query], $allResults);
       }
 
       // limit the total result

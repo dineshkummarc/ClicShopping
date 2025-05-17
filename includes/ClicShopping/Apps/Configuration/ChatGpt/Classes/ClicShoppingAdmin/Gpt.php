@@ -13,8 +13,10 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Statistics;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\InputValidator;
 
 use LLPhant\Chat\MistralAIChat;
 use LLPhant\Chat\OllamaChat;
@@ -52,9 +54,11 @@ class Gpt {
   }
 
   /**
-   * Sets the environment variable for the OpenAI API key.
+   * Securely retrieves the OpenAI API key for use in API calls.
+   * Instead of setting an environment variable with putenv(), which is insecure,
+   * this method simply returns the API key from the application configuration.
    *
-   * @return string The environment variable setting result.
+   * @return string|null The API key or null if not configured
    */
   public static function getEnvironment(): string|null
   {
@@ -373,9 +377,21 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
       $engine = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
     }
 
-    $prompt = HTML::sanitize($question);
+    // Validate and sanitize the question using our enhanced validator
+    $prompt = InputValidator::validateParameter(
+      $question,
+      'string',
+      '',
+      [
+        'maxLength' => 4096, // Reasonable limit for prompt length
+        'pattern' => '/^[^<>]*$/', // Disallow HTML tags
+        'escape' => true // Apply HTML escaping
+      ]
+    );
+
+    // Additional sanitization for extra security
     $prompt = HTMLOverrideCommon::removeInvisibleCharacters($prompt);
- 
+
     // Get the chat instance
     $chat = self::getChat($question, $maxtoken, $temperature, $engine, $max);
 
@@ -400,7 +416,17 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
         statistics::saveStats($usage, $engine);
       }
 
-      $saveData = isset($_POST['saveGpt']) ? HTML::sanitize($_POST['saveGpt']) : 0;
+      // Validate and sanitize the saveGpt parameter from POST data
+      $saveData = isset($_POST['saveGpt']) ? 
+        InputValidator::validateParameter(
+          $_POST['saveGpt'],
+          'int',
+          0,
+          [
+            'min' => 0,
+            'max' => 1
+          ]
+        ) : 0;
 
       if ($saveData === 1) {
         self::saveData($question, $result);
@@ -423,11 +449,43 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
+    // Validate and sanitize the question and result before saving to database
+    $validatedQuestion = InputValidator::validateParameter(
+      $question,
+      'string',
+      '',
+      [
+        'maxLength' => 4096, // Reasonable limit for question length
+        'escape' => true // Apply HTML escaping
+      ]
+    );
+
+    $validatedResult = InputValidator::validateParameter(
+      $result,
+      'string',
+      '',
+      [
+        'maxLength' => 8192, // Reasonable limit for result length
+        'escape' => true // Apply HTML escaping
+      ]
+    );
+
+    // Validate the user admin value
+    $validatedUserAdmin = InputValidator::validateParameter(
+      AdministratorAdmin::getUserAdmin(),
+      'string',
+      'system',
+      [
+        'maxLength' => 255,
+        'pattern' => '/^[a-zA-Z0-9_\-\.\s]+$/' // Allow alphanumeric, underscore, hyphen, period, and spaces
+      ]
+    );
+
     $array_sql = [
-      'question' => $question,
-      'response' => $result,
+      'question' => $validatedQuestion,
+      'response' => $validatedResult,
       'date_added' => 'now()',
-      'user_admin' => AdministratorAdmin::getUserAdmin()
+      'user_admin' => $validatedUserAdmin
     ];
 
     // Use the database layer's save method which should handle parameterization

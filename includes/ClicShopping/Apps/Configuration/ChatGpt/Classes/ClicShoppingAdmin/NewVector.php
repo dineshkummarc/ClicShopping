@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin;
 
+use ClicShopping\OM\CLICSHOPPING;
 use LLPhant\Chat\OpenAIChat;
 use LLPhant\Embeddings\DataReader\FileDataReader;
 use LLPhant\Embeddings\Document;
@@ -25,6 +26,7 @@ use LLPhant\Embeddings\EmbeddingGenerator\VoyageAI\Voyage3LiteEmbeddingGenerator
 use LLPhant\OpenAIConfig;
 use LLPhant\VoyageAIConfig;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\InputValidator;
 
 class NewVector
 {
@@ -157,6 +159,28 @@ class NewVector
 
     if ($embeddingGenerator === null) {
       return null;
+    }
+
+    if (!empty($path_file_upload)) {
+      $baseDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'sources/Download/Private';
+
+      // Define allowed file extensions for security
+      $allowedExtensions = ['txt', 'pdf', 'doc', 'docx', 'csv', 'json', 'xml'];
+
+      // Validate the file path using our enhanced validator
+      $validatedPath = InputValidator::validateFilePath(
+        $path_file_upload,
+        [$baseDir],
+        $allowedExtensions,
+        true // File must exist
+      );
+
+      if ($validatedPath === false) {
+        throw new \RuntimeException('Invalid or unauthorized file path');
+      }
+
+      // Use the validated path for further operations
+      $path_file_upload = $validatedPath;
     }
 
    try {
