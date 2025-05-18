@@ -333,10 +333,10 @@ class Newsletter
     $newsletter_id = HTML::sanitize($newsletter_id);
 
     $Qupdate = $this->app->db->prepare('update :table_newsletters
-                                          set date_sent = now(),
-                                          status = 1
-                                          where newsletters_id = :newsletters_id
-                                         ');
+                                        set date_sent = now(),
+                                              status = 1
+                                        where newsletters_id = :newsletters_id
+                                       ');
     $Qupdate->bindInt(':newsletters_id', $newsletter_id);
     $Qupdate->execute();
 
@@ -415,24 +415,35 @@ class Newsletter
 // ------------------------------------------
       $this->app->db->delete('newsletters_customers_temp');
 
+      $batch = [];
+      $batch_size = 100;
+      $iteration = 0;
+      $check_interval = 100;
+
       while ($Qmail->fetch()) {
-        $time_end = explode(' ', microtime());
-        $timer_total = number_format(($time_end[1] + $time_end[0] - ($time_start[1] + $time_start[0])), 3);
-
-        if ($timer_total > $max_execution_time) {
-          echo("<meta http-equiv=\"refresh\" content=\"12\">");
-        }
-
         if (Is::EmailAddress($Qmail->value('customers_email_address'))) {
-          $sql_array = [
-            'customers_firstname' => addslashes($Qmail->value('customers_firstname')),
-            'customers_lastname' => addslashes($Qmail->value('customers_lastname')),
+          $batch[] = [
+            'customers_firstname' => $Qmail->value('customers_firstname'),
+            'customers_lastname' => $Qmail->value('customers_lastname'),
             'customers_email_address' => $Qmail->value('customers_email_address')
           ];
-
-          $this->app->db->save('newsletters_customers_temp', $sql_array);
         }
-      }  // end while
+
+        if (count($batch) >= $batch_size) {
+          $this->app->db->save('newsletters_customers_temp', $batch);
+          $batch = [];
+        }
+
+        if (($iteration++ % $check_interval) === 0) {
+          if ((microtime(true) - $time_start) > $max_execution_time) {
+            if (!empty($batch)) {
+              $this->app->db->save('newsletters_customers_temp', $batch);
+            }
+
+            echo("<meta http-equiv=\"refresh\" content=\"12\">");
+          }
+        }
+      }
     } else {
       echo '<br />';
       echo '<span class="text-warning text-center">There is a pb with newsletters_customers_temp Database, Click Cancel to go back and retry.</span><br />';
