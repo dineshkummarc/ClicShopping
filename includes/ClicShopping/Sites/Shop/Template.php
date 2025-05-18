@@ -660,7 +660,7 @@ class Template
 //mode privee ou ouvert - affichage des boxes gauche ou droite
               if (MODE_VENTE_PRIVEE == 'true' && $CLICSHOPPING_Customer->isLoggedOn()) {
                 $modules_boxes = 'modules_boxes';
-              } elseif (MODE_VENTE_PRIVEE == 'true' && !$CLICSHOPPING_Customer->isLoggedOn) {
+              } elseif (MODE_VENTE_PRIVEE == 'true' && !$CLICSHOPPING_Customer->isLoggedOn()) {
                 $modules_boxes = '';
               } else {
                 $modules_boxes = 'modules_boxes';
