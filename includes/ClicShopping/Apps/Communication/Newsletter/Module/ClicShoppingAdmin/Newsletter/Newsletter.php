@@ -23,18 +23,18 @@ use ClicShopping\Apps\Configuration\TemplateEmail\Classes\ClicShoppingAdmin\Temp
 class Newsletter
 {
   public mixed $app;
-  public $show_chooseAudience;
-  public $title;
-  public $content;
+  public bool $show_chooseAudience;
+  public string $title;
+  public string $content;
 
-  protected int $twitter;
-  protected $file;
-  protected int $languageId;
-  protected int $customerGroupId;
-  protected int $createFile;
-  protected int $newsletterNoAccount;
-  protected int $fileId;
-  protected string $emailFrom;
+  private int $twitter;
+  private ?string $file = null;
+  private int $languageId;
+  private int $customerGroupId;
+  private int $createFile;
+  private int $newsletterNoAccount;
+  private int $fileId;
+  private string $emailFrom;
 
   /**
    * Constructor method for initializing the newsletter object and loading required data and configurations.
@@ -57,16 +57,12 @@ class Newsletter
     $this->title = $title;
     $this->content = $content;
     $this->emailFrom = HTML::sanitize(STORE_OWNER_EMAIL_ADDRESS);
-    $this->twitter = (int)$_GET['at']; // send to twitter
-
-    if (isset($_GET['ana'])) {
-      $this->newsletterNoAccount = (int)$_GET['ana'];
-    }
-
-    $this->fileId = (int)$_GET['nID']; // id file on disk
-    $this->languageId = (int)$_GET['nlID'];
-    $this->customerGroupId = (int)$_GET['cgID'];
-    $this->createFile = (int)$_GET['ac'];
+    $this->twitter = (int)($_GET['at'] ?? 0);
+    $this->newsletterNoAccount = (int)($_GET['ana'] ?? 0);
+    $this->fileId = (int)($_GET['nID'] ?? 0);
+    $this->languageId = (int)($_GET['nlID'] ?? 0);
+    $this->customerGroupId = (int)($_GET['cgID'] ?? 0);
+    $this->createFile = (int)($_GET['ac'] ?? 0);
   }
 
   /**
@@ -74,7 +70,7 @@ class Newsletter
    *
    * @return bool Returns false if no audience is selected.
    */
-  public function chooseAudience()
+  public function chooseAudience(): bool
   {
     return false;
   }
@@ -85,7 +81,7 @@ class Newsletter
    *
    * @return string Returns the confirmation string containing HTML content including buttons and messages for newsletters.
    */
-  public function confirm()
+  public function confirm(): string
   {
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
     $CLICSHOPPING_Language = Registry::get('Language');
@@ -215,17 +211,15 @@ class Newsletter
     return $confirm_string;
   }
 
-
-// Envoi du mail sans gestion de Fckeditor
-
   /**
-   * Sends the specified newsletter to subscribed customers based on their language and group preferences.
-   * Handles the creation and sending of emails, updates the database, and triggers additional actions.
+   * Sends the newsletter to customers who have subscribed to it.
+   * It retrieves customer data, processes the email content, and sends the emails in batches.
+   * It also handles error checking and temporary storage of customer data.
    *
-   * @param int $newsletter_id The ID of the newsletter to be sent.
-   * @return bool False if the newsletter system is inactive or fails to process the operation, otherwise void.
+   * @param int $newsletter_id The ID of the newsletter being sent.
+   * @return void
    */
-  public function send($newsletter_id)
+  public function send(int $newsletter_id): void
   {
     $CLICSHOPPING_Mail = Registry::get('Mail');
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
@@ -350,16 +344,13 @@ class Newsletter
 // **************************************************
 
   /**
-   * Sends newsletters using CKEditor content to a list of subscribed customers.
-   * The method retrieves customer data, processes email content with CKEditor,
-   * and sends the emails in batches. It also handles error checking and temporary
-   * storage of customer data.
+   * Sends the newsletter using CKEditor, including HTML content and email signature.
+   * It retrieves customer data, processes the email content, and sends the emails in batches.
+   * It also handles error checking and temporary storage of customer data.
    *
-   * @return bool Returns false if the 'CLICSHOPPING_APP_NEWSLETTER_NL_STATUS' configuration
-   *              is not enabled or necessary customer data is not found, indicating
-   *              the process cannot proceed.
+   * @return void
    */
-  public function sendCkeditor()
+  public function sendCkeditor(): void
   {
     $CLICSHOPPING_Mail = Registry::get('Mail');
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
@@ -487,7 +478,7 @@ class Newsletter
    * @return bool Returns false if the Twitter functionality is disabled
    *              via configuration or if conditions for sending are not satisfied.
    */
-  private function sendTwitter()
+  private function sendTwitter(): string
   {
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
