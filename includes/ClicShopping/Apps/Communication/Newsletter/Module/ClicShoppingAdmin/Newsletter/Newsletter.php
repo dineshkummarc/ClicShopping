@@ -27,8 +27,6 @@ class Newsletter
   public string $title;
   public string $content;
 
-  private int $twitter;
-  private ?string $file = null;
   private int $languageId;
   private int $customerGroupId;
   private int $createFile;
@@ -57,7 +55,6 @@ class Newsletter
     $this->title = $title;
     $this->content = $content;
     $this->emailFrom = HTML::sanitize(STORE_OWNER_EMAIL_ADDRESS);
-    $this->twitter = (int)($_GET['at'] ?? 0);
     $this->newsletterNoAccount = (int)($_GET['ana'] ?? 0);
     $this->fileId = (int)($_GET['nID'] ?? 0);
     $this->languageId = (int)($_GET['nlID'] ?? 0);
@@ -165,7 +162,7 @@ class Newsletter
 // Display a button if subcription is > 0
 // ----------------------
     if (SEND_EMAILS == 'true' && $Qmail->valueInt('count') > 0) {
-      $send_button = '<span class="float-end">' . HTML::button($this->app->getDef('button_send'), null, $this->app->link('ConfirmSend&page=' . (int)$_GET['page'] . '&nID=' . $this->fileId . '&nlID=' . $this->languageId . '&cgID=' . $this->customerGroupId . '&ac=' . $this->createFile . '&at=' . $this->twitter . '&ana=' . $this->newsletterNoAccount), 'success', null) . '</span>';
+      $send_button = '<span class="float-end">' . HTML::button($this->app->getDef('button_send'), null, $this->app->link('ConfirmSend&page=' . (int)$_GET['page'] . '&nID=' . $this->fileId . '&nlID=' . $this->languageId . '&cgID=' . $this->customerGroupId . '&ac=' . $this->createFile . '&ana=' . $this->newsletterNoAccount), 'success', null) . '</span>';
     } else {
       $send_button = '';
     }
@@ -217,9 +214,9 @@ class Newsletter
    * It also handles error checking and temporary storage of customer data.
    *
    * @param int $newsletter_id The ID of the newsletter being sent.
-   * @return void
+   * @return mixed
    */
-  public function send(int $newsletter_id): void
+  public function send(int $newsletter_id): mixed
   {
     $CLICSHOPPING_Mail = Registry::get('Mail');
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
@@ -335,8 +332,6 @@ class Newsletter
     $Qupdate->execute();
 
     $CLICSHOPPING_Hooks->call('Newsletter', 'NewsletterSend');
-
-    $this->sendTwitter();
   } // end function
 
 // ***************************************************
@@ -348,9 +343,9 @@ class Newsletter
    * It retrieves customer data, processes the email content, and sends the emails in batches.
    * It also handles error checking and temporary storage of customer data.
    *
-   * @return void
+   * @return mixed
    */
-  public function sendCkeditor(): void
+  public function sendCkeditor(): mixed
   {
     $CLICSHOPPING_Mail = Registry::get('Mail');
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
@@ -465,39 +460,5 @@ class Newsletter
     }
 
     $CLICSHOPPING_Hooks->call('Newsletter', 'NewsletterSendCkEditor');
-
-    $this->sendTwitter();
-  }
-
-  /**
-   * Sends the newsletter to Twitter if certain conditions are met, such as whether
-   * Twitter sharing is enabled and the required file creation process is successful.
-   * It also checks if the necessary directory is writable and logs an alert message
-   * when conditions are not met.
-   *
-   * @return bool Returns false if the Twitter functionality is disabled
-   *              via configuration or if conditions for sending are not satisfied.
-   */
-  private function sendTwitter(): string
-  {
-    $CLICSHOPPING_Hooks = Registry::get('Hooks');
-
-    if (!\defined('CLICSHOPPING_APP_NEWSLETTER_NL_STATUS') || CLICSHOPPING_APP_NEWSLETTER_NL_STATUS == 'False') {
-      return false;
-    }
-
-    if (FileSystem::isWritable(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'sources/public/newsletter')) {
-//        if ($this->twitter == 1 && $this->createFile == 1 && $this->errorCreatingFile !== true) {
-      if ($this->twitter == 1 && $this->createFile == 1) {
-        $CLICSHOPPING_Hooks->call('Newsletter', 'SendTwitter');
-      }
-    } else {
-      $alert = '<div class="mt-1"></div>';
-      $alert .= '<div class="alert alert-warning text-center" role="alert">';
-      $alert .= $this->app->getDef('error_twitter') . ' ' . CLICSHOPPING::getConfig('dir_root', 'Shop') . 'sources/public/newsletter';
-      $alert .= '</div>';
-
-      echo $alert;
-    }
   }
 }
