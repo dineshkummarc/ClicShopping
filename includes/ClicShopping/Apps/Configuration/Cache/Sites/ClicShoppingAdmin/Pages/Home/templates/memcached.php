@@ -14,18 +14,25 @@ $CLICSHOPPING_Cache = Registry::get('Cache');
 $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 
-$memcache = Registry::get('Memcached');
-$CLICSHOPPING_Memcached = Registry::get('Memcached');
+if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
+  ?>
+  <div class="alert alert-warning">
+    <?php echo $CLICSHOPPING_Cache->getDef('text_memcache_not_available'); ?>
+  </div>
+  <?php
+} else {
+  $memcache = Registry::get('Memcached');
+  $CLICSHOPPING_Memcached = Registry::get('Memcached');
 
-$CLICSHOPPING_Memcached->addServer('127.0.0.1', 11211);
-$stats = $CLICSHOPPING_Memcached->getStats();
+  $CLICSHOPPING_Memcached->addServer('127.0.0.1', 11211);
+  $stats = $CLICSHOPPING_Memcached->getStats();
 
-$memcache_available = is_array($stats) && count($stats) > 0;
+  $memcache_available = is_array($stats) && count($stats) > 0;
 
-if (isset($_POST['reset_memcache'])) {
-  $CLICSHOPPING_Memcached->flush();
-  $CLICSHOPPING_MessageStack->add($CLICSHOPPING_Cache->getDef('text_memcache_flushed'), 'success');
-}
+  if (isset($_POST['reset_memcache'])) {
+    $CLICSHOPPING_Memcached->flush();
+    $CLICSHOPPING_MessageStack->add($CLICSHOPPING_Cache->getDef('text_memcache_flushed'), 'success');
+  }
 ?>
 <div class="contentBody">
   <div class="row">
@@ -135,3 +142,5 @@ if (isset($_POST['reset_memcache'])) {
     </div>
   </div>
 </div>
+<?php
+}

@@ -12,3 +12,4 @@ text_memcache_not_available = Memcached is not available on this server
 success_memcached_reset =  Memcached has been reset successfully
 error_memcached_reset =  Failed to reset memcached
 warning_opcache_function = Memcached function not available
+text_memcache_not_available = Please enable memcached to use this feature
