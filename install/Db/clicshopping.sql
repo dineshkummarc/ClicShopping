@@ -1710,6 +1710,9 @@ INSERT INTO configuration VALUES(1758, 'Activer la vérification de l\'email par
 INSERT INTO configuration VALUES(1759, 'Activer la vérification par l\'email par code d\'accés pour la boutique', 'EMAIL_VERIFICATION_ENABLED_SHOP', 'False', 'Activer ou désactiver la vérification par code pour l\'accès àla boutique. <br> Veuillez vérifier que l\'administrateur peut accéder à cette vérification', 46, 6, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1760, 'Durée de validité du code de la vérification par email (minutes)', 'EMAIL_VERIFICATION_CODE_EXPIRY', '5', 'Durée de validité du code de vérification en minutes', 46, 7, NULL, '2025-04-23 15:01:20', NULL, NULL);
 INSERT INTO configuration VALUES(1761, 'Longueur du code de vérification de la vérification par email ', 'EMAIL_VERIFICATION_CODE_LENGTH', '6', 'Nombre de chiffres dans le code de vérification (4-8)', 46, 8, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO configuration VALUES(1762, 'Clé Client id', 'CLICSHOPPING_APP_UPGRADE_UP_CLIENT_ID', '', 'clef Client Id', 6, 0, NULL, '2025-05-19 10:42:16', NULL, NULL);
+INSERT INTO configuration VALUES(1763, 'Clé secrète', 'CLICSHOPPING_APP_UPGRADE_UP_SECRET_KEY', '', 'Vous devez envoyer une demande à un administrateur du forum pour obtenir la clé secrète', 6, 0, NULL, '2025-05-19 10:42:16', NULL, NULL);
+
 
 
 

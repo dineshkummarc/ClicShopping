@@ -110,8 +110,8 @@ class Marketplace
       'form_params' => [
         'grant_type'    => 'password',
         'scope'         => 'profile',
-        'client_id'     => '6a957ad3fec7dc151b8fa9c5dcb7e63a',
-        'client_secret' => 'e75c22798d096d056c965faa565d1b77a046501f5576eb6c',
+        'client_id'     => CLICSHOPPING_APP_UPGRADE_UP_CLIENT_ID,
+        'client_secret' => CLICSHOPPING_APP_UPGRADE_UP_SECRET_KEY,
         'username'      => CLICSHOPPING_APP_UPGRADE_UP_USERNAME,
         'password'      => CLICSHOPPING_APP_UPGRADE_UP_PASSWORD,
       ]

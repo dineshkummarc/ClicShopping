@@ -10,16 +10,16 @@
 
 namespace ClicShopping\Apps\Tools\Upgrade\Module\ClicShoppingAdmin\Config\UP\Params;
 
-class sort_order extends \ClicShopping\Apps\Tools\Upgrade\Module\ClicShoppingAdmin\Config\ConfigParamAbstract
+class client_id extends \ClicShopping\Apps\Tools\Upgrade\Module\ClicShoppingAdmin\Config\ConfigParamAbstract
 {
 
-  public $default = '300';
+  public $default = '';
   public bool $app_configured = true;
-  public int|null $sort_order = 300;
+  public int|null $sort_order = 53;
 
   protected function init()
   {
-    $this->title = $this->app->getDef('cfg_upgrade_sort_order_title');
-    $this->description = $this->app->getDef('cfg_upgrade_sort_order_description');
+    $this->title = $this->app->getDef('cfg_upgrade_client_id_title');
+    $this->description = $this->app->getDef('cfg_upgrade_client_id_description');
   }
 }

@@ -164,6 +164,13 @@ ALTER TABLE `clic_orders` CHANGE `billing_name` `billing_name` TEXT CHARACTER SE
 #embeddings
 INSERT INTO `clic_cron` VALUES(5, 'embeddings', 'update the embeddings table if it not exist', 'weekly', 'embeddings', 1, '2025-05-15 20:14:27', '2025-05-15 20:19:06');
 
+#Marketplace
+INSERT INTO `clic_configuration` VALUES(null, 'cfg_upgrade_client_id_title', 'CLICSHOPPING_APP_UPGRADE_UP_CLIENT_ID', '', 'cfg_upgrade_client_id_description', 6, 0, NULL, '2025-05-19 10:42:16', NULL, NULL);
+INSERT INTO `clic_configuration` VALUES(null, 'Clé secrète', 'CLICSHOPPING_APP_UPGRADE_UP_SECRET_KEY', '', 'Vous devez envoyer une demande à un administrateur du forum pour obtenir la clé secrète', 6, 0, NULL, '2025-05-19 10:42:16', NULL, NULL);
+
+
+
+
 
 #Faire la mise du schema de clicshopping
 

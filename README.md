@@ -64,7 +64,7 @@ Use the Artificial Intlligence to your Ecommerce business with ClicShoppingAI. F
 
 #Solution
  - The solution is built on modules and APP to have a very big flexibility.
- - The approach is completely modular on the catalog / administration with simple code to understand, to customize and to update at need.
+ - The approach is completely modular on the catalog / administration with simple code to understand, to customize, and to update at need.
  - All informations are available at the forum https://www.clicshopping.org or look the [Wiki](https://github.com/ClicShopping/ClicShopping_V3/wiki) for the technical documentation.
  - The modules are available on Github (Official and Community) or by an internal install.
 
@@ -140,8 +140,9 @@ More information in the Wiki
 - 
 
 - Generative AI functionalities :
-- Generative artificial Intelligence included with Gpt, Ollama and Anthropic.
-- Intelligent RAG BI (business intelligence) with agent
+- Generative artificial Intelligence included with Gpt, Ollama, and Anthropic.
+- Intelligent RAG BI (business intelligence) with agent using chatbot
+- Use the embeddings for the RAG to retrieve information
 - Generative artificial products customers recommendations
 - Generative artificial intelligence for All content (product,categories...)
 - Generative artificial intelligence for SEO
@@ -158,11 +159,11 @@ More information in the Wiki
 - Full SEO functionalities optimization and url
 - Payment and Shipping modules included inside the application with Stripe
 - Extension System to install new Applications via the back-office
-- No limit to insert content
 - Some dynamic statistics inside the dashboard and all the back-office
 - GDRP included and some regulation aspect
+- GDRP include hash AES encryption for the more important information
 - Some configuration capacities to adapt the settings in function of your needs in B2B or B2C
-- Ready for mobile, tablet and desktop with BootStrap 5.x technology
+- Ready for mobile, tablet, and desktop with BootStrap 5.x technology
 - Several modes of payment / delivery can be installed
 - More 250 modules available and free functional on the marketplace and available on Github !
 - Full responsive design application with Bootstrap 5.x
@@ -171,12 +172,13 @@ More information in the Wiki
 - Multi-language (English and french included)
 - Lazy load image optimization
 - Free modular Apps to create import or to import from osCommerce 2.x, OpenCart, ZenCart, Crealoaded, Prestashop .... database migration available on the marketplace
-- Double authentication Topt
+- Double authentication number
 - API REST
 - Antispam
 - Some dynamics reports
 - Cron System
 - API connection
+- OpCache
  ...
 
 
