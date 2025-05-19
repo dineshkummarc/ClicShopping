@@ -15,6 +15,9 @@ Rag with agent BI
  - Allow the rag to make statistic via dynamic query
  - Intelligent rag with agent BI allowing to use different embedding model
 API improvment and inclusion OpenAi GPT Cart
+OpCache included
+
+
 
 ------------------
 version3.457
