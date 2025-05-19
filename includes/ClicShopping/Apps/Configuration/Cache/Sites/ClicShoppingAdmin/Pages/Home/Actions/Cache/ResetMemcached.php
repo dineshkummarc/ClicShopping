@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Configuration\Cache\Sites\ClicShoppingAdmin\Pages\Ho
 
 use ClicShopping\OM\Registry;
 
-class ResetOpCache extends \ClicShopping\OM\PagesActionsAbstract
+class ResetMemcached extends \ClicShopping\OM\PagesActionsAbstract
 {
   public mixed $app;
 
@@ -21,20 +21,21 @@ class ResetOpCache extends \ClicShopping\OM\PagesActionsAbstract
     $this->app = Registry::get('Cache');
   }
 
+
   public function execute()
   {
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 
-    if (function_exists('opcache_reset')) {
-      if (opcache_reset()) {
-        $CLICSHOPPING_MessageStack->add($this->app->getDef('success_opcache_reset'), 'success');
-      } else {
-        $CLICSHOPPING_MessageStack->add($this->app->getDef('error_opcache_reset'), 'error');
-      }
+    if (class_exists('Memcached')) {
+      $memcache = new \Memcached();
+      $memcache->addServer('127.0.0.1', 11211);
+      $memcache->flush();
+      $CLICSHOPPING_MessageStack->add($this->app->getDef('success_memcached_reset'), 'success');
     } else {
-      $CLICSHOPPING_MessageStack->add($this->app->getDef('warning_opcache_function'), 'warning');
+      $CLICSHOPPING_MessageStack->add($this->app->getDef('error_memcached_reset'), 'error');
     }
 
-    $this->app->redirect('OpCache');
+    $this->app ->redirect('Memcached');
   }
 }
+

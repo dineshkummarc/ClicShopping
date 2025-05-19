@@ -89,6 +89,12 @@ class Shop extends \ClicShopping\OM\SitesAbstract
       define($Qcfg->value('k'), $Qcfg->value('v'));
     }
 
+    if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'true') {
+      $memcached = new \Memcached();
+      $memcached->addServer('127.0.0.1', 11211);
+      Registry::set('Memcached', $memcached);
+    }
+
 // set the session name and save path
     $CLICSHOPPING_Session = Session::load();
     Registry::set('Session', $CLICSHOPPING_Session);

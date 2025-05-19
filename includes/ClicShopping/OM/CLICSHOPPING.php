@@ -774,7 +774,6 @@ class CLICSHOPPING
     return basename(self::getIndex());
   }
 
-
   /**
    * Converts an associative array into a query string-style formatted string.
    *

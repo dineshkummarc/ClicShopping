@@ -226,6 +226,18 @@ if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
             class="text-end"><?php echo extension_loaded('json') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
         </tr>
         <tr>
+          <td>Memcached</td>
+          <td class="text-center"><?php echo extension_loaded('memcached') ? 'On' : 'Off'; ?></td>
+          <td class="text-center">Optionnal</td>
+          <td class="text-end"><?php echo extension_loaded('memcached') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
+        </tr>
+        <tr>
+          <td>OPcache</td>
+          <td class="text-center"><?php echo extension_loaded('opcache') ? 'On' : 'Off'; ?></td>
+          <td class="text-center">Optionnal</td>
+          <td class="text-end"><?php echo extension_loaded('opcache') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
+        </tr>
+        <tr>
           <td>Pathinfo</td>
           <td class="text-center"><?php echo function_exists('pathinfo') ? 'On' : 'Off'; ?></td>
           <td class="text-center">On</td>

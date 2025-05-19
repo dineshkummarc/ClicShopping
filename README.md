@@ -178,7 +178,7 @@ More information in the Wiki
 - Some dynamics reports
 - Cron System
 - API connection
-- OpCache
+- OpCache / Memcached
  ...
 
 

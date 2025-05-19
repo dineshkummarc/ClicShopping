@@ -151,10 +151,16 @@ CREATE VECTOR INDEX embedding_index ON clic_orders_embedding (embedding);
 
 
 
-#opcache (update the number 805)
-INSERT INTO sdministrator_menu VALUES(805, 'index.php?A&Configuration\\Cache&OpCache', 21, 6, 1, '', 0, 'app_configuration_cache', 1);
-INSERT INTO administrator_menu_description VALUES(805, 'OpCache information', 1);
-INSERT INTO administrator_menu_description VALUES(805, 'Informations OpCache', 2);
+#opcache / Memcache (update the number 805)
+INSERT INTO clic_sdministrator_menu VALUES(805, 'index.php?A&Configuration\\Cache&OpCache', 21, 6, 1, '', 0, 'app_configuration_cache', 1);
+INSERT INTO administrator_menu VALUES(806, 'index.php?A&Configuration\\Cache&Memcached', 21, 7, 1, '', 0, 'app_configuration_cache', 1);
+
+INSERT INTO clic_administrator_menu_description VALUES(805, 'OpCache information', 1);
+INSERT INTO clic_administrator_menu_description VALUES(805, 'Informations OpCache', 2);
+INSERT INTO `clic_administrator_menu_description` VALUES(806, 'Memcached information', 1);
+INSERT INTO `clic_administrator_menu_description` VALUES(806, 'Informations Memcached', 2);
+
+
 
 #update for Hashing
 ALTER TABLE `clic_orders` CHANGE `customers_name` `customers_name` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;
@@ -212,6 +218,7 @@ INSERT INTO clic_configuration VALUES(null, 'Enable email verification by code f
 INSERT INTO clic_configuration VALUES(null, 'Enable email verification by code for store access', 'EMAIL_VERIFICATION_ENABLED_SHOP', 'False', 'Enable or disable code verification for store access. <br> Please ensure the administrator can access this verification', 46, 6, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO clic_configuration VALUES(null, 'Email verification code validity duration (minutes)', 'EMAIL_VERIFICATION_CODE_EXPIRY', '5', 'Duration of the verification code validity in minutes', 46, 7, NULL, '2025-04-23 15:01:20', NULL, NULL);
 INSERT INTO clic_configuration VALUES(null, 'Email verification code length', 'EMAIL_VERIFICATION_CODE_LENGTH', '6', 'Number of digits in the verification code (4-8)', 46, 8, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO clic_configuration VALUES(null, 'Use Memcached', 'USE_MEMCACHED', 'false', 'Enable Memcached caching', 11,2, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
 
 
 
@@ -231,3 +238,4 @@ INSERT INTO clic_configuration VALUES(null, 'Activer la vérification de l\'emai
 INSERT INTO clic_configuration VALUES(null, 'Activer la vérification par l\'email par code d\'accés pour la boutique', 'EMAIL_VERIFICATION_ENABLED_SHOP', 'False', 'Activer ou désactiver la vérification par code pour l\'accès àla boutique. <br> Veuillez vérifier que l\'administrateur peut accéder à cette vérification', 46, 6, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO clic_configuration VALUES(null, 'Durée de validité du code de la vérification par email (minutes)', 'EMAIL_VERIFICATION_CODE_EXPIRY', '5', 'Durée de validité du code de vérification en minutes', 46, 7, NULL, '2025-04-23 15:01:20', NULL, NULL);
 INSERT INTO clic_configuration VALUES(null, 'Longueur du code de vérification de la vérification par email ', 'EMAIL_VERIFICATION_CODE_LENGTH', '6', 'Nombre de chiffres dans le code de vérification (4-8)', 46, 8, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO clic_configuration VALUES(null, 'Use Memcached', 'USE_MEMCACHED', 'false', 'Enable Memcached caching', 11,2, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');

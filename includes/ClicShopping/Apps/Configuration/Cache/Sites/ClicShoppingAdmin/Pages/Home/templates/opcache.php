@@ -72,11 +72,10 @@ $data = $opcache->getData();
                 </button>
               </form>&nbsp;&nbsp;
 
-              <form action="<?php echo $CLICSHOPPING_Cache->link('Cache&ResetOpCache'); ?>" method="post" class="d-inline"
-                    onsubmit="return confirm('<?php echo $CLICSHOPPING_Cache->getDef('text_reset_confirm'); ?>');">
-                <button type="submit" class="btn btn-danger" name="reset_opcache">
-                  <?php echo $CLICSHOPPING_Cache->getDef('text_reset_opcache'); ?>
-                </button>
+              <?php
+              echo HTML::form('reset', $CLICSHOPPING_Cache->link('Cache&ResetOpCache'), 'post');
+              echo HTML::button($CLICSHOPPING_Cache->getDef('text_reset_opcache'), null, null, 'danger');
+              ?>
               </form>
             </div>
 

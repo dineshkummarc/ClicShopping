@@ -16,7 +16,7 @@ Rag with agent BI
  - Intelligent rag with agent BI allowing to use different embedding model
 API improvment and inclusion OpenAi GPT Cart
 OpCache included
-
+Memcached included
 
 
 ------------------

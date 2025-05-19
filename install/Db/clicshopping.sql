@@ -213,6 +213,7 @@ INSERT INTO administrator_menu VALUES(802, 'index.php?A&Customers\\Reviews&Revie
 INSERT INTO administrator_menu VALUES(803, 'index.php?A&Customers\\Reviews&StatsCustomersVote', 98, 4, 0, '', 0, 'app_customers_reviews', 1);
 INSERT INTO administrator_menu VALUES(804, 'index.php?A&Configuration\\Settings&Settings&gID=11', 21, 2, 0, '', 1, 'app_configuration_cache', 1);
 INSERT INTO administrator_menu VALUES(805, 'index.php?A&Configuration\\Cache&OpCache', 21, 6, 1, '', 0, 'app_configuration_cache', 1);
+INSERT INTO administrator_menu VALUES(811, 'index.php?A&Configuration\\Cache&Memcached', 21, 7, 1, '', 0, 'app_configuration_cache', 1);
 
 INSERT INTO administrator_menu_description VALUES(0, '', 1);
 INSERT INTO administrator_menu_description VALUES(0, '', 2);
@@ -589,6 +590,8 @@ INSERT INTO administrator_menu_description VALUES(804, 'Cache Setup', 1);
 INSERT INTO administrator_menu_description VALUES(804, 'Gestion du Cache', 2);
 INSERT INTO administrator_menu_description VALUES(805, 'OpCache information', 1);
 INSERT INTO administrator_menu_description VALUES(805, 'Informations OpCache', 2);
+INSERT INTO administrator_menu_description VALUES(806, 'Memcached information', 1);
+INSERT INTO administrator_menu_description VALUES(806, 'Informations Memcached', 2);
 
 INSERT INTO api VALUES(1, 'Default', 'd0a36b839700b60727fe13998e22aa0af197c61d8b371e26114c133ca51c4864bd0da73ad6d1e5090b02b55cff42b8a0cd23866e64e78fc8884eb6228d32f5e9d76bed468869dd89ee6bb8a3208c5077e88560d0bc238f67cfc732efcf5313a0cb361e297c29c8d82d050d770ed7dee972af6445e801fa9af12e3d478bf5346a', 0, '2022-09-18 14:25:54', '2022-09-18 14:25:54', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 INSERT INTO api_ip VALUES(1, 1, '127.0.0.1', 'localhost');
@@ -1712,9 +1715,10 @@ INSERT INTO configuration VALUES(1760, 'Durée de validité du code de la vérif
 INSERT INTO configuration VALUES(1761, 'Longueur du code de vérification de la vérification par email ', 'EMAIL_VERIFICATION_CODE_LENGTH', '6', 'Nombre de chiffres dans le code de vérification (4-8)', 46, 8, NULL, '2025-04-23 15:01:20', NULL, NULL);
 INSERT INTO configuration VALUES(1762, 'Clé Client id', 'CLICSHOPPING_APP_UPGRADE_UP_CLIENT_ID', '', 'clef Client Id', 6, 0, NULL, '2025-05-19 10:42:16', NULL, NULL);
 INSERT INTO configuration VALUES(1763, 'Clé secrète', 'CLICSHOPPING_APP_UPGRADE_UP_SECRET_KEY', '', 'Vous devez envoyer une demande à un administrateur du forum pour obtenir la clé secrète', 6, 0, NULL, '2025-05-19 10:42:16', NULL, NULL);
-
-
-
+INSERT INTO configuration VALUES(1764, 'Statut', 'CLICSHOPPING_APP_CACHE_CA_STATUS', 'True', 'Souhaitez vous activer ce module à votre boutique', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
+INSERT INTO configuration VALUES(1765, 'Ordre de tri d\'affichage', 'CLICSHOPPING_APP_CACHE_CA_SORT_ORDER', '30', 'Ordre de tri pour l\'affichage (Le plus petit nombre est montré en premier)', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
+INSERT INTO configuration VALUES(1766, 'Parameter [Cache Control App]', 'MODULE_MODULES_CACHE_INSTALLED', 'Configuration\\Cache\\CA', 'Parameter [Cache Control App]', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
+INSERT INTO configuration VALUES(1767, 'Utiliser Memcached', 'USE_MEMCACHED', 'false', 'Activer la mise en cache Memcached', 11,2, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 
 
 
