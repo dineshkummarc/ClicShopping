@@ -97,6 +97,10 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
             'Doctrine\\Common\\' => 16,
             'DarkGhostHunter\\Preloader\\' => 26,
         ),
+        'A' => 
+        array (
+            'Amnuts\\' => 7,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
@@ -296,6 +300,10 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
         'DarkGhostHunter\\Preloader\\' => 
         array (
             0 => __DIR__ . '/..' . '/darkghosthunter/preloader/src',
+        ),
+        'Amnuts\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/amnuts/opcache-gui/src',
         ),
     );
 

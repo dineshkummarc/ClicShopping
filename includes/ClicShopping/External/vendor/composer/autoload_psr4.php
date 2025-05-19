@@ -55,4 +55,5 @@ return array(
     'Doctrine\\Common\\Collections\\' => array($vendorDir . '/doctrine/collections/src'),
     'Doctrine\\Common\\' => array($vendorDir . '/doctrine/event-manager/src'),
     'DarkGhostHunter\\Preloader\\' => array($vendorDir . '/darkghosthunter/preloader/src'),
+    'Amnuts\\' => array($vendorDir . '/amnuts/opcache-gui/src'),
 );
