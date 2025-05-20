@@ -23,6 +23,11 @@ abstract class SessionAbstract
   protected bool $force_cookies = true;
   public ?string $sameSite;
 
+  public function __construct(?string $name = null)
+  {
+    $this->name = $name;
+  }
+
   /**
    * Checks if a session exists
    *

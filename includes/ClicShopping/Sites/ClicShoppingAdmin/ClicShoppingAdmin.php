@@ -27,6 +27,7 @@ use ClicShopping\OM\Language;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Service;
 use ClicShopping\OM\Session;
+
 use Exception;
 use function count;
 
@@ -75,14 +76,8 @@ class ClicShoppingAdmin extends \ClicShopping\OM\SitesAbstract
       while ($Qcfg->fetch()) {
         define($Qcfg->value('k'), $Qcfg->value('v'));
       }
-
-      if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'true') {
-        $memcached = new \Memcached();
-        $memcached->addServer('127.0.0.1', 11211);
-        Registry::set('Memcached', $memcached);
-      }
-
     }
+
 // Used in the "Backup Manager" to compress backups
     define('LOCAL_EXE_GZIP', 'gzip');
     define('LOCAL_EXE_GUNZIP', 'gunzip');

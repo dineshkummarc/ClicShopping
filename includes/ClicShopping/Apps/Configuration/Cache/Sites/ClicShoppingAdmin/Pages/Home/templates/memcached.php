@@ -21,10 +21,8 @@ if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
   </div>
   <?php
 } else {
-  $memcache = Registry::get('Memcached');
-  $CLICSHOPPING_Memcached = Registry::get('Memcached');
+  $CLICSHOPPING_Memcached = new \Memcached('clicshopping_session');
 
-  $CLICSHOPPING_Memcached->addServer('127.0.0.1', 11211);
   $stats = $CLICSHOPPING_Memcached->getStats();
 
   $memcache_available = is_array($stats) && count($stats) > 0;
@@ -59,7 +57,8 @@ if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
 
   <div class="row">
     <div class="col-md-12">
-      <?php if ($memcache_available): ?>
+      <?php
+      if ($memcache_available): ?>
         <div class="card">
           <div class="card-header">
             <ul class="nav nav-tabs card-header-tabs" role="tablist">
@@ -80,7 +79,9 @@ if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
                     </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($stats as $server => $data): ?>
+                    <?php
+                      foreach ($stats as $server => $data) {
+                      ?>
                       <tr>
                         <td>Server</td>
                         <td><?php echo $server; ?></td>
@@ -93,7 +94,9 @@ if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
                         <td><?php echo $CLICSHOPPING_Cache->getDef('text_total_memory'); ?></td>
                         <td><?php echo number_format($data['limit_maxbytes'] / 1024 / 1024, 2) . ' MB'; ?></td>
                       </tr>
-                    <?php endforeach; ?>
+                      <?php
+                      }
+                      ?>
                     </tbody>
                   </table>
                 </div>
@@ -109,24 +112,28 @@ if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
                     </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($stats as $server => $data): ?>
+                    <?php
+                    foreach ($stats as $server => $value) {
+                      ?>
                       <tr>
                         <td>Hits</td>
-                        <td><?php echo number_format($data['get_hits']); ?></td>
+                        <td><?php echo number_format($value['get_hits']); ?></td>
                       </tr>
                       <tr>
                         <td>Misses</td>
-                        <td><?php echo number_format($data['get_misses']); ?></td>
+                        <td><?php echo number_format($value['get_misses']); ?></td>
                       </tr>
                       <tr>
                         <td>Evictions</td>
-                        <td><?php echo number_format($data['evictions']); ?></td>
+                        <td><?php echo number_format($value['evictions']); ?></td>
                       </tr>
                       <tr>
                         <td>Total Items</td>
-                        <td><?php echo number_format($data['total_items']); ?></td>
+                        <td><?php echo number_format($value['total_items']); ?></td>
                       </tr>
-                    <?php endforeach; ?>
+                    <?php
+                    }
+                    ?>
                     </tbody>
                   </table>
                 </div>

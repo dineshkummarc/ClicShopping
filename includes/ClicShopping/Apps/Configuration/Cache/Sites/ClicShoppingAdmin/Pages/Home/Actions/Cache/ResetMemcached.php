@@ -20,16 +20,22 @@ class ResetMemcached extends \ClicShopping\OM\PagesActionsAbstract
   {
     $this->app = Registry::get('Cache');
   }
-
-
+  /**
+   * Execute the action to reset Memcached.
+   *
+   * This method checks if the Memcached extension is available, flushes the Memcached server,
+   * and adds a success or error message to the message stack.
+   *
+   * @return void
+   */
   public function execute()
   {
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 
     if (class_exists('Memcached')) {
-      $memcache = new \Memcached();
-      $memcache->addServer('127.0.0.1', 11211);
+      $memcache = new \Memcached('clicshopping_session');
       $memcache->flush();
+
       $CLICSHOPPING_MessageStack->add($this->app->getDef('success_memcached_reset'), 'success');
     } else {
       $CLICSHOPPING_MessageStack->add($this->app->getDef('error_memcached_reset'), 'error');
