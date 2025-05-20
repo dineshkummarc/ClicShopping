@@ -79,11 +79,6 @@ class Cache
       try {
         $this->memcached = new \Memcached('clicshopping_session');
 
-        // Only add server if no servers are configured
-        if (count($this->memcached->getServerList()) === 0) {
-          $this->memcached->addServer('localhost', 11211);
-        }
-
         // Test connection
         $stats = $this->memcached->getStats();
         if (!is_array($stats) || count($stats) === 0) {
