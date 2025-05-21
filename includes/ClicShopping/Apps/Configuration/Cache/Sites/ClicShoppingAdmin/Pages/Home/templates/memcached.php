@@ -22,34 +22,62 @@ if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
   <?php
 } else {
   $CLICSHOPPING_Memcached = new \Memcached('clicshopping_session');
-
   $stats = $CLICSHOPPING_Memcached->getStats();
-
   $memcache_available = is_array($stats) && count($stats) > 0;
 
   if (isset($_POST['reset_memcache'])) {
     $CLICSHOPPING_Memcached->flush();
     $CLICSHOPPING_MessageStack->add($CLICSHOPPING_Cache->getDef('text_memcache_flushed'), 'success');
   }
-?>
+  ?>
 <div class="contentBody">
   <div class="row">
     <div class="col-md-12">
       <div class="card card-block headerCard">
-        <div class="row">
-          <span
-            class="col-md-1 logoHeading"><?php echo HTML::image($CLICSHOPPING_Template->getImageDirectory() . 'categories/cache.gif', $CLICSHOPPING_Cache->getDef('heading_title'), '40', '40'); ?></span>
-          <span
-            class="col-md-4 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_Cache->getDef('heading_title'); ?></span>
-          <span class="col-md-7 text-end">
+        <div class="row align-items-center">
+          <div class="col-md-1 logoHeading">
+            <?php echo HTML::image($CLICSHOPPING_Template->getImageDirectory() . 'categories/cache.gif', $CLICSHOPPING_Cache->getDef('heading_title'), '40', '40'); ?>
+          </div>
+          <div class="col-md-2 pageHeading">
+            <?php echo '&nbsp;' . $CLICSHOPPING_Cache->getDef('heading_title'); ?>
+          </div>
+          <div class="col-md-6 text-center">
+            <?php
+            if ($memcache_available) {
+              foreach ($stats as $server => $value) {
+                $hits = $value['get_hits'];
+                $misses = $value['get_misses'];
+                $used_memory_mb = $value['bytes'] / 1024 / 1024;
+                $total_memory_mb = $value['limit_maxbytes'] / 1024 / 1024;
+
+                $hit_ratio = $hits + $misses > 0 ? $hits / ($hits + $misses) : 0;
+                $hit_status = 'Mauvais';
+                if ($hit_ratio >= 0.95) {
+                  $hit_status = 'Très bon';
+                } elseif ($hit_ratio >= 0.85) {
+                  $hit_status = 'Bon';
+                }
+
+                $memory_status = ($used_memory_mb >= $total_memory_mb * 0.95) ? 'Saturée' : 'OK';
+
+                echo '<span class="badge bg-info">Serveur : ' . $server . '</span> ';
+                echo '<span class="badge bg-secondary">Taux : ' . round($hit_ratio * 100, 2) . '% - ' . $hit_status . '</span> ';
+                echo '<span class="badge bg-secondary">Mémoire : ' . round($used_memory_mb, 2) . 'MB / ' . round($total_memory_mb, 2) . 'MB - ' . $memory_status . '</span>';
+              }
+            }
+            ?>
+          </div>
+          <div class="col-md-3 text-end">
             <div class="btn-group float-end" role="group">
               <?php
-                echo HTML::form('memcached', $CLICSHOPPING_Cache->link('Cache&ResetMemcached'));
-                echo HTML::button($CLICSHOPPING_Cache->getDef('text_reset_memcached'), null, null, 'danger'); ?>
+              echo HTML::form('memcached', $CLICSHOPPING_Cache->link('Cache&ResetMemcached'));
+              echo HTML::button($CLICSHOPPING_Cache->getDef('text_reset_memcached'), null, null, 'danger');
+              ?>
               </form>
             </div>
-          </span>
+          </div>
         </div>
+
       </div>
     </div>
   </div>
