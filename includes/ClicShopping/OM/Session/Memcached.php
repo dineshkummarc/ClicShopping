@@ -39,7 +39,7 @@ class Memcached extends \ClicShopping\OM\SessionAbstract implements \SessionHand
   {
     parent::__construct($name);
 
-    $this->_life_time = (int)ini_get('session.gc_maxlifetime');
+    $this->_life_time = (int)ini_get('session.gc_maxlifetime'); // session timeout
 
     if (class_exists('Memcached')) {
       $this->orig_module_name = session_module_name();

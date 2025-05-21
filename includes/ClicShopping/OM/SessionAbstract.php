@@ -19,7 +19,7 @@ namespace ClicShopping\OM;
  */
 abstract class SessionAbstract
 {
-  protected $name;
+  protected ?string $name;
   protected bool $force_cookies = true;
   public ?string $sameSite;
 
