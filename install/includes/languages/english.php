@@ -217,5 +217,5 @@ define('TEXT_SMTP_USERNAME', 'User Name (e-mail)');
 define('TEXT_SMTP_USERNAME_INFO', 'Please indicate your user name regarding your email. This is not necessarily related to your admin account');
 define('TEXT_SMTP_PASSWORD', 'Password');
 define('TEXT_SMTP_PASSWORD_INFO', 'Please enter your password to access your email');
-
-define('TEXT_ALERT_DATABASE', 'To continue, you have at least <strong>Maria Db version 11.7 or Mysql 9.x</strong> on your serveur else please install the version 3.456');
+define('TEXT_INFO_DATABASE', 'Install the Database and demo');
+define('TEXT_ALERT_DATABASE', 'To continue, it is recommended to have at least <strong>MariaDB version 11.7 or MySQL 9.x</strong> on your server.');

@@ -77,18 +77,25 @@ use ClicShopping\OM\HTML;
 
           <br/><br/>
           <div class="row mt-3">
-            <div for="demo"><h3>Install Demo Database</h3></div>
-            <?php
-            $demo = [
-              ['id' => 'normal', 'text' => 'Normal'],
-            ];
+            <div for="demo"><h3> <?php echo TEXT_INFO_DATABASE; ?></h3></div>
+            <div class="container">
+              <div class="card bg-warning">
+                <div class="card-body text-center">
+                  <i class="bi bi-exclamation-triangle-fill text-danger"></i> <?php echo TEXT_ALERT_DATABASE; ?><br><br>
+                  <div class="row justify-content-center">
+	            <?php
+	            $demo = [
+	              ['id' => 'normal', 'text' => 'Normal'],
+	            ];
 
-            echo '<div class="col-md-3">' . HTML::selectMenu('demo', $demo, 'demo', 'id="demo"') . '</div>';
-            ?>
+                    echo '<div class="col-md-6 text-center">' . HTML::selectMenu('demo', $demo, 'demo', 'id="demo" class=\"form-control\"') . '</div>';
+	            ?>
+                  </div>
+                </div>
+              </div>
+            </div>
             <br/>
-
-            <div class="help-block"><?php echo '(Load the demo data, recommended for test)'; ?></div>
-
+            <div class="py-2"></div>
             <div class="col text-end">
               <?php
               echo HTML::button(TEXT_CONTINUE, null, null, 'success', ['params' => 'id="buttonDoImport" data-bs-toggle="modal" data-bs-target="#installModal"']) . '&nbsp;';

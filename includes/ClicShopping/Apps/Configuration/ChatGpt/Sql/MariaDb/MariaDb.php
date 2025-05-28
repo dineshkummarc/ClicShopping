@@ -122,5 +122,164 @@ ALTER TABLE :table_gpt_usage  MODIFY usage_id int(11) NOT NULL AUTO_INCREMENT;
 EOD;
       $CLICSHOPPING_Db->exec($sql);
     }
+
+
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_categories_embedding"');
+
+    if ($Qcheck->fetch() === false) {
+      $sql = <<<EOD
+      CREATE TABLE IF NOT EXISTS clic_categories_embedding (
+        id SERIAL PRIMARY KEY,
+          content text DEFAULT NULL,
+          type text DEFAULT NULL,
+          sourcetype text default 'manual',
+          sourcename text default 'manual',
+          embedding vector(3072) NOT NULL,
+          chunknumber int default 128,
+          date_modified datetime DEFAULT NULL,
+          entity_id INT,
+          language_id INT
+      );
+      -- Add vector index separately
+      CREATE VECTOR INDEX embedding_index ON clic_categories_embedding (embedding);
+      
+       CREATE TABLE IF NOT EXISTS clic_products_embedding (
+              id SERIAL PRIMARY KEY,
+                content text DEFAULT NULL,
+                type text DEFAULT NULL,
+                sourcetype text default 'manual',
+                sourcename text default 'manual',
+                embedding vector(3072) NOT NULL,
+                chunknumber int default 128,
+                date_modified datetime DEFAULT NULL,
+                entity_id INT,
+                language_id INT
+              );
+      -- Add vector index separately
+      CREATE VECTOR INDEX embedding_index ON clic_products_embedding (embedding);
+      
+      CREATE TABLE IF NOT EXISTS clic_page_manager_embedding (
+              id SERIAL PRIMARY KEY,
+          content TEXT DEFAULT NULL,
+          type TEXT DEFAULT NULL,
+          sourcetype TEXT DEFAULT 'manual',
+          sourcename TEXT DEFAULT 'manual',
+          embedding VECTOR(3072) NOT NULL,
+          chunknumber INT DEFAULT 128,
+          date_modified DATETIME DEFAULT NULL,
+          entity_id INT,
+          language_id INT
+      );
+      
+      -- Add vector index separately
+      CREATE VECTOR INDEX embedding_index ON clic_page_manager_embedding (embedding);
+      
+      
+      CREATE TABLE IF NOT EXISTS clic_manufacturers_embedding (
+              id SERIAL PRIMARY KEY,
+          content TEXT DEFAULT NULL,
+          type TEXT DEFAULT NULL,
+          sourcetype TEXT DEFAULT 'manual',
+          sourcename TEXT DEFAULT 'manual',
+          embedding VECTOR(3072) NOT NULL,
+          chunknumber INT DEFAULT 128,
+          date_modified DATETIME DEFAULT NULL,
+          entity_id INT,
+          language_id INT
+      );
+      
+      -- Add vector index separately
+      CREATE VECTOR INDEX embedding_index ON clic_manufacturers_embedding (embedding);
+      
+      
+      CREATE TABLE IF NOT EXISTS clic_suppliers_embedding (
+              id SERIAL PRIMARY KEY,
+          content TEXT DEFAULT NULL,
+          type TEXT DEFAULT NULL,
+          sourcetype TEXT DEFAULT 'manual',
+          sourcename TEXT DEFAULT 'manual',
+          embedding VECTOR(3072) NOT NULL,
+          chunknumber INT DEFAULT 128,
+          date_modified DATETIME DEFAULT NULL,
+          entity_id INT
+      );
+      
+      -- Add vector index separately
+      CREATE VECTOR INDEX embedding_index ON clic_suppliers_embedding (embedding);
+      
+      
+      
+      CREATE TABLE IF NOT EXISTS clic_reviews_embedding (
+              id SERIAL PRIMARY KEY,
+          content TEXT DEFAULT NULL,
+          type TEXT DEFAULT NULL,
+          sourcetype TEXT DEFAULT 'manual',
+          sourcename TEXT DEFAULT 'manual',
+          embedding VECTOR(3072) NOT NULL,
+          chunknumber INT DEFAULT 128,
+          date_modified DATETIME DEFAULT NULL,
+          entity_id INT,
+          language_id INT
+      );
+      
+      -- Add vector index separately
+      CREATE VECTOR INDEX embedding_index ON clic_reviews_embedding (embedding);
+      
+      
+      CREATE TABLE IF NOT EXISTS clic_reviews_sentiment_embedding (
+              id SERIAL PRIMARY KEY,
+          content TEXT DEFAULT NULL,
+          type TEXT DEFAULT NULL,
+          sourcetype TEXT DEFAULT 'manual',
+          sourcename TEXT DEFAULT 'manual',
+          embedding VECTOR(3072) NOT NULL,
+          chunknumber INT DEFAULT 128,
+          date_modified DATETIME DEFAULT NULL,
+          entity_id INT,
+          language_id INT
+      );
+      
+      -- Add vector index separately
+      CREATE VECTOR INDEX embedding_index ON clic_reviews_sentiment_embedding (embedding);
+      
+      
+      
+      CREATE TABLE IF NOT EXISTS clic_return_orders_embedding (
+              id SERIAL PRIMARY KEY,
+          content TEXT DEFAULT NULL,
+          type TEXT DEFAULT NULL,
+          sourcetype TEXT DEFAULT 'manual',
+          sourcename TEXT DEFAULT 'manual',
+          embedding VECTOR(3072) NOT NULL,
+          chunknumber INT DEFAULT 128,
+          date_modified DATETIME DEFAULT NULL,
+          entity_id INT
+      );
+      
+      -- Add vector index separately
+      CREATE VECTOR INDEX embedding_index ON clic_return_orders_embedding (embedding);
+      
+      
+      
+      CREATE TABLE IF NOT EXISTS clic_orders_embedding (
+          id SERIAL PRIMARY KEY,
+          content TEXT DEFAULT NULL,
+          type TEXT DEFAULT NULL,
+          sourcetype TEXT DEFAULT 'manual',
+          sourcename TEXT DEFAULT 'manual',
+          embedding VECTOR(3072) NOT NULL,
+          chunknumber INT DEFAULT 128,
+          date_modified DATETIME DEFAULT NULL,
+          entity_id INT
+      );
+      
+      -- Add vector index separately
+      CREATE VECTOR INDEX embedding_index ON clic_orders_embedding (embedding);
+
+
+    EOD;
+      $CLICSHOPPING_Db->exec($sql);
+    }
+
   }
 }

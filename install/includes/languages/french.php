@@ -120,7 +120,7 @@ define('TEXT_STEP_INTRO_2', '<p>Le serveur de base de données permet de stocker
   <p>Note : Avant de commencer, veuillez créer une base de données via le module phpmyadmin et retenir le mot de passe et votre nom d\'utilisateur....</p>');
 
 
-define('TEXT_DATABASE_SERVER', 'Serveur de la base de données<br />');
+define('TEXT_DATABASE_SERVER', 'Serveur base de données<br />');
 define('TEXT_DATABASE_SERVER_HELP', 'Indiquer l\'adresse du serveur de votre base de données ou l\'IP');
 define('TEXT_USERNAME', 'Nom utilisateur<br />');
 define('TEXT_USERNAME_HELP', 'Indiquer le nom d\'utilisateur du serveur de base données');
@@ -221,4 +221,5 @@ define('TEXT_SMTP_USERNAME', 'Nom Utilisateur (e-mail)');
 define('TEXT_SMTP_USERNAME_INFO', 'Veuillez indiquer votre nom d\'utilisateur concernant votre email. Celui-ci n\'est pas forcément en relation avec votre compte d\'administration');
 define('TEXT_SMTP_PASSWORD', 'Mot de passe');
 define('TEXT_SMTP_PASSWORD_INFO', 'Veuillez indiquer votre mot de passe pour accéder à votre email');
-define('TEXT_ALERT_DATABASE', 'Pour continuer, vous devez avoir <strong>la version 11.7 de Maria Db ou Mysql 9.x sur votre serveur</strong> sinon veuillez installer la version de ClicShopping 3.456');
+define('TEXT_INFO_DATABASE', 'Installation base de données et démo');
+define('TEXT_ALERT_DATABASE', 'Pour continuer, il est recommendé d\'avoir <strong>la version 11.7 de Maria Db ou Mysql 9.x sur votre serveur</strong>.');
