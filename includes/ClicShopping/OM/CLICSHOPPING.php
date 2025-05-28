@@ -80,6 +80,7 @@ class CLICSHOPPING
         trigger_error('Version number is not numeric. Please verify: ' . $file);
       }
     }
+
     return self::$version;
   }
 
@@ -384,7 +385,7 @@ class CLICSHOPPING
 
     $args[0] = $req_site . DIRECTORY_SEPARATOR . self::getConfig('http_images_path', $req_site) . $page;
 
-    $url = forward_static_call_array('self::link', $args);
+    $url = forward_static_call_array([static::class, 'link'], $args);
 
     return $url;
   }
