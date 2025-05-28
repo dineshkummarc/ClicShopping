@@ -32,8 +32,18 @@ class Token extends \ClicShopping\OM\PagesAbstract
       return false;
     }
 
+    if (!isset($_POST['username']) || !isset($_POST['key'])) {
+      echo json_encode(['error' => 'Missing required parameters: username and key']);
+      exit;
+    }
+
     $username = HTML::sanitize($_POST['username']);
     $key = HTML::sanitize($_POST['key']);
+
+    if (empty($username) || empty($key)) {
+      echo json_encode(['error' => 'Username and key cannot be empty']);
+      exit;
+    }
 
     Registry::set('Login', new Login($username, $key, ''));
     $CLICSHOPPING_login = Registry::get('Login');
