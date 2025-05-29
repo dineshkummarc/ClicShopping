@@ -536,7 +536,6 @@ class Language
     return ($response_encoding . $response_bom == 'UTF-8 without BOM');
   }
 
-
   /**
    * Retrieves the language code from the URL or session.
    *
@@ -615,7 +614,7 @@ class Language
     return $languages_string;
   }
 
-/**
+  /**
    * Generates a string containing links to available languages with their respective flags.
    *
    * @return string A string containing the language links with flags.

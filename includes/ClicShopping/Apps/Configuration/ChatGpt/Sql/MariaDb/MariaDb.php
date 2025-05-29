@@ -97,29 +97,29 @@ class MariaDb
 
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
-CREATE TABLE :table_gpt (
-  gpt_id int(11) NOT NULL,
-  question text NOT NULL,
-  response text NOT NULL,
-  date_added date DEFAULT NULL
-) CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-ALTER TABLE :table_gpt  ADD PRIMARY KEY (gpt_id);
-ALTER TABLE :table_gpt  MODIFY gpt_id int(11) NOT NULL AUTO_INCREMENT;
-
-CREATE TABLE :table_gpt_usage (
-  usage_id int(11) NOT NULL,
-  gpt_id int(11) NOT NULL,
-  promptTokens int(11) DEFAULT NULL,
-  completionTokens int(11) DEFAULT NULL,
-  totalTokens int(11) DEFAULT NULL,
-  ia_type varchar(255) DEFAULT NULL,
-  model varchar(255) DEFAULT NULL,
-  date_added date DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-ALTER TABLE :table_gpt_usage  ADD PRIMARY KEY (usage_id);
-ALTER TABLE :table_gpt_usage  MODIFY usage_id int(11) NOT NULL AUTO_INCREMENT;
-EOD;
+          CREATE TABLE :table_gpt (
+            gpt_id int(11) NOT NULL,
+            question text NOT NULL,
+            response text NOT NULL,
+            date_added date DEFAULT NULL
+          ) CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+          
+          ALTER TABLE :table_gpt  ADD PRIMARY KEY (gpt_id);
+          ALTER TABLE :table_gpt  MODIFY gpt_id int(11) NOT NULL AUTO_INCREMENT;
+          
+          CREATE TABLE :table_gpt_usage (
+            usage_id int(11) NOT NULL,
+            gpt_id int(11) NOT NULL,
+            promptTokens int(11) DEFAULT NULL,
+            completionTokens int(11) DEFAULT NULL,
+            totalTokens int(11) DEFAULT NULL,
+            ia_type varchar(255) DEFAULT NULL,
+            model varchar(255) DEFAULT NULL,
+            date_added date DEFAULT NULL
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+          ALTER TABLE :table_gpt_usage  ADD PRIMARY KEY (usage_id);
+          ALTER TABLE :table_gpt_usage  MODIFY usage_id int(11) NOT NULL AUTO_INCREMENT;
+          EOD;
       $CLICSHOPPING_Db->exec($sql);
     }
 
@@ -280,6 +280,5 @@ EOD;
     EOD;
       $CLICSHOPPING_Db->exec($sql);
     }
-
   }
 }

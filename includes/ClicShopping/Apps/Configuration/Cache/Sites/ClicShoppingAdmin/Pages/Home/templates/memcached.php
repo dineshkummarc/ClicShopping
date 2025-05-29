@@ -7,6 +7,8 @@
  * @Info : https://www.clicshopping.org/forum/trademark/
  *
  */
+
+use ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin\CacheAdmin;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
@@ -21,7 +23,7 @@ if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
   </div>
   <?php
 } else {
-  $CLICSHOPPING_Memcached = new \Memcached('clicshopping_session');
+  $CLICSHOPPING_Memcached = CacheAdmin::getMemcached();
   $stats = $CLICSHOPPING_Memcached->getStats();
   $memcache_available = is_array($stats) && count($stats) > 0;
 

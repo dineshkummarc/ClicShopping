@@ -11,6 +11,7 @@
 namespace ClicShopping\Apps\Configuration\Cache\Sites\ClicShoppingAdmin\Pages\Home\Actions\Cache;
 
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin\CacheAdmin;
 
 class ResetOpCache extends \ClicShopping\OM\PagesActionsAbstract
 {
@@ -25,8 +26,10 @@ class ResetOpCache extends \ClicShopping\OM\PagesActionsAbstract
   {
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 
+    $result = CacheAdmin::resetOpCache();
+
     if (function_exists('opcache_reset')) {
-      if (opcache_reset()) {
+      if ($result === true) {
         $CLICSHOPPING_MessageStack->add($this->app->getDef('success_opcache_reset'), 'success');
       } else {
         $CLICSHOPPING_MessageStack->add($this->app->getDef('error_opcache_reset'), 'error');
@@ -34,6 +37,7 @@ class ResetOpCache extends \ClicShopping\OM\PagesActionsAbstract
     } else {
       $CLICSHOPPING_MessageStack->add($this->app->getDef('warning_opcache_function'), 'warning');
     }
+
 
     $this->app->redirect('OpCache');
   }

@@ -27,6 +27,7 @@ use ClicShopping\OM\Language;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Service;
 use ClicShopping\OM\Session;
+use ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin\CacheAdmin;
 
 use Exception;
 use function count;
@@ -70,11 +71,40 @@ class ClicShoppingAdmin extends \ClicShopping\OM\SitesAbstract
                                    ');
 
     if (is_object($Qcfg)) {
+      // Conserver le cache DB existant
       $Qcfg->setCache('configuration');
-      $Qcfg->execute();
 
-      while ($Qcfg->fetch()) {
-        define($Qcfg->value('k'), $Qcfg->value('v'));
+      // Vérifier d'abord dans Memcached
+      $cache_key = 'admin_configuration';
+      $cached_config = false;
+
+      if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'true') {
+        $memcached = CacheAdmin::getMemcached();
+        if ($memcached !== false) {
+          $cached_config = $memcached->get($cache_key);
+        }
+      }
+
+      if ($cached_config === false) {
+        $Qcfg->execute();
+        $config_data = [];
+
+        while ($Qcfg->fetch()) {
+          $key = $Qcfg->value('k');
+          $value = $Qcfg->value('v');
+          define($key, $value);
+          $config_data[$key] = $value;
+        }
+
+        // Stocker dans Memcached pour les prochaines requêtes
+        if (isset($memcached)) {
+          $memcached->set($cache_key, $config_data, 3600); // Cache pour 1 heure
+        }
+      } else {
+        // Utiliser les données du cache Memcached
+        foreach ($cached_config as $key => $value) {
+          define($key, $value);
+        }
       }
     }
 

@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\Cache\Sites\ClicShoppingAdmin\Pages\Home\Actions\Cache;
 
+use ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin\CacheAdmin;
 use ClicShopping\OM\Registry;
 
 class ResetMemcached extends \ClicShopping\OM\PagesActionsAbstract
@@ -32,10 +33,9 @@ class ResetMemcached extends \ClicShopping\OM\PagesActionsAbstract
   {
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 
-    if (class_exists('Memcached')) {
-      $memcache = new \Memcached('clicshopping_session');
-      $memcache->flush();
+    $result = CacheAdmin::resetMemcached();
 
+    if ($result === true) {
       $CLICSHOPPING_MessageStack->add($this->app->getDef('success_memcached_reset'), 'success');
     } else {
       $CLICSHOPPING_MessageStack->add($this->app->getDef('error_memcached_reset'), 'error');

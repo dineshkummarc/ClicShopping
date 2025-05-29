@@ -156,6 +156,7 @@ class Composer
         return false;
       }
     }
+    
     return false; // <-- Add this line
   }
 

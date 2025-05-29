@@ -23,6 +23,8 @@ use ClicShopping\OM\Service;
 use ClicShopping\OM\Session;
 
 use ClicShopping\Apps\Tools\WhosOnline\Classes\Shop\WhosOnlineShop;
+use ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin\CacheAdmin;
+
 use function array_slice;
 use function count;
 use function define;
@@ -81,13 +83,42 @@ class Shop extends \ClicShopping\OM\SitesAbstract
       throw new \RuntimeException('Database prepare failed');
     }
 
-    $Qcfg->setCache('configuration');
+      // Conserver le cache DB existant
+      $Qcfg->setCache('configuration');
 
-    $Qcfg->execute();
+      // Vérifier d'abord dans Memcached
+      $cache_key = 'shop_configuration';
+      $cached_config = false;
 
-    while ($Qcfg->fetch()) {
-      define($Qcfg->value('k'), $Qcfg->value('v'));
-    }
+      if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'true') {
+        $memcached = CacheAdmin::getMemcached();
+        if ($memcached !== false) {
+          $cached_config = $memcached->get($cache_key);
+        }
+      }
+
+      if ($cached_config === false) {
+        $Qcfg->execute();
+        $config_data = [];
+
+        while ($Qcfg->fetch()) {
+          $key = $Qcfg->value('k');
+          $value = $Qcfg->value('v');
+          define($key, $value);
+          $config_data[$key] = $value;
+        }
+
+        // Stocker dans Memcached pour les prochaines requêtes
+        if (isset($memcached)) {
+          $memcached->set($cache_key, $config_data, 3600); // Cache pour 1 heure
+        }
+      } else {
+        // Utiliser les données du cache Memcached
+        foreach ($cached_config as $key => $value) {
+          define($key, $value);
+        }
+      }
+
 
 // set the session name and save path
     $CLICSHOPPING_Session = Session::load();

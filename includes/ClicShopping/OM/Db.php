@@ -10,6 +10,8 @@
 
 namespace ClicShopping\OM;
 
+use  ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin;
+
 use ArrayIterator;
 use CachingIterator;
 use Exception;
@@ -38,7 +40,62 @@ class Db extends PDO
   protected int|null $port;
   protected array|null $driver_options = [];
   protected array|null $options = [];
+  protected $cache_key;
+  protected bool $use_cache = false;
+  protected int $cache_expire = 3600; // 1 hour default
 
+  // Ne pas définir le type ici pour éviter le conflit avec la classe enfant
+  protected $memcached;
+
+  /**
+   * Set the cache name for the query
+   *
+   * @param string $cache_name The name to identify this cache
+   * @param int|null $expire Cache expiration time in seconds
+   * @return $this
+   */
+  public function setCache(string $cache_name, ?int $expire = null): static
+  {
+    $this->cache_key = $cache_name;
+    $this->use_cache = true;
+
+    if ($expire !== null) {
+      $this->cache_expire = $expire;
+    }
+
+    return $this;
+  }
+
+  /**
+   * Execute the prepared statement
+   */
+  public function execute()
+  {
+    if ($this->use_cache && method_exists($this, 'getCache')) {
+      // Try to get from cache first
+      $cached_result = $this->getCache($this->query, $this->cache_key);
+      if ($cached_result !== false) {
+        $this->statement = new \ArrayObject($cached_result);
+        return true;
+      }
+    }
+
+    $result = parent::execute();
+
+    // If caching is enabled and execution was successful, cache the results
+    if ($result && $this->use_cache && method_exists($this, 'saveCache')) {
+      $data = [];
+      while ($row = $this->fetch()) {
+        $data[] = $row;
+      }
+      $this->saveCache($this->query, $this->cache_key, $data, $this->cache_expire);
+
+      // Reset the statement to the beginning
+      $this->statement = new \ArrayObject($data);
+    }
+
+    return $result;
+  }
 
   /**
    * Initializes a database connection.
@@ -104,6 +161,12 @@ class Db extends PDO
     try {
       $class = 'ClicShopping\OM\Db\MySQL';
       $object = new $class($server, $username, $password, $database, $port, $driver_options, $options);
+
+      // Initialize Memcached if available
+      if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'true') {
+        $object->initMemcachedConnection();
+      }
+
     } catch (Exception $e) {
       $message = $e->getMessage();
         // Uncomment this line if you want to log the stack trace
@@ -117,6 +180,56 @@ class Db extends PDO
     }
 
     return $object;
+  }
+
+  /**
+   * Initialize Memcached connection using CacheAdmin
+   */
+  protected function initMemcachedConnection(): void
+  {
+    try {
+      $this->memcached = CacheAdmin::getMemcached();
+    } catch (\Exception $e) {
+      $this->memcached = null;
+    }
+  }
+
+  /**
+   * Get data from cache
+   * @param string $query The SQL query
+   * @return array|false
+   */
+  protected function getFromCache(string $query): array|false
+  {
+    if (!$this->memcached || !$this->use_cache) {
+      return false;
+    }
+
+    $cache_id = 'db_' . md5($query . $this->cache_key);
+    $result = $this->memcached->get($cache_id);
+
+    if ($this->memcached->getResultCode() === \Memcached::RES_SUCCESS) {
+      return $result;
+    }
+
+    return false;
+  }
+
+  /**
+   * Save data to cache
+   * @param string $query The SQL query
+   * @param array $data Data to cache
+   * @return bool
+   */
+  protected function saveToCache(string $query, array $data): bool
+  {
+    if (!$this->memcached || !$this->use_cache) {
+      return false;
+    }
+
+    $cache_id = 'db_' . md5($query . $this->cache_key);
+    
+    return $this->memcached->set($cache_id, $data, $this->cache_expire);
   }
 
   /**

@@ -1,5 +1,5 @@
 version4.00
-Tthe version 4.x integrate the embeddings and need to be used with mariaDB 11.8 at least.
+Tthe version 4.x integrate the embeddings and need to be used with mariaDB 11.7 at least.
 The goal is to exploit the Gen AI capacities with the rag creating a RAG BI Agent.
 
 small fix and improvement

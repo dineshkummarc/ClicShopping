@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
-
+use ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin\CacheAdmin;
 /**
  * Class Cache
  *
@@ -77,7 +77,8 @@ class Cache
   {
     if (class_exists('Memcached')) {
       try {
-        $this->memcached = new \Memcached('clicshopping_session');
+        // Using CacheAdmin's Memcached instance to ensure consistency across the application
+        $this->memcached = CacheAdmin::getMemcached();
 
         // Test connection
         $stats = $this->memcached->getStats();

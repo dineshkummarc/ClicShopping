@@ -294,8 +294,6 @@ $data = $opcache->getData();
                          </td>
                        </tr>
 
-
-
                        </tbody>
                      </table>
                    </div>

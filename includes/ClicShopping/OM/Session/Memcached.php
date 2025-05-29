@@ -18,12 +18,14 @@ namespace ClicShopping\OM\Session;
  * using the Memcached PHP extension. It also allows checking for Memcached availability and
  * verifying the existence of a session.
  *
+ *  Persistent session identifier for Memcached
+ *  Kept separate from general cache identifier (clicshopping_session_memcached)
  * @package ClicShopping\OM\Session
  */
 
 class Memcached extends \ClicShopping\OM\SessionAbstract implements \SessionHandlerInterface
 {
-  private const PERSISTENT_ID = 'clicshopping_session';
+  private const PERSISTENT_ID = 'clicshopping_session_memcached';
   private ?\Memcached $_conn = null;
   private string $orig_module_name;
   private int $_life_time;
@@ -62,20 +64,42 @@ class Memcached extends \ClicShopping\OM\SessionAbstract implements \SessionHand
    */
   public function check(): bool
   {
+    if (!extension_loaded('memcached')) {
+      return false;
+    }
+
     if (!class_exists('Memcached')) {
       return false;
     }
 
     try {
       $memcached = new \Memcached(self::PERSISTENT_ID);
+      $memcached->setOptions([
+        \Memcached::OPT_COMPRESSION => true,
+        \Memcached::OPT_LIBKETAMA_COMPATIBLE => true,
+        \Memcached::OPT_BINARY_PROTOCOL => true,
+        \Memcached::OPT_TCP_NODELAY => true,
+        \Memcached::OPT_CONNECT_TIMEOUT => 1000,
+        \Memcached::OPT_RETRY_TIMEOUT => 2,
+        \Memcached::OPT_DISTRIBUTION => \Memcached::DISTRIBUTION_CONSISTENT
+      ]);
+
+      if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
+        $memcached->flush();
+        $memcached->resetServerList();
+        $memcached->quit();
+
+        return false;
+      }
 
       if (count($memcached->getServerList()) === 0) {
         $memcached->addServer('localhost', 11211);
       }
 
+      // Test connection
       $stats = $memcached->getStats();
-
       return !empty($stats) && $memcached->getResultCode() === \Memcached::RES_SUCCESS;
+
     } catch (\Exception $e) {
       return false;
     }

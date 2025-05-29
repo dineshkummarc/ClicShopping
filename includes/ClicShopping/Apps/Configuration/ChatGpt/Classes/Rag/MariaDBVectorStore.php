@@ -33,7 +33,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
  * - Document CRUD operations
  *
  * Requirements:
- * - MariaDB 11.8.0 or higher with vector support
+ * - MariaDB 11.7.0 or higher with vector support
  * - Doctrine ORM configuration
  * - Valid embedding generator implementation
  *

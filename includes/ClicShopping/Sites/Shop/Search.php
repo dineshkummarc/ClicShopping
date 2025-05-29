@@ -432,6 +432,7 @@ class Search
   private function getCategoryID(): int|null
   {
     $category_id = null;
+    
     if (isset($_POST['categories_id']) && !empty($_POST['categories_id'])) {
       $category_id = (int)HTML::sanitize($_POST['categories_id']);
     } elseif (isset($_GET['categories_id']) && !empty($_GET['categories_id'])) {
