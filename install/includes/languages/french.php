@@ -222,4 +222,4 @@ define('TEXT_SMTP_USERNAME_INFO', 'Veuillez indiquer votre nom d\'utilisateur co
 define('TEXT_SMTP_PASSWORD', 'Mot de passe');
 define('TEXT_SMTP_PASSWORD_INFO', 'Veuillez indiquer votre mot de passe pour accéder à votre email');
 define('TEXT_INFO_DATABASE', 'Installation base de données et démo');
-define('TEXT_ALERT_DATABASE', 'Pour continuer, il est recommendé d\'avoir <strong>la version 11.7 de Maria Db ou Mysql 9.x sur votre serveur</strong>.');
+define('TEXT_ALERT_DATABASE', 'Pour continuer, il est recommendé d\'avoir <strong>la version 11.7 de Maria Db sur votre serveur. Vous pouvez utiliser une version inférieure mais vous ne pourriez pas utiliser la technologie RAG</strong>.');

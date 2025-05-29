@@ -218,4 +218,4 @@ define('TEXT_SMTP_USERNAME_INFO', 'Please indicate your user name regarding your
 define('TEXT_SMTP_PASSWORD', 'Password');
 define('TEXT_SMTP_PASSWORD_INFO', 'Please enter your password to access your email');
 define('TEXT_INFO_DATABASE', 'Install the Database and demo');
-define('TEXT_ALERT_DATABASE', 'To continue, it is recommended to have at least <strong>MariaDB version 11.7 or MySQL 9.x</strong> on your server.');
+define('TEXT_ALERT_DATABASE', 'To continue, it is recommended to have <strong>version 11.7 of MariaDB on your server. You can use a lower version but you will not be able to use the RAG technology</strong>.');
