@@ -23,7 +23,7 @@ class Cookies
   protected int $expire;
   protected bool $secure;
 
-  protected ?string $sameSite;
+  protected string|null $sameSite;
 
   /**
    * Constructor method for initializing the class properties.

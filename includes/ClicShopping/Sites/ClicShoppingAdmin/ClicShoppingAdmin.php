@@ -65,7 +65,7 @@ class ClicShoppingAdmin extends \ClicShopping\OM\SitesAbstract
 
 // set the application parameters
     $Qcfg = $CLICSHOPPING_Db->prepare('select configuration_key as k,
-                                            configuration_value as v
+                                              configuration_value as v
                                      from :table_configuration
                                    ');
 

@@ -74,6 +74,7 @@ class Memcached extends \ClicShopping\OM\SessionAbstract implements \SessionHand
       }
 
       $stats = $memcached->getStats();
+
       return !empty($stats) && $memcached->getResultCode() === \Memcached::RES_SUCCESS;
     } catch (\Exception $e) {
       return false;
