@@ -14,7 +14,6 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
         '8825ede83f2f289127722d4e842cf7e8' => __DIR__ . '/..' . '/symfony/polyfill-intl-grapheme/bootstrap.php',
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         'b6b991a57620e2fb6b2f66f03fe9ddc2' => __DIR__ . '/..' . '/symfony/string/Resources/functions.php',
-        'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
         '9d2b9fc6db0f153a0a149fefb182415e' => __DIR__ . '/..' . '/symfony/polyfill-php84/bootstrap.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         '61ba3e92ef91a7a0f1cc260ebd9290e4' => __DIR__ . '/..' . '/openai-php/client/src/OpenAI.php',
@@ -24,7 +23,6 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
         'S' => 
         array (
             'Symfony\\Polyfill\\Php84\\' => 23,
-            'Symfony\\Polyfill\\Php80\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
             'Symfony\\Polyfill\\Intl\\Normalizer\\' => 33,
             'Symfony\\Polyfill\\Intl\\Grapheme\\' => 31,
@@ -36,7 +34,6 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
             'Symfony\\Component\\String\\' => 25,
             'Symfony\\Component\\Stopwatch\\' => 28,
             'Symfony\\Component\\HttpClient\\' => 29,
-            'Symfony\\Component\\Finder\\' => 25,
             'Symfony\\Component\\Console\\' => 26,
             'Symfony\\Component\\Cache\\' => 24,
             'Stripe\\' => 7,
@@ -95,7 +92,6 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
             'Doctrine\\Common\\Lexer\\' => 22,
             'Doctrine\\Common\\Collections\\' => 28,
             'Doctrine\\Common\\' => 16,
-            'DarkGhostHunter\\Preloader\\' => 26,
         ),
         'A' => 
         array (
@@ -107,10 +103,6 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
         'Symfony\\Polyfill\\Php84\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php84',
-        ),
-        'Symfony\\Polyfill\\Php80\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/symfony/polyfill-php80',
         ),
         'Symfony\\Polyfill\\Mbstring\\' => 
         array (
@@ -155,10 +147,6 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
         'Symfony\\Component\\HttpClient\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/http-client',
-        ),
-        'Symfony\\Component\\Finder\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/symfony/finder',
         ),
         'Symfony\\Component\\Console\\' => 
         array (
@@ -297,10 +285,6 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
         array (
             0 => __DIR__ . '/..' . '/doctrine/event-manager/src',
         ),
-        'DarkGhostHunter\\Preloader\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/darkghosthunter/preloader/src',
-        ),
         'Amnuts\\' => 
         array (
             0 => __DIR__ . '/..' . '/amnuts/opcache-gui/src',
@@ -318,15 +302,10 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
     );
 
     public static $classMap = array (
-        'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Deprecated' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/Deprecated.php',
         'FPDF' => __DIR__ . '/..' . '/setasign/fpdf/fpdf.php',
         'Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
-        'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
-        'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
-        'UnhandledMatchError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/UnhandledMatchError.php',
-        'ValueError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/ValueError.php',
         '©' => __DIR__ . '/..' . '/symfony/cache/Traits/ValueWrapper.php',
     );
 

@@ -10,7 +10,6 @@
         "ext-json": "*",
         "ext-pdo": "*",
         "daveearley/daves-email-validation-tool": "^1.2",
-        "darkghosthunter/preloader": "^2.2",
         "nyholm/psr7": "^1.8",
         "setasign/fpdf": "^1.8",
         "ext-xml": "*",

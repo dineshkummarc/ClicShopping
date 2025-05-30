@@ -17,7 +17,6 @@ use ClicShopping\OM\Db;
 use ClicShopping\OM\Hooks;
 use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Language;
-use ClicShopping\OM\Preload;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Service;
 use ClicShopping\OM\Session;
@@ -179,8 +178,6 @@ class Shop extends \ClicShopping\OM\SitesAbstract
 
     Registry::set('Service', new Service());
     Registry::get('Service')->start();
-
-    Preload::execute();
 
 //must start after manufacturer service
     $CLICSHOPPING_Breadcrumb = Registry::get('Breadcrumb');

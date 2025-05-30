@@ -197,7 +197,7 @@ ALTER TABLE `clic_customers` DROP `double_authentification_secret`;
 DELETE FROM `clic_configuration` WHERE `clic_configuration`.`configuration_id` = 1561;
 DELETE FROM `clic_configuration` WHERE `clic_configuration`.`configuration_id` = 1562;
 DELETE FROM `clic_configuration` WHERE `clic_configuration`.`configuration_id` = 1563;
-
+DELETE FROM `clic_configuration` WHERE `clic_configuration`.`configuration_key` = 'CONFIGURATION_PRELOADING';
 
 
 

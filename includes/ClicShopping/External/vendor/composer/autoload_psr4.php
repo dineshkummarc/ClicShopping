@@ -7,7 +7,6 @@ $baseDir = dirname(dirname(dirname(dirname($vendorDir))));
 
 return array(
     'Symfony\\Polyfill\\Php84\\' => array($vendorDir . '/symfony/polyfill-php84'),
-    'Symfony\\Polyfill\\Php80\\' => array($vendorDir . '/symfony/polyfill-php80'),
     'Symfony\\Polyfill\\Mbstring\\' => array($vendorDir . '/symfony/polyfill-mbstring'),
     'Symfony\\Polyfill\\Intl\\Normalizer\\' => array($vendorDir . '/symfony/polyfill-intl-normalizer'),
     'Symfony\\Polyfill\\Intl\\Grapheme\\' => array($vendorDir . '/symfony/polyfill-intl-grapheme'),
@@ -19,7 +18,6 @@ return array(
     'Symfony\\Component\\String\\' => array($vendorDir . '/symfony/string'),
     'Symfony\\Component\\Stopwatch\\' => array($vendorDir . '/symfony/stopwatch'),
     'Symfony\\Component\\HttpClient\\' => array($vendorDir . '/symfony/http-client'),
-    'Symfony\\Component\\Finder\\' => array($vendorDir . '/symfony/finder'),
     'Symfony\\Component\\Console\\' => array($vendorDir . '/symfony/console'),
     'Symfony\\Component\\Cache\\' => array($vendorDir . '/symfony/cache'),
     'Stripe\\' => array($vendorDir . '/stripe/stripe-php/lib'),
@@ -54,6 +52,5 @@ return array(
     'Doctrine\\Common\\Lexer\\' => array($vendorDir . '/doctrine/lexer/src'),
     'Doctrine\\Common\\Collections\\' => array($vendorDir . '/doctrine/collections/src'),
     'Doctrine\\Common\\' => array($vendorDir . '/doctrine/event-manager/src'),
-    'DarkGhostHunter\\Preloader\\' => array($vendorDir . '/darkghosthunter/preloader/src'),
     'Amnuts\\' => array($vendorDir . '/amnuts/opcache-gui/src'),
 );
