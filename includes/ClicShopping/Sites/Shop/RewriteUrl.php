@@ -34,11 +34,48 @@ class RewriteUrl
    */
   private static function seemsUtf8(string $str): bool
   {
-    if (preg_match('!\S!u', $str)) {
-      return true;
-    } else {
+    // Vérifie si la chaîne est vide
+    if (empty($str)) {
       return false;
     }
+
+    // Vérifie l'encodage avec mb_check_encoding si disponible
+    if (function_exists('mb_check_encoding')) {
+      return mb_check_encoding($str, 'UTF-8');
+    }
+
+    // Méthode alternative plus robuste utilisant un pattern plus strict
+    return preg_match('%^(?:
+          [\x09\x0A\x0D\x20-\x7E]              # ASCII
+        | [\xC2-\xDF][\x80-\xBF]               # non-overlong 2-byte
+        | \xE0[\xA0-\xBF][\x80-\xBF]           # excluding overlongs
+        | [\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}    # straight 3-byte
+        | \xED[\x80-\x9F][\x80-\xBF]           # excluding surrogates
+        | \xF0[\x90-\xBF][\x80-\xBF]{2}        # planes 1-3
+        | [\xF1-\xF3][\x80-\xBF]{3}            # planes 4-15
+        | \xF4[\x80-\x8F][\x80-\xBF]{2}        # plane 16
+        )*$%xs', $str);
+  }
+
+  /**
+   * Sanitize and validate input string
+   *
+   * @param string $input The input string to sanitize
+   * @return string|null Returns sanitized string or null if invalid
+   */
+  protected function sanitizeInput(?string $input): ?string
+  {
+    if (is_null($input)) {
+      return null;
+    }
+
+    // Remove any NULL bytes
+    $input = str_replace("\0", '', $input);
+
+    // Remove any potential XSS vectors
+    $input = htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
+
+    return trim($input);
   }
 
   /**

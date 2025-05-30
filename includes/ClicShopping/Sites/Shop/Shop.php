@@ -8,6 +8,8 @@
  *
  */
 
+declare(strict_types=1);
+
 namespace ClicShopping\Sites\Shop;
 
 use ClicShopping\OM\Apps;
