@@ -78,19 +78,21 @@ class HTTP
    *
    * @param string|null $url The URL to redirect to. It can be null.
    * @param int $http_response_code Optional HTTP response status code for the redirection. Defaults to 0.
-   * @return void
+   * @return never
    */
-
-  public static function redirect(?string $url, int $http_response_code = 0)
+  public static function redirect(string|null $url = null, int $http_response_code = 302): never
   {
-    if ((str_contains($url, "\n") === false) && (str_contains($url, "\r") === false)) {
-      if (str_contains($url, '&amp;')) {
-        $url = str_replace('&amp;', '&', $url);
-      }
+    $url ??= 'index.php';
 
-      header('Location: ' . $url, true, $http_response_code);
+    if (preg_match('/[\r\n]/', $url)) {
+      exit;
     }
 
+    if (str_contains($url, '&amp;')) {
+      $url = str_replace('&amp;', '&', $url);
+    }
+
+    header('Location: ' . $url, true, $http_response_code);
     exit;
   }
 
