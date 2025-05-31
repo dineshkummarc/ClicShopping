@@ -15,6 +15,7 @@ use ClicShopping\OM\Registry;
 
 $CLICSHOPPING_Cache = Registry::get('Cache');
 $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
+$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 
 // check if the cache directory exists
 if (is_dir(Cache::getPath())) {

@@ -84,7 +84,7 @@ class Memcached extends \ClicShopping\OM\SessionAbstract implements \SessionHand
         \Memcached::OPT_DISTRIBUTION => \Memcached::DISTRIBUTION_CONSISTENT
       ]);
 
-      if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
+      if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'false') {
         $memcached->flush();
         $memcached->resetServerList();
         $memcached->quit();

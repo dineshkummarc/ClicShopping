@@ -45,3 +45,6 @@ text_cache_directory = Répertoire du cache :
 error_cache_directory_does_not_exist = Erreur : Le répertoire de cache n'existe pas. Merci de le préciser dans Configuration -> Cache.
 error_cache_directory_not_writeable = Erreur : Le répertoire de cache n'est pas autorisé en écriture.
 
+success_opcache_reset = L'OPcache a été réinitialisé avec succès
+error_opcache_reset = Échec de la réinitialisation de l'OPcache
+warning_opcache_function = Fonction OPcache non disponible

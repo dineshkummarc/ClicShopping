@@ -47,3 +47,7 @@ text_display_number_of_link = Display <strong>{{listing_from}}</strong> to <stro
 
  error_cache_directory_does_not_exist = Error: Cache control directory does not exist. Please set this Configuration->Cache control.
  error_cache_directory_not_writeable = Error: Cache control directory is not writeable.
+
+success_opcache_reset = OpCache has been reset successfully
+error_opcache_reset = Failed to reset OPcache
+warning_opcache_function = OPcache function not available

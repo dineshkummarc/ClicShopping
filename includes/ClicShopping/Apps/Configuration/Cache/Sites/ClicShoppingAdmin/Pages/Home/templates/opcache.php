@@ -9,6 +9,7 @@
  */
 
 //https://github.com/amnuts/opcache-gui
+use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
@@ -17,6 +18,7 @@ use Amnuts\Opcache\Service;
 $CLICSHOPPING_Cache = Registry::get('Cache');
 $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
+$CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 $cache_files = [];
 
 
@@ -44,12 +46,10 @@ $options = [
   // json structure of all text strings used, or null for default
   'language_pack'    => null
 ];
+if ($CLICSHOPPING_MessageStack->exists('main')) {
+  echo $CLICSHOPPING_MessageStack->get('main');
+}
 
-// Initialize the OPcache service
-$opcache = new Service($options);
-
-// Get the data
-$data = $opcache->getData();
 ?>
 <div class="contentBody">
   <div class="row">
@@ -90,13 +90,43 @@ $data = $opcache->getData();
     </div>
   </div>
   <div class="mt-1"></div>
+    <?php
+    if(CacheAdmin::checkOpCache() === false) {
+      $opcache = new Service($options);
+      $data = $opcache->getData();
+    } else {
+      $data = [
+        'version' => [
+          'php' => PHP_VERSION,
+          'version' => phpversion('Zend OPcache')
+        ],
+        'memory_usage' => [
+          'used_memory' => 0,
+          'free_memory' => 0,
+          'wasted_memory' => 0
+        ],
+        'opcache_statistics' => [
+          'start_time' => 0,
+          'oom_restarts' => 0,
+          'hits' => 0,
+          'misses' => 0,
+          'num_cached_scripts' => 0,
+          'num_cached_keys' => 0
+        ],
+        'directives' => []
+      ];
+    }
+    ?>
+
+
+
   <!-- //################################################################################################################ -->
   <!-- //                                             LISTING                                                            -->
   <!-- //################################################################################################################ -->
   <div class="row">
     <div class="col-md-12">
       <?php
-     if (is_array($data)) {
+     if (is_array($data) || !empty($data)) {
        ?>
        <div class="separator"></div>
        <div class="row">
@@ -310,35 +340,38 @@ $data = $opcache->getData();
                        <tbody>
                        <tr>
                          <td colspan="2">
-                           <strong>1. <?php echo $CLICSHOPPING_Cache->getDef('text_edit_php_ini'); ?></strong><br>
-                           <?php echo $CLICSHOPPING_Cache->getDef('text_config_instructions'); ?>:
-                           <span class="col-md-3">
-                            <pre class="bg-light p-3 mt-2">
-                              [opcache]
-                              opcache.enable=1              ; Enable Opcache
-                              opcache.enable_cli=1          ; Enable Opcache for PHP CLI
-                              opcache.memory_consumption=128 ; Memory size in MB for Opcache
-                              opcache.interned_strings_buffer=8  ; Memory size for interned strings
-                              opcache.max_accelerated_files=4000 ; Maximum number of files in cache
-                              opcache.revalidate_freq=60    ; How often to check script timestamps
-                              opcache.fast_shutdown=1       ; Fast shutdown for better memory management
-                              opcache.jit_buffer_size=100M  ; JIT buffer size
-                              opcache.jit=tracing           ; JIT compilation mode
-                            </pre>
-                           </span>
+                           <strong>1. <?php echo $CLICSHOPPING_Cache->getDef('text_edit_php_ini'); ?></strong><br><br>
+                           <?php echo $CLICSHOPPING_Cache->getDef('text_config_instructions'); ?>:<br>
+                             <span>
+                              [opcache]<br><br>
+                              opcache.enable=1              ; Enable Opcache<br>
+                              opcache.enable_cli=1          ; Enable Opcache for PHP CLI<br>
+                              opcache.memory_consumption=128 ; Memory size in MB for Opcache<br>
+                              opcache.interned_strings_buffer=8  ; Memory size for interned strings<br>
+                              opcache.max_accelerated_files=4000 ; Maximum number of files in cache<br>
+                              opcache.revalidate_freq=60    ; How often to check script timestamps<br>
+                              opcache.fast_shutdown=1       ; Fast shutdown for better memory management<br>
+                              opcache.jit_buffer_size=100M  ; JIT buffer size<br>
+                              opcache.jit=tracing           ; JIT compilation mode<br>
+                             </span>
                          </td>
                        </tr>
                        <tr>
                          <td colspan="2">
-                           <strong>2. <?php echo $CLICSHOPPING_Cache->getDef('text_restart_server'); ?></strong><br>
-                           <?php echo $CLICSHOPPING_Cache->getDef('text_config_instructions'); ?>:
-                           <pre class="bg-light p-3 mt-2">
-                              # For Apache:
-                              sudo systemctl restart apache2
 
-                              # For Nginx with PHP-FPM:
-                              sudo systemctl restart nginx
-                              sudo systemctl restart php-fpm</pre>
+                           <strong>2. <?php echo $CLICSHOPPING_Cache->getDef('text_restart_server'); ?></strong><br><br>
+                           <?php echo $CLICSHOPPING_Cache->getDef('text_config_instructions'); ?>:<br>
+                             <span>
+                              # For Apache:<br><br>
+                              sudo systemctl restart apache2<br><br>
+
+                              # For Nginx with PHP-FPM:<br>
+                              sudo systemctl restart nginx<br>
+                              sudo systemctl restart php-fpm<br><br>
+
+                              <?php echo $CLICSHOPPING_Cache->getDef('text_info'); ?><br>
+                            </span>
+
                          </td>
                        </tr>
                        </tbody>

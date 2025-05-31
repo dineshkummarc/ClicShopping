@@ -26,18 +26,19 @@ class ResetOpCache extends \ClicShopping\OM\PagesActionsAbstract
   {
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 
-    $result = CacheAdmin::resetOpCache();
+    if(CacheAdmin::checkOpCache() === true) {
+      $result = CacheAdmin::resetOpCache();
 
-    if (function_exists('opcache_reset')) {
-      if ($result === true) {
-        $CLICSHOPPING_MessageStack->add($this->app->getDef('success_opcache_reset'), 'success');
+      if (function_exists('opcache_reset')) {
+        if ($result === true) {
+          $CLICSHOPPING_MessageStack->add($this->app->getDef('success_opcache_reset'), 'success', 'main');
+        } else {
+          $CLICSHOPPING_MessageStack->add($this->app->getDef('error_opcache_reset'), 'error', 'main');
+        }
       } else {
-        $CLICSHOPPING_MessageStack->add($this->app->getDef('error_opcache_reset'), 'error');
+        $CLICSHOPPING_MessageStack->add($this->app->getDef('warning_opcache_function'), 'warning', 'main');
       }
-    } else {
-      $CLICSHOPPING_MessageStack->add($this->app->getDef('warning_opcache_function'), 'warning');
     }
-
 
     $this->app->redirect('OpCache');
   }

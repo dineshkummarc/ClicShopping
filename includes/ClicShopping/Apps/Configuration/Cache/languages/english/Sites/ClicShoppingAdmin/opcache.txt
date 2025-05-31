@@ -38,6 +38,5 @@ text_config_instructions = Configuration Instructions
 text_edit_php_ini = Edit php.ini Configuration
 text_restart_server = Restart Web Server
 
-success_opcache_reset = OPcache has been reset successfully
-error_opcache_reset = Failed to reset OPcache
-warning_opcache_function = OPcache function not available
+text_info = opcache is a caching engine built into PHP to improve performance by storing precompiled script bytecode in shared memory, eliminating the need for PHP to load and parse scripts on each request.<br />
+but if you are in development mode, you must disable the OpCache in your php.ini file (on 0) or reset each time because OpCache use a persisting mode.<br />

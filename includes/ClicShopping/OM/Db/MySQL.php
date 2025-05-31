@@ -11,7 +11,7 @@
 namespace ClicShopping\OM\Db;
 
 use PDO;
-use ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin\CacheAdmin;
+use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
 
 /**
  * Represents a MySQL database connection and driver with specific implementations

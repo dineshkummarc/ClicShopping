@@ -189,7 +189,7 @@ class CacheAdmin
    *
    * @return bool True if opcache_reset exists, false otherwise.
    */
-  private static function checkOpCache(): bool
+  public static function checkOpCache(): bool
   {
     return function_exists('opcache_reset');
   }

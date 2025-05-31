@@ -27,7 +27,7 @@ use ClicShopping\OM\Language;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Service;
 use ClicShopping\OM\Session;
-use ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin\CacheAdmin;
+use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
 
 use Exception;
 use function count;

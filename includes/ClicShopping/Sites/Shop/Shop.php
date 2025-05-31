@@ -24,7 +24,7 @@ use ClicShopping\OM\Service;
 use ClicShopping\OM\Session;
 
 use ClicShopping\Apps\Tools\WhosOnline\Classes\Shop\WhosOnlineShop;
-use ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin\CacheAdmin;
+use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
 
 use function array_slice;
 use function count;

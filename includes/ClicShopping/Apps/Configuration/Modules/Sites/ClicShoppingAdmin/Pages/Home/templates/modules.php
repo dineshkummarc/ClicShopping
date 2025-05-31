@@ -360,3 +360,4 @@ switch ($module_type) {
     <?php echo $CLICSHOPPING_Modules->getDef('text_info_module'); ?>
   </div>
 </div>
+<div class="py-3"></div>

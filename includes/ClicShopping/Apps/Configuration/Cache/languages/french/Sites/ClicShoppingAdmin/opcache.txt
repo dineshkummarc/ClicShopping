@@ -50,6 +50,5 @@ text_config_instructions = Instructions de configuration
 text_edit_php_ini = Modifier la configuration php.ini
 text_restart_server = Redémarrer le serveur web
 
-success_opcache_reset = L'OPcache a été réinitialisé avec succès
-error_opcache_reset = Échec de la réinitialisation de l'OPcache
-warning_opcache_function = Fonction OPcache non disponible
+text_info = OpCache est un moteur de cache intégré à PHP pour améliorer les performances en stockant le bytecode précompilé des scripts en mémoire partagée, évitant ainsi à PHP de charger et d’analyser les scripts à chaque requête.<br />
+Cependant, si vous êtes en mode développement, vous devez désactiver OpCache dans votre fichier php.ini (sur 0) ou le réinitialiser à chaque fois car OpCache utilise un mode persistant.<br />
