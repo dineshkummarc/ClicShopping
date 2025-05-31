@@ -162,9 +162,16 @@ class Db extends PDO
       $class = 'ClicShopping\OM\Db\MySQL';
       $object = new $class($server, $username, $password, $database, $port, $driver_options, $options);
 
-      // Initialize Memcached if available
-      if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'true') {
-        $object->initMemcachedConnection();
+      if (defined('USE_MEMCACHED')) {
+        if (USE_MEMCACHED === 'true') {
+          $object->initMemcachedConnection();
+        } else {
+          if (property_exists($object, 'memcached') && $object->memcached instanceof \Memcached) {
+            $object->memcached->flush();
+            $object->memcached->resetServerList();
+            $object->memcached->quit();
+          }
+        }
       }
 
     } catch (Exception $e) {

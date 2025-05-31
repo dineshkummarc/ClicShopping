@@ -123,7 +123,6 @@ class he_header_page_manager_header_menu
         'date_added' => 'now()'
       ]
     );
-
   }
 
   public function remove()

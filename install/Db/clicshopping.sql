@@ -171,7 +171,7 @@ INSERT INTO administrator_menu VALUES(730, 'index.php?A&Configuration\\Modules&M
 INSERT INTO administrator_menu VALUES(732, 'index.php?A&Configuration\\Languages&Languages', 19, 1, 1, 'languages.gif', 0, 'app_configuration_languages', 1);
 INSERT INTO administrator_menu VALUES(736, 'index.php?A&Configuration\\Langues&Langues', 20, 1, 1, 'languages.gif', 0, 'app_configuration_langues', 1);
 INSERT INTO administrator_menu VALUES(737, 'index.php?A&Tools\\ActionsRecorder&ActionsRecorder', 178, 1, 1, 'cadenas.gif', 0, 'app_tools_actions_recorder', 1);
-INSERT INTO administrator_menu VALUES(738, 'index.php?A&Configuration\\Cache&Cache', 21, 1, 1, 'cache.gif', 0, 'app_configuration_cache', 1);
+INSERT INTO administrator_menu VALUES(738, 'index.php?A&Configuration\\Cache&Cache', 21, 4, 1, 'cache.gif', 0, 'app_configuration_cache', 1);
 INSERT INTO administrator_menu VALUES(739, 'index.php?A&Tools\\DefineLanguage&DefineLanguage', 170, 1, 1, 'define_language.gif', 0, 'app_tools_define_language', 1);
 INSERT INTO administrator_menu VALUES(742, 'index.php?A&Tools\\ServiceAPP&ServiceAPP', 727, 2, 1, 'service.png', 0, 'app_tools_modules_service', 1);
 INSERT INTO administrator_menu VALUES(756, 'index.php?A&Configuration\\Weight&Weight', 20, 4, 1, 'weight.png', 0, 'app_configuration_weight', 1);
@@ -211,9 +211,9 @@ INSERT INTO administrator_menu VALUES(800, 'index.php?A&Marketing\\Recommendatio
 INSERT INTO administrator_menu VALUES(801, 'index.php?A&Customers\\Reviews&Reviews', 587, 1, 0, '', 0, 'app_customers_reviews', 1);
 INSERT INTO administrator_menu VALUES(802, 'index.php?A&Customers\\Reviews&ReviewsSentiment', 587, 2, 0, '', 0, 'app_customers_reviews', 1);
 INSERT INTO administrator_menu VALUES(803, 'index.php?A&Customers\\Reviews&StatsCustomersVote', 98, 4, 0, '', 0, 'app_customers_reviews', 1);
-INSERT INTO administrator_menu VALUES(804, 'index.php?A&Configuration\\Settings&Settings&gID=11', 21, 2, 0, '', 1, 'app_configuration_cache', 1);
-INSERT INTO administrator_menu VALUES(805, 'index.php?A&Configuration\\Cache&OpCache', 21, 6, 1, '', 0, 'app_configuration_cache', 1);
-INSERT INTO administrator_menu VALUES(811, 'index.php?A&Configuration\\Cache&Memcached', 21, 7, 1, '', 0, 'app_configuration_cache', 1);
+INSERT INTO administrator_menu VALUES(804, 'index.php?A&Configuration\\Settings&Settings&gID=11', 21, 5, 0, '', 1, 'app_configuration_cache', 1);
+INSERT INTO administrator_menu VALUES(805, 'index.php?A&Configuration\\Cache&OpCache', 21, 7, 1, '', 0, 'app_configuration_cache', 1);
+INSERT INTO administrator_menu VALUES(806, 'index.php?A&Configuration\\Cache&Memcached', 21, 8, 1, '', 0, 'app_configuration_cache', 1);
 
 INSERT INTO administrator_menu_description VALUES(0, '', 1);
 INSERT INTO administrator_menu_description VALUES(0, '', 2);
@@ -685,7 +685,7 @@ INSERT INTO configuration VALUES(118, 'Stockage du temps d\'exécution', 'STORE_
 INSERT INTO configuration VALUES(119, 'Emplacement du fichier pour le stocke d\'exécution', 'STORE_PAGE_PARSE_TIME_LOG', '/home/www/site/shop/includes/Work/Log/admin.log', 'Chemin d\'accès et nom du fichier des temps d\'exécution.', 10, 2, '2008-09-15 10:07:36', '2006-04-09 16:13:48', NULL, NULL);
 INSERT INTO configuration VALUES(120, 'Format de date des exécutions', 'STORE_PARSE_DATE_TIME_FORMAT', '%d/%m/%Y %H:%M:%S', 'Format de la date des exécutions.', 10, 3, NULL, '2006-04-09 16:13:48', NULL, NULL);
 INSERT INTO configuration VALUES(121, 'Affichage du temps d\'exécution', 'DISPLAY_PAGE_PARSE_TIME', 'false', 'Affiche le temps d\'exécution d\'une page (le stockage du temps d\'exécution doit &ecirc;tre activé et l\'emplacement choisi du fichier pour le stockage d\'exécution).<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 10, 4, '2007-06-03 16:58:14', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
-INSERT INTO configuration VALUES(123, 'Utiliser le cache', 'USE_CACHE', 'false', 'Utiliser les fonctionnalités de cache.<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 11, 1, '2006-07-18 00:13:26', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
+INSERT INTO configuration VALUES(123, 'Utiliser le cache (fichiers)', 'USE_CACHE', 'false', 'Utiliser les fonctionnalités de cache.<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 11, 1, '2006-07-18 00:13:26', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
 INSERT INTO configuration VALUES(125, 'Méthode de transport d\'email', 'EMAIL_TRANSPORT', 'sendmail', 'Définir si le serveur utilise une connexion locale à sendmail ou une connexion SMTP par TCP/IP. Les Serveurs Windows et MacOS devraient codifier SMTP.', 12, 1, NULL, '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'sendmail\', \'gmail\', \'smtp\'))');
 INSERT INTO configuration VALUES(126, 'Saut de ligne en-t&ecirc;te des emails', 'EMAIL_LINEFEED', 'LF', 'Définir les caractères utilisés pour séparer les en-t&ecirc;tes des emails.', 12, 2, NULL, '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'LF\', \'CRLF\'))');
 INSERT INTO configuration VALUES(127, 'Utiliser MIME HTML pour l\'envoi des emails', 'EMAIL_USE_HTML', 'false', 'Envoie les emails au format html ou texte brut.<br><br><i>(Valeur True = HTML - Valeur False = TEXTE)</i>', 12, 3, '2008-09-15 22:57:14', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
@@ -1716,7 +1716,7 @@ INSERT INTO configuration VALUES(1763, 'Clé secrète', 'CLICSHOPPING_APP_UPGRAD
 INSERT INTO configuration VALUES(1764, 'Statut', 'CLICSHOPPING_APP_CACHE_CA_STATUS', 'True', 'Souhaitez vous activer ce module à votre boutique', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
 INSERT INTO configuration VALUES(1765, 'Ordre de tri d\'affichage', 'CLICSHOPPING_APP_CACHE_CA_SORT_ORDER', '30', 'Ordre de tri pour l\'affichage (Le plus petit nombre est montré en premier)', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
 INSERT INTO configuration VALUES(1766, 'Parameter [Cache Control App]', 'MODULE_MODULES_CACHE_INSTALLED', 'Configuration\\Cache\\CA', 'Parameter [Cache Control App]', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
-INSERT INTO configuration VALUES(1767, 'Utiliser Memcached', 'USE_MEMCACHED', 'false', 'Activer la mise en cache Memcached', 11,2, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1767, 'Utiliser Memcached', 'USE_MEMCACHED', 'false', 'Activer la mise en cache Memcached. Pour du debug, veuillez laisser sur false', 11,2, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
 
 
 

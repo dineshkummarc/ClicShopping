@@ -8,21 +8,14 @@
  *
  */
 
-use ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin\CacheAdmin;
-use ClicShopping\OM\HTML;
-use ClicShopping\OM\Registry;
+  use ClicShopping\OM\HTML;
+  use ClicShopping\OM\Registry;
+  use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
 
-$CLICSHOPPING_Cache = Registry::get('Cache');
-$CLICSHOPPING_MessageStack = Registry::get('MessageStack');
-$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
+  $CLICSHOPPING_Cache = Registry::get('Cache');
+  $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
+  $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 
-if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
-  ?>
-  <div class="alert alert-warning">
-    <?php echo $CLICSHOPPING_Cache->getDef('text_memcache_not_available'); ?>
-  </div>
-  <?php
-} else {
   $CLICSHOPPING_Memcached = CacheAdmin::getMemcached();
   $stats = $CLICSHOPPING_Memcached->getStats();
   $memcache_available = is_array($stats) && count($stats) > 0;
@@ -84,7 +77,15 @@ if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
     </div>
   </div>
   <div class="mt-1"></div>
-
+  <?php
+  if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
+    ?>
+      <div class="alert alert-warning">
+        <?php echo $CLICSHOPPING_Cache->getDef('text_memcache_not_available'); ?>
+      </div>
+    <?php
+  }
+  ?>
   <div class="row">
     <div class="col-md-12">
       <?php
@@ -179,5 +180,3 @@ if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
     </div>
   </div>
 </div>
-<?php
-}

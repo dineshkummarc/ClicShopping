@@ -1,24 +1,28 @@
 version4.00
-Tthe version 4.x integrate the embeddings and need to be used with mariaDB 11.7 at least.
-The goal is to exploit the Gen AI capacities with the rag creating a RAG BI Agent.
 
-small fix and improvement
-librairies updated
-Protect data information by AES-256
-new double authentification approach by email
-Add product recommendation module for products_info template using the embedding
-Add embedding for some table
-Add rag via chatbot for administration
-Rag with agent BI
- - Allow to use the rag and retieve the data inside the database
- - Allow the rag to search as specific information via a text request
- - Allow the rag to make statistic via dynamic query
- - Intelligent rag with agent BI allowing to use different embedding model
-API improvment and inclusion OpenAi GPT Cart
-OpCache included
-Memcached included
-Security increased
+Tthe version 4.x integrate the embeddings and need to be used with mariaDB 11.7 at least if you want to use it. An database update is available in GTP Apps.
 
+note : This update works only with mariaDb and not mySQL 9.x due a difference in the vectorisation.
+
+The goal is to exploit the Gen AI capacities with a hybrid rag approach creating a RAG BI Agent.
+
+- small bug fix
+- librairies updated
+- Protect data information by AES-256
+- New double authentification approach by email
+- Add product recommendation module for products_info template using the embedding
+- Add embedding for some tablea and some files updated to use it.
+- Add rag via chatbot for administration
+- Rag with agent BI
+ - -  Allow to use the rag and retieve the data inside the database
+ - -  Allow the rag to search as specific information via a text request
+ - -  Allow the rag to make statistic via dynamic query
+ - -  Intelligent rag with agent BI allowing to use different embedding model
+- API improvement and inclusion OpenAi GPT Cart
+- OpCache included
+- Memcached included
+- Security improvement
+- Code refactored and optimised
 
 ------------------
 version3.457

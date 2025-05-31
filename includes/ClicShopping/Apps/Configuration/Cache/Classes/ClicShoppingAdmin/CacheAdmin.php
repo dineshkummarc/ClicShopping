@@ -8,7 +8,7 @@
  *
  */
 
-namespace ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin;
+namespace ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin;
 /**
  * Class CacheAdmin
  *

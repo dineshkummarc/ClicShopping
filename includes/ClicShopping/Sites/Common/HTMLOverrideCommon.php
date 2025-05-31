@@ -29,7 +29,7 @@ class HTMLOverrideCommon extends HTML
   public static function removeInvisibleCharacters(string|null $text): string|null
   {
     if (!is_null($text)) {
-    // List of invisible characters to remove (non-breaking spaces, zero-width characters, etc.)
+      // List of invisible characters to remove (non-breaking spaces, zero-width characters, etc.)
       $invisibleChars = [
         "\u{200B}", // Zero Width Space
         "\u{200C}", // Zero Width Non-Joiner
@@ -51,13 +51,13 @@ class HTMLOverrideCommon extends HTML
     return $text;
   }
 
- /**
-  * Cleans an HTML string by removing tags, JavaScript, and HTML entities.
-  *
-  * @param string $html The HTML content to clean.
-  * @param int|null $maxLength Maximum length of the cleaned text.
-  * @return string Cleaned and optionally truncated text.
-  */
+  /**
+   * Cleans an HTML string by removing tags, JavaScript, and HTML entities.
+   *
+   * @param string $html The HTML content to clean.
+   * @param int|null $maxLength Maximum length of the cleaned text.
+   * @return string Cleaned and optionally truncated text.
+   */
   public static function cleanHtmlOptimized(string $html, ?int $maxLength = null): string
   {
     // Supprime les balises <script> et <style>
@@ -82,7 +82,7 @@ class HTMLOverrideCommon extends HTML
     return htmlspecialchars($clean, ENT_QUOTES | ENT_HTML5, 'UTF-8');
   }
 
- /**
+  /**
    * Cleans an HTML text by removing unnecessary content for embedding.
    * - Removes scripts, styles, images, iframes, external links.
    * - Retains only the text useful for indexing and searching.
@@ -134,12 +134,12 @@ class HTMLOverrideCommon extends HTML
      return trim($clean);
  }
 
- /**
-  * Cleans HTML text for SEO by removing harmful tags and normalizing the content.
-  *
-  * @param string $html The HTML content to clean.
-  * @return string Cleaned and optimized text for SEO.
-  */
+  /**
+   * Cleans HTML text for SEO by removing harmful tags and normalizing the content.
+   *
+   * @param string $html The HTML content to clean.
+   * @return string Cleaned and optimized text for SEO.
+   */
   public static function cleanHtmlForSEO(string $html): string
   {
     // Supprime les balises nuisibles au SEO (scripts, styles, iframes, objets, boutons)

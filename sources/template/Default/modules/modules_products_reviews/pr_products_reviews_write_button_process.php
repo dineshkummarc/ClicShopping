@@ -38,14 +38,13 @@ class pr_products_reviews_write_button_process
   public function execute()
   {
     $CLICSHOPPING_Template = Registry::get('Template');
+    $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
+    $CLICSHOPPING_ProductsFunctionTemplate = Registry::get('ProductsFunctionTemplate');
 
     $content_width = (int)MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_CONTENT_WIDTH;
     $text_position = MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_POSITION;
 
     if (isset($_GET['Products'], $_GET['ReviewsWrite']) && !isset($_GET['Success'])) {
-      $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
-      $CLICSHOPPING_ProductsFunctionTemplate = Registry::get('ProductsFunctionTemplate');
-
       $products_name_url = $CLICSHOPPING_ProductsFunctionTemplate->getProductsUrlRewrited()->getProductNameUrl($CLICSHOPPING_ProductsCommon->getID());
 
       $button_back = HTML::button(CLICSHOPPING::getDef('button_back'), null, $products_name_url, 'primary');

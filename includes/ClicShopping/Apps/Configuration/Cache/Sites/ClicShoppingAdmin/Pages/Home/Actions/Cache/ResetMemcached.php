@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\Cache\Sites\ClicShoppingAdmin\Pages\Home\Actions\Cache;
 
-use ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin\CacheAdmin;
+use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
 use ClicShopping\OM\Registry;
 
 class ResetMemcached extends \ClicShopping\OM\PagesActionsAbstract

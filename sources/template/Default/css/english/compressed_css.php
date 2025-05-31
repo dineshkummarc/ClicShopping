@@ -24,7 +24,8 @@ function get_files($root_dir, $all_data = [])
 // only include files with these extensions
   $allow_extensions = ['css'];
 // make any specific files  you want to be excluded
-  $ignore_files = ['general/stylesheet.css',
+  $ignore_files = [
+    'general/stylesheet.css',
     'general/stylesheet_responsive.css',
     'general/link_general.css',
     'general/link_general_responsive.css',
