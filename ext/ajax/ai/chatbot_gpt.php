@@ -79,39 +79,39 @@ Instructions:
     $result = $ragManager->answerQuestion($prompt, 5, 0.7, $language_id);
   } else {
 //
-// APPROCHE 2: Utilisation de l'approche existante
+// APPROACHE 2: Use the current approach
 //
 
 //
-// 1️ Initialisation du générateur d'embedding
+// 1️ Embedding generator initialisation
 // 
     $embeddingGenerator = new OpenAI3LargeEmbeddingGenerator();
 
 //
-// 2️ Récupérer l'EntityManager de Doctrine via la classe DoctrineOrm
+// 2️  Take DoctrineDoctrine EntityManager via DoctrineOrm class
 //
     $entityManager = DoctrineOrm::getEntityManager();
 
 //
-// 3️ Récupérer toutes les tables d'embedding disponibles
+// 3️ Take all the embeddings table available
 //
     $embeddingTables = [];
 
-// Tables principales connues
+// Main Tables known
     $knownTables = [
       'products_embedding',
       'categories_embedding',
       'pages_manager_embedding'
     ];
 
-    // Ajouter d'abord les tables connues
+    // Add first the tables known
     foreach ($knownTables as $tableName) {
       try {
         // Utiliser notre implémentation personnalisée MariaDBVectorStore au lieu de DoctrineVectorStore
         $vectorStore = new MariaDBVectorStore($embeddingGenerator, $tableName);
         $embeddingTables[$tableName] = $vectorStore;
       } catch (\Exception $e) {
-        if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+        if (\defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
           error_log("Erreur lors de l'initialisation de la table {$tableName} : " . $e->getMessage());
           // Continuer avec les autres tables en cas d'erreur
         }
@@ -128,7 +128,7 @@ Instructions:
             $vectorStore = new MariaDBVectorStore($embeddingGenerator, $tableName);
             $embeddingTables[$tableName] = $vectorStore;
           } catch (\Exception $e) {
-            if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+            if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
               error_log("Erreur lors de l'initialisation de la table {$tableName} : " . $e->getMessage());
               // Continuer avec les autres tables en cas d'erreur
             }
@@ -136,7 +136,7 @@ Instructions:
         }
       }
     } catch (\Exception $e) {
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+      if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
         error_log("Erreur lors de la recherche des tables d'embedding : " . $e->getMessage());
         // Continuer avec les tables connues en cas d'erreur
       }
