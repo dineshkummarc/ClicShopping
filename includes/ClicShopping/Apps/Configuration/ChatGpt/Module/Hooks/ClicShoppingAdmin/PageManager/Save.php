@@ -53,7 +53,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
-    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'False') {
+    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
 
@@ -105,7 +105,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
               //********************
               // add embedding
               //********************
-              if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'True') {
+              if (\defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True'  && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
                 $embedding_data = "\n" . $this->app->getDef('text_page_manager_name', ['page_title' => $page_manager_name]) . "\n";
 
                 if (!empty($seo_page_manager_title)) {

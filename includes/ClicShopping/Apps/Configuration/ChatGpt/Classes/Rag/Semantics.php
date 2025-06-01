@@ -248,8 +248,7 @@ class Semantics
     foreach ($patterns as $type => $typePatterns) {
       foreach ($typePatterns as $pattern) {
         if (preg_match($pattern, $text)) {
-          if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') &&
-              CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+          if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
             self::logSecurityEvent("Semantic pattern matched: Type: $type", 'info');
           }
           return true;
@@ -279,7 +278,7 @@ class Semantics
 
     $score = self::calculateScore($translated);
 
-    if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
       self::logSecurityEvent("Total score: {$score}", 'info');
     }
 
@@ -291,7 +290,7 @@ class Semantics
       return 'analytics';
     }
 
-    if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
       self::logSecurityEvent("No analytics pattern matched. Falling back to semantic analysis.", 'info');
     }
 
@@ -339,8 +338,7 @@ class Semantics
         if (preg_match($pattern, $text)) {
           $hasAnalyticalContext = self::hasAnalyticalContext($text);
           if ($hasAnalyticalContext) {
-            if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') &&
-                CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+            if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
               self::logSecurityEvent("Critical pattern matched: Type: $type", 'info');
             }
             return true;
@@ -407,8 +405,7 @@ class Semantics
     // Check main patterns first
     foreach ($allPatterns as $type => $pattern) {
       if (preg_match($pattern, $text)) {
-        if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') &&
-            CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+        if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
           self::logSecurityEvent("Geographic pattern matched: $type", 'info');
         }
         return true;
@@ -421,8 +418,7 @@ class Semantics
       if (preg_match($pattern, $text)) {
         $contextMatches++;
         if ($contextMatches >= 2) { // Require at least 2 context matches to consider it geographic
-          if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') &&
-              CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+          if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
             self::logSecurityEvent("Geographic context patterns matched", 'info');
           }
           return true;

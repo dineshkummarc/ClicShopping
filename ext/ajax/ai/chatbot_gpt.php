@@ -69,7 +69,7 @@ Instructions:
 //
 // APPROCHE 1: Utilisation de MultiDBRAGManager (nouvelle implémentation)
 //
-  if (defined('CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER == 'True') {
+  if (defined('CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
     // Initialisation du gestionnaire RAG multi-bases
     // Si aucune table n'est spécifiée, toutes les tables d'embedding seront utilisées automatiquement
     $ragManager = new MultiDBRAGManager();

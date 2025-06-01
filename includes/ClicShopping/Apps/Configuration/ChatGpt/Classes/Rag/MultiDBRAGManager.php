@@ -72,7 +72,7 @@ class MultiDBRAGManager
     $this->db = Registry::get('Db');
 
     $this->language = Registry::get('Language');
-    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
+    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
     $this->securityLogger = new SecurityLogger();
 
     $parameters = null;

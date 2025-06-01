@@ -56,7 +56,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
-    if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'False') {
+    if (CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
 

@@ -53,7 +53,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
-    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'False') {
+    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' ||  && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
 

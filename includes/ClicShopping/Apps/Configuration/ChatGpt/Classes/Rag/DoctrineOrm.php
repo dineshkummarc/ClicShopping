@@ -144,7 +144,7 @@ class DoctrineOrm
 
        return $indexExists !== false;
      } catch (\Exception $e) {
-       if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+       if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
          error_log('Error while checking structure for table ' . $tableName . ': ' . $e->getMessage());
        }
        return false;
@@ -176,7 +176,7 @@ class DoctrineOrm
 
       return $connection->fetchFirstColumn($sql);
     } catch (\Exception $e) {
-      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+      if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
         error_log('Error while retrieving embedding tables: ' . $e->getMessage());
       }
       return [];
@@ -191,7 +191,7 @@ class DoctrineOrm
    */
   private static function logError($message)
   {
-    if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True') {
+    if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
       error_log($message);
     }
   }

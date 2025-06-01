@@ -826,7 +826,7 @@ class Cron {
       return false;
     }
 
-    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING') || CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'False') {
+    if (!defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False') {
       return false;
     }
 

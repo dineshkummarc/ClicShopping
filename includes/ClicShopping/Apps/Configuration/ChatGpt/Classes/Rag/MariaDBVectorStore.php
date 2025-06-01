@@ -64,7 +64,7 @@ class MariaDBVectorStore extends VectorStoreBase
     // Récupération de la connexion Doctrine
     $entityManager = DoctrineOrm::getEntityManager();
     $this->connection = $entityManager->getConnection();
-    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
+    $this->debug = \defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER');
 
     // Initialize security components
     $this->securityLogger = new SecurityLogger();

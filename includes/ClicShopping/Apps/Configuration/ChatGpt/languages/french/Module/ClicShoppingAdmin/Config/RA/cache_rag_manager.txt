@@ -1,0 +1,5 @@
+cfg_chatgpt_cache_rag_manager_title = Voulez-vous activer le cache du Rag ?
+cfg_chatgpt_cache_rag_manager_description = Le cache permet de mettre en cache les requêtes, veuillez choisir True.
+
+cfg_chatgpt_cache_rag_manager_status_true = True
+cfg_chatgpt_cache_rag_manager_status_false = False

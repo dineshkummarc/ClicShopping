@@ -74,7 +74,7 @@ class AnalyticsAgent
     $this->dbSecurity = new DbSecurity();
 
     $this->cache = new Cache($enablePromptCache);
-    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
+    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
 
     $this->enablePromptCache = $enablePromptCache;
 

@@ -96,7 +96,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
   // categories description
   //-------------------
             $categories_description = '';
-	    
+
             if (isset($_POST['option_gpt_description'])) {
               $question_description = $this->app->getDef('text_categories_description', ['category_name' => $categories_name]);
               $categories_description = $translate_language . ' ' . $language_name . ' ' . $question_description;
@@ -168,7 +168,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
   //********************
   // add embedding
   //********************
-            if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'True') {
+            if (\defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
               $embedding_data = "\n" . $this->app->getDef('text_category_embedded') . "\n";
 
               $embedding_data .= $this->app->getDef('text_category_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_name) . "\n";

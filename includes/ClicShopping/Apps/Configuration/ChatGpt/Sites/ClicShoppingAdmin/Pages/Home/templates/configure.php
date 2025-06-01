@@ -38,16 +38,18 @@ if ($CLICSHOPPING_MessageStack->exists('ChatGpt')) {
             class="col-md-8 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_ChatGpt->getDef('heading_title'); ?></span>
           <span class="col-md-3 text-end">
           <?php
-            $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_categories_embedding"');
-            $result = $Qcheck->fetch();
+            if (\defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS')) {
+              $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_categories_embedding"');
+              $result = $Qcheck->fetch();
 
-            // If the table does not exist (empty result), show the form
-            if (empty($result) || $result === false) {
-              echo HTML::form('updateChatGpt', $CLICSHOPPING_ChatGpt->link('Configure&Update'));
-              echo HTML::button($CLICSHOPPING_ChatGpt->getDef('module_ch_sql_update'), null, $CLICSHOPPING_ChatGpt->link('ChatGpt'), 'warning',  ['params' => 'id="sqlUpdate" onclick="return confirm(\'' . $CLICSHOPPING_ChatGpt->getDef('module_ch_confirmation') . '\');"']) . '&bnsp;';
-              echo '</form>';
+              // If the table does not exist (empty result), show the form
+              if (empty($result) || $result === false) {
+                echo HTML::form('updateChatGpt', $CLICSHOPPING_ChatGpt->link('Configure&Update'));
+                echo HTML::button($CLICSHOPPING_ChatGpt->getDef('module_ch_sql_update'), null, $CLICSHOPPING_ChatGpt->link('ChatGpt'), 'warning',  ['params' => 'id="sqlUpdate" onclick="return confirm(\'' . $CLICSHOPPING_ChatGpt->getDef('module_ch_confirmation') . '\');"']) . '&bnsp;';
+                echo '</form>';
+              }
             }
-            
+
             echo HTML::button($CLICSHOPPING_ChatGpt->getDef('module_ch_short_title'), null, $CLICSHOPPING_ChatGpt->link('ChatGpt'), 'primary');
           ?>
           </span>

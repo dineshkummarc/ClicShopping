@@ -48,7 +48,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
-    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'False') {
+    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
 
@@ -100,7 +100,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         //********************
         // add embedding
         //********************
-        if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'True') {
+        if (\defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
           $embedding_data = $this->app->getDef('text_supplier_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($supplier_name) . "\n";
 
           if (!empty($date_added)) {

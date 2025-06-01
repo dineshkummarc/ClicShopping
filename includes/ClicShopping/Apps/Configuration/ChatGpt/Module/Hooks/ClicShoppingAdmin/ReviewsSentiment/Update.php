@@ -195,7 +195,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     // embedding
     //
 
-    if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'True') {
+    if (\defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
       $Qcheck = $this->app->db->prepare('select id
                                            from :table_pages_manager_embedding
                                            where entity_id = :entity_id

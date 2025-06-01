@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
-use ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin\CacheAdmin;
+use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
 /**
  * Class Cache
  *
@@ -45,8 +45,8 @@ class Cache
     $this->promptCache = [];
     $this->securityLogger = new SecurityLogger();
 
-    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER === 'True';
-    $this->cache = defined('CLICSHOPPING_APP_CHATGPT_CH_CACHE_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_CACHE_RAG_MANAGER === 'True';
+    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
+    $this->cache = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
 
     // First set the enable state
     $this->enablePromptCache = $this->cache === true ? true : false;

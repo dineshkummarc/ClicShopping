@@ -40,10 +40,10 @@ class NewVector
     $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY;
 
     // Déterminer quelle clé API utiliser en fonction du modèle
-    if (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'mistral') === 0) {
+    if (strpos(CLICSHOPPING_APP_CHATGPT_RA_EMBEDDING_MODEL, 'mistral') === 0) {
       $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL;
-    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'voyage') === 0) {
-      $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_VOYAGE_AI;
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_RA_EMBEDDING_MODEL, 'voyage') === 0) {
+      $api_key = CLICSHOPPING_APP_CHATGPT_RA_API_KEY_VOYAGE_AI;
     }
 
     return $api_key;
@@ -62,7 +62,7 @@ class NewVector
     } elseif (strpos($model, 'mistral') === 0) {
       return !empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL);
     } elseif (strpos($model, 'voyage') === 0) {
-      return !empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_VOYAGE_AI);
+      return !empty(CLICSHOPPING_APP_CHATGPT_RA_API_KEY_VOYAGE_AI);
     } elseif (strpos($model, 'ollama') === 0) {
       return true; // Ollama n'a pas besoin de clé API
     }
@@ -99,7 +99,7 @@ class NewVector
   {
     Gpt::getEnvironment();
 
-    $model = CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL;
+    $model = CLICSHOPPING_APP_CHATGPT_RA_EMBEDDING_MODEL;
 
     if (!$model) {
       return null;
@@ -226,7 +226,7 @@ class NewVector
   private static function chat(): mixed // Not use currently
   {
     $api_key = self::getApiKey();
-    $parameters = ['model' => CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL];
+    $parameters = ['model' => CLICSHOPPING_APP_CHATGPT_RA_EMBEDDING_MODEL];
 
     $config = new OpenAIConfig();
     $config->apiKey = $api_key;
@@ -355,17 +355,17 @@ class NewVector
    */
   public static function getEmbeddingLength(): int
   {
-    if (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'gpt-large') === 0) {
+    if (strpos(CLICSHOPPING_APP_CHATGPT_RA_EMBEDDING_MODEL, 'gpt-large') === 0) {
       return 3072; // OpenAI Large
-    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'gpt-medium') === 0) {
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_RA_EMBEDDING_MODEL, 'gpt-medium') === 0) {
       return 1536; // OpenAI Medium
-    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'mistral') === 0) {
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_RA_EMBEDDING_MODEL, 'mistral') === 0) {
       return 1024; // Mistral
-    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'voyage3-large') === 0) {
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_RA_EMBEDDING_MODEL, 'voyage3-large') === 0) {
       return 4096; // Voyage3 Large
-    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'voyage3-lite') === 0) {
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_RA_EMBEDDING_MODEL, 'voyage3-lite') === 0) {
       return 384; // Voyage3 Lite
-    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_EMBEDDING_MODEL, 'voyage3') === 0) {
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_RA_EMBEDDING_MODEL, 'voyage3') === 0) {
       return 1024; // Voyage3 standard
     } else {
       return 1536; // Ollama (valeur par défaut)
