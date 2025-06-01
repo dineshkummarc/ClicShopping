@@ -17,14 +17,21 @@
   $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 
   $CLICSHOPPING_Memcached = CacheAdmin::getMemcached();
-  $stats = $CLICSHOPPING_Memcached->getStats();
-  $memcache_available = is_array($stats) && count($stats) > 0;
 
-  if (isset($_POST['reset_memcache'])) {
-    $CLICSHOPPING_Memcached->flush();
-    $CLICSHOPPING_MessageStack->add($CLICSHOPPING_Cache->getDef('text_memcache_flushed'), 'success');
+  if ($CLICSHOPPING_Memcached && method_exists($CLICSHOPPING_Memcached, 'getStats')) {
+    $stats = $CLICSHOPPING_Memcached->getStats();
+    $memcache_available = is_array($stats) && count($stats) > 0;
+
+    if (isset($_POST['reset_memcache'])) {
+      $CLICSHOPPING_Memcached->flush();
+      $CLICSHOPPING_MessageStack->add($CLICSHOPPING_Cache->getDef('text_memcache_flushed'), 'success');
+    }
+  } else {
+    $stats = [];
+    $memcache_available = false;
+    $CLICSHOPPING_MessageStack->add('main', $CLICSHOPPING_Cache->getDef('text_memcache_error'), 'error');
   }
-  ?>
+?>
 <div class="contentBody">
   <div class="row">
     <div class="col-md-12">

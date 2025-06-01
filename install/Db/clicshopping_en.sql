@@ -1706,10 +1706,10 @@ INSERT INTO configuration VALUES(1753, 'Email verification code validity duratio
 INSERT INTO configuration VALUES(1754, 'Email verification code length', 'EMAIL_VERIFICATION_CODE_LENGTH', '6', 'Number of digits in the verification code (4-8)', 46, 8, NULL, '2025-04-23 15:01:20', NULL, NULL);
 INSERT INTO configuration VALUES(1755, 'client ID key', 'CLICSHOPPING_APP_UPGRADE_UP_CLIENT_ID', '', 'client ID key', 6, 0, NULL, '2025-05-19 10:42:16', NULL, NULL);
 INSERT INTO configuration VALUES(1756, 'Secret key', 'CLICSHOPPING_APP_UPGRADE_UP_SECRET_KEY', '', 'You must send a request to a forum administrator to obtain the secret key', 6, 0, NULL, '2025-05-19 10:42:16', NULL, NULL);
-INSERT INTO configuration VALUES(1764, 'Status', 'CLICSHOPPING_APP_CACHE_CA_STATUS', 'True', 'Do you want to enable this module in your shop?', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
-INSERT INTO configuration VALUES(1765, 'Sort order of display', 'CLICSHOPPING_APP_CACHE_CA_SORT_ORDER', '30', 'Sort order for display (The lowest number is shown first)', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
-INSERT INTO configuration VALUES(1766, 'Parameter [Cache Control App]', 'MODULE_MODULES_CACHE_INSTALLED', 'Configuration\\Cache\\CA', 'Parameter [Cache Control App]', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
-INSERT INTO configuration VALUES(1767, 'Use Memcached', 'USE_MEMCACHED', 'false', 'Enable Memcached caching. For debug, please let on False', 11,2, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
+INSERT INTO configuration VALUES(1757, 'Status', 'CLICSHOPPING_APP_CACHE_CA_STATUS', 'True', 'Do you want to enable this module in your shop?', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
+INSERT INTO configuration VALUES(1758, 'Sort order of display', 'CLICSHOPPING_APP_CACHE_CA_SORT_ORDER', '30', 'Sort order for display (The lowest number is shown first)', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
+INSERT INTO configuration VALUES(1759, 'Parameter [Cache Control App]', 'MODULE_MODULES_CACHE_INSTALLED', 'Configuration\\Cache\\CA', 'Parameter [Cache Control App]', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
+INSERT INTO configuration VALUES(1760, 'Use Memcached', 'USE_MEMCACHED', 'false', 'Enable Memcached caching. For debug, please let on False', 11,2, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
 
 
 INSERT INTO configuration_group VALUES(1, 'Store Setup', 'General Information on the Store.', 1, 1);

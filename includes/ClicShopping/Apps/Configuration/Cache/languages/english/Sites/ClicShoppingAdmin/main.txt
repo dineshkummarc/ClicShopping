@@ -51,3 +51,4 @@ text_display_number_of_link = Display <strong>{{listing_from}}</strong> to <stro
 success_opcache_reset = OpCache has been reset successfully
 error_opcache_reset = Failed to reset OPcache
 warning_opcache_function = OPcache function not available
+error_memcached_reset = Failed to reset Memcached.
