@@ -7,7 +7,7 @@
  * @Info : https://www.clicshopping.org/forum/trademark/
  *
  */
-<
+
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
@@ -41,7 +41,7 @@ class ph_products_favorites_title
   public string $code;
   public string $group;
   public $title;
-  public $description;<<<
+  public $description;
   public int|null $sort_order = 0;
   public bool $enabled = false;
   private mixed $cache_block;
@@ -75,36 +75,36 @@ class ph_products_favorites_title
     $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
 
     if (isset($_GET['Products'], $_GET['Favorites'])) {
-    if ($this->enabled) {
-      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
-        $cache_id = $this->cache_block . $this->lang;
-        $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
+      if ($this->enabled) {
+        if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+          $cache_id = $this->cache_block . $this->lang;
+          $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
 
-        if ($cache_output !== false) {
-          $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
-          return;
+          if ($cache_output !== false) {
+            $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
+            return;
+          }
         }
+
+          $content_width = (int)MODULE_PRODUCTS_FAVORITES_CONTENT_WIDTH;
+          $text_position = MODULE_PRODUCTS_FAVORITES_POSITION;
+
+          $content = '<!-- products favorites title start -->' . "\n";
+          $content .= '<div class="ModulesProductsFavoritesContainer">';
+
+        ob_start();
+        require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/products_favorites_title'));
+        $content .= ob_get_clean();
+
+        $content .= '<!-- products favorites title end -->' . "\n";
+
+        if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+          $CLICSHOPPING_TemplateCache->setCache($cache_id, $content);
+        }
+
+        $CLICSHOPPING_Template->addBlock($content, $this->group);
       }
-
-        $content_width = (int)MODULE_PRODUCTS_FAVORITES_CONTENT_WIDTH;
-        $text_position = MODULE_PRODUCTS_FAVORITES_POSITION;
-
-	$content = '<!-- products favorites title start -->' . "\n";
-        $content .= '<div class="ModulesProductsFavoritesContainer">';
-
-      ob_start();
-      require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/products_favorites_title'));
-      $content .= ob_get_clean();
-
-      $content .= '<!-- products favorites title end -->' . "\n";
-
-      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
-        $CLICSHOPPING_TemplateCache->setCache($cache_id, $content);
-      }
-
-      $CLICSHOPPING_Template->addBlock($content, $this->group);
     }
-  }
   }
 
   /**
