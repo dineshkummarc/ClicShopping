@@ -316,7 +316,7 @@ class TemplateCache
     {
       $result = false;
 
-      if (USE_CATALOG_CACHE == 'true') {
+      if (USE_CATALOG_CACHE == 'True') {
         $result =  true;
       }
 
@@ -332,7 +332,7 @@ class TemplateCache
     {
       $result = false;
 
-      if (USE_CATALOG_RESET_CACHE == 'true') {
+      if (USE_CATALOG_RESET_CACHE == 'True') {
         $result =  true;
       }
 

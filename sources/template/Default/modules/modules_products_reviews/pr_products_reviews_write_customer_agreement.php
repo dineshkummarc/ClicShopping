@@ -11,19 +11,69 @@
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
+/**
+ * Class pr_products_reviews_write_customer_agreement
+ *
+ * This module displays a customer agreement (privacy conditions) checkbox or message
+ * on the product reviews write page. It supports caching based on language, and its
+ * display is controlled by configuration settings. The module can be enabled/disabled,
+ * positioned, and its width and sort order can be configured.
+ *
+ * @package ClicShopping\Modules\ProductsReviews
+ * @copyright 2008 - https://www.clicshopping.org
+ * @license GPL 2 & MIT
+ */
 class pr_products_reviews_write_customer_agreement
 {
+  /**
+   * @var string Module code (class name)
+   */
   public string $code;
+
+  /**
+   * @var string Module group (directory name)
+   */
   public string $group;
+
+  /**
+   * @var string Module title
+   */
   public $title;
+
+  /**
+   * @var string Module description
+   */
   public $description;
+
+  /**
+   * @var int|null Sort order for display
+   */
   public int|null $sort_order = 0;
+
+  /**
+   * @var bool Module enabled status
+   */
   public bool $enabled = false;
 
+  /**
+   * @var string Cache block identifier prefix
+   */
+  private mixed $cache_block;
+
+  /**
+   * @var int Language ID
+   */
+  private mixed $lang;
+
+  /**
+   * Constructor. Initializes module properties and configuration.
+   */
   public function __construct()
   {
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
+    $this->cache_block = 'products_reviews_write_customer_agreement_';
+    $this->lang = Registry::get('Language')->getId();
 
     $this->title = CLICSHOPPING::getDef('modules_products_reviews_write_customer_agreement_title');
     $this->description = CLICSHOPPING::getDef('modules_products_reviews_write_customer_agreement_description');
@@ -34,39 +84,72 @@ class pr_products_reviews_write_customer_agreement
     }
   }
 
+  /**
+   * Executes the module logic: displays the customer agreement if enabled and handles caching.
+   */
   public function execute()
   {
     $CLICSHOPPING_Template = Registry::get('Template');
-
-    $content_width = (int)MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_CONTENT_WIDTH;
-    $text_position = MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_POSITION;
+    $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
 
     if (isset($_GET['Products'], $_GET['ReviewsWrite']) && !isset($_GET['Success'])) {
-      $data = '<!-- pr_modules_products_reviews_write_customer_agreement start -->' . "\n";
+      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        // Cache based only on language as the content is static
+        $cache_id = $this->cache_block . $this->lang;
+        $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
+
+        if ($cache_output !== false) {
+          $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
+          return;
+        }
+      }
+
+      $content_width = (int)MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_CONTENT_WIDTH;
+      $text_position = MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_POSITION;
+
+      if (isset($_GET['Products'], $_GET['ReviewsWrite']) && !isset($_GET['Success'])) {
+      $customer_agree = '<!-- Start customer_agree -->' . "\n";
 
       if (DISPLAY_PRIVACY_CONDITIONS == 'true') {
         ob_start();
         require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/products_reviews_write_customer_agreement'));
+        $customer_agree .= ob_get_clean();
 
-        $data .= ob_get_clean();
+        $customer_agree .= '<!-- end customer_agree -->' . "\n";
 
-        $data .= '<!-- pr_modules_products_reviews_write_customer_agreement end -->' . "\n";
+        if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+          $CLICSHOPPING_TemplateCache->setCache($cache_id, $customer_agree);
+        }
 
-        $CLICSHOPPING_Template->addBlock($data, $this->group);
+        $CLICSHOPPING_Template->addBlock($customer_agree, $this->group);
+	}
       }
     }
-  } // public function execute
+  }
 
+  /**
+   * Checks if the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module configuration is defined.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_STATUS');
   }
 
+  /**
+   * Installs the module configuration into the database.
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -120,11 +203,21 @@ class pr_products_reviews_write_customer_agreement
     );
   }
 
+  /**
+   * Removes the module configuration from the database.
+   *
+   * @return int
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
+  /**
+   * Returns the configuration keys used by this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array('MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_STATUS',

@@ -39,7 +39,7 @@ class Session
   public static function load(?string $name = null)
   {
     if (!isset(static::$driver)) {
-      if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'true') {
+      if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'True') {
         static::$driver = 'Memcached';
       } else {
         static::$driver = CLICSHOPPING::configExists('store_sessions') ? CLICSHOPPING::getConfig('store_sessions') : static::$default_driver;

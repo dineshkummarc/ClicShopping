@@ -555,12 +555,12 @@ if (!\is_null($action)) {
               <span class="input-group-addon" id="basic-addon1"></span>
               <?php echo HTML::inputField('first_name', '', 'placeholder="' . CLICSHOPPING::getDef('text_firstname') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
             </div>
-            <div class="separator"></div>
+            <div class="mt-1"></div>
             <div class="input-group">
               <span class="input-group-addon" id="basic-addon1"></span>
               <?php echo HTML::inputField('name', '', 'placeholder="' . CLICSHOPPING::getDef('text_name') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
             </div>
-            <div class="separator"></div>
+            <div class="mt-1"></div>
             <?php
               }
             ?>

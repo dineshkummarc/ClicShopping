@@ -11,6 +11,28 @@
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
+/**
+ * Class pi_products_info_description
+ *
+ * Module to display the product description on the product info page.
+ *
+ * Configuration options:
+ * - MODULE_PRODUCTS_INFO_DESCRIPTION_STATUS: Enable or disable the module.
+ * - MODULE_PRODUCTS_INFO_DESCRIPTION_CONTENT_WIDTH: Set the width (1-12).
+ * - MODULE_PRODUCTS_INFO_DESCRIPTION_POSITION: Set the float position (end, start, none).
+ * - MODULE_PRODUCTS_INFO_DESCRIPTION_SORT_ORDER: Set the display sort order.
+ *
+ * Methods:
+ * - __construct(): Initializes module properties and configuration.
+ * - execute(): Renders the product description block if enabled and product is set.
+ * - isEnabled(): Returns if the module is enabled.
+ * - check(): Checks if the module is installed.
+ * - install(): Installs configuration settings in the database.
+ * - remove(): Removes configuration settings from the database.
+ * - keys(): Returns the configuration keys used by this module.
+ *
+ * @package ClicShopping\Modules\ProductsInfo
+ */
 class pi_products_info_description
 {
   public string $code;
@@ -19,11 +41,18 @@ class pi_products_info_description
   public $description;
   public int|null $sort_order = 0;
   public bool $enabled = false;
+  private mixed $cache_block;
+  private mixed $lang;
 
+  /**
+   * Constructor: Initializes module properties and configuration.
+   */
   public function __construct()
   {
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
+    $this->cache_block = 'products_info_description_';
+    $this->lang = Registry::get('Language')->getId();
 
     $this->title = CLICSHOPPING::getDef('module_products_info_description');
     $this->description = CLICSHOPPING::getDef('module_products_info_description_description');
@@ -34,42 +63,71 @@ class pi_products_info_description
     }
   }
 
+  /**
+   * Executes the module: displays the product description if applicable.
+   */
   public function execute()
   {
     $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
+    $CLICSHOPPING_Template = Registry::get('Template');
+    $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
 
     if ($CLICSHOPPING_ProductsCommon->getID() && isset($_GET['Products'])) {
+      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        // Cache based on language and product ID
+        $cache_id = $this->cache_block . $this->lang . '_' . $CLICSHOPPING_ProductsCommon->getID();
+        $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
+
+        if ($cache_output !== false) {
+          $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
+          return;
+        }
+      }
 
       $content_width = (int)MODULE_PRODUCTS_INFO_DESCRIPTION_CONTENT_WIDTH;
       $text_position = MODULE_PRODUCTS_INFO_DESCRIPTION_POSITION;
 
-      $CLICSHOPPING_Template = Registry::get('Template');
+      $products_description = stripslashes($CLICSHOPPING_ProductsCommon->getProductsDescription());
 
-      $products_description = $CLICSHOPPING_ProductsCommon->getProductsDescription();
-
-      $products_description_content = '<!-- Start products_description -->' . "\n";
+      $products_description_content = '<!-- Start products description -->' . "\n";
 
       ob_start();
       require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/products_info_description'));
-
       $products_description_content .= ob_get_clean();
 
-      $products_description_content .= '<!-- end products_description -->' . "\n";
+      $products_description_content .= '<!-- end products description -->' . "\n";
+
+      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        $CLICSHOPPING_TemplateCache->setCache($cache_id, $products_description_content);
+      }
 
       $CLICSHOPPING_Template->addBlock($products_description_content, $this->group);
     }
-  } // public function execute
+  }
 
+  /**
+   * Returns whether the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module is installed.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULE_PRODUCTS_INFO_DESCRIPTION_STATUS');
   }
 
+  /**
+   * Installs the module configuration in the database.
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -123,11 +181,21 @@ class pi_products_info_description
     );
   }
 
+  /**
+   * Removes the module configuration from the database.
+   *
+   * @return int
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
+  /**
+   * Returns the configuration keys used by this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array(
@@ -138,4 +206,3 @@ class pi_products_info_description
     );
   }
 }
-

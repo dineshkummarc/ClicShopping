@@ -34,7 +34,7 @@ try {
 
   $ragManager = new MultiDBRAGManager();
 
-  if (defined('CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_CH_RAG_MANAGER == 'True') {
+  if (defined('CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
     $queryType = isset($_POST['queryType']) ? HTML::sanitize($_POST['queryType']) : 'semantic';
 
     if ($queryType === 'semantic') {
@@ -75,7 +75,7 @@ try {
             $vectorStore = new MariaDBVectorStore($embeddingGenerator, $tableName);
             $embeddingTables[$tableName] = $vectorStore;
           } catch (\Exception $e) {
-            if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+            if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
               error_log("Erreur lors de l'initialisation de la table {$tableName} : " . $e->getMessage());
               // Continuer avec les autres tables en cas d'erreur
             }
@@ -92,7 +92,7 @@ try {
                 $vectorStore = new MariaDBVectorStore($embeddingGenerator, $tableName);
                 $embeddingTables[$tableName] = $vectorStore;
               } catch (\Exception $e) {
-                if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+                 if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
                   error_log("Erreur lors de l'initialisation de la table {$tableName} : " . $e->getMessage());
                   // If error continue
                 }
@@ -100,7 +100,7 @@ try {
             }
           }
         } catch (\Exception $e) {
-          if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG_RAG_MANAGER == 'True') {
+          if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
             error_log("Erreur lors de la recherche des tables d'embedding : " . $e->getMessage());
             // If error continue
           }

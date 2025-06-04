@@ -91,7 +91,7 @@ class Shop extends \ClicShopping\OM\SitesAbstract
       $cache_key = 'shop_configuration';
       $cached_config = false;
 
-      if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'true') {
+      if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'True') {
         $memcached = CacheAdmin::getMemcached();
         if ($memcached !== false) {
           $cached_config = $memcached->get($cache_key);

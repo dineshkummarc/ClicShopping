@@ -85,7 +85,7 @@
   </div>
   <div class="mt-1"></div>
   <?php
-  if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'false') {
+  if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'False') {
     ?>
       <div class="alert alert-warning">
         <?php echo $CLICSHOPPING_Cache->getDef('text_memcache_not_available'); ?>

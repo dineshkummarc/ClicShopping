@@ -1706,10 +1706,21 @@ INSERT INTO configuration VALUES(1753, 'Email verification code validity duratio
 INSERT INTO configuration VALUES(1754, 'Email verification code length', 'EMAIL_VERIFICATION_CODE_LENGTH', '6', 'Number of digits in the verification code (4-8)', 46, 8, NULL, '2025-04-23 15:01:20', NULL, NULL);
 INSERT INTO configuration VALUES(1755, 'client ID key', 'CLICSHOPPING_APP_UPGRADE_UP_CLIENT_ID', '', 'client ID key', 6, 0, NULL, '2025-05-19 10:42:16', NULL, NULL);
 INSERT INTO configuration VALUES(1756, 'Secret key', 'CLICSHOPPING_APP_UPGRADE_UP_SECRET_KEY', '', 'You must send a request to a forum administrator to obtain the secret key', 6, 0, NULL, '2025-05-19 10:42:16', NULL, NULL);
+
 INSERT INTO configuration VALUES(1757, 'Status', 'CLICSHOPPING_APP_CACHE_CA_STATUS', 'True', 'Do you want to enable this module in your shop?', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
 INSERT INTO configuration VALUES(1758, 'Sort order of display', 'CLICSHOPPING_APP_CACHE_CA_SORT_ORDER', '30', 'Sort order for display (The lowest number is shown first)', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
 INSERT INTO configuration VALUES(1759, 'Parameter [Cache Control App]', 'MODULE_MODULES_CACHE_INSTALLED', 'Configuration\\Cache\\CA', 'Parameter [Cache Control App]', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
-INSERT INTO configuration VALUES(1760, 'Use Memcached', 'USE_MEMCACHED', 'false', 'Enable Memcached caching. For debug, please let on False', 11,2, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
+INSERT INTO configuration VALUES(1760, 'Use Memcached', 'USE_MEMCACHED', 'False', 'Enable Memcached caching. For debug, please let on False', 11,2, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1761, 'Use static content page cache on the catalog', 'USE_CATALOG_CACHE', 'False', 'Enable the caching about the static catalog content.<br>Please for a cache reset, change to False ', 11, 7, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1762, 'Reset the static content page cache on the catalog', 'USE_CATALOG_RESET_CACHE', 'False', 'Reset the caching about the static catalog content<br>After Reset, Please change the status to False', 11, 8, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1763, 'Activate the static content log page cache on the catalog', 'USE_CATALOG_LOG_CACHE', 'False', 'Activate the caching log about the static catalog content', 11, 9, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+
+INSERT INTO configuration VALUES(1764, 'Use static content page cache on catalog', 'USE_CATALOG_CACHE', 'False', 'Enable static content caching for the catalog', 11, 7, '2025-06-03 15:04:24', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'False\'))');
+INSERT INTO configuration VALUES(1765, 'Reset static content page cache on catalog', 'USE_CATALOG_RESET_CACHE', 'False', 'Reset static content caching for the catalog', 11, 7, '2025-05-31 11:00:50', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1766, 'Enable cache logging for static content page on catalog', 'USE_CATALOG_LOG_CACHE', 'False', 'Enable cache logging for catalog static content', 11, 7, '2025-06-03 15:01:38', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+
+
+
 
 
 INSERT INTO configuration_group VALUES(1, 'Store Setup', 'General Information on the Store.', 1, 1);

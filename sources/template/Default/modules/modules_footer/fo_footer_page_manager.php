@@ -20,13 +20,24 @@ class fo_footer_page_manager
   public int|null $sort_order = 0;
   public bool $enabled = false;
   public $pages;
-
+  private $cache_id;
+/**
+   * fo_footer_page_manager module
+   *
+   * This module manages the display of custom pages in the footer section.
+   * It supports configuration for enabling/disabling, content width, sort order,
+   * and page selection. It also supports caching and customer group filtering.
+   */
   public function __construct()
   {
+    /**
+     * Initializes module properties and configuration.
+     */
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
     $this->title = CLICSHOPPING::getDef('module_footer_page_manager_title');
     $this->description = CLICSHOPPING::getDef('module_footer_page_manager_description');
+    $this->cache_id = 'footer_page_manager_';
 
     if (\defined('MODULES_FOOTER_PAGE_MANAGER_STATUS')) {
       $this->sort_order = (int)MODULES_FOOTER_PAGE_MANAGER_SORT_ORDER ?? 0;
@@ -35,14 +46,32 @@ class fo_footer_page_manager
     }
   }
 
+  /**
+   * Executes the module logic, handles caching, and renders the footer page manager.
+   *
+   * - Checks if the module is enabled and if the customer is allowed to view.
+   * - Uses cache if enabled and available.
+   * - Queries the database for available pages for the customer group.
+   * - Renders the footer block if pages are available.
+   */
   public function execute()
   {
     $CLICSHOPPING_Template = Registry::get('Template');
     $CLICSHOPPING_Customer = Registry::get('Customer');
     $CLICSHOPPING_PageManagerShop = Registry::get('PageManagerShop');
     $CLICSHOPPING_Db = Registry::get('Db');
+    $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
 
     if (MODE_VENTE_PRIVEE == 'false' || (MODE_VENTE_PRIVEE == 'true' && $CLICSHOPPING_Customer->isLoggedOn())) {
+      $cache_id = $this->cache_id . $CLICSHOPPING_Customer->getCustomersGroupID();
+
+      if ($this->enabled && $CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
+        if ($cache_output !== false) {
+          $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
+          return;
+        }
+      }
 
       $Qpages = $CLICSHOPPING_Db->prepare('select count(*) as count
                                             from :table_pages_manager
@@ -54,9 +83,7 @@ class fo_footer_page_manager
 
       $Qpages->execute();
 
-
       if ($Qpages->valueInt('count') > 0) {
-
         $content_width = (int)MODULE_FOOTER_PAGE_MANAGER_CONTENT_WIDTH;
 
         $link = $CLICSHOPPING_PageManagerShop->pageManagerDisplayFooter();
@@ -76,16 +103,31 @@ class fo_footer_page_manager
     }
   }
 
+  /**
+   * Checks if the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module configuration is defined.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULES_FOOTER_PAGE_MANAGER_STATUS');
   }
 
+  /**
+   * Installs the module configuration in the database.
+   *
+   * @return void
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -139,11 +181,21 @@ class fo_footer_page_manager
     );
   }
 
+  /**
+   * Removes the module configuration from the database.
+   *
+   * @return int
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
+  /**
+   * Returns the configuration keys used by this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array('MODULES_FOOTER_PAGE_MANAGER_STATUS',

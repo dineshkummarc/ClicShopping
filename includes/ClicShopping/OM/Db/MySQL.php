@@ -52,7 +52,7 @@ class MySQL extends \ClicShopping\OM\Db
     $this->options = $options;
 
     // Initialize Memcached if available and enabled
-    if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'true') {
+    if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'True') {
       $this->initMemcached();
     }
 

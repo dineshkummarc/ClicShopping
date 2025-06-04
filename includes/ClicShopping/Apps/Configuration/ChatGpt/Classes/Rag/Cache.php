@@ -57,7 +57,7 @@ class Cache
         $this->setPromptCacheEnabled(true);
       }
 
-      if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'true') {
+      if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'True') {
         $this->useMemcached = true;
         $this->initMemcached();
       }

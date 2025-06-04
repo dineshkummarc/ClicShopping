@@ -59,10 +59,27 @@ class pf_products_featured_title
    */
   public bool $enabled = false;
 
+  /**
+   * Cache block identifier.
+   * @var string
+   */
+  private mixed $cache_block;
+
+  /**
+   * Current language ID.
+   * @var int
+   */
+  private mixed $lang;
+
+  /**
+   * Constructor. Initializes module properties and configuration.
+   */
   public function __construct()
   {
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
+    $this->cache_block = 'products_featured_title_';
+    $this->lang = Registry::get('Language')->getId();
 
     $this->title = CLICSHOPPING::getDef('module_products_featured_title_tilte');
     $this->description = CLICSHOPPING::getDef('module_products_featured_title_title_description');
@@ -81,25 +98,41 @@ class pf_products_featured_title
   public function execute()
   {
     $CLICSHOPPING_Template = Registry::get('Template');
+    $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
 
     if (isset($_GET['Products'], $_GET['Featured'])) {
-      $content_width = (int)MODULE_PRODUCTS_FEATURED_CONTENT_WIDTH;
-      $text_position = MODULE_PRODUCTS_FEATURED_POSITION;
+    if ($this->enabled) {
+      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        $cache_id = $this->cache_block . $this->lang;
+        $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
 
-      $content = '  <!-- Product featured title start -->' . "\n";
-      $content .= '<div class="ModulesProductsFeaturedContainer">';
+        if ($cache_output !== false) {
+          $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
+          return;
+        }
+      }
 
-      ob_start();
-      require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/products_featured_title'));
-      $content .= ob_get_clean();
+        $content_width = (int)MODULE_PRODUCTS_FEATURED_CONTENT_WIDTH;
+        $text_position = MODULE_PRODUCTS_FEATURED_POSITION;
 
-      $content .= '</div>' . "\n";
-      $content .= '<!--  Products featured End -->' . "\n";
+        $products_featured_title = '<!-- products featured title start -->' . "\n";
+        $products_featured_title .= '<div class="ModulesProductsFeaturedContainer">';
 
-      $CLICSHOPPING_Template->addBlock($content, $this->group);
+        ob_start();
+	require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/products_featured_title'));
+	$products_featured_title .= ob_get_clean();
 
-    }
-  } // public function execute
+        $products_featured_title .= '</div>' . "\n";
+	$products_featured_title .= '<!-- products featured title end -->' . "\n";
+
+	if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+	    $CLICSHOPPING_TemplateCache->setCache($cache_id, $products_featured_title);
+	}
+
+	$CLICSHOPPING_Template->addBlock($products_featured_title, $this->group);
+      }
+    }	    
+  }
 
   /**
    * Checks if the module is enabled.

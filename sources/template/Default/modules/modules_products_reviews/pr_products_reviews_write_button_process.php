@@ -12,19 +12,66 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
+/**
+ * Class pr_products_reviews_write_button_process
+ *
+ * Handles the display and processing of the "write review" button for products.
+ * This module manages configuration, caching, and rendering of the button block
+ * in the product reviews write context.
+ *
+ * @package ClicShopping\Modules\ProductsReviews
+ */
 class pr_products_reviews_write_button_process
 {
+  /**
+   * @var string Module code (class name)
+   */
   public string $code;
+
+  /**
+   * @var string Module group (directory name)
+   */
   public string $group;
+
+  /**
+   * @var string Module title
+   */
   public $title;
+
+  /**
+   * @var string Module description
+   */
   public $description;
+
+  /**
+   * @var int|null Sort order for display
+   */
   public int|null $sort_order = 0;
+
+  /**
+   * @var bool Module enabled status
+   */
   public bool $enabled = false;
 
+  /**
+   * @var string Cache block identifier prefix
+   */
+  private mixed $cache_block;
+
+  /**
+   * @var int Language ID
+   */
+  private mixed $lang;
+
+  /**
+   * Constructor. Initializes module properties and configuration.
+   */
   public function __construct()
   {
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
+    $this->cache_block = 'products_reviews_write_button_process_';
+    $this->lang = Registry::get('Language')->getId();
 
     $this->title = CLICSHOPPING::getDef('modules_products_reviews_write_button_process_title');
     $this->description = CLICSHOPPING::getDef('modules_products_reviews_write_button_process_description');
@@ -35,44 +82,77 @@ class pr_products_reviews_write_button_process
     }
   }
 
+  /**
+   * Executes the module logic: displays the review write buttons and handles caching.
+   */
   public function execute()
   {
     $CLICSHOPPING_Template = Registry::get('Template');
+    $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
     $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
     $CLICSHOPPING_ProductsFunctionTemplate = Registry::get('ProductsFunctionTemplate');
 
-    $content_width = (int)MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_CONTENT_WIDTH;
-    $text_position = MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_POSITION;
+    if (isset($_GET['Products'], $_GET['ReviewsWrite'])) {
+      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        // Cache based on language and product ID as button URLs contain the product ID
+        $cache_id = $this->cache_block . $this->lang . '_' . (int)$_GET['products_id'];
+        $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
 
-    if (isset($_GET['Products'], $_GET['ReviewsWrite']) && !isset($_GET['Success'])) {
+        if ($cache_output !== false) {
+          $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
+          return;
+        }
+      }
+
+      $content_width = (int)MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_CONTENT_WIDTH;
+      $text_position = MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_POSITION;
+
+      if (isset($_GET['Products'], $_GET['ReviewsWrite']) && !isset($_GET['Success'])) {
       $products_name_url = $CLICSHOPPING_ProductsFunctionTemplate->getProductsUrlRewrited()->getProductNameUrl($CLICSHOPPING_ProductsCommon->getID());
 
       $button_back = HTML::button(CLICSHOPPING::getDef('button_back'), null, $products_name_url, 'primary');
       $button_process = HTML::button(CLICSHOPPING::getDef('button_continue'), null, null, 'success');
 
-      $data = '<!-- pr_modules_products_reviews_write_rating start -->' . "\n";
+      $reviews_button = '<!-- Start products_reviews_write_button_process -->' . "\n";
 
       ob_start();
       require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/products_reviews_write_button_process'));
+      $reviews_button .= ob_get_clean();
 
-      $data .= ob_get_clean();
+      $reviews_button .= '<!-- end products_reviews_write_button_process -->' . "\n";
 
-      $data .= '<!-- pr_modules_products_reviews_write_rating end -->' . "\n";
+      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        $CLICSHOPPING_TemplateCache->setCache($cache_id, $reviews_button);
+      }
 
-      $CLICSHOPPING_Template->addBlock($data, $this->group);
+      $CLICSHOPPING_Template->addBlock($reviews_button, $this->group);
+      }
     }
-  } // public function execute
+  }
 
+  /**
+   * Checks if the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module configuration is defined.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_STATUS');
   }
 
+  /**
+   * Installs the module configuration into the database.
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -126,11 +206,21 @@ class pr_products_reviews_write_button_process
     );
   }
 
+  /**
+   * Removes the module configuration from the database.
+   *
+   * @return int
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
+  /**
+   * Returns the configuration keys used by this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array('MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_STATUS',

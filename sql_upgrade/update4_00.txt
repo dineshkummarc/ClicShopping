@@ -213,15 +213,11 @@ INSERT INTO clic_configuration VALUES(null, 'Enable email verification by code f
 INSERT INTO clic_configuration VALUES(null, 'Enable email verification by code for store access', 'EMAIL_VERIFICATION_ENABLED_SHOP', 'False', 'Enable or disable code verification for store access. <br> Please ensure the administrator can access this verification', 46, 6, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO clic_configuration VALUES(null, 'Email verification code validity duration (minutes)', 'EMAIL_VERIFICATION_CODE_EXPIRY', '5', 'Duration of the verification code validity in minutes', 46, 7, NULL, '2025-04-23 15:01:20', NULL, NULL);
 INSERT INTO clic_configuration VALUES(null, 'Email verification code length', 'EMAIL_VERIFICATION_CODE_LENGTH', '6', 'Number of digits in the verification code (4-8)', 46, 8, NULL, '2025-04-23 15:01:20', NULL, NULL);
-INSERT INTO clic_configuration VALUES(null, 'Use Memcached', 'USE_MEMCACHED', 'false', 'Enable Memcached caching. For Debug,pleaselet on False', 11,2, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
+INSERT INTO clic_configuration VALUES(null, 'Use Memcached', 'USE_MEMCACHED', 'False', 'Enable Memcached caching. For Debug,please let on False', 11,2, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 
-
-
-
-INSERT INTO clic_configuration VALUES(null, 'Sort order of display', 'CLICSHOPPING_APP_CACHE_CA_SORT_ORDER', '30', 'Sort order for display (The lowest number is shown first)', 6, 0, NULL, '2025-05-31 08:42:43', NULL, NULL);
-INSERT INTO clic_configuration VALUES(null, 'Status', 'CLICSHOPPING_APP_CACHE_CA_STATUS', 'True', 'Do you want to enable this module in your shop?', 6, 0, NULL, '2025-05-31 08:42:43', NULL, NULL);
-INSERT INTO clic_configuration VALUES(null, 'Parameter [Cache Control App]', 'MODULE_MODULES_CACHE_INSTALLED', 'Configuration\\Cache\\CA', 'Parameter [Cache Control App]', 6, 0, NULL, '2025-05-31 08:42:43', NULL, NULL);
-
+INSERT INTO `clic_configuration` VALUES(null, 'Use static content page cache on catalog', 'USE_CATALOG_CACHE', 'False', 'Enable static content caching for the catalog', 11, 7, '2025-06-03 15:04:24', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'False\'))');
+INSERT INTO `clic_configuration` VALUES(null, 'Reset static content page cache on catalog', 'USE_CATALOG_RESET_CACHE', 'False', 'Reset static content caching for the catalog', 11, 7, '2025-05-31 11:00:50', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO `clic_configuration` VALUES(null, 'Enable cache logging for static content page on catalog', 'USE_CATALOG_LOG_CACHE', 'False', 'Enable cache logging for catalog static content', 11, 7, '2025-06-03 15:01:38', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 
 
 #french
@@ -238,6 +234,6 @@ INSERT INTO clic_configuration VALUES(null, 'Durée de validité du code de la v
 INSERT INTO clic_configuration VALUES(null, 'Longueur du code de vérification de la vérification par email ', 'EMAIL_VERIFICATION_CODE_LENGTH', '6', 'Nombre de chiffres dans le code de vérification (4-8)', 46, 8, NULL, '2025-04-23 15:01:20', NULL, NULL);
 INSERT INTO clic_configuration VALUES(null, 'Utiliser Memcached', 'USE_MEMCACHED', 'false', 'Activer le cache via Memcached. Pour du debug, veuillez laisser sur False', 11,2, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
 
-INSERT INTO clic_configuration VALUES(null, 'Ordre de tri d\'affichage', 'CLICSHOPPING_APP_CACHE_CA_SORT_ORDER', '30', 'Ordre de tri pour l\'affichage (Le plus petit nombre est montré en premier)', 6, 0, NULL, '2025-05-31 08:42:43', NULL, NULL);
-INSERT INTO clic_configuration VALUES(null, 'Statut', 'CLICSHOPPING_APP_CACHE_CA_STATUS', 'True', 'Souhaitez vous activer ce module à votre boutique', 6, 0, NULL, '2025-05-31 08:42:43', NULL, NULL);
-INSERT INTO clic_configuration VALUES(null, 'Parameter [Cache Control App]', 'MODULE_MODULES_CACHE_INSTALLED', 'Configuration\\Cache\\CA', 'Parameter [Cache Control App]', 6, 0, NULL, '2025-05-31 08:42:43', NULL, NULL);
+INSERT INTO `clic_configuration` VALUES(null, 'Utiliser le cache de page de contenu statique sur le catalogue', 'USE_CATALOG_CACHE', 'False', 'Activer la mise en cache du contenu statique du catalogue', 11, 7, '2025-06-03 15:04:24', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'False\'))');
+INSERT INTO `clic_configuration` VALUES(null, 'Réinitialiser le cache de page de contenu statique sur le catalogue', 'USE_CATALOG_RESET_CACHE', 'False', 'Réinitialiser la mise en cache du contenu statique du catalogue', 11, 7, '2025-05-31 11:00:50', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO `clic_configuration` VALUES(null, 'Activer le journal du cache de page de contenu statique sur le catalogue', 'USE_CATALOG_LOG_CACHE', 'False', 'Activer le journal de mise en cache du contenu statique du catalogue', 11, 7, '2025-06-03 15:01:38', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');

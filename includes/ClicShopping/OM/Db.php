@@ -163,7 +163,7 @@ class Db extends PDO
       $object = new $class($server, $username, $password, $database, $port, $driver_options, $options);
 
       if (defined('USE_MEMCACHED')) {
-        if (USE_MEMCACHED === 'true') {
+        if (USE_MEMCACHED === 'True') {
           $object->initMemcachedConnection();
         } else {
           if (property_exists($object, 'memcached') && $object->memcached instanceof \Memcached) {

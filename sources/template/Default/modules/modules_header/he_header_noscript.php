@@ -19,11 +19,25 @@ class he_header_noscript
   public $description;
   public int|null $sort_order = 0;
   public bool $enabled = false;
+  private mixed $cache_block;
+  private mixed $lang;
 
+ /**
+   * he_header_noscript module
+   *
+   * Displays a noscript message in the header if JavaScript is disabled.
+   * Handles module configuration, installation, removal, and caching.
+   */
   public function __construct()
   {
+    /**
+     * Initializes the module properties and loads language definitions.
+     */
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
+    $this->cache_block = 'header_noscript_';
+    $this->lang = Registry::get('Language')->getId();
+
     $this->title = CLICSHOPPING::getDef('module_header_noscript_title');
     $this->description = CLICSHOPPING::getDef('module_header_noscript_description');
 
@@ -33,37 +47,70 @@ class he_header_noscript
     }
   }
 
+  /**
+   * Executes the module logic to display the noscript message.
+   * Handles caching and adds the block to the template.
+   */
   public function execute()
   {
     $CLICSHOPPING_Template = Registry::get('Template');
+    $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
 
-    $content_width = MODULE_HEADER_NOSCRIPT_CONTENT_WIDTH;
+    if ($this->enabled) {
+      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        $cache_id = $this->cache_block . $this->lang;
+        $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
 
-    $header_template = '<!-- header no script start -->';
+        if ($cache_output !== false) {
+          $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
+          return;
+        }
+      }
 
-    ob_start();
-    require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/header_noscript'));
-    $header_template .= ob_get_clean();
+      $content_width = (int)MODULE_HEADER_NOSCRIPT_CONTENT_WIDTH;
 
-    $header_template .= '<!-- header no script end -->' . "\n";
+      $header_template = '<!-- Start noscript header message -->' . "\n";
 
-    $CLICSHOPPING_Template->addBlock($header_template, $this->group);
+      ob_start();
+      require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/header_noscript'));
+      $header_template .= ob_get_clean();
+
+      $header_template .= '<!-- End noscript header message -->' . "\n";
+
+      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        $CLICSHOPPING_TemplateCache->setCache($cache_id, $header_template);
+      }
+
+      $CLICSHOPPING_Template->addBlock($header_template, $this->group);
+    }
   }
 
+  /**
+   * Checks if the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module configuration is defined.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULE_HEADER_NOSCRIPT_STATUS');
   }
 
+  /**
+   * Installs the module configuration in the database.
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
-
 
     $CLICSHOPPING_Db->save('configuration', [
         'configuration_title' => 'Do you want to activate this module?',
@@ -102,11 +149,21 @@ class he_header_noscript
     );
   }
 
+  /**
+   * Removes the module configuration from the database.
+   *
+   * @return int Number of affected rows
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
+  /**
+   * Returns the configuration keys used by this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array('MODULE_HEADER_NOSCRIPT_STATUS',

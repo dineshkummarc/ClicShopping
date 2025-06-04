@@ -21,6 +21,7 @@ The goal is to exploit the Gen AI capacities with a hybrid rag approach creating
 - API improvement and inclusion OpenAi GPT Cart
 - OpCache included
 - Memcached included
+- Static cached template included
 - Security improvement
 - Code refactored and optimised
 
