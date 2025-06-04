@@ -225,7 +225,15 @@ class Shop extends \ClicShopping\OM\SitesAbstract
           $class = 'ClicShopping\Apps\\' . $vendor_app . '\\' . $page . '\\' . $page_code;
         }
       } else {
-        $req = basename(array_keys($_GET)[0]);
+        // If no route is defined, check the GET parameters
+        $key = array_keys($_GET)[0];
+
+        if (is_string($key) && preg_match('/^[a-zA-Z0-9_-]+$/', $key)) {
+          $req = basename($key);
+        } else {
+          // fallback sécurisé ou erreur
+          $req = $this->default_page;
+        }
 
         if (class_exists('ClicShopping\Custom\Sites\\' . $this->code . '\Pages\\' . $req . '\\' . $req)) {
           $page_code = $req;

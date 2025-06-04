@@ -12,13 +12,51 @@
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
+/**
+ * Class pf_products_featured_title
+ *
+ * Handles the display and configuration of the "Products Featured Title" module.
+ * This module manages the featured products title block, including its rendering,
+ * caching, and configuration in the ClicShopping system.
+ *
+ * @package ClicShopping\Modules\ProductsFeatured
+ */
 class pf_products_featured_title
 {
+  /**
+   * Module code identifier.
+   * @var string
+   */
   public string $code;
+
+  /**
+   * Module group name (directory).
+   * @var string
+   */
   public string $group;
+
+  /**
+   * Module title (localized).
+   * @var string
+   */
   public $title;
+
+  /**
+   * Module description (localized).
+   * @var string
+   */
   public $description;
+
+  /**
+   * Sort order for display.
+   * @var int|null
+   */
   public int|null $sort_order = 0;
+
+  /**
+   * Module enabled status.
+   * @var bool
+   */
   public bool $enabled = false;
 
   public function __construct()
@@ -35,6 +73,11 @@ class pf_products_featured_title
     }
   }
 
+  /**
+   * Executes the module logic, handles caching and rendering.
+   *
+   * @return void
+   */
   public function execute()
   {
     $CLICSHOPPING_Template = Registry::get('Template');
@@ -58,16 +101,31 @@ class pf_products_featured_title
     }
   } // public function execute
 
+  /**
+   * Checks if the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module configuration is defined.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULE_PRODUCTS_FEATURED_TITLE_STATUS');
   }
 
+  /**
+   * Installs the module configuration in the database.
+   *
+   * @return void
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -120,11 +178,21 @@ class pf_products_featured_title
     );
   }
 
+  /**
+   * Removes the module configuration from the database.
+   *
+   * @return int Number of affected rows.
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
+  /**
+   * Returns the configuration keys for this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array(
