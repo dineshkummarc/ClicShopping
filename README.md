@@ -63,7 +63,7 @@ Use the Artificial Intlligence to your Ecommerce business with ClicShoppingAI. F
 
 
 #Solution
- - The solution is built on modules and APP to have a very big flexibility.
+ - The solution is built on modules and APP to have a nice flexibility.
  - The approach is completely modular on the catalog / administration with simple code to understand, to customize, and to update at need.
  - All informations are available at the forum https://www.clicshopping.org or look the [Wiki](https://github.com/ClicShopping/ClicShopping_V3/wiki) for the technical documentation.
  - The modules are available on Github (Official and Community) or by an internal install.
@@ -76,10 +76,10 @@ Use the Artificial Intlligence to your Ecommerce business with ClicShoppingAI. F
         - Official : https://github.com/ClicShoppingOfficialModulesV3
 
 #Requirement (more information in the wiki)
- - Apache 2.4<br>
- - MYSQL 9.x / MariaDb 11.7<br>
+ - Apache 2.x <br>
+ - MYSQL 9.x / MariaDb 11.7 (recommended)<br>
  - PHP >= 8.3
- - More information in the Wiki
+ - More information in the Github Wiki
 
 #Installation
  - Step1 : Download ClicShopping : https://github.com/ClicShopping/ClicShopping_V3/releases
