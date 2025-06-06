@@ -570,7 +570,7 @@ class CLICSHOPPING
    * @param string|null $group The group to which the configuration belongs. Defaults to 'global' if not provided.
    * @return void
    */
-  public static function setConfig(string $key, $value, string|null $group = null)
+  public static function setConfig(string $key, mixed $value, string|null $group = null)
   {
     if (!isset($group)) {
       $group = 'global';
