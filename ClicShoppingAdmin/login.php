@@ -20,7 +20,7 @@
 
   $login_request = true;
 
-  require_once __DIR__ . '/includes/application_top.php';
+  require_once __DIR__ . '/Core/OM.php';
 
   $CLICSHOPPING_Db = Registry::get('Db');
   $CLICSHOPPING_MessageStack = Registry::get('MessageStack');

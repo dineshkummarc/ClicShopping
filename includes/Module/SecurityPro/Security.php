@@ -28,7 +28,6 @@ use ClicShopping\OM\CLICSHOPPING;
 class Security
 {
 
-// Array of files to be excluded from cleansing, these can also be added in application_top.php if preferred using _Security_Pro::addExclusion()
   public array $_excluded_from_cleansing = [];
   public bool $_enabled = true; // Turn on or off - bool true / false
   public $_basename;

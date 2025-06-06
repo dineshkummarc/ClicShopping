@@ -338,7 +338,7 @@ class Language
     }
 
     if ($site == 'ClicShoppingAdmin') {
-      $pathname = CLICSHOPPING::getConfig('dir_root', $site) . 'includes/languages/' . $this->get('directory', $language_code) . DIRECTORY_SEPARATOR . $group;
+      $pathname = CLICSHOPPING::getConfig('dir_root', $site) . 'Core/languages/' . $this->get('directory', $language_code) . DIRECTORY_SEPARATOR . $group;
     } else {
       $pathname = CLICSHOPPING::getConfig('dir_root', $site) . 'sources/languages/' . $this->get('directory', $language_code) . DIRECTORY_SEPARATOR . $group;
     }
@@ -380,7 +380,7 @@ class Language
     if (!is_null($force_directory_language)) $site = $force_directory_language;
 
     if ($site == 'ClicShoppingAdmin') {
-      $pathname = CLICSHOPPING::getConfig('dir_root', $site) . 'includes/languages/' . $this->get('directory', $language_code) . DIRECTORY_SEPARATOR . $group;
+      $pathname = CLICSHOPPING::getConfig('dir_root', $site) . 'Core/languages/' . $this->get('directory', $language_code) . DIRECTORY_SEPARATOR . $group;
     } else {
       $pathname = CLICSHOPPING::getConfig('dir_root', $site) . 'sources/languages/' . $this->get('directory', $language_code) . DIRECTORY_SEPARATOR . $group;
     }

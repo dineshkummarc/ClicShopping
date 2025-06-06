@@ -136,3 +136,4 @@ if (!FileSystem::isWritable($CLICSHOPPING_Template->getDirectoryPathLanguage()))
     </tbody>
   </table>
 </div>
+<div class="py-4"></div>

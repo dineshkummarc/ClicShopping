@@ -11,7 +11,7 @@ namespace ClicShopping\OM;
 
 use DirectoryIterator;
 use ReflectionFunction;
-
+use function call_user_func_array;
 use function is_string;
 
 /**
@@ -47,10 +47,10 @@ class Hooks
    * @param string $hook The specific hook to be called.
    * @param array|null $parameters Optional parameters to be passed to the hook/action.
    * @param string|null $action The action to be executed, defaults to 'execute' if not provided.
-   * @param string|null $context Optional context identifier (ex: tab, position, etc.) to filter hooks. V4.x
+   * @param string|null $context Optional context identifier (ex: tab, position, etc.) to filter hooks.
    * @return array The results returned by the executed hook actions.
    */
-  public function call(string $group, string $hook, array|null $parameters = null, string|null $action = null, string|null $context = null): array
+  public function call(string $group, string $hook, ?array $parameters = null, ?string $action = null, ?string $context = null): array
   {
     if (!isset($action)) {
       $action = 'execute';
@@ -69,21 +69,26 @@ class Hooks
     if (isset($this->watches[$this->site][$group][$hook][$action])) {
       // Filtrer les watches selon le contexte si spécifié
       foreach ($this->watches[$this->site][$group][$hook][$action] as $watchEntry) {
-        // Si un contexte est spécifié, vérifier la correspondance
-        if ($context !== null) {
-          // Si le watch a un contexte défini, il doit correspondre
-          if (isset($watchEntry['context']) && $watchEntry['context'] !== $context) {
-            continue; // Skip ce watch, le contexte ne correspond pas
+        //Cjekcif it's a structure with context or simple code
+        if (is_array($watchEntry) && isset($watchEntry['code'])) {
+          // Structure avec contexte
+          if ($context !== null) {
+            // Si le watch a un contexte défini, il doit correspondre
+            if (isset($watchEntry['context']) && $watchEntry['context'] !== $context) {
+              continue; // Skip ce watch, le contexte ne correspond pas
+            }
+            // Si le watch n'a pas de contexte mais qu'on en demande un spécifique, skip aussi
+            if (!isset($watchEntry['context']) && $context !== 'global') {
+              continue;
+            }
           }
-          // Si le watch n'a pas de contexte mais qu'on en demande un spécifique, skip aussi
-          if (!isset($watchEntry['context']) && $context !== 'global') {
-            continue;
+          $calls[] = $watchEntry['code'];
+        } else {
+          // Structure simple (code directement) - rétrocompatibilité
+          if ($context === null || $context === 'global') {
+            $calls[] = $watchEntry;
           }
         }
-
-        // Récupérer le code du watch (soit directement, soit depuis la structure)
-        $code = isset($watchEntry['code']) ? $watchEntry['code'] : $watchEntry;
-        $calls[] = $code;
       }
     }
 

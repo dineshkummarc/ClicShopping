@@ -12,7 +12,7 @@ use ClicShopping\OM\CLICSHOPPING;
 
 chdir('../../');
 
-require('includes/application_top.php');
+require('Core/OM.php');
 
 ob_start();
 
