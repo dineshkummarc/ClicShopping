@@ -94,8 +94,8 @@ class bm_order_history
         $Qproducts->execute();
 
         while ($Qproducts->fetch()) {
-          $products_name_url = $CLICSHOPPING_ProductsFunctionTemplate->getProductsUrlRewrited()->getProductNameUrl($Qproducts->valueInt('products_id'));
-
+          //$products_name_url = $CLICSHOPPING_ProductsFunctionTemplate->getProductsUrlRewrited()->getProductNameUrl($Qproducts->valueInt('products_id'));
+          $products_name_url = CLICSHOPPING::link(null, 'Account&HistoryInfo');
           $customer_orders_string .= '<li class="boxeContentsHistory">' . HTML::link($products_name_url, $Qproducts->value('products_name')) . '</li>';
         }
 

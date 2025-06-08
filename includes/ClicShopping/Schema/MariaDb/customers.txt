@@ -28,7 +28,9 @@ provider_name_client varchar(64)  null
 customer_website_company varchar(64) null
 customer_guest_account tinyint(1) default(0) not_null
 gdpr tinyint(1) default(0) not_null
-double_authentification_secret varchar(255) null
+email_verification tinyint(1) default(1) not_null
+email_verification_code varchar(32) NULL
+email_verification_expiry datetime NULL
 
 --
 primary customers_id

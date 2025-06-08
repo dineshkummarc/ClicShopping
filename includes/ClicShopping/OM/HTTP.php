@@ -12,6 +12,8 @@ namespace ClicShopping\OM;
 
 use Exception;
 use GuzzleHttp\Client as GuzzleClient;
+use InvalidArgumentException;
+
 use function count;
 use function in_array;
 use function strlen;
@@ -76,19 +78,21 @@ class HTTP
    *
    * @param string|null $url The URL to redirect to. It can be null.
    * @param int $http_response_code Optional HTTP response status code for the redirection. Defaults to 0.
-   * @return void
+   * @return never
    */
-
-  public static function redirect(?string $url, int $http_response_code = 0)
+  public static function redirect(string|null $url = null, int $http_response_code = 302): never
   {
-    if ((strstr($url, "\n") === false) && (strstr($url, "\r") === false)) {
-      if (str_contains($url, '&amp;')) {
-        $url = str_replace('&amp;', '&', $url);
-      }
+    $url ??= 'index.php';
 
-      header('Location: ' . $url, true, $http_response_code);
+    if (preg_match('/[\r\n]/', $url)) {
+      exit;
     }
 
+    if (str_contains($url, '&amp;')) {
+      $url = str_replace('&amp;', '&', $url);
+    }
+
+    header('Location: ' . $url, true, $http_response_code);
     exit;
   }
 
@@ -105,7 +109,7 @@ class HTTP
    *                    - 'certificate' (string): Optional. Path to the certificate file for SSL authentication.
    * @return mixed The response body. If 'format' is set to 'json', the response will be decoded into an array. Returns false if an error occurs.
    */
-  public static function getResponse(array $data)
+  public static function getResponse(array $data, array|null $allowed_hosts = null): mixed
   {
     if (!isset($data['header']) || !\is_array($data['header'])) {
       $data['header'] = [];
@@ -127,6 +131,19 @@ class HTTP
       trigger_error('HttpRequest::getResponse(): Unknown "format": ' . $data['format']);
 
       unset($data['format']);
+    }
+
+    // Add this before making the request in getResponse()
+    if (!filter_var($data['url'], FILTER_VALIDATE_URL)) {
+      trigger_error('Invalid URL provided to getResponse().');
+      return false;
+    }
+
+    // Check if the URL is allowed
+    $host = parse_url($data['url'], PHP_URL_HOST);
+    if (\is_array($allowed_hosts) && !in_array($host, $allowed_hosts, true)) {
+      trigger_error('URL host not allowed in getResponse().');
+      return false;
     }
 
     $options = [];
@@ -289,7 +306,7 @@ class HTTP
 
       return $x . '.' . $n;
     } else {
-      return 'Unkown or localhost';
+      return  'Unknown or localhost';
     }
   }
 

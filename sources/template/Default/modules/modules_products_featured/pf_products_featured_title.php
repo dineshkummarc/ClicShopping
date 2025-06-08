@@ -12,19 +12,74 @@
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
+/**
+ * Class pf_products_featured_title
+ *
+ * Handles the display and configuration of the "Products Featured Title" module.
+ * This module manages the featured products title block, including its rendering,
+ * caching, and configuration in the ClicShopping system.
+ *
+ * @package ClicShopping\Modules\ProductsFeatured
+ */
 class pf_products_featured_title
 {
+  /**
+   * Module code identifier.
+   * @var string
+   */
   public string $code;
+
+  /**
+   * Module group name (directory).
+   * @var string
+   */
   public string $group;
+
+  /**
+   * Module title (localized).
+   * @var string
+   */
   public $title;
+
+  /**
+   * Module description (localized).
+   * @var string
+   */
   public $description;
+
+  /**
+   * Sort order for display.
+   * @var int|null
+   */
   public int|null $sort_order = 0;
+
+  /**
+   * Module enabled status.
+   * @var bool
+   */
   public bool $enabled = false;
 
+  /**
+   * Cache block identifier.
+   * @var string
+   */
+  private mixed $cache_block;
+
+  /**
+   * Current language ID.
+   * @var int
+   */
+  private mixed $lang;
+
+  /**
+   * Constructor. Initializes module properties and configuration.
+   */
   public function __construct()
   {
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
+    $this->cache_block = 'products_featured_title_';
+    $this->lang = Registry::get('Language')->getId();
 
     $this->title = CLICSHOPPING::getDef('module_products_featured_title_tilte');
     $this->description = CLICSHOPPING::getDef('module_products_featured_title_title_description');
@@ -35,39 +90,75 @@ class pf_products_featured_title
     }
   }
 
+  /**
+   * Executes the module logic, handles caching and rendering.
+   *
+   * @return void
+   */
   public function execute()
   {
     $CLICSHOPPING_Template = Registry::get('Template');
+    $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
 
     if (isset($_GET['Products'], $_GET['Featured'])) {
-      $content_width = (int)MODULE_PRODUCTS_FEATURED_CONTENT_WIDTH;
-      $text_position = MODULE_PRODUCTS_FEATURED_POSITION;
+    if ($this->enabled) {
+      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        $cache_id = $this->cache_block . $this->lang;
+        $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
 
-      $content = '  <!-- Product featured title start -->' . "\n";
-      $content .= '<div class="ModulesProductsFeaturedContainer">';
+        if ($cache_output !== false) {
+          $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
+          return;
+        }
+      }
 
-      ob_start();
-      require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/products_featured_title'));
-      $content .= ob_get_clean();
+        $content_width = (int)MODULE_PRODUCTS_FEATURED_CONTENT_WIDTH;
+        $text_position = MODULE_PRODUCTS_FEATURED_POSITION;
 
-      $content .= '</div>' . "\n";
-      $content .= '<!--  Products featured End -->' . "\n";
+        $products_featured_title = '<!-- products featured title start -->' . "\n";
+        $products_featured_title .= '<div class="ModulesProductsFeaturedContainer">';
 
-      $CLICSHOPPING_Template->addBlock($content, $this->group);
+        ob_start();
+	require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/products_featured_title'));
+	$products_featured_title .= ob_get_clean();
 
-    }
-  } // public function execute
+        $products_featured_title .= '</div>' . "\n";
+	$products_featured_title .= '<!-- products featured title end -->' . "\n";
 
+	if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+	    $CLICSHOPPING_TemplateCache->setCache($cache_id, $products_featured_title);
+	}
+
+	$CLICSHOPPING_Template->addBlock($products_featured_title, $this->group);
+      }
+    }	    
+  }
+
+  /**
+   * Checks if the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module configuration is defined.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULE_PRODUCTS_FEATURED_TITLE_STATUS');
   }
 
+  /**
+   * Installs the module configuration in the database.
+   *
+   * @return void
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -120,11 +211,21 @@ class pf_products_featured_title
     );
   }
 
+  /**
+   * Removes the module configuration from the database.
+   *
+   * @return int Number of affected rows.
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
+  /**
+   * Returns the configuration keys for this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array(

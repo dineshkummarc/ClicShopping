@@ -14,6 +14,7 @@ use ClicShopping\OM\Registry;
 $CLICSHOPPING_DefineLanguage = Registry::get('DefineLanguage');
 $CLICSHOPPING_Language = Registry::get('Language');
 $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
+$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
 
@@ -26,8 +27,9 @@ $languages = $CLICSHOPPING_Language->getLanguages();
 if ($CLICSHOPPING_MessageStack->exists('main')) {
   echo $CLICSHOPPING_MessageStack->get('main');
 }
+$content_group = HTML::sanitize($_GET['ContentGroup']);
 
-echo HTML::form('define_language', $CLICSHOPPING_DefineLanguage->link('DefineLanguage&Save&ContentGroup=' . $_GET['ContentGroup'], 'post', 'enctype="multipart/form-data"'));
+echo HTML::form('define_language', $CLICSHOPPING_DefineLanguage->link('DefineLanguage&Save&ContentGroup=' . $content_group, 'post', 'enctype="multipart/form-data"'));
 ?>
 <div class="contentBody">
   <div class="row">
@@ -39,10 +41,10 @@ echo HTML::form('define_language', $CLICSHOPPING_DefineLanguage->link('DefineLan
           <span
             class="col-md-6 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_DefineLanguage->getDef('heading_title'); ?></span>
           <span class="col-md-5 text-end">
-<?php
-echo '&nbsp;';
-echo HTML::button($CLICSHOPPING_DefineLanguage->getDef('button_back'), null, $CLICSHOPPING_DefineLanguage->link('DefineLanguage'), 'primary') . ' ' . HTML::button($CLICSHOPPING_DefineLanguage->getDef('button_save'), null, null, 'success') . ' ';
-?>
+            <?php
+            echo '&nbsp;';
+            echo HTML::button($CLICSHOPPING_DefineLanguage->getDef('button_back'), null, $CLICSHOPPING_DefineLanguage->link('DefineLanguage'), 'primary') . ' ' . HTML::button($CLICSHOPPING_DefineLanguage->getDef('button_save'), null, null, 'success') . ' ';
+            ?>
            </span>
         </div>
       </div>
@@ -98,7 +100,7 @@ echo HTML::button($CLICSHOPPING_DefineLanguage->getDef('button_back'), null, $CL
                                                                             ');
             }
 
-            $Qdefinitions->bindValue(':content_group', $_GET['ContentGroup']);
+            $Qdefinitions->bindValue(':content_group', $content_group);
             $Qdefinitions->bindInt(':languages_id', $languages[$i]['id']);
             $Qdefinitions->execute();
 
@@ -150,7 +152,7 @@ echo HTML::button($CLICSHOPPING_DefineLanguage->getDef('button_back'), null, $CL
                                                                          ');
           }
 
-          $Qdefinitions->bindValue(':content_group', $_GET['ContentGroup']);
+          $Qdefinitions->bindValue(':content_group', $content_group);
           $Qdefinitions->execute();
 
           while ($Qdefinitions->fetch()) {
@@ -171,7 +173,7 @@ echo HTML::button($CLICSHOPPING_DefineLanguage->getDef('button_back'), null, $CL
                                                                                 and definition_key = :definition_key
                                                                                 order by languages_id
                                                                               ');
-                  $Tdefinitions->bindValue(':content_group', $_GET['ContentGroup']);
+                  $Tdefinitions->bindValue(':content_group', $content_group);
                   $Tdefinitions->bindValue(':definition_key', $Qdefinitions->value('definition_key'));
                   $Tdefinitions->bindInt(':languages_id', $languages[$i]['id']);
                   $Tdefinitions->execute();

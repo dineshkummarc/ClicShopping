@@ -50,7 +50,7 @@ class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
 
         $Qupdate->execute();
 
-        $this->Hooks->call('Suppliers', 'Delete');
+        $this->Hooks->call('Suppliers', 'DeleteAll');
       }
     }
 

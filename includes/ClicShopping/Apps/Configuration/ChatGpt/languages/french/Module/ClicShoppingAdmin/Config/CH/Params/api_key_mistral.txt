@@ -1,0 +1,2 @@
+cfg_chatgpt_api_key_mistral_title = Clef Api Mistral
+cfg_chatgpt_api_key_mistral_description =  Veuillez insérer la clef API (https://www.mistral.ai)

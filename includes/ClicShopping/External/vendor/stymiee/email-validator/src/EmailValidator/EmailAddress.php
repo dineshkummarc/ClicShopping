@@ -9,11 +9,55 @@ class EmailAddress
     /**
      * @var string
      */
-    private $email;
+    private string $email;
+
+    /**
+     * @var string|null
+     */
+    private ?string $localPart = null;
+
+    /**
+     * @var string|null
+     */
+    private ?string $domain = null;
 
     public function __construct(string $email)
     {
         $this->email = $email;
+        $this->parseEmail();
+    }
+
+    /**
+     * Parses the email address into local part and domain
+     * 
+     * This method handles:
+     * - Multiple @ symbols in quoted strings
+     * - Domain literals (IP addresses in square brackets)
+     * - Comments in email addresses
+     * 
+     * @return void
+     */
+    private function parseEmail(): void
+    {
+        // First, remove any comments
+        $email = preg_replace('/\([^)]*\)/', '', $this->email);
+        
+        // Handle domain literals (IP addresses in square brackets)
+        if (preg_match('/\[([^\]]+)\]$/', $email, $matches)) {
+            $this->domain = $matches[1];
+            $this->localPart = substr($email, 0, strrpos($email, '@'));
+            return;
+        }
+
+        // Split on the last @ symbol
+        $parts = explode('@', $email);
+        if (count($parts) < 2) {
+            return;
+        }
+
+        $this->domain = end($parts);
+        array_pop($parts);
+        $this->localPart = implode('@', $parts);
     }
 
     /**
@@ -23,7 +67,7 @@ class EmailAddress
      */
     public function getDomain(): ?string
     {
-        return explode('@', $this->email)[1] ?? null;
+        return $this->domain;
     }
 
     /**
@@ -40,11 +84,11 @@ class EmailAddress
      * Returns the username of the email address.
      *
      * @since 1.1.0
-     * @return string|null
+     * @return string
      */
-    private function getUsername(): ?string
+    private function getUsername(): string
     {
-        return explode('@', $this->email)[0] ?? '';
+        return $this->localPart ?? '';
     }
 
     /**

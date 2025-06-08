@@ -68,6 +68,7 @@ class Cron
                                                                       cycle,
                                                                       action,
                                                                       status,
+                                                                      description,
                                                                       date_added,
                                                                       date_modified
                                              from :table_cron
@@ -150,14 +151,14 @@ class Cron
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
-    if ($status == '0') {
+    if ($status === 0) {
       return $CLICSHOPPING_Db->save('cron',
         ['status' => 1,
           'date_modified' => 'now()'
         ],
         ['cron_id' => (int)$cron_id]
       );
-    } elseif ($status == '1') {
+    } elseif ($status === 1) {
       return $CLICSHOPPING_Db->save('cron',
         ['status' => 0,
           'date_modified' => 'now()'

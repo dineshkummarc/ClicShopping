@@ -7,238 +7,40 @@
  *
  */
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Hash;
-use ClicShopping\OM\HTML;
-use ClicShopping\OM\HTTP;
-use ClicShopping\OM\Is;
-use ClicShopping\OM\Registry;
-use ClicShopping\Sites\ClicShoppingAdmin\ActionRecorderAdmin;
-use ClicShopping\Sites\Common\Topt;
+  use ClicShopping\OM\HTML;
+  use ClicShopping\OM\CLICSHOPPING;
+  use ClicShopping\OM\Registry;
+  use ClicShopping\OM\Is;
+  use ClicShopping\OM\Hash;
+  use ClicShopping\OM\HTTP;
+  use ClicShopping\Sites\ClicShoppingAdmin\ActionRecorderAdmin;
 
-use ClicShopping\Apps\Configuration\TemplateEmail\Classes\ClicShoppingAdmin\TemplateEmailAdmin;
+  use ClicShopping\Apps\Configuration\TemplateEmail\Classes\ClicShoppingAdmin\TemplateEmailAdmin;
+  use ClicShopping\Sites\ClicShoppingAdmin\EmailVerification;
 
-$login_request = true;
+  $login_request = true;
 
-require_once __DIR__ . '/includes/application_top.php';
+  require_once __DIR__ . '/Core/OM.php';
 
-$CLICSHOPPING_Db = Registry::get('Db');
-$CLICSHOPPING_MessageStack = Registry::get('MessageStack');
-$CLICSHOPPING_Mail = Registry::get('Mail');
-$CLICSHOPPING_Hooks = Registry::get('Hooks');
-$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
+  $CLICSHOPPING_Db = Registry::get('Db');
+  $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
+  $CLICSHOPPING_Mail = Registry::get('Mail');
+  $CLICSHOPPING_Hooks = Registry::get('Hooks');
+  $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 
-$action = $_GET['action'] ?? '';
+  $action = $_GET['action'] ?? '';
 
 // prepare to logout an active administrator if the login page is accessed again
-if (isset($_SESSION['admin'])) {
-  $action = 'logoff';
-}
+  if (isset($_SESSION['admin'])) {
+    $action = 'logoff';
+  }
 
 if (!\is_null($action)) {
-  switch ($action) {
-    case 'loginAuth':
-      $error = false;
-
-      if (isset($_POST['username'], $_POST['password'])) {
-        $_SESSION['username'] = HTML::sanitize($_POST['username']);
-        $_SESSION['password'] = HTML::sanitize($_POST['password']);
-
-        $username = $_SESSION['username'];
-        $password = $_SESSION['password'];
-      } else {
-        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_invalid_administrator'), 'error');
-
-        $CLICSHOPPING_Hooks->call('Login', 'ErrorProcess');
-      }
-
-      Registry::set('ActionRecorderAdmin', new ActionRecorderAdmin('ar_admin_login', null, $username));
-      $CLICSHOPPING_ActionRecorder = Registry::get('ActionRecorderAdmin');
-
-      if ($CLICSHOPPING_ActionRecorder->canPerform()) {
-        $sql_array = [
-          'id',
-          'user_name',
-          'user_password',
-          'name',
-          'first_name',
-          'access',
-          'double_authentification_secret',
-          'status'
-        ];
-
-        $Qcheck = $CLICSHOPPING_Db->get('administrators', $sql_array, ['user_name' => $username, 'status' => 1]);
-
-        if ($Qcheck->fetch()) {
-          if (Hash::verify($password, $Qcheck->value('user_password'))) {
-            $sql_array = [
-              'id',
-              'username',
-              'access',
-              'double_authentification_secret',
-              'status'
-            ];
-
-            $Qcheck = $CLICSHOPPING_Db->get('administrators', 'double_authentification_secret', ['user_name' => $username, 'status' => 1]);
-
-            $_SESSION['adminAuth'] = [
-              'id' => $Qcheck->valueInt('id'),
-              'username' => $Qcheck->value('user_name'),
-              'access' => $Qcheck->value('access'),
-              'status' => $Qcheck->value('status')
-            ];
-
-            $CLICSHOPPING_ActionRecorder->_user_id = $_SESSION['adminAuth']['id'];
-            $CLICSHOPPING_ActionRecorder->record();
-
-            if (empty(Topt::checkAuthAdmin($username))) {
-              $_SESSION['tfa_secret'] = Topt::getTfaSecret();
-              $update_array = ['double_authentification_secret' => $_SESSION['tfa_secret']];
-
-              $CLICSHOPPING_Db->save('administrators', $update_array, ['user_name' => $username]);
-            } else if (empty($_SESSION['tfa_secret'])) {
-              $_SESSION['tfa_secret'] = $Qcheck->value('double_authentification_secret');
-            }
-          }
-        } else {
-          $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_invalid_administrator'), 'error');
-
-          $CLICSHOPPING_Hooks->call('Login', 'ErrorProcess');
-        }
-      } else {
-        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_action_recorder', ['module_action_recorder_admin_login_minutes' => (\defined('MODULE_ACTION_RECORDER_ADMIN_LOGIN_MINUTES') ? (int)MODULE_ACTION_RECORDER_ADMIN_LOGIN_MINUTES : 5)]));
-      }
-
-      if (isset($_POST['username'])) {
-        $CLICSHOPPING_ActionRecorder->record(false);
-      }
-      break;
-
-    case 'loginAuthProcess':
-      $error = true;
-// Check the topt
-      if (isset($_POST['tfa_code'])) {
-        $tfaCode = HTML::sanitize($_POST['tfa_code']);
-        $username = HTML::sanitize($_SESSION['username']);
-        $password = HTML::sanitize($_SESSION['password']);
-        $sql_array = [
-          'id',
-          'user_name',
-          'user_password',
-          'access',
-          'status'
-        ];
-
-        $Qadmin = $CLICSHOPPING_Db->get('administrators', $sql_array, ['user_name' => $username, 'status' => 1]);
-
-        if ($Qadmin->fetch() !== false) {
-          if (Hash::verify($password, $Qadmin->value('user_password'))) {
-            $_SESSION['admin'] = [
-              'id' => $Qadmin->valueInt('id'),
-              'username' => $Qadmin->value('user_name'),
-              'access' => $Qadmin->value('access'),
-              'status' => $Qadmin->value('status'),
-            ];
-
-            if (isset($_SESSION['redirect_origin'])) {
-              $page = $_SESSION['redirect_origin']['page'];
-
-              $get_string = http_build_query($_SESSION['redirect_origin']['get']);
-
-              unset($_SESSION['redirect_origin']);
-              Topt::resetAllAdmin();
-
-              $CLICSHOPPING_Hooks->call('Login', 'Process');
-
-              CLICSHOPPING::redirect($page, $get_string);
-            } else {
-              CLICSHOPPING::redirect();
-            }
-          }
-        }
-
-        if (isset($_POST['username'])) {
-          $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_invalid_administrator'), 'error');
-
-          $CLICSHOPPING_Hooks->call('Login', 'ErrorProcess');
-        }
-
-        if (empty($tfaCode)) {
-          CLICSHOPPING::redirect('login.php?action=loginAuth');
-        } else {
-          if (!empty(Topt::checkAuthAdmin($_SESSION['username']))) {
-            if (Topt::getVerifyAuth($_SESSION['tfa_secret'], $tfaCode) === true) {
-              $username = HTML::sanitize($_SESSION['username']);
-              $password = HTML::sanitize($_SESSION['password']);
-
-              if (!empty($username) && !empty($password)) {
-                $sql_array = [
-                  'id',
-                  'user_name',
-                  'user_password',
-                  'access',
-                  'status'
-                ];
-
-                $Qadmin = $CLICSHOPPING_Db->get('administrators', $sql_array, ['user_name' => $username, 'status' => 1]);
-
-                if ($Qadmin->fetch() !== false) {
-                  if (Hash::verify($password, $Qadmin->value('user_password'))) {
-                    $_SESSION['admin'] = [
-                      'id' => $Qadmin->valueInt('id'),
-                      'username' => $Qadmin->value('user_name'),
-                      'access' => $Qadmin->value('access'),
-                      'status' => $Qadmin->value('status'),
-                    ];
-
-                    if (isset($_SESSION['redirect_origin'])) {
-                      $page = $_SESSION['redirect_origin']['page'];
-
-                      $get_string = http_build_query($_SESSION['redirect_origin']['get']);
-
-                      unset($_SESSION['redirect_origin']);
-                      Topt::resetAllAdmin();
-
-                      $CLICSHOPPING_Hooks->call('Login', 'Process');
-
-                      CLICSHOPPING::redirect($page, $get_string);
-                    } else {
-                      CLICSHOPPING::redirect();
-                    }
-                  }
-                }
-
-                if (isset($_POST['username'])) {
-                  $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_invalid_administrator'), 'error');
-
-                  $CLICSHOPPING_Hooks->call('Login', 'ErrorProcess');
-                }
-              } else {
-                unset($_SESSION['user_secret']);
-                CLICSHOPPING::redirect('login.php');
-              }
-            } else {
-              $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('text_code_auth_invalid'), 'error');
-              unset($_SESSION['user_secret']);
-              CLICSHOPPING::redirect('login.php?action=loginAuth');
-            }
-          } else {
-            $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('text_code_auth_invalid'), 'error');
-            unset($_SESSION['user_secret']);
-            CLICSHOPPING::redirect('login.php?action=loginAuth');
-          }
-        }
-      } else {
-        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('text_code_auth_invalid'), 'error');
-        unset($_SESSION['user_secret']);
-        CLICSHOPPING::redirect('login.php?action=loginAuth');
-      }
-      break;
-
-    case 'process':
-      $CLICSHOPPING_Hooks->call('PreAction', 'Process');
-      $username = '';
-      $password = '';
+    switch ($action) {
+      case 'process':
+        $CLICSHOPPING_Hooks->call('PreAction', 'Process');
+        $username = '';
+        $password = '';
 
       if (isset($_SESSION['redirect_origin'], $_SESSION['redirect_origin']['auth_user']) && !isset($_POST['username'])) {
         $username = HTML::sanitize($_SESSION['redirect_origin']['auth_user']);
@@ -281,12 +83,22 @@ if (!\is_null($action)) {
               $CLICSHOPPING_ActionRecorder->_user_id = $_SESSION['admin']['id'];
               $CLICSHOPPING_ActionRecorder->record();
 
-              if (isset($_SESSION['redirect_origin'])) {
+              //****************************
+              // Check Doublea uthtification
+              //****************************
+              if (EmailVerification::isEnabledForAdmin($username)) {
+                // Stocker les informations de session pour une utilisation ultérieure
+                $_SESSION['username'] = $username;
+                $_SESSION['password'] = $password;
+                
+                CLICSHOPPING::redirect('login.php', 'action=emailVerify');
+              } elseif (isset($_SESSION['redirect_origin'])) {
                 $page = $_SESSION['redirect_origin']['page'];
 
                 $get_string = http_build_query($_SESSION['redirect_origin']['get']);
 
                 unset($_SESSION['redirect_origin']);
+                unset($_SESSION['email_verified']);
 
                 $CLICSHOPPING_Hooks->call('Login', 'Process');
 
@@ -316,7 +128,7 @@ if (!\is_null($action)) {
       $CLICSHOPPING_Hooks->call('Account', 'LogoutBefore');
 
       unset($_SESSION['admin']);
-      Topt::resetAllAdmin();
+      unset($_SESSION['email_verified']);
 
       if (isset($_SERVER['PHP_AUTH_USER']) && !empty($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW']) && !empty($_SERVER['PHP_AUTH_PW'])) {
         $_SESSION['auth_ignore'] = true;
@@ -365,15 +177,15 @@ if (!\is_null($action)) {
       if ($error === false) {
         $username = HTML::sanitize($_POST['username']);
 
-        $Qcheck = $CLICSHOPPING_Db->prepare('select id
+          $Qcheck = $CLICSHOPPING_Db->prepare('select id
                                                from :table_administrators
                                                where user_name = :user_name
                                                limit 1
                                               ');
-        $Qcheck->bindValue(':user_name', $username);
-        $Qcheck->execute();
+          $Qcheck->bindValue(':user_name', $username);
+          $Qcheck->execute();
 
-        if ($Qcheck->rowCount() === 1 && Is::EmailAddress($username)) {
+          if ($Qcheck->rowCount() == 1 && Is::EmailAddress($username)) {
           $new_password = Hash::getRandomString((int)ENTRY_PASSWORD_MIN_LENGTH);
           $crypted_password = Hash::encrypt($new_password);
 
@@ -417,214 +229,411 @@ if (!\is_null($action)) {
 
         CLICSHOPPING::redirect('login.php');
       }
-
       break;
+
+    //******************************
+    //  Double authentification by email
+    //******************************
+    case 'emailVerify':
+      $error = false;
+
+      if (isset($_POST['username'], $_POST['password'])) {
+        $_SESSION['username'] = HTML::sanitize($_POST['username']);
+        $_SESSION['password'] = HTML::sanitize($_POST['password']);
+
+        $username = $_SESSION['username'];
+        $password = $_SESSION['password'];
+      } else {
+        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_invalid_administrator'), 'error');
+
+        $CLICSHOPPING_Hooks->call('Login', 'ErrorProcess');
+      }
+
+      $sql_array = [
+        'id',
+        'user_name',
+        'user_password',
+        'access',
+        'status'
+      ];
+
+      $Qcheck = $CLICSHOPPING_Db->get('administrators', $sql_array, ['user_name' => $username, 'status' => 1]);
+
+      if (!empty($Qcheck->value('user_name'))) {
+        if (Hash::verify($password, $Qcheck->value('user_password'))) {
+          if (EmailVerification::sendVerificationCode($username)) {
+            $_SESSION['email_verified'] = true;
+          }
+        } else {
+          $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_invalid_administrator'), 'error');
+          CLICSHOPPING::redirect('login.php');
+        }
+      } else {
+        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_invalid_administrator'), 'error');
+        CLICSHOPPING::redirect('login.php');
+      }
+      break;
+
+      case 'email_code':
+        $error = false;
+
+        if (isset($_POST['email_code_sent'])) {
+          $email_code = HTML::sanitize($_POST['email_code_sent']);
+          $username = HTML::sanitize($_SESSION['username']);
+
+          $check = EmailVerification::verifyCode($username, $email_code);
+
+          if ($check === true) {
+            $sql_array = [
+              'id',
+              'user_name',
+              'user_password',
+              'access',
+              'status'
+            ];
+
+            $Qadmin = $CLICSHOPPING_Db->get('administrators', $sql_array, ['user_name' => $username, 'status' => 1]);
+
+            if ($Qadmin->fetch() !== false) {
+              $_SESSION['admin'] = [
+                'id' => $Qadmin->valueInt('id'),
+                'username' => $Qadmin->value('user_name'),
+                'access' => $Qadmin->value('access'),
+                'status' => $Qadmin->value('status'),
+              ];
+
+              if (isset($_SESSION['redirect_origin'])) {
+                $page = $_SESSION['redirect_origin']['page'];
+                $get_string = http_build_query($_SESSION['redirect_origin']['get']);
+
+                CLICSHOPPING::redirect($page, $get_string);
+              } else {
+                CLICSHOPPING::redirect();
+              }
+            }
+          } else {
+            $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('text_email_code_invalid'), 'error');
+            CLICSHOPPING::redirect('login.php?action=emailVerify');
+          }
+        } else {
+          $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('text_email_code_required'), 'error');
+          CLICSHOPPING::redirect('login.php?action=emailVerify');
+        }
+      break;
+
+      case 'resend_code':
+        if (isset($_SESSION['username'])) {
+          $username = HTML::sanitize($_SESSION['username']);
+
+          $CLICSHOPPING_Db = Registry::get('Db');
+          $CLICSHOPPING_Mail = Registry::get('Mail');
+
+          $admin_check = EmailVerification::checkuser($username);
+
+          if (!empty($admin_check['user_name'])) {
+            $code_length = defined('EMAIL_VERIFICATION_CODE_LENGTH') ? (int)EMAIL_VERIFICATION_CODE_LENGTH : 6;
+            $code_length = max(4, min(8, $code_length)); // Limiter entre 4 et 8
+
+            $verification_code = '';
+
+            for ($i = 0; $i < $code_length; $i++) {
+              $verification_code .= mt_rand(0, 9);
+            }
+
+            $expiry_minutes = defined('EMAIL_VERIFICATION_CODE_EXPIRY') ? (int)EMAIL_VERIFICATION_CODE_EXPIRY : 15;
+            $expiry_time = date('Y-m-d H:i:s', time() + ($expiry_minutes * 60));
+
+            $update_array = [
+              'email_verification_code' => $verification_code,
+              'email_verification_expiry' => $expiry_time
+            ];
+
+            $CLICSHOPPING_Db->save('administrators', $update_array, ['user_name' => $username]);
+
+            // Envoyer l'email avec le code
+            $body_subject = CLICSHOPPING::getDef('email_verification_subject', ['store_name' => STORE_NAME]);
+
+            $text_array = [
+              'store_name' => STORE_NAME,
+              'verification_code' => $verification_code,
+              'expiry_minutes' => $expiry_minutes
+            ];
+
+            $email_body = CLICSHOPPING::getDef('email_verification_body', $text_array) . "\n";
+
+            $to_addr = $username;
+            $from_name = STORE_OWNER;
+            $from_addr = STORE_OWNER_EMAIL_ADDRESS;
+            $to_name = null;
+            $subject = $body_subject;
+
+            $CLICSHOPPING_Mail->addHtml($email_body);
+            $CLICSHOPPING_Mail->send($to_addr, $from_name, $from_addr, $to_name, $subject);
+
+            $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('success_email_verification_code_sent'), 'success');
+          } else {
+            $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_invalid_administrator'), 'error');
+            CLICSHOPPING::redirect('login.php');
+          }
+        } else {
+          CLICSHOPPING::redirect('login.php');
+        }
+      break;
+    }
   }
-}
 
-$Qcheck = $CLICSHOPPING_Db->get('administrators', 'id', null, null, 1);
+  $Qcheck = $CLICSHOPPING_Db->get('administrators', 'id', null, null, 1);
 
-if (!$Qcheck->check()) {
-  $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('text_create_first_administrator'), 'warning');
-}
+  if (!$Qcheck->check()) {
+    $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('text_create_first_administrator'), 'warning');
+  }
 
-require_once($CLICSHOPPING_Template->getTemplateHeaderFooterAdmin('header.php'));
+  require_once($CLICSHOPPING_Template->getTemplateHeaderFooterAdmin('header.php'));
 
-require_once('background.php');
+  require_once('background.php');
 
-$ip = HTTP::getIpAddress();
+  $ip = HTTP::getIpAddress();
 
-if (Is::IpAddress($ip) && (!empty($ip) || !\is_null($ip))) {
-  $url = "https://ipinfo.io/{$ip}/geo";
-  $options = [
-    'http' => [
-      'ignore_errors' => true, // Ignore HTTP errors and fetch the response
-    ],
-  ];
+  if (Is::IpAddress($ip) && (!empty($ip) || !\is_null($ip))) {
+    $url = "https://ipinfo.io/{$ip}/geo";
+    $options = [
+      'http' => [
+        'ignore_errors' => true, // Ignore HTTP errors and fetch the response
+      ],
+    ];
 
-  $context = stream_context_create($options);
+    $context = stream_context_create($options);
 
-  $details = file_get_contents($url, false, $context);
+    $details = file_get_contents($url, false, $context);
 
-  if ($details === false) {
-    $http_response_header = $http_response_header ?? [];
+    if ($details === false) {
+      $http_response_header = $http_response_header ?? [];
 
-    // Check the HTTP response headers for the status code
-    $responseCode = isset($http_response_header[0]) ? explode(' ', $http_response_header[0])[1] : null;
+      // Check the HTTP response headers for the status code
+      $responseCode = isset($http_response_header[0]) ? explode(' ', $http_response_header[0])[1] : null;
 
-    if ($responseCode == 429) {
-      // Handle the "Too Many Requests" error
-      echo "Error: Too Many Requests. Please wait and try again later.";
+      if ($responseCode == 429) {
+        // Handle the "Too Many Requests" error
+        echo "Error: Too Many Requests. Please wait and try again later.";
+      } else {
+        // Handle other errors
+        echo "Error: Something went wrong. Please try again later.";
+      }
     } else {
-      // Handle other errors
-      echo "Error: Something went wrong. Please try again later.";
-    }
-  } else {
-    // Process $details as usual
-    $details = json_decode($details, true, 512, JSON_THROW_ON_ERROR);
+      // Process $details as usual
+      $details = json_decode($details, true, 512, JSON_THROW_ON_ERROR);
 
-    if ($details !== null && isset($details['country'])) {
-      $country = $details['country'];
-      echo "<script>$('svg path[data-country-code={$country}]').attr('fill', '#197ac6').attr('fill-opacity', '0.15');</script>";
+      if ($details !== null && isset($details['country'])) {
+        $country = $details['country'];
+        echo "<script>$('svg path[data-country-code={$country}]').attr('fill', '#197ac6').attr('fill-opacity', '0.15');</script>";
+      }
     }
   }
-}
 ?>
   <div class="loader-wrapper"></div>
 <?php
-if ($Qcheck->check()) {
-  if (CLICSHOPPING_TOTP_ADMIN == 'True') {
-    if (!empty($_SESSION['tfa_secret'])) {
-      $form_action = 'loginAuthProcess';
+  if ($Qcheck->check()) {
+    if (EMAIL_VERIFICATION_ENABLED_ADMIN == 'True') {
+      $form_action = 'emailVerify';
+      $action = 'verificatiion_enable';
     } else {
-      $form_action = 'loginAuth';
+      $form_action = 'process';
     }
+    $button_text = CLICSHOPPING::getDef('button_login');
   } else {
-    $form_action = 'process';
+    $form_action = 'create';
+    $button_text = CLICSHOPPING::getDef('button_create_administrator');
   }
 
-  $button_text = CLICSHOPPING::getDef('button_login');
-} else {
-  $form_action = 'create';
-  $button_text = CLICSHOPPING::getDef('button_create_administrator');
-}
 
-if ($action != 'password') {
-  ?>
-  <div id="loginModal" tabindex="-1" role="document" aria-hidden="true" style="padding-top:10rem;">
-  <div class="modal-dialog">
-  <div class="modal-content" style="background-color: transparent; border: none; align-items: center;">
-  <div class="modal-header">
-    <h1 style="color:#233C7A; text-align: center;"><?php echo CLICSHOPPING::getDef('heading_title'); ?></h1>
-  </div>
-  <?php echo HTML::form('login', CLICSHOPPING::link('login.php', 'action=' . $form_action)); ?>
-  <div class="modal-body" style="width:20rem; padding-top:3rem;">
-  <div class="col-md-12 center-block">
-  <?php
-  if ($form_action == 'create') {
+  if (!empty($_SESSION['email_verified']) && $_SESSION['email_verified'] === true) {
     ?>
-    <div class="input-group">
-      <span class="input-group-addon" id="basic-addon1"></span>
-      <?php echo HTML::inputField('first_name', '', 'placeholder="' . CLICSHOPPING::getDef('text_firstname') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
-    </div>
-    <div class="mt-1"></div>
-    <div class="input-group">
-      <span class="input-group-addon" id="basic-addon1"></span>
-      <?php echo HTML::inputField('name', '', 'placeholder="' . CLICSHOPPING::getDef('text_name') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
-    </div>
-    <div class="mt-1"></div>
-    <?php
-  } elseif (!empty($_SESSION['tfa_secret'])) {
-    ?>
-    <div class="contentText">
-      <?php
-      if (empty($_SESSION['user_secret'])) {
-        ?>
-        <div class="col-md-12 text-center">
-          <?php echo Topt::getImageTopt(CLICSHOPPING_TOTP_SHORT_TILTE, $_SESSION['tfa_secret']); ?>
-          <div class="mt-1"></div>
-          <div class="row">
-            <span
-              class="col-md-12"><?php echo HTML::inputField('tfa_code', null, 'aria-required="true" required placeholder="' . CLICSHOPPING::getDef('text_auth_code') . '"'); ?></span>
+    <?php echo HTML::form('email_verification', CLICSHOPPING::link('login.php', 'action=email_code')); ?>
+
+    <div id="loginModal" tabindex="-1" role="document" aria-hidden="true" style="padding-top:10rem;">
+      <div class="modal-dialog">
+        <div class="modal-content" style="background-color: transparent; border: none; align-items: center;">
+          <div class="modal-header">
+            <h4><?php echo CLICSHOPPING::getDef('heading_title_email_verification'); ?></h4>
           </div>
-          <div class="mt-1"></div>
-          <span class="col-md-6">
-            <label
-              for="buttonContinue"><?php echo HTML::button(CLICSHOPPING::getDef('button_continue'), null, null, 'success'); ?></label>
-            <label
-              for="buttonCancel"><?php echo HTML::button(CLICSHOPPING::getDef('button_cancel'), null, 'login.php?action=logoff', 'warning'); ?></label>
-          </span>
-        </div>
-        <div class="mt-1"></div>
-        <div class="col-md-12"><?php echo CLICSHOPPING::getDef('text_Login_auth_introduction'); ?></div>
-        <?php
-      }
-      ?>
-    </div>
-    <?php
-  } elseif (empty($_SESSION['tfa_secret'])) {
-    ?>
-    <div class="input-group">
-      <span class="input-group-addon" id="basic-addon1"></span>
-      <?php echo HTML::inputField('username', '', 'placeholder="' . CLICSHOPPING::getDef('text_username') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
-    </div>
-    <div class="mt-1"></div>
-    <div class="input-group">
-      <span class="input-group-addon" id="basic-addon1"></span>
-      <?php echo HTML::passwordField('password', '', 'placeholder="' . CLICSHOPPING::getDef('text_password') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
-    </div>
-    <div class="mt-1"></div>
-    <div class="text-end">
-      <label for="buttonText"><?php echo HTML::button($button_text, null, null, 'primary'); ?></label>
-    </div>
-    <div class="mt-1"></div>
-    </div>
-    </div>
-    </form>
-    <div class="modal-footer">
-      <div class="col-md-12">
-        <div class="row">
-          <div class="col-md-6">
-            <label for="buttononlineCatalog"><a href="../index.php">
-                <button class="btn text-start" data-bs-dismiss="modal"
-                        aria-hidden="true"><?php echo CLICSHOPPING::getDef('header_title_online_catalog'); ?></button>
-              </a></label>
-          </div>
-          <div class="col-md-6">
-            <label for="buttonNewPassword"><a href="<?php echo CLICSHOPPING::link('login.php', 'action=password'); ?>">
-                <button class="btn text-end" data-bs-dismiss="modal"
-                        aria-hidden="true"><?php echo CLICSHOPPING::getDef('text_new_text_password'); ?></button>
-              </a></label>
+          <div class="modal-body" style="width:40rem; padding-top:3rem;">
+            <div class="col-md-12 center-block">
+              <div class="input-group">
+                <span class="input-group-addon" id="basic-addon1"></span>
+                <?php echo HTML::inputField('email_code_sent', null, 'required aria-required="true" autocomplete="off" autofocus placeholder="' . CLICSHOPPING::getDef('entry_email_verification_code_placeholder') . '"', 'password'); ?>
+                <?php echo HTML::button(CLICSHOPPING::getDef('button_verify'), null, null, 'primary'); ?>
+              </div>
+              <div class="mt-1"></div>
+              <div class="col-md-12">
+                <div class="row">
+                  <span class="col-md-6">
+                    <?php echo HTML::button(CLICSHOPPING::getDef('button_resend_code'), null, CLICSHOPPING::link('login.php', 'action=resend_code'), 'success'); ?>
+                  </span>
+                  <span class="col-md-6 text-end">
+                    <?php echo HTML::button(CLICSHOPPING::getDef('button_back'), null, 'login.php?action=logoff', 'warning'); ?>
+                  </span>
+                </div>
+              </div>
+              <div class="mt-1"></div>
+            </div>
+            <div class="mt-4"></div>
+            <div class="modal-footer">
+              <div class="col-md-12">
+                <div class="row">
+                  <div class="alert alert-info" role="alert">
+                    <?php echo CLICSHOPPING::getDef('text_email_verification_instruction'); ?>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    </div>
-    </div>
-    </div>
+    </form>
     <?php
-  }
-} else {
-  ?>
+  } elseif ($form_action == 'emailVerify') {
+    echo HTML::form('login', CLICSHOPPING::link('login.php', 'action=' . $form_action));
+    ?>
   <div id="loginModal" tabindex="-1" role="document" aria-hidden="true" style="padding-top:10rem;">
     <div class="modal-dialog">
       <div class="modal-content" style="background-color: transparent; border: none; align-items: center;">
-        <?php echo HTML::form('send_password', CLICSHOPPING::link('login.php', 'action=send_password')); ?>
         <div class="modal-header">
-          <h2 style="color:#233C7A;"><?php echo CLICSHOPPING::getDef('heading_title_sent_password'); ?></h2>
+          <h1 style="color:#233C7A; text-align: center;"><?php echo CLICSHOPPING::getDef('heading_title'); ?></h1>
         </div>
-        <div class="modal-body" style="width:30rem; padding-top:3rem;">
+        <div class="modal-body" style="width:20rem; padding-top:3rem;">
           <div class="col-md-12 center-block">
-            <div class="text-danger"
-                 style="font-size:12px; padding-bottom:10px;"><?php echo CLICSHOPPING::getDef('text_sent_password'); ?></div>
             <div class="input-group">
-              <span class="input-group-addon" id="basic-addon1">@</span>
-              <?php echo HTML::inputField('username', '', 'size="150" placeholder="' . CLICSHOPPING::getDef('text_email_lost_password') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
+              <span class="input-group-addon" id="basic-addon1"></span>
+              <?php echo HTML::inputField('username', '', 'placeholder="' . CLICSHOPPING::getDef('text_username') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
+            </div>
+            <div class="mt-1"></div>
+            <div class="input-group">
+              <span class="input-group-addon" id="basic-addon1"></span>
+              <?php echo HTML::passwordField('password', '', 'placeholder="' . CLICSHOPPING::getDef('text_password') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
+            </div>
+            <div class="mt-1"></div>
+            <div class="text-end">
+              <label for="buttonText"><?php echo HTML::button($button_text, null, null, 'primary'); ?></label>
             </div>
             <div class="mt-1"></div>
           </div>
-        </div>
-        <div class="row col-md-12">
-          <div class="col-md-6">
-            <label for="buttonHeaderAdministration"><a href="<?php echo CLICSHOPPING::link('login.php'); ?>">
-                <button class="btn btn-secondary text-start"
-                        type="button"><?php echo CLICSHOPPING::getDef('header_title_administration'); ?></button>
-              </a></label>
-          </div>
-          <div class="col-md-6 text-end">
-            <label
-              for="buttonSubmit"><?php echo HTML::button(CLICSHOPPING::getDef('button_submit'), null, null, 'primary'); ?></label>
+
+          <div class="modal-footer">
+            <div class="col-md-12">
+              <div class="row">
+                <div class="col-md-6">
+                  <label for="buttononlineCatalog"><a href="../index.php"> <button class="btn text-start" data-bs-dismiss="modal" aria-hidden="true"><?php echo CLICSHOPPING::getDef('header_title_online_catalog'); ?></button></a></label>
+                </div>
+                <div class="col-md-6">
+                  <label for="buttonNewPassword"><a href="<?php echo CLICSHOPPING::link('login.php', 'action=password'); ?>"><button class="btn text-end" data-bs-dismiss="modal" aria-hidden="true"><?php echo CLICSHOPPING::getDef('text_new_text_password'); ?></button></a></label>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      </form>
-      <div class="mt-1"></div>
+    </div>
+  </div>
+  </form>
+    <?php
+  } elseif ($action != 'password') {
+   ?>
+  <div id="loginModal" tabindex="-1" role="document" aria-hidden="true" style="padding-top:10rem;">
+    <div class="modal-dialog">
+      <div class="modal-content" style="background-color: transparent; border: none; align-items: center;">
+        <div class="modal-header">
+          <h1 style="color:#233C7A; text-align: center;"><?php echo CLICSHOPPING::getDef('heading_title'); ?></h1>
+        </div>
+        <?php echo HTML::form('login', CLICSHOPPING::link('login.php', 'action=' . $form_action)); ?>
+        <div class="modal-body" style="width:20rem; padding-top:3rem;">
+          <div class="col-md-12 center-block">
+            <?php
+              if ($form_action == 'create') {
+            ?>
+            <div class="input-group">
+              <span class="input-group-addon" id="basic-addon1"></span>
+              <?php echo HTML::inputField('first_name', '', 'placeholder="' . CLICSHOPPING::getDef('text_firstname') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
+            </div>
+            <div class="mt-1"></div>
+            <div class="input-group">
+              <span class="input-group-addon" id="basic-addon1"></span>
+              <?php echo HTML::inputField('name', '', 'placeholder="' . CLICSHOPPING::getDef('text_name') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
+            </div>
+            <div class="mt-1"></div>
+            <?php
+              }
+            ?>
+            <div class="input-group">
+              <span class="input-group-addon" id="basic-addon1"></span>
+              <?php echo HTML::inputField('username', '', 'placeholder="' . CLICSHOPPING::getDef('text_username') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
+            </div>
+            <div class="mt-1"></div>
+            <div class="input-group">
+              <span class="input-group-addon" id="basic-addon1"></span>
+              <?php echo HTML::passwordField('password', '', 'placeholder="' . CLICSHOPPING::getDef('text_password') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
+            </div>
+            <div class="mt-1"></div>
+            <div class="text-end">
+              <label for="buttonText"><?php echo HTML::button($button_text, null, null, 'primary'); ?></label>
+            </div>
+            <div class="mt-1"></div>
+          </div>
+          </div>
+          </form>
+          <div class="modal-footer">
+            <div class="col-md-12">
+              <div class="row">
+                <div class="col-md-6">
+                  <label for="buttononlineCatalog"><a href="../index.php"><button class="btn text-start" data-bs-dismiss="modal" aria-hidden="true"><?php echo CLICSHOPPING::getDef('header_title_online_catalog'); ?></button></a></label>
+                </div>
+                <div class="col-md-6">
+                  <label for="buttonNewPassword"><a href="<?php echo CLICSHOPPING::link('login.php', 'action=password'); ?>"> <button class="btn text-end" data-bs-dismiss="modal" aria-hidden="true"><?php echo CLICSHOPPING::getDef('text_new_text_password'); ?></button></a></label>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <?php
-}
-?>
+  } else {
+    ?>
+    <?php echo HTML::form('send_password', CLICSHOPPING::link('login.php', 'action=send_password')); ?>
+    <div id="loginModal" tabindex="-1" role="document" aria-hidden="true" style="padding-top:10rem;">
+      <div class="modal-dialog">
+        <div class="modal-content" style="background-color: transparent; border: none; align-items: center;">
+          <div class="modal-header">
+            <h2 style="color:#233C7A;"><?php echo CLICSHOPPING::getDef('heading_title_sent_password'); ?></h2>
+          </div>
+          <div class="modal-body" style="width:30rem; padding-top:3rem;">
+            <div class="col-md-12 center-block">
+              <div class="text-danger"
+                   style="font-size:12px; padding-bottom:10px;"><?php echo CLICSHOPPING::getDef('text_sent_password'); ?></div>
+              <div class="input-group">
+                <span class="input-group-addon" id="basic-addon1">@</span>
+                <?php echo HTML::inputField('username', '', 'size="150" placeholder="' . CLICSHOPPING::getDef('text_email_lost_password') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
+              </div>
+              <div class="mt-1"></div>
+            </div>
+          </div>
+          <div class="row col-md-12">
+            <div class="col-md-6">
+              <label for="buttonHeaderAdministration"><a href="<?php echo CLICSHOPPING::link('login.php'); ?>"><button class="btn btn-secondary text-start" type="button"><?php echo CLICSHOPPING::getDef('header_title_administration'); ?></button></a></label>
+            </div>
+            <div class="col-md-6 text-end">
+              <label for="buttonSubmit"><?php echo HTML::button(CLICSHOPPING::getDef('button_submit'), null, null, 'primary'); ?></label>
+            </div>
+          </div>
+        </div>
+        <div class="mt-1"></div>
+      </div>
+    </div>
+    </form>
+   <?php
+  }
+  ?>
   <div class="clearfix"></div>
 <?php
-require_once($CLICSHOPPING_Template->getTemplateHeaderFooterAdmin('footer.php'));
-require_once($CLICSHOPPING_Template->getTemplateHeaderFooterAdmin('application_bottom.php'));
+  require_once($CLICSHOPPING_Template->getTemplateHeaderFooterAdmin('footer.php'));
+  require_once($CLICSHOPPING_Template->getTemplateHeaderFooterAdmin('application_bottom.php'));

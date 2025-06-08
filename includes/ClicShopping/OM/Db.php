@@ -10,6 +10,8 @@
 
 namespace ClicShopping\OM;
 
+use  ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin;
+
 use ArrayIterator;
 use CachingIterator;
 use Exception;
@@ -36,9 +38,64 @@ class Db extends PDO
   protected string $database;
   protected string $table_prefix;
   protected int|null $port;
-  protected ?array $driver_options = [];
-  protected ?array $options = [];
-  protected $query_call;
+  protected array|null $driver_options = [];
+  protected array|null $options = [];
+  protected $cache_key;
+  protected bool $use_cache = false;
+  protected int $cache_expire = 3600; // 1 hour default
+
+  // Ne pas définir le type ici pour éviter le conflit avec la classe enfant
+  protected $memcached;
+
+  /**
+   * Set the cache name for the query
+   *
+   * @param string $cache_name The name to identify this cache
+   * @param int|null $expire Cache expiration time in seconds
+   * @return $this
+   */
+  public function setCache(string $cache_name, ?int $expire = null): static
+  {
+    $this->cache_key = $cache_name;
+    $this->use_cache = true;
+
+    if ($expire !== null) {
+      $this->cache_expire = $expire;
+    }
+
+    return $this;
+  }
+
+  /**
+   * Execute the prepared statement
+   */
+  public function execute()
+  {
+    if ($this->use_cache && method_exists($this, 'getCache')) {
+      // Try to get from cache first
+      $cached_result = $this->getCache($this->query, $this->cache_key);
+      if ($cached_result !== false) {
+        $this->statement = new \ArrayObject($cached_result);
+        return true;
+      }
+    }
+
+    $result = parent::execute();
+
+    // If caching is enabled and execution was successful, cache the results
+    if ($result && $this->use_cache && method_exists($this, 'saveCache')) {
+      $data = [];
+      while ($row = $this->fetch()) {
+        $data[] = $row;
+      }
+      $this->saveCache($this->query, $this->cache_key, $data, $this->cache_expire);
+
+      // Reset the statement to the beginning
+      $this->statement = new \ArrayObject($data);
+    }
+
+    return $result;
+  }
 
   /**
    * Initializes a database connection.
@@ -104,6 +161,19 @@ class Db extends PDO
     try {
       $class = 'ClicShopping\OM\Db\MySQL';
       $object = new $class($server, $username, $password, $database, $port, $driver_options, $options);
+
+      if (defined('USE_MEMCACHED')) {
+        if (USE_MEMCACHED === 'True') {
+          $object->initMemcachedConnection();
+        } else {
+          if (property_exists($object, 'memcached') && $object->memcached instanceof \Memcached) {
+            $object->memcached->flush();
+            $object->memcached->resetServerList();
+            $object->memcached->quit();
+          }
+        }
+      }
+
     } catch (Exception $e) {
       $message = $e->getMessage();
         // Uncomment this line if you want to log the stack trace
@@ -117,6 +187,56 @@ class Db extends PDO
     }
 
     return $object;
+  }
+
+  /**
+   * Initialize Memcached connection using CacheAdmin
+   */
+  protected function initMemcachedConnection(): void
+  {
+    try {
+      $this->memcached = CacheAdmin::getMemcached();
+    } catch (\Exception $e) {
+      $this->memcached = null;
+    }
+  }
+
+  /**
+   * Get data from cache
+   * @param string $query The SQL query
+   * @return array|false
+   */
+  protected function getFromCache(string $query): array|false
+  {
+    if (!$this->memcached || !$this->use_cache) {
+      return false;
+    }
+
+    $cache_id = 'db_' . md5($query . $this->cache_key);
+    $result = $this->memcached->get($cache_id);
+
+    if ($this->memcached->getResultCode() === \Memcached::RES_SUCCESS) {
+      return $result;
+    }
+
+    return false;
+  }
+
+  /**
+   * Save data to cache
+   * @param string $query The SQL query
+   * @param array $data Data to cache
+   * @return bool
+   */
+  protected function saveToCache(string $query, array $data): bool
+  {
+    if (!$this->memcached || !$this->use_cache) {
+      return false;
+    }
+
+    $cache_id = 'db_' . md5($query . $this->cache_key);
+    
+    return $this->memcached->set($cache_id, $data, $this->cache_expire);
   }
 
   /**
@@ -159,7 +279,7 @@ class Db extends PDO
    * @param mixed ...$params Optional parameters to bind to the query.
    * @return PDOStatement|false Returns the PDOStatement object if the query was successful, or false on failure.
    */
-  public function query(string $statement, ...$params): PDOStatement|false
+  public function query(string $statement, ?int $fetchMode = null, ...$fetchModeArgs): PDOStatement|false
   {
     $statement = $this->autoPrefixTables($statement);
 
@@ -338,6 +458,17 @@ class Db extends PDO
       }
     }
 
+    // Process special vector fields
+    $vector_fields = [];
+    foreach ($data as $field => $value) {
+      // Check if the field is meant to be a vector and starts with 'vec_'
+      if (substr($field, 0, 4) === 'vec_') {
+        $actual_field = substr($field, 4); // Get the actual field name without 'vec_' prefix
+        $vector_fields[$actual_field] = $value; // Store the vector value
+        unset($data[$field]); // Remove the special prefixed field
+      }
+    }
+
     if (isset($where_condition)) {
       $statement = 'update ' . $table . ' set ';
 
@@ -351,6 +482,11 @@ class Db extends PDO
         } else {
           $statement .= $c . ' = :new_' . $c . ', ';
         }
+      }
+
+      // Add vector fields with VEC_FromText function
+      foreach ($vector_fields as $c => $v) {
+        $statement .= $c . ' = VEC_FromText(:vec_' . $c . '), ';
       }
 
       $statement = substr($statement, 0, -2) . ' where ';
@@ -369,6 +505,15 @@ class Db extends PDO
         }
       }
 
+      // Bind vector fields
+      foreach ($vector_fields as $c => $v) {
+        // Format vector as [val1,val2,...] if it's an array
+        if (is_array($v)) {
+          $v = '[' . implode(',', $v) . ']';
+        }
+        $Q->bindValue(':vec_' . $c, $v);
+      }
+
       foreach ($where_condition as $c => $v) {
         $Q->bindValue(':cond_' . $c, $v);
       }
@@ -379,7 +524,9 @@ class Db extends PDO
     } else {
       $is_prepared = false;
 
-      $statement = 'insert into ' . $table . ' (' . implode(', ', array_keys($data)) . ') values (';
+      // Combine regular fields and vector fields for the column list
+      $all_fields = array_merge(array_keys($data), array_keys($vector_fields));
+      $statement = 'insert into ' . $table . ' (' . implode(', ', $all_fields) . ') values (';
 
       foreach ($data as $c => $v) {
         if (is_null($v)) {
@@ -397,6 +544,14 @@ class Db extends PDO
         }
       }
 
+      // Add vector fields with VEC_FromText function
+      foreach ($vector_fields as $c => $v) {
+        if ($is_prepared === false) {
+          $is_prepared = true;
+        }
+        $statement .= 'VEC_FromText(:vec_' . $c . '), ';
+      }
+
       $statement = substr($statement, 0, -2) . ')';
 
       if ($is_prepared === true) {
@@ -406,6 +561,15 @@ class Db extends PDO
           if ($v != 'now()' && $v !== 'null' && !is_null($v)) {
             $Q->bindValue(':' . $c, $v);
           }
+        }
+
+        // Bind vector fields
+        foreach ($vector_fields as $c => $v) {
+          // Format vector as [val1,val2,...] if it's an array
+          if (is_array($v)) {
+            $v = '[' . implode(',', $v) . ']';
+          }
+          $Q->bindValue(':vec_' . $c, $v);
         }
 
         $Q->execute();

@@ -114,10 +114,6 @@ class RecommendationsShop
   }
 
   /**
-   * @return array
-   */
-
-  /**
    * Retrieves a list of column identifiers based on a predefined configuration,
    * sorted in ascending order, and filtered to include only those with a value greater than zero.
    *

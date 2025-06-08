@@ -25,7 +25,10 @@ $sql_array = [
   'user_name',
   'name',
   'first_name',
-  'access'
+  'access',
+  'email_verification',
+  'email_verification_code',
+  'email_verification_expiry'
 ];
 $Qadmin = $CLICSHOPPING_Administrators->db->get('administrators', $sql_array, ['id' => (int)$id]);
 ?>
@@ -53,7 +56,6 @@ $Qadmin = $CLICSHOPPING_Administrators->db->get('administrators', $sql_array, ['
   <div class="mt-1"></div>
   <div class="col-md-12 mainTitle"><strong><?php echo $Qadmin->value('user_name'); ?></strong></div>
   <div class="adminformTitle">
-
     <div class="row">
       <div class="col-md-12">
         <div class="form-group row">
@@ -62,7 +64,6 @@ $Qadmin = $CLICSHOPPING_Administrators->db->get('administrators', $sql_array, ['
         </div>
       </div>
     </div>
-
 
     <div class="row">
       <div class="col-md-5">
@@ -128,7 +129,65 @@ $Qadmin = $CLICSHOPPING_Administrators->db->get('administrators', $sql_array, ['
         </div>
       </div>
     </div>
-  </div>
+
+    <div class="mt-3"></div>
+    <?php
+     if (EMAIL_VERIFICATION_ENABLED_ADMIN == 'True') {
+    ?>
+      <div class="row">
+        <div class="col-md-5">
+          <h3><?php echo $CLICSHOPPING_Administrators->getDef('text_email_verification_title'); ?></h3>
+        </div>
+      </div>
+
+      <div class="col-md-5">
+        <div class="form-group row">
+          <label for="<?php echo $CLICSHOPPING_Administrators->getDef('text_email_verification'); ?>"
+                 class="col-5 col-form-label"><?php echo $CLICSHOPPING_Administrators->getDef('text_email_verification'); ?></label>
+          <div class="col-md-5">
+            <ul class="list-group-slider list-group-flush">
+              <li class="list-group-item-slider">
+                <label class="switch">
+                  <?php echo HTML::checkboxField('email_verification', '1', $Qadmin->value('email_verification'), 'class="success" id="email_verification"'); ?>
+                  <span class="slider"></span>
+                </label>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <?php
+      if ( DEBUG_MODE == 'True' ) {
+      ?>
+        <div class="row">
+          <div class="col-md-5">
+            <div class="form-group row">
+              <label for="code"
+                     class="col-5 col-form-label"><?php echo $CLICSHOPPING_Administrators->getDef('text_email_verification_code'); ?></label>
+              <div class="col-md-5">
+                <?php echo HTML::inputField('email_verification_code', $Qadmin->value('email_verification_code'), 'id="email_verification_code"'); ?>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-5">
+            <div class="form-group row">
+              <label for="code"
+                     class="col-5 col-form-label"><?php echo $CLICSHOPPING_Administrators->getDef('text_email_verification_expiry'); ?></label>
+              <div class="col-md-5">
+                <?php echo HTML::inputField('email_verification_expiry', $Qadmin->value('email_verification_expiry'), 'id="email_verification_expiry"'); ?>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <?php
+    }
+  }
+  ?>
   </form>
 </div>
 <script defer

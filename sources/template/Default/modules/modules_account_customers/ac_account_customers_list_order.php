@@ -10,6 +10,7 @@
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
+use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Shop\AddressBook;
@@ -114,10 +115,10 @@ class ac_account_customers_list_order
 
         while ($Qorders->fetch()) {
           if (!empty($Qorders->value('delivery_name'))) {
-            $order_name = $Qorders->value('delivery_name');
+            $order_name = Hash::displayDecryptedDataText($Qorders->value('delivery_name'));
             $order_country = $Qorders->value('delivery_country');
           } else {
-            $order_name = $Qorders->value('billing_name');
+            $order_name = Hash::displayDecryptedDataText($Qorders->value('billing_name'));
             $order_country = $Qorders->value('billing_country');
           }
 

@@ -18,8 +18,8 @@ use function defined;
 
 class saveEntry implements \ClicShopping\OM\Modules\HooksInterface
 {
-  protected mixed $productsCommon;
-  protected mixed $recommendationsShop;
+  private mixed $productsCommon;
+  private mixed $recommendationsShop;
 
   /**
    * Constructor method.

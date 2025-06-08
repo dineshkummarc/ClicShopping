@@ -135,17 +135,21 @@ class MySQL extends \ClicShopping\OM\SessionAbstract implements \SessionHandlerI
   }
 
   /**
-   * Removes expired sessions from the database based on the maximum lifetime parameter.
+   * Garbage collector to clean up expired sessions.
    *
-   * @param int $maxlifetime The maximum lifetime in seconds for session validity.
-   * @return int|false Returns the number of rows deleted as an integer on success, or false on failure.
+   * @param int $maxlifetime The maximum lifetime of a session.
+   * @return int|false Returns the number of deleted sessions or false on failure.
    */
-  public function gc($maxlifetime): int|false
+  public function gc(int $maxlifetime): int|false
   {
     $Qdel = $this->db->prepare('delete from :table_sessions where expiry < :expiry');
     $Qdel->bindValue(':expiry', time() - $maxlifetime);
     $Qdel->execute();
 
-    return $Qdel->isError() === false;
+    if ($Qdel->isError() === false) {
+      return $Qdel->rowCount();
+    }
+
+    return false;
   }
 }

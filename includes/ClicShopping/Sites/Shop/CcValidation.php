@@ -23,6 +23,7 @@ class CcValidation
   public string $cc_number;
   public string $cc_expiry_month;
   public string $cc_expiry_year;
+  public int $errorCode = 0; // 0 = no error
 
   /**
    * Constructor method to initialize credit card details.
@@ -51,13 +52,15 @@ class CcValidation
     } elseif (preg_match('/^5610[0-9]{12}$/', $this->cc_number)) {
       $this->cc_type = 'Australian BankCard';
     } else {
-      return -1;
+      $this->errorCode = -1;
+      return;
     }
 
     if (is_numeric($expiry_m) && ($expiry_m > 0) && ($expiry_m < 13)) {
       $this->cc_expiry_month = $expiry_m;
     } else {
-      return -2;
+      $this->errorCode = -2;
+      return;
     }
 
     $current_year = date('Y');
@@ -65,12 +68,14 @@ class CcValidation
     if (is_numeric($expiry_y) && ($expiry_y >= $current_year) && ($expiry_y <= ($current_year + 10))) {
       $this->cc_expiry_year = $expiry_y;
     } else {
-      return -3;
+      $this->errorCode = -3;
+      return;
     }
 
     if ($expiry_y == $current_year) {
       if ($expiry_m < date('n')) {
-        return -4;
+        $this->errorCode = -4;
+        return;
       }
     }
 

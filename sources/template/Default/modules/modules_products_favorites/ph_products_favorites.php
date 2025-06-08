@@ -13,6 +13,29 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
+/**
+ * Class ph_products_favorites
+ *
+ * This class handles the display and configuration of the "Products Favorites" module in ClicShopping.
+ * It manages the listing, sorting, and rendering of favorite products for customers, including
+ * configuration options for display templates, columns, short descriptions, stock, and more.
+ *
+ * Key Features:
+ * - Retrieves and paginates favorite products using FavoritesClass.
+ * - Supports sorting by date, price, model, quantity, and weight.
+ * - Renders product information, images, stock status, reviews, and custom buttons.
+ * - Provides configuration options for template, columns, display options, and sort order.
+ * - Integrates with the ClicShopping template system for flexible UI rendering.
+ *
+ * Methods:
+ * - __construct(): Initializes module properties and checks configuration status.
+ * - execute(): Main logic for fetching, preparing, and rendering the favorites product list.
+ * - isEnabled(): Returns whether the module is enabled.
+ * - check(): Checks if the module configuration is defined.
+ * - install(): Inserts module configuration settings into the database.
+ * - remove(): Removes module configuration from the database.
+ * - keys(): Returns the list of configuration keys used by this module.
+ */
 class ph_products_favorites
 {
   public string $code;
@@ -22,6 +45,9 @@ class ph_products_favorites
   public int|null $sort_order = 0;
   public bool $enabled = false;
 
+  /**
+   * Constructor: Initializes module properties and configuration.
+   */
   public function __construct()
   {
     $this->code = get_class($this);
@@ -36,6 +62,9 @@ class ph_products_favorites
     }
   }
 
+  /**
+   * Executes the module logic: fetches, prepares, and renders the favorites product list.
+   */
   public function execute()
   {
     $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
@@ -73,7 +102,7 @@ class ph_products_favorites
           $new_prods_content .= '</button>';
           $new_prods_content .= '<ul class="dropdown-menu text-start" aria-labelledby="dropdownMenu2">';
 
-// number of sort criterias
+          // number of sort criterias
           $column_list = FavoritesClass::getCountColumnList();
 
           for ($col = 0, $n = \count($column_list); $col < $n; $col++) {
@@ -134,16 +163,16 @@ class ph_products_favorites
         if ($listingTotalRow > 0) {
           $new_prods_content .= '<div class="d-flex flex-wrap">';
 
-// display number of short description
+          // display number of short description
           $products_short_description_number = (int)MODULE_PRODUCTS_FAVORITES_SHORT_DESCRIPTION;
-// delete words
+          // delete words
           $delete_word = (int)MODULE_PRODUCTS_FAVORITES_SHORT_DESCRIPTION_DELETE_WORLDS;
-// nbr of column to display  boostrap
+          // nbr of column to display  boostrap
           $bootstrap_column = (int)MODULE_PRODUCTS_FAVORITES_COLUMNS;
-// initialisation des boutons
+          // initialisation des boutons
           $size_button = $CLICSHOPPING_ProductsCommon->getSizeButton('md');
 
-// Template define
+          // Template define
           $filename = $CLICSHOPPING_Template->getTemplateModulesFilename($this->group . '/template_html/' . MODULE_PRODUCTS_FAVORITES_TEMPLATE);
           $counter = 1;
 
@@ -151,40 +180,40 @@ class ph_products_favorites
             $products_id = $Qlisting->valueInt('products_id');
             $_POST['products_id'] = $products_id;
 
-//rewriting
+            //rewriting
             $products_name_url = $CLICSHOPPING_ProductsFunctionTemplate->getProductsUrlRewrited()->getProductNameUrl($CLICSHOPPING_ProductsCommon->getID());
-//product name
+            //product name
             $products_name = $CLICSHOPPING_ProductsCommon->getProductsName($products_id);
-//Stock (good, alert, out of stock).
+            //Stock (good, alert, out of stock).
             $products_stock = $CLICSHOPPING_ProductsFunctionTemplate->getStock(MODULE_PRODUCTS_FAVORITES_DISPLAY_STOCK, $products_id);
-//Flash discount
+            //Flash discount
             $products_flash_discount = $CLICSHOPPING_ProductsFunctionTemplate->getFlashDiscount($products_id, '<br />');
-// Minimum quantity to take an order
+            // Minimum quantity to take an order
             $min_order_quantity_products_display = $CLICSHOPPING_ProductsFunctionTemplate->getMinOrderQuantityProductDisplay($products_id);
-// display a message in public function the customer group applied - before submit button
+            // display a message in public function the customer group applied - before submit button
             $submit_button_view = $CLICSHOPPING_ProductsFunctionTemplate->getButtonView($products_id);
-// button buy
+            // button buy
             $button_buy_id = 'buttonBuyId_' . $counter++;
             $buy_button = HTML::button(CLICSHOPPING::getDef('button_buy_now'), null, null, 'primary', ['params' => 'id="' . $button_buy_id . '"'], 'sm');
             $CLICSHOPPING_ProductsCommon->getBuyButton($buy_button);
 
-// Display an input allowing for the customer to insert a quantity
+            // Display an input allowing for the customer to insert a quantity
             if ($CLICSHOPPING_ProductsCommon->getProductsQuantity() > 0) {
               $input_quantity = $CLICSHOPPING_ProductsFunctionTemplate->getDisplayInputQuantity(MODULE_PRODUCTS_FAVORITES_DELETE_BUY_BUTTON, $products_id);
             } else {
               $input_quantity = '';
             }
 
-// display the differents prices before button
+            // display the differents prices before button
             $product_price = $CLICSHOPPING_ProductsCommon->getCustomersPrice($products_id);
-//Short description
+            //Short description
             $products_short_description = $CLICSHOPPING_ProductsCommon->getProductsShortDescription($products_id, $delete_word, $products_short_description_number);
-// Reviews
+            // Reviews
             $avg_reviews = '<span class="ModulesReviews">' . HTML::stars($CLICSHOPPING_Reviews->getAverageProductReviews($products_id)) . '</span>';
 
-// **************************
-// display the differents buttons before minorder qty
-// **************************
+            // **************************
+            // display the differents buttons before minorder qty
+            // **************************
             $submit_button = '';
             $form = '';
             $endform = '';
@@ -201,12 +230,12 @@ class ph_products_favorites
               }
             }
 
-// Quantity type
+            // Quantity type
             $products_quantity_unit = $CLICSHOPPING_ProductsFunctionTemplate->getProductQuantityUnitType($products_id);
 
-// **************************************************
-// Button Free - Must be above getProductsSoldOut
-// **************************************************
+            // **************************************************
+            // Button Free - Must be above getProductsSoldOut
+            // **************************************************
             if ($CLICSHOPPING_ProductsCommon->getProductsOrdersView($products_id) != 1 && NOT_DISPLAY_PRICE_ZERO == 'false') {
               $submit_button = HTML::button(CLICSHOPPING::getDef('text_products_free'), '', $products_name_url, 'danger');
               $min_quantity = 0;
@@ -216,9 +245,9 @@ class ph_products_favorites
               $min_order_quantity_products_display = '';
             }
 
-// **************************
-// Display an information if the stock is sold out for all groups
-// **************************
+            // **************************
+            // Display an information if the stock is sold out for all groups
+            // **************************
             if (!empty($CLICSHOPPING_ProductsCommon->getProductsSoldOut($products_id))) {
               $submit_button = $CLICSHOPPING_ProductsCommon->getProductsSoldOut($products_id);
               $form = '';
@@ -228,38 +257,38 @@ class ph_products_favorites
               $min_order_quantity_products_display = '';
             }
 
-// See the button more view details
+            // See the button more view details
             $button_small_view_details = $CLICSHOPPING_ProductsFunctionTemplate->getButtonViewDetails(MODULE_PRODUCTS_FAVORITES_DELETE_BUY_BUTTON, $products_id);
 
-// Display the image
+            // Display the image
             $products_image = $CLICSHOPPING_ProductsFunctionTemplate->getImage(MODULE_PRODUCTS_FAVORITES_IMAGE_MEDIUM, $products_id);
 
-// Ticker Image
+            // Ticker Image
             $products_image .= $CLICSHOPPING_ProductsFunctionTemplate->getTicker(MODULE_PRODUCTS_FAVORITES_TICKER, $products_id, 'ModulesProductsFavoritesBootstrapTickerSpecial', 'ModulesProductsFavoritesBootstrapTickerFavorite', 'ModulesProductsFavoritesBootstrapTickerFeatured', 'ModulesProductsFavoritesBootstrapTickerNew');
 
             $ticker = $CLICSHOPPING_ProductsFunctionTemplate->getTickerPourcentage(MODULE_PRODUCTS_FAVORITES_POURCENTAGE_TICKER, $products_id, 'ModulesProductsFavoritesBootstrapTickerPourcentage');
 
-//******************************************************************************************************************
-//            Options -- activate and insert code in template and css
-//******************************************************************************************************************
+            //******************************************************************************************************************
+            //            Options -- activate and insert code in template and css
+            //******************************************************************************************************************
 
-// products model
+            // products model
             $products_model = $CLICSHOPPING_ProductsFunctionTemplate->getProductsModel($products_id);
-// manufacturer
+            // manufacturer
             $products_manufacturers = $CLICSHOPPING_ProductsFunctionTemplate->getProductsManufacturer($products_id);
-// display the price by kilo
+            // display the price by kilo
             $product_price_kilo = $CLICSHOPPING_ProductsFunctionTemplate->getProductsPriceByWeight($products_id);
-// display date available
+            // display date available
             $products_date_available = $CLICSHOPPING_ProductsFunctionTemplate->getProductsDateAvailable($products_id);
-// display products only shop
+            // display products only shop
             $products_only_shop = $CLICSHOPPING_ProductsFunctionTemplate->getProductsOnlyTheShop($products_id);
-// display products only shop
+            // display products only shop
             $products_only_web = $CLICSHOPPING_ProductsFunctionTemplate->getProductsOnlyOnTheWebSite($products_id);
-// display products packaging
+            // display products packaging
             $products_packaging = $CLICSHOPPING_ProductsFunctionTemplate->getProductsPackaging($products_id);
-// display shipping delay
+            // display shipping delay
             $products_shipping_delay = $CLICSHOPPING_ProductsFunctionTemplate->getProductsShippingDelay($products_id);
-// display products tag
+            // display products tag
             $tag = $CLICSHOPPING_ProductsFunctionTemplate->getProductsHeadTag($products_id);
 
             $products_tag = '';
@@ -268,22 +297,22 @@ class ph_products_favorites
                 $products_tag .= '#<span class="productTag">' . HTML::link(CLICSHOPPING::link(null, 'Search&keywords=' . HTML::outputProtected(CLICSHOPPING::utf8Decode($value) . '&search_in_description=1&categories_id=&inc_subcat=1'), 'rel="nofollow"'), $value) . '</span> ';
               }
             }
-// display products volume
+            // display products volume
             $products_volume = $CLICSHOPPING_ProductsFunctionTemplate->getProductsVolume($products_id);
-// display products weight
+            // display products weight
             $products_weight = $CLICSHOPPING_ProductsFunctionTemplate->getProductsWeight($products_id);
-// Reviews
+            // Reviews
             $avg_reviews = '<span class="ModulesReviews">' . HTML::stars($CLICSHOPPING_Reviews->getAverageProductReviews($products_id)) . '</span>';
-// Json ltd
+            // Json ltd
             $jsonLtd = $CLICSHOPPING_ProductsFunctionTemplate->getProductJsonLd($products_id);
 
-//******************************************************************************************************************
-//            End Options -- activate and insert code in template and css
-//******************************************************************************************************************
+            //******************************************************************************************************************
+            //            End Options -- activate and insert code in template and css
+            //******************************************************************************************************************
 
-// *************************
-//      Template call
-// **************************
+            // *************************
+            //      Template call
+            // **************************
             if (is_file($filename)) {
               ob_start();
               require($filename);
@@ -331,16 +360,31 @@ class ph_products_favorites
     } // php_self
   } // public function execute
 
+  /**
+   * Returns whether the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module configuration is defined.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULE_PRODUCTS_FAVORITES_STATUS');
   }
 
+  /**
+   * Installs the module configuration into the database.
+   *
+   * @return void
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -550,11 +594,21 @@ class ph_products_favorites
     );
   }
 
+  /**
+   * Removes the module configuration from the database.
+   *
+   * @return int
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
+  /**
+   * Returns the configuration keys used by this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array(

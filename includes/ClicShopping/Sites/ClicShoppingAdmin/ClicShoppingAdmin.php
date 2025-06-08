@@ -27,6 +27,8 @@ use ClicShopping\OM\Language;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Service;
 use ClicShopping\OM\Session;
+use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
+
 use Exception;
 use function count;
 
@@ -64,16 +66,46 @@ class ClicShoppingAdmin extends \ClicShopping\OM\SitesAbstract
 
 // set the application parameters
     $Qcfg = $CLICSHOPPING_Db->prepare('select configuration_key as k,
-                                                configuration_value as v
-                                         from :table_configuration
-                                       ');
+                                              configuration_value as v
+                                     from :table_configuration
+                                   ');
 
-    $Qcfg->setCache('configuration');
+    if (is_object($Qcfg)) {
+      // Conserver le cache DB existant
+      $Qcfg->setCache('configuration');
 
-    $Qcfg->execute();
+      // Vérifier d'abord dans Memcached
+      $cache_key = 'admin_configuration';
+      $cached_config = false;
 
-    while ($Qcfg->fetch()) {
-      define($Qcfg->value('k'), $Qcfg->value('v'));
+      if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'True') {
+        $memcached = CacheAdmin::getMemcached();
+        if ($memcached !== false) {
+          $cached_config = $memcached->get($cache_key);
+        }
+      }
+
+      if ($cached_config === false) {
+        $Qcfg->execute();
+        $config_data = [];
+
+        while ($Qcfg->fetch()) {
+          $key = $Qcfg->value('k');
+          $value = $Qcfg->value('v');
+          define($key, $value);
+          $config_data[$key] = $value;
+        }
+
+        // Stocker dans Memcached pour les prochaines requêtes
+        if (isset($memcached)) {
+          $memcached->set($cache_key, $config_data, 3600); // Cache pour 1 heure
+        }
+      } else {
+        // Utiliser les données du cache Memcached
+        foreach ($cached_config as $key => $value) {
+          define($key, $value);
+        }
+      }
     }
 
 // Used in the "Backup Manager" to compress backups
@@ -186,7 +218,13 @@ class ClicShoppingAdmin extends \ClicShopping\OM\SitesAbstract
         if (str_contains($app, '\\')) {
           list($vendor, $app) = explode('\\', $app);
 
-          if (Apps::exists($vendor . '\\' . $app) && ($page = Apps::getRouteDestination(null, $vendor . '\\' . $app)) !== null) {
+          $page = Apps::getRouteDestination(null, $vendor . '\\' . $app);
+
+          if (is_array($page)) {
+            $page = (string)reset($page);
+          }
+
+          if (Apps::exists($vendor . '\\' . $app) && $page!== null) {
 // get controller class name from namespace
             $page_namespace = explode('\\', $page);
             $page_code = $page_namespace[count($page_namespace) - 1];

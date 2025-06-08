@@ -59,7 +59,7 @@ class Categories extends \ClicShopping\OM\Modules\HeaderTagsAbstract
     $current_category_id = $CLICSHOPPING_Category->getPath();
 
     if (CLICSHOPPING::getBaseNameIndex()) {
-// $categories is set in application_top.php to add the category to the breadcrumb
+// $categories is set in OM.php to add the category to the breadcrumb
 // $categories is not set so a database query is needed
       if ($current_category_id > 0) {
         $Qsubmit = $this->app->db->prepare('select seo_id,

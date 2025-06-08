@@ -15,7 +15,7 @@ use ClicShopping\OM\HTML;
 
 class model extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Config\ConfigParamAbstract
 {
-  public $default = 'gpt-3.5-turbo';
+  public $default = 'GPT‑4.1-nano';
   public int|null $sort_order = 15;
 
   protected function init()

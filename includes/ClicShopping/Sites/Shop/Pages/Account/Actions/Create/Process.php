@@ -80,14 +80,14 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
 // Clients B2C : Controle entree du prenom
       if (strlen($firstname) < ENTRY_FIRST_NAME_MIN_LENGTH) {
         $error = true;
-        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_first_name_error', ['min_length' => ENTRY_FIRST_NAME_MIN_LENGTH]), 'error');
+        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_first_name_error', ['min_length' => (int)ENTRY_FIRST_NAME_MIN_LENGTH]), 'error');
       }
 
 // Clients B2C : Controle entree du nom de famille
       if (strlen($lastname) < ENTRY_LAST_NAME_MIN_LENGTH) {
         $error = true;
 
-        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_last_name_error', ['min_length' => ENTRY_LAST_NAME_MIN_LENGTH]), 'error');
+        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_last_name_error', ['min_length' => (int)ENTRY_LAST_NAME_MIN_LENGTH]), 'error');
       }
 
 // Clients B2C : Controle entree date de naissance
@@ -105,7 +105,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
       if (Is::EmailAddress($email_address) === false) {
         $error = true;
 
-        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_email_address_check_error', ['min_length' => ENTRY_EMAIL_ADDRESS_MIN_LENGTH]), 'error');
+        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_email_address_check_error', ['min_length' => (int)ENTRY_EMAIL_ADDRESS_MIN_LENGTH]), 'error');
 
       } elseif ($email_address != $email_address_confirm) {
         $error = true;
@@ -129,7 +129,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
       if (strlen($password) < ENTRY_PASSWORD_MIN_LENGTH) {
         $error = true;
 
-        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_password_error', ['min_length' => ENTRY_PASSWORD_MIN_LENGTH]), 'error');
+        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('entry_password_error', ['min_length' => (int)ENTRY_PASSWORD_MIN_LENGTH]), 'error');
 
       } elseif ($password != $confirmation) {
         $error = true;
@@ -149,14 +149,14 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
 
       if ($error === false) {
         $sql_data_array = [
-          'customers_firstname' => $firstname,
-          'customers_lastname' => $lastname,
+          'customers_firstname' => Hash::encryptDatatext($firstname),
+          'customers_lastname' => Hash::encryptDatatext($lastname),
           'customers_email_address' => $email_address,
           'customers_newsletter' => (int)$newsletter,
           'languages_id' => (int)$CLICSHOPPING_Language->getId(),
           'customers_password' => Hash::encrypt($password),
-          'customers_telephone' => $telephone,
-          'customers_cellular_phone' => $cellular_phone,
+          'customers_telephone' => Hash::encryptDatatext($telephone),
+          'customers_cellular_phone' => Hash::encryptDatatext($cellular_phone),
           'member_level' => 1,
           'client_computer_ip' => HTTP::getIPAddress(),
           'provider_name_client' => HTTP::getProviderNameCustomer(),
@@ -171,9 +171,9 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
 // save element in address book
         $sql_data_array_book = [
           'customers_id' => (int)$customer_id,
-          'entry_firstname' => $firstname,
-          'entry_lastname' => $lastname,
-          'entry_telephone' => $telephone
+          'entry_firstname' => Hash::encryptDatatext($firstname),
+          'entry_lastname' => Hash::encryptDatatext($lastname),
+          'entry_telephone' => Hash::encryptDatatext($telephone)
         ];
 
         $CLICSHOPPING_Db->save('address_book', $sql_data_array_book);

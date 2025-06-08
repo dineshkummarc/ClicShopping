@@ -30,7 +30,7 @@ CREATE TABLE `clic_return_orders_reason` (
   `name` varchar(128) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
-INSERT INTO `clic_return_orders_reason` VALUES(1, 1, 'Non -compliant package');
+INSERT INTO `clic_return_orders_reason` VALUES(1, 1, 'No-compliant package');
 INSERT INTO `clic_return_orders_reason` VALUES(1, 2, 'Colis non conforme');
 INSERT INTO `clic_return_orders_reason` VALUES(2, 1, 'Received Wrong Item');
 INSERT INTO `clic_return_orders_reason` VALUES(2, 2, 'Mauvais produit reçu');

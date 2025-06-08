@@ -12,6 +12,11 @@ text_intro = This app allow you to include a Gpt page and a shortcut in products
 
 module_ch_introduction = The install process create the database settings for this module and the access menu
 
+module_ra_title = RAG BI
+module_ra_short_title = RAG BI
+module_ra_introduction = RAG BI with Agent is a technique that combines the power of large language models (LLMs) with external knowledge sources to improve the accuracy and relevance of generated responses. By integrating RAG into your chatbot, you can provide more accurate and contextually relevant answers to user queries, enhancing the overall user experience.
+
+
 button_back = Back
 button_install_title = Install
 button_configure = Configure

@@ -155,8 +155,9 @@ abstract class AppAbstract
    * @param string $type The type of the module to check for.
    * @return bool Returns true if the module exists, false otherwise.
    */
-  final public function hasModule(string $module, string $type)
+  final public function hasModule(string $module, string $type): bool
   {
+    return isset($this->modules[$type]) && in_array($module, $this->modules[$type]);
   }
 
   /**

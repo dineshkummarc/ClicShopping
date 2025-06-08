@@ -11,6 +11,7 @@
 namespace ClicShopping\Apps\Orders\Orders\Classes\Shop;
 
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
@@ -862,10 +863,22 @@ class Order
       $cc_owner = $this->info['cc_owner'];
     }
 
+    $firstname = Hash::displayDecryptedDataText($this->customer['firstname']);
+    $lastame = Hash::displayDecryptedDataText($this->customer['lastname']);
+    $customers_name =  Hash::encryptDatatext($firstname . ' ' . $lastame);
+
+    $delivery_firstname = Hash::displayDecryptedDataText($this->delivery['firstname']);
+    $delivery_lastame = Hash::displayDecryptedDataText($this->delivery['lastname']);
+    $delivery_name =  Hash::encryptDatatext($delivery_firstname . ' ' . $delivery_lastame);
+
+    $billing_firstname = Hash::displayDecryptedDataText($this->billing['firstname']);
+    $billing_lastame = Hash::displayDecryptedDataText($this->billing['lastname']);
+    $billing_name =  Hash::encryptDatatext($billing_firstname . ' ' . $billing_lastame);
+
     $sql_data_array = [
       'customers_id' => (int)$CLICSHOPPING_Customer->getID(),
       'customers_group_id' => (int)$this->customer['customers_group_id'],
-      'customers_name' => $this->customer['firstname'] . ' ' . $this->customer['lastname'],
+      'customers_name' => $customers_name,
       'customers_company' => $this->customer['company'],
       'customers_street_address' => $this->customer['street_address'],
       'customers_suburb' => $this->customer['suburb'],
@@ -876,7 +889,7 @@ class Order
       'customers_telephone' => $this->customer['telephone'],
       'customers_email_address' => $this->customer['email_address'],
       'customers_address_format_id' => (int)$this->customer['format_id'],
-      'delivery_name' => trim($this->delivery['firstname'] . ' ' . $this->delivery['lastname']),
+      'delivery_name' => $delivery_name,
       'delivery_company' => $this->delivery['company'],
       'delivery_street_address' => $this->delivery['street_address'],
       'delivery_suburb' => $this->delivery['suburb'],
@@ -885,7 +898,7 @@ class Order
       'delivery_state' => $this->delivery['state'],
       'delivery_country' => $this->delivery['country']['title'],
       'delivery_address_format_id' => (int)$this->delivery['format_id'],
-      'billing_name' => $this->billing['firstname'] . ' ' . $this->billing['lastname'],
+      'billing_name' => $billing_name,
       'billing_company' => $this->billing['company'],
       'billing_street_address' => $this->billing['street_address'],
       'billing_suburb' => $this->billing['suburb'],
@@ -1077,10 +1090,10 @@ class Order
     $CLICSHOPPING_Hooks->call('Orders', 'PreActionProcess');
 
     $Qproducts = $this->db->prepare('select products_id,
-                                              products_quantity
-                                        from :table_orders_products
-                                        where orders_id = :orders_id
-                                       ');
+                                            products_quantity
+                                      from :table_orders_products
+                                      where orders_id = :orders_id
+                                     ');
     $Qproducts->bindInt(':orders_id', $last_order_id);
     $Qproducts->execute();
 
@@ -1115,10 +1128,10 @@ class Order
           $Qstock->execute();
         } else {
           $Qstock = $this->db->prepare('select products_quantity,
-                                                  products_quantity_alert
-                                          from :table_products
-                                          where products_id = :products_id
-                                          ');
+                                                products_quantity_alert
+                                        from :table_products
+                                        where products_id = :products_id
+                                        ');
 
           $Qstock->bindInt(':products_id', $CLICSHOPPING_Prod::getProductID($Qproducts->valueInt('products_id')));
           $Qstock->execute();
@@ -1353,8 +1366,8 @@ class Order
       $email_order .= TemplateEmail::getTemplateEmailSignature() . "\n\n";
       $email_order .= TemplateEmail::getTemplateEmailTextFooter() . "\n";
 
-      $to_email_address = $this->customer['email_address'];
-      $to_name = $this->customer['firstname'] . ' ' . $this->customer['lastname'];
+      $to_email_address = Hash::displayDecryptedDataText($this->customer['email_address']);
+      $to_name = Hash::displayDecryptedDataText($this->customer['firstname']) . ' ' . Hash::displayDecryptedDataText($this->customer['lastname']);
       $email_subject = CLICSHOPPING::getDef('email_text_subject', ['store_name' => STORE_NAME]);
 
       $to_addr = $to_email_address;

@@ -109,12 +109,12 @@ echo HTML::form('stats_products_viewed', $CLICSHOPPING_Products->link('Products&
           </td>
           <td><?php echo $CLICSHOPPING_Image->getSmallImageAdmin($Qproducts->valueInt('products_id')); ?></td>
           <td><?php echo $rows; ?>.</td>
-          <td><?php echo HTML::link(CLICSHOPPING::link(null, 'A&Catalog\Products&Preview&pID=' . $Qproducts->valueInt('products_id') . '?page=' . $page), $Qproducts->value('products_name')); ?></td>
+          <td><?php echo HTML::link(CLICSHOPPING::link(null, 'A&Catalog\Products&Preview&pID=' . $Qproducts->valueInt('products_id')), $Qproducts->value('products_name')); ?></td>
           <td class="text-center"><?php echo $Qproducts->valueInt('products_viewed'); ?>&nbsp;</td>
           <td class="text-end">
             <div class="btn-group d-flex justify-content-end" role="group" aria-label="buttonGroup">
               <?php
-              echo HTML::link($CLICSHOPPING_Products->link('Preview&pID=' . $Qproducts->valueInt('products_id') . '?page=' . $page), '<h4><i class="bi bi-easel2" title="' . $CLICSHOPPING_Products->getDef('icon_preview') . '"></i></h4>');
+              echo HTML::link($CLICSHOPPING_Products->link('Preview&pID=' . $Qproducts->valueInt('products_id')), '<h4><i class="bi bi-easel2" title="' . $CLICSHOPPING_Products->getDef('icon_preview') . '"></i></h4>');
               echo '&nbsp;';
               echo HTML::link($CLICSHOPPING_Products->link('Products&UpdateStatsProductsViewed&resetViewed=1&products_id=' . $Qproducts->valueInt('products_id') . '&page=' . $page), '<h4><i class="bi bi-trash2" title="' . $CLICSHOPPING_Products->getDef('icon_delete') . '"></i></h4>');
               ?>

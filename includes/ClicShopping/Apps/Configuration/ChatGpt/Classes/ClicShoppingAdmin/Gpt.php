@@ -13,16 +13,20 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Statistics;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\InputValidator;
 
+use LLPhant\Chat\MistralAIChat;
 use LLPhant\Chat\OllamaChat;
 use LLPhant\Chat\OpenAIChat;
-use LLPhant\Exception\MissingParameterExcetion;
 use LLPhant\OpenAIConfig;
 use LLPhant\OllamaConfig;
-use LLPhant\Chat\TokenUsage;
 use LLPhant\AnthropicConfig;
 use LLPhant\Chat\AnthropicChat;
+use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
+use LLPhant\Embeddings\Document;
 
 use function defined;
 use function is_null;
@@ -42,11 +46,26 @@ class Gpt {
    */
   public static function checkGptStatus(): bool
   {
-    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_STATUS') || CLICSHOPPING_APP_CHATGPT_CH_STATUS == 'False' || empty('CLICSHOPPING_APP_CHATGPT_CH_API_KEY')) {
+    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_STATUS') || CLICSHOPPING_APP_CHATGPT_CH_STATUS == 'False' || empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY)) {
       return false;
-    } else {
-      return true;
     }
+
+    return true;
+  }
+
+  /**
+   * Securely retrieves the OpenAI API key for use in API calls.
+   * Instead of setting an environment variable with putenv(), which is insecure,
+   * this method simply returns the API key from the application configuration.
+   *
+   * @return string|null The API key or null if not configured
+   */
+  public static function getEnvironment(): string|null
+  {
+    // Use for dev but in production, the API key should be set in the environmen. @todo: update this
+    $env = putenv('OPENAI_API_KEY=' . CLICSHOPPING_APP_CHATGPT_CH_API_KEY);
+
+    return $env;
   }
 
   /**
@@ -87,17 +106,19 @@ class Gpt {
   public static function getGptModel(): array
   {
     $array = [
+      ['id' => 'gpt-4.1-mini', 'text' => 'OpenAi gpt 4.1-mini'],
+      ['id' => 'gpt-4.1-nano', 'text' => 'OpenAi gpt-4.1-nano'],
       ['id' => 'gpt-4o-mini', 'text' => 'OpenAi gpt-4o-mini'],
       ['id' => 'gpt-4o', 'text' => 'OpenAi gpt-4o'],
-      ['id' => 'gpt-3o-mini', 'text' => 'OpenAi gpt-3o-mini'],
+      ['id' => 'o3-mini', 'text' => 'OpenAI o3-mini'],
       ['id' => 'gpt-o1-mini', 'text' => 'OpenAi gpt-01-mini'],
       ['id' => 'gpt-3.5-turbo', 'text' => 'OpenAi gpt-3.5-turbo'],
-      ['id' => 'gemma3', 'text' => 'Ollama Gemma3 4B'],
-      ['id' => 'mistral:7b', 'text' => 'Ollama Mistral:7b'],
+      ['id' => 'gemma3:7b', 'text' => 'Ollama Gemma3 7b'],
       ['id' => 'phi4', 'text' => 'Ollama Phi4'],
       ['id' => 'anth-sonnet', 'text' => 'Anthropic Claude Sonnet 3.5'],
       ['id' => 'anth-opus', 'text' => 'Anthropic Claude Opus'],
       ['id' => 'anth-haiku', 'text' => 'Anthropic Claude Haiku'],
+      ['id' => 'mistral-large-latest', 'text' => 'Mistral Large Lastest'],
     ];
 
     return $array;
@@ -123,11 +144,15 @@ class Gpt {
    * @param array|null $parameters Optional parameters for configuring the OpenAI model, such as model type and options.
    * @return mixed The configured OpenAIChat instance.
    */
-  public static function getOpenAiGpt(array|null $parameters): mixed
+  public static function getOpenAiGpt(array|null $parameters, string|null $api_key = null): mixed
   {
-
      $config = new OpenAIConfig();
-     $config->apiKey = CLICSHOPPING_APP_CHATGPT_CH_API_KEY;
+
+     if (is_null($api_key)) {
+        $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY;
+     }
+
+     $config->apiKey = $api_key;
 
      if (!is_null($parameters)) {
         $config->model = $parameters['model'];
@@ -142,14 +167,14 @@ class Gpt {
   /**
    * Generates a response from the OpenAI chat model based on input parameters.
    *
-   * @param string $question The question or input text to be sent to the OpenAI chat model.
+   * @param string|null $question The question or input text to be sent to the OpenAI chat model.
    * @param int|null $maxtoken Optional. Maximum number of tokens to generate in the response. Defaults to the configured application value if null.
    * @param float|null $temperature Optional. Controls the creativity or randomness of the model's response. Defaults to the configured application value if null.
    * @param string|null $engine Optional. Specifies the model engine to use. Defaults to the configured application value if null.
    * @param int|null $max Optional. Number of responses to generate. Defaults to the configured application value if null.
    * @return mixed Returns the generated chat response from OpenAI if successful, or false if the application API key is unavailable.
    */
-   public static function getOpenAIChat(string $question,  int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null,  int|null $max = 1): mixed
+   public static function getOpenAIChat(string|null $question,  int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null,  int|null $max = 1): mixed
    {
     if (!empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY)) {
       $top = ['\n'];
@@ -167,14 +192,14 @@ class Gpt {
       }
 
       $parameters = [
-        'temperature' => $temperature, // Contrôle de la créativité du modèle
+        'temperature' => $temperature, // Controls the model's creativity
         'top_p' => (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P,
-        'frequency_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY, //pénalité de fréquence pour encourager le modèle à générer des réponses plus variées
-        'presence_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY, //pénalité de présence pour encourager le modèle à générer des réponses avec des mots qui n'ont pas été utilisés dans l'amorce
-        'max_tokens' => $maxtoken, //nombre maximum de jetons à générer dans la réponse
-        'stop' => $top, //caractères pour arrêter la réponse
-        'n' => $max, // nombre de réponses à générer
-        'user' => AdministratorAdmin::getUserAdmin(), // nom de l'utilisateur
+        'frequency_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY, // Frequency penalty to encourage the model to generate more varied responses
+        'presence_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY, // Presence penalty to encourage the model to generate responses with words not used in the prompt
+        'max_tokens' => $maxtoken, // Maximum number of tokens to generate in the response
+        'stop' => $top, // Characters to stop the response
+        'n' => $max, // Number of responses to generate
+        'user' => AdministratorAdmin::getUserAdmin(), // User's name
         'messages' => [
                         'role' => 'system',
                         'content' => 'You are an e-commerce expert in marketing.'
@@ -224,24 +249,88 @@ class Gpt {
   public static function getAnthropicChat(string $model, int|null $maxtoken = null, array|null $modelOptions = null): mixed
   {
     $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_ANTHROPIC;
-    $result = false;
 
-    if (is_null($maxtoken)) {
-      $maxtoken = (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN;
+    if (is_null($modelOptions)){
+      $modelOptions = [
+        'temperature' => (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE,
+        'top_p' => (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P,
+        'max_tokens_to_sample' => (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN,
+        'stop_sequences' => ['\n']
+      ];
     }
 
-    if (!empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_ANTHROPIC)) {
-      if ($model = 'anth-sonnet') {
-        $result = new AnthropicChat(new AnthropicConfig(AnthropicConfig::CLAUDE_3_5_SONNET, $maxtoken, $modelOptions, $api_key));
-      } elseif ($model = 'anth-opus') {
-        $result = new AnthropicChat(new AnthropicConfig(AnthropicConfig::CLAUDE_3_OPUS, $maxtoken, $modelOptions, $api_key));
+    $result = false;
+
+    if (!empty($api_key)) {
+      if ($model === 'anth-sonnet') {
+        $result = new AnthropicChat(
+          new AnthropicConfig(AnthropicConfig::CLAUDE_3_5_SONNET, $maxtoken, $modelOptions, $api_key)
+        );
+      } elseif ($model === 'anth-opus') {
+        $result = new AnthropicChat(
+          new AnthropicConfig(AnthropicConfig::CLAUDE_3_OPUS, $maxtoken, $modelOptions, $api_key)
+        );
       } else {
-        $result = new AnthropicChat(new AnthropicConfig(AnthropicConfig::CLAUDE_3_HAIKU, $maxtoken, $modelOptions, $api_key));
+        $result = new AnthropicChat(
+          new AnthropicConfig(AnthropicConfig::CLAUDE_3_HAIKU, $maxtoken, $modelOptions, $api_key)
+        );
       }
     }
 
     return $result;
   }
+
+/**
+* Creates an instance of the MistralAIChat class based on the specified model and configuration options.
+*
+* @param string $model The specific model identifier to use for the MistralAIChat instance.
+ *                      Should be one of the values defined in MistralAIChatModel.
+ * @param int|null $maxtoken The maximum number of tokens the model can output.
+ *                           Defaults to the configured max token if not provided.
+ * @return MistralAIChat An instance of MistralAIChat initialized with the provided parameters.
+ * @throws Exception|\Exception If the API key is not provided or if there's an error creating the instance.
+ */
+public static function getMistralChat(string $model, ?int $maxtoken = null): MistralAIChat
+{
+  $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL ?? null;
+
+  if (empty($api_key)) {
+    throw new \Exception('You have to provide a MISTRAL_API_KEY to request Mistral AI.');
+  }
+
+  // Valid model for MistralAIChat
+  $valid_models = [
+    'mistral-tiny', 'mistral-small-latest', 'mistral-medium-latest',
+    'mistral-large-latest', 'pixtral-large-latest', 'ministral-3b-latest',
+    'ministral-8b-latest', 'codestral-latest', 'open-mistral-nemo',
+    'open-codestral-mamba', 'mistral-moderation-latest'
+  ];
+
+  if (empty($model) || !in_array($model, $valid_models)) {
+    // Utiliser le modèle par défaut si le modèle spécifié n'est pas valide
+    $model = 'mistral-large-latest';
+  }
+
+  $config = new OpenAIConfig();
+  $config->apiKey = $api_key;
+  $config->model = $model;
+
+// Appliquer la limite de tokens si spécifiée
+  if (!is_null($maxtoken) && $maxtoken > 0) {
+    $config->maxTokens = $maxtoken;
+  } else {
+    $maxtoken = (int)(CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN ?? 0);
+    if ($maxtoken > 0) {
+      $config->maxTokens = $maxtoken;
+    }
+  }
+
+  try {
+    return new MistralAIChat($config);
+  } catch (\Exception $e) {
+    throw new \Exception('Error creating MistralAIChat instance: ' . $e->getMessage());
+  }
+}
 
   /**
    * Retrieves a chat response based on the provided parameters and model configuration.
@@ -259,6 +348,8 @@ class Gpt {
       $client = self::getOpenAIChat($question, $maxtoken, $temperature, $engine, $max);
     } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'anth') === 0) {
        $client = self::getAnthropicChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL, $maxtoken);
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'mistral') === 0) {
+      $client = self::getMistralChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL, $maxtoken);
     } else {
       $client = self::getOllamaChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL);
     }
@@ -286,13 +377,31 @@ class Gpt {
       $engine = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
     }
 
-    $prompt = HTML::sanitize($question);
+    // Validate and sanitize the question using our enhanced validator
+    $prompt = InputValidator::validateParameter(
+      $question,
+      'string',
+      '',
+      [
+        'maxLength' => 4096, // Reasonable limit for prompt length
+        'pattern' => '/^[^<>]*$/', // Disallow HTML tags
+        'escape' => true // Apply HTML escaping
+      ]
+    );
+
+    // Additional sanitization for extra security
+    $prompt = HTMLOverrideCommon::removeInvisibleCharacters($prompt);
 
     // Get the chat instance
     $chat = self::getChat($question, $maxtoken, $temperature, $engine, $max);
 
     // Generate text using the chat instance
-    $result = $chat->generateText($prompt);
+    try {
+      $result = $chat->generateText($prompt);
+    } catch (Exception $e) {
+      error_log($e->getMessage());
+      return false;
+    }
 
     if (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'gpt') === 0) {
       $lastResponse = $chat->getLastResponse();
@@ -303,15 +412,30 @@ class Gpt {
           'completion_tokens' => $lastResponse['usage']['completion_tokens'],
           'total_tokens' => $lastResponse['usage']['total_tokens']
         ];
-      } else {
-        $usage = null;
+
+        statistics::saveStats($usage, $engine);
       }
 
-      self::saveData($question, $result, $engine, $usage);
+      // Validate and sanitize the saveGpt parameter from POST data
+      $saveData = isset($_POST['saveGpt']) ? 
+        InputValidator::validateParameter(
+          $_POST['saveGpt'],
+          'int',
+          0,
+          [
+            'min' => 0,
+            'max' => 1
+          ]
+        ) : 0;
+
+      if ($saveData === 1) {
+        self::saveData($question, $result);
+      }
     }
 
     return $result;
   }
+
 
   /**
    * Saves data to the database, including question details and token usage statistics.
@@ -319,103 +443,53 @@ class Gpt {
    * @param string $question The question being saved.
    * @param string $result The result or response to the question.
    * @param string|null $engine The engine used for the response, or null if not specified.
-   * @param array|null $usage An associative array containing token usage statistics, or null if not available.
    * @return void
    */
-  private static function saveData(string $question, string $result, string|null $engine, array|null $usage): void
+  private static function saveData(string $question, string $result): void
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
-    $promptTokens = 0;
-    $completionTokens = 0;
-    $totalTokens = 0;
+    // Validate and sanitize the question and result before saving to database
+    $validatedQuestion = InputValidator::validateParameter(
+      $question,
+      'string',
+      '',
+      [
+        'maxLength' => 4096, // Reasonable limit for question length
+        'escape' => true // Apply HTML escaping
+      ]
+    );
+
+    $validatedResult = InputValidator::validateParameter(
+      $result,
+      'string',
+      '',
+      [
+        'maxLength' => 8192, // Reasonable limit for result length
+        'escape' => true // Apply HTML escaping
+      ]
+    );
+
+    // Validate the user admin value
+    $validatedUserAdmin = InputValidator::validateParameter(
+      AdministratorAdmin::getUserAdmin(),
+      'string',
+      'system',
+      [
+        'maxLength' => 255,
+        'pattern' => '/^[a-zA-Z0-9_\-\.\s]+$/' // Allow alphanumeric, underscore, hyphen, period, and spaces
+      ]
+    );
 
     $array_sql = [
-      'question' => $question,
-      'response' => $result,
+      'question' => $validatedQuestion,
+      'response' => $validatedResult,
       'date_added' => 'now()',
-      'user_admin' => 'Chatbot ' . $engine
+      'user_admin' => $validatedUserAdmin
     ];
 
+    // Use the database layer's save method which should handle parameterization
     $CLICSHOPPING_Db->save('gpt', $array_sql);
-
-    $QlastId = $CLICSHOPPING_Db->prepare('select gpt_id
-                                           from :table_gpt
-                                           order by gpt_id desc
-                                           limit 1
-                                          ');
-    $QlastId->execute();
-
-    if (!is_null($usage)) {
-      $promptTokens = $usage['prompt_tokens'];
-      $completionTokens = $usage['completion_tokens'];
-      $totalTokens = $usage['total_tokens'];
-    }
-
-    $array_usage_sql = [
-      'gpt_id' => $QlastId->valueInt('gpt_id'),
-      'promptTokens' => $promptTokens, // Accéder à la valeur de 'prompt_tokens'
-      'completionTokens' => $completionTokens, // Accéder à la valeur de 'completion_tokens'
-      'totalTokens' => $totalTokens, // Accéder à la valeur de 'total_tokens
-      'ia_type' => 'GPT',
-      'model' => $engine,
-      'date_added' => 'now()'
-    ];
-
-    $CLICSHOPPING_Db->save('gpt_usage', $array_usage_sql);
-  }
-  
-  /*****************************************
-   * Statistics
-   ****************************************/
-
-  /**
-   * Retrieves the total number of tokens (promptTokens, completionTokens, totalTokens) used in the last month.
-   *
-   * @return array An associative array containing promptTokens, completionTokens, totalTokens, and date_added.
-   */
-  public static function getTotalTokenByMonth(): array
-  {
-    $CLICSHOPPING_Db = Registry::get('Db');
-
-    $Qtotal = $CLICSHOPPING_Db->prepare('select sum(promptTokens) as promptTokens,
-                                                  sum(completionTokens) as completionTokens,
-                                                  sum(totalTokens) as totalTokens,
-                                                  date_added
-                                           from :table_gpt_usage
-                                           where DATE_SUB(NOW(), INTERVAL 1 MONTH)
-                                          ');
-    $Qtotal->execute();
-
-    $result = $Qtotal->fetch();
-
-    return $result;
-  }
-
-  /**
-   *
-   * Retrieves token usage data for a specified GPT ID.
-   *
-   * @param int $id The unique identifier of the GPT entry.
-   * @return array An associative array containing token usage data: promptTokens, completionTokens, totalTokens, and the date added.
-   */
-  public static function getTokenbyId(int $id): array
-  {
-    $CLICSHOPPING_Db = Registry::get('Db');
-
-    $Qtotal = $CLICSHOPPING_Db->prepare('select sum(promptTokens) as promptTokens,
-                                                  sum(completionTokens) as completionTokens,
-                                                  sum(totalTokens) as totalTokens,
-                                                  date_added
-                                           from :table_gpt_usage
-                                           where gpt_id = :gpt_id
-                                          ');
-    $Qtotal->binInt(':gtp_id', $id);
-    $Qtotal->execute();
-
-    $result = $Qtotal->fetch();
-
-    return $result;
   }
 
   /**
@@ -539,7 +613,7 @@ class Gpt {
 
     return $menu;
   }
-  
+
   /*****************************************
    * Ckeditor
    ****************************************/
@@ -557,22 +631,48 @@ class Gpt {
 
     $organization = '';
     if (!empty(CLICSHOPPING_APP_CHATGPT_CH_ORGANIZATION)) {
-      $organization = 'let organizationGpt = "' . CLICSHOPPING_APP_CHATGPT_CH_ORGANIZATION . '"';
+      $organization = 'let organizationGpt = "' . CLICSHOPPING_APP_CHATGPT_CH_ORGANIZATION . '";';
     }
 
     $script = '<script>
      let apiGptUrl = "' . $url . '";
-     let apiKeyGpt = "' . CLICSHOPPING_APP_CHATGPT_CH_API_KEY . '";
-     ' . $organization . ';
-     let modelGpt =  "' . $model . '";
+     ' . $organization . '
+     let modelGpt = "' . $model . '";
      let frequency_penalty_gpt = parseFloat("' . (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY . '");
      let presence_penalty_gpt = parseFloat("' . (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY . '");
      let max_tokens_gpt = parseInt("' . (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN . '");
      let temperatureGpt = parseFloat("' . (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE . '");
      let nGpt = parseInt("' . (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_RESPONSE . '");
      let best_of_gpt = parseInt("' . (int)CLICSHOPPING_APP_CHATGPT_CH_BESTOFF . '");
-     let top_p_gpt =  parseFloat("' . (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P . '");
+     let top_p_gpt = parseFloat("' . (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P . '");
      let titleGpt = "' . CLICSHOPPING::getDef('text_chat_title') . '";
+    </script>';
+
+    $script .= '<script>
+     function callChatGpt(prompt, callback) {
+       const payload = {
+         prompt: prompt,
+         model: modelGpt,
+         max_tokens: max_tokens_gpt,
+         temperature: temperatureGpt,
+         top_p: top_p_gpt,
+         frequency_penalty: frequency_penalty_gpt,
+         presence_penalty: presence_penalty_gpt,
+         n: nGpt,
+         best_of: best_of_gpt
+       };
+
+       fetch(apiGptUrl, {
+         method: "POST",
+         headers: {
+           "Content-Type": "application/json"
+         },
+         body: JSON.stringify(payload)
+       })
+       .then(response => response.json())
+       .then(data => callback(data))
+       .catch(error => console.error("Erreur GPT :", error));
+     }
     </script>';
 
     $script .= '<!--start wysiwig preloader--><style>.blur {filter: blur(1px);opacity: 0.4;}</style><!--end wysiwzg preloader-->';

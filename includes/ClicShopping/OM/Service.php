@@ -12,6 +12,7 @@ namespace ClicShopping\OM;
 
 use function call_user_func;
 use function in_array;
+use InvalidArgumentException;
 
 /**
  * Handles the management of service modules for the application.
@@ -20,10 +21,9 @@ use function in_array;
  */
 class Service
 {
-  protected array $_services = [];
-  protected array $_started_services = [];
-  protected array $_call_before_page_content = [];
-  protected array $_call_after_page_content = [];
+  protected array $startedServices = [];
+  protected array $callBeforePageContent = [];
+  protected array $callAfterPageContent = [];
   protected string $directory;
   protected string $directoryAdmin;
 
@@ -45,7 +45,7 @@ class Service
    */
   public function start()
   {
-    $this->_started_services = [];
+    $this->startedServices = [];
 
     $exclude = ['.', '..', '_htaccess', '.htaccess'];
 
@@ -55,14 +55,17 @@ class Service
       $files = array_diff(scandir($this->directory), $exclude);
     }
 
+    $result = ['file' => []];
+
     foreach ($files as $sm) {
       $result['file'][] = ['files_name' => $sm];
     }
 
     foreach ($result['file'] as &$module) {
-      $class = substr($module['files_name'], 0, strrpos($module['files_name'], '.'));
-
-      $this->startService($class);
+      if (strpos($module['files_name'], '.') !== false) {
+        $class = substr($module['files_name'], 0, strrpos($module['files_name'], '.'));
+        $this->startService($class);
+      }
     }
   }
 
@@ -82,14 +85,14 @@ class Service
     */
     if (CLICSHOPPING::getSite() === 'Shop') {
       if ($this->isStarted('output_compression')) {
-        $key = array_search('output_compression', $this->_started_services, true);
-        unset($this->_started_services[$key]);
+        $key = array_search('output_compression', $this->startedServices, true);
+        unset($this->startedServices[$key]);
 
-        $this->_started_services[] = 'output_compression';
+        $this->startedServices[] = 'output_compression';
       }
     }
 
-    foreach ($this->_started_services as $service) {
+    foreach ($this->startedServices as $service) {
       $this->stopService($service);
     }
   }
@@ -106,7 +109,7 @@ class Service
     if (CLICSHOPPING::getSite() === 'Shop') {
       if (class_exists('ClicShopping\\Service\\Shop\\' . $service)) {
         if (call_user_func(array('ClicShopping\\Service\\Shop\\' . $service, 'start'))) {
-          $this->_started_services[] = $service;
+          $this->startedServices[] = $service;
         }
       } else {
         throw new InvalidArgumentException('\'ClicShopping\\Service\\Shop\\' . $service . '\' does not exist');
@@ -114,7 +117,7 @@ class Service
     } else {
       if (class_exists('ClicShopping\\Service\\ClicShoppingAdmin\\' . $service)) {
         if (call_user_func(array('ClicShopping\\Service\\ClicShoppingAdmin\\' . $service, 'start'))) {
-          $this->_started_services[] = $service;
+          $this->startedServices[] = $service;
         }
       } else {
         throw new InvalidArgumentException('\'ClicShopping\\Service\\ClicShoppingAdmin\\' . $service . '\' does not exist');
@@ -149,7 +152,7 @@ class Service
    */
   public function isStarted(string $service): bool
   {
-    return in_array($service, $this->_started_services, true);
+    return in_array($service, $this->startedServices, true);
   }
 
   /**
@@ -161,7 +164,7 @@ class Service
    */
   public function addCallBeforePageContent($object, $method)
   {
-    $this->_call_before_page_content[] = [$object, $method];
+    $this->callBeforePageContent[] = [$object, $method];
   }
 
   /**
@@ -173,7 +176,7 @@ class Service
    */
   public function addCallAfterPageContent($object, $method): void
   {
-    $this->_call_after_page_content[] = [$object, $method];
+    $this->callAfterPageContent[] = [$object, $method];
   }
 
   /**
@@ -183,7 +186,7 @@ class Service
    */
   public function hasBeforePageContentCalls(): bool
   {
-    return !empty($this->_call_before_page_content);
+    return !empty($this->callBeforePageContent);
   }
 
   /**
@@ -193,7 +196,7 @@ class Service
    */
   public function hasAfterPageContentCalls(): bool
   {
-    return !empty($this->_call_after_page_content);
+    return !empty($this->callAfterPageContent);
   }
 
   /**
@@ -203,7 +206,7 @@ class Service
    */
   public function getCallBeforePageContent(): array
   {
-    return $this->_call_before_page_content;
+    return $this->callBeforePageContent;
   }
 
   /**
@@ -213,6 +216,6 @@ class Service
    */
   public function getCallAfterPageContent(): array
   {
-    return $this->_call_after_page_content;
+    return $this->callAfterPageContent;
   }
 }

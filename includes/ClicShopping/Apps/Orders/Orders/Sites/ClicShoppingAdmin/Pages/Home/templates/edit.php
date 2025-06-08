@@ -71,10 +71,10 @@ $orders_invoice_statuses = [];
 $orders_status_invoice_array = [];
 
 $QordersStatusInvoice = $CLICSHOPPING_Orders->db->prepare('select orders_status_invoice_id,
-                                                            orders_status_invoice_name
-                                                     from :table_orders_status_invoice
-                                                     where language_id = :language_id
-                                                    ');
+                                                                  orders_status_invoice_name
+                                                           from :table_orders_status_invoice
+                                                           where language_id = :language_id
+                                                          ');
 $QordersStatusInvoice->bindInt(':language_id', $CLICSHOPPING_Language->getId());
 $QordersStatusInvoice->execute();
 
@@ -111,18 +111,18 @@ $Qcustomers->execute();
           <span
             class="col-md-2 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_Orders->getDef('heading_title') . ' #' . (int)$order_id; ?></span>
           <span class="col-md-9 text-end">
-<?php
-if ($Qcustomers->valueInt('customers_id') != 0) {
-  echo HTML::button($CLICSHOPPING_Orders->getDef('button_history'), null, $CLICSHOPPING_Orders->link('Orders&cID=' . $Qcustomers->valueInt('customers_id')), 'info', null);
-  echo '&nbsp;';
-}
+            <?php
+            if ($Qcustomers->valueInt('customers_id') != 0) {
+              echo HTML::button($CLICSHOPPING_Orders->getDef('button_history'), null, $CLICSHOPPING_Orders->link('Orders&cID=' . $Qcustomers->valueInt('customers_id')), 'info', null);
+              echo '&nbsp;';
+            }
 
-echo HTML::button($CLICSHOPPING_Orders->getDef('button_invoice'), null, $CLICSHOPPING_Orders->link('Invoice&oID=' . (int)$order_id), 'success', ['newwindow' => true]);
-echo '&nbsp;';
-echo HTML::button($CLICSHOPPING_Orders->getDef('button_packingslip'), null, $CLICSHOPPING_Orders->link('PackingSlip&oID=' . (int)$order_id), 'info', ['newwindow' => true]);
-echo '&nbsp;';
-echo HTML::button($CLICSHOPPING_Orders->getDef('button_back'), null, $CLICSHOPPING_Orders->link('Orders'), 'primary');
-?>
+            echo HTML::button($CLICSHOPPING_Orders->getDef('button_invoice'), null, $CLICSHOPPING_Orders->link('Invoice&oID=' . (int)$order_id), 'success', ['newwindow' => true]);
+            echo '&nbsp;';
+            echo HTML::button($CLICSHOPPING_Orders->getDef('button_packingslip'), null, $CLICSHOPPING_Orders->link('PackingSlip&oID=' . (int)$order_id), 'info', ['newwindow' => true]);
+            echo '&nbsp;';
+            echo HTML::button($CLICSHOPPING_Orders->getDef('button_back'), null, $CLICSHOPPING_Orders->link('Orders'), 'primary');
+            ?>
           </span>
         </div>
       </div>
@@ -295,7 +295,7 @@ echo HTML::button($CLICSHOPPING_Orders->getDef('button_back'), null, $CLICSHOPPI
                   <div class="col-md-12" id="cellular">
                     <span
                       class="col-md-3"><?php echo $CLICSHOPPING_Orders->getDef('entry_cellular_phone_number'); ?></span>
-                    <span class="col-md-5"><strong><?php echo $order->customer['cellular_phone']; ?></strong></span>
+                    <span class="col-md-5"><strong><?php echo$order->customer['cellular_phone']; ?></strong></span>
                   </div>
                   <?php
                 }

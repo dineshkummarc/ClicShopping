@@ -110,7 +110,7 @@ class ApiDeleteCategories
         return json_encode(['error' => 'Invalid ID format']);
       }
 
-      static::deleteCategories($id);
+      self::deleteCategories($id);
     } else {
       return false;
     }

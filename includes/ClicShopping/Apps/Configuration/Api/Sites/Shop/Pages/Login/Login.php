@@ -18,11 +18,9 @@ use ClicShopping\OM\Registry;
 
 class Login extends \ClicShopping\OM\PagesAbstract
 {
-  protected ?string $file = null;
+  protected string|null $file = null;
   protected bool $use_site_template = false;
-  private mixed $lang;
-  private mixed $db;
-
+  private mixed $authentification;
   /**
    * Initializes the API request handling process. This method retrieves necessary dependencies and processes
    * incoming API requests based on the HTTP request method. It handles authentication, validates access,
@@ -32,16 +30,11 @@ class Login extends \ClicShopping\OM\PagesAbstract
    */
   protected function init()
   {
-    $this->lang = Registry::get('Language');
-    $this->Db = Registry::get('Db');
-
-    if (!\defined('CLICSHOPPING_APP_API_AI_STATUS') && CLICSHOPPING_APP_API_AI_STATUS == 'False') {
+    if (!\defined('CLICSHOPPING_APP_API_AI_STATUS') || CLICSHOPPING_APP_API_AI_STATUS == 'False') {
       return false;
     }
 
     $requestMethod = ApiShop::requestMethod();
-    //    echo ApiShop::getheader();
-    //     $id = $this->authentification->getUrlId();
 
 // Handle the event
     switch ($requestMethod) {
@@ -92,7 +85,6 @@ class Login extends \ClicShopping\OM\PagesAbstract
     }
 
     if ($response['body']) {
-      //echo $response['body'];
       echo $response['body'];
     }
 

@@ -23,6 +23,7 @@ use function is_null;
 class DbStatement extends \PDOStatement
 {
   protected $pdo;
+  public mixed $page_set = null;
   protected bool $is_error = false;
   protected string $page_set_keyword = 'page';
   protected mixed $page_set_results_per_page;
@@ -34,7 +35,6 @@ class DbStatement extends \PDOStatement
   protected string $query_call;
   protected int|null $page_set_total_rows;
   protected $result;
-  public ?string $page_set;
 
   /**
    *
@@ -51,6 +51,13 @@ class DbStatement extends \PDOStatement
    * @param string|int
    */
 // force type to int (see http://bugs.php.net/bug.php?id=44639)
+  /**
+   * Binds a value to a parameter for use in a prepared statement.
+   *
+   * @param string|int $parameter The parameter identifier to bind the value to.
+   * @param string|int|null $value The value to bind.
+   * @return bool True on success, false on failure.
+   */
   public function bindInt(string|int $parameter, string|int|null $value): bool
   {
     return $this->bindValue($parameter, (int)$value, PDO::PARAM_INT);
@@ -60,13 +67,24 @@ class DbStatement extends \PDOStatement
    *
    */
 // force type to bool (see http://bugs.php.net/bug.php?id=44639)
+  /**
+   * Binds a boolean value to a parameter for use in a prepared statement.
+   *
+   * @param string|int $parameter The parameter identifier to bind the value to.
+   * @param bool $value The boolean value to bind.
+   * @return bool True on success, false on failure.
+   */
   public function bindBool(string|int $parameter, bool $value): bool
   {
     return $this->bindValue($parameter, (bool)$value, PDO::PARAM_BOOL);
   }
 
   /**
-   * Binds a decimal value to
+   * Binds a string value to a parameter for use in a prepared statement.
+   *
+   * @param string|int $parameter The parameter identifier to bind the value to.
+   * @param string|null $value The string value to bind.
+   * @return bool True on success, false on failure.
    */
   public function bindDecimal(string|int $parameter, float $value): bool
   {
@@ -74,7 +92,10 @@ class DbStatement extends \PDOStatement
   }
 
   /**
+   * Binds a null value to a parameter for use in a prepared statement.
    *
+   * @param string|int $parameter The parameter identifier to bind the value to.
+   * @return bool True on success, false on failure.
    */
   public function bindNull(string|int $parameter): bool
   {
@@ -82,9 +103,12 @@ class DbStatement extends \PDOStatement
   }
 
   /**
-   * Sets up pagination properties and binds relevant placeholders for offset and maximum results.
+   * Sets the page set parameters for pagination.
    *
    * @param int $max_results The maximum number of results per page.
+   * @param string|null $page_set_keyword The keyword used for the page set in the URL.
+   * @param string $placeholder_offset The placeholder for the offset in the SQL query.
+   * @param string $placeholder_max_results The placeholder for the maximum results in the SQL query.
    */
   public function setPageSet($max_results, $page_set_keyword = null, string $placeholder_offset = 'page_set_offset', string $placeholder_max_results = 'page_set_max_results')
   {
@@ -102,10 +126,10 @@ class DbStatement extends \PDOStatement
   }
 
   /**
-   * Executes the query with the provided input parameters, handles caching,
-   * and processes pagination-related operations if applicable.
+   * Executes the prepared statement with optional input parameters.
    *
-   * @param array|null
+   * @param array|null $input_parameters An associative array of input parameters to bind to the statement.
+   * @return bool True on success, false on failure.
    */
   public function execute(array|null $input_parameters = null): bool
   {
@@ -152,7 +176,10 @@ class DbStatement extends \PDOStatement
   /**
    * Fetches the next row from the result set.
    *
-   * @param int $fetch_style The fetch style for the resulting row. Defaults
+   * @param int $fetch_style The fetch style to use (default: PDO::FETCH_DEFAULT).
+   * @param int $cursor_orientation The cursor orientation (default: PDO::FETCH_ORI_NEXT).
+   * @param int $cursor_offset The cursor offset (default: 0).
+   * @return bool|array The fetched row or false on failure.
    */
   public function fetch(
     int $fetch_style = PDO::FETCH_DEFAULT, //FETCH_ASSOC,
@@ -177,16 +204,23 @@ class DbStatement extends \PDOStatement
   }
 
   /**
-   * Fetches all rows from the
+   * Fetches all rows from the result set.
+   *
+   * @param int|null $fetch_style The fetch style to use (default: PDO::FETCH_BOTH).
+   * @param mixed ...$args Additional arguments for the fetch style.
+   * @return array The fetched rows.
    */
   public function fetchAll(int|null $fetch_style = PDO::FETCH_BOTH, mixed ...$args): array
   {
     if ($this->cache_read === true) {
       $this->result = $this->cache_data;
     } else {
-// fetchAll() fails if second argument is passed in a fetch style that does not
-// use the optional argument
-      if (in_array($fetch_style, [PDO::FETCH_COLUMN, PDO::FETCH_CLASS, PDO::FETCH_FUNC])) {
+      $fetch_argument = $args[0] ?? null;
+      $ctor_args = $args[1] ?? [];
+
+      if (in_array($fetch_style, [PDO::FETCH_COLUMN])) {
+        $this->result = parent::fetchAll($fetch_style, $fetch_argument);
+      } elseif (in_array($fetch_style, [PDO::FETCH_CLASS, PDO::FETCH_FUNC])) {
         $this->result = parent::fetchAll($fetch_style, $fetch_argument, $ctor_args);
       } else {
         $this->result = parent::fetchAll($fetch_style);
@@ -201,7 +235,10 @@ class DbStatement extends \PDOStatement
   }
 
   /**
+   * Fetches a single column from the next row of the result set.
    *
+   * @param int $column_number The column number to fetch (default: 0).
+   * @return bool The value of the specified column or false on failure.
    */
   public function check()
   {
@@ -213,7 +250,9 @@ class DbStatement extends \PDOStatement
   }
 
   /**
+   * Retrieves the result set as an array.
    *
+   * @return array The result set as an array.
    */
   public function toArray()
   {
@@ -225,10 +264,11 @@ class DbStatement extends \PDOStatement
   }
 
   /**
-   * Sets caching parameters for the current database query.
+   * Sets the cache for the current statement.
    *
-   * @param string $key The unique key to reference the cache.
-   * @param int
+   * @param string $key The cache key.
+   * @param int|null $expire The cache expiration time in seconds (default: null).
+   * @param bool $cache_empty_results Whether to cache empty results (default: false).
    */
   public function setCache(string $key, int|null $expire = null, bool $cache_empty_results = false)
   {
@@ -250,7 +290,11 @@ class DbStatement extends \PDOStatement
   }
 
   /**
+   * Retrieves the value of a specified column from the result set.
    *
+   * @param string $column The name of the column to retrieve the value from.
+   * @param string $type The type of value to retrieve (default: 'string').
+   * @return mixed The value of the specified column or false if not found.
    */
   protected function valueMixed(string $column, string $type = 'string')
   {
@@ -288,10 +332,10 @@ class DbStatement extends \PDOStatement
   }
 
   /**
-   * Retrieves the value of a specified column as a string.
+   * Retrieves the value of a specified column from the result set.
    *
    * @param string $column The name of the column to retrieve the value from.
-   * @return
+   * @return string The value of the specified column or false if not found.
    */
   public function value(string $column): string
   {
@@ -299,10 +343,9 @@ class DbStatement extends \PDOStatement
   }
 
   /**
-   * Retrieves a protected value for the given column.
+   * Retrieves the value of a specified column cast as a protected string.
    *
-   * @param string $column The name of the column to retrieve the protected value for.
-   * 
+   * @param string $column The name of the column from which to retrieve the
    */
   public function valueProtected(string $column): string
   {
@@ -320,7 +363,9 @@ class DbStatement extends \PDOStatement
   }
 
   /**
+   * Retrieves the value of the specified column cast as a decimal.
    *
+   * @param string $column The name of the column from which to retrieve the
    */
   public function valueDecimal(string $column): float
   {
@@ -362,7 +407,9 @@ class DbStatement extends \PDOStatement
   }
 
   /**
+   * Sets the query call string.
    *
+   * @param string $type The type of query call (e.g., 'prepare', 'execute').
    */
   public function setQueryCall(string $type)
   {
@@ -380,7 +427,9 @@ class DbStatement extends \PDOStatement
   }
 
   /**
+   * Retrieves the current page set.
    *
+   * @return int The current page set.
    */
   public function getCurrentPageSet()
   {
@@ -412,7 +461,9 @@ class DbStatement extends \PDOStatement
   }
 
   /**
-   * Sets the PDO instance to be
+   * Retrieves the PDO instance associated with this statement.
+   *
+   * @return PDO The PDO instance.
    */
   public function setPDO(PDO $instance)
   {
@@ -420,7 +471,10 @@ class DbStatement extends \PDOStatement
   }
 
   /**
-   * Generates a label for the current page set
+   * Retrieves the label for the current page set.
+   *
+   * @param string $text The text to be parsed for the label.
+   * @return string The formatted label for the page set.
    */
   public function getPageSetLabel(string $text): string
   {
@@ -446,7 +500,11 @@ class DbStatement extends \PDOStatement
   }
 
   /**
+   * Generates pagination links for the current page set.
    *
+   * @param string|null $parameters Additional parameters for the pagination links.
+   * @param string|null $site The site context (default: null).
+   * @return string The generated pagination links.
    */
   public function getPageSetLinks($parameters = null, $site = null): string
   {

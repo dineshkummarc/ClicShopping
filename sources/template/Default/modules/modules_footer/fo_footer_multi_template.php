@@ -20,11 +20,15 @@ class fo_footer_multi_template
   public int|null $sort_order = 0;
   public bool $enabled = false;
   public $pages;
+  private mixed $cache_block;
+  private mixed $lang;
 
   public function __construct()
   {
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
+    $this->cache_block = 'footer_multi_template_';
+    $this->lang = Registry::get('Language')->getId();
 
     $this->title = CLICSHOPPING::getDef('module_footer_multi_template_title');
     $this->description = CLICSHOPPING::getDef('module_footer_multi_template_description');
@@ -36,110 +40,149 @@ class fo_footer_multi_template
     }
   }
 
+ /**
+   * Executes the module logic, handles caching, and renders the multi-template footer.
+   *
+   * - Checks if the module is enabled and if the customer is allowed to view.
+   * - Uses cache if enabled and available.
+   * - Prepares social network URLs and structured data for the footer.
+   * - Loads the selected footer template and renders it.
+   * - Adds the rendered block to the template system.
+   */
   public function execute()
   {
-
     $CLICSHOPPING_Template = Registry::get('Template');
     $CLICSHOPPING_Customer = Registry::get('Customer');
     $CLICSHOPPING_PageManagerShop = Registry::get('PageManagerShop');
+    $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
 
     if (MODE_VENTE_PRIVEE == 'false' || (MODE_VENTE_PRIVEE == 'true' && $CLICSHOPPING_Customer->isLoggedOn())) {
+      if ($this->enabled) {
+        if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+          $cache_id = $this->cache_block . $this->lang;
+          $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
 
-      $content_width = (int)MODULE_FOOTER_MULTI_TEMPLATE_CONTENT_WIDTH;
-      $menu_footer = $CLICSHOPPING_PageManagerShop->pageManagerDisplayFooterMenu();
+          if ($cache_output !== false) {
+            $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
+            return;
+          }
+        }
 
-      $footer_tag = '<!-- Start footer social footer -->' . "\n";
-      $footer_tag .= '<script type="application/ld+json">' . "\n";
-      $footer_tag .= ' {
-          "@context" : "https://schema.org",
-          "@type" : "Organization",
-          "name" : "' . STORE_NAME . '",
-        ';
+        $content_width = (int)MODULE_FOOTER_MULTI_TEMPLATE_CONTENT_WIDTH;
+        $menu_footer = $CLICSHOPPING_PageManagerShop->pageManagerDisplayFooterMenu();
 
-      if (!empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL) || !empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL) || !empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL)) {
-        $footer_tag .= '"url" : "' . CLICSHOPPING::getConfig('http_server', 'Shop');
-
-        $footer_tag .= '
-            "sameAs" : [
+        $footer_tag = '<!-- Start footer social footer -->' . "\n";
+        $footer_tag .= '<script type="application/ld+json">' . "\n";
+        $footer_tag .= ' {
+            "@context" : "https://schema.org",
+            "@type" : "Organization",
+            "name" : "' . STORE_NAME . '",
           ';
-        if (!empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL)) {
-          $footer_tag .= ' "" ';
+
+        if (!empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL) || !empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL) || !empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL)) {
+          $footer_tag .= '"url" : "' . CLICSHOPPING::getConfig('http_server', 'Shop');
+
+          $footer_tag .= '
+              "sameAs" : [
+            ';
+          if (!empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL)) {
+            $footer_tag .= ' "" ';
+          }
+          if (!empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL)) {
+            $footer_tag .= ' ,"" ';
+          }
+          if (!empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL)) {
+            $footer_tag .= ' ,"" ';
+          }
+          $footer_tag .= '
+            ]';
+        } else {
+          $footer_tag .= '"url" : "' . CLICSHOPPING::getConfig('http_server', 'Shop');
         }
-        if (!empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL)) {
-          $footer_tag .= ' ,"" ';
+        $footer_tag .= '}' . "\n";
+        $footer_tag .= '</script>' . "\n";
+        $footer_tag .= '<!-- end footer social footer -->' . "\n";
+
+        $CLICSHOPPING_Template->addBlock($footer_tag, 'footer_scripts');
+
+        $social_footer = '<!-- footer social footer -->' . "\n";
+
+        $footer_template = '<!-- footer multi template start -->' . "\n";
+
+        $filename = $CLICSHOPPING_Template->getTemplateModulesFilename($this->group . '/template_html/' . MODULE_FOOTER_MULTI_TEMPLATE);
+
+        $facebook = MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL;
+        if (!empty($facebook)) {
+          $facebook_url = rawurldecode($facebook);
+        } else {
+          $facebook_url = '#';
         }
-        if (!empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL)) {
-          $footer_tag .= ' ,"" ';
+
+        $twitter = MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL;
+        if (!empty($twitter)) {
+          $twitter_url = rawurldecode(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL);
+        } else {
+          $twitter_url = '#';
         }
-        $footer_tag .= '
-          ]';
-      } else {
-        $footer_tag .= '"url" : "' . CLICSHOPPING::getConfig('http_server', 'Shop');
-      }
-      $footer_tag .= '}' . "\n";
-      $footer_tag .= '</script>' . "\n";
-      $footer_tag .= '<!-- end footer social footer -->' . "\n";
 
-      $CLICSHOPPING_Template->addBlock($footer_tag, 'footer_scripts');
-
-      $social_footer = '<!-- footer social footer -->' . "\n";
-
-      $footer_template = '<!-- footer multi template start -->' . "\n";
-
-      $filename = $CLICSHOPPING_Template->getTemplateModulesFilename($this->group . '/template_html/' . MODULE_FOOTER_MULTI_TEMPLATE);
-
-      $facebook = MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL;
-      if (!empty($facebook)) {
-        $facebook_url = rawurldecode($facebook);
-      } else {
-        $facebook_url = '#';
-      }
-
-      $twitter = MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL;
-      if (!empty($twitter)) {
-        $twitter_url = rawurldecode(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL);
-      } else {
-        $twitter_url = '#';
-      }
-
-      $pinterest = MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL;
-      if (!empty($pinterest)) {
-        $pinterest_url = rawurldecode($pinterest);
-      } else {
-        $pinterest_url = '#';
-      }
-
-      if (\defined('MODULES_HEADER_TAGS_MAILCHIMP_LIST_ANONYMOUS')) {
-        if (!empty(MODULES_HEADER_TAGS_MAILCHIMP_LIST_ANONYMOUS)) {
-          $mailchimp_list_anonymous = MODULES_HEADER_TAGS_MAILCHIMP_LIST_ANONYMOUS;
+        $pinterest = MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL;
+        if (!empty($pinterest)) {
+          $pinterest_url = rawurldecode($pinterest);
+        } else {
+          $pinterest_url = '#';
         }
+
+        if (\defined('MODULES_HEADER_TAGS_MAILCHIMP_LIST_ANONYMOUS')) {
+          if (!empty(MODULES_HEADER_TAGS_MAILCHIMP_LIST_ANONYMOUS)) {
+            $mailchimp_list_anonymous = MODULES_HEADER_TAGS_MAILCHIMP_LIST_ANONYMOUS;
+          }
+        }
+
+        if (is_file($filename)) {
+          ob_start();
+          require_once($filename);
+          $footer_template .= ob_get_clean();
+        } else {
+          echo '<div class="alert alert-warning text-center" role="alert">' . CLICSHOPPING::getDef('template_does_not_exist') . '</div>';
+          exit;
+        }
+
+        $footer_template .= '<!-- footer multi template end -->' . "\n";
+
+        if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+          $CLICSHOPPING_TemplateCache->setCache($cache_id, $footer_template);
+        }
+
+        $CLICSHOPPING_Template->addBlock($footer_template, $this->group);
       }
-
-      if (is_file($filename)) {
-        ob_start();
-        require_once($filename);
-        $footer_template .= ob_get_clean();
-      } else {
-        echo '<div class="alert alert-warning text-center" role="alert">' . CLICSHOPPING::getDef('template_does_not_exist') . '</div>';
-        exit;
-      }
-
-      $footer_template .= '<!-- footer multi template end -->' . "\n";
-
-      $CLICSHOPPING_Template->addBlock($footer_template, $this->group);
     }
   }
 
+  /**
+   * Checks if the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module configuration is defined.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULE_FOOTER_MULTI_TEMPLATE_STATUS');
   }
 
+  /**
+   * Installs the module configuration in the database.
+   *
+   * @return void
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -253,12 +296,21 @@ class fo_footer_multi_template
     );
   }
 
+  /**
+   * Removes the module configuration from the database.
+   *
+   * @return int
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
-
+  /**
+   * Returns the configuration keys used by this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array('MODULE_FOOTER_MULTI_TEMPLATE_STATUS',

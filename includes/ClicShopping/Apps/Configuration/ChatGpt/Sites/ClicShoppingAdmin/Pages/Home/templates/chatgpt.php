@@ -14,6 +14,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Statistics;
 
 $CLICSHOPPING_ChatGpt = Registry::get('ChatGpt');
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
@@ -56,7 +57,7 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
       <div class="card card-block headerCard">
         <div class="row">
           <?php
-          $stat_result = Gpt::getTotalTokenByMonth();
+          $stat_result = Statistics::getTotalTokenByMonth();
 
           if(is_array($stat_result)) {
             if ($stat_result['promptTokens'] > 0) {

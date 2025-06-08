@@ -66,7 +66,7 @@ class ApiDeleteCustomer
         return json_encode(['error' => 'Invalid ID format']);
       }
 
-      static::deleteCustomer($id);
+      self::deleteCustomer($id);
     } else {
       return false;
     }

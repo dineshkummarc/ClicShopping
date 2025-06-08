@@ -47,29 +47,23 @@ if (!FileSystem::isWritable($CLICSHOPPING_Template->getDirectoryPathLanguage()))
           <span
             class="col-md-6 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_DefineLanguage->getDef('heading_title'); ?></span>
           <span class="col-md-4 text-end">
-<?php
-echo HTML::form('search_form', $CLICSHOPPING_DefineLanguage->link('DefineLanguage'), 'post', '', ['session_id' => true]) . HTML::inputField('search', null, 'placeholder="' . $CLICSHOPPING_DefineLanguage->getDef('text_search') . '"') . ' ';
-echo '&nbsp;';
-
-/*
-  if (isset($_POST['search'])) {
-    echo HTML::button($CLICSHOPPING_DefineLanguage->getDef('button_back'), null, $CLICSHOPPING_DefineLanguage->link('DefineLanguage'), 'primary');
-  }
-*/
-if (!isset($_POST['search'])) {
-  echo '&nbsp;';
-  echo ' ' . HTML::button($CLICSHOPPING_DefineLanguage->getDef('button_reset_all_languages'), null, $CLICSHOPPING_DefineLanguage->link('DefineLanguage&TableReset'), 'danger');
-}
-?>
-              </form>
+            <?php
+            echo HTML::form('search_form', $CLICSHOPPING_DefineLanguage->link('DefineLanguage'), 'post', '', ['session_id' => true]) . HTML::inputField('search', null, 'placeholder="' . $CLICSHOPPING_DefineLanguage->getDef('text_search') . '"') . ' ';
+            echo '&nbsp;';
+            if (!isset($_POST['search'])) {
+              echo '&nbsp;';
+              echo ' ' . HTML::button($CLICSHOPPING_DefineLanguage->getDef('button_reset_all_languages'), null, $CLICSHOPPING_DefineLanguage->link('DefineLanguage&TableReset'), 'danger');
+            }
+            ?>
+            </form>
           </span>
           <span class="col-md-1 text-end">
-<?php
-if (isset($_POST['search'])) {
-  echo HTML::button($CLICSHOPPING_DefineLanguage->getDef('button_reset'), null, $CLICSHOPPING_DefineLanguage->link('DefineLanguage'), 'warning');
-}
-?>
-            </span>
+            <?php
+            if (isset($_POST['search'])) {
+              echo HTML::button($CLICSHOPPING_DefineLanguage->getDef('button_reset'), null, $CLICSHOPPING_DefineLanguage->link('DefineLanguage'), 'warning');
+            }
+            ?>
+          </span>
         </div>
       </div>
     </div>
@@ -142,3 +136,4 @@ if (isset($_POST['search'])) {
     </tbody>
   </table>
 </div>
+<div class="py-4"></div>

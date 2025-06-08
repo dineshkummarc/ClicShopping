@@ -1,0 +1,8 @@
+text_review_sentiment_semantic_semantic_title = Sentiment analysis for the product {{products_name}}
+text_review_sentiment_semantic_description = Review content for {{products_name}}
+text_review_sentiment_semantic_status = Sentiment status for {{products_name}}
+text_review_sentiment_semantic_approved = Sentiment approval for {{products_name}}
+text_review_sentiment_semantic_date_added = Review date added for {{products_name}}
+text_review_sentiment_semantic_vote = Rating given to {{products_name}}
+text_review_sentiment_semantic_customer_id = Customer ID who rated {{products_name}}
+text_review_sentiment_semantic_vote_sentiment = Nature of the vote for {{products_name}}

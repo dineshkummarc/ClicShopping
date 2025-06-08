@@ -223,7 +223,7 @@ class Template
    *
    * @return mixed The width of the grid content.
    */
-  public function getGridContentWidth()
+  public function getGridContentWidth(): int
   {
     return $this->_grid_content_width;
   }
@@ -660,7 +660,7 @@ class Template
 //mode privee ou ouvert - affichage des boxes gauche ou droite
               if (MODE_VENTE_PRIVEE == 'true' && $CLICSHOPPING_Customer->isLoggedOn()) {
                 $modules_boxes = 'modules_boxes';
-              } elseif (MODE_VENTE_PRIVEE == 'true' && !$CLICSHOPPING_Customer->isLoggedOn) {
+              } elseif (MODE_VENTE_PRIVEE == 'true' && !$CLICSHOPPING_Customer->isLoggedOn()) {
                 $modules_boxes = '';
               } else {
                 $modules_boxes = 'modules_boxes';
@@ -827,128 +827,150 @@ class Template
   }
 
   /**
-   * Retrieves the path of the template header or footer file based on the specified name.
+   * Retrieves the path of the template header or footer file
+   * First checks in the current theme directory, falls back to default template if not found
    *
-   * @param string $name The name of the template file to retrieve.
-   * @return string The full path of the template file.
+   * @param string $name The name of the template file (without extension)
+   * @return string Full path to the template header/footer file
    */
   public function getTemplateHeaderFooter(string $name): string
   {
+    $themaPath = $this->getPathDirectoryTemplateThema() . trim($name) . '.php';
+    $defaultPath = $this->getDefaultTemplateDirectory() . DIRECTORY_SEPARATOR . trim($name) . '.php';
 
-    if (file_exists($this->getPathDirectoryTemplateThema() . $name . '.php')) {
-      $themaFiles = $this->getPathDirectoryTemplateThema() . $name . '.php';
-    } else {
-      $themaFiles = $this->getDefaultTemplateDirectory() . DIRECTORY_SEPARATOR . $name . '.php';
-    }
-
-    return $themaFiles;
+    return file_exists($themaPath) ? $themaPath : $defaultPath;
   }
 
   /**
-   * Retrieves the path to the template CSS file based on the current language and theme configuration.
-   * If the specific CSS file is not found, it defaults to a predefined directory.
+   * Retrieves the URL path to the template CSS file based on current language
+   * Checks multiple locations and falls back to defaults if needed
    *
-   * @return string The URL to the template CSS file.
+   * @return string The URL to the appropriate CSS file
    */
   public function getTemplateCSS(): string
   {
     $CLICSHOPPING_Language = Registry::get('Language');
-    if (is_file($this->getPathRoot() . DIRECTORY_SEPARATOR . $this->getPathDirectoryTemplateThema() . $this->_directoryTemplateCss . $CLICSHOPPING_Language->get('directory') . DIRECTORY_SEPARATOR . 'compressed_css.php')) {
-      $themaCSS = CLICSHOPPING::link($this->getPathDirectoryTemplateThema() . $this->_directoryTemplateCss . $CLICSHOPPING_Language->get('directory') . DIRECTORY_SEPARATOR . 'compressed_css.php');
-    } else {
-      $themaCSS = CLICSHOPPING::link($this->getDefaultTemplateDirectory() . DIRECTORY_SEPARATOR . $this->_directoryTemplateCss . $CLICSHOPPING_Language->get('directory') . DIRECTORY_SEPARATOR . 'compressed_css.php');
+    $langDir = $CLICSHOPPING_Language->get('directory');
+
+    $themePath = $this->getPathRoot() . DIRECTORY_SEPARATOR .
+      $this->getPathDirectoryTemplateThema() .
+      $this->_directoryTemplateCss .
+      $langDir . DIRECTORY_SEPARATOR .
+      'compressed_css.php';
+
+    // First try theme-specific CSS in current language
+    if (is_file($themePath)) {
+      return CLICSHOPPING::link($this->getPathDirectoryTemplateThema() .
+        $this->_directoryTemplateCss .
+        $langDir . DIRECTORY_SEPARATOR .
+        'compressed_css.php');
     }
 
-// if current does'nt exist take default
-    if (!is_file($this->getPathRoot() . DIRECTORY_SEPARATOR . $this->getPathDirectoryTemplateThema() . $this->_directoryTemplateCss . $CLICSHOPPING_Language->get('directory') . DIRECTORY_SEPARATOR . 'compressed_css.php')) {
-      $themaCSS = CLICSHOPPING::link($this->getPathDirectoryTemplateThema() . $this->_directoryTemplateCss . 'english/' . 'compressed_css.php');
+    // Then try default template CSS in current language
+    $defaultPath = $this->getDefaultTemplateDirectory() . DIRECTORY_SEPARATOR .
+      $this->_directoryTemplateCss .
+      $langDir . DIRECTORY_SEPARATOR .
+      'compressed_css.php';
+
+    if (is_file($this->getPathRoot() . DIRECTORY_SEPARATOR . $defaultPath)) {
+      return CLICSHOPPING::link($defaultPath);
     }
 
-    return $themaCSS;
+    // Finally fall back to English CSS in current theme
+    return CLICSHOPPING::link($this->getPathDirectoryTemplateThema() .
+      $this->_directoryTemplateCss .
+      'english/compressed_css.php');
   }
 
 
   /**
-   * Retrieves the full path of a template file based on the given name.
+   * Retrieves the full path to a template file
+   * First checks in the current theme directory, falls back to default template if not found
    *
-   * @param string $name The name of the template file to retrieve.
-   * @return string The full path of the template file.
+   * @param string $name The name of the template file without extension
+   * @return string Full path to the template file
    */
   public function getTemplateFiles(string $name): string
   {
-    if (is_file($this->getPathDirectoryTemplateThema() . $this->_directoryTemplateFiles . $name . '.php')) {
-      $themaFiles = $this->getPathDirectoryTemplateThema() . $this->_directoryTemplateFiles . $name . '.php';
-    } else {
-      $themaFiles = $this->getDefaultTemplateDirectory() . DIRECTORY_SEPARATOR . $this->_directoryTemplateFiles . $name . '.php';
+    $themaPath = $this->getPathDirectoryTemplateThema() . $this->_directoryTemplateFiles . trim($name) . '.php';
+    $defaultPath = $this->getDefaultTemplateDirectory() . DIRECTORY_SEPARATOR . $this->_directoryTemplateFiles . trim($name) . '.php';
+
+    if (!is_file($themaPath) && !is_file($defaultPath)) {
+      throw new \RuntimeException("Template file not found: $name");
     }
 
-    return $themaFiles;
+    return is_file($themaPath) ? $themaPath : $defaultPath;
   }
 
+
   /**
-   * Retrieves the file path for a template module based on the provided module name.
+   * Retrieves the path to a template module file
+   * First checks in the current theme directory, falls back to default template if not found
    *
-   * @param string $name The name of the template module to retrieve.
-   * @return string The file path of
+   * @param string $name The name of the template module without extension
+   * @return string Full path to the template module file
    */
   public function getTemplateModules(string $name): string
   {
+    $themaPath = $this->getPathDirectoryTemplateThema() . $this->_directoryModules . trim($name) . '.php';
+    $defaultPath = $this->getDefaultTemplateDirectory() . DIRECTORY_SEPARATOR . $this->_directoryModules . trim($name) . '.php';
 
-    if (is_file($this->getPathDirectoryTemplateThema() . $this->_directoryModules . $name . '.php')) {
-      $themaFiles = $this->getPathDirectoryTemplateThema() . $this->_directoryModules . $name . '.php';
-    } else {
-      $themaFiles = $this->getDefaultTemplateDirectory() . DIRECTORY_SEPARATOR . $this->_directoryModules . $name . '.php';
-    }
-
-    return $themaFiles;
+    return is_file($themaPath) ? $themaPath : $defaultPath;
   }
 
   /**
-   * Retrieves the full path to the template module file based on the specified name.
+   * Retrieves the full path to a template module filename
+   * First checks in the current theme directory, falls back to default template if not found
    *
-   * @param string $name The name of the template module file.
-   * @return string The full path to the template
+   * @param string $name The module filename to locate
+   * @return string Full path to the template module file
    */
   public function getTemplateModulesFilename(string $name): string
   {
+    $themaPath = $this->getPathDirectoryTemplateThema() . $this->_directoryModules . $name;
+    $defaultPath = $this->getDefaultTemplateDirectory() . DIRECTORY_SEPARATOR . $this->_directoryModules . $name;
 
-    if (is_file($this->getPathDirectoryTemplateThema() . $this->_directoryModules . $name)) {
-      $themaFilename = $this->getPathDirectoryTemplateThema() . $this->_directoryModules . $name;
-    } else {
-      $themaFilename = $this->getDefaultTemplateDirectory() . DIRECTORY_SEPARATOR . $this->_directoryModules . $name;
-    }
-
-    return $themaFilename;
+    return is_file($themaPath) ? $themaPath : $defaultPath;
   }
 
   /**
-   * Gets the path to the directory of the template language files for a given file name.
+   * Gets the path to the language file in the template directory
+   * Checks multiple locations and returns the most appropriate path
    *
-   * @param string $name The name of the language file to locate.
-   * @return string The path to the template language file.
+   * @param string $name The name of the language file without extension
+   * @return string The full path to the language file
    */
-
   public function getPathDirectoryTemplatetLanguageFiles(string $name): string
   {
     $CLICSHOPPING_Language = Registry::get('Language');
+    $langDir = $CLICSHOPPING_Language->get('directory');
 
-    if (is_file($this->getPathRoot() . $this->getPathDirectoryTemplateThema() . $this->_directoryTemplateLanguages . $CLICSHOPPING_Language->get('directory') . DIRECTORY_SEPARATOR . $name . '.php')) {
-      $languagefiles = $this->getPathDirectoryTemplateThema() . $this->_directoryTemplateLanguages . $CLICSHOPPING_Language->get('directory') . DIRECTORY_SEPARATOR . $name . '.php';
-      if (is_file($this->getPathRoot() . $this->getSiteTemplateLanguageDirectory() . $CLICSHOPPING_Language->get('directory') . DIRECTORY_SEPARATOR . $name . '.php')) {
-        $languagefiles = $this->getSiteTemplateLanguageDirectory() . $CLICSHOPPING_Language->get('directory') . DIRECTORY_SEPARATOR . $name . '.php';
+    $themaPath = $this->getPathRoot() . $this->getPathDirectoryTemplateThema() .
+      $this->_directoryTemplateLanguages . $langDir . DIRECTORY_SEPARATOR . $name . '.php';
+
+    $sitePath = $this->getPathRoot() . $this->getSiteTemplateLanguageDirectory() .
+      $langDir . DIRECTORY_SEPARATOR . $name . '.php';
+
+    // First check thema path
+    if (is_file($themaPath)) {
+      // If site template exists, prefer it over thema
+      if (is_file($sitePath)) {
+        return $this->getSiteTemplateLanguageDirectory() . $langDir . DIRECTORY_SEPARATOR . $name . '.php';
       }
-    } else {
-      $languagefiles = $this->getSiteTemplateLanguageDirectory() . $CLICSHOPPING_Language->get('directory') . DIRECTORY_SEPARATOR . $name . '.php';
+      return $this->getPathDirectoryTemplateThema() . $this->_directoryTemplateLanguages .
+        $langDir . DIRECTORY_SEPARATOR . $name . '.php';
     }
 
-    return $languagefiles;
+    // Fallback to site template path
+    return $this->getSiteTemplateLanguageDirectory() . $langDir . DIRECTORY_SEPARATOR . $name . '.php';
   }
 
   /**
-   * Retrieves the default JavaScript path for a given template name.
+   * Retrieves the path to the default JavaScript file in the template
+   * Builds the complete path by combining site directory, template sources, and JavaScript directory
    *
-   * @param string $name The name of the JavaScript file.
-   * @return string The full path to the JavaScript file.
+   * @param string $name The name of the JavaScript file
+   * @return string The full path to the JavaScript file
    */
   public function getTemplateDefaultJavaScript(string $name): string
   {
@@ -958,20 +980,18 @@ class Template
   }
 
   /**
-   * Retrieves the file path of the JavaScript file for the specified template theme.
+   * Retrieves the path to a JavaScript file based on the current theme
+   * First checks in the current theme directory, falls back to default template if not found
    *
-   * @param string $name The name of the JavaScript file to retrieve.
-   * @return string The file path
+   * @param string $name The name of the JavaScript file to locate
+   * @return string Full path to the JavaScript file
    */
   public function getTemplateThemaJavaScript(string $name): string
   {
-    if (is_file($this->getPathDirectoryTemplateThema() . $this->_directoryJavascript . $name)) {
-      $javascript = $this->getPathDirectoryTemplateThema() . $this->_directoryJavascript . $name;
-    } else {
-      $javascript = $this->getDefaultTemplateDirectory() . DIRECTORY_SEPARATOR . $this->_directoryJavascript . $name;
-    }
+    $themaPath = $this->getPathDirectoryTemplateThema() . $this->_directoryJavascript . trim($name);
+    $defaultPath = $this->getDefaultTemplateDirectory() . DIRECTORY_SEPARATOR . $this->_directoryJavascript . trim($name);
 
-    return $javascript;
+    return is_file($themaPath) ? $themaPath : $defaultPath;
   }
 
   /**

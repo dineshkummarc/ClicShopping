@@ -20,11 +20,15 @@ class pr_products_reviews_info_button_process
   public $description;
   public int|null $sort_order = 0;
   public bool $enabled = false;
+  private mixed $cache_block;
+  private mixed $lang;
 
   public function __construct()
   {
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
+    $this->cache_block = 'products_reviews_info_button_process_';
+    $this->lang = Registry::get('Language')->getId();
 
     $this->title = CLICSHOPPING::getDef('modules_products_reviews_info_button_process_title');
     $this->description = CLICSHOPPING::getDef('modules_products_reviews_info_button_process_description');
@@ -38,26 +42,40 @@ class pr_products_reviews_info_button_process
   public function execute()
   {
     $CLICSHOPPING_Template = Registry::get('Template');
-
-    $content_width = (int)MODULES_PRODUCTS_REVIEWS_INFO_BUTTON_PROCESS_CONTENT_WIDTH;
-    $text_position = MODULES_PRODUCTS_REVIEWS_INFO_BUTTON_PROCESS_POSITION;
-
+    $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
+    $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
+      
     if (isset($_GET['Products'], $_GET['ReviewsInfo'])) {
-      $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
+      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        // Cache basé sur la langue et l'ID du produit pour les boutons
+        $cache_id = $this->cache_block . $this->lang . '_' . (int)$_GET['products_id'];
+        $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
 
-      $button_back = HTML::button(CLICSHOPPING::getDef('button_back'), null, CLICSHOPPING::link(null, 'Products&Reviews&products_id=' . $CLICSHOPPING_ProductsCommon->getID()), 'primary');
-      $button_process = HTML::button(CLICSHOPPING::getDef('button_write'), null, CLICSHOPPING::link(null, 'Products&ReviewsWrite&products_id=' . $CLICSHOPPING_ProductsCommon->getID()), 'success');
+        if ($cache_output !== false) {
+          $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
+          return;
+        }
+      }
 
-      $data = '<!-- pr_products_reviews_info_button_process start -->' . "\n";
+      $content_width = (int)MODULES_PRODUCTS_REVIEWS_INFO_BUTTON_PROCESS_CONTENT_WIDTH;
+      $text_position = MODULES_PRODUCTS_REVIEWS_INFO_BUTTON_PROCESS_POSITION;
+
+      $button_back = HTML::button(CLICSHOPPING::getDef('button_back'), null, CLICSHOPPING::link(null, 'Products&ReviewsInfo&products_id=' . (int)$_GET['products_id']), 'primary');
+      $button_process = HTML::button(CLICSHOPPING::getDef('button_write_review'), null, CLICSHOPPING::link(null, 'Products&ReviewsWrite&products_id=' . (int)$_GET['products_id']), 'success');
+
+      $reviews_button = '<!-- Start products_reviews_info_button_process -->' . "\n";
 
       ob_start();
       require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/products_reviews_info_button_process'));
+      $reviews_button .= ob_get_clean();
 
-      $data .= ob_get_clean();
+      $reviews_button .= '<!-- end products_reviews_info_button_process -->' . "\n";
 
-      $data .= '<!-- pr_products_reviews_info_button_process end -->' . "\n";
+      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        $CLICSHOPPING_TemplateCache->setCache($cache_id, $reviews_button);
+      }
 
-      $CLICSHOPPING_Template->addBlock($data, $this->group);
+      $CLICSHOPPING_Template->addBlock($reviews_button, $this->group);
     }
   } // public function execute
 

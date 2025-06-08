@@ -14,7 +14,7 @@ class organization extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicS
 {
 
   public $default = '';
-  public int|null $sort_order = 35;
+  public int|null $sort_order = 32;
   public bool $app_configured = true;
 
   protected function init()

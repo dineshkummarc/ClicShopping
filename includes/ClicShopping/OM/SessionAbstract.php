@@ -19,9 +19,21 @@ namespace ClicShopping\OM;
  */
 abstract class SessionAbstract
 {
-  protected $name;
+  protected string $name = '';
   protected bool $force_cookies = true;
-  public ?string $sameSite;
+  public string|null $sameSite;
+
+  public function __construct(string|null $name = null)
+  {
+    if ($name === null) {
+      $currentName = session_name();
+      $this->name = $currentName !== false ? $currentName : '';
+    } else {
+      $this->name = $name;
+    }
+
+    $this->setName($this->name);
+  }
 
   /**
    * Checks if a session exists

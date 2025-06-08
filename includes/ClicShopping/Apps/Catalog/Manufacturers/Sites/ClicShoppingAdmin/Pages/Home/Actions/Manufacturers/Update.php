@@ -36,7 +36,6 @@ class Update extends \ClicShopping\OM\PagesActionsAbstract
     $manufacturers_name = HTML::sanitize($_POST['manufacturers_name']);
 
     $sql_data_array = ['manufacturers_name' => $manufacturers_name];
-
     $update_sql_data = ['last_modified' => 'now()'];
 
     $sql_data_array = array_merge($sql_data_array, $update_sql_data);
@@ -82,7 +81,7 @@ class Update extends \ClicShopping\OM\PagesActionsAbstract
       );
     }
 
-    $CLICSHOPPING_Hooks->call('Manufacturers', 'Save');
+    $CLICSHOPPING_Hooks->call('Manufacturers', 'Update');
 
     $this->app->redirect('Manufacturers&page=' . $page . '&mID=' . $manufacturers_id);
   }

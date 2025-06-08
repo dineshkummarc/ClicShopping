@@ -28,7 +28,6 @@ class Mail
   protected string $text;
   protected string $html_text;
   protected string $lf;
-  public string $Debugoutput;
   protected string $fileError;
 
 //Enable SMTP debugging
@@ -358,7 +357,7 @@ class Mail
 // If not the email is not sent
     $error_email = false;
 
-    if ($this->validateDomainEmail($to_addr === false) || $this->excludeEmailDomain($to_addr) === true) {
+    if ($this->validateDomainEmail($to_addr) === false || $this->excludeEmailDomain($to_addr) === true || $this->temporaryEmailExcluded($to_addr) === true) {
       $error_email = true;
     }
 
@@ -432,7 +431,7 @@ class Mail
     }
 
     // Send message
-    $this->send($to_email_address, $to_name, $from_email_name, $from_email_address, $email_subject);
+    $this->send($to_email_address, $from_email_name, $from_email_address, $to_name, $email_subject);
   }
 
   /**
@@ -457,9 +456,9 @@ class Mail
    * @param string|null $email The email address to validate and check against the banned domain list. Defaults to an empty string.
    * @return bool Returns true if the email belongs to a banned domain or is invalid, otherwise false.
    */
-  public function excludeEmailDomain(?string $email = '')
+  public function excludeEmailDomain(string|null $email = ''): bool
   {
-    if (SEND_EMAILS == 'false') {
+    if (SEND_EMAILS == 'true') {
       if (filter_var($email, FILTER_VALIDATE_EMAIL) && !empty($email)) {
         $bannedDomainList = explode(',', CONFIGURATION_EXLCLUDE_EMAIL_DOMAIN);
 
@@ -484,5 +483,56 @@ class Mail
         }
       }
     }
+
+    return false;
+  }
+
+/**
+   * Checks if the provided email address belongs to a temporary or disposable email domain.
+   *
+   * @param string|null $email The email address to check.
+   * @return bool Returns true if the email domain is excluded; otherwise, false.
+   */
+  private function temporaryEmailExcluded(string|null $email = '') : bool
+  {
+    if (SEND_EMAILS == 'true') {
+      $temp_domains = [
+        '10minutemail.com',
+        'guerrillamail.com',
+        'mailinator.com',
+        'temp-mail.org',
+        'trashmail.com',
+        'yopmail.com',
+        'maildrop.cc',
+        'dispostable.com',
+        'fakeinbox.com',
+        'getairmail.com',
+        'throwawaymail.com',
+        'tempinbox.com',
+        'moakt.com',
+        'mytrashmail.com',
+        'emailondeck.com',
+        'mintemail.com',
+        'mailnesia.com',
+        'spambog.com',
+        'spamgourmet.com',
+        'sharklasers.com',
+        'grr.la',
+        'maildrop.cc',
+        'anonbox.net',
+        '0wnd.net',
+        'binkmail.com',
+        'spambox.us'
+      ];
+
+
+      $domain = strtolower(substr(strrchr($email, "@"), 1));
+
+      if (in_array($domain, $temp_domains)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

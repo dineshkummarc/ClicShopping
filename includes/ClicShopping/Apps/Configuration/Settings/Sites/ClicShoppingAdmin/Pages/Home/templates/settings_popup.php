@@ -16,7 +16,7 @@ use ClicShopping\Sites\ClicShoppingAdmin\CallUserFuncConfiguration;
 $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 $CLICSHOPPING_Settings = Registry::get('Settings');
 
-$gID = (isset($_GET['gID'])) ? $_GET['gID'] : 1;
+$gID = (isset($_GET['gID'])) ? (int)$_GET['gID'] : 1;
 
 $Qconfiguration = $CLICSHOPPING_Settings->db->get('configuration', [
   'configuration_id',
@@ -76,8 +76,7 @@ if ($cInfo->set_function) {
   $value_field = HTML::inputField('configuration[' . $cInfo->configuration_key . ']', $cInfo->configuration_value);
 }
 
-echo HTML::form('configuration', $CLICSHOPPING_Settings->link('SettingsPopUp&Update&gID=' . $_GET['gID'] . '&cID=' . $cInfo->configuration_id));
-
+echo HTML::form('configuration', $CLICSHOPPING_Settings->link('SettingsPopUp&Update&gID=' . (int)$_GET['gID'] . '&cID=' . (int)$cInfo->configuration_id), 'post', 'role="form" id="usrForm"', ['tokenize' => true]);
 ?>
 <div class="clearfix"></div>
 <div class="row">
@@ -96,12 +95,13 @@ echo HTML::form('configuration', $CLICSHOPPING_Settings->link('SettingsPopUp&Upd
 
 
 <div style="padding:20px 10px 30px 10px;">
-  <div s class="text-start"
-       style="font-weight: bold; font-size:12px;"><?php echo '&nbsp;' . $cInfo->configuration_title; ?></div>
+  <div class="text-start"
+       style="font-weight: bold; font-size:12px;"><?php echo '&nbsp;' . HTML::output($cInfo->configuration_title); ?></div>
   <div class="mt-1"></div>
-  <div class="text-start"><?php echo $cInfo->configuration_description; ?></div>
+  <div class="text-start"><?php echo HTML::output($cInfo->configuration_description); ?></div>
   <div class="mt-1"></div>
   <div><?php echo $value_field; ?></div>
 </div>
 
 </form>
+  <div class="py-2"></div>

@@ -25,8 +25,19 @@ abstract class ModulesAbstract
   protected $interface;
   protected string $ns = 'ClicShopping\Apps\\';
 
+  /**
+   * Retrieves the namespace of the module.
+   *
+   * @return string The namespace of the module.
+   */
   abstract public function getInfo($app, $key, $data);
 
+  /**
+   * Retrieves the class name of the module.
+   *
+   * @param string $module The name of the module.
+   * @return string The class name of the module.
+   */
   abstract public function getClass($module);
 
   /**
@@ -60,7 +71,7 @@ abstract class ModulesAbstract
    *
    * @return array The filtered array of modules.
    */
-  public function filter($modules, $filter)
+  public function filter(array $modules, string$filter)
   {
     return $modules;
   }

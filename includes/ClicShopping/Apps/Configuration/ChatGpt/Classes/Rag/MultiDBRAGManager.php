@@ -1,0 +1,541 @@
+<?php
+/**
+ *
+ * @copyright 2008 - https://www.clicshopping.org
+ * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
+ * @Licence GPL 2 & MIT
+ * @Info : https://www.clicshopping.org/forum/trademark/
+ *
+ */
+namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
+
+use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Hash;
+use ClicShopping\OM\HTML;
+use ClicShopping\OM\Registry;
+
+use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\AnalyticsAgent;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
+
+use LLPhant\Query\SemanticSearch\LLMReranker;
+use LLPhant\Embeddings\Document;
+use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
+
+/**
+ * MultiDBRAGManager Class
+ *
+ * This class manages multiple vector databases for Retrieval-Augmented Generation (RAG).
+ * It provides functionality for document management, similarity search, and question answering
+ * across multiple vector stores using OpenAI embeddings.
+ *
+ * Key features:
+ * - Multiple vector store management
+ * - Document embedding and storage
+ * - Similarity search across multiple databases
+ * - Question answering using RAG
+ * - Support for different languages and entity types
+ *
+ * @package ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag
+ */
+class MultiDBRAGManager
+{
+  private mixed $app;
+  private mixed $db;
+  private mixed $language;
+  private mixed $embeddingGenerator;
+  private array $vectorStores = [];
+
+  private bool $debug = false;
+  
+  /**
+   * Constructor for MultiDBRAGManager
+   * Initializes the RAG system with specified model and tables
+   *
+   * @param string|null $model OpenAI model to use (null for default configuration)
+   * @param array $tableNames List of table names to use (empty for all embedding tables)
+   * @param array $modelOptions Additional model options (temperature, etc.)
+   * @throws \Exception If initialization fails
+   */
+  public function __construct(?string $model = null, array $tableNames = [], array $modelOptions = [])
+  {
+    // Initialisation de l'application ChatGpt via Registry
+    if (!Registry::exists('ChatGpt')) {
+      Registry::set('ChatGpt', new ChatGpt());
+    }
+
+    $this->app = Registry::get('ChatGpt');
+    $this->db = Registry::get('Db');
+
+    $this->language = Registry::get('Language');
+    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
+    $this->securityLogger = new SecurityLogger();
+
+    $parameters = null;
+    $model = $model ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL  : 'default_model');
+
+    if (!is_null($model)) {
+      $parameters['model'] = $model;
+    } elseif (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL')) {
+      $parameters['model'] = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
+    }
+
+    Gpt::getOpenAiGpt($parameters);
+
+    // Initialize vector stores
+    $this->initializeVectorStores($tableNames);
+    $this->embeddingGenerator = $this->createEmbeddingGenerator();
+  }
+
+  /**
+   * Returns the embedding generator instance
+   *
+   * @return EmbeddingGeneratorInterface Instance of the embedding generator
+   */
+  private function getEmbeddingGenerator(): EmbeddingGeneratorInterface {
+    if (!isset($this->embeddingGenerator)) {
+      $this->embeddingGenerator = $this->createEmbeddingGenerator();
+    }
+
+    return $this->embeddingGenerator;
+  }
+
+  /**
+   * Creates an embedding generator using the specified Gpt class
+   *
+   * @return EmbeddingGeneratorInterface Instance of the embedding generator
+   */
+  private function createEmbeddingGenerator(): EmbeddingGeneratorInterface
+  {
+    return new class(Gpt::class) implements EmbeddingGeneratorInterface
+    {
+      private $gptClass;
+
+      /**
+       * Constructor for the embedding generator
+       *
+       * @param string $gptClass Class name of the Gpt instance
+       */
+      public function __construct(string $gptClass)
+      {
+        $this->gptClass = $gptClass;
+      }
+
+      /**
+       * Embeds a single text string
+       *
+       * @param string $text Text to embed
+       * @return array Embedding vector
+       */
+      public function embedText(string $text): array
+      {
+        $generator = NewVector::gptEmbeddingsModel();
+	
+        if (!$generator) {
+          throw new \RuntimeException('Embedding generator non initialisé');
+        }
+
+        return $generator->embedText($text);
+      }
+
+      /**
+       * Embeds a single document
+       *
+       * @param Document $document Document object to embed
+       * @return Document Embedded Document object
+       */
+      public function embedDocument(Document $document): Document
+      {
+        $document->embedding = NewVector::createEmbedding(null, $document);
+
+        return $document;
+      }
+
+      /**
+       * Embeds multiple documents
+       *
+       * @param array $documents Array of Document objects to embed
+       * @return array Array of embedded Document objects
+       */
+      public function embedDocuments(array $documents): array
+      {
+        $results = [];
+
+        foreach ($documents as $document) {
+          $results[] = $this->embedDocument($document);
+        }
+
+        return $results;
+      }
+
+      /**
+       * Returns the length of the embedding vector
+       *
+       * @return int Length of the embedding vector
+       */
+      public function getEmbeddingLength(): int {
+        return NewVector::getEmbeddingLength();
+      }
+    };
+  }
+
+  /**
+   * Initializes vector stores for the specified tables
+   *
+   * @param array $tableNames List of table names to initialize
+   */
+  private function initializeVectorStores(array $tableNames): void
+  {
+    if (empty($tableNames)) {
+      try {
+        $tableNames = DoctrineOrm::getEmbeddingTables();
+        $this->securityLogger->logSecurityEvent("Embedding tables found: " . implode(", ", $tableNames), 'info');
+      } catch (\Exception $e) {
+        $this->securityLogger->logSecurityEvent("Error while retrieving the embedding tables: " . $e->getMessage(), 'error');
+        $tableNames = [];
+      }
+    }
+
+    foreach ($tableNames as $tableName) {
+      try {
+        $this->vectorStores[$tableName] = new MariaDBVectorStore($this->getEmbeddingGenerator(), $tableName);
+        $this->securityLogger->logSecurityEvent("Vector store initialized for the table: " . $tableName, 'info');
+      } catch (\Exception $e) {
+        $this->securityLogger->logSecurityEvent("Error while initializing the vector store for the table {$tableName}: " . $e->getMessage(), 'error');
+      }
+    }
+  }
+
+  /**
+   * Adds a document to the specified vector store
+   *
+   * @param string $content Document content to add
+   * @param string $tableName Name of the table to store the document
+   * @param string $type Document type
+   * @param string $sourceType Source type of the document
+   * @param string $sourceName Name of the source
+   * @param string|null $entityType Entity type (page, category, product, etc.)
+   * @param int|null $entityId Entity ID
+   * @param int|null $languageId Language ID
+   * @return bool True if successful, false otherwise
+   */
+  public function addDocument(string $content, string $tableName, string $type = 'text', string $sourceType = 'manual', string $sourceName = 'manual', string|null $entityType = null, int|null $entityId = null, int|null $languageId = null): bool
+  {
+    try {
+      // Check the table if the vector exist
+      if (!isset($this->vectorStores[$tableName])) {
+        // If the table does not exist, chack if exist inside the db
+        if (!DoctrineOrm::checkTableStructure($tableName)) {
+          // Id the table does not existe, create it
+          if (!DoctrineOrm::createTableStructure($tableName)) {
+            throw new \Exception("Unable to create the table {$tableName}");
+          }
+        }
+
+        // Ajouter la table aux vector stores
+        $this->vectorStores[$tableName] = new MariaDBVectorStore($this->embeddingGenerator, $tableName);
+      }
+
+      // meta data creation
+      $document = new Document();
+      $document->content = $content;
+      $document->sourceType = $sourceType;
+      $document->sourceName = $sourceName;
+      $document->chunkNumber = 128;
+
+      $document->metadata = [
+        'type' => $type,
+        'entity_type' => $entityType,
+        'entity_id' => $entityId,
+        'language_id' => $languageId,
+        'date_modified' => 'now()'
+      ];
+
+      $this->vectorStores[$tableName]->addDocument($document);
+
+      return true;
+    } catch (\Exception $e) {
+      $this->securityLogger->logSecurityEvent('Error while adding the document: ' . $e->getMessage(), 'error');
+
+      return false;
+    }
+  }
+
+  /**
+   * Searches for similar documents across all configured tables
+   *
+   * @param string $query Search query
+   * @param int $limit Maximum number of results per table
+   * @param float $minScore Minimum similarity score (0-1)
+   * @param int|null $languageId Language ID for filtering results
+   * @param string|null $entityType Entity type for filtering results
+   * @return array Array of matching documents with similarity scores
+   */
+  public function searchDocuments(string $query, int $limit = 5, float $minScore = 0.5, int|null $languageId = null, string|null $entityType = null): array {
+    try {
+      $allResults = [];
+
+      if ($this->debug == 'True') {
+        $this->securityLogger->logSecurityEvent("Starting document search for query: " . $query, 'info');
+      }
+      // Vérifier si des vector stores sont disponibles
+
+      if (empty($this->vectorStores)) {
+        if ($this->debug == 'True') {
+          $this->securityLogger->logSecurityEvent("No vector store available", 'error');
+        }
+
+        return [];
+      }
+
+      if ($this->debug == 'True') {
+        $this->securityLogger->logSecurityEvent("Found embedding tables: " . implode(", ", array_keys($this->vectorStores)), 'info');
+      }
+
+      // Génération de l'embedding pour la requête
+      $queryEmbedding = $this->embeddingGenerator->embedText($query);
+
+      if ($this->debug == 'True') {
+        $this->securityLogger->logSecurityEvent("Generated embedding for query, length: " . count($queryEmbedding), 'info');
+      }
+
+      // Rechercher dans chaque vector store
+      foreach ($this->vectorStores as $tableName => $vectorStore) {
+        try {
+          if ($this->debug == 'True') {
+            $this->securityLogger->logSecurityEvent("Table search: " . $tableName, 'info');
+          }
+
+          // Création d'une fonction de filtrage basée sur les critères
+          $filter = function($metadata) use ($languageId, $entityType) {
+            $match = true;
+
+            // Filtrage par langue si spécifié
+            if ($languageId !== null && isset($metadata['language_id'])) {
+              $match = $match && ($metadata['language_id'] == $languageId);
+            }
+
+            // Filtrage par type d'entité si spécifié
+            if ($entityType !== null && isset($metadata['entity_type'])) {
+              $match = $match && ($metadata['entity_type'] == $entityType);
+            }
+
+            return $match;
+          };
+
+          $results = $vectorStore->similaritySearch($queryEmbedding, $limit, $minScore, $filter);
+
+          if ($this->debug == 'True') {
+            $this->securityLogger->logSecurityEvent("Results found in table {$tableName}: " . count($results), 'info');
+          }
+          // Ajouter les résultats à la liste complète
+          foreach ($results as $document) {
+            $allResults[] = $document;
+          }
+        } catch (\Exception $e) {
+          if ($this->debug == 'True') {
+            $this->securityLogger->logSecurityEvent("Error while searching in table {$tableName}: " . $e->getMessage(), 'error');
+            //Continue with other table is if error
+          }
+        }
+      }
+
+      if (!empty($allResults)) {
+        $array_parameters = [
+          'model' => CLICSHOPPING_APP_CHATGPT_CH_MODEL,
+          'max_tokens' => 128
+        ];
+
+        $chat = Gpt::getOpenAiGpt($array_parameters);
+
+        $reranker = new LLMReranker($chat, $limit);
+
+        $allResults = $reranker->transformDocuments([$query], $allResults);
+      }
+
+      // limit the total result
+      $finalResults = array_slice($allResults, 0, $limit);
+
+      if ($this->debug == 'True') {
+        $this->securityLogger->logSecurityEvent("Total number of results found: " . count($finalResults), 'info');
+      }
+
+      return $finalResults;
+    } catch (\Exception $e) {
+      if ($this->debug == 'True') {
+        $this->securityLogger->logSecurityEvent('Error while searching documents: ' . $e->getMessage(), 'error');
+      }
+
+      return [];
+    }
+  }
+
+  /**
+   * Generates an answer to a question using RAG methodology
+   *
+   * This method:
+   * 1. Searches for relevant documents
+   * 2. Creates a context from found documents
+   * 3. Generates a response using the OpenAI model
+   * 4. Includes relevant links and sources in the response
+   *
+   * @param string $question User's question
+   * @param int $limit Maximum number of documents to retrieve
+   * @param float $minScore Minimum similarity score (0-1)
+   * @param int|null $languageId Language ID for filtering results
+   * @param string|null $entityType Entity type for filtering results
+   * @param array $modelOptions Additional options for the model
+   * @return string Generated answer
+   */
+  public function answerQuestion(string $question, int $limit = 5, float $minScore = 0.5, int|null $languageId = null, string|null $entityType = null, array $modelOptions = []): string
+  {
+    try {
+      // research document
+      $documents = $this->searchDocuments($question, $limit, $minScore, $languageId, $entityType);
+
+      if (empty($documents) || !is_array($documents)) {
+        return CLICSHOPPING::getDef('text_rag_answer_question_not_found');
+      }
+
+      // contact preparation and links
+      $context = '';
+      $score = '';
+      $link = '';
+
+      foreach ($documents as $doc) {
+        //$tableName = $doc->metadata['table_name'] ?? 'inconnu';
+        $score = round(($doc->metadata['score'] ?? 0) * 100, 2);
+
+        $link = '';
+
+        if (!empty($doc->metadata['entity_id']) && !empty($doc->metadata['type'])) {
+          $routes = [
+            'products' => 'A&Catalog\Products&Products',
+            'category' => 'A&Catalog\Categories&Categories',
+            'page_manager' => 'A&Communication\PageManager',
+            'orders' => 'A&Orders\Orders',
+            'suppliers' => 'A&Catalog\Suppliers&Suppliers',
+            'manufacturers' => 'A&Catalog\Manufacturers&Manufacturers',
+          ];
+
+          if (isset($routes[$doc->metadata['type']])) {
+            $link = "/n" . HTML::link(CLICSHOPPING::link(null, $routes[$doc->metadata['type']]), $doc->metadata['type']);
+
+            $link = str_replace('%5C', '\\', $link);
+          }
+        }
+
+        $context .= $doc->content . "\n\n";
+
+        if (!empty($link)) {
+          $link .= "- {{$doc->metadata['entity_id']}: {$link} \n";
+        }
+
+          $score .= "- (accuracy: {$score} %)  \n";
+      }
+
+      $array = [
+        'context' => $context,
+        'question' => $question,
+        'links' => $link,
+        'score' => $score
+      ];
+
+      $prompt = CLICSHOPPING::getDef('text_rag_system_message_template' , $array);
+
+      if (!empty($modelOptions)) {
+        $response = Gpt::getGptResponse($prompt);
+
+        return $response;
+      } else {
+        // Use the standard without specific options
+        return Gpt::getGptResponse($prompt);
+      }
+    } catch (\Exception $e) {
+      $this->securityLogger->logSecurityEvent('Error during response generation: ' . $e->getMessage(), 'error');
+
+      return CLICSHOPPING::getDef('text_rag_answer_question_error');
+    }
+  }
+
+
+  /**
+   * Formats the analysis results for display
+   *
+   * @param array $results Analysis results
+   * @return string|null Formatted results for display
+   */
+  public function formatResults(array $results): string|null
+  {
+    $formatter = new ResultFormatter();
+    $result = $formatter->format($results);
+
+    if (is_array($result) && array_key_exists('content', $result)) {
+      $result = $result['content'];
+    } else {
+      $result = 'Error : please change or adapt your question';
+    }
+
+    return $result;
+  }
+
+  /**
+   * Executes an analytical query on e-commerce data
+   *
+   * This method is specifically designed for analytical queries
+   * that require calculations, aggregations, or precise searches
+   * on numerical or structured data.
+   *
+   * @param string $query User\'s question or query
+   * @param string|null $entityType Type of entity to analyze (products, orders, etc.)
+   * @return array Analysis results with structured data
+   */
+  public function executeAnalyticsQuery(string $query, string|null $entityType = null): array
+  {
+    try {
+      $analyticsAgent = new AnalyticsAgent();
+
+      //Check the request
+      if (!$analyticsAgent->isAnalyticsQuery($query)) {
+        $array = [
+          'type' => 'not_analytics',
+          'message' => CLICSHOPPING::getDef('text_not_analytics')
+        ];
+	
+        return $array;
+      }
+
+      $results = $analyticsAgent->processBusinessQuery($query);
+
+      if ($results['type'] === 'error') {
+        return [
+          'type' => 'error',
+          'message' => $results['message']
+        ];
+      }
+
+      $matchedCategories = $analyticsAgent->getAnalyticsCategories($query);
+
+      $array = [
+        'type' => 'analytics_results',
+        'query' => $query,
+        'matched_categories' => $matchedCategories,
+        'sql_query' => $results['query'] ?? '',
+        'interpretation' => Hash::displayDecryptedDataText($results['interpretation']),
+        'count' => $results['count'],
+        'results' => $results['results']
+      ];
+
+      return $array;
+    } catch (\Exception $e) {
+      return [
+        'type' => 'error',
+        'message' => 'Error executing analytics query: ' . $e->getMessage()
+      ];
+    }
+  }
+}

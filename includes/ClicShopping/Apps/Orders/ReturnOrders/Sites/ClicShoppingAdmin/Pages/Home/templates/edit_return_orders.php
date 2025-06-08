@@ -10,6 +10,7 @@
 
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\OM\Hash;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 use ClicShopping\Apps\Orders\ReturnOrders\Classes\ClicShoppingAdmin\ReturnProduct;
 
@@ -144,7 +145,7 @@ $languages = $CLICSHOPPING_Language->getLanguages();
                     for="<?php echo $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_firstname'); ?>"
                     class="col-5 col-form-label"><?php echo $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_firstname'); ?></label>
                   <div class="col-md-7">
-                    <?php echo HTML::inputField('customer_firstname', $Qreturn->value('customer_firstname'), 'required aria-required="true" id="ref_return_orders_customer_first_name" placeholder="' . $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_firstname') . '"', 'ref_return_orders_customer_first_name'); ?>
+                    <?php echo HTML::inputField('customer_firstname',  Hash::displayDecryptedDataText($Qreturn->value('customer_firstname')), 'required aria-required="true" id="ref_return_orders_customer_first_name" placeholder="' . $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_firstname') . '"', 'ref_return_orders_customer_first_name'); ?>
                   </div>
                 </div>
               </div>
@@ -157,7 +158,7 @@ $languages = $CLICSHOPPING_Language->getLanguages();
                     for="<?php echo $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_lastname'); ?>"
                     class="col-5 col-form-label"><?php echo $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_lastname'); ?></label>
                   <div class="col-md-7">
-                    <?php echo HTML::inputField('customer_lastname', $Qreturn->value('customer_lastname'), 'required aria-required="true" id="ref_return_orders_customer_last__name" placeholder="' . $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_lastname') . '"', 'ref_return_orders_customer_lastname'); ?>
+                    <?php echo HTML::inputField('customer_lastname',  Hash::displayDecryptedDataText($Qreturn->value('customer_lastname')), 'required aria-required="true" id="ref_return_orders_customer_last__name" placeholder="' . $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_lastname') . '"', 'ref_return_orders_customer_lastname'); ?>
                   </div>
                 </div>
               </div>
@@ -171,7 +172,7 @@ $languages = $CLICSHOPPING_Language->getLanguages();
                     for="<?php echo $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_email'); ?>"
                     class="col-5 col-form-label"><?php echo $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_email'); ?></label>
                   <div class="col-md-7">
-                    <?php echo HTML::inputField('customer_email', $Qreturn->value('customer_email'), 'required aria-required="true" id="ref_return_orders_customer_email" placeholder="' . $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_email') . '"', 'ref_return_orders_customer_customer_email'); ?>
+                    <?php echo HTML::inputField('customer_email',  Hash::displayDecryptedDataText($Qreturn->value('customer_email')), 'required aria-required="true" id="ref_return_orders_customer_email" placeholder="' . $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_email') . '"', 'ref_return_orders_customer_customer_email'); ?>
                   </div>
                 </div>
               </div>
@@ -185,7 +186,7 @@ $languages = $CLICSHOPPING_Language->getLanguages();
                     for="<?php echo $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_phone'); ?>"
                     class="col-5 col-form-label"><?php echo $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_phone'); ?></label>
                   <div class="col-md-7">
-                    <?php echo HTML::inputField('customer_telephone', $Qreturn->value('customer_telephone'), 'required aria-required="true" id="ref_return_orders_customer_phone" placeholder="' . $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_phone') . '"', 'ref_return_orders_customer_customer_phone'); ?>
+                    <?php echo HTML::inputField('customer_telephone',  Hash::displayDecryptedDataText($Qreturn->value('customer_telephone')), 'required aria-required="true" id="ref_return_orders_customer_phone" placeholder="' . $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_customer_phone') . '"', 'ref_return_orders_customer_customer_phone'); ?>
                   </div>
                 </div>
               </div>

@@ -2,8 +2,8 @@
   "title": "ChatGpt App",
   "app": "ChatGpt",
   "vendor": "ChatGpt",
-  "version": "1.1",
-  "req_core_version": "3.4",
+  "version": "1.2",
+  "req_core_version": "4.0",
   "license": "GPL-2",
   "authors": [
     {
@@ -21,20 +21,40 @@
       "CostEstimation": "Module\\ClicShoppingAdmin\\Dashboard\\CostEstimation"
     },
     "Hooks": {
+      "ClicShoppingAdmin/Cronjob": {
+        "Process": "Module\\Hooks\\ClicShoppingAdmin\\Cronjob\\Process"
+      },
+      "ClicShoppingAdmin/Language": {
+        "DeleteConfirm": "Module\\Hooks\\ClicShoppingAdmin\\Langues\\DeleteConfirm"
+      },
       "ClicShoppingAdmin/Products": {
         "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\Products\\SeoChatGpt",
-        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Insert"
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Products\\DeleteAll",
+        "Delete": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Delete"
       },
       "ClicShoppingAdmin/Categories": {
         "CategoriesContentTab3": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\SeoChatGpt",
-        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\Insert"
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\Update",
+        "DeleteConfirm": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\DeleteConfirm"
       },
       "ClicShoppingAdmin/Manufacturers": {
         "ManufacturersTab4": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\SeoChatGpt",
-        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\Insert"
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\DeleteAll"
+      },
+      "ClicShoppingAdmin/Suppliers": {
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Suppliers\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Suppliers\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Suppliers\\DeleteAll"
       },
       "ClicShoppingAdmin/PageManager": {
-        "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\PageManager\\SeoChatGpt"
+        "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\PageManager\\SeoChatGpt",
+        "Save": "Module\\Hooks\\ClicShoppingAdmin\\PageManager\\Save",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\PageManager\\DeleteAll"
       },
       "ClicShoppingAdmin/SEO": {
         "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\SEO\\SeoChatGpt"
@@ -42,11 +62,34 @@
       "ClicShoppingAdmin/Recommendations": {
         "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\SEO\\SeoChatGpt"
       },
+      "ClicShoppingAdmin/Reviews": {
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Reviews\\DeleteAll",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Reviews\\Update"
+      },
+      "ClicShoppingAdmin/ReviewsSentiment": {
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\DeleteAll"
+      },
+      "ClicShoppingAdmin/Orders": {
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\Update",
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\DeleteConfirm",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\DeleteAll"
+      },
+      "ClicShoppingAdmin/ReturnOrders": {
+        "Save": "Module\\Hooks\\ClicShoppingAdmin\\ReturnOrders\\Save",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\ReturnOrders\\DeleteAll"
+      },
       "Shop/Reviews": {
         "SaveEntry": "Module\\Hooks\\Shop\\Reviews\\SaveEntry"
       },
-      "ClicShoppingAdmin/ReviewsSentiment": {
-        "Update": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\Update"
+      "Shop/ReviewsWrite": {
+        "Process": "Module\\Hooks\\Shop\\ReviewsWrite\\Process"
+      },
+      "Shop/Orders": {
+        "Process": "Module\\Hooks\\Shop\\Orders\\Process"
+      },
+      "Shop/ReturnOrders": {
+        "Process": "Module\\Hooks\\Shop\\ReturnOrders\\Process"
       }
     }
   },

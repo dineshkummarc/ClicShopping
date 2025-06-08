@@ -35,6 +35,7 @@ class CLICSHOPPING
   protected static string $site = 'Shop';
   protected static array $cfg = [];
   protected static ?string $application;
+  protected static string $directoryVersion;
 
   /**
    * Initializes the system by setting up configuration, error handling, HTTP settings, and the site application.
@@ -79,6 +80,7 @@ class CLICSHOPPING
         trigger_error('Version number is not numeric. Please verify: ' . $file);
       }
     }
+
     return self::$version;
   }
 
@@ -383,7 +385,7 @@ class CLICSHOPPING
 
     $args[0] = $req_site . DIRECTORY_SEPARATOR . self::getConfig('http_images_path', $req_site) . $page;
 
-    $url = forward_static_call_array('self::link', $args);
+    $url = forward_static_call_array([static::class, 'link'], $args);
 
     return $url;
   }
@@ -568,7 +570,7 @@ class CLICSHOPPING
    * @param string|null $group The group to which the configuration belongs. Defaults to 'global' if not provided.
    * @return void
    */
-  public static function setConfig(string $key, $value, string|null $group = null)
+  public static function setConfig(string $key, mixed $value, string|null $group = null)
   {
     if (!isset($group)) {
       $group = 'global';
@@ -772,7 +774,6 @@ class CLICSHOPPING
   {
     return basename(self::getIndex());
   }
-
 
   /**
    * Converts an associative array into a query string-style formatted string.

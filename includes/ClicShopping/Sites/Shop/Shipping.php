@@ -168,25 +168,28 @@ class Shipping
    *                    details such as 'id', 'title', 'info', and 'cost'. Returns null
    *                    if no valid shipping method is found.
    */
-  public function getFirst()
+  public function getFirst():array|null
   {
     foreach ($this->modules as $value) {
       if (str_contains($value, '\\')) {
         $obj = Registry::get('Shipping_' . str_replace('\\', '_', $value));
-      }
-      if ($obj->enabled) {
-        foreach ($obj->quotes['methods'] as $method) {
-          if (isset($method['cost']) && !is_null($method['cost'])) {
-            return [
-              'id' => $obj->quotes['id'] . '_' . $method['id'],
-              'title' => $obj->quotes['module'] . (isset($method['title']) && !empty($method['title']) ? ' (' . $method['title'] . ')' : ''),
-              'info' => $obj->quotes['info'] . (isset($method['info']) && !empty($method['info']) ? ' (' . $method['info'] . ')' : ''),
-              'cost' => $method['cost']
-            ];
+
+        if ($obj->enabled) {
+          foreach ($obj->quotes['methods'] as $method) {
+            if (isset($method['cost']) && !is_null($method['cost'])) {
+              return [
+                'id' => $obj->quotes['id'] . '_' . $method['id'],
+                'title' => $obj->quotes['module'] . (isset($method['title']) && !empty($method['title']) ? ' (' . $method['title'] . ')' : ''),
+                'info' => $obj->quotes['info'] . (isset($method['info']) && !empty($method['info']) ? ' (' . $method['info'] . ')' : ''),
+                'cost' => $method['cost']
+              ];
+            }
           }
         }
       }
     }
+
+    return null;
   }
 
   /**
@@ -242,6 +245,8 @@ class Shipping
 
       return $cheapest;
     }
+
+    return false;
   }
 
   /**

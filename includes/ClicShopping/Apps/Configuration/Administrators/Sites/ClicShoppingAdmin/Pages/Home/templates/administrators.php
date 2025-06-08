@@ -24,7 +24,10 @@ $Qadmin = $CLICSHOPPING_Administrators->db->get('administrators', ['id',
   'name',
   'first_name',
   'access',
-  'status'
+  'status',
+  'email_verification',
+  'email_verification_code',
+  'email_verification_expiry'
 ],
   null,
   'user_name'

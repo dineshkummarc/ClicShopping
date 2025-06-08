@@ -1,0 +1,6 @@
+text_page_manager_name = [{{pages_title}}]
+text_page_manager_description = [Description {{pages_title}}]
+text_page_manager_seo_title = [Seo title {{pages_title}}]
+text_page_manager_seo_description = [Seo description {{pages_title}}]
+text_page_manager_seo_keywords = [Seo keywords {{pages_title}}]
+text_page_manager_taxonomy = [Taxonomy]

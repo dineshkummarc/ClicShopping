@@ -43,7 +43,7 @@ abstract class SitesAbstract implements \ClicShopping\OM\SitesInterface
 
     $this->code = (new ReflectionClass($this))->getShortName();
 
-    return $this->init();
+    $this->init();
   }
 
   /**

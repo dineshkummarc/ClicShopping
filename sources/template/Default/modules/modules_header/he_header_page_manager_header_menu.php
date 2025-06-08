@@ -11,21 +11,88 @@
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
+/**
+ * Class he_header_page_manager_header_menu
+ *
+ * This class manages the display and configuration of the header menu for the page manager module in ClicShopping.
+ * It handles module initialization, execution (including caching and template rendering), and configuration management.
+ *
+ * Properties:
+ * - $code: The module code (class name).
+ * - $group: The module group (directory name).
+ * - $title: The module title (from language definitions).
+ * - $description: The module description (from language definitions).
+ * - $sort_order: The display sort order.
+ * - $enabled: Whether the module is enabled.
+ * - $pages: The pages where the module is displayed.
+ * - $cache_block: The cache block identifier.
+ * - $lang: The current language ID.
+ *
+ * Methods:
+ * - __construct(): Initializes module properties and configuration.
+ * - execute(): Executes the module logic, handles caching, and renders the menu.
+ * - isEnabled(): Checks if the module is enabled.
+ * - check(): Checks if the module configuration is defined.
+ * - install(): Installs the module configuration in the database.
+ * - remove(): Removes the module configuration from the database.
+ * - keys(): Returns the configuration keys used by this module.
+ */
 class he_header_page_manager_header_menu
 {
+  /**
+   * @var string Module code (class name)
+   */
   public string $code;
+
+  /**
+   * @var string Module group (directory name)
+   */
   public string $group;
+
+  /**
+   * @var string Module title
+   */
   public $title;
+
+  /**
+   * @var string Module description
+   */
   public $description;
+
+  /**
+   * @var int|null Sort order
+   */
   public int|null $sort_order = 0;
+
+  /**
+   * @var bool Module enabled status
+   */
   public bool $enabled = false;
+
+  /**
+   * @var mixed Pages where the module is displayed
+   */
   public $pages;
 
+  /**
+   * @var string Cache block identifier
+   */
+  private mixed $cache_block;
+
+  /**
+   * @var int Language ID
+   */
+  private mixed $lang;
+
+  /**
+   * Constructor. Initializes module properties and configuration.
+   */
   public function __construct()
   {
-
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
+    $this->cache_block = 'header_page_manager_menu_';
+    $this->lang = Registry::get('Language')->getId();
 
     $this->title = CLICSHOPPING::getDef('module_header_page_manager_header_menu_title');
     $this->description = CLICSHOPPING::getDef('module_header_page_manager_header_menu_description');
@@ -37,39 +104,76 @@ class he_header_page_manager_header_menu
     }
   }
 
+  /**
+   * Executes the module logic, handles caching and rendering.
+   *
+   * @return void
+   */
   public function execute()
   {
     $CLICSHOPPING_Template = Registry::get('Template');
     $CLICSHOPPING_PageManagerShop = Registry::get('PageManagerShop');
+    $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
+    $CLICSHOPPING_Customer = Registry::get('Customer');
 
     if (MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_STATUS == 'True') {
-      $content_width = (int)MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_CONTENT_WIDTH;
-      $header_menu = $CLICSHOPPING_PageManagerShop->pageManagerDisplayHeaderMenu('<div class="menuHeaderPageManager">', '</div>');
+    if ($this->enabled) {
+      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        // Include customer group ID to manage group-specific menus
+        $cache_id = $this->cache_block . $this->lang . '_' . $CLICSHOPPING_Customer->getCustomersGroupID();
+        $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
 
-      $data = '<!-- Boxe page manager menu header  start -->' . "\n";
+        if ($cache_output !== false) {
+          $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
+          return;
+        }
+      }
 
-      ob_start();
+        $content_width = (int)MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_CONTENT_WIDTH;
+        $header_menu = $CLICSHOPPING_PageManagerShop->pageManagerDisplayHeaderMenu('<div class="menuHeaderPageManager">', '</div>');
 
-      require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/header_page_manager_header_menu'));
+        $data = '<!-- Start Page Manager Header Menu -->' . "\n";
 
-      $data .= ob_get_clean();
+        ob_start();
+        require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/header_page_manager_header_menu'));
+        $data .= ob_get_clean();
 
-      $data .= '<!-- Boxe  page manager menu header  end -->' . "\n";
+        $data .= '<!-- End Page Manager Header Menu -->' . "\n";
 
-      $CLICSHOPPING_Template->addBlock($data, $this->group);
+        if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+          $CLICSHOPPING_TemplateCache->setCache($cache_id, $data);
+        }
+
+        $CLICSHOPPING_Template->addBlock($data, $this->group);
+      }
     }
   }
 
+  /**
+   * Checks if the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module configuration is defined.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_STATUS');
   }
 
+  /**
+   * Installs the module configuration in the database.
+   *
+   * @return void
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -86,7 +190,6 @@ class he_header_page_manager_header_menu
       ]
     );
 
-
     $CLICSHOPPING_Db->save('configuration', [
         'configuration_title' => 'Please, select the width of your module ?',
         'configuration_key' => 'MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_CONTENT_WIDTH',
@@ -98,7 +201,6 @@ class he_header_page_manager_header_menu
         'date_added' => 'now()'
       ]
     );
-
 
     $CLICSHOPPING_Db->save('configuration', [
         'configuration_title' => 'Sort order display',
@@ -123,14 +225,23 @@ class he_header_page_manager_header_menu
         'date_added' => 'now()'
       ]
     );
-
   }
 
+  /**
+   * Removes the module configuration from the database.
+   *
+   * @return int
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
+  /**
+   * Returns the configuration keys used by this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array('MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_STATUS',

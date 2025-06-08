@@ -30,6 +30,16 @@ class GptShop
   }
 
   /**
+   * Retrieves the GPT envirnment information
+   *
+   * @return string Returns envirnment information.
+   */
+  public static function getEnvironment(): string
+  {
+    return  Gpt::getEnvironment();
+  }
+
+  /**
    * Retrieves the AJAX URL for the ChatGPT chatbot endpoint or an empty string based on the provided parameter.
    *
    * @param bool $chatGpt Determines whether to return the ChatGPT AJAX URL. If true, returns the URL; if false, returns an empty string.
@@ -40,7 +50,7 @@ class GptShop
     if ($chatGpt === true) {
       $url = CLICSHOPPING::getConfig('http_server', 'ClicShoppingAdmin') . CLICSHOPPING::getConfig('http_path', 'Shop') . 'ext/ajax/ai/chatbot_gpt.php';
     } else {
-      $url = '';
+      $url = CLICSHOPPING::getConfig('http_server', 'Shop') . CLICSHOPPING::getConfig('http_path', 'Shop') . 'ext/ajax/ai/chatbot_gpt.php';
     }
 
     return $url;

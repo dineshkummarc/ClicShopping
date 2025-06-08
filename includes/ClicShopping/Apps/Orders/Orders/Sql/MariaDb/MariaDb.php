@@ -67,5 +67,29 @@ class MariaDb
 
       Cache::clear('menu-administrator');
     }
+
+
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_orders_embedding"');
+
+    if ($Qcheck->fetch() === false) {
+      $sql = <<<EOD
+    CREATE TABLE IF NOT EXISTS clic_orders_embedding (
+          id SERIAL PRIMARY KEY,
+          content text DEFAULT NULL,
+          type text DEFAULT NULL,
+          sourcetype text default 'manual',
+          sourcename text default 'manual',
+          embedding vector(3072) NOT NULL,
+          chunknumber int default(128),
+          date_modified datetime DEFAULT NULL,
+          entity_id INT
+        );
+        
+      CREATE VECTOR INDEX embedding_index ON clic_orders_embedding (embedding);
+   EOD;
+
+      $CLICSHOPPING_Db->exec($sql);
+}
+
   }
 }

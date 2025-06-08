@@ -23,15 +23,15 @@ use function strlen;
  */
 class DirectoryListing
 {
-  protected string $_directory = '';
-  protected bool $_include_files = true;
-  protected bool $_include_directories = true;
-  protected array $_exclude_entries = ['.', '..'];
-  protected bool $_stats = false;
-  protected bool $_recursive = false;
-  protected array $_check_extension = [];
-  protected bool $_add_directory_to_filename = false;
-  protected $_listing;
+  private string $directory = '';
+  private bool $include_files = true;
+  private bool $include_directories = true;
+  private array $exclude_entries = ['.', '..'];
+  private bool $stats = false;
+  private bool $recursive = false;
+  private array $check_extension = [];
+  private bool $adddirectory_to_filename = false;
+  private array $listing = [];
 
   /**
    * Constructor method to initialize the object with a directory path and optional statistics setting.
@@ -55,7 +55,7 @@ class DirectoryListing
    */
   public function setDirectory(string $directory)
   {
-    $this->_directory = $directory;
+    $this->directory = $directory;
   }
 
   /**
@@ -67,9 +67,9 @@ class DirectoryListing
   public function setIncludeFiles(bool $boolean)
   {
     if ($boolean === true) {
-      $this->_include_files = true;
+      $this->include_files = true;
     } else {
-      $this->_include_files = false;
+      $this->include_files = false;
     }
   }
 
@@ -82,9 +82,9 @@ class DirectoryListing
   public function setIncludeDirectories(bool $boolean)
   {
     if ($boolean === true) {
-      $this->_include_directories = true;
+      $this->include_directories = true;
     } else {
-      $this->_include_directories = false;
+      $this->include_directories = false;
     }
   }
 
@@ -98,13 +98,13 @@ class DirectoryListing
   {
     if (is_array($entries)) {
       foreach ($entries as $value) {
-        if (!in_array($value, $this->_exclude_entries)) {
-          $this->_exclude_entries[] = $value;
+        if (!in_array($value, $this->exclude_entries)) {
+          $this->exclude_entries[] = $value;
         }
       }
     } elseif (is_string($entries)) {
-      if (!in_array($entries, $this->_exclude_entries)) {
-        $this->_exclude_entries[] = $entries;
+      if (!in_array($entries, $this->exclude_entries)) {
+        $this->exclude_entries[] = $entries;
       }
     }
   }
@@ -118,9 +118,9 @@ class DirectoryListing
   public function setStats(bool $boolean)
   {
     if ($boolean === true) {
-      $this->_stats = true;
+      $this->stats = true;
     } else {
-      $this->_stats = false;
+      $this->stats = false;
     }
   }
 
@@ -133,9 +133,9 @@ class DirectoryListing
   public function setRecursive(bool $boolean)
   {
     if ($boolean === true) {
-      $this->_recursive = true;
+      $this->recursive = true;
     } else {
-      $this->_recursive = false;
+      $this->recursive = false;
     }
   }
 
@@ -147,7 +147,7 @@ class DirectoryListing
    */
   public function setCheckExtension(string $extension)
   {
-    $this->_check_extension[] = mb_strtolower($extension);
+    $this->check_extension[] = mb_strtolower($extension);
   }
 
   /**
@@ -159,9 +159,9 @@ class DirectoryListing
   public function setAddDirectoryToFilename(bool $boolean)
   {
     if ($boolean === true) {
-      $this->_add_directory_to_filename = true;
+      $this->adddirectory_to_filename = true;
     } else {
-      $this->_add_directory_to_filename = false;
+      $this->adddirectory_to_filename = false;
     }
   }
 
@@ -174,27 +174,27 @@ class DirectoryListing
   public function read(string $directory = '')
   {
     if (empty($directory)) {
-      $directory = $this->_directory;
+      $directory = $this->directory;
     }
 
-    if (!is_array($this->_listing)) {
-      $this->_listing = array();
+    if (!is_array($this->listing)) {
+      $this->listing = array();
     }
 
     if ($dir = @dir($directory)) {
       while (($entry = $dir->read()) !== false) {
-        if (!in_array($entry, $this->_exclude_entries)) {
-          if (($this->_include_files === true) && is_file($dir->path . DIRECTORY_SEPARATOR . $entry)) {
-            if (empty($this->_check_extension) || in_array(mb_strtolower(substr($entry, strrpos($entry, '.') + 1)), $this->_check_extension)) {
-              if ($this->_add_directory_to_filename === true) {
-                if ($dir->path !== $this->_directory) {
-                  $entry = substr($dir->path, strlen($this->_directory) + 1) . DIRECTORY_SEPARATOR . $entry;
+        if (!in_array($entry, $this->exclude_entries)) {
+          if (($this->include_files === true) && is_file($dir->path . DIRECTORY_SEPARATOR . $entry)) {
+            if (empty($this->check_extension) || in_array(mb_strtolower(substr($entry, strrpos($entry, '.') + 1)), $this->check_extension)) {
+              if ($this->adddirectory_to_filename === true) {
+                if ($dir->path !== $this->directory) {
+                  $entry = substr($dir->path, strlen($this->directory) + 1) . DIRECTORY_SEPARATOR . $entry;
                 }
               }
 
-              $this->_listing[] = array('name' => $entry, 'is_directory' => false);
+              $this->listing[] = array('name' => $entry, 'is_directory' => false);
 
-              if ($this->_stats === true) {
+              if ($this->stats === true) {
                 $stats = array(
                   'size' => filesize($dir->path . DIRECTORY_SEPARATOR . $entry),
                   'permissions' => fileperms($dir->path . DIRECTORY_SEPARATOR . $entry),
@@ -203,33 +203,33 @@ class DirectoryListing
                   'last_modified' => filemtime($dir->path . DIRECTORY_SEPARATOR . $entry)
                 );
 
-                $this->_listing[count($this->_listing) - 1] = array_merge($this->_listing[count($this->_listing) - 1], $stats);
+                $this->listing[count($this->listing) - 1] = array_merge($this->listing[count($this->listing) - 1], $stats);
               }
             }
           } elseif (is_dir($dir->path . DIRECTORY_SEPARATOR . $entry)) {
-            if ($this->_include_directories === true) {
+            if ($this->include_directories === true) {
               $entry_name = $entry;
 
-              if ($this->_add_directory_to_filename === true) {
-                if ($dir->path !== $this->_directory) {
-                  $entry_name = substr($dir->path, strlen($this->_directory) + 1) . DIRECTORY_SEPARATOR . $entry;
+              if ($this->adddirectory_to_filename === true) {
+                if ($dir->path !== $this->directory) {
+                  $entry_name = substr($dir->path, strlen($this->directory) + 1) . DIRECTORY_SEPARATOR . $entry;
                 }
               }
 
-              $this->_listing[] = array('name' => $entry_name, 'is_directory' => true);
+              $this->listing[] = array('name' => $entry_name, 'is_directory' => true);
 
-              if ($this->_stats === true) {
+              if ($this->stats === true) {
                 $stats = array(
                   'size' => filesize($dir->path . DIRECTORY_SEPARATOR . $entry),
                   'permissions' => fileperms($dir->path . DIRECTORY_SEPARATOR . $entry),
                   'user_id' => fileowner($dir->path . DIRECTORY_SEPARATOR . $entry),
                   'group_id' => filegroup($dir->path . DIRECTORY_SEPARATOR . $entry),
                   'last_modified' => filemtime($dir->path . DIRECTORY_SEPARATOR . $entry));
-                $this->_listing[count($this->_listing) - 1] = array_merge($this->_listing[count($this->_listing) - 1], $stats);
+                $this->listing[count($this->listing) - 1] = array_merge($this->listing[count($this->listing) - 1], $stats);
               }
             }
 
-            if ($this->_recursive === true) {
+            if ($this->recursive === true) {
               $this->read($dir->path . DIRECTORY_SEPARATOR . $entry);
             }
           }
@@ -250,16 +250,16 @@ class DirectoryListing
    */
   public function getFiles(bool $sort_by_directories = true): array
   {
-    if (!is_array($this->_listing)) {
+    if (!is_array($this->listing)) {
       $this->read();
     }
 
-    if (is_array($this->_listing) && (count($this->_listing) > 0)) {
+    if (is_array($this->listing) && (count($this->listing) > 0)) {
       if ($sort_by_directories === true) {
-        usort($this->_listing, array($this, '_sortListing'));
+        usort($this->listing, array($this, 'sortListing'));
       }
 
-      return $this->_listing;
+      return $this->listing;
     }
 
     return array();
@@ -272,34 +272,31 @@ class DirectoryListing
    */
   public function getSize(): int
   {
-    if (!is_array($this->_listing)) {
+    if (!is_array($this->listing)) {
       $this->read();
     }
 
-    return count($this->_listing);
+    return count($this->listing);
   }
 
   /**
-   * Retrieves the current directory path.
+   * Retrieves the directory path.
    *
-   * @return string The path of the directory.
+   * @return string The directory path.
    */
   public function getDirectory(): string
   {
-    return $this->_directory;
+    return $this->directory;
   }
 
   /**
-   * Compares two file listings for sorting purposes, prioritizing directories over files
-   * and sorting alphabetically by name within each type.
+   * Sorts the listing based on the directory and file names.
    *
-   * @param array $a The first file listing to compare.
-   * @param array $b The second file listing to compare.
-   * @return string Returns a negative integer, zero, or a positive integer
-   *                as the first argument is considered less than, equal to,
-   *                or greater than the second, respectively.
+   * @param array $a The first array to compare.
+   * @param array $b The second array to compare.
+   * @return int Returns an integer less than, equal to, or greater than zero if the first argument is considered to be respectively less than, equal to, or greater than the second.
    */
-  protected function _sortListing(array $a, array $b): string
+  protected function sortListing(array $a, array $b): int
   {
     return strcmp((($a['is_directory'] === true) ? 'D' : 'F') . $a['name'], (($b['is_directory'] === true) ? 'D' : 'F') . $b['name']);
   }

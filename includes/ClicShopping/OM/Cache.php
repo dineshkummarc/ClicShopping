@@ -22,7 +22,7 @@ class Cache
   protected static string $path;
   protected const SAFE_KEY_NAME_REGEX = 'a-zA-Z0-9-_';
   protected string $key;
-  protected $data;
+  protected mixed $data;
 
   /**
    * Constructor method for initializing the class.
@@ -120,7 +120,7 @@ class Cache
     $filename = static::getPath() . $this->key . '.cache';
 
     if (is_file($filename)) {
-      $this->data = unserialize(file_get_contents($filename));
+      $this->data = unserialize(file_get_contents($filename), ['allowed_classes' => false]);
     }
 
     return $this->data;

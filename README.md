@@ -2,23 +2,41 @@
   <img src="https://www.clicshopping.org/images/logonew.png">
 </p>
 
-# ClicShoppingAI
-Unlock the potential of your online business with ClicShoppingAI(tm), a powerful open-source Ecommerce solution that supports B2B, B2C, and B2B-B2C. Now integrated with cutting-edge generative artificial intelligence systems like Gpt and Ollama, ClicShoppingAI takes your store to new heights!
+#The Future of Ecommerce, Powered by the GEN AI
 
-Boost Your Competitiveness - Absolutely Free!
-ClicShoppingAI helps merchants increase their turnover and competitiveness and the best part is, it's completely free! With AI on your side, you can optimize inventory, offer personalized recommendations, and provide top-notch customer service, all without breaking the bank.
+Unlock the full potential of your online business with ClicShoppingAI™, a powerful, open-source Ecommerce platform designed for B2B, B2C, and B2B-B2C.
 
-Seamless, Responsive Design for All Devices:
-Say goodbye to website worries with ClicShoppingAI's modern, responsive design. Customers will enjoy a delightful shopping experience across all devices, including mobile and desktop, without sacrificing speed or performance.
+ClicShoppingAI helps you deliver a seamless shopping experience for your customers while giving you the tools you need to manage your store efficiently.
 
-Lightweight, User-Friendly Installation:
-Don't waste time on complicated setups! Installing ClicShoppingAI is a breeze - just a few clicks on your server or computer, and you're good to go. It's a lightweight, customizable, and user-friendly solution, consuming minimal server resources.
+Easily integrate ClicShoppingAI with the most powerful Generative AI technologies:
 
-Empowering Ongoing Development:
-At ClicShoppingAI, we thrive on community support. By operating on donations, contributions, and financial backing, we ensure continuous platform development, guaranteeing you stay ahead of the competition.
+    Use advanced AI systems like GPT and Ollama to boost your store’s capabilities.
+    Leverage RAG Big Data and AI to enhance customer experience, optimize inventory management, and drive more sales.
+    Take your Ecommerce business to the next level with AI-powered features.
 
-Embrace the Future of Ecommerce - Today!
-Take the leap into the future of Ecommerce with ClicShoppingAI. With AI-driven capabilities and an easy installation process, you can revolutionize your online store in no time. Don't wait - seize the opportunity with ClicShopping now!
+Built for Everyone 
+    
+    Designed  small businesses to large enterprises — ClicShoppingAI’s modular architecture makes it easy to customize, extend, and adapt your store to your unique needs.
+
+Boost Your Business — For Free!
+
+    ClicShoppingAI helps you increase sales and stay competitive — at no cost. With built-in AI tools, you can optimize inventory, deliver personalized recommendations, and enhance customer service effortlessly.
+
+Responsive Design on Any Device
+
+    Offer a seamless shopping experience everywhere. ClicShoppingAI’s modern, responsive design ensures fast, smooth performance across desktops, tablets, and smartphones.
+
+Easy, Lightweight Installation
+
+    Set up your store quickly and easily. ClicShoppingAI installs in just a few clicks, uses minimal server resources, and offers full customization to fit your needs.
+
+Driven by Community Support
+
+    ClicShoppingAI is powered by its community. Donations and contributions help drive continuous improvements, keeping your platform innovative and competitive.
+
+Get Started Today
+Use the Artificial Intlligence to your Ecommerce business with ClicShoppingAI. Fast setup, powerful features, and a vibrant community — all completely free.
+
 
 ## Table of Contents
 
@@ -45,23 +63,23 @@ Take the leap into the future of Ecommerce with ClicShoppingAI. With AI-driven c
 
 
 #Solution
- - The solution is built on modules and APP to have a very big flexibility.
- - The approach is completely modular on the catalog / administration with simple code to understand, to customize and to update at need.
- - All informations are available at the forum https://www.clicshopping or look the [Wiki](https://github.com/ClicShopping/ClicShopping_V3/wiki)
+ - The solution is built on modules and APP to have a nice flexibility.
+ - The approach is completely modular on the catalog / administration with simple code to understand, to customize, and to update at need.
+ - All informations are available at the forum https://www.clicshopping.org or look the [Wiki](https://github.com/ClicShopping/ClicShopping_V3/wiki) for the technical documentation.
  - The modules are available on Github (Official and Community) or by an internal install.
 
 #Marketplace
-  - A markeplace is also available on the : 
+    - A marketplace is also available on the : 
     - For all App : [community](https://www.clicshopping.org/forum/files/) 
     - Or github :
         - Community : https://github.com/ClicShoppingV3Community
         - Official : https://github.com/ClicShoppingOfficialModulesV3
 
 #Requirement (more information in the wiki)
- - Apache 2.4<br>
- - MYSQL 7.x / MariaDb 10.x<br>
- - PHP >= 8.3 or 8.4
- - More information in the Wiki
+ - Apache 2.x <br>
+ - MYSQL 9.x / MariaDb 11.7 (recommended)<br>
+ - PHP >= 8.3
+ - More information in the Github Wiki
 
 #Installation
  - Step1 : Download ClicShopping : https://github.com/ClicShopping/ClicShopping_V3/releases
@@ -122,7 +140,9 @@ More information in the Wiki
 - 
 
 - Generative AI functionalities :
-- Generative artificial Intelligence included with Gpt, Ollama and Anthropic
+- Generative artificial Intelligence included with Gpt, Ollama, and Anthropic.
+- Intelligent RAG BI (business intelligence) with agent using chatbot
+- Use the embeddings for the RAG to retrieve information
 - Generative artificial products customers recommendations
 - Generative artificial intelligence for All content (product,categories...)
 - Generative artificial intelligence for SEO
@@ -132,17 +152,18 @@ More information in the Wiki
 - Generative artificial Intelligence Automated review tagging
 - Generative artificial Intelligence product automation
 - Real time safety stock predictive (AI)
-- 
+
+
 - WYSIWYG to create your products description, content with CKeditor
 - Image Editor management with El-Finder 2.x - drag and drop - webp
 - Full SEO functionalities optimization and url
 - Payment and Shipping modules included inside the application with Stripe
 - Extension System to install new Applications via the back-office
-- No limit to insert content
 - Some dynamic statistics inside the dashboard and all the back-office
 - GDRP included and some regulation aspect
+- GDRP include hash AES encryption for the more important information
 - Some configuration capacities to adapt the settings in function of your needs in B2B or B2C
-- Ready for mobile, tablet and desktop with BootStrap 5.x technology
+- Ready for mobile, tablet, and desktop with BootStrap 5.x technology
 - Several modes of payment / delivery can be installed
 - More 250 modules available and free functional on the marketplace and available on Github !
 - Full responsive design application with Bootstrap 5.x
@@ -151,12 +172,13 @@ More information in the Wiki
 - Multi-language (English and french included)
 - Lazy load image optimization
 - Free modular Apps to create import or to import from osCommerce 2.x, OpenCart, ZenCart, Crealoaded, Prestashop .... database migration available on the marketplace
-- Double authentication Topt
+- Double authentication number
 - API REST
 - Antispam
 - Some dynamics reports
 - Cron System
 - API connection
+- OpCache / Memcached
  ...
 
 

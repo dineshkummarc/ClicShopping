@@ -19,11 +19,14 @@ class co_contact_us_privacy_condition
   public $description;
   public int|null $sort_order = 0;
   public bool $enabled = false;
-
+  private mixed $cache_block;
+  private mixed $lang;
   public function __construct()
   {
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
+    $this->cache_block = 'contact_us_privacy_condition_';
+    $this->lang = Registry::get('Language')->getId();
 
     $this->title = CLICSHOPPING::getDef('modules_contact_us_privacy_condition_title');
     $this->description = CLICSHOPPING::getDef('modules_contact_us_privacy_condition_description');
@@ -37,21 +40,36 @@ class co_contact_us_privacy_condition
   public function execute()
   {
     $CLICSHOPPING_Template = Registry::get('Template');
+    $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
 
     if (isset($_GET['Info'], $_GET['Contact']) && !isset($_GET['Success'])) {
+      if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+        // Cache based only on language as the introduction text is static
+        $cache_id = $this->cache_block . $this->lang;
+        $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
+
+        if ($cache_output !== false) {
+          $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
+          return;
+        }
+      }
+
       $content_width = (int)MODULES_CONTACT_US_PRIVACY_CONDITION_CONTENT_WIDTH;
 
       if (DISPLAY_PRIVACY_CONDITIONS == 'true') {
-        $contact_us_privacy_condition = '<!--  contact_us_privacy_condition start -->' . "\n";
+        $privacy_condition = '<!-- Start contact us privacy condition -->' . "\n";
 
         ob_start();
         require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/contact_us_privacy_condition'));
+        $privacy_condition .= ob_get_clean();
 
-        $contact_us_privacy_condition .= ob_get_clean();
+        $privacy_condition .= '<!-- End contact us privacy condition -->' . "\n";
 
-        $contact_us_privacy_condition .= '<!-- contact_us_privacy_condition end -->' . "\n";
+        if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+          $CLICSHOPPING_TemplateCache->setCache($cache_id, $privacy_condition);
+        }
 
-        $CLICSHOPPING_Template->addBlock($contact_us_privacy_condition, $this->group);
+        $CLICSHOPPING_Template->addBlock($privacy_condition, $this->group);
       }
     }
   }

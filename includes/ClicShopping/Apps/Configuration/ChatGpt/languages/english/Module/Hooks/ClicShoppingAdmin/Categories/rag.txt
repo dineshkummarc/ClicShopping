@@ -1,0 +1,7 @@
+text_category_embedded = [category]
+text_category_name = [category name]
+text_category_description = [category description: {{category_name}}]
+text_category_seo_title = [category SEO title: {{category_name}}]
+text_category_seo_description = [category SEO description: {{category_name}}]
+text_category_seo_keywords = [category SEO keywords: {{category_name}}]
+text_category_taxonomy = [Taxonomy of the category]

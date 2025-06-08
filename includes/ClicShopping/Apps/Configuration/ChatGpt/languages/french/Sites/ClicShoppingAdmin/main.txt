@@ -12,6 +12,12 @@ text_intro = Cette app vous permet d'inclure une gestion des pays <br /><br />
 
 module_ch_introduction = Le processus d'installation installe la base de données et le menu
 
+
+module_ra_title = RAG BI
+module_ra_short_title = RAG BI
+module_ra_introduction = rag bi avec agent est une technique qui combine la puissance des modèles de gros langage (LLM) avec des sources de connaissances externes pour améliorer la précision et la pertinence des réponses générées. En intégrant RAG dans votre chatbot, vous pouvez fournir des réponses plus précises et plus pertinentes aux requêtes utilisateur, améliorant l'expérience utilisateur globale.
+
+
 button_install_title = Installer
 button_configure = Configurer
 button_save = Sauver

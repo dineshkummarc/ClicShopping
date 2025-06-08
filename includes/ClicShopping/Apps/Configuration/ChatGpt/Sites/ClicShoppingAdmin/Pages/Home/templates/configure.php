@@ -15,6 +15,7 @@ $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 $CLICSHOPPING_ChatGpt = Registry::get('ChatGpt');
 $CLICSHOPPING_Composer = Registry::get('Composer');
 $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
+$CLICSHOPPING_Db = Registry::get('Db');
 
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
 
@@ -36,7 +37,21 @@ if ($CLICSHOPPING_MessageStack->exists('ChatGpt')) {
           <span
             class="col-md-8 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_ChatGpt->getDef('heading_title'); ?></span>
           <span class="col-md-3 text-end">
-            <?php echo HTML::button($CLICSHOPPING_ChatGpt->getDef('module_ch_short_title'), null, $CLICSHOPPING_ChatGpt->link('ChatGpt'), 'primary'); ?>
+          <?php
+            if (\defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS')) {
+              $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_categories_embedding"');
+              $result = $Qcheck->fetch();
+
+              // If the table does not exist (empty result), show the form
+              if (empty($result) || $result === false) {
+                echo HTML::form('updateChatGpt', $CLICSHOPPING_ChatGpt->link('Configure&Update'));
+                echo HTML::button($CLICSHOPPING_ChatGpt->getDef('module_ch_sql_update'), null, $CLICSHOPPING_ChatGpt->link('ChatGpt'), 'warning',  ['params' => 'id="sqlUpdate" onclick="return confirm(\'' . $CLICSHOPPING_ChatGpt->getDef('module_ch_confirmation') . '\');"']) . '&bnsp;';
+                echo '</form>';
+              }
+            }
+
+            echo HTML::button($CLICSHOPPING_ChatGpt->getDef('module_ch_short_title'), null, $CLICSHOPPING_ChatGpt->link('ChatGpt'), 'primary');
+          ?>
           </span>
         </div>
       </div>

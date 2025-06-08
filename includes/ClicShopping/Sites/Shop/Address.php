@@ -11,6 +11,7 @@
 namespace ClicShopping\Sites\Shop;
 
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 /**
@@ -31,10 +32,6 @@ class Address
     $this->db = Registry::get('Db');
   }
 
-  /*
-  * Return a formatted address
-  *  TABLES: address_format
-  */
   /**
    * Formats an address based on a specified address format ID and other attributes.
    *
@@ -57,23 +54,32 @@ class Address
 
     $Qformat = Registry::get('Db')->get('address_format', 'address_format', ['address_format_id' => (int)$address_format_id]);
 
+    $company = Hash::displayDecryptedDataText($address['company']);
+    $street_address = Hash::displayDecryptedDataText($address['street_address']);
+    $suburb = Hash::displayDecryptedDataText($address['suburb']);
+    $city = Hash::displayDecryptedDataText($address['city']);
+    $postcode = Hash::displayDecryptedDataText($address['postcode']);
+
     $replace = [
-      '$company' => HTML::outputProtected($address['company']),
+      '$company' => $company,
       '$firstname' => '',
       '$lastname' => '',
-      '$street' => HTML::outputProtected($address['street_address']),
-      '$suburb' => HTML::outputProtected($address['suburb']),
-      '$city' => HTML::outputProtected($address['city']),
-      '$state' => HTML::outputProtected($address['state']),
-      '$postcode' => HTML::outputProtected($address['postcode']),
+      '$street' =>  $street_address,
+      '$suburb' => $suburb,
+      '$city' => $city,
+      '$state' => $address['state'],
+      '$postcode' => $postcode,
       '$country' => ''
     ];
 
     if (isset($address['firstname']) && !empty($address['firstname'])) {
-      $replace['$firstname'] = HTML::outputProtected($address['firstname']);
-      $replace['$lastname'] = HTML::outputProtected($address['lastname']);
+      $firstname = Hash::displayDecryptedDataText($address['firstname']);
+      $lastname = Hash::displayDecryptedDataText($address['lastname']);
+      $replace['$firstname'] = $firstname;
+      $replace['$lastname'] = $lastname;
     } elseif (isset($address['name']) && !empty($address['name'])) {
-      $replace['$firstname'] = HTML::outputProtected($address['name']);
+      $name = Hash::displayDecryptedDataText($address['name']);
+      $replace['$firstname'] = $name;
     }
 
     if (isset($address['country_id']) && !empty($address['country_id'])) {
@@ -86,7 +92,7 @@ class Address
       if (CLICSHOPPING::getSite() === 'ClicShoppingAdmin') {
         $replace['$country'] = HTML::outputProtected($address['country']);
       } else {
-        $replace['$country'] = HTML::outputProtected($address['country']['title']); // bug osc à tester
+        $replace['$country'] = $address['country']['title']; // bug possible
       }
     }
 
@@ -141,7 +147,6 @@ class Address
 
   public static function getAddressFormatId(int $country_id): int
   {
-
     $format_id = 1;
 
     $Qformat = Registry::get('Db')->get('countries', 'address_format_id', ['countries_id' => (int)$country_id]);
@@ -313,7 +318,7 @@ class Address
    * @return array An array of zones, where each zone includes the zone ID, name, country ID, and country name.
    */
 
-  public static function getZones($id = null): array
+  public static function getZones(int|null $id = null): array
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
@@ -353,9 +358,9 @@ class Address
         'country_id' => $Qzones->valueInt('zone_country_id'),
         'country_name' => $Qzones->value('countries_name')
       ];
-
-      return $zones_array;
     }
+
+    return $zones_array;
   }
 
   /**

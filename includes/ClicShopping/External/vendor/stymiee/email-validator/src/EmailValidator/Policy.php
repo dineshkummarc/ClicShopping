@@ -9,47 +9,47 @@ class Policy
     /**
      * @var bool
      */
-    private $checkBannedListedEmail;
+    private bool $checkBannedListedEmail;
 
     /**
      * @var bool
      */
-    private $checkDisposableEmail;
+    private bool $checkDisposableEmail;
 
     /**
      * @var bool
      */
-    private $checkFreeEmail;
+    private bool $checkFreeEmail;
 
     /**
-     * @var array
+     * @var array<string>
      */
-    private $bannedList;
-
-    /**
-     * @var bool
-     */
-    private $checkMxRecords;
-
-    /**
-     * @var array|mixed
-     */
-    private $disposableList;
-
-    /**
-     * @var array|mixed
-     */
-    private $freeList;
+    private array $bannedList;
 
     /**
      * @var bool
      */
-    private $localDisposableOnly;
+    private bool $checkMxRecords;
+
+    /**
+     * @var array<string>
+     */
+    private array $disposableList;
+
+    /**
+     * @var array<string>
+     */
+    private array $freeList;
 
     /**
      * @var bool
      */
-    private $localFreeOnly;
+    private bool $localDisposableOnly;
+
+    /**
+     * @var bool
+     */
+    private bool $localFreeOnly;
 
     public function __construct(array $config = [])
     {
@@ -130,7 +130,7 @@ class Policy
     /**
      * Returns the list of banned domains.
      *
-     * @return array
+     * @return array<string>
      */
     public function getBannedList(): array
     {
@@ -140,7 +140,7 @@ class Policy
     /**
      * Returns the list of free email provider domains.
      *
-     * @return array
+     * @return array<string>
      */
     public function getFreeList(): array
     {
@@ -150,7 +150,7 @@ class Policy
     /**
      * Returns the list of disposable email domains.
      *
-     * @return array
+     * @return array<string>
      */
     public function getDisposableList(): array
     {

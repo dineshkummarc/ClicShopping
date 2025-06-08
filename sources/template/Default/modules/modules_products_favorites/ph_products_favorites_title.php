@@ -12,6 +12,30 @@
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
+/**
+ * Class ph_products_favorites_title
+ *
+ * This class manages the display and configuration of the "Products Favorites Title" module
+ * in the ClicShopping e-commerce platform. It handles module initialization, execution,
+ * configuration installation/removal, and status checks.
+ *
+ * Public Properties:
+ * - string $code: The class name.
+ * - string $group: The module group (directory name).
+ * - mixed $title: The module title (localized).
+ * - mixed $description: The module description (localized).
+ * - int|null $sort_order: The display sort order.
+ * - bool $enabled: Whether the module is enabled.
+ *
+ * Methods:
+ * - __construct(): Initializes the module properties.
+ * - execute(): Renders the module if enabled, with optional caching.
+ * - isEnabled(): Returns the enabled status.
+ * - check(): Checks if the module is installed.
+ * - install(): Installs the module configuration.<<<<<<<<<
+ * - remove(): Removes the module configuration.
+ * - keys(): Returns the configuration keys for this module.
+ */
 class ph_products_favorites_title
 {
   public string $code;
@@ -20,11 +44,18 @@ class ph_products_favorites_title
   public $description;
   public int|null $sort_order = 0;
   public bool $enabled = false;
+  private mixed $cache_block;
+  private mixed $lang;
 
+  /**
+   * Constructor: Initializes module properties and configuration.
+   */
   public function __construct()
   {
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
+    $this->cache_block = 'products_favorites_title_';
+    $this->lang = Registry::get('Language')->getId();
 
     $this->title = CLICSHOPPING::getDef('module_products_favorites_title');
     $this->description = CLICSHOPPING::getDef('module_products_favorites_title_description');
@@ -35,39 +66,70 @@ class ph_products_favorites_title
     }
   }
 
+  /**
+   * Executes the module: renders and caches the output if enabled.
+   */
   public function execute()
   {
     $CLICSHOPPING_Template = Registry::get('Template');
+    $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
 
     if (isset($_GET['Products'], $_GET['Favorites'])) {
-      $content_width = (int)MODULE_PRODUCTS_FAVORITES_CONTENT_WIDTH;
-      $text_position = MODULE_PRODUCTS_FAVORITES_POSITION;
+      if ($this->enabled) {
+        if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+          $cache_id = $this->cache_block . $this->lang;
+          $cache_output = $CLICSHOPPING_TemplateCache->getCache($cache_id);
 
-      $content = '  <!-- Product favorites title start -->' . "\n";
-      $content .= '<div class="ModulesProductsFavoritesContainer">';
+          if ($cache_output !== false) {
+            $CLICSHOPPING_Template->addBlock($cache_output, $this->group);
+            return;
+          }
+        }
 
-      ob_start();
-      require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/products_favorites_title'));
-      $content .= ob_get_clean();
+          $content_width = (int)MODULE_PRODUCTS_FAVORITES_CONTENT_WIDTH;
+          $text_position = MODULE_PRODUCTS_FAVORITES_POSITION;
 
-      $content .= '</div>' . "\n";
-      $content .= '<!--  Products favorites End -->' . "\n";
+          $content = '<!-- products favorites title start -->' . "\n";
+          $content .= '<div class="ModulesProductsFavoritesContainer">';
 
-      $CLICSHOPPING_Template->addBlock($content, $this->group);
+        ob_start();
+        require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/products_favorites_title'));
+        $content .= ob_get_clean();
 
+        $content .= '<!-- products favorites title end -->' . "\n";
+
+        if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
+          $CLICSHOPPING_TemplateCache->setCache($cache_id, $content);
+        }
+
+        $CLICSHOPPING_Template->addBlock($content, $this->group);
+      }
     }
-  } // public function execute
+  }
 
+  /**
+   * Returns whether the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module is installed.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULE_PRODUCTS_FAVORITES_TITLE_STATUS');
   }
 
+  /**
+   * Installs the module configuration into the database.
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -120,11 +182,21 @@ class ph_products_favorites_title
     );
   }
 
+  /**
+   * Removes the module configuration from the database.
+   *
+   * @return int Number of affected rows.
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
+  /**
+   * Returns the configuration keys for this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array(

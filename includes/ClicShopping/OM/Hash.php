@@ -31,6 +31,7 @@ class Hash
 {
   private static $key; // 32 caractères pour AES-256
   private static $cipher = 'aes-256-cbc'; // Algorithme de chiffremen
+  private const EMAIL_PREFIX = 'ENC::'; // Préfixe pour identifier un email chiffré
 
   /**
    * Hash constructor.
@@ -42,9 +43,16 @@ class Hash
    */
   public function __construct()
   {
-    self::$key = getenv('ENCRYPTION_KEY');
-    if (empty(self::$key)) {
-      self::$key = '1c5f37542a2056c76dc2cfe98fecb514';
+    if (CLICSHOPPING::getConfig('encryption_key') && CLICSHOPPING::configExists('encryption_key')) {
+      self::$key = CLICSHOPPING::getConfig('encryption_key'); // Clé hexadécimale (32 caractères)
+    } else {
+      self::$key = '1c5f37542a2056c76dc2cfe98fecb514'; // Valeur par défaut (32 caractères hex)
+    }
+
+    self::$key = hex2bin(self::$key);
+
+    if (self::$key === false || strlen(self::$key) !== 32) {
+      throw new Exception('Clé d’encryption invalide');
     }
   }
 
@@ -328,13 +336,19 @@ class Hash
   /**
    * Encrypts the provided data using a specified cipher and key.
    *
-   * @param string $data The plaintext data to be encrypted.
+   * @param string|null $data The plaintext data to be encrypted.
    * @return string The encrypted data in Base64-encoded format, including the encryption initialization vector.
    * @throws Exception If the encryption process fails.
    */
-  public static function encryptDatatext(string $data): string
+  public static function encryptDatatext(string|null $data): string
   {
-    $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(self::$cipher));
+    if (!empty($data) || is_null($data)) {
+      $strong = false;
+      $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(self::$cipher), $strong);
+
+      if ($iv === false || $strong === false) {
+        throw new Exception('IV generation failed or is not cryptographically strong');
+      }
 
     $encrypted = openssl_encrypt($data, self::$cipher, self::$key, 0, $iv);
     if ($encrypted === false) {
@@ -342,6 +356,9 @@ class Hash
     }
 
     return base64_encode($encrypted . '::' . $iv);
+    } else {
+      return '';
+    }
   }
 
   /**
@@ -408,4 +425,57 @@ class Hash
 
     return $data;
   }
+
+/**
+   * Hashes an email address using a secure one-way hashing algorithm.
+   *
+   * @param string $email The email address to be hashed.
+   * @return string The hashed email address.
+   */
+  public static function encryptEmail(string $email): string {
+    $strong = false;
+    $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(self::$cipher), $strong);
+
+    if ($iv === false || $strong === false) {
+      throw new Exception('IV generation failed or is not cryptographically strong');
+    }
+
+    $encrypted = openssl_encrypt($email, self::$cipher, self::$key, 0, $iv);
+    return base64_encode($iv . $encrypted);
+  }
+
+  /**
+   * Hashes an email address using a secure one-way hashing algorithm.
+   *
+   * @param string $encryptedEmail The email address to be hashed.
+   * @return string The hashed email address.
+   */
+  public static function displayDecryptedEmail(string $encryptedEmail): string {
+    $data = base64_decode($encryptedEmail);
+    $ivLength = openssl_cipher_iv_length(self::$cipher);
+    $iv = substr($data, 0, $ivLength);
+    $encrypted = substr($data, $ivLength);
+    return openssl_decrypt($encrypted, self::$cipher, self::$key, 0, $iv);
+  }
+/*
+
+// Exemple d'utilisation
+$email = "user@example.com";
+
+// Chiffrement (première fois)
+$encryptedEmail = Hash::encryptEmail($email);
+echo "Email chiffré : " . $encryptedEmail . "\n";
+
+// Stockage du hash pour vérification plus tard
+$hashedEmail = Hash::hashEmail($email);
+echo "Hash de l'email : " . $hashedEmail . "\n";
+
+// Déchiffrement
+$decryptedEmail = Hash::displayDecrypteEmail($encryptedEmail);
+echo "Email déchiffré : " . $decryptedEmail . "\n";
+
+// Vérification d'un email
+$isValid = Hash::verifyEmail("user@example.com", $hashedEmail);
+echo "L'email est valide ? " . ($isValid ? "Oui" : "Non") . "\n";
+*/
 }

@@ -5,7 +5,7 @@ module_ca_short_title = Contrôle du cache
 text_cache = Contrôle du cache
 text_configure =  Configurer App Module
 
-text_intro = Cette app vous permet d'inclure une gestion des administrateurs <br /><br />
+text_intro = Cette app vous permet d'inclure une gestion de cache<br /><br />
 - Activer ce module qui est situé dans le menu Configuration
 
 module_ca_introduction = Le processus d'installation installe la base de données et le menu
@@ -24,6 +24,8 @@ button_insert =  Insérer
 button_back = Retour
 button_reset = Réinitialiser
 button_update = Mettre à jour
+button_configure = Configurer
+image_reset = Supprimer le Cache
 
 dialog_uninstall_title = Désinstaller
 dialog_uninstall_body = Souhaitez-vous installer cette App ?
@@ -44,3 +46,7 @@ text_cache_directory = Répertoire du cache :
 error_cache_directory_does_not_exist = Erreur : Le répertoire de cache n'existe pas. Merci de le préciser dans Configuration -> Cache.
 error_cache_directory_not_writeable = Erreur : Le répertoire de cache n'est pas autorisé en écriture.
 
+success_opcache_reset = L'OPcache a été réinitialisé avec succès
+error_opcache_reset = Échec de la réinitialisation de l'OPcache
+warning_opcache_function = Fonction OPcache non disponible
+error_memcached_reset = Échec de la réinitialisation de Memcached

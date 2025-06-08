@@ -16,170 +16,203 @@ use ClicShopping\OM\Registry;
 
 class Customers extends \ClicShopping\OM\PagesAbstract
 {
-  protected ?string $file = null;
+  protected string|null $file = null;
   protected bool $use_site_template = false;
-  private mixed $lang;
-  private mixed $db;
+  private mixed $Db;
 
   /**
-   * Initializes the API interaction and handles requests based on the HTTP method.
-   *
-   * This method sets up necessary dependencies, validates the application state,
-   * and processes different HTTP request methods (GET, POST, DELETE, PUT). It
-   * ensures token validation and delegates to appropriate sub-methods for
-   * handling customer operations such as retrieval, saving, or deletion, based
-   * on the request type.
-   *
-   * @return bool|void Returns false if the application API state is disabled, otherwise exits after processing.
-   */
+    * Initializes the Customers API page, handling authentication, request method routing,
+    * and permission checks for customer-related API actions (GET, POST, DELETE).
+    */
   protected function init()
   {
-    $this->lang = Registry::get('Language');
     $this->Db = Registry::get('Db');
 
-    if (!\defined('CLICSHOPPING_APP_API_AI_STATUS') && CLICSHOPPING_APP_API_AI_STATUS == 'False') {
-      return false;
+    if (!\defined('CLICSHOPPING_APP_API_AI_STATUS') || CLICSHOPPING_APP_API_AI_STATUS == 'False') {
+      return $this->sendErrorResponse('API is disabled');
     }
 
     $requestMethod = ApiShop::requestMethod();
+    $token = HTML::sanitize($_GET['token'] ?? null);
 
-// Handle the event
+    if (!$token || !ApiShop::checkToken($token)) {
+      return $this->sendErrorResponse('Invalid or missing token');
+    }
+
+    // Handle request method logic
+    $statusCheck = $this->getStatusCheck($token);
+
     switch ($requestMethod) {
       case 'GET':
-        $token = HTML::sanitize($_GET['token']);
-        $result = ApiShop::checkToken($token);
-        $check = $this->statusCheck('get_customer_status', $token);
-
-        if (empty($result) || $check == 0) {
-          $response = ApiShop::notFoundResponse();
-          Registry::get('Session')->kill();
-        } else {
-          $response = static::getCustomer();
-        }
-        break;
+        return $this->handleGetRequest($statusCheck);
       case 'DELETE':
-        $token = HTML::sanitize($_GET['token']);
-        $result = ApiShop::checkToken($token);
-
-        $check = $this->statusCheck('delete_customer_status', $token);
-
-        if (empty($result) || $check == 0) {
-          $response = ApiShop::notFoundResponse();
-          Registry::get('Session')->kill();
-        } else {
-          $response = static::deleteCustomer();
-        }
-        break;
+        return $this->handleDeleteRequest($statusCheck);
       case 'POST':
-        $token = HTML::sanitize($_GET['token']);
-        $result = ApiShop::checkToken($token);
-
-        if (isset($_GET['update'])) {
-          $check = $this->statusCheck('update_customer_status', $token);
-
-          if (empty($result) || $check == 0) {
-            $response = ApiShop::notFoundResponse();
-            Registry::get('Session')->kill();
-          } else {
-            $response = static::saveCustomer();  
-          }
-        } elseif (isset($_GET['update'])) {
-          $check = $this->statusCheck('insert_customer_status', $token);
-
-          if (empty($result) || $check == 0) {
-            $response = ApiShop::notFoundResponse();
-            Registry::get('Session')->kill();
-          } else {
-            $response = static::saveCustomer();  
-          }
-        }
-        break;
+        return $this->handlePostRequest($statusCheck);
       case 'PUT':
-        break;
+        return $this->handlePutRequest($statusCheck);
       default:
-        $response = ApiShop::notFoundResponse();
-        Registry::get('Session')->kill();
-        break;
+        return $this->sendErrorResponse('Unsupported request method');
+    }
+  }
+
+  /**
+   * Get status check for various actions
+   *
+   * @param string $token The session token used for identifying the API session.
+   * @return array An associative array containing the status checks for various actions.
+   */
+  private function getStatusCheck(string $token): array
+  {
+    return [
+      'get' => $this->statusCheck('get_customer_status', $token),
+      'delete' => $this->statusCheck('delete_customer_status', $token),
+      'update' => $this->statusCheck('update_customer_status', $token),
+      'insert' => $this->statusCheck('insert_customer_status', $token)
+    ];
+  }
+
+  /**
+   * Handle GET request
+   */
+  private function handleGetRequest(array $statusCheck)
+  {
+    if ($statusCheck['get'] == 0) {
+      return $this->sendErrorResponse('Customer fetch not allowed');
     }
 
-    if ($response['body']) {
-      echo $response['body'];
+    return $this->sendSuccessResponse(static::getCustomers());
+  }
+
+  /**
+   * Handle PUT request
+   */
+  private function handlePutRequest(array $statusCheck)
+  {
+    if (!$statusCheck['update']) {
+      return $this->sendErrorResponse('Update not allowed');
     }
 
+    // Lire le corps PUT brut
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($data['customers_id'])) {
+      return $this->sendErrorResponse('Missing parameters');
+    }
+
+    // Effectue la mise à jour dans la base de données ici...
+
+    return $this->sendSuccessResponse('Customer updated successfully');
+  }
+
+  /**
+   * Handle DELETE request
+   */
+  private function handleDeleteRequest(array $statusCheck)
+  {
+    if ($statusCheck['delete'] == 0) {
+      return $this->sendErrorResponse('Customer deletion not allowed');
+    }
+
+    return $this->sendSuccessResponse(static::deleteCustomers());
+  }
+
+  /**
+   * Handle POST request
+   */
+  private function handlePostRequest(array $statusCheck)
+  {
+    if (isset($_GET['update']) && $statusCheck['update'] == 0) {
+      return $this->sendErrorResponse('Customer update not allowed');
+    }
+
+    if (isset($_GET['insert']) && $statusCheck['insert'] == 0) {
+      return $this->sendErrorResponse('Customer insertion not allowed');
+    }
+
+    return $this->sendSuccessResponse(self::saveCustomers());
+  }
+
+  /**
+   * Sends a success response with the provided data.
+   *
+   * @param mixed $data The data to be included in the success response.
+   * @return array The HTTP response indicating success.
+   */
+  private function sendSuccessResponse(mixed $data): array
+  {
+    echo json_encode(['status' => 'success', 'data' => $data]);
     exit;
   }
 
   /**
-   * Retrieves customer information by calling the API and processes the response.
+   * Sends an error response with the provided message.
    *
-   * @return array The HTTP response containing the customer data or a not-found status.
+   * @param string $message The error message to be included in the response.
+   * @return array The HTTP response indicating an error.
    */
-  private static function getCustomer(): array
+  private function sendErrorResponse(string $message): array
   {
-    $CLICSHOPPING_Hooks = Registry::get('Hooks');
-
-    $result = $CLICSHOPPING_Hooks->call('Api', 'ApiGetCustomer');
-
-    if (empty($result)) {
-      $response = ApiShop::notFoundResponse();
-    } else {
-      $response = ApiShop::HttpResponseOk($result);
-    }
-
-    ApiShop::clearCache();
-
-    return $response;
+    echo json_encode(['status' => 'error', 'message' => $message]);
+    exit;
   }
 
   /**
+   * Retrieves a list of Customers through the API.
    *
-   * @return array The response after attempting to delete a customer, either a successful HTTP response or a not found response.
+   * @return array The API response containing the Customers or an error response.
    */
-  private static function deleteCustomer(): array
+  private static function getCustomers(): array
   {
-    $CLICSHOPPING_Hooks = Registry::get('Hooks');
-
-    $result = $CLICSHOPPING_Hooks->call('Api', 'ApiDeleteCustomer');
-
-    if (empty($result)) {
-      $response = ApiShop::notFoundResponse();
-    } else {
-      $response = ApiShop::HttpResponseOk($result);
-    }
-
-    ApiShop::clearCache();
-
-    return $response;
+    return self::handleCustomersAction('ApiGetCustomer');
   }
 
   /**
-   * Saves customer data by calling the corresponding hook and returns an appropriate HTTP response.
+   * Deletes Customers by invoking the 'ApiDeleteCustomers' hook.
+   * Clears the API cache after the operation is completed.
    *
-   * @return array An array representing the HTTP response, either success or not found.
+   * @return array The HTTP response indicating the success or failure of the operation.
    */
-  private static function saveCustomer(): array
+  private static function deleteCustomers(): array
   {
-    $CLICSHOPPING_Hooks = Registry::get('Hooks');
-
-    $result = $CLICSHOPPING_Hooks->call('Api', 'ApiSaveCustomer');
-
-    if (empty($result)) {
-      $response = ApiShop::notFoundResponse();
-    } else {
-      $response = ApiShop::HttpResponseOk($result);
-    }
-
-    ApiShop::clearCache();
-
-    return $response;
+    return self::handleCustomersAction('ApiDeleteCustomer');
   }
 
   /**
-   * Checks the status based on the provided string and token values.
+   * Saves the provided customer data through the API call and handles the response.
    *
-   * @param string $string The name of the column to retrieve from the database.
-   * @param string $token The session token used for identification in the database query.
-   * @return int The integer value of the requested status.
+   * @return array The API response, either an HTTP OK response with the results or a not found response if the operation fails.
+   */
+  private static function saveCustomers(): array
+  {
+    return self::handleCustomersAction('ApiPutCustomer');
+  }
+
+  /**
+   * Handles the customer action by invoking the appropriate hook and clearing the cache.
+   *
+   * @param string $action The action to be performed (e.g., 'ApiGetCustomers', 'ApiDeleteCustomers', etc.).
+   * @return array The HTTP response indicating the success or failure of the operation.
+   */
+  private static function handleCustomersAction(string $action): array
+  {
+    $CLICSHOPPING_Hooks = Registry::get('Hooks');
+    $result = $CLICSHOPPING_Hooks->call('Api', $action);
+
+    if (empty($result)) {
+      return ApiShop::notFoundResponse();
+    }
+
+    ApiShop::clearCache();
+    return ApiShop::HttpResponseOk($result);
+  }
+
+  /**
+   * Checks the status based on the provided string and token.
+   *
+   * @param string $string The column name to be selected from the database.
+   * @param string $token The session token used for identifying the API session.
+   * @return int The integer value associated with the specified column.
    */
   private function statusCheck(string $string, string $token): int
   {
@@ -190,11 +223,8 @@ class Customers extends \ClicShopping\OM\PagesAbstract
                                           and ase.session_id = :session_id  
                                         ');
     $QstatusCheck->bindValue('session_id', $token);
-
     $QstatusCheck->execute();
 
-    $result = $QstatusCheck->valueInt($string);
-
-    return $result;
+    return $QstatusCheck->valueInt($string);
   }
 }

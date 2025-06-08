@@ -338,7 +338,7 @@ class Language
     }
 
     if ($site == 'ClicShoppingAdmin') {
-      $pathname = CLICSHOPPING::getConfig('dir_root', $site) . 'includes/languages/' . $this->get('directory', $language_code) . DIRECTORY_SEPARATOR . $group;
+      $pathname = CLICSHOPPING::getConfig('dir_root', $site) . 'Core/languages/' . $this->get('directory', $language_code) . DIRECTORY_SEPARATOR . $group;
     } else {
       $pathname = CLICSHOPPING::getConfig('dir_root', $site) . 'sources/languages/' . $this->get('directory', $language_code) . DIRECTORY_SEPARATOR . $group;
     }
@@ -380,7 +380,7 @@ class Language
     if (!is_null($force_directory_language)) $site = $force_directory_language;
 
     if ($site == 'ClicShoppingAdmin') {
-      $pathname = CLICSHOPPING::getConfig('dir_root', $site) . 'includes/languages/' . $this->get('directory', $language_code) . DIRECTORY_SEPARATOR . $group;
+      $pathname = CLICSHOPPING::getConfig('dir_root', $site) . 'Core/languages/' . $this->get('directory', $language_code) . DIRECTORY_SEPARATOR . $group;
     } else {
       $pathname = CLICSHOPPING::getConfig('dir_root', $site) . 'sources/languages/' . $this->get('directory', $language_code) . DIRECTORY_SEPARATOR . $group;
     }
@@ -487,7 +487,7 @@ class Language
    * @param string $scope The scope in which the definitions will be injected.
    * @return void
    */
-  public function injectDefinitions($defs, $scope)
+  public function injectDefinitions(array $defs, string $scope): void
   {
     if (isset($this->definitions[$scope])) {
       $this->definitions[$scope] = array_merge($this->definitions[$scope], $defs);
@@ -497,9 +497,12 @@ class Language
   }
 
   /**
+   * Sets whether to use caching for language definitions.
    *
+   * @param bool $flag If true, caching will be enabled; if false, caching will be disabled.
+   * @return void
    */
-  public function setUseCache($flag)
+  public function setUseCache(bool $flag) :void
   {
     $this->use_cache = ($flag === true);
   }
@@ -536,9 +539,13 @@ class Language
     return ($response_encoding . $response_bom == 'UTF-8 without BOM');
   }
 
-
   /**
+   * Retrieves the language code from the URL or session.
    *
+   * This method checks if a language code is provided in the URL and sets it in the session.
+   * If no code is provided, it retrieves the code from the session.
+   *
+   * @return string|false The language code if found, false otherwise.
    */
   public function getLanguageCode()
   {
@@ -581,7 +588,7 @@ class Language
    * @param string $tag The string delimiter to be used between the language links. Default is ' - '.
    * @return string A string containing the language links separated by the
    */
-  public function getLanguageText($tag = ' - ')
+  public function getLanguageText(string $tag = ' - '): string
   {
     $get_params = [];
 
@@ -611,9 +618,11 @@ class Language
   }
 
   /**
+   * Generates a string containing links to available languages with their respective flags.
    *
+   * @return string A string containing the language links with flags.
    */
-  public function getFlag()
+  public function getFlag(): string
   {
     $get_params = [];
     $content = '';
@@ -666,7 +675,7 @@ class Language
    * @return array An array where each element is an associative array containing:
    *               - 'id': The ID of the language (integer).
    *               - 'name': The name*/
-  public function getLanguages()
+  public function getLanguages(): array
   {
 
     $languages_array = [];
@@ -700,7 +709,7 @@ class Language
    * @param int $id The ID of the language to retrieve the name for.
    * @return string|null The name of the language if found, or null if not found.
    */
-  public function getLanguagesName($id)
+  public function getLanguagesName(int $id): null|string
   {
     $Qlanguages = Registry::get('Db')->get('languages', [
       'languages_id',
@@ -738,5 +747,24 @@ class Language
     }
 
     return $values_languages_id;
+  }
+
+/**
+ * Retrieves the language code based on the language ID.
+ *
+ * @param int $language_id The ID of the language
+ * @return string|null The language code if found, null otherwise
+ */
+  public function getLanguageCodeById(int $language_id): string
+  {
+      $Qlanguage = $this->db->prepare('select code 
+                                      from :table_languages 
+                                      where languages_id = :languages_id
+                                     ');
+
+      $Qlanguage->bindInt(':languages_id', $language_id);
+      $Qlanguage->execute();
+
+      return $Qlanguage->value('code');
   }
 }

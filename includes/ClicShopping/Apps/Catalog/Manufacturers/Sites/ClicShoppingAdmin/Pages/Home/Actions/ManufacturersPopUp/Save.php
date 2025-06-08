@@ -78,7 +78,6 @@ class Save extends \ClicShopping\OM\PagesActionsAbstract
       Cache::clear('manufacturers');
 
       echo 'Success';
-//    echo "From Server : ".json_encode($_POST)."<br>";
     } else {
       echo 'Error <br />';
     }

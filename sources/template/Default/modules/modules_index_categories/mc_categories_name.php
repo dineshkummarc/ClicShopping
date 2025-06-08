@@ -111,7 +111,6 @@ class mc_categories_name
         'date_added' => 'now()'
       ]
     );
-
   }
 
   public function remove()

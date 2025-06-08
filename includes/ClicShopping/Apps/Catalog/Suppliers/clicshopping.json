@@ -28,7 +28,7 @@
       },
       "ClicShoppingAdmin/Manufacturers": {
         "ProductsContentTab1": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\ProductsContentTab1",
-        "Save": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\Save"
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\Update"
       }
     }
   },

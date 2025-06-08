@@ -20,8 +20,17 @@ class ml_login_mode_b2b
   public int|null $sort_order = 0;
   public bool $enabled = false;
 
+/**
+   * Class ml_login_mode_b2b
+   *
+   * Handles the B2B login mode module for ClicShopping.
+   * Provides configuration, installation, and display logic for the B2B login block.
+   */
   public function __construct()
   {
+    /**
+     * Initializes the module properties and loads language definitions.
+     */
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
 
@@ -34,9 +43,11 @@ class ml_login_mode_b2b
     }
   }
 
+  /**
+   * Executes the module logic to display the B2B login block if conditions are met.
+   */
   public function execute()
   {
-
     $CLICSHOPPING_Template = Registry::get('Template');
 
     if (isset($_GET['Account'], $_GET['LogIn'])) {
@@ -57,18 +68,31 @@ class ml_login_mode_b2b
 
       $CLICSHOPPING_Template->addBlock($login_mode_b2b, $this->group);
     }
-  } // function execute
+  }
 
+  /**
+   * Checks if the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module configuration is defined.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULE_LOGIN_MODE_B2B_STATUS');
   }
 
+  /**
+   * Installs the module configuration in the database.
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -122,11 +146,21 @@ class ml_login_mode_b2b
     );
   }
 
+  /**
+   * Removes the module configuration from the database.
+   *
+   * @return int Number of rows affected.
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
+  /**
+   * Returns the list of configuration keys used by this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array(

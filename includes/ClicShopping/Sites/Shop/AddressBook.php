@@ -122,9 +122,8 @@ class AddressBook
    * @param bool $check_session Whether to validate the session for the logged-in customer. Defaults to true.
    * @return string The customer's default address modification status, or 0 if conditions are not met.
    */
-  public static function countCustomersModifyAddressDefault($id = '', bool $check_session = true): string
+  public static function countCustomersModifyAddressDefault(int|string $id = '', bool $check_session = true): string
   {
-
     $CLICSHOPPING_Customer = Registry::get('Customer');
     $CLICSHOPPING_Db = Registry::get('Db');
 
@@ -132,27 +131,29 @@ class AddressBook
       if ($CLICSHOPPING_Customer->isLoggedOn()) {
         $id = $CLICSHOPPING_Customer->getID();
       } else {
-        return 0;
+        return '0';
       }
     }
 
     if ($check_session === true) {
       if (!$CLICSHOPPING_Customer->isLoggedOn() || ($id != $CLICSHOPPING_Customer->getID())) {
-        return 0;
+        return '0';
       }
     }
 
     if (ACCOUNT_MODIFY_ADRESS_DEFAULT_PRO == 'true' || $CLICSHOPPING_Customer->getCustomersGroupID() == '0') {
       $QcustomersModifyAddressDefault = $CLICSHOPPING_Db->prepare('select customers_modify_address_default
-                                                                     from :table_customers
-                                                                     where customers_id = :customers_id
-                                                                    ');
+                                                                   from :table_customers
+                                                                   where customers_id = :customers_id
+                                                                  ');
       $QcustomersModifyAddressDefault->bindInt(':customers_id', (int)$CLICSHOPPING_Customer->getID());
 
       $QcustomersModifyAddressDefault->execute();
 
       return $QcustomersModifyAddressDefault->value('customers_modify_address_default');
     }
+
+    return '0';
   }
 
   /**
@@ -162,7 +163,7 @@ class AddressBook
    * @param bool $check_session Whether to ensure the customer's session is valid. Defaults to true.
    * @return string|null The customer's additional address information, or null if not available.
    */
-  public static function countCustomersAddAddress($id = null, bool $check_session = true): ?string
+  public static function countCustomersAddAddress(int|string|null $id = null, bool $check_session = true): ?string
   {
 
     $CLICSHOPPING_Customer = Registry::get('Customer');

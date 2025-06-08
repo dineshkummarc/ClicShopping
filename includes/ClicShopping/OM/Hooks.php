@@ -5,7 +5,6 @@
  * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
  * @Licence GPL 2 & MIT
  * @Info : https://www.clicshopping.org/forum/trademark/
- *
  */
 
 namespace ClicShopping\OM;
@@ -22,7 +21,7 @@ use function is_string;
  */
 class Hooks
 {
-  protected ?string $site;
+  protected string|null $site;
   protected array $hooks = [];
   protected array $watches = [];
 
@@ -48,9 +47,10 @@ class Hooks
    * @param string $hook The specific hook to be called.
    * @param array|null $parameters Optional parameters to be passed to the hook/action.
    * @param string|null $action The action to be executed, defaults to 'execute' if not provided.
+   * @param string|null $context Optional context identifier (ex: tab, position, etc.) to filter hooks.
    * @return array The results returned by the executed hook actions.
    */
-  public function call(string $group, string $hook, ?array $parameters = null, ?string $action = null): array
+  public function call(string $group, string $hook, ?array $parameters = null, ?string $action = null, ?string $context = null): array
   {
     if (!isset($action)) {
       $action = 'execute';
@@ -67,7 +67,29 @@ class Hooks
     }
 
     if (isset($this->watches[$this->site][$group][$hook][$action])) {
-      $calls = array_merge($calls, $this->watches[$this->site][$group][$hook][$action]);
+      // Filtrer les watches selon le contexte si spécifié
+      foreach ($this->watches[$this->site][$group][$hook][$action] as $watchEntry) {
+        //Cjekcif it's a structure with context or simple code
+        if (is_array($watchEntry) && isset($watchEntry['code'])) {
+          // Structure avec contexte
+          if ($context !== null) {
+            // Si le watch a un contexte défini, il doit correspondre
+            if (isset($watchEntry['context']) && $watchEntry['context'] !== $context) {
+              continue; // Skip ce watch, le contexte ne correspond pas
+            }
+            // Si le watch n'a pas de contexte mais qu'on en demande un spécifique, skip aussi
+            if (!isset($watchEntry['context']) && $context !== 'global') {
+              continue;
+            }
+          }
+          $calls[] = $watchEntry['code'];
+        } else {
+          // Structure simple (code directement) - rétrocompatibilité
+          if ($context === null || $context === 'global') {
+            $calls[] = $watchEntry;
+          }
+        }
+      }
     }
 
     $result = [];
@@ -77,15 +99,31 @@ class Hooks
 
       if (is_string($code)) {
         $class = Apps::getModuleClass($code, 'Hooks');
-
         $obj = new $class();
 
-        $bait = $obj->$action($parameters);
+        // Passer le contexte à l'objet s'il supporte cette méthode
+        if (method_exists($obj, 'setContext') && $context !== null) {
+          $obj->setContext($context);
+        }
+
+        // Ajouter le contexte aux paramètres
+        $contextualParameters = $parameters ?? [];
+        if ($context !== null) {
+          $contextualParameters['_context'] = $context;
+        }
+
+        $bait = $obj->$action($contextualParameters);
       } else {
         $ref = new ReflectionFunction($code);
 
         if ($ref->isClosure()) {
-          $bait = $code($parameters);
+          // Ajouter le contexte aux paramètres pour les closures
+          $contextualParameters = $parameters ?? [];
+          if ($context !== null) {
+            $contextualParameters['_context'] = $context;
+          }
+
+          $bait = $code($contextualParameters);
         }
       }
 
@@ -100,11 +138,16 @@ class Hooks
   /**
    * Combines and returns the result of calling the 'call' method with the provided arguments.
    *
+   * @param string $group The group name of the hook.
+   * @param string $hook The specific hook to be called.
+   * @param array|null $parameters Optional parameters to be passed to the hook/action.
+   * @param string|null $action The action to be executed, defaults to 'execute' if not provided.
+   * @param string|null $context Optional context identifier to filter hooks.
    * @return string Concatenated string resulting from the invocation of the 'call' method with passed arguments.
    */
-  public function output(): string
+  public function output(string $group, string $hook, array|null $parameters = null, string|null $action = null, string|null $context = null): string
   {
-    return implode('', call_user_func_array([$this, 'call'], \func_get_args()));
+    return implode('', $this->call($group, $hook, $parameters, $action, $context));
   }
 
   /**
@@ -114,11 +157,51 @@ class Hooks
    * @param string $hook The hook within the group to watch.
    * @param string $action The specific action within the hook to associate the code with.
    * @param mixed $code The code or callback to be executed when the action is triggered.
+   * @param string|null $context Optional context identifier to restrict when this watch is executed.
    * @return void
    */
-  public function watch(string $group, string $hook, string $action, $code): void
+  public function watch(string $group, string $hook, string $action, $code, string|null $context = null): void
   {
-    $this->watches[$this->site][$group][$hook][$action][] = $code;
+    if ($context !== null) {
+      // Structure avec contexte
+      $this->watches[$this->site][$group][$hook][$action][] = [
+        'code' => $code,
+        'context' => $context
+      ];
+    } else {
+      // Simple structure (rétrocompatibility)
+      $this->watches[$this->site][$group][$hook][$action][] = $code;
+    }
+  }
+
+  /**
+   * Helper method to watch a hook for a specific tab
+   *
+   * @param string $group The group to which the hook belongs.
+   * @param string $hook The hook within the group to watch.
+   * @param string $tab The tab identifier.
+   * @param mixed $code The code or callback to be executed.
+   * @param string $action The specific action, defaults to 'display'.
+   * @return void
+   */
+  public function watchTab(string $group, string $hook, string $tab, $code, string $action = 'display'): void
+  {
+    $this->watch($group, $hook, $action, $code, $tab);
+  }
+
+  /**
+   * Helper method to check if a hook exists for a specific context
+   *
+   * @param string $group The group name.
+   * @param string $hook The hook name.
+   * @param string|null $context The context to check.
+   * @param string $action The action name, defaults to 'display'.
+   * @return bool True if hooks exist for the given context.
+   */
+  public function hasContextualHook(string $group, string $hook, string|null $context = null, string $action = 'display'): bool
+  {
+    $results = $this->call($group, $hook, null, $action, $context);
+    return !empty($results);
   }
 
   /**

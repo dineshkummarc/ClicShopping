@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace EmailValidator;
 
+use EmailValidator\Validator\AValidator;
 use EmailValidator\Validator\BannedListValidator;
 use EmailValidator\Validator\BasicValidator;
 use EmailValidator\Validator\DisposableEmailValidator;
 use EmailValidator\Validator\FreeEmailValidator;
+use EmailValidator\Validator\GmailValidator;
 use EmailValidator\Validator\MxValidator;
 
 class EmailValidator
@@ -24,41 +26,54 @@ class EmailValidator
 
     public const FAIL_FREE_PROVIDER = 5;
 
+    public const FAIL_CUSTOM = 6;
+
     /**
      * @var BasicValidator
      */
-    private $basicValidator;
+    private BasicValidator $basicValidator;
 
     /**
      * @var MxValidator
      */
-    private $mxValidator;
+    private MxValidator $mxValidator;
 
     /**
      * @var BannedListValidator
      */
-    private $bannedListValidator;
+    private BannedListValidator $bannedListValidator;
 
     /**
      * @var DisposableEmailValidator
      */
-    private $disposableEmailValidator;
+    private DisposableEmailValidator $disposableEmailValidator;
 
     /**
      * @var FreeEmailValidator
      */
-    private $freeEmailValidator;
+    private FreeEmailValidator $freeEmailValidator;
+
+    /**
+     * @var GmailValidator
+     */
+    private GmailValidator $gmailValidator;
+
+    /**
+     * @var array<AValidator>
+     * @since 2.0.0
+     */
+    private array $customValidators = [];
 
     /**
      * @var int
      */
-    private $reason;
+    private int $reason;
 
     /**
-     * @var EmailAddress
+     * @var EmailAddress|null
      * @since 1.1.0
      */
-    private $emailAddress;
+    private ?EmailAddress $emailAddress = null;
 
     public function __construct(array $config = [])
     {
@@ -71,6 +86,19 @@ class EmailValidator
         $this->bannedListValidator = new BannedListValidator($policy);
         $this->disposableEmailValidator = new DisposableEmailValidator($policy);
         $this->freeEmailValidator = new FreeEmailValidator($policy);
+        $this->gmailValidator = new GmailValidator($policy);
+    }
+
+    /**
+     * Register a custom validator
+     *
+     * @param AValidator $validator
+     * @return void
+     * @since 2.0.0
+     */
+    public function registerValidator(AValidator $validator): void
+    {
+        $this->customValidators[] = $validator;
     }
 
     /**
@@ -95,6 +123,13 @@ class EmailValidator
             $this->reason = self::FAIL_DISPOSABLE_DOMAIN;
         } elseif (!$this->freeEmailValidator->validate($this->emailAddress)) {
             $this->reason = self::FAIL_FREE_PROVIDER;
+        } else {
+            foreach ($this->customValidators as $validator) {
+                if (!$validator->validate($this->emailAddress)) {
+                    $this->reason = self::FAIL_CUSTOM;
+                    break;
+                }
+            }
         }
 
         return $this->reason === self::NO_ERROR;
@@ -136,6 +171,9 @@ class EmailValidator
             case self::FAIL_FREE_PROVIDER:
                 $msg = 'Domain is used by free email providers';
                 break;
+            case self::FAIL_CUSTOM:
+                $msg = 'Failed custom validation';
+                break;
             case self::NO_ERROR:
             default:
                 $msg = '';
@@ -164,7 +202,7 @@ class EmailValidator
      */
     public function isGmailWithPlusChar(): bool
     {
-        return $this->emailAddress->isGmailWithPlusChar();
+        return $this->emailAddress !== null && $this->gmailValidator->isGmailWithPlusChar($this->emailAddress);
     }
 
     /**
@@ -176,6 +214,24 @@ class EmailValidator
      */
     public function getGmailAddressWithoutPlus(): string
     {
-        return $this->emailAddress->getGmailAddressWithoutPlus();
+        if ($this->emailAddress === null) {
+            return '';
+        }
+        return $this->gmailValidator->getGmailAddressWithoutPlus($this->emailAddress);
+    }
+
+    /**
+     * Returns a sanitized gmail address (plus trick removed and dots removed).
+     *
+     * @codeCoverageIgnore
+     * @since 1.1.4
+     * @return string
+     */
+    public function getSanitizedGmailAddress(): string
+    {
+        if ($this->emailAddress === null) {
+            return '';
+        }
+        return $this->gmailValidator->getSanitizedGmailAddress($this->emailAddress);
     }
 }

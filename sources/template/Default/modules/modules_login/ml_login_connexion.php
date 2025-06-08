@@ -12,15 +12,51 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
+/**
+ * Module: ml_login_connexion
+ *
+ * Handles the display and configuration of the login connection module.
+ *
+ * - MODULE_LOGIN_CONNEXION_STATUS: Enable or disable the module.
+ * - MODULE_LOGIN_CONNEXION_CONTENT_WIDTH: Set the width of the module content.
+ * - MODULE_LOGIN_CONNEXION_POSITION: Set the display position of the module.
+ * - MODULE_LOGIN_CONNEXION_SORT_ORDER: Set the display order of the module.
+ */
 class ml_login_connexion
 {
+  /**
+   * @var string Module code
+   */
   public string $code;
+
+  /**
+   * @var string Module group
+   */
   public string $group;
+
+  /**
+   * @var string Module title
+   */
   public $title;
+
+  /**
+   * @var string Module description
+   */
   public $description;
+
+  /**
+   * @var int|null Sort order
+   */
   public int|null $sort_order = 0;
+
+  /**
+   * @var bool Module enabled status
+   */
   public bool $enabled = false;
 
+  /**
+   * Constructor. Initializes module properties and loads configuration.
+   */
   public function __construct()
   {
     $this->code = get_class($this);
@@ -35,9 +71,11 @@ class ml_login_connexion
     }
   }
 
+  /**
+   * Executes the module: renders the login form if on the login page.
+   */
   public function execute()
   {
-
     $CLICSHOPPING_Template = Registry::get('Template');
 
     if (isset($_GET['Account'], $_GET['LogIn'])) {
@@ -58,18 +96,31 @@ class ml_login_connexion
 
       $CLICSHOPPING_Template->addBlock($ml_login_connexion, $this->group);
     }
-  } // function execute
+  }
 
+  /**
+   * Checks if the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module configuration is defined.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULE_LOGIN_CONNEXION_STATUS');
   }
 
+  /**
+   * Installs the module configuration into the database.
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -123,11 +174,21 @@ class ml_login_connexion
     );
   }
 
+  /**
+   * Removes the module configuration from the database.
+   *
+   * @return int Number of rows affected
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
+  /**
+   * Returns the configuration keys used by this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array(

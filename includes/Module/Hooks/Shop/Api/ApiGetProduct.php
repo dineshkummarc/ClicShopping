@@ -23,97 +23,78 @@ class ApiGetProduct
    * @return array Returns an array of product information including various product attributes
    *               such as name, description, SKU, UPC, dimensions, and price.
    */
-  private static function products(int|string $id, int|string $language_id)
+  private static function products(mixed $id = null, mixed $language_id = null): array
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
-    if (is_numeric($id)) {
-      $sql_request = ' and p.products_id = :products_id';
-    } else {
-      $sql_request = '';
+    $sql = 'SELECT p.*, pd.*
+          FROM :table_products p
+          JOIN :table_products_description pd ON p.products_id = pd.products_id
+          WHERE 1';
+
+    $params = [];
+
+    if ($id !== null && $id !== 'All' && is_numeric($id)) {
+      $sql .= ' AND p.products_id = :products_id';
+      $params[':products_id'] = (int)$id;
     }
 
-    if (is_numeric($language_id)) {
-      $sql_language_request = ' and pd.language_id = :language_id';
-    } else {
-      $sql_language_request = '';
+    if ($language_id !== null && is_numeric($language_id)) {
+      $sql .= ' AND pd.language_id = :language_id';
+      $params[':language_id'] = (int)$language_id;
     }
 
-    $Qapi = $CLICSHOPPING_Db->prepare('select p.*,
-                                                pd.*
-                                         from :table_products p,
-                                              :table_products_description pd 
-                                         where p.products_id = pd.products_id
-                                         ' . $sql_request . '
-                                         ' . $sql_language_request . '
-                                      ');
-    if (is_numeric($id)) {
-      $Qapi->bindInt(':products_id', $id);
-    }
+    $Qapi = $CLICSHOPPING_Db->prepare($sql);
 
-    if (is_numeric($language_id)) {
-      $Qapi->bindInt(':language_id', $language_id);
+    foreach ($params as $key => $value) {
+      $Qapi->bindInt($key, $value);
     }
 
     $Qapi->execute();
 
     $product_data = [];
 
-    $result = $Qapi->fetchAll();
-
-    foreach ($result as $value) {
+    foreach ($Qapi->fetchAll() as $row) {
       $product_data[] = [
-        'products_id' => $value['products_id'],
-        'language_id' => $value['language_id'],
-        'products_name' => $value['products_name'],
-        'products_description' => $value['products_description'],
-        'products_model' => $value['products_model'],
-        'products_quantity' => $value['products_quantity'],
-        'products_weight' => $value['products_weight'],
-        'products_quantity_alert' => $value['products_quantity_alert'],
-        'products_sku' => $value['products_sku'],
-        'products_upc' => $value['products_upc'],
-        'products_ean' => $value['products_ean'],
-        'products_jan' => $value['products_jan'],
-        'products_isbn' => $value['products_isbn'],
-        'products_mpn' => $value['products_mpn'],
-        'products_price' => $value['products_price'],
-        'products_dimension_width' => $value['products_dimension_width'],
-        'products_dimension_height' => $value['products_dimension_height'],
-        'products_dimension_depth' => $value['products_dimension_depth'],
-        'products_volume' => $value['products_volume'],
+        'products_id' => $row['products_id'],
+        'language_id' => $row['language_id'],
+        'products_name' => $row['products_name'],
+        'products_description' => $row['products_description'],
+        'products_model' => $row['products_model'],
+        'products_quantity' => $row['products_quantity'],
+        'products_weight' => $row['products_weight'],
+        'products_quantity_alert' => $row['products_quantity_alert'],
+        'products_sku' => $row['products_sku'],
+        'products_upc' => $row['products_upc'],
+        'products_ean' => $row['products_ean'],
+        'products_jan' => $row['products_jan'],
+        'products_isbn' => $row['products_isbn'],
+        'products_mpn' => $row['products_mpn'],
+        'products_price' => $row['products_price'],
+        'products_dimension_width' => $row['products_dimension_width'],
+        'products_dimension_height' => $row['products_dimension_height'],
+        'products_dimension_depth' => $row['products_dimension_depth'],
+        'products_volume' => $row['products_volume'],
       ];
     }
 
     return $product_data;
   }
 
-
   /**
-   * Executes the functionality by verifying parameters and fetching product information if valid.
+   * Executes the API call to retrieve product data.
    *
-   * @return false|string Returns false if required parameters are not set or if the ID is invalid;
-   *                      otherwise, returns a JSON-encoded string with product information.
+   * @return array|false An array of product data or false if parameters are missing.
    */
   public function execute()
   {
-    if (isset($_GET['pId'], $_GET['token'])) {
-      $id = HTML::sanitize($_GET['pId']);
-
-      if (isset($_GET['lId'])) {
-        $language_id = HTML::sanitize($_GET['lId']);
-      } else {
-        $language_id = '';
-      }
-
-      if (!is_numeric($language_id)) {
-        http_response_code(400);
-        return json_encode(['error' => 'Invalid ID format']);
-      }
-
-      return static::products($id, $language_id);
-    } else {
+    if (!isset($_GET['pId'], $_GET['token'])) {
       return false;
     }
+
+    $id = HTML::sanitize($_GET['pId']);
+    $language_id = isset($_GET['lId']) ? HTML::sanitize($_GET['lId']) : null;
+
+    return self::products($id, $language_id);
   }
 }

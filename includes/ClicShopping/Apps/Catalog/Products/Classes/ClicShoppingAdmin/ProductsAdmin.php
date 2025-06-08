@@ -30,7 +30,6 @@ use function is_null;
  */
 class ProductsAdmin
 {
-  private $id;
   private mixed $db;
   private mixed $template;
   private mixed $hooks;
@@ -659,8 +658,6 @@ class ProductsAdmin
     $QduplicateImageManufacturers->bindValue(':products_image_small', $Qimage['products_image_small']);
 
     $QduplicateImageManufacturers->execute();
-
-    $duplicate_image_manufacturers = $QduplicateImageManufacturers->fetch();
 
     return $QduplicateImageManufacturers->valueInt('total');
   }

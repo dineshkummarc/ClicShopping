@@ -116,7 +116,7 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
             class="text-end">
             <div class="btn-group d-flex justify-content-end" role="group" aria-label="buttonGroup">
               <?php
-              echo HTML::link($CLICSHOPPING_Products->link('Preview&pID=' . $Qproducts->valueInt('products_id') . '?page=' . HTML::sanitize($_GET['page'])), '<h4><i class="bi bi-easil3" title="' . $CLICSHOPPING_Products->getDef('icon_preview') . '"></i></h4>');
+              echo HTML::link($CLICSHOPPING_Products->link('Preview&pID=' . $Qproducts->valueInt('products_id')), '<h4><i class="bi bi-easil3" title="' . $CLICSHOPPING_Products->getDef('icon_preview') . '"></i></h4>');
               echo '&nbsp;';
               echo $CLICSHOPPING_Products->link('Products&search=' . $Qproducts->value('products_name'), '<h4><i class="bi bi-pencil" title="' . $CLICSHOPPING_Products->getDef('icon_edit') . '"></i></h4>');
               ?>

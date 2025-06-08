@@ -24,5 +24,5 @@ interface IsInterface
    * @param mixed $value The input value required for execution.
    * @return bool Returns true if the operation was successful, otherwise false.
    */
-  public static function execute($value): bool;
+  public static function execute(mixed $value): bool;
 }

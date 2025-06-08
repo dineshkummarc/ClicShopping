@@ -33,6 +33,7 @@ class Insert extends \ClicShopping\OM\PagesActionsAbstract
     $username = HTML::sanitize($_POST['username']);
     $password = HTML::sanitize($_POST['password']);
     $access = HTML::sanitize($_POST['access_administrator']);
+    $email_verification =  isset($_POST['email_verification']) ? HTML::sanitize($_POST['email_verification']) : 1;
 
     if (empty($access)) {
       $CLICSHOPPING_MessageStack->add($this->app->getDef('error_administrator_select'), 'error');
@@ -49,6 +50,7 @@ class Insert extends \ClicShopping\OM\PagesActionsAbstract
             'name' => $name,
             'first_name' => $first_name,
             'access' => $access,
+            'email_verification' => $email_verification,
             'date_added' => 'now()'
           ]
         );

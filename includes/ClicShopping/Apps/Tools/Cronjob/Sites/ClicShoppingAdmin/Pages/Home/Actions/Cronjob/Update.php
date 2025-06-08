@@ -29,6 +29,7 @@ class Update extends \ClicShopping\OM\PagesActionsAbstract
     $code = HTML::sanitize($_POST['code']);
     $cycle = HTML::sanitize($_POST['cycle']);
     $action = HTML::sanitize($_POST['action']);
+    $description = HTML::sanitize($_POST['description']);
 
     if (isset($_POST['status'])) {
       $status = HTML::sanitize($_POST['status']);
@@ -41,6 +42,7 @@ class Update extends \ClicShopping\OM\PagesActionsAbstract
       'cycle' => $cycle,
       'action' => $action,
       'status' => $status,
+      'description' => $description,
       'date_modified' => 'now()'
     ];
 

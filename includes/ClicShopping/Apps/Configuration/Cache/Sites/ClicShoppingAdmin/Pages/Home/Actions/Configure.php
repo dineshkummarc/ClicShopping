@@ -24,6 +24,7 @@ class Configure extends \ClicShopping\OM\PagesActionsAbstract
     $this->page->setFile('configure.php');
     $this->page->data['action'] = 'Configure';
 
+    $CLICSHOPPING_Cache->loadDefinitions('ClicShoppingAdmin/main');
     $CLICSHOPPING_Cache->loadDefinitions('ClicShoppingAdmin/configure');
 
     $modules = $CLICSHOPPING_Cache->getConfigModules();

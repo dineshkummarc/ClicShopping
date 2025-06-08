@@ -26,7 +26,8 @@
       "api&customers": "Sites\\Shop\\Pages\\Customers",
       "api&orders": "Sites\\Shop\\Pages\\Orders",
       "api&manufacturers": "Sites\\Shop\\Pages\\Manufacturers",
-      "api&suppliers": "Sites\\Shop\\Pages\\Suppliers"
+      "api&suppliers": "Sites\\Shop\\Pages\\Suppliers",
+      "api&productGpt": "Sites\\Shop\\Pages\\ProductGpt"
     }
   }
 }

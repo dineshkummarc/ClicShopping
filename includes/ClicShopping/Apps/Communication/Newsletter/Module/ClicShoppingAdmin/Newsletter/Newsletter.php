@@ -23,18 +23,16 @@ use ClicShopping\Apps\Configuration\TemplateEmail\Classes\ClicShoppingAdmin\Temp
 class Newsletter
 {
   public mixed $app;
-  public $show_chooseAudience;
-  public $title;
-  public $content;
+  public bool $show_chooseAudience;
+  public string $title;
+  public string $content;
 
-  protected int $twitter;
-  protected $file;
-  protected int $languageId;
-  protected int $customerGroupId;
-  protected int $createFile;
-  protected int $newsletterNoAccount;
-  protected int $fileId;
-  protected string $emailFrom;
+  private int $languageId;
+  private int $customerGroupId;
+  private int $createFile;
+  private int $newsletterNoAccount;
+  private int $fileId;
+  private string $emailFrom;
 
   /**
    * Constructor method for initializing the newsletter object and loading required data and configurations.
@@ -57,16 +55,11 @@ class Newsletter
     $this->title = $title;
     $this->content = $content;
     $this->emailFrom = HTML::sanitize(STORE_OWNER_EMAIL_ADDRESS);
-    $this->twitter = (int)$_GET['at']; // send to twitter
-
-    if (isset($_GET['ana'])) {
-      $this->newsletterNoAccount = (int)$_GET['ana'];
-    }
-
-    $this->fileId = (int)$_GET['nID']; // id file on disk
-    $this->languageId = (int)$_GET['nlID'];
-    $this->customerGroupId = (int)$_GET['cgID'];
-    $this->createFile = (int)$_GET['ac'];
+    $this->newsletterNoAccount = (int)($_GET['ana'] ?? 0);
+    $this->fileId = (int)($_GET['nID'] ?? 0);
+    $this->languageId = (int)($_GET['nlID'] ?? 0);
+    $this->customerGroupId = (int)($_GET['cgID'] ?? 0);
+    $this->createFile = (int)($_GET['ac'] ?? 0);
   }
 
   /**
@@ -74,7 +67,7 @@ class Newsletter
    *
    * @return bool Returns false if no audience is selected.
    */
-  public function chooseAudience()
+  public function chooseAudience(): bool
   {
     return false;
   }
@@ -85,7 +78,7 @@ class Newsletter
    *
    * @return string Returns the confirmation string containing HTML content including buttons and messages for newsletters.
    */
-  public function confirm()
+  public function confirm(): string
   {
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
     $CLICSHOPPING_Language = Registry::get('Language');
@@ -169,7 +162,7 @@ class Newsletter
 // Display a button if subcription is > 0
 // ----------------------
     if (SEND_EMAILS == 'true' && $Qmail->valueInt('count') > 0) {
-      $send_button = '<span class="float-end">' . HTML::button($this->app->getDef('button_send'), null, $this->app->link('ConfirmSend&page=' . (int)$_GET['page'] . '&nID=' . $this->fileId . '&nlID=' . $this->languageId . '&cgID=' . $this->customerGroupId . '&ac=' . $this->createFile . '&at=' . $this->twitter . '&ana=' . $this->newsletterNoAccount), 'success', null) . '</span>';
+      $send_button = '<span class="float-end">' . HTML::button($this->app->getDef('button_send'), null, $this->app->link('ConfirmSend&page=' . (int)$_GET['page'] . '&nID=' . $this->fileId . '&nlID=' . $this->languageId . '&cgID=' . $this->customerGroupId . '&ac=' . $this->createFile . '&ana=' . $this->newsletterNoAccount), 'success', null) . '</span>';
     } else {
       $send_button = '';
     }
@@ -215,17 +208,15 @@ class Newsletter
     return $confirm_string;
   }
 
-
-// Envoi du mail sans gestion de Fckeditor
-
   /**
-   * Sends the specified newsletter to subscribed customers based on their language and group preferences.
-   * Handles the creation and sending of emails, updates the database, and triggers additional actions.
+   * Sends the newsletter to customers who have subscribed to it.
+   * It retrieves customer data, processes the email content, and sends the emails in batches.
+   * It also handles error checking and temporary storage of customer data.
    *
-   * @param int $newsletter_id The ID of the newsletter to be sent.
-   * @return bool False if the newsletter system is inactive or fails to process the operation, otherwise void.
+   * @param int $newsletter_id The ID of the newsletter being sent.
+   * @return mixed
    */
-  public function send($newsletter_id)
+  public function send(int $newsletter_id): mixed
   {
     $CLICSHOPPING_Mail = Registry::get('Mail');
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
@@ -333,16 +324,14 @@ class Newsletter
     $newsletter_id = HTML::sanitize($newsletter_id);
 
     $Qupdate = $this->app->db->prepare('update :table_newsletters
-                                          set date_sent = now(),
-                                          status = 1
-                                          where newsletters_id = :newsletters_id
-                                         ');
+                                        set date_sent = now(),
+                                              status = 1
+                                        where newsletters_id = :newsletters_id
+                                       ');
     $Qupdate->bindInt(':newsletters_id', $newsletter_id);
     $Qupdate->execute();
 
     $CLICSHOPPING_Hooks->call('Newsletter', 'NewsletterSend');
-
-    $this->sendTwitter();
   } // end function
 
 // ***************************************************
@@ -350,16 +339,13 @@ class Newsletter
 // **************************************************
 
   /**
-   * Sends newsletters using CKEditor content to a list of subscribed customers.
-   * The method retrieves customer data, processes email content with CKEditor,
-   * and sends the emails in batches. It also handles error checking and temporary
-   * storage of customer data.
+   * Sends the newsletter using CKEditor, including HTML content and email signature.
+   * It retrieves customer data, processes the email content, and sends the emails in batches.
+   * It also handles error checking and temporary storage of customer data.
    *
-   * @return bool Returns false if the 'CLICSHOPPING_APP_NEWSLETTER_NL_STATUS' configuration
-   *              is not enabled or necessary customer data is not found, indicating
-   *              the process cannot proceed.
+   * @return mixed
    */
-  public function sendCkeditor()
+  public function sendCkeditor(): mixed
   {
     $CLICSHOPPING_Mail = Registry::get('Mail');
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
@@ -415,24 +401,35 @@ class Newsletter
 // ------------------------------------------
       $this->app->db->delete('newsletters_customers_temp');
 
+      $batch = [];
+      $batch_size = 100;
+      $iteration = 0;
+      $check_interval = 100;
+
       while ($Qmail->fetch()) {
-        $time_end = explode(' ', microtime());
-        $timer_total = number_format(($time_end[1] + $time_end[0] - ($time_start[1] + $time_start[0])), 3);
-
-        if ($timer_total > $max_execution_time) {
-          echo("<meta http-equiv=\"refresh\" content=\"12\">");
-        }
-
         if (Is::EmailAddress($Qmail->value('customers_email_address'))) {
-          $sql_array = [
-            'customers_firstname' => addslashes($Qmail->value('customers_firstname')),
-            'customers_lastname' => addslashes($Qmail->value('customers_lastname')),
+          $batch[] = [
+            'customers_firstname' => $Qmail->value('customers_firstname'),
+            'customers_lastname' => $Qmail->value('customers_lastname'),
             'customers_email_address' => $Qmail->value('customers_email_address')
           ];
-
-          $this->app->db->save('newsletters_customers_temp', $sql_array);
         }
-      }  // end while
+
+        if (count($batch) >= $batch_size) {
+          $this->app->db->save('newsletters_customers_temp', $batch);
+          $batch = [];
+        }
+
+        if (($iteration++ % $check_interval) === 0) {
+          if ((microtime(true) - $time_start) > $max_execution_time) {
+            if (!empty($batch)) {
+              $this->app->db->save('newsletters_customers_temp', $batch);
+            }
+
+            echo("<meta http-equiv=\"refresh\" content=\"12\">");
+          }
+        }
+      }
     } else {
       echo '<br />';
       echo '<span class="text-warning text-center">There is a pb with newsletters_customers_temp Database, Click Cancel to go back and retry.</span><br />';
@@ -463,39 +460,5 @@ class Newsletter
     }
 
     $CLICSHOPPING_Hooks->call('Newsletter', 'NewsletterSendCkEditor');
-
-    $this->sendTwitter();
-  }
-
-  /**
-   * Sends the newsletter to Twitter if certain conditions are met, such as whether
-   * Twitter sharing is enabled and the required file creation process is successful.
-   * It also checks if the necessary directory is writable and logs an alert message
-   * when conditions are not met.
-   *
-   * @return bool Returns false if the Twitter functionality is disabled
-   *              via configuration or if conditions for sending are not satisfied.
-   */
-  private function sendTwitter()
-  {
-    $CLICSHOPPING_Hooks = Registry::get('Hooks');
-
-    if (!\defined('CLICSHOPPING_APP_NEWSLETTER_NL_STATUS') || CLICSHOPPING_APP_NEWSLETTER_NL_STATUS == 'False') {
-      return false;
-    }
-
-    if (FileSystem::isWritable(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'sources/public/newsletter')) {
-//        if ($this->twitter == 1 && $this->createFile == 1 && $this->errorCreatingFile !== true) {
-      if ($this->twitter == 1 && $this->createFile == 1) {
-        $CLICSHOPPING_Hooks->call('Newsletter', 'SendTwitter');
-      }
-    } else {
-      $alert = '<div class="mt-1"></div>';
-      $alert .= '<div class="alert alert-warning text-center" role="alert">';
-      $alert .= $this->app->getDef('error_twitter') . ' ' . CLICSHOPPING::getConfig('dir_root', 'Shop') . 'sources/public/newsletter';
-      $alert .= '</div>';
-
-      echo $alert;
-    }
   }
 }

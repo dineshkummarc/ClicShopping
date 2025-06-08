@@ -8,6 +8,10 @@ double_authentification_secret varchar(255) null
 status tinyint(1) default(1) not_null
 date_added datetime not_null
 last_modified datetime null
+email_verification tinyint(1) default(1) not_null
+email_verification_code varchar(32) NULL
+email_verification_expiry datetime NULL
+
 --
 primary id
 ##

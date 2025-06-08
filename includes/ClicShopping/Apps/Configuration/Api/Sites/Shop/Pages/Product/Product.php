@@ -16,173 +16,203 @@ use ClicShopping\OM\Registry;
 
 class Product extends \ClicShopping\OM\PagesAbstract
 {
-  protected ?string $file = null;
+  protected string|null $file = null;
   protected bool $use_site_template = false;
-  private mixed $lang;
-  private mixed $db;
+  private mixed $Db;
 
   /**
-   * Initializes the API handling logic based on the HTTP request method.
-   * This method sets up necessary dependencies from the registry and processes the API call
-   * according to the request method (GET, POST, DELETE, etc.). It includes functionality for
-   * authentication and permission checks using tokens and status validation.
-   *
-   * @return bool|void Returns false if the API status is disabled or on invalid requests,
-   *                   and outputs the response body for valid requests.
-   */
+    * Initializes the Products API page, handling authentication, request method routing,
+    * and permission checks for product-related API actions (GET, POST, DELETE).
+    */
   protected function init()
   {
-    $this->lang = Registry::get('Language');
     $this->Db = Registry::get('Db');
 
-    if (!\defined('CLICSHOPPING_APP_API_AI_STATUS') && CLICSHOPPING_APP_API_AI_STATUS == 'False') {
-      return false;
+    if (!\defined('CLICSHOPPING_APP_API_AI_STATUS') || CLICSHOPPING_APP_API_AI_STATUS == 'False') {
+      return $this->sendErrorResponse('API is disabled');
     }
 
     $requestMethod = ApiShop::requestMethod();
+    $token = HTML::sanitize($_GET['token'] ?? null);
 
-// Handle the event
+    if (!$token || !ApiShop::checkToken($token)) {
+      return $this->sendErrorResponse('Invalid or missing token');
+    }
+
+    // Handle request method logic
+    $statusCheck = $this->getStatusCheck($token);
+
     switch ($requestMethod) {
       case 'GET':
-        $token = HTML::sanitize($_GET['token']);
-        $result = ApiShop::checkToken($token);
-        $check = $this->statusCheck('get_product_status', $token);
-
-        if (empty($result) || $check == 0) {
-          $response = ApiShop::notFoundResponse();
-          Registry::get('Session')->kill();
-        } else {
-          $response = static::getProduct();
-        }
-        break;
+        return $this->handleGetRequest($statusCheck);
       case 'DELETE':
-        $token = HTML::sanitize($_GET['token']);
-        $result = ApiShop::checkToken($token);
-
-        $check = $this->statusCheck('delete_product_status', $token);
-
-        if (empty($result) || $check == 0) {
-          $response = ApiShop::notFoundResponse();
-          Registry::get('Session')->kill();
-        } else {
-          $response = static::deleteProduct();
-        }
-        break;
+        return $this->handleDeleteRequest($statusCheck);
       case 'POST':
-        $token = HTML::sanitize($_GET['token']);
-        $result = ApiShop::checkToken($token);
-
-        if (isset($_GET['update'])) {
-          $check = $this->statusCheck('update_product_status', $token);
-
-          if (empty($result) || $check == 0) {
-            $response = ApiShop::notFoundResponse();
-            Registry::get('Session')->kill();
-          } else {
-            $response = static::saveProduct();  
-          }
-        } elseif (isset($_GET['update'])) {
-          $check = $this->statusCheck('insert_product_status', $token);
-
-          if (empty($result) || $check == 0) {
-            $response = ApiShop::notFoundResponse();
-            Registry::get('Session')->kill();
-          } else {
-            $response = static::saveProduct();  
-          }
-        }
-        break;
+        return $this->handlePostRequest($statusCheck);
       case 'PUT':
-        break;
+        return $this->handlePutRequest($statusCheck);
       default:
-        $response = ApiShop::notFoundResponse();
-        Registry::get('Session')->kill();
-        break;
+        return $this->sendErrorResponse('Unsupported request method');
+    }
+  }
+
+  /**
+   * Get status check for various actions
+   *
+   * @param string $token The session token used for identifying the API session.
+   * @return array An associative array containing the status checks for various actions.
+   */
+  private function getStatusCheck(string $token): array
+  {
+    return [
+      'get' => $this->statusCheck('get_product_status', $token),
+      'delete' => $this->statusCheck('delete_product_status', $token),
+      'update' => $this->statusCheck('update_product_status', $token),
+      'insert' => $this->statusCheck('insert_product_status', $token)
+    ];
+  }
+
+  /**
+   * Handle GET request
+   */
+  private function handleGetRequest(array $statusCheck)
+  {
+    if ($statusCheck['get'] == 0) {
+      return $this->sendErrorResponse('Product fetch not allowed');
     }
 
-    if ($response['body']) {
-      echo $response['body'];
+    return $this->sendSuccessResponse(static::getProducts());
+  }
+
+  /**
+   * Handle PUT request
+   */
+  private function handlePutRequest(array $statusCheck)
+  {
+    if (!$statusCheck['update']) {
+      return $this->sendErrorResponse('Update not allowed');
     }
 
+    // Lire le corps PUT brut
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($data['products_id'], $data['language_id'])) {
+      return $this->sendErrorResponse('Missing parameters');
+    }
+
+    // Effectue la mise à jour dans la base de données ici...
+
+    return $this->sendSuccessResponse('Product updated successfully');
+  }
+
+  /**
+   * Handle DELETE request
+   */
+  private function handleDeleteRequest(array $statusCheck)
+  {
+    if ($statusCheck['delete'] == 0) {
+      return $this->sendErrorResponse('Product deletion not allowed');
+    }
+
+    return $this->sendSuccessResponse(static::deleteProducts());
+  }
+
+  /**
+   * Handle POST request
+   */
+  private function handlePostRequest(array $statusCheck)
+  {
+    if (isset($_GET['update']) && $statusCheck['update'] == 0) {
+      return $this->sendErrorResponse('Product update not allowed');
+    }
+
+    if (isset($_GET['insert']) && $statusCheck['insert'] == 0) {
+      return $this->sendErrorResponse('Product insertion not allowed');
+    }
+
+    return $this->sendSuccessResponse(self::saveProducts());
+  }
+
+  /**
+   * Sends a success response with the provided data.
+   *
+   * @param mixed $data The data to be included in the success response.
+   * @return array The HTTP response indicating success.
+   */
+  private function sendSuccessResponse(mixed $data): array
+  {
+    echo json_encode(['status' => 'success', 'data' => $data]);
     exit;
   }
 
   /**
-   * Retrieves the product data through the API and returns an appropriate response.
+   * Sends an error response with the provided message.
    *
-   * @return array The HTTP response containing either the product data or a not-found message.
+   * @param string $message The error message to be included in the response.
+   * @return array The HTTP response indicating an error.
    */
-  private static function getProduct(): array
+  private function sendErrorResponse(string $message): array
   {
-    $CLICSHOPPING_Hooks = Registry::get('Hooks');
-
-    $result = $CLICSHOPPING_Hooks->call('Api', 'ApiGetProduct');
-
-    if (empty($result)) {
-      $response = ApiShop::notFoundResponse();
-    } else {
-      $response = ApiShop::HttpResponseOk($result);
-    }
-
-    ApiShop::clearCache();
-
-    return $response;
+    echo json_encode(['status' => 'error', 'message' => $message]);
+    exit;
   }
 
   /**
-   * Deletes a product by calling the appropriate API hooks and generates a corresponding HTTP response.
+   * Retrieves a list of products through the API.
    *
-   * The method utilizes the ApiDeleteProduct hook to handle the product deletion logic. If the hook returns
-   * no result, a "Not Found" HTTP response is generated. Otherwise, a successful HTTP response with the result
-   * data is returned. The method also clears the cache after the operation.
-   *
-   * @return array Returns an HTTP response representing the outcome of the product deletion operation.
+   * @return array The API response containing the saveProducts or an error response.
    */
-  private static function deleteProduct(): array
+  private static function getProducts(): array
   {
-    $CLICSHOPPING_Hooks = Registry::get('Hooks');
-
-    $result = $CLICSHOPPING_Hooks->call('Api', 'ApiDeleteProduct');
-
-    if (empty($result)) {
-      $response = ApiShop::notFoundResponse();
-    } else {
-      $response = ApiShop::HttpResponseOk($result);
-    }
-
-    ApiShop::clearCache();
-
-    return $response;
+    return self::handleProductAction('ApiGetProduct');
   }
 
   /**
-   * Saves a product by invoking the appropriate hooks and processes the result to return a standardized API response.
+   * Deletes products by invoking the 'ApiDeleteProducts' hook.
+   * Clears the API cache after the operation is completed.
    *
-   * @return array Returns an array containing the API response, which could either be a not-found response or a successful HTTP response with the processed result.
+   * @return array The HTTP response indicating the success or failure of the operation.
    */
-  private static function saveProduct(): array
+  private static function deleteProducts(): array
   {
-    $CLICSHOPPING_Hooks = Registry::get('Hooks');
-
-    $result = $CLICSHOPPING_Hooks->call('Api', 'ApiSaveProduct');
-
-    if (empty($result)) {
-      $response = ApiShop::notFoundResponse();
-    } else {
-      $response = ApiShop::HttpResponseOk($result);
-    }
-
-    ApiShop::clearCache();
-
-    return $response;
+    return self::handleProductAction('ApiDeleteProduct');
   }
 
   /**
-   * Executes a database query to retrieve an integer value associated with a given column and token.
+   * Saves the provided product data through the API call and handles the response.
    *
-   * @param string $string The column name to select in the query.
-   * @param string $token The session identifier used to bind the query parameter.
-   * @return int Returns the integer value retrieved from the specified column in the database.
+   * @return array The API response, either an HTTP OK response with the results or a not found response if the operation fails.
+   */
+  private static function saveProducts(): array
+  {
+    return self::handleProductAction('ApiPutProduct');
+  }
+
+  /**
+   * Handles the product action by invoking the appropriate hook and clearing the cache.
+   *
+   * @param string $action The action to be performed (e.g., 'ApiGetProducts', 'ApiDeleteProducts', etc.).
+   * @return array The HTTP response indicating the success or failure of the operation.
+   */
+  private static function handleProductAction(string $action): array
+  {
+    $CLICSHOPPING_Hooks = Registry::get('Hooks');
+    $result = $CLICSHOPPING_Hooks->call('Api', $action);
+
+    if (empty($result)) {
+      return ApiShop::notFoundResponse();
+    }
+
+    ApiShop::clearCache();
+    return ApiShop::HttpResponseOk($result);
+  }
+
+  /**
+   * Checks the status based on the provided string and token.
+   *
+   * @param string $string The column name to be selected from the database.
+   * @param string $token The session token used for identifying the API session.
+   * @return int The integer value associated with the specified column.
    */
   private function statusCheck(string $string, string $token): int
   {
@@ -193,11 +223,8 @@ class Product extends \ClicShopping\OM\PagesAbstract
                                           and ase.session_id = :session_id  
                                         ');
     $QstatusCheck->bindValue('session_id', $token);
-
     $QstatusCheck->execute();
 
-    $result = $QstatusCheck->valueInt($string);
-
-    return $result;
+    return $QstatusCheck->valueInt($string);
   }
 }

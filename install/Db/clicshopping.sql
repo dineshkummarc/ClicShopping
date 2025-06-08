@@ -171,7 +171,7 @@ INSERT INTO administrator_menu VALUES(730, 'index.php?A&Configuration\\Modules&M
 INSERT INTO administrator_menu VALUES(732, 'index.php?A&Configuration\\Languages&Languages', 19, 1, 1, 'languages.gif', 0, 'app_configuration_languages', 1);
 INSERT INTO administrator_menu VALUES(736, 'index.php?A&Configuration\\Langues&Langues', 20, 1, 1, 'languages.gif', 0, 'app_configuration_langues', 1);
 INSERT INTO administrator_menu VALUES(737, 'index.php?A&Tools\\ActionsRecorder&ActionsRecorder', 178, 1, 1, 'cadenas.gif', 0, 'app_tools_actions_recorder', 1);
-INSERT INTO administrator_menu VALUES(738, 'index.php?A&Configuration\\Cache&Cache', 21, 1, 1, 'cache.gif', 0, 'app_configuration_cache', 1);
+INSERT INTO administrator_menu VALUES(738, 'index.php?A&Configuration\\Cache&Cache', 21, 4, 1, 'cache.gif', 0, 'app_configuration_cache', 1);
 INSERT INTO administrator_menu VALUES(739, 'index.php?A&Tools\\DefineLanguage&DefineLanguage', 170, 1, 1, 'define_language.gif', 0, 'app_tools_define_language', 1);
 INSERT INTO administrator_menu VALUES(742, 'index.php?A&Tools\\ServiceAPP&ServiceAPP', 727, 2, 1, 'service.png', 0, 'app_tools_modules_service', 1);
 INSERT INTO administrator_menu VALUES(756, 'index.php?A&Configuration\\Weight&Weight', 20, 4, 1, 'weight.png', 0, 'app_configuration_weight', 1);
@@ -211,8 +211,9 @@ INSERT INTO administrator_menu VALUES(800, 'index.php?A&Marketing\\Recommendatio
 INSERT INTO administrator_menu VALUES(801, 'index.php?A&Customers\\Reviews&Reviews', 587, 1, 0, '', 0, 'app_customers_reviews', 1);
 INSERT INTO administrator_menu VALUES(802, 'index.php?A&Customers\\Reviews&ReviewsSentiment', 587, 2, 0, '', 0, 'app_customers_reviews', 1);
 INSERT INTO administrator_menu VALUES(803, 'index.php?A&Customers\\Reviews&StatsCustomersVote', 98, 4, 0, '', 0, 'app_customers_reviews', 1);
-INSERT INTO administrator_menu VALUES(804, 'index.php?A&Configuration\\Settings&Settings&gID=11', 21, 2, 0, '', 1, 'app_configuration_cache', 1);
-
+INSERT INTO administrator_menu VALUES(804, 'index.php?A&Configuration\\Settings&Settings&gID=11', 21, 5, 0, '', 1, 'app_configuration_cache', 1);
+INSERT INTO administrator_menu VALUES(805, 'index.php?A&Configuration\\Cache&OpCache', 21, 7, 1, '', 0, 'app_configuration_cache', 1);
+INSERT INTO administrator_menu VALUES(806, 'index.php?A&Configuration\\Cache&Memcached', 21, 8, 1, '', 0, 'app_configuration_cache', 1);
 
 INSERT INTO administrator_menu_description VALUES(0, '', 1);
 INSERT INTO administrator_menu_description VALUES(0, '', 2);
@@ -506,8 +507,8 @@ INSERT INTO administrator_menu_description VALUES(736, 'Languages', 1);
 INSERT INTO administrator_menu_description VALUES(736, 'Langages', 2);
 INSERT INTO administrator_menu_description VALUES(737, 'Actions recorder', 1);
 INSERT INTO administrator_menu_description VALUES(737, 'Actions sur les connexions', 2);
-INSERT INTO administrator_menu_description VALUES(738, 'Cache control', 1);
-INSERT INTO administrator_menu_description VALUES(738, 'Contrôle du cache', 2);
+INSERT INTO administrator_menu_description VALUES(738, 'Db Cache control', 1);
+INSERT INTO administrator_menu_description VALUES(738, 'Contrôle du cache Db', 2);
 INSERT INTO administrator_menu_description VALUES(739, 'DefineLanguage', 1);
 INSERT INTO administrator_menu_description VALUES(739, 'Editeur de langues', 2);
 INSERT INTO administrator_menu_description VALUES(742, 'Modules Services', 1);
@@ -587,7 +588,10 @@ INSERT INTO administrator_menu_description VALUES(803, 'Products Reviews Vote', 
 INSERT INTO administrator_menu_description VALUES(803, 'Vote commentaires produits', 2);
 INSERT INTO administrator_menu_description VALUES(804, 'Cache Setup', 1);
 INSERT INTO administrator_menu_description VALUES(804, 'Gestion du Cache', 2);
-
+INSERT INTO administrator_menu_description VALUES(805, 'OpCache information', 1);
+INSERT INTO administrator_menu_description VALUES(805, 'Informations OpCache', 2);
+INSERT INTO administrator_menu_description VALUES(806, 'Memcached information', 1);
+INSERT INTO administrator_menu_description VALUES(806, 'Informations Memcached', 2);
 
 INSERT INTO api VALUES(1, 'Default', 'd0a36b839700b60727fe13998e22aa0af197c61d8b371e26114c133ca51c4864bd0da73ad6d1e5090b02b55cff42b8a0cd23866e64e78fc8884eb6228d32f5e9d76bed468869dd89ee6bb8a3208c5077e88560d0bc238f67cfc732efcf5313a0cb361e297c29c8d82d050d770ed7dee972af6445e801fa9af12e3d478bf5346a', 0, '2022-09-18 14:25:54', '2022-09-18 14:25:54', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 INSERT INTO api_ip VALUES(1, 1, '127.0.0.1', 'localhost');
@@ -681,7 +685,7 @@ INSERT INTO configuration VALUES(118, 'Stockage du temps d\'exécution', 'STORE_
 INSERT INTO configuration VALUES(119, 'Emplacement du fichier pour le stocke d\'exécution', 'STORE_PAGE_PARSE_TIME_LOG', '/home/www/site/shop/includes/Work/Log/admin.log', 'Chemin d\'accès et nom du fichier des temps d\'exécution.', 10, 2, '2008-09-15 10:07:36', '2006-04-09 16:13:48', NULL, NULL);
 INSERT INTO configuration VALUES(120, 'Format de date des exécutions', 'STORE_PARSE_DATE_TIME_FORMAT', '%d/%m/%Y %H:%M:%S', 'Format de la date des exécutions.', 10, 3, NULL, '2006-04-09 16:13:48', NULL, NULL);
 INSERT INTO configuration VALUES(121, 'Affichage du temps d\'exécution', 'DISPLAY_PAGE_PARSE_TIME', 'false', 'Affiche le temps d\'exécution d\'une page (le stockage du temps d\'exécution doit &ecirc;tre activé et l\'emplacement choisi du fichier pour le stockage d\'exécution).<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 10, 4, '2007-06-03 16:58:14', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
-INSERT INTO configuration VALUES(123, 'Utiliser le cache', 'USE_CACHE', 'false', 'Utiliser les fonctionnalités de cache.<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 11, 1, '2006-07-18 00:13:26', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
+INSERT INTO configuration VALUES(123, 'Utiliser le cache (fichiers)', 'USE_CACHE', 'false', 'Utiliser les fonctionnalités de cache.<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 11, 1, '2006-07-18 00:13:26', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
 INSERT INTO configuration VALUES(125, 'Méthode de transport d\'email', 'EMAIL_TRANSPORT', 'sendmail', 'Définir si le serveur utilise une connexion locale à sendmail ou une connexion SMTP par TCP/IP. Les Serveurs Windows et MacOS devraient codifier SMTP.', 12, 1, NULL, '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'sendmail\', \'gmail\', \'smtp\'))');
 INSERT INTO configuration VALUES(126, 'Saut de ligne en-t&ecirc;te des emails', 'EMAIL_LINEFEED', 'LF', 'Définir les caractères utilisés pour séparer les en-t&ecirc;tes des emails.', 12, 2, NULL, '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'LF\', \'CRLF\'))');
 INSERT INTO configuration VALUES(127, 'Utiliser MIME HTML pour l\'envoi des emails', 'EMAIL_USE_HTML', 'false', 'Envoie les emails au format html ou texte brut.<br><br><i>(Valeur True = HTML - Valeur False = TEXTE)</i>', 12, 3, '2008-09-15 22:57:14', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
@@ -1584,7 +1588,6 @@ INSERT INTO configuration VALUES(1536, 'Souhaitez-vous permettre au client de su
 INSERT INTO configuration VALUES(1537, 'A quel endroit souhaitez-vous afficher le module ?', 'MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_CONTENT_POSITION', 'float-end', 'Affiche le module à gauche ou à droite<br><br><i>(Valeur Left = Gauche <br>Valeur Right = Droite <br>Valeur None = Aucun)</i>', 6, 2, NULL, '2019-09-15 20:17:24', NULL, 'clic_cfg_set_boolean_value(array(\'float-end\', \'float-start\', \'float-none\'))');
 INSERT INTO configuration VALUES(1538, 'Souhaitez-vous activer ce module ?', 'MODULE_HEADER_TAGS_BREADCRUMB_STATUS', 'True', 'Souhaitez-vous activer ce module ?', 6, 1, NULL, '2019-09-22 21:39:43', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1539, 'Ordre de tri d\'affichage', 'MODULE_HEADER_TAGS_BREADCRUMB_SORT_ORDER', '555', 'Ordre de tri pour l\'affichage (Le plus petit nombre est montré en premier)', 6, 10, NULL, '2019-09-22 21:39:43', NULL, '');
-INSERT INTO configuration VALUES(1540, 'Souhaitez vous activer le Preloading (PHP >= 7.4)', 'CONFIGURATION_PRELOADING', 'false', 'Fonctionnalité en beta, you devez avoir accès à votre php.init pour activer cette fonction. Veuillez vous référer à la documentation disponible sur le forum.<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 14, 10, '2006-09-23 01:42:33', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
 INSERT INTO configuration VALUES(1541, 'Souhaitez-vous convertir toutes les images du produits en Webp ?', 'CONFIGURATION_CONVERT_IMAGE', 'false', 'Toutes les images du produits seront converties au format Webp. Veuillez noter que certaines configuration serveur n\'accepte pas ce format', 4, 10, NULL, '2018-11-05 09:49:46', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
 INSERT INTO configuration VALUES(1542, 'Souhaitez-vous compresser le HTML', 'CONFIGURATION_TEMPLATE_MINIFY_HTML', 'false', 'Compression du code HTML et le js dans le HTML (catalogue)', 43, 1, '2013-12-16 18:12:37', '2006-04-09 18:20:19', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
 INSERT INTO configuration VALUES(1543, 'Exclure des domaines d\'emails spécifiques', 'CONFIGURATION_EXLCLUDE_EMAIL_DOMAIN', '', 'Si le domaine est attrapée, l\'email de ne sera pas envoyé. Veuillez séparer vos domaines par une virgule ","<br><br><i>exemple: mail.ru, yandex.com', 12, 10, NULL, '2019-09-22 21:39:43', NULL, '');
@@ -1605,9 +1608,6 @@ INSERT INTO configuration VALUES(1557, 'Ordre de tri d\'affichage', 'MODULE_ACCO
 INSERT INTO configuration VALUES(1558, 'Souhaitez-vous activer ce module ?', 'MODULE_ACCOUNT_PRODUCT_RETURN_HISTORY_INFO_STATUS', 'True', 'Souhaitez vous activer ce module à votre boutique ?<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 6, 1, NULL, '2022-10-09 09:06:34', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1559, 'Veuillez selectionner la largeur de l\'affichage', 'MODULE_ACCOUNT_PRODUCT_RETURN_HISTORY_INFO_CONTENT_WIDTH', '12', 'Veuillez indiquer un nombre compris entre 1 et 12', 6, 1, NULL, '2022-10-09 09:06:34', NULL, 'clic_cfg_set_content_module_width_pull_down');
 INSERT INTO configuration VALUES(1560, 'Ordre de tri d\'affichage', 'MODULE_ACCOUNT_PRODUCT_RETURN_HISTORY_INFO_SORT_ORDER', '120', 'Ordre de tri pour l\'affichage (Le plus petit nombre est montré en premier)', 6, 105, NULL, '2022-10-09 09:06:34', NULL, '');
-INSERT INTO configuration VALUES(1561, 'Titre court double authentification site internet ', 'CLICSHOPPING_TOTP_SHORT_TILTE', 'ClicShopping', 'Veuillez insérer une un mot le titre de de l\'authentification (sans espace et accent)', 46, 2, NULL, '2018-07-29 16:22:38', NULL, '');
-INSERT INTO configuration VALUES(1562, 'Double authentification TOTP Catalogue', 'CLICSHOPPING_TOTP_CATALOG', 'False', 'Souhaitez-vous activer cette fonctionnalité de double authentification<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 46, 2, NULL, '2018-07-29 16:22:38', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
-INSERT INTO configuration VALUES(1563, 'Double authentification TOTP Administration', 'CLICSHOPPING_TOTP_ADMIN', 'False', 'Souhaitez-vous activer cette fonctionnalité de double authentification<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 46, 4, NULL, '2018-07-29 16:22:38', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1564, 'Souhaitez-vous activer la vérification du Numéro de TVA Intracommunautaire via un webservice (Europe seulement)', 'ACCOUNT_TVA_INTRACOM_PRO_VERIFICATION', 'false', 'La vérification du numéro de TVA Intracom se fait via un appel de webservice.<br>site : https://ec.europa.eu/taxation_customs/vies/<br><i>(Valeur True = Oui - Valeur False = Non)</i><br><br><font color="#FF0000"><b> Note :</b> Valide uniquement pour l\'europe</font>', 18, 9, '2006-10-29 16:05:56', '2006-04-26 14:43:56', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
 INSERT INTO configuration VALUES(1565, 'Ordre de tri d\'affichage', 'CLICSHOPPING_APP_API_AI_SORT_ORDER', '30', 'Ordre de tri pour l\'affichage (Le plus petit nombre est montré en premier)', 6, 0, NULL, '2022-11-24 12:03:41', NULL, NULL);
 INSERT INTO configuration VALUES(1566, 'Statut', 'CLICSHOPPING_APP_API_AI_STATUS', 'True', 'Souhaitez vous activer ce module à votre boutique', 6, 0, NULL, '2022-11-24 12:03:41', NULL, NULL);
@@ -1695,6 +1695,26 @@ INSERT INTO configuration VALUES(1743, 'Souhaitez-vous installer ce module ?', '
 INSERT INTO configuration VALUES(1744, 'Select the width to display', 'MODULE_ADMIN_DASHBOARD_GPT_CHECK_API_APP_CONTENT_WIDTH', '12', 'Veuillez sélectionner un nombre entre 1 et 12', 6, 1, NULL, '2023-09-15 09:16:47', NULL, 'clic_cfg_set_content_module_width_pull_down');
 INSERT INTO configuration VALUES(1745, 'Ordre de tri d\'affichage', 'MODULE_ADMIN_DASHBOARD_GPT_CHECK_API_APP_SORT_ORDER', '2', 'Ordre de tri pour l\'affichage (Le plus petit nombre est montré en premier)', 6, 2, NULL, '2023-09-15 09:16:47', NULL, '');
 INSERT INTO configuration VALUES(1746, 'Clef Api Anthropic', 'CLICSHOPPING_APP_CHATGPT_CH_ANTHROPIC_API_KEY', '', 'Veuillez insérer la clef API (https://www.anthropic.com)', 6, 0, NULL, '2023-02-22 17:17:04', NULL, NULL);
+INSERT INTO configuration VALUES(1747, 'Clef Api Mistral', 'CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL', '', 'Veuillez insérer la clef API (https://www.mistral.ai)', 6, 0, NULL, '2025-04-16 13:09:02', NULL, NULL);
+INSERT INTO configuration VALUES(1748, 'Ordre de tri d\'affichage', 'CLICSHOPPING_APP_ADMINISTRATORS_AD_SORT_ORDER', '30', 'Ordre de tri pour l\'affichage (Le plus petit nombre est montré en premier)', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO configuration VALUES(1749, 'Statut', 'CLICSHOPPING_APP_ADMINISTRATORS_AD_STATUS', 'True', 'Souhaitez vous activer cette APP', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO configuration VALUES(1750, 'Parameter [Administrators App]', 'MODULE_MODULES_ADMINISTRATORS_INSTALLED', 'Configuration\\Administrators\\AD', 'Parameter [Administrators App]', 6, 0, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO configuration VALUES(1751, 'Activer la vérification de l\'email par code d\'accés à l\'administration', 'EMAIL_VERIFICATION_ENABLED_ADMIN', 'False', 'Activer ou désactiver la vérification par code pour l\'accès administrateur. <br> Veuillez vérifier que l\'administrateur peut accéder à cette vérification', 46, 5, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1752, 'Activer la vérification par l\'email par code d\'accés pour la boutique', 'EMAIL_VERIFICATION_ENABLED_SHOP', 'False', 'Activer ou désactiver la vérification par code pour l\'accès àla boutique. <br> Veuillez vérifier que l\'administrateur peut accéder à cette vérification', 46, 6, NULL, '2025-04-23 15:01:20', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1753, 'Durée de validité du code de la vérification par email (minutes)', 'EMAIL_VERIFICATION_CODE_EXPIRY', '5', 'Durée de validité du code de vérification en minutes', 46, 7, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO configuration VALUES(1754, 'Longueur du code de vérification de la vérification par email ', 'EMAIL_VERIFICATION_CODE_LENGTH', '6', 'Nombre de chiffres dans le code de vérification (4-8)', 46, 8, NULL, '2025-04-23 15:01:20', NULL, NULL);
+INSERT INTO configuration VALUES(1755, 'Clé Client id', 'CLICSHOPPING_APP_UPGRADE_UP_CLIENT_ID', '', 'clef Client Id', 6, 0, NULL, '2025-05-19 10:42:16', NULL, NULL);
+INSERT INTO configuration VALUES(1756, 'Clé secrète', 'CLICSHOPPING_APP_UPGRADE_UP_SECRET_KEY', '', 'Vous devez envoyer une demande à un administrateur du forum pour obtenir la clé secrète', 6, 0, NULL, '2025-05-19 10:42:16', NULL, NULL);
+
+INSERT INTO configuration VALUES(1757, 'Statut', 'CLICSHOPPING_APP_CACHE_CA_STATUS', 'True', 'Souhaitez vous activer ce module à votre boutique', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
+INSERT INTO configuration VALUES(1758, 'Ordre de tri d\'affichage', 'CLICSHOPPING_APP_CACHE_CA_SORT_ORDER', '30', 'Ordre de tri pour l\'affichage (Le plus petit nombre est montré en premier)', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
+INSERT INTO configuration VALUES(1759, 'Parameter [Cache Control App]', 'MODULE_MODULES_CACHE_INSTALLED', 'Configuration\\Cache\\CA', 'Parameter [Cache Control App]', 6, 0, NULL, '2025-05-19 17:16:52', NULL, NULL);
+INSERT INTO configuration VALUES(1760, 'Utiliser Memcached', 'USE_MEMCACHED', 'False', 'Activer la mise en cache Memcached. Pour du debug, veuillez laisser sur false', 11,2, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1761, 'Utiliser le cache de page de contenu statique sur le catalogue', 'USE_CATALOG_CACHE', 'False', 'Activer la mise en cache du contenu statique du catalogue.<br>Pour un Reset, veuillez mettre sur False.', 11, 7, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1762, 'Réinitialiser le cache de page de contenu statique sur le catalogue', 'USE_CATALOG_RESET_CACHE', 'False', 'Réinitialiser la mise en cache du contenu statique du catalogue.<br>Aprés une réinitialisation, veuillez changer le status en False.', 11, 8, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1763, 'Activer le journal du cache de page de contenu statique sur le catalogue', 'USE_CATALOG_LOG_CACHE', 'False', 'Activer le journal de mise en cache du contenu statique du catalogue', 11, 9, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+
+
 
 
 INSERT INTO configuration_group VALUES(1, 'Gestion de ma boutique', 'Informations générales sur la boutique.', 1, 1);
@@ -1978,10 +1998,11 @@ INSERT INTO countries VALUES(237, 'East Timor', 'TL', 'TLS', 1, 1);
 INSERT INTO countries VALUES(238, 'Zambia', 'ZM', 'ZMB', 1, 1);
 INSERT INTO countries VALUES(239, 'Zimbabwe', 'ZW', 'ZWE', 1, 1);
 
-INSERT INTO cron VALUES(1, 'currency', null, 'day', 'currency', 1, '2014-09-25 14:40:00', '2022-10-08 17:57:36');
-INSERT INTO cron VALUES(2, 'gdpr', null, 'monthly', 'gdpr', 0, '2014-09-01 14:40:00', '2022-10-08 18:04:38');
-INSERT INTO cron VALUES(3, 'backup', null, 'weekly', 'backup', 1, '1900-01-01 00:00:00', '2022-10-08 17:31:47');
+INSERT INTO cron VALUES(1, 'currency', 'Update the currencies', 'day', 'currency', 1, '2014-09-25 14:40:00', '2022-10-08 17:57:36');
+INSERT INTO cron VALUES(2, 'gdpr', 'Customer Legislation', 'monthly', 'gdpr', 0, '2014-09-01 14:40:00', '2022-10-08 18:04:38');
+INSERT INTO cron VALUES(3, 'backup', 'database backup', 'weekly', 'backup', 1, '1900-01-01 00:00:00', '2022-10-08 17:31:47');
 INSERT INTO cron VALUES(4, 'marketplace', 'Apps marketplace', 'monthly', 'marketplace', 1, '2023-01-06 15:51:34', '2023-01-06 18:19:19');
+INSERT INTO cron VALUES(5, 'embeddings', 'Update the embeddings table if it not exist<br>Table updated : categories_embedding, manufacturers_embedding, products_embedding, pages_manager_embedding, reviews_embedding,suppliers_embedding.<br>Table not updated : orders_embedding,return_orders_embedding, reviews_sentiment_embeddings', 'weekly', 'embeddings', 1, '2025-05-15 20:14:27', '2025-05-15 20:19:06');
 
 INSERT INTO currencies VALUES(1, 'Euro', 'EUR', '', 'EUR', '.', ',', '2', 1.00000000, '2008-09-13 18:02:35', 1, 0);
 INSERT INTO currencies VALUES(2, 'Dollard', 'USD', 'USD', '', '.', ',', '2', 1.40750003, '2008-09-13 18:02:36', 1, 0);
@@ -3001,5 +3022,3 @@ INSERT INTO zones_to_geo_zones VALUES(81, 38, 68, 14, NULL, '2015-02-09 16:12:03
 INSERT INTO zones_to_geo_zones VALUES(82, 38, 77, 14, NULL, '2015-02-09 16:12:14');
 INSERT INTO zones_to_geo_zones VALUES(83, 38, 76, 9, NULL, '2015-02-09 18:53:27');
 
-#full text index
-ALTER TABLE clic_products_description ADD FULLTEXT description (products_description);

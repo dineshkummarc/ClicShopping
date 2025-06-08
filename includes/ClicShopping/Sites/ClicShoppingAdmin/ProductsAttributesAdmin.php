@@ -43,7 +43,6 @@ class ProductsAttributesAdmin
 
   }
 
-
   /**
    * Retrieves the name of a product option value based on its ID and the current language ID.
    *
@@ -75,9 +74,8 @@ class ProductsAttributesAdmin
 
     foreach ($select_array as $key => $value) {
       if (is_int($key)) $key = $value;
-      $string .= '<br />' . HTML::radioField('configuration[' . $key_name . ']', $key);
-      if ($key_value == $key) $string .= ' checked="checked"';
-      $string .= ' /> ' . $value;
+      $checked = ($key_value == $key) ? ' checked="checked"' : '';
+      $string .= '<br />' . HTML::radioField('configuration[' . $key_name . ']', $key, $checked) . ' ' . $value;
     }
 
     return $string;

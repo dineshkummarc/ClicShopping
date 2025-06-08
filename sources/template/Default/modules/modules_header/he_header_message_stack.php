@@ -22,9 +22,12 @@ class he_header_message_stack
   public bool $enabled = false;
   public $pages;
 
+  /**
+   * Constructor for the he_header_message_stack module.
+   * Initializes module properties such as code, group, title, description, sort order, and enabled status.
+   */
   public function __construct()
   {
-
     $this->code = get_class($this);
     $this->group = basename(__DIR__);
 
@@ -37,6 +40,10 @@ class he_header_message_stack
     }
   }
 
+  /**
+   * Executes the module logic.
+   * Displays error or info messages from the URL parameters in the header message stack.
+   */
   public function execute()
   {
 
@@ -73,20 +80,34 @@ class he_header_message_stack
 
   }
 
+  /**
+   * Checks if the module is enabled.
+   *
+   * @return bool
+   */
   public function isEnabled()
   {
     return $this->enabled;
   }
 
+  /**
+   * Checks if the module configuration status constant is defined.
+   *
+   * @return bool
+   */
   public function check()
   {
     return \defined('MODULE_HEADER_MESSAGE_STACK_STATUS');
   }
 
+  /**
+   * Installs the module configuration settings in the database.
+   *
+   * @return void
+   */
   public function install()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
-
 
     $CLICSHOPPING_Db->save('configuration', [
         'configuration_title' => 'Do you want to enable this module ?',
@@ -126,11 +147,21 @@ class he_header_message_stack
 
   }
 
+  /**
+   * Removes the module configuration settings from the database.
+   *
+   * @return int Number of rows affected
+   */
   public function remove()
   {
     return Registry::get('Db')->exec('delete from :table_configuration where configuration_key in ("' . implode('", "', $this->keys()) . '")');
   }
 
+  /**
+   * Returns the configuration keys used by this module.
+   *
+   * @return array
+   */
   public function keys()
   {
     return array('MODULE_HEADER_MESSAGE_STACK_STATUS',

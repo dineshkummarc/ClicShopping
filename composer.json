@@ -8,20 +8,23 @@
     "license": ["(GPL-2.0-or-later or MIT)"],
     "require": {
         "ext-json": "*",
+        "ext-pdo": "*",
         "daveearley/daves-email-validation-tool": "^1.2",
-        "darkghosthunter/preloader": "^2.2",
-        "stymiee/email-validator": "^1.1",
-        "phpmailer/phpmailer": "^6.9",
         "nyholm/psr7": "^1.8",
         "setasign/fpdf": "^1.8",
         "ext-xml": "*",
         "phpxmlrpc/phpxmlrpc": "^4.11",
         "guzzlehttp/guzzle": "^7.9",
-        "robthree/twofactorauth": "^3.0",
-        "symfony/http-client": "^7.2",
-        "theodo-group/llphant": "^0.9.7",
-        "stripe/stripe-php": "^16.6",
-        "mattketmo/email-checker": "^2.4"
+        "mattketmo/email-checker": "^2.4",
+        "doctrine/orm": "^3.3",
+        "doctrine/migrations": "^3.9",
+        "phpmailer/phpmailer": "^6.10",
+        "amnuts/opcache-gui": "^3.5",
+        "stymiee/email-validator": "^2.0",
+        "stripe/stripe-php": "^17.3",
+        "theodo-group/llphant": "^0.10.1",
+        "symfony/cache": "^7.3",
+        "symfony/http-client": "^7.3"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"
