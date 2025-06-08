@@ -28,7 +28,7 @@ class LogInAuth extends \ClicShopping\OM\PagesActionsAbstract
 
     $this->page->setFile('login_auth.php');
 
-    if (EMAIL_VERIFICATION_ENABLED_SHOP == 'False') {
+    if (defined('EMAIL_VERIFICATION_ENABLED_SHOP') && EMAIL_VERIFICATION_ENABLED_SHOP == 'False') {
       CLICSHOPPING::redirect('Account&LogIn');
     }
 

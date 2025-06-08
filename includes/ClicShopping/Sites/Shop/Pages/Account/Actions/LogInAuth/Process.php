@@ -64,7 +64,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
 
     $CLICSHOPPING_Hooks->call('LogInAuth', 'postProcess');
 
-    if (EMAIL_VERIFICATION_ENABLED_SHOP == 'False') {
+    if (defined('EMAIL_VERIFICATION_ENABLED_SHOP') && EMAIL_VERIFICATION_ENABLED_SHOP == 'False') {
       CLICSHOPPING::redirect(null, 'Account&LogIn');
     }
 

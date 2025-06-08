@@ -3024,15 +3024,3 @@ INSERT INTO zones_to_geo_zones VALUES(81, 38, 68, 14, NULL, '2015-02-09 16:12:03
 INSERT INTO zones_to_geo_zones VALUES(82, 38, 77, 14, NULL, '2015-02-09 16:12:14');
 INSERT INTO zones_to_geo_zones VALUES(83, 38, 76, 9, NULL, '2015-02-09 18:53:27');
 
-#full text index
-ALTER TABLE clic_products_description ADD FULLTEXT description (products_description);
-CREATE VECTOR INDEX embedding_index ON clic_categories_embedding (embedding);
-CREATE VECTOR INDEX embedding_index ON clic_manufacturers_embedding (embedding);
-CREATE VECTOR INDEX embedding_index ON clic_orders_embedding (embedding);
-CREATE VECTOR INDEX embedding_index ON clic_pages_manager_embedding (embedding);
-CREATE VECTOR INDEX embedding_index ON clic_products_embedding (embedding);
-CREATE VECTOR INDEX embedding_index ON clic_return_orders_embedding (embedding);
-CREATE VECTOR INDEX embedding_index ON clic_reviews_embedding (embedding);
-CREATE VECTOR INDEX embedding_index ON clic_reviews_sentiment_embedding (embedding);
-CREATE VECTOR INDEX embedding_index ON clic_suppliers_embedding (embedding);
-
