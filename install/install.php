@@ -9,7 +9,7 @@
  */
 
 
-require_once('includes/application.php');
+require_once('Core/OM.php');
 
 $page_contents = 'install.php';
 

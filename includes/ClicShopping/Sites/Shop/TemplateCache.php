@@ -116,7 +116,7 @@ class TemplateCache
    */
   private function checkStaticCache()
   {
-    if (USE_CATALOG_CACHE == 'False') {
+    if (defined('USE_CATALOG_CACHE') && USE_CATALOG_CACHE == 'False') {
       $this->resetAllCache(true);
       $this->clearLogs();
 

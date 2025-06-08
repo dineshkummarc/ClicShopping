@@ -28,8 +28,8 @@ provider_name_client varchar(64)  null
 customer_website_company varchar(64) null
 customer_guest_account tinyint(1) default(0) not_null
 gdpr tinyint(1) default(0) not_null
-email_verification TINYINT(1) not_null DEFAULT 1
-email_verification_code VARCHAR(32) NULL
+email_verification tinyint(1) default(1) not_null
+email_verification_code varchar(32) NULL
 email_verification_expiry datetime NULL
 
 --

@@ -15,7 +15,7 @@ use ClicShopping\OM\HTTP;
 header('Cache-Control: no-cache, must-revalidate');
 header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
 
-require_once('includes/application.php');
+require_once('Core/OM.php');
 
 $dir_fs_www_root = __DIR__;
 

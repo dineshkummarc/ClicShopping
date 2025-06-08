@@ -1715,10 +1715,6 @@ INSERT INTO configuration VALUES(1761, 'Use static content page cache on the cat
 INSERT INTO configuration VALUES(1762, 'Reset the static content page cache on the catalog', 'USE_CATALOG_RESET_CACHE', 'False', 'Reset the caching about the static catalog content<br>After Reset, Please change the status to False', 11, 8, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1763, 'Activate the static content log page cache on the catalog', 'USE_CATALOG_LOG_CACHE', 'False', 'Activate the caching log about the static catalog content', 11, 9, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 
-INSERT INTO configuration VALUES(1764, 'Use static content page cache on catalog', 'USE_CATALOG_CACHE', 'False', 'Enable static content caching for the catalog', 11, 7, '2025-06-03 15:04:24', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'False\'))');
-INSERT INTO configuration VALUES(1765, 'Reset static content page cache on catalog', 'USE_CATALOG_RESET_CACHE', 'False', 'Reset static content caching for the catalog', 11, 7, '2025-05-31 11:00:50', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
-INSERT INTO configuration VALUES(1766, 'Enable cache logging for static content page on catalog', 'USE_CATALOG_LOG_CACHE', 'False', 'Enable cache logging for catalog static content', 11, 7, '2025-06-03 15:01:38', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
-
 
 
 

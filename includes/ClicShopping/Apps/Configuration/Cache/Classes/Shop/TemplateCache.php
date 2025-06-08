@@ -316,7 +316,7 @@ class TemplateCache
     {
       $result = false;
 
-      if (USE_CATALOG_CACHE == 'True') {
+      if (defined('USE_CATALOG_CACHE') && USE_CATALOG_CACHE == 'True') {
         $result =  true;
       }
 
@@ -332,7 +332,7 @@ class TemplateCache
     {
       $result = false;
 
-      if (USE_CATALOG_RESET_CACHE == 'True') {
+      if (defined('USE_CATALOG_RESET_CACHE') && USE_CATALOG_RESET_CACHE == 'True') {
         $result =  true;
       }
 
@@ -347,7 +347,7 @@ class TemplateCache
      */
     private function log(string $message): void
     {
-        if (USE_CATALOG_LOG_CACHE == 'True') {
+        if (defined('USE_CATALOG_LOG_CACHE') && USE_CATALOG_LOG_CACHE == 'True') {
           $logFile = $this->cacheDir . '/' . self::LOG_FILE_NAME;
           $logs = [];
 

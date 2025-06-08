@@ -12,7 +12,7 @@ $languages_array = [['id' => 'english', 'text' => 'English'],
   ['id' => 'french', 'text' => 'Francais'],
 ];
 
-require_once('includes/languages/' . $language . '.php');
+require_once('Core/languages/' . $language . '.php');
 
 $template = 'main_page';
 ?>

@@ -1713,13 +1713,6 @@ INSERT INTO configuration VALUES(1760, 'Utiliser Memcached', 'USE_MEMCACHED', 'F
 INSERT INTO configuration VALUES(1761, 'Utiliser le cache de page de contenu statique sur le catalogue', 'USE_CATALOG_CACHE', 'False', 'Activer la mise en cache du contenu statique du catalogue.<br>Pour un Reset, veuillez mettre sur False.', 11, 7, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1762, 'Réinitialiser le cache de page de contenu statique sur le catalogue', 'USE_CATALOG_RESET_CACHE', 'False', 'Réinitialiser la mise en cache du contenu statique du catalogue.<br>Aprés une réinitialisation, veuillez changer le status en False.', 11, 8, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1763, 'Activer le journal du cache de page de contenu statique sur le catalogue', 'USE_CATALOG_LOG_CACHE', 'False', 'Activer le journal de mise en cache du contenu statique du catalogue', 11, 9, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
-INSERT INTO configuration VALUES(1764, 'Utiliser le cache de page de contenu statique sur le catalogue', 'USE_CATALOG_CACHE', 'False', 'Activer la mise en cache du contenu statique du catalogue', 11, 7, '2025-06-03 15:04:24', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'False\'))');
-INSERT INTO configuration VALUES(1765, 'Réinitialiser le cache de page de contenu statique sur le catalogue', 'USE_CATALOG_RESET_CACHE', 'False', 'Réinitialiser la mise en cache du contenu statique du catalogue', 11, 7, '2025-05-31 11:00:50', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
-INSERT INTO configuration VALUES(1766, 'Activer le journal du cache de page de contenu statique sur le catalogue', 'USE_CATALOG_LOG_CACHE', 'False', 'Activer le journal de mise en cache du contenu statique du catalogue', 11, 7, '2025-06-03 15:01:38', '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
-
-
-
-
 
 
 
