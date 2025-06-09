@@ -68,8 +68,13 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 ##Generative AI functionalities :
 - GPT API integration
 - Generative artificial Intelligence included with Gpt, Ollama, and Anthropic.
-- Intelligent RAG BI (business intelligence) with agent using chatbot
-- Use the embeddings for the RAG to retrieve information via vector database
+- RAG-powered Business Intelligence Agent for data analysis and insights
+  - Vector embeddings for products, categories, orders, and other entities
+  - Multi-model AI support (OpenAI, Anthropic, Mistral, Ollama)
+  - Semantic search across multiple database tables
+  - Analytics query processing with natural language to SQL conversion
+  - Intelligent content generation with context-aware responses
+  - Admin chatbot interface with RAG capabilities
 - Generative artificial products customers recommendations
 - Generative artificial intelligence for All content (product,categories...)
 - Generative artificial intelligence for SEO
@@ -87,6 +92,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 - Anti-spam Protection: Multiple layers of protection
 - Regular Security Updates: Community-driven security patches
 - Double authentication number
+- Security Headers: XSS protection and security hardening
 
 ##Internationalization
 - Included Languages: English, French
