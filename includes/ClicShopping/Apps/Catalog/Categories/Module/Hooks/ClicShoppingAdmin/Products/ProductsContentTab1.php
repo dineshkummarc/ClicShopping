@@ -142,42 +142,29 @@ class ProductsContentTab1 implements \ClicShopping\OM\Modules\HooksInterface
 <!--  Start Categories Hooks      -->
 <!-- ######################## -->
 <script>
-$('#tab1ContentRow1').append(
-    '{$content}'
-);
+  $('#tab1ContentRow1').append(`<?= $content ?>`);
+
+  $(document).on('click', '#myCategoriesAjax', function(e) {
+    const selectedOptionVal = document.querySelector('#move_to_category_id').value;
+    let options_html = "";
+    fetch("<?= $categories_ajax ?>?" + selectedOptionVal)
+      .then(response => response.json())
+      .then(jsonResponse => {
+        options_html = "";
+        for (const index in jsonResponse) {
+          const category_id = jsonResponse[index].id;
+          const category_name = jsonResponse[index].text;
+          const selectedString = category_id == selectedOptionVal ? ' selected="selected"' : '';
+          options_html += '<option value="' + category_id + '"' + selectedString + '>' + category_name + '</option>';
+        }
+        $('#move_to_category_id').html(options_html);
+      })
+      .catch(err => {
+        console.log("error :", err);
+      });
+  });
 </script>
 
-<script>
-  window.addEventListener("DOMContentLoaded", (event) => {
-  console.log("DOM uploaded and analysed");
-  const myCategoriesAjax = document.querySelector('#myCategoriesAjax');
-  if (myCategoriesAjax) {
-    myCategoriesAjax.addEventListener('click', function(e) {
-      const selectedOptionVal = document.querySelector('#move_to_category_id').value;
-      let options_html = "";
-      fetch("{$categories_ajax}?" + selectedOptionVal)
-        .then(function(response) {
-          return response.json();
-        })
-        .then(function(jsonResponse) {
-          console.log("data is :", jsonResponse);
-          for (const index in jsonResponse) {
-            const category_id = jsonResponse[index].id;
-            const category_name = jsonResponse[index].text;
-            const selectedString = category_id == selectedOptionVal ? ' selected="selected"' : '';
-            options_html += '<option value="' + category_id + '"' + selectedString + '>' + category_name + '</option>';
-          }
-          $('#move_to_category_id').html(options_html);
-        })
-        .catch(function(err) {
-          console.log("error :", err);
-        });
-    });
-  } else {
-    console.log("myCategoriesAjax not found");
-  }
-});
- </script>
 <!-- ######################## -->
 <!--  End Categories App      -->
 <!-- ######################## -->

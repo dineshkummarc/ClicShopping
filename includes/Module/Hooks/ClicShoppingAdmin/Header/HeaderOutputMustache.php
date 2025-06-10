@@ -8,9 +8,9 @@
  *
  */
 
-namespace ClicShopping\OM\Module\Hooks\ClicShoppingAdmin\Footer;
+namespace ClicShopping\OM\Module\Hooks\ClicShoppingAdmin\Header;
 
-class FooterOutputMustache
+class HeaderOutputMustache
 {
   /**
    * Generates and returns a string containing Mustache.js script include tags
@@ -25,8 +25,7 @@ class FooterOutputMustache
 
     if (isset($_SESSION['admin'])) {
       $output .= '<!-- Mustache Script start-->' . "\n";
-      $output .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/4.2.0/mustache.min.js"></script>' . "\n";
-
+      $output .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/4.1.0/mustache.min.js"></script>' . "\n";
       $output .= '<!--Mustache end -->' . "\n";
     } else {
       return false;

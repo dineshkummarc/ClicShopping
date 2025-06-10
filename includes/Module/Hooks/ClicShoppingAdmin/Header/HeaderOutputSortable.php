@@ -8,9 +8,9 @@
  *
  */
 
-namespace ClicShopping\OM\Module\Hooks\ClicShoppingAdmin\Footer;
+namespace ClicShopping\OM\Module\Hooks\ClicShoppingAdmin\Header;
 
-class FooterOutputSortable
+class HeaderOutputSortable
 {
   /**
    * Renders specific JavaScript code for a sortable functionality if certain conditions are met.
@@ -30,7 +30,7 @@ class FooterOutputSortable
     if (isset($_SESSION['admin'])) {
       if (isset($_GET['cPath'])) {
         $output .= '<!-- Sortable Script start-->' . "\n";
-        $output .= '<script defer src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.6/Sortable.min.js"></script>' . "\n";
+        $output .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.6/Sortable.min.js"></script>' . "\n";
         $output .= '<!--Sortable end -->' . "\n";
       }
     } else {

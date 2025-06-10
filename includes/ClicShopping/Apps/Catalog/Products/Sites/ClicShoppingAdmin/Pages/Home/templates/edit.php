@@ -1053,7 +1053,7 @@ echo HTML::button($CLICSHOPPING_Products->getDef('button_cancel'), null, $CLICSH
                   <span
                     class="col-sm-6"><?php echo $CLICSHOPPING_Products->getDef('text_products_image_visuel'); ?></span>
                 </div>
-                <div class="col-md-11 adminformAide">
+                <div class="col-md-11">
                   <div
                     class="col-sm-12 text-center"><?php echo $CLICSHOPPING_ProductsAdmin->getInfoImage($pInfo->products_image, $CLICSHOPPING_Products->getDef('text_products_image_vignette'), '150', '150') . HTML::hiddenField('products_image', $pInfo->products_image); ?></div>
                   <div
@@ -1065,9 +1065,9 @@ echo HTML::button($CLICSHOPPING_Products->getDef('button_cancel'), null, $CLICSH
                 </div>
               </div>
             </div>
-            <div class="mt-1"></div>
-            <div class="mt-1"></div>
           </div>
+
+          <div class="mt-1"></div>
           <?php
           // -----------------------------------
           // Gallery
