@@ -29,6 +29,7 @@ CLICSHOPPING::loadSite('ClicShoppingAdmin');
 
 try {
   Gpt::getEnvironment();
+
   $prompt = HTML::sanitize($_POST['message']);
   $languageId = Registry::get('Language')->getId();
 

@@ -6,6 +6,8 @@ user_admin varchar(255) default null
 
 --
 primary gpt_id
+idx_gpt_id gpt_id
+
 ##
 engine innodb
 character_set utf8mb4

@@ -274,9 +274,8 @@ class MariaDb
       );
       
       -- Add vector index separately
-      CREATE VECTOR INDEX embedding_index ON clic_orders_embedding (embedding);
-
-
+      CREATE VECTOR INDEX embedding_index ON clic_orders_embedding (embedding);    
+             
     EOD;
       $CLICSHOPPING_Db->exec($sql);
     }

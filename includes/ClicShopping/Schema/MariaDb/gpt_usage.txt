@@ -9,6 +9,8 @@ date_added date default null
 
 --
 primary usage_id
+idx_usage_id usage_id
+
 ##
 engine innodb
 character_set utf8mb4

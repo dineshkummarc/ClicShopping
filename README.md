@@ -176,7 +176,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 #documentation
 
 Wiki on github : https://github.com/ClicShopping/ClicShopping/wiki
-DeepWiki : https://deepwiki.com/ClicShopping/ClicShopping
+DeepWiki :[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ClicShopping/ClicShopping)
 
 
 #Donation
