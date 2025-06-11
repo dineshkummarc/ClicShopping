@@ -2,14 +2,13 @@
 [![Total Downloads](https://poser.pugx.org/stymiee/email-validator/downloads)](https://packagist.org/packages/stymiee/email-validator)
 ![Build](https://github.com/stymiee/email-validator/workflows/Build/badge.svg)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/stymiee/email-validator/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/stymiee/email-validator/?branch=master)
-[![Maintainability](https://api.codeclimate.com/v1/badges/3b45bd94f090378ac5c6/maintainability)](https://codeclimate.com/github/stymiee/email-validator/maintainability)
 [![License](https://poser.pugx.org/stymiee/email-validator/license)](https://packagist.org/packages/stymiee/email-validator)
 
 # PHP Email Validator (email-validator)
 
 The PHP Email Validator will validate an email address for all or some of the following conditions:
 
-- is in a valid format
+- is in a valid format (supports both RFC 5321 and RFC 5322)
 - has configured MX records (optional)
 - is not a disposable email address (optional)
 - is not a free email account (optional)
@@ -216,17 +215,6 @@ Domain does not accept email
 Domain is used by disposable email providers
 Domain is used by free email providers (Sanitized address: test@gmail.com)
 ```
-## Notes
-
-The email address is checked against a list of known disposable email address providers which are aggregated from
-public disposable email address provider lists. This requires making HTTP requests to get the lists when validating 
-the address.
-
-## Support
-
-If you require assistance using this library start by viewing the [HELP.md](HELP.md) file included in this package. It 
-includes common problems and solutions as well how to ask for additional assistance.
-
 ## Custom Validators
 
 You can create your own custom validators by extending the `AValidator` class. Here's an example:
@@ -255,6 +243,14 @@ $isValid = $emailValidator->validate('user@example.com');
 
 Custom validators will be run after all built-in validators. If a custom validator fails, the error code will be set to `EmailValidator::FAIL_CUSTOM` and the error message will be "Failed custom validation".
 
+### Best Practices
+
+1. Keep your validation logic focused and single-purpose
+2. Use the Policy class to make your validator configurable
+3. Handle null domains and invalid emails gracefully
+4. Add appropriate unit tests for your custom validator
+5. Document your validator's requirements and behavior
+
 ### Example Use Cases
 
 - Domain-specific validation rules
@@ -263,10 +259,86 @@ Custom validators will be run after all built-in validators. If a custom validat
 - Special character restrictions
 - Custom format requirements
 
-### Best Practices
+### RFC 5322 Validation
 
-1. Keep your validation logic focused and single-purpose
-2. Use the Policy class to make your validator configurable
-3. Handle null domains and invalid emails gracefully
-4. Add appropriate unit tests for your custom validator
-5. Document your validator's requirements and behavior
+The library supports full RFC 5322 email validation, which includes:
+- Quoted strings in local parts
+- Comments in local parts and domains
+- Domain literals (IPv4 and IPv6)
+- International domain names (IDNA 2008)
+
+**Example using RFC 5322 validation**
+```php
+<?php
+
+namespace EmailValidator;
+
+require('../vendor/autoload.php');
+
+$config = [
+    'checkMxRecords' => true,
+    'useRfc5322' => true  // Enable RFC 5322 validation
+];
+$emailValidator = new EmailValidator($config);
+
+$testEmailAddresses = [
+    // Standard email addresses
+    'user@example.com',
+    
+    // Quoted strings
+    '"John Doe"@example.com',
+    '"very.unusual.@.unusual.com"@example.com',
+    
+    // Comments
+    'user(comment)@example.com',
+    'user@(comment)example.com',
+    
+    // Domain literals
+    'user@[192.0.2.1]',
+    'user@[IPv6:2001:db8::1]',
+    
+    // International domains
+    'user@münchen.de',
+    'user@xn--mnchen-3ya.de'  // Punycode
+];
+
+foreach ($testEmailAddresses as $emailAddress) {
+    $emailIsValid = $emailValidator->validate($emailAddress);
+    echo ($emailIsValid) ? 'Email is valid' : $emailValidator->getErrorReason();
+    echo PHP_EOL;
+}
+```
+
+The RFC 5322 validator supports:
+
+1. **Quoted Strings**
+   - Allows special characters and whitespace in local part when quoted
+   - Example: `"John Doe"@example.com`
+   - Example: `"very.unusual.@.unusual.com"@example.com`
+
+2. **Comments**
+   - Supports comments in both local part and domain
+   - Example: `user(comment)@example.com`
+   - Example: `user@(comment)example.com`
+
+3. **Domain Literals**
+   - Supports both IPv4 and IPv6 addresses
+   - Example: `user@[192.0.2.1]`
+   - Example: `user@[IPv6:2001:db8::1]`
+
+4. **International Domains**
+   - Full IDNA 2008 support
+   - Handles both Unicode and Punycode
+   - Example: `user@münchen.de`
+   - Example: `user@xn--mnchen-3ya.de`
+
+## Notes
+
+The email address is checked against a list of known disposable email address providers which are aggregated from
+public disposable email address provider lists. This requires making HTTP requests to get the lists when validating
+the address.
+
+## Support
+
+If you require assistance using this library start by viewing the [HELP.md](HELP.md) file included in this package. It
+includes common problems and solutions as well how to ask for additional assistance.

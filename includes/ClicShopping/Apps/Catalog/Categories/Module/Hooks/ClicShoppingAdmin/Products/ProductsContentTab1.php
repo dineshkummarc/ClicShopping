@@ -142,12 +142,15 @@ class ProductsContentTab1 implements \ClicShopping\OM\Modules\HooksInterface
 <!--  Start Categories Hooks      -->
 <!-- ######################## -->
 <script>
-  $('#tab1ContentRow1').append(`<?= $content ?>`);
-
+$('#tab1ContentRow1').append(
+    '{$content}'
+);
+</script>
+<script>
   $(document).on('click', '#myCategoriesAjax', function(e) {
     const selectedOptionVal = document.querySelector('#move_to_category_id').value;
     let options_html = "";
-    fetch("<?= $categories_ajax ?>?" + selectedOptionVal)
+    fetch("<? $categories_ajax ?>?" + selectedOptionVal)
       .then(response => response.json())
       .then(jsonResponse => {
         options_html = "";

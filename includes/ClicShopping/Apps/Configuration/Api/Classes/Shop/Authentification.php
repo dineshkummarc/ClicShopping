@@ -16,9 +16,9 @@ use ClicShopping\OM\Registry;
 
 class Authentification
 {
-  public $username;
-  public $key;
-  public $ip;
+  private string $username;
+  private string $key;
+  private ?string $ip;
 
   /**
    * Constructor for initializing the class with user credentials and optional IP address.
@@ -78,6 +78,10 @@ class Authentification
    */
   public static function addSession(int $api_id): int|string
   {
+    // Validation de l'API ID
+    if ($api_id <= 0) {
+      throw new Exception("Invalid API ID provided");
+    }
     $CLICSHOPPING_Db = Registry::get('Db');
 
     $Qcheck = $CLICSHOPPING_Db->get('api_session', 'session_id', ['api_id' => $api_id]);
@@ -85,6 +89,7 @@ class Authentification
     if (empty($Qcheck->value('session_id'))) {
       $session_id = bin2hex(random_bytes(16));
       $ip = HTTP::getIpAddress();
+
 
       $sql_data_array = [
         'api_id' => $api_id,

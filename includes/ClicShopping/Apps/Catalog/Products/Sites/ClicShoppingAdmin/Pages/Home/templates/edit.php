@@ -935,10 +935,8 @@ echo HTML::button($CLICSHOPPING_Products->getDef('button_cancel'), null, $CLICSH
                   </div>
                 </div>
               </div>
-
-              <div class="row" id="test"></div>
-
             </div>
+
             <div id="PriceB2B">
               <?php echo $CLICSHOPPING_Hooks->output('Products', 'CustomerGroupTab3', null, 'display'); ?>
             </div>

@@ -27,10 +27,7 @@ class Login
     $this->key = $key;
     $this->ip = $ip;
     $this->lang = Registry::get('Language');
-    /**
-     *
-     */
-      $this->Db = Registry::get('Db');
+    $this->Db = Registry::get('Db');
   }
 
   /**
