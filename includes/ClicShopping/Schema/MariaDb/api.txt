@@ -31,6 +31,7 @@ delete_supplier_status tinyint(1) not_null defaut(0)
 
 --
 primary api_id
+idx_api_id api_id
 ##
 engine innodb
 character_set utf8mb4

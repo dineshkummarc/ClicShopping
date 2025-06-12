@@ -5,6 +5,7 @@ namespace ClicShopping\Apps\Configuration\Api\Classes\Shop;
 
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\Configuration\Api\Classes\Shop\ApiSecurity;
 
 class Login
 {
@@ -88,19 +89,27 @@ class Login
       throw new \InvalidArgumentException('Username and key must not be empty');
     }
 
+    if (ApiSecurity::isAccountLocked($username)) {
+      return 'account locked';
+    }
+
     Registry::set('Authentification', new Authentification($username, $key, $ip));
     $this->authentification = Registry::get('Authentification');
     $result = $this->authentification->checkAccess();
 
     if (!is_array($result) || !isset($result['api_id'])) {
+      ApiSecurity::incrementFailedAttempts($username);
       return 'no access';
     }
 
     $api_id = $result['api_id'];
 
     if (!$this->authentification->getIps($api_id)) {
+      ApiSecurity::incrementFailedAttempts($username);
       return 'bad IP';
     }
+
+    ApiSecurity::resetFailedAttempts($username);
 
     return $this->authentification->addSession($api_id);
   }

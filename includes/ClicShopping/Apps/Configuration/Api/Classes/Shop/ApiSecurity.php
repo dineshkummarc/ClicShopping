@@ -1,4 +1,12 @@
 <?php
+/**
+ *
+ * @copyright 2008 - https://www.clicshopping.org
+ * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
+ * @Licence GPL 2 & MIT
+ * @Info : https://www.clicshopping.org/forum/trademark/
+ *
+ */
 
 namespace ClicShopping\Apps\Configuration\Api\Classes\Shop;
 
@@ -45,7 +53,7 @@ class ApiSecurity {
       if ($attempts >= self::MAX_LOGIN_ATTEMPTS) {
         $timeSinceLastAttempt = time() - $lastAttempt;
         // Déverrouiller après 30 minutes (1800 secondes)
-        return $timeSinceLastAttempt < 1800;
+        return $timeSinceLastAttempt < self::ACCOUNT_LOCK_DURATION;
       }
 
       return false;
@@ -135,6 +143,7 @@ class ApiSecurity {
 
       if ($Qexisting->rowCount() > 0) {
         $attempts = $Qexisting->valueInt('attempts') + 1;
+
         $CLICSHOPPING_Db->save('api_failed_attempts', [
           'attempts' => $attempts,
           'last_attempt' => time()

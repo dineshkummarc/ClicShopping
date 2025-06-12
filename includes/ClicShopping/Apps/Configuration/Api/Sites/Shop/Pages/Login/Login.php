@@ -36,58 +36,41 @@ class Login extends \ClicShopping\OM\PagesAbstract
 
     $requestMethod = ApiShop::requestMethod();
 
-// Handle the event
     switch ($requestMethod) {
       case 'POST':
-        if (isset($_POST['key'])) {
-          $key = HTML::sanitize($_POST['key']);
-        } else {
-          $key = '';
-        }
-
-        if (isset($_POST['username'])) {
-          $username = HTML::sanitize($_POST['username']);
-        } else {
-          $username = '';
-        }
-
-        if (isset($_POST['ip'])) {
-          $ip = HTML::sanitize($_POST['ip']);
-        } else {
-          $ip = '';
-        }
+        $key = HTML::sanitize($_POST['key'] ?? '');
+        $username = HTML::sanitize($_POST['username'] ?? '');
+        $ip = HTML::sanitize($_POST['ip'] ?? '');
 
         Registry::set('Authentification', new Authentification($username, $key, $ip));
         $this->authentification = Registry::get('Authentification');
 
-        $check = $this->authentification->checkUrl('Login');
-
-        if ($check === true) {
-          $result = $this->authentification->checkAccess();
-
-          if (isset($result)) {
-            $api_id = $result['api_id'];
-
-            if ($this->authentification->getIps($api_id) === true) {
-              $_SESSION['api_token'] = $this->authentification->addSession($api_id);
-              $response['body'] = $_SESSION['api_token'];
-            } else {
-              $response['body'] = 'bad IP';
-            }
-          }
-        } else {
-          $response['body'] = 'bad token';
+        if ($this->authentification->checkUrl('Login') !== true) {
+          echo 'bad token';
+          exit;
         }
-        break;
-      default:
-        $response['body'] = $this->authentification->notFoundResponse();
-        break;
-    }
 
-    if ($response['body']) {
-      echo $response['body'];
+        $result = $this->authentification->checkAccess();
+        if (!isset($result)) {
+          exit;
+        }
+
+        $api_id = $result['api_id'];
+        if ($this->authentification->getIps($api_id) !== true) {
+          echo 'bad IP';
+          exit;
+        }
+
+        $_SESSION['api_token'] = $this->authentification->addSession($api_id);
+        echo $_SESSION['api_token'];
+        break;
+
+      default:
+        echo $this->authentification?->notFoundResponse();
+        break;
     }
 
     exit;
   }
 }
+

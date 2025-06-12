@@ -1,0 +1,13 @@
+id int(11) not_null  auto_increment
+identifier varchar(255) not_null
+attempts int(11) DEFAULT 1
+last_attempt int(11) not_null
+
+--
+primary id
+UNIQUE identifier identifier
+
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci

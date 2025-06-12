@@ -1,0 +1,14 @@
+id int(11) NOT NULL
+identifier varchar(255) NOT NULL
+timestamp int(11) NOT NULL
+ip varchar(45) DEFAULT NULL
+
+--
+primary id
+idx_identifier_timestamp identifier timestamp
+idx_timestamp timestamp
+
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci

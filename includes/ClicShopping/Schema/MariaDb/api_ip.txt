@@ -4,6 +4,7 @@ ip varchar(40) not_null
 comment varchar(255) default null
 --
 primary api_ip_id
+idx_api_ip_id api_ip_id
 ##
 engine innodb
 character_set utf8mb4
