@@ -1,10 +1,13 @@
+version4.011
+Increase the api security
+librairies updated
+
 ------------------
 version4.01
-
+remove schema fogotten
 
 -----------------
 version4.00
-
 
 Tthe version 4.x integrate the embeddings and need to be used with mariaDB 11.7 at least if you want to use it. An database update is available in GTP Apps.
 

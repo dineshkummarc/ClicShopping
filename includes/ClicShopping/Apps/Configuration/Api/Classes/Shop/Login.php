@@ -9,10 +9,10 @@ use ClicShopping\OM\Registry;
 class Login
 {
   private mixed $lang;
-  public string $username;
-  public string $key;
-  public ?string $ip;
-
+  private string $username;
+  private string $key;
+  private ?string $ip;
+  private mixed $authentification;
   /**
    * Constructor method.
    *
@@ -23,13 +23,46 @@ class Login
    */
   public function __construct(string $username, string $key, ?string $ip)
   {
+    if (trim($username) === '' || trim($key) === '') {
+      throw new \InvalidArgumentException('Username and key are required');
+    }
+
     $this->username = $username;
     $this->key = $key;
     $this->ip = $ip;
     $this->lang = Registry::get('Language');
-    $this->Db = Registry::get('Db');
   }
 
+  /**
+   * Get the username of the user.
+   *
+   * @return string Returns the username.
+   */
+  public function getUsername(): string
+  {
+    return $this->username;
+  }
+
+  /**
+   * Get the IP address of the user.
+   *
+   * @return string|null Returns the IP address if set, otherwise null.
+   */
+  public function getIp(): ?string
+  {
+    return $this->ip;
+  }
+
+  /**
+   * Get the key associated with the user.
+   *
+   * @return string|null Returns the key if set, otherwise null.
+   */
+  public function getKey(): string
+  {
+    return $this->key;
+  }
+  
   /**
    * Handles user login by authenticating username, key, and IP, then generating a session token.
    *
@@ -41,46 +74,34 @@ class Login
    *                      'bad IP' if the IP is not allowed, 'no access' for invalid credentials,
    *                      or false if the API module is inactive.
    */
-  public function getLogin()
+  public function getLogin(): string|false
   {
-    if (!\defined('CLICSHOPPING_APP_API_AI_STATUS') && CLICSHOPPING_APP_API_AI_STATUS == 'False') {
-      return false;
+    if (!\defined('CLICSHOPPING_APP_API_AI_STATUS') || CLICSHOPPING_APP_API_AI_STATUS == 'False') {
+        return false;
     }
 
-    if (isset($_POST['key'])) {
-      $key = HTML::sanitize($_POST['key']);
-    } else {
-      $key = '';
-    }
+    $key = HTML::sanitize($this->getKey());
+    $username = HTML::sanitize($this->getUsername());
+    $ip = HTML::sanitize($this->getIp() ?? '');
 
-    if (isset($_POST['username'])) {
-      $username = HTML::sanitize($_POST['username']);
-    } else {
-      $username = '';
-    }
-
-    if (isset($_POST['ip'])) {
-      $ip = HTML::sanitize($_POST['ip']);
-    } else {
-      $ip = '';
+    if ($username === '' || $key === '') {
+      throw new \InvalidArgumentException('Username and key must not be empty');
     }
 
     Registry::set('Authentification', new Authentification($username, $key, $ip));
     $this->authentification = Registry::get('Authentification');
     $result = $this->authentification->checkAccess();
 
-    if (isset($result) && $result !== false) {
-      $api_id = $result['api_id'];
-
-      if ($this->authentification->getIps($api_id) === true) {
-        $token = $this->authentification->addSession($api_id);
-      } else {
-        $token = 'bad IP';
-      }
-    } else {
-      $token = 'no access';
+    if (!is_array($result) || !isset($result['api_id'])) {
+      return 'no access';
     }
 
-    return $token;
+    $api_id = $result['api_id'];
+
+    if (!$this->authentification->getIps($api_id)) {
+      return 'bad IP';
+    }
+
+    return $this->authentification->addSession($api_id);
   }
 }

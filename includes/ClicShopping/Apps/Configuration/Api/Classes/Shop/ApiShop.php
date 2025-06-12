@@ -16,165 +16,289 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 
-class ApiShop
+class ApiShop extends ApiSecurity
 {
-  /**
-   *
-   * @return mixed Returns the request method used in the HTTP request, typically a string such as 'GET', 'POST', etc.
-   */
-  public static function requestMethod(): mixed
-  {
-    $requestMethod = $_SERVER["REQUEST_METHOD"];
 
-    return $requestMethod;
+  /**
+   * Returns the request method used in the HTTP request
+   *
+   * @return string Returns the request method (GET, POST, etc.)
+   * @throws Exception If REQUEST_METHOD is not available
+   */
+  public static function requestMethod(): string
+  {
+    if (!isset($_SERVER["REQUEST_METHOD"])) {
+      throw new Exception("REQUEST_METHOD not available");
+    }
+
+    $method = strtoupper($_SERVER["REQUEST_METHOD"]);
+    $allowedMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'];
+
+    if (!in_array($method, $allowedMethods)) {
+      throw new Exception("Invalid HTTP method: " . $method);
+    }
+
+    return $method;
   }
 
   /**
-   * Checks if the given username and API key grant access.
+   * Checks if the given username and API key grant access with rate limiting
    *
    * @param string $username The username to authenticate.
    * @param string $key The API key associated with the username.
    * @return bool Returns true if access is granted, otherwise false.
+   * @throws Exception If database error occurs or rate limit exceeded
    */
   public static function getAccess(string $username, string $key): bool
   {
-    $CLICSHOPPING_Db = Registry::get('Db');
+    // Validation des entrées
+    if (empty($username) || empty($key)) {
+      self::logSecurityEvent('Empty credentials provided', ['username' => $username]);
+      return false;
+    }
 
-    $Qapi = $CLICSHOPPING_Db->prepare('select api_id,
-                                              username,
-                                              api_key,
-                                              status,
-                                              date_added,
-                                              date_modified
-                                       from :table_api
-                                       where status = 1
-                                       and username = :username
-                                       and api_key = :api_key
-                                      ');
-    $Qapi->bindValue(':username', $username);
-    $Qapi->bindValue(':api_key', $key);
+    if (strlen($username) > 100 || strlen($key) > 255) {
+      self::logSecurityEvent('Credentials too long', ['username' => $username]);
+      return false;
+    }
 
-    $Qapi->execute();
-    $result = $Qapi->fetch();
+    // AJOUT : Vérifier si le compte n'est pas bloqué
+    if (self::isAccountLocked($username)) {
+      self::logSecurityEvent('Authentication attempted on locked account', [
+        'username' => $username,
+        'ip' => HTTP::getIpAddress()
+      ]);
+      throw new Exception("Account temporarily locked due to multiple failed attempts");
+    }
 
-    return $result;
+    // Vérification du rate limiting
+    if (!self::checkRateLimit($username, 'login')) {
+      self::logSecurityEvent('Rate limit exceeded for login', ['username' => $username]);
+      throw new Exception("Rate limit exceeded. Please try again later.");
+    }
+
+    try {
+      $CLICSHOPPING_Db = Registry::get('Db');
+
+      if (!$CLICSHOPPING_Db) {
+        throw new Exception("Database connection not available");
+      }
+
+      $Qapi = $CLICSHOPPING_Db->prepare('select api_id,
+                                                username,
+                                                api_key,
+                                                status,
+                                                date_added,
+                                                date_modified
+                                         from :table_api
+                                         where status = 1
+                                         and username = :username
+                                         and api_key = :api_key
+                                        ');
+
+      $Qapi->bindValue(':username', $username);
+      $Qapi->bindValue(':api_key', $key);
+
+      $Qapi->execute();
+      $result = $Qapi->fetch();
+
+      $isValid = !empty($result);
+
+      if (!$isValid) {
+        self::incrementFailedAttempts($username);
+        self::logSecurityEvent('Failed login attempt', ['username' => $username]);
+      } else {
+        self::resetFailedAttempts($username);
+        self::logSecurityEvent('Successful login', ['username' => $username]);
+      }
+
+      return $isValid;
+
+    } catch (PDOException $e) {
+      self::logSecurityEvent('Database error in getAccess', [
+        'username' => $username,
+        'error' => $e->getMessage()
+      ]);
+      throw new Exception("Authentication service temporarily unavailable");
+    }
   }
 
   /**
    * Creates a new API session and stores it in the database.
    *
-   * @param int|null $api_id The API ID associated with the session. Nullable.
+   * @param int|null $api_id The API ID associated with the session.
    * @return int The ID of the newly created session entry in the database.
+   * @throws Exception If session creation fails
    */
-  public static function createSession( int|null $api_id): int
+  public static function createSession(int|null $api_id): int
   {
-    $CLICSHOPPING_Db = Registry::get('Db');
-
-    $Ip = HTTP::getIpAddress();
-
-    $session_id = bin2hex(random_bytes(16));
-
-    $sql_data_array = [
-      'api_id' => HTML::sanitize($api_id),
-      'session_id' => $session_id,
-      'ip' => $Ip,
-      'date_added' => 'now()',
-      'date_modified' => 'now()'
-    ];
-
-    $CLICSHOPPING_Db->save('api_session', $sql_data_array);
-
-    return $CLICSHOPPING_Db->lastInsertId();
-  }
-
-  /**
-   * Retrieves the URL parameter 'id' from the request, sanitizes it, and returns it as an integer.
-   * If the parameter is non-numeric but not empty, returns false.
-   * If the parameter is empty or not set, returns null.
-   *
-   * @return int|false|null Returns the sanitized integer value of 'id', false if non-numeric but not empty, or null if empty or not set.
-   */
-  public function getUrlId(): int|false|null
-  {
-    $request = HTML::sanitize($_REQUEST['id']);
-    if (isset($request) && is_numeric($request)) {
-      $result = (int)$request;
-    } else {
-      if (!empty($request)) {
-        return false;
-      }
-
-      $result = null;
+    // Validation
+    if ($api_id !== null && $api_id <= 0) {
+      throw new Exception("Invalid API ID provided");
     }
 
-    return $result;
+    try {
+      $CLICSHOPPING_Db = Registry::get('Db');
+
+      if (!$CLICSHOPPING_Db) {
+        throw new Exception("Database connection not available");
+      }
+
+      $Ip = HTTP::getIpAddress();
+
+      if (empty($Ip)) {
+        throw new Exception("Unable to determine client IP address");
+      }
+
+      $session_id = bin2hex(random_bytes(16));
+
+      $sql_data_array = [
+        'api_id' => $api_id,
+        'session_id' => $session_id,
+        'ip' => $Ip,
+        'date_added' => 'now()',
+        'date_modified' => 'now()'
+      ];
+
+      $result = $CLICSHOPPING_Db->save('api_session', $sql_data_array);
+
+      if (!$result) {
+        throw new Exception("Failed to create session");
+      }
+
+      $sessionId = $CLICSHOPPING_Db->lastInsertId();
+
+      if (!$sessionId) {
+        throw new Exception("Failed to retrieve session ID");
+      }
+
+      self::logSecurityEvent('Session created', [
+        'api_id' => $api_id,
+        'session_id' => $session_id,
+        'ip' => $Ip
+      ]);
+
+      return $sessionId;
+
+    } catch (PDOException $e) {
+      self::logSecurityEvent('Database error in createSession', [
+        'api_id' => $api_id,
+        'error' => $e->getMessage()
+      ]);
+      throw new Exception("Session creation failed");
+    }
   }
 
+
   /**
-   * Validates and regenerates the API session token if necessary or creates
-   * a new session if the token is invalid.
+   * Validates and regenerates the API session token if necessary
    *
    * @param string $token The current session token to check or renew.
    * @return string The valid session token, either existing or newly generated.
+   * @throws Exception If token processing fails
    */
   public static function checkToken(string $token): string
   {
-    $CLICSHOPPING_Db = Registry::get('Db');
+    // Validation du token
+    if (empty($token)) {
+      throw new Exception("Token cannot be empty");
+    }
 
-    $sql_data_array = [
-      'api_id',
-      'date_modified',
-      'date_added'
-    ];
+    if (strlen($token) !== 32 || !ctype_xdigit($token)) {
+      throw new Exception("Invalid token format");
+    }
 
-    $Qcheck = $CLICSHOPPING_Db->get('api_session', $sql_data_array, ['session_id' => $token], 1);
+    // Vérification du rate limiting pour les tokens
+    $clientIp = HTTP::getIpAddress();
 
-    if (!empty($Qcheck->value('api_id'))) {
-      $now = date('Y-m-d H:i:s');
-      $date_diff = DateTime::getIntervalDate($Qcheck->value('date_modified'), $now);
+    if (!self::checkRateLimit($clientIp, 'token_check')) {
+      throw new Exception("Rate limit exceeded for token validation");
+    }
 
-      if ($date_diff > (3600 / 60)) {
-        $CLICSHOPPING_Db->delete('api_session', ['api_id' => (int)$Qcheck->valueInt('api_id')]);
+    try {
+      $CLICSHOPPING_Db = Registry::get('Db');
 
+      if (!$CLICSHOPPING_Db) {
+        throw new Exception("Database connection not available");
+      }
+
+      $sql_data_array = [
+        'api_id',
+        'date_modified',
+        'date_added'
+      ];
+
+      $Qcheck = $CLICSHOPPING_Db->get('api_session', $sql_data_array, ['session_id' => $token], 1);
+
+      if (!empty($Qcheck->value('api_id'))) {
+        $now = date('Y-m-d H:i:s');
+        $date_diff = DateTime::getIntervalDate($Qcheck->value('date_modified'), $now);
+
+        // Session expirée après le timeout configuré
+        if ($date_diff > self::SESSION_TIMEOUT_MINUTES) {
+          // Régénérer la session
+          $CLICSHOPPING_Db->delete('api_session', ['api_id' => (int)$Qcheck->valueInt('api_id')]);
+
+          $session_id = bin2hex(random_bytes(16));
+          $Ip = HTTP::getIpAddress();
+
+          $sql_data_array = [
+            'api_id' => $Qcheck->valueInt('api_id'),
+            'session_id' => $session_id,
+            'date_modified' => 'now()',
+            'date_added' => $Qcheck->value('date_added'),
+            'ip' => $Ip
+          ];
+
+          $CLICSHOPPING_Db->save('api_session', $sql_data_array);
+
+          self::logSecurityEvent('Session regenerated', [
+            'old_token' => $token,
+            'new_token' => $session_id,
+            'api_id' => $Qcheck->valueInt('api_id')
+          ]);
+
+          return $session_id;
+        }
+
+        return $token; // Session encore valide
+      } else {
+        // Token invalide - créer une nouvelle session
         $session_id = bin2hex(random_bytes(16));
         $Ip = HTTP::getIpAddress();
 
         $sql_data_array = [
-          'api_id' => $Qcheck->valueInt('api_id'),
+          'api_id' => null,
           'session_id' => $session_id,
           'date_modified' => 'now()',
-          'date_added' => $Qcheck->value('date_added'),
+          'date_added' => 'now()',
           'ip' => $Ip
         ];
 
         $CLICSHOPPING_Db->save('api_session', $sql_data_array);
 
-        $token = $session_id;
+        self::logSecurityEvent('New session created for invalid token', [
+          'old_token' => $token,
+          'new_token' => $session_id
+        ]);
+
+        return $session_id;
       }
-    } else {
-      $session_id = bin2hex(random_bytes(16));
-      $Ip = HTTP::getIpAddress();
 
-      $sql_data_array = [
-        'api_id' => $Qcheck->valueInt('api_id'),
-        'session_id' => $session_id,
-        'date_modified' => 'now()',
-        'date_added' => 'now()',
-        'ip' => $Ip
-      ];
-
-      $CLICSHOPPING_Db->save('api_session', $sql_data_array);
-
-      $token = $session_id;
+    } catch (PDOException $e) {
+      self::logSecurityEvent('Database error in checkToken', [
+        'token' => $token,
+        'error' => $e->getMessage()
+      ]);
+      throw new Exception("Token validation failed");
     }
-
-    return $token;
   }
 
   /**
    * Clears specific cached data for categories, products also purchased, and upcoming items.
    *
    * @return void
+   * @throws Exception If cache clearing fails
    */
   public static function clearCache(): void
   {
@@ -190,23 +314,81 @@ class ApiShop
    */
   public static function notFoundResponse(): array
   {
-    $response['status_code_header'] = 'HTTP/1.1 404 Not Found';
-    $response['body'] = json_encode(['error' => 'HTTP/1.1 404 Not Found']);
-
-    return $response;
+    return [
+      'status_code_header' => 'HTTP/1.1 404 Not Found',
+      'body' => json_encode([
+        'error' => 'Resource not found',
+        'timestamp' => date('c')
+      ])
+    ];
   }
 
   /**
-   * Generates an HTTP response with a status code header of '200 OK' and a JSON-encoded body containing the provided result.
+   * Generates an HTTP response with a status code header of '200 OK'
    *
    * @param array $result The array of data to be included in the response body.
    * @return array An associative array containing the response header and body.
+   * @throws Exception If JSON encoding fails
    */
   public static function HttpResponseOk(array $result): array
   {
-    $response['status_code_header'] = 'HTTP/1.1 200 OK';
-    $response['body'] = json_encode($result);
+    $jsonResult = json_encode($result, JSON_UNESCAPED_UNICODE);
 
-    return $response;
+    if ($jsonResult === false) {
+      throw new Exception("Failed to encode response as JSON");
+    }
+
+    return [
+      'status_code_header' => 'HTTP/1.1 200 OK',
+      'body' => $jsonResult
+    ];
+  }
+
+  /**
+   * Checks if the account is locked due to too many failed login attempts
+   *
+   * @param string $username The username to check.
+   * @return bool Returns true if the account is locked, otherwise false.
+   */
+  public static function isAccountLocked(string $username): bool
+  {
+    $result =  parent::isAccountLocked($username);
+
+    return $result;
+  }
+
+  /**
+   * Vérifie le rate limiting pour un identifiant et un type d'action
+   */
+  public static function checkRateLimit(string $identifier, string $action): bool
+  {
+    return parent::checkRateLimit($identifier, $action);
+  }
+
+  /**
+   * Incrémente le compteur de tentatives échouées
+   */
+  public static function incrementFailedAttempts(string $username): void
+  {
+    parent::incrementFailedAttempts($username);
+  }
+
+  /**
+   * Remet à zéro le compteur de tentatives échouées
+   */
+  public static function resetFailedAttempts(string $username)
+  {
+    return parent::resetFailedAttempts($username);
+  }
+
+  /**
+   * Logs security events to a file with structured data
+   *
+   * @param string $event The event type (e.g., 'Authentication', 'RateLimitExceeded')
+   * @param array $data Additional data to log (optional)
+   */
+  public static function logSecurityEvent(string $event, array $data = [])
+  {
+   parent::logSecurityEvent($event, $data);
   }
 }
