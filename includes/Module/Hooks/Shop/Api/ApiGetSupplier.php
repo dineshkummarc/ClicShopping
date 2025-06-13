@@ -128,6 +128,8 @@ class ApiGetSupplier
     }
 
     $id = HTML::sanitize($_GET['sId']);
+    ApiSecurity::secureGetId($id);
+
     $language_id = isset($_GET['lId']) ? HTML::sanitize($_GET['lId']) : null;
 
     return self::suppliers($id, $language_id);

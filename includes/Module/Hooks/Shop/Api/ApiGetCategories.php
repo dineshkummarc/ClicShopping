@@ -94,25 +94,24 @@ class ApiGetCategories
       }
     }
 
-    // Validation et authentification du token
     if (!isset($_GET['token'])) {
       ApiSecurity::logSecurityEvent('Missing token in categories request');
       return false;
     }
 
-    // Check if the token is valid
     $token = ApiSecurity::checkToken($_GET['token']);
     if (!$token) {
       return false;
     }
 
-    // Rate limiting
     $clientIp = HTTP::getIpAddress();
     if (!ApiSecurity::checkRateLimit($clientIp, 'get_categories')) {
       return false;
     }
 
     $id = isset($_GET['cId']) ? HTML::sanitize($_GET['cId']) : null;
+    ApiSecurity::secureGetId($id);
+
     $language_id = isset($_GET['lId']) ? HTML::sanitize($_GET['lId']) : null;
 
     return self::categories($id, $language_id);

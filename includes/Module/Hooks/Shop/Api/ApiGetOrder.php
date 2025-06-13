@@ -166,11 +166,7 @@ class ApiGetOrder
       }
 
       $id = HTML::sanitize($_GET['oId']);
-
-      if (!is_numeric($id)) {
-        http_response_code(400);
-        return json_encode(['error' => 'Invalid ID format']);
-      }
+      ApiSecurity::secureGetId($id);
 
       return self::getOrder($id);
     } else {

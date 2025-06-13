@@ -120,6 +120,8 @@ class ApiGetManufacturer
     }
 
     $id = HTML::sanitize($_GET['mId']);
+    ApiSecurity::secureGetId($id);
+
     $language_id = isset($_GET['lId']) ? HTML::sanitize($_GET['lId']) : null;
 
     return self::manufacturers($id, $language_id);

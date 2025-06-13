@@ -128,6 +128,8 @@ class ApiGetProduct
     }
 
     $id = HTML::sanitize($_GET['pId']);
+    ApiSecurity::secureGetId($id);
+
     $language_id = isset($_GET['lId']) ? HTML::sanitize($_GET['lId']) : null;
 
     return self::products($id, $language_id);

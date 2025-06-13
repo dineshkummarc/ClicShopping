@@ -59,6 +59,8 @@ class ApiGetProductGpt
     }
 
     $id = HTML::sanitize($_GET['pId']);
+    ApiSecurity::secureGetId($id);
+
     $language_id = isset($_GET['lId']) ? HTML::sanitize($_GET['lId']) : null;
 
     $CLICSHOPPING_Db = Registry::get('Db');
@@ -108,6 +110,7 @@ class ApiGetProductGpt
 
     foreach ($Qapi->fetchAll() as $row) {
       $product_id = $row['products_id'];
+
       $language_code = $CLICSHOPPING_Language->getLanguageCodeById($row['language_id']);
 
       if (!isset($products[$product_id])) {

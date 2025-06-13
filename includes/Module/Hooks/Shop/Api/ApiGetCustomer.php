@@ -121,11 +121,7 @@ class ApiGetCustomer
       }
 
       $id = HTML::sanitize($_GET['cId']);
-
-      if (!is_numeric($id)) {
-        http_response_code(400);
-        return json_encode(['error' => 'Invalid ID format']);
-      }
+      ApiSecurity::secureGetId($id);
 
       return self::getCustomer($id);
     } else {

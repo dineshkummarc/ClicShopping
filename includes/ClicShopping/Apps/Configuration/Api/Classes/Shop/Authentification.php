@@ -104,12 +104,10 @@ class Authentification extends ApiSecurity
       ]);
 
       if (!empty($Qcheck->value('session_id'))) {
-        // Vérifier si la session n'est pas expirée
         $now = date('Y-m-d H:i:s');
         $date_diff = DateTime::getIntervalDate($Qcheck->value('date_modified'), $now);
 
         if ($date_diff <= self::SESSION_TIMEOUT_MINUTES) {
-          // Session encore valide, la retourner
           self::logSecurityEvent('Existing session returned', [
             'api_id' => $api_id,
             'session_id' => $Qcheck->value('session_id')
@@ -121,7 +119,6 @@ class Authentification extends ApiSecurity
         }
       }
 
-      // Créer une nouvelle session
       $session_id = bin2hex(random_bytes(16));
       $ip = HTTP::getIpAddress();
 
@@ -137,7 +134,6 @@ class Authentification extends ApiSecurity
         'date_modified' => 'now()'
       ];
 
-      // Utiliser le bon nom de table (corrigé)
       $result = $CLICSHOPPING_Db->save('api_session', $sql_data_array);
 
       if (!$result) {
@@ -174,7 +170,6 @@ class Authentification extends ApiSecurity
   public function checkUrl(string $requiredParam): bool
   {
     try {
-      // Validation du paramètre
       if (empty($requiredParam)) {
         throw new \Exception("Required parameter name cannot be empty");
       }
@@ -204,7 +199,6 @@ class Authentification extends ApiSecurity
         return false;
       }
 
-      // Vérifier la présence du paramètre 'api'
       if (!isset($_REQUEST['api'])) {
         self::logSecurityEvent('Missing api parameter', [
           'username' => $this->getUsername(),
@@ -214,7 +208,6 @@ class Authentification extends ApiSecurity
         return false;
       }
 
-      // Logique corrigée : si le paramètre interdit est présent, rejeter
       if (isset($_REQUEST[$requiredParam])) {
         self::logSecurityEvent('Forbidden parameter present', [
           'parameter' => $requiredParam,
@@ -237,23 +230,25 @@ class Authentification extends ApiSecurity
   }
 
   /**
-   * @return void
+   * Sends a 404 Not Found response with structured JSON data
    */
   private function send404Response(): void
   {
     header("HTTP/1.1 404 Not Found");
     header("Content-Type: application/json");
+
     echo json_encode([
       'error' => 'Not Found',
       'timestamp' => date('c')
     ]);
+
     exit();
   }
 
   /**
-   * @param string $identifier
-   * @param string $action
-   * @return bool
+   * Checks if the provided credentials are valid
+   *
+   * @return bool Returns true if credentials are valid, false otherwise
    */
   public static function checkRateLimit(string $identifier, string $action): bool
   {
@@ -272,7 +267,9 @@ class Authentification extends ApiSecurity
   }
 
   /**
-   * Incrémente les tentatives échouées
+   * Increments the failed attempts counter for a given username
+   *
+   * @param string $username The username to increment failed attempts for
    */
   public static function incrementFailedAttempts(string $username): void
   {
@@ -280,7 +277,10 @@ class Authentification extends ApiSecurity
   }
 
   /**
-   * Remet à zéro les tentatives échouées
+   * Resets the failed attempts counter for a given username
+   *
+   * @param string $username The username to reset failed attempts for
+   * @return bool Returns true if reset was successful, false otherwise
    */
   public static function resetFailedAttempts(string $username)
   {
@@ -299,11 +299,10 @@ class Authentification extends ApiSecurity
   }
 
   /**
-   * Validates IP address against allowed IPs for the API with enhanced security
+   * Validates the IP address for a given API ID
    *
-   * @param int $api_id The API ID used to retrieve the associated IP address.
-   * @return bool Returns true if IP is allowed, false otherwise.
-   * @throws Exception If validation fails due to database error
+   * @param int $api_id The unique identifier of the API
+   * @return bool Returns true if the IP is valid, false otherwise
    */
   public static function getIps(int $api_id): bool
   {

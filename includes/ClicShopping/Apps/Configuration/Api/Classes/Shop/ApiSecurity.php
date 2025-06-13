@@ -43,7 +43,6 @@ class ApiSecurity {
       throw new Exception("Invalid token format");
     }
 
-    // Vérification du rate limiting pour les tokens
     $clientIp = HTTP::getIpAddress();
 
     if (!self::checkRateLimit($clientIp, 'token_check')) {
@@ -69,9 +68,7 @@ class ApiSecurity {
         $now = date('Y-m-d H:i:s');
         $date_diff = DateTime::getIntervalDate($Qcheck->value('date_modified'), $now);
 
-        // Session expirée après le timeout configuré
         if ($date_diff > self::SESSION_TIMEOUT_MINUTES) {
-          // Régénérer la session
           $CLICSHOPPING_Db->delete('api_session', ['api_id' => (int)$Qcheck->valueInt('api_id')]);
 
           $session_id = bin2hex(random_bytes(16));
@@ -96,9 +93,8 @@ class ApiSecurity {
           return $session_id;
         }
 
-        return $token; // Session encore valide
+        return $token;
       } else {
-        // Token invalide - créer une nouvelle session
         $session_id = bin2hex(random_bytes(16));
         $Ip = HTTP::getIpAddress();
 
@@ -129,9 +125,8 @@ class ApiSecurity {
     }
   }
 
-
   /**
-   * Enregistre un événement de sécurité dans la base de données
+   * Save the security event inside the database
    * @param string $eventType Type d'événement (e.g., 'login_attempt', 'rate_limit_exceeded')
    * @param array $details Détails supplémentaires sur l'événement
    */
@@ -156,10 +151,8 @@ class ApiSecurity {
       $attempts = $Qattempts->valueInt('attempts');
       $lastAttempt = $Qattempts->valueInt('last_attempt');
 
-      // Compte verrouillé si MAX_LOGIN_ATTEMPTS dépassé
       if ($attempts >= self::MAX_LOGIN_ATTEMPTS) {
         $timeSinceLastAttempt = time() - $lastAttempt;
-        // Déverrouiller après 30 minutes (1800 secondes)
         return $timeSinceLastAttempt < self::ACCOUNT_LOCK_DURATION;
       }
 
@@ -171,32 +164,28 @@ class ApiSecurity {
         'error' => $e->getMessage()
       ]);
 
-      return false; // En cas d'erreur, ne pas bloquer
+      return false;
     }
   }
 
-  /* Enregistre un événement de sécurité dans la base de données
+  /* Save the security event inside the database
    * @param string $eventType Type d'événement (e.g., 'login_attempt', 'rate_limit_exceeded')
    * @param array $details Détails supplémentaires sur l'événement
    */
   public static function checkRateLimit(string $identifier, string $action): bool
   {
     try {
-
       $CLICSHOPPING_Db = Registry::get('Db');
 
       $key = $action . '_' . hash('sha256', $identifier);
       $window_start = time() - self::RATE_LIMIT_WINDOW;
 
-      // Nettoyer les anciennes entrées
       $Qdelete = $CLICSHOPPING_Db->prepare('delete 
                                             from :table_api_rate_limit 
                                             where timestamp < :window_start');
       $Qdelete->bindValue(':window_start', $window_start);
       $Qdelete->execute();
 
-
-      // Compter les tentatives récentes
       $Qcount = $CLICSHOPPING_Db->prepare('select count(id) as count 
                                           from :table_api_rate_limit
                                           where  identifier = :identifier
@@ -212,7 +201,6 @@ class ApiSecurity {
         return false;
       }
 
-      // Enregistrer cette tentative
       $CLICSHOPPING_Db->save('api_rate_limit', [
         'identifier' => $key,
         'timestamp' => time(),
@@ -232,10 +220,8 @@ class ApiSecurity {
     }
   }
 
-  /**
-   * Enregistre un événement de sécurité dans la base de données
-   * @param string $eventType Type d'événement (e.g., 'login_attempt', 'rate_limit_exceeded')
-   * @param array $details Détails supplémentaires sur l'événement
+   /** Increments the number of failed login attempts for a user
+   * @param string $username Nom d'utilisateur
    */
   public static function incrementFailedAttempts(string $username): void
   {
@@ -261,7 +247,6 @@ class ApiSecurity {
         ]);
       }
     } catch (\Exception $e) {
-      // Log mais ne pas faire échouer l'authentification
       self::logSecurityEvent('Failed to increment failed attempts', [
         'username' => $username,
         'error' => $e->getMessage()
@@ -270,8 +255,8 @@ class ApiSecurity {
   }
 
   /**
-   * Enregistre un événement de sécurité dans la base de données
-   * @param string $username
+   * Resets the number of failed login attempts for a user
+   * @param string $username Nom d'utilisateur
    */
   public static function resetFailedAttempts(string $username)
   {
@@ -289,11 +274,10 @@ class ApiSecurity {
     }
   }
 
-  /**
-   * Valide les informations d'identification de l'utilisateur
+  /** Validate user credentials with enhanced security checks
    * @param string $username Nom d'utilisateur
    * @param string $key Clé API
-   * @return bool Retourne true si les informations sont valides, sinon false
+   * @return bool Retourne true si les informations d'identification sont valides, sinon false
    */
   protected static function validateCredentials(string $username, string $key): bool
   {
@@ -310,9 +294,11 @@ class ApiSecurity {
     return true;
   }
 
-  /** Enregistre un événement de sécurité dans un fichier de log
-   * @param string $event Type d'événement (e.g., 'login_attempt', 'rate_limit_exceeded')
-   * @param array $data Détails supplémentaires sur l'événement
+  /**
+   * Logs security events to a file with enhanced security measures
+   *
+   * @param string $event The type of event being logged (e.g., 'login_attempt', 'rate_limit_exceeded').
+   * @param array $data Additional data related to the event.
    */
   public static function logSecurityEvent(string $event, array $data = [])
   {
@@ -376,21 +362,20 @@ class ApiSecurity {
          'api_id' => $api_id,
          'client_ip' => $clientIp
        ]);
-       // Si aucune restriction IP, autoriser (comportement par défaut)
+
        return true;
      }
 
      foreach ($Qips as $allowedIp) {
        $ip = $allowedIp['ip'];
 
-       // Vérifications de sécurité améliorées
        if ($ip === '127.0.0.1' || $ip === 'localhost') {
-         // Autoriser localhost seulement si la requête vient vraiment de localhost
          if (in_array($clientIp, ['127.0.0.1', '::1'])) {
            self::logSecurityEvent('Localhost access granted', [
              'api_id' => $api_id,
              'client_ip' => $clientIp
            ]);
+
            return true;
          }
        } elseif ($ip === $clientIp) {
@@ -399,14 +384,16 @@ class ApiSecurity {
            'client_ip' => $clientIp,
            'allowed_ip' => $ip
          ]);
+
          return true;
-       } // Support pour les ranges CIDR si nécessaire
+       }
        elseif (self::ipInRange($clientIp, $ip)) {
          self::logSecurityEvent('IP in allowed range', [
            'api_id' => $api_id,
            'client_ip' => $clientIp,
            'range' => $ip
          ]);
+
          return true;
        }
      }
@@ -424,6 +411,7 @@ class ApiSecurity {
        'api_id' => $api_id,
        'error' => $e->getMessage()
      ]);
+
      throw new \Exception("IP validation failed");
    }
   }
@@ -449,12 +437,11 @@ class ApiSecurity {
     return ($ip & $mask) === $subnet;
   }
 
-
   /**
-   * Authentifie les informations d'identification de l'utilisateur
+   * Authenticates user credentials against the database
    * @param string $username Nom d'utilisateur
    * @param string $key Clé API
-   * @return array|bool Retourne les détails de l'utilisateur si l'authentification réussit, sinon false
+   * @return array|bool Retourne les informations de l'utilisateur si l'authentification réussit, sinon false
    * @throws Exception Si une erreur de base de données se produit
    */
   public static function authenticateCredentials(string $username, string $key): array|bool
@@ -503,44 +490,42 @@ class ApiSecurity {
         'username' => $username,
         'error' => $e->getMessage()
       ]);
+
       throw new Exception("Authentication service temporarily unavailable");
     }
   }
 
   /**
-   * Authentifie l'utilisateur en vérifiant les informations d'identification
+   * Performs the authentication process with enhanced security checks
    * @param string $username Nom d'utilisateur
-   * @param string $key Clé API
-   * @return bool Retourne true si l'authentification réussit, sinon false
-   * @throws Exception Si l'authentification échoue ou si le compte est verrouillé
+   * @param string $key
    */
   protected static function performAuthentication(string $username, string $key)
   {
-    // 1. Validation des entrées
     if (!self::validateCredentials($username, $key)) {
       return false;
     }
 
-    // 2. Vérification du verrouillage
     if (self::isAccountLocked($username)) {
       self::logSecurityEvent('Authentication attempted on locked account', [
         'username' => $username
       ]);
+
       throw new Exception("Account temporarily locked due to multiple failed attempts");
     }
 
-    // 3. Rate limiting
     if (!self::checkRateLimit($username, 'login')) {
       self::logSecurityEvent('Rate limit exceeded for authentication', [
         'username' => $username
       ]);
+
       throw new Exception("Rate limit exceeded. Please try again later.");
     }
   }
 
   /**
-   * Détecte si l'environnement est local (développement)
-   * @return bool True si en environnement local
+   * Checks if the current environment is a local development environment
+   * @return bool Returns true if the environment is local, false otherwise
    */
   public static function isLocalEnvironment(): bool
   {
@@ -555,4 +540,21 @@ class ApiSecurity {
 
     return str_contains($serverName, 'localhost') || str_contains($host, 'localhost');
   }
+
+  /**
+   * Validates the ID parameter for API requests
+   * @param int|string $id The ID to validate
+   * @throws Exception If the ID is invalid
+   */
+  public static function secureGetId(int| string $id):void
+  {
+
+    if ($id !== null) {
+      if ($id !== 'All' && !ctype_digit($id)) {
+        http_response_code(400);
+        exit(json_encode(['error' => 'Invalid Id format']));
+      }
+    }
+  }
+
 }
