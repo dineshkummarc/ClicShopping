@@ -56,13 +56,14 @@ class StartAfter
 
 // verify the browser user agent if the feature is enabled
     if (SESSION_CHECK_USER_AGENT == 'True') {
+      $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+
       if (!isset($_SESSION['SESSION_USER_AGENT'])) {
-        $_SESSION['SESSION_USER_AGENT'] = $_SERVER['HTTP_USER_AGENT'];
+        $_SESSION['SESSION_USER_AGENT'] = $userAgent;
       }
 
-      if ($_SESSION['SESSION_USER_AGENT'] != $_SERVER['HTTP_USER_AGENT']) {
+      if ($_SESSION['SESSION_USER_AGENT'] !== $userAgent) {
         $CLICSHOPPING_Session->kill();
-
         CLICSHOPPING::redirect(null, 'Account&LogIn');
       }
     }

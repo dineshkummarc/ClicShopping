@@ -11,14 +11,11 @@
 namespace ClicShopping\Apps\Configuration\Api\Classes\Shop;
 
 use ClicShopping\OM\Cache;
-use ClicShopping\OM\DateTime;
-use ClicShopping\OM\HTML;
 use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 
 class ApiShop extends ApiSecurity
 {
-
   /**
    * Returns the request method used in the HTTP request
    *
@@ -46,80 +43,18 @@ class ApiShop extends ApiSecurity
    *
    * @param string $username The username to authenticate.
    * @param string $key The API key associated with the username.
-   * @return bool Returns true if access is granted, otherwise false.
-   * @throws Exception If database error occurs or rate limit exceeded
+   * @return void
+   * @throws Exception|\Exception If database error occurs or rate limit exceeded
    */
-  public static function getAccess(string $username, string $key): bool
+
+  public static function getAccess(string $username, string $key):void
   {
-    // Validation des entrées
-    if (empty($username) || empty($key)) {
-      self::logSecurityEvent('Empty credentials provided', ['username' => $username]);
-      return false;
-    }
-
-    if (strlen($username) > 100 || strlen($key) > 255) {
-      self::logSecurityEvent('Credentials too long', ['username' => $username]);
-      return false;
-    }
-
-    // AJOUT : Vérifier si le compte n'est pas bloqué
-    if (self::isAccountLocked($username)) {
-      self::logSecurityEvent('Authentication attempted on locked account', [
-        'username' => $username,
-        'ip' => HTTP::getIpAddress()
-      ]);
-      throw new Exception("Account temporarily locked due to multiple failed attempts");
-    }
-
-    // Vérification du rate limiting
-    if (!self::checkRateLimit($username, 'login')) {
-      self::logSecurityEvent('Rate limit exceeded for login', ['username' => $username]);
-      throw new Exception("Rate limit exceeded. Please try again later.");
-    }
-
     try {
-      $CLICSHOPPING_Db = Registry::get('Db');
-
-      if (!$CLICSHOPPING_Db) {
-        throw new Exception("Database connection not available");
-      }
-
-      $Qapi = $CLICSHOPPING_Db->prepare('select api_id,
-                                                username,
-                                                api_key,
-                                                status,
-                                                date_added,
-                                                date_modified
-                                         from :table_api
-                                         where status = 1
-                                         and username = :username
-                                         and api_key = :api_key
-                                        ');
-
-      $Qapi->bindValue(':username', $username);
-      $Qapi->bindValue(':api_key', $key);
-
-      $Qapi->execute();
-      $result = $Qapi->fetch();
-
-      $isValid = !empty($result);
-
-      if (!$isValid) {
-        self::incrementFailedAttempts($username);
-        self::logSecurityEvent('Failed login attempt', ['username' => $username]);
-      } else {
-        self::resetFailedAttempts($username);
-        self::logSecurityEvent('Successful login', ['username' => $username]);
-      }
-
-      return $isValid;
-
-    } catch (PDOException $e) {
-      self::logSecurityEvent('Database error in getAccess', [
-        'username' => $username,
-        'error' => $e->getMessage()
-      ]);
-      throw new Exception("Authentication service temporarily unavailable");
+      self::performAuthentication($username, $key);
+      self::authenticateCredentials($username, $key);
+    } catch (\Exception $e) {
+      // Les exceptions sont déjà gérées dans performAuthentication
+      throw $e;
     }
   }
 
@@ -199,6 +134,8 @@ class ApiShop extends ApiSecurity
    */
   public static function checkToken(string $token): string
   {
+    return parent::checkToken($token);
+/*
     // Validation du token
     if (empty($token)) {
       throw new Exception("Token cannot be empty");
@@ -284,7 +221,6 @@ class ApiShop extends ApiSecurity
 
         return $session_id;
       }
-
     } catch (PDOException $e) {
       self::logSecurityEvent('Database error in checkToken', [
         'token' => $token,
@@ -292,6 +228,7 @@ class ApiShop extends ApiSecurity
       ]);
       throw new Exception("Token validation failed");
     }
+*/
   }
 
   /**

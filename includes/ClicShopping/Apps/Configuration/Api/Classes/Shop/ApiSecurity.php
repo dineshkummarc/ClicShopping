@@ -11,6 +11,7 @@
 namespace ClicShopping\Apps\Configuration\Api\Classes\Shop;
 
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\DateTime;
 use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 use Exception;
@@ -22,6 +23,112 @@ class ApiSecurity {
   const RATE_LIMIT_WINDOW = 900; // 15 minutes
   const MAX_REQUESTS_PER_WINDOW = 50;
   const ACCOUNT_LOCK_DURATION = 1800; // 30 minutes
+
+
+  /**
+   * Validates and regenerates the API session token if necessary
+   *
+   * @param string $token The current session token to check or renew.
+   * @return string The valid session token, either existing or newly generated.
+   * @throws Exception If token processing fails
+   */
+  public static function checkToken(string $token): string
+  {
+    // Validation du token
+    if (empty($token)) {
+      throw new Exception("Token cannot be empty");
+    }
+
+    if (strlen($token) !== 32 || !ctype_xdigit($token)) {
+      throw new Exception("Invalid token format");
+    }
+
+    // Vérification du rate limiting pour les tokens
+    $clientIp = HTTP::getIpAddress();
+
+    if (!self::checkRateLimit($clientIp, 'token_check')) {
+      throw new Exception("Rate limit exceeded for token validation");
+    }
+
+    try {
+      $CLICSHOPPING_Db = Registry::get('Db');
+
+      if (!$CLICSHOPPING_Db) {
+        throw new Exception("Database connection not available");
+      }
+
+      $sql_data_array = [
+        'api_id',
+        'date_modified',
+        'date_added'
+      ];
+
+      $Qcheck = $CLICSHOPPING_Db->get('api_session', $sql_data_array, ['session_id' => $token], 1);
+
+      if (!empty($Qcheck->value('api_id'))) {
+        $now = date('Y-m-d H:i:s');
+        $date_diff = DateTime::getIntervalDate($Qcheck->value('date_modified'), $now);
+
+        // Session expirée après le timeout configuré
+        if ($date_diff > self::SESSION_TIMEOUT_MINUTES) {
+          // Régénérer la session
+          $CLICSHOPPING_Db->delete('api_session', ['api_id' => (int)$Qcheck->valueInt('api_id')]);
+
+          $session_id = bin2hex(random_bytes(16));
+          $Ip = HTTP::getIpAddress();
+
+          $sql_data_array = [
+            'api_id' => $Qcheck->valueInt('api_id'),
+            'session_id' => $session_id,
+            'date_modified' => 'now()',
+            'date_added' => $Qcheck->value('date_added'),
+            'ip' => $Ip
+          ];
+
+          $CLICSHOPPING_Db->save('api_session', $sql_data_array);
+
+          self::logSecurityEvent('Session regenerated', [
+            'old_token' => $token,
+            'new_token' => $session_id,
+            'api_id' => $Qcheck->valueInt('api_id')
+          ]);
+
+          return $session_id;
+        }
+
+        return $token; // Session encore valide
+      } else {
+        // Token invalide - créer une nouvelle session
+        $session_id = bin2hex(random_bytes(16));
+        $Ip = HTTP::getIpAddress();
+
+        $sql_data_array = [
+          'api_id' => null,
+          'session_id' => $session_id,
+          'date_modified' => 'now()',
+          'date_added' => 'now()',
+          'ip' => $Ip
+        ];
+
+        $CLICSHOPPING_Db->save('api_session', $sql_data_array);
+
+        self::logSecurityEvent('New session created for invalid token', [
+          'old_token' => $token,
+          'new_token' => $session_id
+        ]);
+
+        return $session_id;
+      }
+
+    } catch (PDOException $e) {
+      self::logSecurityEvent('Database error in checkToken', [
+        'token' => $token,
+        'error' => $e->getMessage()
+      ]);
+      throw new \Exception("Token validation failed");
+    }
+  }
+
 
   /**
    * Enregistre un événement de sécurité dans la base de données
@@ -137,9 +244,7 @@ class ApiSecurity {
 
       $key = 'login_attempts_' . hash('sha256', $username);
 
-      $Qexisting = $CLICSHOPPING_Db->get('api_failed_attempts', ['attempts', 'last_attempt'], [
-        'identifier' => $key
-      ]);
+      $Qexisting = $CLICSHOPPING_Db->get('api_failed_attempts', ['attempts', 'last_attempt'], ['identifier' => $key]);
 
       if ($Qexisting->rowCount() > 0) {
         $attempts = $Qexisting->valueInt('attempts') + 1;
@@ -182,6 +287,27 @@ class ApiSecurity {
         'error' => $e->getMessage()
       ]);
     }
+  }
+
+  /**
+   * Valide les informations d'identification de l'utilisateur
+   * @param string $username Nom d'utilisateur
+   * @param string $key Clé API
+   * @return bool Retourne true si les informations sont valides, sinon false
+   */
+  protected static function validateCredentials(string $username, string $key): bool
+  {
+    if (empty($username) || empty($key)) {
+      self::logSecurityEvent('Empty credentials provided', ['username' => $username]);
+      return false;
+    }
+
+    if (strlen($username) > 100 || strlen($key) > 255) {
+      self::logSecurityEvent('Credentials too long', ['username' => $username]);
+      return false;
+    }
+
+    return true;
   }
 
   /** Enregistre un événement de sécurité dans un fichier de log
@@ -321,5 +447,112 @@ class ApiSecurity {
     $subnet &= $mask;
 
     return ($ip & $mask) === $subnet;
+  }
+
+
+  /**
+   * Authentifie les informations d'identification de l'utilisateur
+   * @param string $username Nom d'utilisateur
+   * @param string $key Clé API
+   * @return array|bool Retourne les détails de l'utilisateur si l'authentification réussit, sinon false
+   * @throws Exception Si une erreur de base de données se produit
+   */
+  public static function authenticateCredentials(string $username, string $key): array|bool
+  {
+    try {
+      $CLICSHOPPING_Db = Registry::get('Db');
+
+      if (!$CLICSHOPPING_Db) {
+        throw new Exception("Database connection not available");
+      }
+
+      $Qapi = $CLICSHOPPING_Db->prepare('select api_id,
+                                                username,
+                                                api_key,
+                                                status,
+                                                date_added,
+                                                date_modified
+                                         from :table_api
+                                         where status = 1
+                                         and username = :username
+                                         and api_key = :api_key
+                                         ');
+
+      $Qapi->bindValue(':username', $username);
+      $Qapi->bindValue(':api_key', $key);
+      $Qapi->execute();
+
+      $result = $Qapi->fetch();
+
+      $isValid = !empty($result);
+
+      if (!$isValid) {
+        self::incrementFailedAttempts($username);
+        self::logSecurityEvent('Failed authentication attempt', ['username' => $username]);
+
+        return false;
+      } else {
+        self::resetFailedAttempts($username);
+        self::logSecurityEvent('Successful authentication', ['username' => $username]);
+
+        return $result;
+      }
+
+    } catch (PDOException $e) {
+      self::logSecurityEvent('Database error in authentication', [
+        'username' => $username,
+        'error' => $e->getMessage()
+      ]);
+      throw new Exception("Authentication service temporarily unavailable");
+    }
+  }
+
+  /**
+   * Authentifie l'utilisateur en vérifiant les informations d'identification
+   * @param string $username Nom d'utilisateur
+   * @param string $key Clé API
+   * @return bool Retourne true si l'authentification réussit, sinon false
+   * @throws Exception Si l'authentification échoue ou si le compte est verrouillé
+   */
+  protected static function performAuthentication(string $username, string $key)
+  {
+    // 1. Validation des entrées
+    if (!self::validateCredentials($username, $key)) {
+      return false;
+    }
+
+    // 2. Vérification du verrouillage
+    if (self::isAccountLocked($username)) {
+      self::logSecurityEvent('Authentication attempted on locked account', [
+        'username' => $username
+      ]);
+      throw new Exception("Account temporarily locked due to multiple failed attempts");
+    }
+
+    // 3. Rate limiting
+    if (!self::checkRateLimit($username, 'login')) {
+      self::logSecurityEvent('Rate limit exceeded for authentication', [
+        'username' => $username
+      ]);
+      throw new Exception("Rate limit exceeded. Please try again later.");
+    }
+  }
+
+  /**
+   * Détecte si l'environnement est local (développement)
+   * @return bool True si en environnement local
+   */
+  public static function isLocalEnvironment(): bool
+  {
+    $ip = HTTP::getIpAddress();
+
+    if (in_array($ip, ['127.0.0.1', '::1'])) {
+      return true;
+    }
+
+    $serverName = $_SERVER['SERVER_NAME'] ?? '';
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+
+    return str_contains($serverName, 'localhost') || str_contains($host, 'localhost');
   }
 }

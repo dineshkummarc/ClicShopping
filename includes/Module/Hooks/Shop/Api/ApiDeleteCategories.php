@@ -12,7 +12,9 @@ namespace ClicShopping\OM\Module\Hooks\Shop\Api;
 
 use ClicShopping\OM\Cache;
 use ClicShopping\OM\HTML;
+use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\Configuration\Api\Classes\Shop\ApiSecurity;
 use function count;
 
 use ClicShopping\Apps\Catalog\Categories\Classes\ClicShoppingAdmin\CategoriesAdmin;
@@ -103,6 +105,38 @@ class ApiDeleteCategories
   public function execute()
   {
     if (isset($_GET['cId'], $_GET['categories'])) {
+
+    $api_id = $_SERVER['HTTP_X_API_ID'] ?? null;
+
+    if (ApiSecurity::isLocalEnvironment()) {
+      ApiSecurity::logSecurityEvent('Local environment detected', ['ip' => $_SERVER['REMOTE_ADDR'] ?? '']);
+    } else {
+      if (!$api_id || !ApiSecurity::validateIp($api_id)) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Unauthorized IP']);
+        exit;
+      }
+    }
+
+      // Validation et authentification du token
+      if (!isset($_GET['token'])) {
+        ApiSecurity::logSecurityEvent('Missing token in categories request');
+        return false;
+      }
+
+      // Check if the token is valid
+      $token = ApiSecurity::checkToken($_GET['token']);
+      if (!$token) {
+        return false;
+      }
+
+      // Rate limiting
+      $clientIp = HTTP::getIpAddress();
+      if (!ApiSecurity::checkRateLimit($clientIp, 'get_categories')) {
+        return false;
+      }
+
+
       $id = HTML::sanitize($_GET['cId']);
 
       if (!is_numeric($id)) {

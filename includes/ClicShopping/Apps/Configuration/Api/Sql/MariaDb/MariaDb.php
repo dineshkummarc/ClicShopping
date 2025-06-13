@@ -153,6 +153,25 @@ CREATE TABLE :table_api_session (
   date_modified datetime NOT NULL
   PRIMARY KEY api_session_id
 ) CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `clic_api_rate_limit` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `identifier` varchar(255) NOT NULL,
+  `timestamp` int(11) NOT NULL,
+  `ip` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_identifier_timestamp` (`identifier`, `timestamp`),
+  KEY `idx_timestamp` (`timestamp`)
+);
+
+CREATE TABLE `clic_api_failed_attempts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `identifier` varchar(255) NOT NULL,
+  `attempts` int(11) DEFAULT 1,
+  `last_attempt` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `identifier` (`identifier`)
+);
 EOD;
       $CLICSHOPPING_Db->exec($sql);
     }

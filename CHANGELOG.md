@@ -1,5 +1,5 @@
 version4.011
-Increase the api security
+Increase the api security with some checks
 librairies updated
 
 ------------------
