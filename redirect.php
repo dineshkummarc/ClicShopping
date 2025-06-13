@@ -33,14 +33,17 @@ $CLICSHOPPING_Manufacturer = Registry::get('Manufacturers');
 
 $CLICSHOPPING_Language = Registry::get('Language');
 
-switch ($_GET['action']) {
-  case 'banner':
-    $Qbanner = $CLICSHOPPING_Db->get('banners', 'banners_url', ['banners_id' => HTML::sanitize($_GET['goto'])]);
+$action = isset($_GET['action']) ? HTML::sanitize($_GET['action']) : null;
 
-    if ($Qbanner->fetch() !== false) {
-      if (!empty($Qbanner->value('banners_url'))) {
+switch ($action) {
+  case 'banner':
+    if (isset($_GET['goto'])) {
+      $goto = HTML::sanitize($_GET['goto']);
+      $Qbanner = $CLICSHOPPING_Db->get('banners', 'banners_url', ['banners_id' => $goto]);
+
+      if ($Qbanner->fetch() !== false && !empty($Qbanner->value('banners_url'))) {
         if ($CLICSHOPPING_Service->isStarted('Banner')) {
-          $CLICSHOPPING_Banner->updateBannerClickCount($_GET['goto']);
+          $CLICSHOPPING_Banner->updateBannerClickCount($goto);
           HTTP::redirect($Qbanner->value('banners_url'));
         }
       }
@@ -48,11 +51,9 @@ switch ($_GET['action']) {
     break;
 
   case 'url':
-    if (isset($_GET['goto']) && !is_null($_GET['goto'])) {
-      $Qcheck = $CLICSHOPPING_Db->get('products_description', 'products_url', ['products_url' => HTML::sanitize($_GET['goto'])],
-        null,
-        1
-      );
+    if (isset($_GET['goto'])) {
+      $goto = HTML::sanitize($_GET['goto']);
+      $Qcheck = $CLICSHOPPING_Db->get('products_description', 'products_url', ['products_url' => $goto], null, 1);
 
       if ($Qcheck->fetch() !== false) {
         HTTP::redirect($Qcheck->value('products_url'));
@@ -103,8 +104,7 @@ switch ($_GET['action']) {
 
         if ($Qmanufacturer->fetch() !== false) {
           if (!empty($Qmanufacturer->value('manufacturers_url'))) {
-
-            $Qupdate = $CLICSHOPPING_Db->prepare('update :table_manufactuers_info
+            $Qupdate = $CLICSHOPPING_Db->prepare('update :table_manufacturers_info
                                                     set url_clicked = url_clicked+1,
                                                         date_last_click = now()
                                                     where manufacturers_id = :manufacturers_id
@@ -121,6 +121,8 @@ switch ($_GET['action']) {
       } // end else
     } // is numeric
 
+    break;
+  default:
     break;
 }
 
