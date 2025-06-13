@@ -1,0 +1,20 @@
+-- Table pour le rate limiting
+CREATE TABLE `clic_api_rate_limit` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `identifier` varchar(255) NOT NULL,
+  `timestamp` int(11) NOT NULL,
+  `ip` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_identifier_timestamp` (`identifier`, `timestamp`),
+  KEY `idx_timestamp` (`timestamp`)
+);
+
+-- Table pour les tentatives de connexion échouées
+CREATE TABLE `clic_api_failed_attempts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `identifier` varchar(255) NOT NULL,
+  `attempts` int(11) DEFAULT 1,
+  `last_attempt` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `identifier` (`identifier`)
+);

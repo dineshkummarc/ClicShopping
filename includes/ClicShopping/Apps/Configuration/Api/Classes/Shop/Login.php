@@ -104,7 +104,7 @@ class Login
     Registry::set('Authentification', new Authentification($username, $key, $ip));
     $this->authentification = Registry::get('Authentification');
 
-    $result = ApiSecurity::authenticateCredentials($username, $key,);
+    $result = ApiSecurity::authenticateCredentials($username, $key);
 
     if (!is_array($result) || !isset($result['api_id'])) {
       ApiSecurity::incrementFailedAttempts($username);
@@ -115,7 +115,7 @@ class Login
 
     if (!$this->authentification->getIps($api_id)) {
       ApiSecurity::incrementFailedAttempts($username);
-      return 'bad IP';
+      return 'Bad IP';
     }
 
     ApiSecurity::resetFailedAttempts($username);
