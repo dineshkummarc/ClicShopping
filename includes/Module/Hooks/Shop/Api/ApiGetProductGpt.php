@@ -28,19 +28,10 @@ class ApiGetProductGpt
       return false;
     }
 
-     $api_id = $_SERVER['HTTP_X_API_ID'] ?? null;
-
     if (ApiSecurity::isLocalEnvironment()) {
       ApiSecurity::logSecurityEvent('Local environment detected', ['ip' => $_SERVER['REMOTE_ADDR'] ?? '']);
-    } else {
-      if (!$api_id || !ApiSecurity::validateIp($api_id)) {
-        http_response_code(403);
-        echo json_encode(['error' => 'Unauthorized IP']);
-        exit;
-      }
     }
    
-    // Validation et authentification du token
     if (!isset($_GET['token'])) {
       ApiSecurity::logSecurityEvent('Missing token in product request');
       return false;
@@ -54,7 +45,7 @@ class ApiGetProductGpt
 
     // Rate limiting
     $clientIp = HTTP::getIpAddress();
-    if (!ApiSecurity::checkRateLimit($clientIp, 'get_categories')) {
+    if (!ApiSecurity::checkRateLimit($clientIp, 'get_gpt_product')) {
       return false;
     }
 

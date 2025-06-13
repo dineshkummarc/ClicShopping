@@ -81,7 +81,7 @@ class ApiDeleteCategories
       }
 
       foreach (array_keys($products_delete) as $key) {
-        $CLICSHOPPING_Hooks->call('Products', 'RemoveProduct');
+        $CLICSHOPPING_Hooks->call('Products', 'RemoveProduct', ['products_id' => $id]);
       }
 
       $CLICSHOPPING_Hooks->call('Categories', 'DeleteConfirm');
@@ -106,19 +106,10 @@ class ApiDeleteCategories
   {
     if (isset($_GET['cId'], $_GET['categories'])) {
 
-    $api_id = $_SERVER['HTTP_X_API_ID'] ?? null;
-
     if (ApiSecurity::isLocalEnvironment()) {
       ApiSecurity::logSecurityEvent('Local environment detected', ['ip' => $_SERVER['REMOTE_ADDR'] ?? '']);
-    } else {
-      if (!$api_id || !ApiSecurity::validateIp($api_id)) {
-        http_response_code(403);
-        echo json_encode(['error' => 'Unauthorized IP']);
-        exit;
-      }
     }
 
-      // Validation et authentification du token
       if (!isset($_GET['token'])) {
         ApiSecurity::logSecurityEvent('Missing token in categories request');
         return false;
@@ -132,10 +123,9 @@ class ApiDeleteCategories
 
       // Rate limiting
       $clientIp = HTTP::getIpAddress();
-      if (!ApiSecurity::checkRateLimit($clientIp, 'get_categories')) {
+      if (!ApiSecurity::checkRateLimit($clientIp, 'delete_categories')) {
         return false;
       }
-
 
       $id = HTML::sanitize($_GET['cId']);
 
@@ -144,7 +134,11 @@ class ApiDeleteCategories
         return json_encode(['error' => 'Invalid ID format']);
       }
 
-      self::deleteCategories($id);
+      self::deleteCategories((int)$id);
+
+      http_response_code(200);
+      echo json_encode(['success' => 'Category deleted']);
+      exit;
     } else {
       return false;
     }

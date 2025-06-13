@@ -71,7 +71,7 @@ class ApiDeleteProduct
     $Qcheck = $CLICSHOPPING_Db->get('products_to_categories', 'products_id', ['products_id' => $id], null, 1);
 
     if ($Qcheck->fetch() === false) {
-      $CLICSHOPPING_Hooks->call('Products', 'RemoveProduct');
+      $CLICSHOPPING_Hooks->call('Products', 'RemoveProduct', ['products_id' => $id]);
     }
   }
 
@@ -85,19 +85,11 @@ class ApiDeleteProduct
   public function execute()
   {
     if (isset($_GET['pId'], $_GET['product'])) {
-   $api_id = $_SERVER['HTTP_X_API_ID'] ?? null;
 
-    if (ApiSecurity::isLocalEnvironment()) {
-      ApiSecurity::logSecurityEvent('Local environment detected', ['ip' => $_SERVER['REMOTE_ADDR'] ?? '']);
-    } else {
-      if (!$api_id || !ApiSecurity::validateIp($api_id)) {
-        http_response_code(403);
-        echo json_encode(['error' => 'Unauthorized IP']);
-        exit;
+      if (ApiSecurity::isLocalEnvironment()) {
+        ApiSecurity::logSecurityEvent('Local environment detected', ['ip' => $_SERVER['REMOTE_ADDR'] ?? '']);
       }
-    }
 
-      // Validation et authentification du token
       if (!isset($_GET['token'])) {
         ApiSecurity::logSecurityEvent('Missing token in product request');
         return false;
@@ -111,7 +103,7 @@ class ApiDeleteProduct
 
       // Rate limiting
       $clientIp = HTTP::getIpAddress();
-      if (!ApiSecurity::checkRateLimit($clientIp, 'get_categories')) {
+      if (!ApiSecurity::checkRateLimit($clientIp, 'delete_product')) {
         return false;
       }
 
@@ -123,6 +115,10 @@ class ApiDeleteProduct
       }
 
       return self::deleteProducts($id);
+
+      http_response_code(200);
+      echo json_encode(['success' => 'Product deleted']);
+      exit;
     } else {
       return false;
     }

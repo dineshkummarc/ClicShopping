@@ -188,8 +188,8 @@ class ApiSecurity {
 
       $Qcount = $CLICSHOPPING_Db->prepare('select count(id) as count 
                                           from :table_api_rate_limit
-                                          where  identifier = :identifier
-                                          and  timestamp >= :timestamp
+                                          where identifier = :identifier
+                                          and timestamp >= :timestamp
                                           ');
       $Qcount->bindValue(':identifier', $key);
       $Qcount->bindValue(':timestamp', $window_start);

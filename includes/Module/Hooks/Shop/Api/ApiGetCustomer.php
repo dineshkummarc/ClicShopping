@@ -90,19 +90,10 @@ class ApiGetCustomer
   public function execute()
   {
     if (isset($_GET['cId'], $_GET['token'])) {
-      $api_id = $_SERVER['HTTP_X_API_ID'] ?? null;
-
-    if (ApiSecurity::isLocalEnvironment()) {
-      ApiSecurity::logSecurityEvent('Local environment detected', ['ip' => $_SERVER['REMOTE_ADDR'] ?? '']);
-    } else {
-      if (!$api_id || !ApiSecurity::validateIp($api_id)) {
-        http_response_code(403);
-        echo json_encode(['error' => 'Unauthorized IP']);
-        exit;
+      if (ApiSecurity::isLocalEnvironment()) {
+        ApiSecurity::logSecurityEvent('Local environment detected', ['ip' => $_SERVER['REMOTE_ADDR'] ?? '']);
       }
-    }
 
-      // Validation et authentification du token
       if (!isset($_GET['token'])) {
         ApiSecurity::logSecurityEvent('Missing token in customer request');
         return false;
@@ -116,7 +107,7 @@ class ApiGetCustomer
 
       // Rate limiting
       $clientIp = HTTP::getIpAddress();
-      if (!ApiSecurity::checkRateLimit($clientIp, 'get_categories')) {
+      if (!ApiSecurity::checkRateLimit($clientIp, 'get_customer')) {
         return false;
       }
 

@@ -82,16 +82,8 @@ class ApiGetCategories
    */
   public function execute()
   {
-    $api_id = $_SERVER['HTTP_X_API_ID'] ?? null;
-
     if (ApiSecurity::isLocalEnvironment()) {
       ApiSecurity::logSecurityEvent('Local environment detected', ['ip' => $_SERVER['REMOTE_ADDR'] ?? '']);
-    } else {
-      if (!$api_id || !ApiSecurity::validateIp($api_id)) {
-        http_response_code(403);
-        echo json_encode(['error' => 'Unauthorized IP']);
-        exit;
-      }
     }
 
     if (!isset($_GET['token'])) {

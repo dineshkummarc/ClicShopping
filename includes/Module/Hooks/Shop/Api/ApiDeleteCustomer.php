@@ -62,16 +62,8 @@ class ApiDeleteCustomer
   {
     if (isset($_GET['cId'], $_GET['customer'])) {
 
-    $api_id = $_SERVER['HTTP_X_API_ID'] ?? null;
-
     if (ApiSecurity::isLocalEnvironment()) {
       ApiSecurity::logSecurityEvent('Local environment detected', ['ip' => $_SERVER['REMOTE_ADDR'] ?? '']);
-    } else {
-      if (!$api_id || !ApiSecurity::validateIp($api_id)) {
-        http_response_code(403);
-        echo json_encode(['error' => 'Unauthorized IP']);
-        exit;
-      }
     }
 
       // Validation et authentification du token
@@ -88,7 +80,7 @@ class ApiDeleteCustomer
 
       // Rate limiting
       $clientIp = HTTP::getIpAddress();
-      if (!ApiSecurity::checkRateLimit($clientIp, 'get_categories')) {
+      if (!ApiSecurity::checkRateLimit($clientIp, 'delete_customer')) {
         return false;
       }
 
@@ -101,6 +93,10 @@ class ApiDeleteCustomer
       }
 
       self::deleteCustomer($id);
+
+      http_response_code(200);
+      echo json_encode(['success' => 'Customer deleted']);
+      exit;
     } else {
       return false;
     }
