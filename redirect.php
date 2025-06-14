@@ -12,7 +12,6 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
-use function is_null;
 
 // start the timer for the page parse time log
 define('PAGE_PARSE_START_TIME', microtime());

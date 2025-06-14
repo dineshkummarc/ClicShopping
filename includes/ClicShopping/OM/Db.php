@@ -1041,9 +1041,20 @@ class Db extends PDO
       $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     }
 
-    $statement = str_replace(':table_', $prefix, $statement);
+    // Validation stricte du préfixe : lettres, chiffres, underscores uniquement
+    if (!preg_match('/^[a-zA-Z0-9_]*$/', $prefix)) {
+      throw new \InvalidArgumentException('Invalid table prefix');
+    }
 
-    return $statement;
+    // Ajout d'un underscore terminal si le préfixe est non vide et ne se termine pas déjà par un underscore
+    if ($prefix !== '' && substr($prefix, -1) !== '_') {
+      $prefix .= '_';
+    }
+
+    // Substitution sûre des tokens
+    return preg_replace_callback('/:table_([a-zA-Z0-9_]+)/', function ($matches) use ($prefix) {
+      return $prefix . $matches[1];
+    }, $statement);
   }
 
   /**

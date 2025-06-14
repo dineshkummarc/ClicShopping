@@ -18,12 +18,13 @@ use Exception;
 
 class ApiSecurity {
 
-  const SESSION_TIMEOUT_MINUTES = 60;
+  const SESSION_TIMEOUT_MINUTES = 30;
   const MAX_LOGIN_ATTEMPTS = 5;
   const RATE_LIMIT_WINDOW = 900; // 15 minutes
-  const MAX_REQUESTS_PER_WINDOW = 50;
+  const MAX_REQUESTS_PER_WINDOW = 20;  // 20 request maximum per 15 minutes
   const ACCOUNT_LOCK_DURATION = 1800; // 30 minutes
 
+  protected static $renewSession = true; //temporary time to add a refresh totken
 
   /**
    * Validates and regenerates the API session token if necessary
@@ -34,7 +35,6 @@ class ApiSecurity {
    */
   public static function checkToken(string $token): string
   {
-    // Validation du token
     if (empty($token)) {
       throw new Exception("Token cannot be empty");
     }
@@ -56,69 +56,82 @@ class ApiSecurity {
         throw new Exception("Database connection not available");
       }
 
-      $sql_data_array = [
-        'api_id',
-        'date_modified',
-        'date_added'
-      ];
+      $sql_data_array = ['api_id', 'date_modified', 'date_added'];
 
       $Qcheck = $CLICSHOPPING_Db->get('api_session', $sql_data_array, ['session_id' => $token], 1);
 
-      if (!empty($Qcheck->value('api_id'))) {
-        $now = date('Y-m-d H:i:s');
-        $date_diff = DateTime::getIntervalDate($Qcheck->value('date_modified'), $now);
+      if (static::$renewSession === true) {
+        if (!empty($Qcheck->value('api_id'))) {
+          $now = date('Y-m-d H:i:s');
+          $date_diff = DateTime::getIntervalDate($Qcheck->value('date_modified'), $now);
 
-        if ($date_diff > self::SESSION_TIMEOUT_MINUTES) {
-          $CLICSHOPPING_Db->delete('api_session', ['api_id' => (int)$Qcheck->valueInt('api_id')]);
+          if ($date_diff > self::SESSION_TIMEOUT_MINUTES) {
+            $CLICSHOPPING_Db->delete('api_session', ['api_id' => (int)$Qcheck->valueInt('api_id')]);
 
+            throw new Exception("Session expired");
+          }
+
+          return $token;
+        }
+      } else {
+        if (!empty($Qcheck->value('api_id'))) {
+          $now = date('Y-m-d H:i:s');
+          $date_diff = DateTime::getIntervalDate($Qcheck->value('date_modified'), $now);
+
+          if ($date_diff > self::SESSION_TIMEOUT_MINUTES) {
+            $CLICSHOPPING_Db->delete('api_session', ['api_id' => (int)$Qcheck->valueInt('api_id')]);
+
+            $session_id = bin2hex(random_bytes(16));
+            $Ip = HTTP::getIpAddress();
+
+            $sql_data_array = [
+              'api_id' => $Qcheck->valueInt('api_id'),
+              'session_id' => $session_id,
+              'date_modified' => 'now()',
+              'date_added' => $Qcheck->value('date_added'),
+              'ip' => $Ip
+            ];
+
+            $CLICSHOPPING_Db->save('api_session', $sql_data_array);
+
+            self::logSecurityEvent('Session regenerated', [
+              'old_token' => $token,
+              'new_token' => $session_id,
+              'api_id' => $Qcheck->valueInt('api_id')
+            ]);
+
+            return $session_id;
+          }
+
+          return $token;
+        } else {
           $session_id = bin2hex(random_bytes(16));
           $Ip = HTTP::getIpAddress();
 
           $sql_data_array = [
-            'api_id' => $Qcheck->valueInt('api_id'),
+            'api_id' => null,
             'session_id' => $session_id,
             'date_modified' => 'now()',
-            'date_added' => $Qcheck->value('date_added'),
+            'date_added' => 'now()',
             'ip' => $Ip
           ];
 
           $CLICSHOPPING_Db->save('api_session', $sql_data_array);
 
-          self::logSecurityEvent('Session regenerated', [
+          self::logSecurityEvent('New session created for invalid token', [
             'old_token' => $token,
-            'new_token' => $session_id,
-            'api_id' => $Qcheck->valueInt('api_id')
+            'new_token' => $session_id
           ]);
 
           return $session_id;
         }
-
-        return $token;
-      } else {
-        $session_id = bin2hex(random_bytes(16));
-        $Ip = HTTP::getIpAddress();
-
-        $sql_data_array = [
-          'api_id' => null,
-          'session_id' => $session_id,
-          'date_modified' => 'now()',
-          'date_added' => 'now()',
-          'ip' => $Ip
-        ];
-
-        $CLICSHOPPING_Db->save('api_session', $sql_data_array);
-
-        self::logSecurityEvent('New session created for invalid token', [
-          'old_token' => $token,
-          'new_token' => $session_id
-        ]);
-
-        return $session_id;
       }
+
+      throw new Exception("Invalid or unknown token");
 
     } catch (PDOException $e) {
       self::logSecurityEvent('Database error in checkToken', [
-        'token' => $token,
+        'token' => substr(hash('sha256', $token), 0, 12) . '...',
         'error' => $e->getMessage()
       ]);
       throw new \Exception("Token validation failed");
@@ -127,8 +140,6 @@ class ApiSecurity {
 
   /**
    * Save the security event inside the database
-   * @param string $eventType Type d'événement (e.g., 'login_attempt', 'rate_limit_exceeded')
-   * @param array $details Détails supplémentaires sur l'événement
    */
   public static function isAccountLocked(string $username): bool
   {
@@ -303,29 +314,80 @@ class ApiSecurity {
   public static function logSecurityEvent(string $event, array $data = [])
   {
     try {
+      // Neutralisation des données sensibles
+      $sanitizedData = [];
+
+      foreach ($data as $key => $value) {
+        if (in_array($key, ['token', 'old_token', 'new_token', 'session_id', 'api_id'], true)) {
+          $sanitizedData[$key] = substr(hash('sha256', (string)$value), 0, 12) . '...';
+        } elseif ($key === 'error') {
+          $sanitizedData[$key] = self::sanitizeErrorMessage($value);
+        } else {
+          $sanitizedData[$key] = $value;
+        }
+      }
+
       $logData = [
         'timestamp' => date('c'),
         'event' => $event,
-        'ip' => HTTP::getIpAddress(),
-        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
-        'data' => $data
+        'ip' => self::sanitizeIp(HTTP::getIpAddress()),
+        'user_agent' => substr($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown', 0, 120),
+        'data' => $sanitizedData
       ];
 
       $logDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Log/';
       $logFile = $logDir . 'api_security.log';
+      $maxSize = 10 * 1024 * 1024; // 10 Mo
 
       if (!is_dir($logDir)) {
         if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
-          throw new \Runtime\Exception(sprintf('Directory "%s" was not created', $logDir));
+          throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));
         }
       }
 
-      file_put_contents($logFile, json_encode($logData) . PHP_EOL, FILE_APPEND | LOCK_EX);
+      // Rotation si taille max atteinte
+      if (file_exists($logFile) && filesize($logFile) >= $maxSize) {
+        $backupFile = $logFile . '.' . date('Ymd_His');
+        rename($logFile, $backupFile);
+      }
+
+      $encoded = json_encode($logData, JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR);
+      file_put_contents($logFile, $encoded . PHP_EOL, FILE_APPEND | LOCK_EX);
     } catch (\Throwable $e) {
-      error_log('[API_SECURITY_LOG_ERROR] ' . $e->getMessage());
+      error_log('[API_SECURITY_LOG_ERROR] ' . self::sanitizeErrorMessage($e->getMessage()));
     }
   }
 
+  /**
+   * Sanitizes error messages to prevent SQL injection and sensitive data exposure
+   *
+   * @param string $msg The error message to sanitize.
+   * @return string The sanitized error message.
+   */
+  protected static function sanitizeErrorMessage(string $msg): string
+  {
+    return preg_replace('/(select|update|insert|delete|from|where)[^;]*/i', '[SQL_REDACTED]', $msg);
+  }
+
+  /**
+   * Sanitizes IP addresses by masking the last segment for IPv4 and IPv6
+   *
+   * @param string $ip The IP address to sanitize.
+   * @return string The sanitized IP address.
+   */
+  protected static function sanitizeIp(string $ip): string
+  {
+    // Masque les derniers segments pour IPv4/IPv6
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+      return preg_replace('/\.\d+$/', '.x', $ip);
+    }
+
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+      return preg_replace('/:[a-f0-9]*$/i', ':x', $ip);
+    }
+
+    return 'Unknown';
+  }
 
   /**
    * Validates IP address against allowed IPs for the API with enhanced security
@@ -358,12 +420,12 @@ class ApiSecurity {
      $Qips = $CLICSHOPPING_Db->get('api_ip', 'ip', ['api_id' => $api_id]);
 
      if (empty($Qips)) {
-       self::logSecurityEvent('No IP restrictions found for API', [
+       self::logSecurityEvent('No IP restrictions found for API - access denied', [
          'api_id' => $api_id,
          'client_ip' => $clientIp
        ]);
 
-       return true;
+       return false;
      }
 
      foreach ($Qips as $allowedIp) {
@@ -556,5 +618,4 @@ class ApiSecurity {
       }
     }
   }
-
 }
