@@ -172,7 +172,7 @@ class ApiShop extends ApiSecurity
         $date_diff = DateTime::getIntervalDate($Qcheck->value('date_modified'), $now);
 
         // Session expirée après le timeout configuré
-        if ($date_diff > self::SESSION_TIMEOUT_MINUTES) {
+        if ($date_diff > (int)CLICSHOPPING_APP_API_AI_SESSION_TIMEOUT_MINUTES) {
           // Régénérer la session
           $CLICSHOPPING_Db->delete('api_session', ['api_id' => (int)$Qcheck->valueInt('api_id')]);
 

@@ -18,13 +18,7 @@ use Exception;
 
 class ApiSecurity {
 
-  const SESSION_TIMEOUT_MINUTES = 30;
-  const MAX_LOGIN_ATTEMPTS = 5;
-  const RATE_LIMIT_WINDOW = 900; // 15 minutes
-  const MAX_REQUESTS_PER_WINDOW = 20;  // 20 request maximum per 15 minutes
-  const ACCOUNT_LOCK_DURATION = 1800; // 30 minutes
-
-  protected static $renewSession = true; //temporary time to add a refresh totken
+  protected static $renewSession = true; //temporary time to add a refresh token
 
   /**
    * Validates and regenerates the API session token if necessary
@@ -65,7 +59,7 @@ class ApiSecurity {
           $now = date('Y-m-d H:i:s');
           $date_diff = DateTime::getIntervalDate($Qcheck->value('date_modified'), $now);
 
-          if ($date_diff > self::SESSION_TIMEOUT_MINUTES) {
+          if ($date_diff > (int)CLICSHOPPING_APP_API_AI_SESSION_TIMEOUT_MINUTES) {
             $CLICSHOPPING_Db->delete('api_session', ['api_id' => (int)$Qcheck->valueInt('api_id')]);
 
             throw new Exception("Session expired");
@@ -78,7 +72,7 @@ class ApiSecurity {
           $now = date('Y-m-d H:i:s');
           $date_diff = DateTime::getIntervalDate($Qcheck->value('date_modified'), $now);
 
-          if ($date_diff > self::SESSION_TIMEOUT_MINUTES) {
+          if ($date_diff > (int)CLICSHOPPING_APP_API_AI_SESSION_TIMEOUT_MINUTES) {
             $CLICSHOPPING_Db->delete('api_session', ['api_id' => (int)$Qcheck->valueInt('api_id')]);
 
             $session_id = bin2hex(random_bytes(16));
@@ -162,9 +156,9 @@ class ApiSecurity {
       $attempts = $Qattempts->valueInt('attempts');
       $lastAttempt = $Qattempts->valueInt('last_attempt');
 
-      if ($attempts >= self::MAX_LOGIN_ATTEMPTS) {
+      if ($attempts >= (int)CLICSHOPPING_APP_API_AI_MAX_LOGIN_ATTEMPTS) {
         $timeSinceLastAttempt = time() - $lastAttempt;
-        return $timeSinceLastAttempt < self::ACCOUNT_LOCK_DURATION;
+        return $timeSinceLastAttempt < (int)CLICSHOPPING_APP_API_AI_ACCOUNT_LOCK_DURATION;
       }
 
       return false;
@@ -189,7 +183,7 @@ class ApiSecurity {
       $CLICSHOPPING_Db = Registry::get('Db');
 
       $key = $action . '_' . hash('sha256', $identifier);
-      $window_start = time() - self::RATE_LIMIT_WINDOW;
+      $window_start = time() - (int)CLICSHOPPING_APP_API_AI_RATE_LIMIT_WINDOW;
 
       $Qdelete = $CLICSHOPPING_Db->prepare('delete 
                                             from :table_api_rate_limit 
@@ -208,7 +202,7 @@ class ApiSecurity {
 
       $attempts = $Qcount->valueInt('count') ?? 0;
 
-      if ($attempts >= self::MAX_REQUESTS_PER_WINDOW) {
+      if ($attempts >= (int)CLICSHOPPING_APP_API_AI_MAX_REQUEST_PER_WINDOW) {
         return false;
       }
 

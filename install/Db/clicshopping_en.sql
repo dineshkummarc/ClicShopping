@@ -1714,7 +1714,11 @@ INSERT INTO configuration VALUES(1760, 'Use Memcached', 'USE_MEMCACHED', 'False'
 INSERT INTO configuration VALUES(1761, 'Use static content page cache on the catalog', 'USE_CATALOG_CACHE', 'False', 'Enable the caching about the static catalog content.<br>Please for a cache reset, change to False ', 11, 7, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1762, 'Reset the static content page cache on the catalog', 'USE_CATALOG_RESET_CACHE', 'False', 'Reset the caching about the static catalog content<br>After Reset, Please change the status to False', 11, 8, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1763, 'Activate the static content log page cache on the catalog', 'USE_CATALOG_LOG_CACHE', 'False', 'Activate the caching log about the static catalog content', 11, 9, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
-
+INSERT INTO configuration VALUES(1764, 'Time interval during which rate limits are enforced', 'CLICSHOPPING_APP_API_AI_RATE_LIMIT_WINDOW', '900', 'Fixed duration defining the period over which requests are counted to enforce rate limiting and prevent excessive usage.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
+INSERT INTO configuration VALUES(1765, 'Session expiration duration', 'CLICSHOPPING_APP_API_AI_SESSION_TIMEOUT_MINUTES', '30', 'Specifies the session expiration time in minutes.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
+INSERT INTO configuration VALUES(1766, 'Account lock duration', 'CLICSHOPPING_APP_API_AI_ACCOUNT_LOCK_DURATION', '1800', 'Duration during which an account remains locked after exceeding allowed limits. (30 mn)', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
+INSERT INTO configuration VALUES(1767, 'Maximum allowed login attempts', 'CLICSHOPPING_APP_API_AI_MAX_LOGIN_ATTEMPTS', '5', 'Specifies the maximum number of login attempts permitted before restriction.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
+INSERT INTO configuration VALUES(1768, 'Maximum requests per window', 'CLICSHOPPING_APP_API_AI_MAX_REQUEST_PER_WINDOW', '20', 'Limits the number of requests to 20 within a 15-minute interval.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
 
 
 

@@ -10,16 +10,16 @@
 
 namespace ClicShopping\Apps\Configuration\Api\Module\ClicShoppingAdmin\Config\AI\Params;
 
-class sort_order extends \ClicShopping\Apps\Configuration\Api\Module\ClicShoppingAdmin\Config\ConfigParamAbstract
+class max_login_attempts extends \ClicShopping\Apps\Configuration\Api\Module\ClicShoppingAdmin\Config\ConfigParamAbstract
 {
 
-  public $default = '100';
-  public int|null $sort_order = 300;
+  public $default = '5';
+  public int|null $sort_order = 30;
   public bool $app_configured = true;
 
   protected function init()
   {
-    $this->title = $this->app->getDef('cfg_products_api_sort_order_title');
-    $this->description = $this->app->getDef('cfg_products_api_sort_order_description');
+    $this->title = $this->app->getDef('cfg_products_api_max_login_attempts_title');
+    $this->description = $this->app->getDef('cfg_products_api_max_login_attempts_description');
   }
 }

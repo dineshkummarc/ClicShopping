@@ -76,6 +76,7 @@ if (!empty($cId)) {
             class="col-md-7 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_Api->getDef('heading_title'); ?></span>
           <span class="col-md-4 text-end">
 <?php
+echo HTML::button($CLICSHOPPING_Api->getDef('button_configure'), null, $CLICSHOPPING_Api->link('Configure'), 'primary') . ' ';
 echo HTML::form('form_api', $CLICSHOPPING_Api->link('Api&' . $form_action . '&page=' . $page . '&' . (isset($_GET['cID']) ? '&cID=' . $_GET['cID'] : '')));
 echo HTML::button($CLICSHOPPING_Api->getDef('button_cancel'), null, $CLICSHOPPING_Api->link('Api&page=' . $page . '&cID=' . $Qapi->valueInt('api_id')), 'warning') . ' ';
 

@@ -18,3 +18,21 @@ CREATE TABLE `clic_api_failed_attempts` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `identifier` (`identifier`)
 );
+
+
+
+#french
+INSERT INTO `clic_configuration` VALUES(null, 'Intervalle de temps pendant lequel les limites de débit sont appliquées', 'CLICSHOPPING_APP_API_AI_RATE_LIMIT_WINDOW', '900', 'Durée fixe définissant la période sur laquelle les requêtes sont comptabilisées pour appliquer la limitation et éviter les usages excessifs.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
+INSERT INTO `clic_configuration` VALUES(null, 'Durée d’expiration de la session', 'CLICSHOPPING_APP_API_AI_SESSION_TIMEOUT_MINUTES', '30', 'Spécifie la durée d’expiration de la session en minutes.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
+INSERT INTO `clic_configuration` VALUES(null, 'Durée de verrouillage du compte', 'CLICSHOPPING_APP_API_AI_ACCOUNT_LOCK_DURATION', '1800', 'Durée pendant laquelle un compte reste verrouillé après dépassement des limites autorisées (30 mn).', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
+INSERT INTO `clic_configuration` VALUES(null, 'Nombre maximal de tentatives de connexion', 'CLICSHOPPING_APP_API_AI_MAX_LOGIN_ATTEMPTS', '5', 'Spécifie le nombre maximal de tentatives de connexion autorisées avant restriction.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
+INSERT INTO `clic_configuration` VALUES(null, 'Nombre maximal de requêtes par fenêtre', 'CLICSHOPPING_APP_API_AI_MAX_REQUEST_PER_WINDOW', '20', 'Limite le nombre de requêtes à 20 sur une période de 15 minutes.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
+
+
+
+#english
+INSERT INTO clic_configuration VALUES(null, 'Time interval during which rate limits are enforced', 'CLICSHOPPING_APP_API_AI_RATE_LIMIT_WINDOW', '900', 'Fixed duration defining the period over which requests are counted to enforce rate limiting and prevent excessive usage.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
+INSERT INTO clic_configuration VALUES(null, 'Session expiration duration', 'CLICSHOPPING_APP_API_AI_SESSION_TIMEOUT_MINUTES', '30', 'Specifies the session expiration time in minutes.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
+INSERT INTO clic_configuration VALUES(null, 'Account lock duration', 'CLICSHOPPING_APP_API_AI_ACCOUNT_LOCK_DURATION', '1800', 'Duration during which an account remains locked after exceeding allowed limits. (30 mn)', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
+INSERT INTO clic_configuration VALUES(null, 'Maximum allowed login attempts', 'CLICSHOPPING_APP_API_AI_MAX_LOGIN_ATTEMPTS', '5', 'Specifies the maximum number of login attempts permitted before restriction.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
+INSERT INTO clic_configuration VALUES(null, 'Maximum requests per window', 'CLICSHOPPING_APP_API_AI_MAX_REQUEST_PER_WINDOW', '20', 'Limits the number of requests to 20 within a 15-minute interval.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);

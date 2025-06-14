@@ -107,7 +107,7 @@ class Authentification extends ApiSecurity
         $now = date('Y-m-d H:i:s');
         $date_diff = DateTime::getIntervalDate($Qcheck->value('date_modified'), $now);
 
-        if ($date_diff <= self::SESSION_TIMEOUT_MINUTES) {
+        if ($date_diff <= (int)CLICSHOPPING_APP_API_AI_SESSION_TIMEOUT_MINUTES) {
           self::logSecurityEvent('Existing session returned', [
             'api_id' => $api_id,
             'session_id' => $Qcheck->value('session_id')

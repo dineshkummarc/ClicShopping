@@ -31,7 +31,11 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
           <span
             class="col-md-4 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_Api->getDef('heading_title'); ?></span>
           <span
-            class="col-md-7 text-end"><?php echo HTML::button($CLICSHOPPING_Api->getDef('button_insert'), null, $CLICSHOPPING_Api->link('Edit'), 'success') . ' '; ?>
+            class="col-md-7 text-end">
+            <?php
+              echo HTML::button($CLICSHOPPING_Api->getDef('button_configure'), null, $CLICSHOPPING_Api->link('Configure'), 'primary') . ' ';
+              echo HTML::button($CLICSHOPPING_Api->getDef('button_insert'), null, $CLICSHOPPING_Api->link('Edit'), 'success') . ' ';
+            ?>
           </span>
         </div>
       </div>
