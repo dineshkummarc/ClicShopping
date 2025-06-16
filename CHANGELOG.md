@@ -1,7 +1,11 @@
+version 4.02
+
+
+------------------
 version4.011
 Increase the api security with some checks
 librairies updated
-Documentation imporved (wiki)
+Documentation improved (wiki)
 
 ------------------
 version4.01
