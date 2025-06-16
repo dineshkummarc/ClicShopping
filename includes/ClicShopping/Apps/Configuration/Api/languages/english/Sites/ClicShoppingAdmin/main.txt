@@ -76,7 +76,7 @@ text_heading_comment = Comments
 
 text_get_status = Display (GET)
 text_delete_status = Delete (DELETE)
-text_update_status = Update (POST)
+text_update_status = Update / Insert (PUT / POST)
 text_insert_status = Insert (POST)
 
 text_info_warning = You must save your Api before to add some others elements

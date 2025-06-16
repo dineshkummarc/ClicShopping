@@ -75,17 +75,17 @@ if (!empty($cId)) {
           <span
             class="col-md-7 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_Api->getDef('heading_title'); ?></span>
           <span class="col-md-4 text-end">
-<?php
-echo HTML::button($CLICSHOPPING_Api->getDef('button_configure'), null, $CLICSHOPPING_Api->link('Configure'), 'primary') . ' ';
-echo HTML::form('form_api', $CLICSHOPPING_Api->link('Api&' . $form_action . '&page=' . $page . '&' . (isset($_GET['cID']) ? '&cID=' . $_GET['cID'] : '')));
-echo HTML::button($CLICSHOPPING_Api->getDef('button_cancel'), null, $CLICSHOPPING_Api->link('Api&page=' . $page . '&cID=' . $Qapi->valueInt('api_id')), 'warning') . ' ';
+            <?php
+            echo HTML::button($CLICSHOPPING_Api->getDef('button_configure'), null, $CLICSHOPPING_Api->link('Configure'), 'primary') . ' ';
+            echo HTML::form('form_api', $CLICSHOPPING_Api->link('Api&' . $form_action . '&page=' . $page . '&' . (isset($_GET['cID']) ? '&cID=' . $_GET['cID'] : '')));
+            echo HTML::button($CLICSHOPPING_Api->getDef('button_cancel'), null, $CLICSHOPPING_Api->link('Api&page=' . $page . '&cID=' . $Qapi->valueInt('api_id')), 'warning') . ' ';
 
-if (!empty($cId)) {
-  echo HTML::button($CLICSHOPPING_Api->getDef('button_update'), null, null, 'success') . ' ';
-} else {
-  echo HTML::button($CLICSHOPPING_Api->getDef('button_insert'), null, null, 'success') . ' ';
-}
-?>
+            if (!empty($cId)) {
+              echo HTML::button($CLICSHOPPING_Api->getDef('button_update'), null, null, 'success') . ' ';
+            } else {
+              echo HTML::button($CLICSHOPPING_Api->getDef('button_insert'), null, null, 'success') . ' ';
+            }
+            ?>
           </span>
         </div>
       </div>
@@ -171,44 +171,7 @@ if (!empty($cId)) {
                     </div>
                   </div>
                 </div>
-                <!--
-                      <div class="row" id="updatePoductsStatus">
-                        <div class="col-md-12">
-                          <div class="form-group row">
-                            <label for="<?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?>"
-                                   class="col-7 col-form-label"><?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?></label>
-                            <div class="col-md-5">
-                              <ul class="list-group-slider list-group-flush">
-                                <li class="list-group-item-slider">
-                                  <label class="switch">
-                                    <?php echo HTML::checkboxField('update_product_status', '1', $Qapi->valueInt('update_product_status'), 'class="success"'); ?>
-                                    <span class="slider"></span>
-                                  </label>
-                                </li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row" id="insertPoductsStatus">
-                        <div class="col-md-12">
-                          <div class="form-group row">
-                            <label for="<?php echo $CLICSHOPPING_Api->getDef('text_insert_status'); ?>"
-                                   class="col-7 col-form-label"><?php echo $CLICSHOPPING_Api->getDef('text_insert_status'); ?></label>
-                            <div class="col-md-5">
-                              <ul class="list-group-slider list-group-flush">
-                                <li class="list-group-item-slider">
-                                  <label class="switch">
-                                    <?php echo HTML::checkboxField('insert_product_status', '1', $Qapi->valueInt('insert_product_status'), 'class="success"'); ?>
-                                    <span class="slider"></span>
-                                  </label>
-                                </li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
--->
+
                 <div class="row" id="deletePoductsStatus">
                   <div class="col-md-12">
                     <div class="form-group row">
@@ -219,6 +182,25 @@ if (!empty($cId)) {
                           <li class="list-group-item-slider">
                             <label class="switch">
                               <?php echo HTML::checkboxField('delete_product_status', '1', $Qapi->valueInt('delete_product_status'), 'class="success"'); ?>
+                              <span class="slider"></span>
+                            </label>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row" id="updatePoductsStatus">
+                  <div class="col-md-12">
+                    <div class="form-group row">
+                      <label for="<?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?>"
+                             class="col-7 col-form-label"><?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?></label>
+                      <div class="col-md-5">
+                        <ul class="list-group-slider list-group-flush">
+                          <li class="list-group-item-slider">
+                            <label class="switch">
+                              <?php echo HTML::checkboxField('update_product_status', '1', $Qapi->valueInt('update_product_status'), 'class="success"'); ?>
                               <span class="slider"></span>
                             </label>
                           </li>
@@ -267,44 +249,25 @@ if (!empty($cId)) {
                     </div>
                   </div>
                 </div>
-                <!--
-                      <div class="row" id="updateCategoriesStatus">
-                        <div class="col-md-12">
-                          <div class="form-group row">
-                            <label for="<?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?>"
-                                   class="col-7 col-form-label"><?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?></label>
-                            <div class="col-md-5">
-                              <ul class="list-group-slider list-group-flush">
-                                <li class="list-group-item-slider">
-                                  <label class="switch">
-                                    <?php echo HTML::checkboxField('update_categories_status', '1', $Qapi->valueInt('update_categories_status'), 'class="success"'); ?>
-                                    <span class="slider"></span>
-                                  </label>
-                                </li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
+
+                <div class="row" id="updateCategoriesStatus">
+                  <div class="col-md-12">
+                    <div class="form-group row">
+                      <label for="<?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?>"
+                             class="col-7 col-form-label"><?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?></label>
+                      <div class="col-md-5">
+                        <ul class="list-group-slider list-group-flush">
+                          <li class="list-group-item-slider">
+                            <label class="switch">
+                              <?php echo HTML::checkboxField('update_categories_status', '1', $Qapi->valueInt('update_categories_status'), 'class="success"'); ?>
+                              <span class="slider"></span>
+                            </label>
+                          </li>
+                        </ul>
                       </div>
-                      <div class="row" id="insertCategoriesStatus">
-                        <div class="col-md-12">
-                          <div class="form-group row">
-                            <label for="<?php echo $CLICSHOPPING_Api->getDef('text_insert_status'); ?>"
-                                   class="col-7 col-form-label"><?php echo $CLICSHOPPING_Api->getDef('text_insert_status'); ?></label>
-                            <div class="col-md-5">
-                              <ul class="list-group-slider list-group-flush">
-                                <li class="list-group-item-slider">
-                                  <label class="switch">
-                                    <?php echo HTML::checkboxField('insert_categories_status', '1', $Qapi->valueInt('insert_categories_status'), 'class="success"'); ?>
-                                    <span class="slider"></span>
-                                  </label>
-                                </li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
--->
+                    </div>
+                  </div>
+                </div>
               </td>
               <td>
                 <div class="row" id="getCustomersStatus">
@@ -498,44 +461,25 @@ if (!empty($cId)) {
                     </div>
                   </div>
                 </div>
-                <!--
-                      <div class="row" id="updateManufacturersStatus">
-                        <div class="col-md-12">
-                          <div class="form-group row">
-                            <label for="<?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?>"
-                                   class="col-7 col-form-label"><?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?></label>
-                            <div class="col-md-5">
-                              <ul class="list-group-slider list-group-flush">
-                                <li class="list-group-item-slider">
-                                  <label class="switch">
-                                    <?php echo HTML::checkboxField('update_manufacturer_status', '1', $Qapi->valueInt('update_manufacturer_status'), 'class="success"'); ?>
-                                    <span class="slider"></span>
-                                  </label>
-                                </li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
+
+                <div class="row" id="updateManufacturersStatus">
+                  <div class="col-md-12">
+                    <div class="form-group row">
+                      <label for="<?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?>"
+                             class="col-7 col-form-label"><?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?></label>
+                      <div class="col-md-5">
+                        <ul class="list-group-slider list-group-flush">
+                          <li class="list-group-item-slider">
+                            <label class="switch">
+                              <?php echo HTML::checkboxField('update_manufacturer_status', '1', $Qapi->valueInt('update_manufacturer_status'), 'class="success"'); ?>
+                              <span class="slider"></span>
+                            </label>
+                          </li>
+                        </ul>
                       </div>
-                      <div class="row" id="insertManufacturersStatus">
-                        <div class="col-md-12">
-                          <div class="form-group row">
-                            <label for="<?php echo $CLICSHOPPING_Api->getDef('text_insert_status'); ?>"
-                                   class="col-7 col-form-label"><?php echo $CLICSHOPPING_Api->getDef('text_insert_status'); ?></label>
-                            <div class="col-md-5">
-                              <ul class="list-group-slider list-group-flush">
-                                <li class="list-group-item-slider">
-                                  <label class="switch">
-                                    <?php echo HTML::checkboxField('insert_manufacturer_status', '1', $Qapi->valueInt('insert_manufacturer_status'), 'class="success"'); ?>
-                                    <span class="slider"></span>
-                                  </label>
-                                </li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
--->
+                    </div>
+                  </div>
+                </div>
               </td>
               <td>
                 <div class="row" id="getSuppliersStatus">
@@ -575,46 +519,25 @@ if (!empty($cId)) {
                     </div>
                   </div>
                 </div>
-                <!--
-                      <div class="row" id="updateSuppliersStatus">
-                        <div class="col-md-12">
-                          <div class="form-group row">
-                            <label for="<?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?>"
-                                   class="col-7 col-form-label"><?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?></label>
-                            <div class="col-md-5">
-                              <ul class="list-group-slider list-group-flush">
-                                <li class="list-group-item-slider">
-                                  <label class="switch">
-                                    <?php echo HTML::checkboxField('update_supplier_status', '1', $Qapi->valueInt('update_supplier_status'), 'class="success"'); ?>
-                                    <span class="slider"></span>
-                                  </label>
-                                </li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row" id="insertSuppliersStatus">
-                        <div class="col-md-12">
-                          <div class="form-group row">
-                            <label for="<?php echo $CLICSHOPPING_Api->getDef('text_insert_status'); ?>"
-                                   class="col-7 col-form-label"><?php echo $CLICSHOPPING_Api->getDef('text_insert_status'); ?></label>
-                            <div class="col-md-5">
-                              <ul class="list-group-slider list-group-flush">
-                                <li class="list-group-item-slider">
-                                  <label class="switch">
-                                    <?php echo HTML::checkboxField('insert_supplier_status', '1', $Qapi->valueInt('insert_supplier_status'), 'class="success"'); ?>
-                                    <span class="slider"></span>
-                                  </label>
-                                </li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
--->
 
-
+                <div class="row" id="updateSuppliersStatus">
+                  <div class="col-md-12">
+                    <div class="form-group row">
+                      <label for="<?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?>"
+                             class="col-7 col-form-label"><?php echo $CLICSHOPPING_Api->getDef('text_update_status'); ?></label>
+                      <div class="col-md-5">
+                        <ul class="list-group-slider list-group-flush">
+                          <li class="list-group-item-slider">
+                            <label class="switch">
+                              <?php echo HTML::checkboxField('update_supplier_status', '1', $Qapi->valueInt('update_supplier_status'), 'class="success"'); ?>
+                              <span class="slider"></span>
+                            </label>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </td>
             </tbody>
           </table>
