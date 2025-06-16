@@ -1,10 +1,11 @@
 version4.011
 Increase the api security with some checks
 librairies updated
+Documentation imporved (wiki)
 
 ------------------
 version4.01
-remove schema fogotten
+remove schema forgotten
 
 -----------------
 version4.00
