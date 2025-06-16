@@ -5,7 +5,7 @@ last_attempt int(11) not_null
 
 --
 primary id
-UNIQUE identifier identifier
+idx_identifier identifier
 
 ##
 engine innodb
