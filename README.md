@@ -75,6 +75,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
   - Analytics query processing with natural language to SQL conversion
   - Intelligent content generation with context-aware responses
   - Admin chatbot interface with RAG capabilities
+  - Web Search impleted for semantic search (with embedding - see documentation)
 - Generative artificial products customers recommendations
 - Generative artificial intelligence for All content (product,categories...)
 - Generative artificial intelligence for SEO
@@ -83,6 +84,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 - Generative artificial Intelligence Automated product tagging
 - Generative artificial Intelligence Automated review tagging
 - Generative artificial Intelligence product automation
+- Generative artificial Intelligence Web Search
 - Real time safety stock predictive (AI)
 
 ##Security & Compliance

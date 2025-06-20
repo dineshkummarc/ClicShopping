@@ -9,4 +9,4 @@ For all information you can ask on :
 
 of course if identified an issue you can open an issue :
 
-- Issu : [Issue](https://github.com/ClicShopping/ClicShopping/issues)
+- Issue : [Issue](https://github.com/ClicShopping/ClicShopping/issues)

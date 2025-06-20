@@ -1,4 +1,7 @@
-version 4.02
+Version4.02
+small fix
+librairies updated
+Improve secuirty content html editor 
 
 
 ------------------

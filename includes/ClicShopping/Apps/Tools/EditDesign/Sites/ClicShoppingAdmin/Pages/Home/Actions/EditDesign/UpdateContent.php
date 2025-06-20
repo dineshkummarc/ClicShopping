@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Tools\EditDesign\Sites\ClicShoppingAdmin\Pages\Home\
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\FileSystem;
 use ClicShopping\OM\Registry;
-
+use ClicShopping\Apps\Tools\EditDesign\Classes\CodeSecurity;
 class UpdateContent extends \ClicShopping\OM\PagesActionsAbstract
 {
   public function execute()
@@ -22,19 +22,39 @@ class UpdateContent extends \ClicShopping\OM\PagesActionsAbstract
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
     $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 
-    $directory_selected = $_POST['directory_html'];
-    $filename_selected = $_POST['filename'];
-    $code = $_POST['code'];
+    $directory_selected = $_POST['directory_html'] ?? '';
+    $filename_selected = $_POST['filename'] ?? '';
+    $code = $_POST['code'] ?? '';
 
-    if (is_file(CLICSHOPPING::getConfig('dir_root', 'Shop') . $CLICSHOPPING_Template->getDynamicTemplateDirectory() . '/modules/' . $directory_selected . '/content/' . $filename_selected)) {
-      $filename = CLICSHOPPING::getConfig('dir_root', 'Shop') . $CLICSHOPPING_Template->getDynamicTemplateDirectory() . '/modules/' . $directory_selected . '/content/' . $filename_selected;
-    } else {
+    $basePath = CLICSHOPPING::getConfig('dir_root', 'Shop') . $CLICSHOPPING_Template->getDynamicTemplateDirectory() . '/modules/' . $directory_selected . '/content/';
+    $filePath = realpath($basePath . $filename_selected);
+
+    // Sécurité chemin
+    if ($filePath === false || strpos($filePath, realpath($basePath)) !== 0 || !is_file($filePath)) {
       $CLICSHOPPING_MessageStack->add($CLICSHOPPING_EditDesign->getDef('error_file_does_not_exist'), 'error');
+      $CLICSHOPPING_EditDesign->redirect('EditModuleContent&action=directory&directory_html=' . $directory_selected);
+      return false;
     }
 
-    if (FileSystem::isWritable($filename)) {
-      $file = new \SplFileObject($filename, "w");
-      $written = $file->fwrite($code);
+    $extension = pathinfo($filename_selected, PATHINFO_EXTENSION);
+
+    if ($extension === 'css') {
+      if (CodeSecurity::isCssSafe($code) === false) {
+        $CLICSHOPPING_MessageStack->add($CLICSHOPPING_EditDesign->getDef('error_insert_php_code'), 'error');
+        $CLICSHOPPING_EditDesign->redirect('EditModuleContent&action=directory&directory_html=' . $directory_selected . '&filename=' . $filename_selected);
+        return false;
+      }
+    } else {
+      if (CodeSecurity::isPhpSafe($code) === false) {
+        $CLICSHOPPING_MessageStack->add($CLICSHOPPING_EditDesign->getDef('error_insert_php_code'), 'error');
+        $CLICSHOPPING_EditDesign->redirect('EditModuleContent&action=directory&directory_html=' . $directory_selected . '&filename=' . $filename_selected);
+        return false;
+      }
+    }
+
+    if (FileSystem::isWritable($filePath)) {
+      $file = new \SplFileObject($filePath, "w");
+      $file->fwrite($code);
       $CLICSHOPPING_MessageStack->add($CLICSHOPPING_EditDesign->getDef('success_file_saved_sucessfully'), 'success');
     } else {
       $CLICSHOPPING_MessageStack->add($CLICSHOPPING_EditDesign->getDef('error_file_not_writeable'), 'error');
@@ -43,3 +63,4 @@ class UpdateContent extends \ClicShopping\OM\PagesActionsAbstract
     $CLICSHOPPING_EditDesign->redirect('EditModuleContent&action=directory&directory_html=' . $directory_selected . '&filename=' . $filename_selected);
   }
 }
+

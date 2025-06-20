@@ -59,3 +59,5 @@ Si vous ajoutez un mot / syntaxe, veuillez aussi utiliser l'outil de gestion des
 
 success_file_saved_sucessfully =  Mise à jour effectuée
 error_file_does_not_exist = Fichier non existant
+error_insert_php_code = Code PHP interdit détecté dans le contenu. Modification bloquée.
+error_insert_css_code = Forbidden CSS code detected in the content. Modification blocked.

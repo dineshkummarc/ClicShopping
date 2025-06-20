@@ -23,10 +23,12 @@ class ChatGpt extends \ClicShopping\OM\AppAbstract
   }
 
   /**
-   * Retrieves the configuration modules sorted by their defined order or by default order
-   * if no sort order is specified.
+   * Retrieves the list of configuration modules available in the specified directory.
+   * The method scans the directory for valid configuration module classes, checks if
+   * they inherit from a specific abstract class, and orders them based on their sort order.
    *
-   * @return mixed Returns an array of configuration module names, sorted by their sort order or default order.
+   * @return mixed An array of configuration module names indexed by sort order,
+   * or an empty array if no valid modules are found.
    */
   public function getConfigModules(): mixed
   {
@@ -77,11 +79,11 @@ class ChatGpt extends \ClicShopping\OM\AppAbstract
   }
 
   /**
-   * Retrieves configuration information for a specified module.
+   * Retrieves specific information about a configuration module.
    *
-   * @param string $module The name of the module to retrieve configuration information for.
-   * @param string $info The specific configuration information to be fetched.
-   * @return mixed The requested configuration information.
+   * @param string $module The name of the module to retrieve information from.
+   * @param string $info The specific information or property to retrieve from the module.
+   * @return mixed Returns the requested module information.
    */
   public function getConfigModuleInfo(string $module, string $info): mixed
   {
@@ -95,9 +97,9 @@ class ChatGpt extends \ClicShopping\OM\AppAbstract
   }
 
   /**
-   * Retrieves the current API version.
+   * Retrieves the API version.
    *
-   * @return string|int The API version, which may be a string or an integer.
+   * @return string|int The current API version.
    */
   public function getApiVersion(): string|int
   {

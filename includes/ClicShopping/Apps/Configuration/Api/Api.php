@@ -107,9 +107,9 @@ class Api extends \ClicShopping\OM\AppAbstract
   }
 
   /**
-   * Retrieves the identifier value.
+   * Retrieves the identifier.
    *
-   * @return string The identifier value.
+   * @return string The identifier.
    */
   public function getIdentifier(): string
   {

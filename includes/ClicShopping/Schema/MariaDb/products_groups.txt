@@ -1,3 +1,4 @@
+id int not_null auto_increment
 customers_group_id int default(0) not_null
 customers_group_price decimal(15,4) default(0.0000) not_null
 products_id int default(0) not_null
@@ -8,8 +9,10 @@ orders_group_view char(1) default(1) not_null
 products_quantity_unit_id_group int(5) default(0) not_null
 products_model_group varchar(255)
 products_quantity_fixed_group int default(1) not_null
-
 --
+primary id
+idx_customers_group_id customers_group_id
+
 ##
 engine innodb
 character_set utf8mb4

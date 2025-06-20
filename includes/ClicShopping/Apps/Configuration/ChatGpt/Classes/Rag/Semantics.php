@@ -75,12 +75,23 @@ class Semantics
    */
   public static function checkSemantics(string $text): string
   {
-    $prompt = "Determine whether the following question is of type 'analytics' or 'semantic'. Respond with only one word: 'analytics' or 'semantic'.\nQ: {$text}\nAnswer:";
-    $type = Gpt::getGptResponse($prompt, 20);
+    try {
+      $prompt = "Determine whether the following question is of type 'analytics' or 'semantic'. " .
+        "Respond with only one word: 'analytics' or 'semantic'.\nQ: {$text}\nAnswer:";
 
-    $result = in_array(strtolower(trim($type)), ['analytics', 'semantic']) ? strtolower(trim($type)) : 'semantic';
+      $prompt_result = Gpt::getGptResponse($prompt, 20, 0);
+      $type = trim(strtolower($prompt_result));
 
-    return $result;
+      if (in_array($type, ['analytics', 'semantic'])) {
+        return $type;
+      }
+
+      // Fallback to local analysis if GPT response is invalid
+      return self::isSemanticQuery($text) ? 'semantic' : 'analytics';
+    } catch (\Exception $e) {
+      // If GPT fails completely, fall back to local analysis
+      return self::isSemanticQuery($text) ? 'semantic' : 'analytics';
+    }
   }
 
   /**
@@ -268,7 +279,7 @@ class Semantics
    * @param int threshold Adjust this threshold based on your needs
    * @return string The classification result: 'analytics' or 'semantic'.
    */
- public static function classifyQuery(string $text, int|null $threshold = 3): string
+  public static function classifyQuery(string $text, int|null $threshold = 3): string
   {
     $translated = self::translateToEnglish($text);
 
@@ -307,7 +318,6 @@ class Semantics
   public static function hasCriticalMatch(string $text): bool
   {
     $patterns = self::analyticsPatterns();
-    $result = false;
 
     // Check geographic exceptions first
     if (self::isGeographicQuery($text)) {

@@ -37,7 +37,7 @@ $action = isset($_GET['action']) ? HTML::sanitize($_GET['action']) : null;
 switch ($action) {
   case 'banner':
     if (isset($_GET['goto'])) {
-      $goto = HTML::sanitize($_GET['goto']);
+      $goto = HTML::sanitize($_GET['goto'] ?? '');
       $Qbanner = $CLICSHOPPING_Db->get('banners', 'banners_url', ['banners_id' => $goto]);
 
       if ($Qbanner->fetch() !== false && !empty($Qbanner->value('banners_url'))) {
@@ -51,7 +51,7 @@ switch ($action) {
 
   case 'url':
     if (isset($_GET['goto'])) {
-      $goto = HTML::sanitize($_GET['goto']);
+      $goto = HTML::sanitize($_GET['goto'] ?? '');
       $Qcheck = $CLICSHOPPING_Db->get('products_description', 'products_url', ['products_url' => $goto], null, 1);
 
       if ($Qcheck->fetch() !== false) {

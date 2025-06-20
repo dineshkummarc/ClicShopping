@@ -65,3 +65,5 @@ success_file_saved_sucessfully =  Successfull update
 error_file_does_not_exist = Fichier does not exist
 
 error_file_not_writeable = The files is not writeable
+error_insert_php_code = Forbidden PHP code detected in the content. Modification blocked.
+error_insert_css_code = Forbidden CSS code detected in the content. Modification blocked.
