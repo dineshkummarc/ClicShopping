@@ -1,7 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LLPhant\Evaluation\Trajectory;
 
+use LLPhant\Chat\Message;
+use LLPhant\Evaluation\AbstractEvaluator;
+use LLPhant\Evaluation\EvaluationResults;
 use LLPhant\Evaluation\Trajectory\Vocabulary\HarmfulKeywordsEn;
 use LLPhant\Evaluation\Trajectory\Vocabulary\StopWordsEn;
 
@@ -10,7 +15,7 @@ use LLPhant\Evaluation\Trajectory\Vocabulary\StopWordsEn;
  * This evaluates the quality of AI responses across multiple steps of interaction
  * to assess overall performance and task completion.
  */
-class TrajectoryEvaluator
+final class TrajectoryEvaluator extends AbstractEvaluator
 {
     /** @var float[]|string[] */
     private array $evaluationMetrics;
@@ -59,6 +64,59 @@ class TrajectoryEvaluator
         $this->groundTruth[$trajectoryId] = $groundTruth;
 
         return $this;
+    }
+
+    public function evaluateText(string $candidate, string $reference = '', int $n = 1): EvaluationResults
+    {
+        $this->addTrajectory('task1', [
+            [
+                'prompt' => $reference,
+                'response' => $candidate,
+            ],
+        ]);
+        $results = $this->evaluateAll();
+
+        return new EvaluationResults(
+            'Trajectory evaluation result',
+            $this->flattenResults($results)
+        );
+    }
+
+    /**
+     * @param  Message[]  $messages
+     * @param  string[]  $references  when empty array is passed, assistant messages are extracted from $messages param
+     * @param  int  $n  not supported for trajectory evaluator
+     */
+    public function evaluateMessages(array $messages, array $references = [], int $n = 1): EvaluationResults
+    {
+        if ($n !== 1) {
+            throw new \LogicException("Trajectory evaluator doesn't support N-grams. Keep default param value.");
+        }
+        if ($references === []) {
+            $references = $this->filterAssistantMessages($messages);
+        }
+
+        $userMessages = $this->filterUserMessages($messages);
+
+        if (count($userMessages) !== count($references)) {
+            throw new \LogicException('The number of assistant messages and reference strings must match.');
+        }
+
+        $trajectory = [];
+        foreach ($userMessages as $idx => $userMessage) {
+            $trajectory[] = [
+                'prompt' => $userMessage,
+                'response' => $references[$idx],
+            ];
+        }
+
+        $this->addTrajectory('task1', $trajectory);
+        $results = $this->evaluateAll();
+
+        return new EvaluationResults(
+            'Trajectory evaluation result',
+            $this->flattenResults($results)
+        );
     }
 
     /**
@@ -120,13 +178,34 @@ class TrajectoryEvaluator
         $passed = $overallScore >= $this->passingThreshold;
 
         return [
+            'overallScore' => $overallScore,
             'trajectoryId' => $trajectoryId,
             'stepScores' => $stepScores,
             'metricScores' => $aggregateMetricScores,
-            'overallScore' => $overallScore,
             'passed' => $passed,
             'interactionCount' => count($interactions),
         ];
+    }
+
+    /**
+     * @param  mixed[]  $array
+     * @return string[]
+     */
+    private function flattenResults(array $array, string $prefix = ''): array
+    {
+        $flat = [];
+
+        foreach ($array as $key => $value) {
+            $path = $prefix === '' ? (string) $key : $prefix.'_'.$key;
+
+            if (is_array($value)) {
+                $flat += $this->flattenResults($value, $path);
+            } else {
+                $flat[$path] = $value;
+            }
+        }
+
+        return $flat;
     }
 
     /**
@@ -242,7 +321,7 @@ class TrajectoryEvaluator
     {
         // Extract question patterns from prompt
         preg_match_all('/\b(who|what|when|where|why|how)\b/i', $prompt, $questions);
-        $questionCount = is_countable($questions[0]) ? count($questions[0]) : 0;
+        $questionCount = is_countable($questions[0] ?? null) ? count($questions[0]) : 0;
 
         if ($questionCount === 0) {
             return 0.8; // Default fairly complete for non-questions
