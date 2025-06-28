@@ -1,0 +1,4 @@
+composer require php-http/discovery
+composer require symfony/http-client
+composer require curl-client ==> option 0 - php-http/curl-client
+composer require php-http/guzzle7-adapter

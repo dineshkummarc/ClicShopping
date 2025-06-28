@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Tools\Upgrade\Classes\ClicShoppingAdmin;
 
+use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 use GuzzleHttp\Client as GuzzleClient;
 
@@ -74,7 +75,6 @@ class Marketplace
     $_SESSION[$this->rateLimitKey]['count']++;
     return true;
   }
-
 
 /**
    * Retrieves an access token from the community API using the provided credentials.
