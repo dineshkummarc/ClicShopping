@@ -24,7 +24,8 @@
         "stripe/stripe-php": "^17.3",
         "theodo-group/llphant": "^0.10.1",
         "symfony/cache": "^7.3",
-        "symfony/http-client": "^7.3"
+        "symfony/http-client": "^7.3",
+        "php-http/discovery": "^1.20"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"
