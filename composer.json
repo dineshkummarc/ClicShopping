@@ -20,12 +20,12 @@
         "doctrine/migrations": "^3.9",
         "phpmailer/phpmailer": "^6.10",
         "amnuts/opcache-gui": "^3.5",
-        "stymiee/email-validator": "^2.0",
         "stripe/stripe-php": "^17.3",
-        "theodo-group/llphant": "^0.10.1",
         "symfony/cache": "^7.3",
         "symfony/http-client": "^7.3",
-        "php-http/discovery": "^1.20"
+        "php-http/discovery": "^1.20",
+        "theodo-group/llphant": "^0.10.7",
+        "stymiee/email-validator": "^2.1"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"
