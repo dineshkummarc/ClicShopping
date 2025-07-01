@@ -1,2 +1,0 @@
-cfg_chatgpt_server_port_title = MCP Server Port
-cfg_chatgpt_server_port_description = Port used to connect to the MCP server

@@ -1,2 +1,0 @@
-cfg_chatgpt_token_title = Token
-cfg_chatgpt_token_description = Please insert the access token to connect to the MCP server
