@@ -1,0 +1,2 @@
+cfg_chatgpt_server_host_title = Hôte du serveur MCP
+cfg_chatgpt_server_host_description = Insérer le token d’accès pour se connecter au serveur MCP

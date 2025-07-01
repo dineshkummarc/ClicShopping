@@ -244,6 +244,14 @@ if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
           <td
             class="text-end"><?php echo function_exists('pathinfo') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
         </tr>
+
+        <tr>
+          <td>exec</td>
+          <td class="text-center"><?php echo function_exists('exec') ? 'On' : 'Off'; ?></td>
+          <td class="text-center">Optionnal</td>
+          <td class="text-end"><?php echo function_exists('exec') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
+        </tr>
+
         </tbody>
       </table>
       <br>

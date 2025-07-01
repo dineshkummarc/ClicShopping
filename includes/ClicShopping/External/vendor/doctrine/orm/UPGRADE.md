@@ -1,3 +1,49 @@
+# Upgrade to 3.5
+
+## Deprecate not using native lazy objects on PHP 8.4+
+
+Having native lazy objects disabled on PHP 8.4+ is deprecated and will not be
+possible in 4.0.
+
+You can enable them through configuration:
+
+```php
+$config->enableNativeLazyObjects(true);
+```
+
+As a consequence, methods, parameters and commands related to userland lazy
+objects have been deprecated on PHP 8.4+:
+
+- `Doctrine\ORM\Tools\Console\Command\GenerateProxiesCommand`
+- `Doctrine\ORM\Configuration::getAutoGenerateProxyClasses()`
+- `Doctrine\ORM\Configuration::getProxyDir()`
+- `Doctrine\ORM\Configuration::getProxyNamespace()`
+- `Doctrine\ORM\Configuration::setAutoGenerateProxyClasses()`
+- `Doctrine\ORM\Configuration::setProxyDir()`
+- `Doctrine\ORM\Configuration::setProxyNamespace()`
+- Passing more than one argument to `Doctrine\ORM\Proxy\ProxyFactory::__construct()`
+
+Additionally, some methods of ORMSetup have been deprecated in favor of a new
+counterpart.
+
+- `Doctrine\ORM\ORMSetup::createAttributeMetadataConfiguration()` is deprecated in favor of
+  `Doctrine\ORM\ORMSetup::createAttributeMetadataConfig()`
+- `Doctrine\ORM\ORMSetup::createXMLMetadataConfiguration()` is deprecated in favor of
+  `Doctrine\ORM\ORMSetup::createXMLMetadataConfig()`
+- `Doctrine\ORM\ORMSetup::createConfiguration()` is deprecated in favor of
+  `Doctrine\ORM\ORMSetup::createConfig()`
+
+## Deprecate methods for configuring no longer configurable features
+
+Since 3.0, lazy ghosts are enabled unconditionally, and so is rejecting ID
+collisions in the identity map.
+
+As a consequence, the following methods are deprecated and will be removed in 4.0:
+* `Doctrine\ORM\Configuration::setLazyGhostObjectEnabled()`
+* `Doctrine\ORM\Configuration::isLazyGhostObjectEnabled()`
+* `Doctrine\ORM\Configuration::setRejectIdCollisionInIdentityMap()`
+* `Doctrine\ORM\Configuration::isRejectIdCollisionInIdentityMapEnabled()`
+
 # Upgrade to 3.4.1
 
 ## BC BREAK: You can no longer use the `.*` notation to get all fields of an entity in a DTO

@@ -1719,7 +1719,7 @@ INSERT INTO configuration VALUES(1765, 'Session expiration duration', 'CLICSHOPP
 INSERT INTO configuration VALUES(1766, 'Account lock duration', 'CLICSHOPPING_APP_API_AI_ACCOUNT_LOCK_DURATION', '1800', 'Duration during which an account remains locked after exceeding allowed limits. (30 mn)', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
 INSERT INTO configuration VALUES(1767, 'Maximum allowed login attempts', 'CLICSHOPPING_APP_API_AI_MAX_LOGIN_ATTEMPTS', '5', 'Specifies the maximum number of login attempts permitted before restriction.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
 INSERT INTO configuration VALUES(1768, 'Maximum requests per window', 'CLICSHOPPING_APP_API_AI_MAX_REQUEST_PER_WINDOW', '20', 'Limits the number of requests to 20 within a 15-minute interval.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
-
+INSERT INTO configuration VALUES(1769, 'Debug / Log', 'CLICSHOPPING_APP_CHATGPT_CH_DEBUG', 'False', 'Enabling this will provide you with complete information about errors and issues encountered by the ChatGPT application.<br>\nIt is recommended to enable it only when needed for debugging.', 6, 0, NULL, '2025-06-30 11:46:10', NULL, NULL);
 
 
 

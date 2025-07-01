@@ -1,0 +1,2 @@
+cfg_chatgpt_token_title = Token du serveur
+cfg_chatgpt_token_description = Veuillez insérer le token d’accès pour se connecter au serveur MCP
