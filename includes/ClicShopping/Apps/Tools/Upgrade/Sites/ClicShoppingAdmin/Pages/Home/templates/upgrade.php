@@ -34,10 +34,19 @@ if (isset($_POST['template_directory'])) {
 $check_new_version = false;
 $core_online_info = $CLICSHOPPING_Github->getJsonCoreInformation();
 
-if (\is_object($core_online_info) && $core_online_info->version) {
-  if ($current_version < $core_online_info->version) {
+// Add proper validation for the response
+if (is_object($core_online_info) &&
+  property_exists($core_online_info, 'version') &&
+  !empty($core_online_info->version)) {
+  if (version_compare($current_version, $core_online_info->version, '<')) {
     $check_new_version = true;
   }
+} else {
+  // Handle error case
+  $core_online_info = new \stdClass();
+  $core_online_info->version = '';
+  $core_online_info->date = '';
+  $core_online_info->description = $CLICSHOPPING_Upgrade->getDef('error_github_connection');
 }
 ?>
 <div class="contentBody">

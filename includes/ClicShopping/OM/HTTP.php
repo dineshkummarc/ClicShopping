@@ -60,17 +60,23 @@ class HTTP
    *                       If true, the method sends the HSTS header. If false, it redirects to HTTPS and terminates further execution.
    * @return void
    */
-  public static function getHSTS(bool $use_sts = true)
+  public static function getHSTS(bool $use_sts = true): bool
   {
+    if (headers_sent($filename, $linenum)) {
+      trigger_error("Headers already sent in $filename on line $linenum");
+      return false;
+    }
+
     if (static::$request_type == 'SSL' && isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') {
       if ($use_sts === true) {
         header('Strict-Transport-Security: max-age=500; includeSubDomains; preload');
       } else {
         header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], true, 301);
-// we are in cleartext at the moment, prevent further execution and output
-        die();
+        exit();
       }
     }
+
+    return true;
   }
 
   /**

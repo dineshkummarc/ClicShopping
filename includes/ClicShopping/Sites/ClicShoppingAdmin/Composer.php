@@ -20,8 +20,8 @@ use function is_null;
  */
 class Composer
 {
-  protected static string $root;
-  protected static string $composerJson;
+  private static string $root;
+  private static string $composerJson;
 
   /**
    * Initializes the class by setting the root directory, composer.json file path,
@@ -67,16 +67,10 @@ class Composer
   {
     if (self::checkExecEnabled() === true) {
       $cmd = 'cd ' . self::$root . ' && composer show';
-      exec($cmd, $output, $return); // update dependencies
-
-      if ($return === 0) {
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      return false;
+      return !\exec($cmd, $output, $return) && $return === 0;
     }
+    
+    return false;
   }
 
   /**
@@ -85,20 +79,15 @@ class Composer
    * @param string|null $libray The name of the library to check. Defaults to null.
    * @return bool Returns true if the library is installed and command execution is enabled, otherwise false.
    */
-  public static function checkLibrayInstalled($libray = null): bool
+  public static function checkLibrayInstalled(?string $libray = null): bool
   {
     if (!is_null($libray) && self::checkExecute() === true) {
-      $cmd = 'cd ' . self::$root . ' && composer show' . $libray;
-      exec($cmd, $output, $return); // update dependencies
+      $cmd = 'cd ' . self::$root . ' && composer show ' . $libray;
+      \exec($cmd, $output, $return);
 
-      if ($return === 0) {
-        return false;
-      } else {
-        return true;
-      }
-    } else {
-      return false;
+      return !($return === 0);
     }
+    return false;
   }
 
   /**
@@ -110,11 +99,7 @@ class Composer
    */
   private static function checkExecute(): bool
   {
-    if (self::checkComposerInstalled() === false || self::checkExecEnabled() === false) {
-      return false;
-    } else {
-      return true;
-    }
+    return !(self::checkComposerInstalled() === false || self::checkExecEnabled() === false);
   }
 
   /**
@@ -124,10 +109,9 @@ class Composer
    * @param string $return The return value to append to the debug string.
    * @return string The formatted debug string.
    */
-  public function debug($output, $return): string
+  final public function debug(mixed $output, string $return): string
   {
-    $result = print_r($output, true) . ' - ' . $return;
-    return $result;
+    return print_r($output, true) . ' - ' . $return;
   }
 
   /**
@@ -157,7 +141,7 @@ class Composer
       }
     }
     
-    return false; // <-- Add this line
+    return false;
   }
 
   /**
@@ -168,14 +152,13 @@ class Composer
   public static function getLibrary(): array
   {
     $composer_file = self::$composerJson;
-
-    if (file_exists($composer_file)) {
-      $composer_json = json_decode(file_get_contents($composer_file), true);
-
-      return $composer_json['require'];
-    } else {
+    if (!file_exists($composer_file)) {
       return [];
     }
+
+    $composer_json = json_decode(file_get_contents($composer_file), true);
+
+    return $composer_json['require'] ?? [];
   }
 
   /**
@@ -184,29 +167,21 @@ class Composer
    * @param string|null $library The name of the specific library to update. If null, updates all dependencies.
    * @return string The output message from the update operation, typically the third line of the composer output.
    */
-  public static function update(null|string $library = null): string
+  public static function update(?string $library = null): string
   {
-    $result = '';
-
-    if (self::checkExecute() === true) {
-      if (is_null($library)) {
-        $cmd = 'cd ' . self::$root . ' && composer update 2>&1';
-        exec($cmd, $output, $return); // update dependencies
-
-        $result = $output[2];
-      } else {
-        $cmd = 'cd ' . self::$root . ' && composer update  ' . $library . ' 2>&1';
-        exec($cmd, $output, $return); // update dependencies
-
-        if (isset($output)) {
-          $result = $output[2];
-        }
-      }
-
-      return $result;
+    if (!self::checkExecute()) {
+      return '';
     }
 
-    return ''; // <-- Add this line
+    $cmd = 'cd ' . self::$root . ' && composer update';
+    if ($library !== null) {
+      $cmd .= ' ' . $library;
+    }
+    $cmd .= ' 2>&1';
+
+    \exec($cmd, $output, $return);
+
+    return $output[2] ?? '';
   }
 
 
