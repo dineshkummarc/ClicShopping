@@ -20,6 +20,10 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
     );
 
     public static $prefixLengthsPsr4 = array (
+        'Y' => 
+        array (
+            'Yethee\\Tiktoken\\' => 16,
+        ),
         'S' => 
         array (
             'Symfony\\Polyfill\\Php84\\' => 23,
@@ -100,6 +104,10 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
     );
 
     public static $prefixDirsPsr4 = array (
+        'Yethee\\Tiktoken\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/yethee/tiktoken/src',
+        ),
         'Symfony\\Polyfill\\Php84\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php84',

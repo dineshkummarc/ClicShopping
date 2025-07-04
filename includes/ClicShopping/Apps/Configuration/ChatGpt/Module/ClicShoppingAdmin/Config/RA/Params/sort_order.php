@@ -12,10 +12,8 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Confi
 
 class sort_order extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Config\ConfigParamAbstract
 {
-
   public $default = '60';
   public int|null $sort_order = 300;
-  public bool $app_configured = true;
 
   protected function init()
   {
