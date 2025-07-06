@@ -105,7 +105,12 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
             if (!empty($categories_description)) {
               $embedding_data .= $this->app->getDef('text_category_description', ['category_name' => $categories_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_description) . "\n";;
-              $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($categories_description) . "\n";
+
+              $taxonomy = Semantics::createTaxonomy($categories_description);
+
+              if ($taxonomy != '') {
+                $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
+              }
             }
 
             if (!empty($seo_categories_title)) {

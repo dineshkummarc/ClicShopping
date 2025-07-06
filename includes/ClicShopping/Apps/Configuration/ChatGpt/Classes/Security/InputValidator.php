@@ -432,4 +432,26 @@ class InputValidator
 
     return $html;
   }
+
+  /**
+   * Validates and sanitizes an array of input data (e.g., $_GET, $_POST)
+   * Recursively sanitizes all string values in the array.
+   *
+   * @param array $input The input array to validate/sanitize
+   * @return array The sanitized array
+   */
+  public function validateArray(array $input): array
+  {
+    $sanitized = [];
+    foreach ($input as $key => $value) {
+      if (is_array($value)) {
+        $sanitized[$key] = $this->validateArray($value);
+      } else if (is_string($value)) {
+        $sanitized[$key] = htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8');
+      } else {
+        $sanitized[$key] = $value;
+      }
+    }
+    return $sanitized;
+  }
 }

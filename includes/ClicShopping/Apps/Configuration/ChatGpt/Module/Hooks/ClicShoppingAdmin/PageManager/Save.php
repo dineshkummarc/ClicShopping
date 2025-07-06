@@ -122,7 +122,11 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
                 if (!empty($page_manager_description)) {
                   $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_title' => $page_manager_name]) . ' : ' . $page_manager_description . "\n";
-                  $embedding_data .= $this->app->getDef('text_page_manager_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($page_manager_description) . "\n";
+                  $taxonomy = Semantics::createTaxonomy($page_manager_description);
+
+                  if ($taxonomy != '') {
+                    $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
+                  }
                 }
 
                 $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);

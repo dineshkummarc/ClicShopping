@@ -172,7 +172,11 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               if (!empty($manufacturers_description)) {
                 $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
-                $embedding_data .= $this->app->getDef('text_manufacturer_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($manufacturers_description) . "\n";
+                $taxonomy = Semantics::createTaxonomy($manufacturers_description);
+
+                if ($taxonomy != '') {
+                  $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
+                }
               }
 
               if (!empty($seo_manufacturer_title)) {
