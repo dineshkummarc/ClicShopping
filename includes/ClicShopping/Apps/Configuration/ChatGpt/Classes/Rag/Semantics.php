@@ -75,23 +75,19 @@ class Semantics
    */
   public static function checkSemantics(string $text): string
   {
-    try {
-      $prompt = "Determine whether the following question is of type 'analytics' or 'semantic'. " .
-        "Respond with only one word: 'analytics' or 'semantic'.\nQ: {$text}\nAnswer:";
+    $prompt = "Determine whether the following question is of type 'analytics' or 'semantic'. Respond with only one word: 'analytics' or 'semantic'.\nQ: {$text}\nAnswer:";
+    $prompt_result = Gpt::getGptResponse($prompt, 20, 0);
+    $type = trim(strtolower($prompt_result));
 
-      $prompt_result = Gpt::getGptResponse($prompt, 20, 0);
-      $type = trim(strtolower($prompt_result));
-
-      if (in_array($type, ['analytics', 'semantic'])) {
-        return $type;
+    if (!in_array($type, ['analytics', 'semantic'])) {
+      if (self::isSemanticQuery($text)) {
+        $type = 'semantic';
+      } else {
+        $type = 'analytics';
       }
-
-      // Fallback to local analysis if GPT response is invalid
-      return self::isSemanticQuery($text) ? 'semantic' : 'analytics';
-    } catch (\Exception $e) {
-      // If GPT fails completely, fall back to local analysis
-      return self::isSemanticQuery($text) ? 'semantic' : 'analytics';
     }
+
+    return $type;
   }
 
   /**
@@ -514,12 +510,17 @@ class Semantics
    * @param string $text The text to analyze.
    * @return string The generated taxonomy.
    */
-  public static function createTaxonomy(string $text): string
+  public static function createTaxonomy(string $text, ?int $min_character = 2000): string
   {
+    $result = '';
+    $text = trim($text);
+
     $prompt = CLICSHOPPING::getDef('text_create_taxonomy', ['document_text' => $text]);
 
-    $result = Gpt::getGptResponse($prompt);
+    if (strlen($prompt) > $min_character && str_word_count($text) > 200) {
+      $result = Gpt::getGptResponse($prompt);
+    }
 
-    return trim($result);
+    return is_string($result) ? trim($result) : '';
   }
 }

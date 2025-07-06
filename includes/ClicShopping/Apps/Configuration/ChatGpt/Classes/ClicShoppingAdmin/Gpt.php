@@ -25,8 +25,6 @@ use LLPhant\OpenAIConfig;
 use LLPhant\OllamaConfig;
 use LLPhant\AnthropicConfig;
 use LLPhant\Chat\AnthropicChat;
-use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
-use LLPhant\Embeddings\Document;
 
 use function defined;
 use function is_null;
@@ -370,6 +368,10 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
   public static function getGptResponse(string $question,  int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null,  int|null $max = 1): bool|string
   {
     if (self::checkGptStatus() === false) {
+      return false;
+    }
+
+    if (empty($question) || !is_string($question) || trim($question) === '') {
       return false;
     }
 

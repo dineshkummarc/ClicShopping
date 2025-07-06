@@ -10,9 +10,9 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Dashboard;
 
-use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 
 class CostEstimation extends \ClicShopping\OM\Modules\AdminDashboardAbstract
 {
