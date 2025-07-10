@@ -45,15 +45,17 @@ class Insert extends \ClicShopping\OM\PagesActionsAbstract
     if (!empty($username)) {
       if (!$Qcheck->check()) {
 
-        $this->app->db->save('administrators', ['user_name' => $username,
-            'user_password' => Hash::encrypt($password),
-            'name' => $name,
-            'first_name' => $first_name,
-            'access' => $access,
-            'email_verification' => $email_verification,
-            'date_added' => 'now()'
-          ]
-        );
+      $inset_array =  [
+        'user_name' => $username,
+        'user_password' => Hash::encrypt($password),
+        'name' => $name,
+        'first_name' => $first_name,
+        'access' => $access,
+        'email_verification' => $email_verification,
+        'date_added' => 'now()'
+      ];
+
+        $this->app->db->save('administrators', $inset_array);
       }
     } else {
       $CLICSHOPPING_MessageStack->add($this->app->getDef('error_administrator_exists'), 'error');

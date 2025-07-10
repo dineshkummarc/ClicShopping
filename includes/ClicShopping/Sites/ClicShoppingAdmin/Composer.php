@@ -69,7 +69,7 @@ class Composer
       $cmd = 'cd ' . self::$root . ' && composer show';
       return !\exec($cmd, $output, $return) && $return === 0;
     }
-    
+
     return false;
   }
 

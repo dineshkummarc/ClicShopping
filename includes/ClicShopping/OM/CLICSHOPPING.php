@@ -795,7 +795,8 @@ class CLICSHOPPING
     if (is_array($array)) {
       foreach ($array as $key => $value) {
         if ((!\in_array($key, $exclude, true)) && ($key != 'x') && ($key != 'y')) {
-          $get_string .= $key . $equals . $value . $separator;
+          $stringValue = is_array($value) ? self::arrayToString($value) : (string)$value;
+          $get_string .= $key . $equals . $stringValue . $separator;
         }
       }
 

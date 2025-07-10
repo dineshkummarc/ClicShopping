@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '7543619d02756009db691ff747421f0c6c47725f',
+        'reference' => 'd0a490bfd59308b35530287d18cb8dae229ae5a5',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '7543619d02756009db691ff747421f0c6c47725f',
+            'reference' => 'd0a490bfd59308b35530287d18cb8dae229ae5a5',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'doctrine/dbal' => array(
-            'pretty_version' => '4.2.4',
-            'version' => '4.2.4.0',
-            'reference' => 'b37d160498ea91a2382a2ebe825c4ea6254fc0ec',
+            'pretty_version' => '4.3.0',
+            'version' => '4.3.0.0',
+            'reference' => '5fe09532be619202d59c70956c6fb20e97933ee3',
             'type' => 'library',
             'install_path' => __DIR__ . '/../doctrine/dbal',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => 'a76f62e135c8b583602bd99df737b5c20f4d7200',
+            'reference' => 'b34bea5e19970433575063dd74b68e5e880e10ee',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(

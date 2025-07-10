@@ -160,6 +160,6 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
       $CLICSHOPPING_MessageStack->add($this->app->getDef('error_email_sent'), 'error', 'email');
     }
 
-    $this->app->redirect('EMail&EMail');
+    $this->app->redirect('EMail');
   }
 }

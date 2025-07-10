@@ -35,7 +35,7 @@ class PageManagerShop
    *
    * @return int The number of pages meeting the specified criteria.
    */
-  private function pageManagerDisplayPageIntroCount()
+  private function pageManagerDisplayPageIntroCount(): int
   {
     $Qpages = $this->db->prepare('select count(*) as count
                                      from :table_pages_manager
@@ -56,7 +56,7 @@ class PageManagerShop
    *
    * @return int The display time for the introductory page, or 0 if no pages are available.
    */
-  public function pageManagerDisplayPageIntroTime()
+  public function pageManagerDisplayPageIntroTime(): int
   {
     if ($this->pageManagerDisplayPageIntroCount() > 0) {
       $Qpages = $this->db->prepare('select p.pages_id,
@@ -91,7 +91,7 @@ class PageManagerShop
    *
    * @return string The HTML content of the page intro, or an empty string if no intro is available.
    */
-  public function pageManagerDisplayPageIntro()
+  public function pageManagerDisplayPageIntro(): string
   {
     if ($this->pageManagerDisplayPageIntroCount() > 0) {
       $Qpages = $this->db->prepare('select p.pages_id,
@@ -134,7 +134,7 @@ class PageManagerShop
    *
    * @return string The HTML content of the randomly selected front page or an empty string if no pages are available.
    */
-  public function pageManagerDisplayFrontPage()
+  public function pageManagerDisplayFrontPage(): string
   {
     $Qpages = $this->db->prepare('select count(*) as count
                                      from :table_pages_manager
@@ -228,7 +228,7 @@ class PageManagerShop
    * @param string $separation A string that separates the individual contents of the box, defaulting to an empty string.
    * @return string The generated HTML content for the page manager display box.
    */
-  public function pageManagerDisplayBox($start_class = '<div class="pageManagerDisplayBox">', $end_class = '</div>', $separation = '')
+  public function pageManagerDisplayBox($start_class = '<div class="pageManagerDisplayBox">', $end_class = '</div>', $separation = ''): string
   {
     $QPage = $this->db->prepare('select  p.pages_id,
                                             p.sort_order,
@@ -307,7 +307,7 @@ class PageManagerShop
    * @param string $separation The HTML or text separator to use between items in the secondary box.
    * @return string The generated HTML for the secondary box display.
    */
-  public function pageManagerDisplaySecondaryBox($start_class = '<div class="pageManagerDisplaySecondaryBox">', $end_class = '</div>', $separation = '|')
+  public function pageManagerDisplaySecondaryBox($start_class = '<div class="pageManagerDisplaySecondaryBox">', $end_class = '</div>', $separation = '|'): string
   {
     $QPageSecondary = $this->db->prepare('select SQL_CALC_FOUND_ROWS p.pages_id,
                                                                         p.sort_order,
@@ -399,7 +399,7 @@ class PageManagerShop
    * @param string $separation The string or character used to separate menu items.
    * @return string The constructed header menu as an HTML-formatted string.
    */
-  public function pageManagerDisplayHeaderMenu($start_class = '<span class="menuHeaderPageManager">', $end_class = '</span>', $separation = '|')
+  public function pageManagerDisplayHeaderMenu($start_class = '<span class="menuHeaderPageManager">', $end_class = '</span>', $separation = '|'): string
   {
     $QPage = $this->db->prepare('select  p.pages_id,
                                             p.sort_order,
@@ -477,7 +477,7 @@ class PageManagerShop
    * @param string $separation The string to separate each menu item. Default is ' | '.
    * @return string The generated footer menu as a formatted HTML string.
    */
-  public function pageManagerDisplayFooterMenu($start_class = '<span class="menuFooterPageManager">', $end_class = '</span>', $separation = ' | ')
+  public function pageManagerDisplayFooterMenu($start_class = '<span class="menuFooterPageManager">', $end_class = '</span>', $separation = ' | '): string
   {
     $QPage = $this->db->prepare('select  p.pages_id,
                                             p.sort_order,
@@ -545,7 +545,7 @@ class PageManagerShop
    *
    * @return string The HTML content representing the footer pages in the page manager.
    */
-  public function pageManagerDisplayFooter()
+  public function pageManagerDisplayFooter(): string
   {
     $QPage = $this->db->prepare('select  p.pages_id,
                                             p.sort_order,
@@ -627,7 +627,7 @@ class PageManagerShop
    * @param int $id The ID of the page to retrieve from the page manager.
    * @return string The HTML content of the page, or redirects to a URL if applicable.
    */
-  public function pageManagerDisplayInformation(int $id)
+  public function pageManagerDisplayInformation(int $id): string
   {
     $QPage = $this->db->prepare('select p.pages_id,
                                           p.page_type,
@@ -681,7 +681,7 @@ class PageManagerShop
    * @param int $id The unique identifier of the page to retrieve the title for.
    * @return string|null The title of the page, or null if the page does not exist or does not meet the criteria.
    */
-  public function pageManagerDisplayTitle(int $id)
+  public function pageManagerDisplayTitle(int $id): string|null
   {
     $QPage = $this->db->prepare('select p.pages_id,
                                           p.page_type,
@@ -730,7 +730,7 @@ class PageManagerShop
    * @param int $status The desired status of the page (1 for active, 0 for inactive).
    * @return bool|int True on successful execution, or -1 if the provided status is invalid.
    */
-  private function setPageManagerStatus($pages_id, $status)
+  private function setPageManagerStatus($pages_id, $status): bool|int
   {
     if ($status == 1) {
       $Qupdate = $this->db->prepare('update :table_pages_manager
@@ -772,7 +772,7 @@ class PageManagerShop
    *
    * @return void This method does not return any value.
    */
-  public function activatePageManager()
+  public function activatePageManager(): void
   {
     $QPages = $this->db->query('select pages_id
                                   from :table_pages_manager
@@ -802,7 +802,7 @@ class PageManagerShop
    *
    * @return void
    */
-  public function expirePageManager()
+  public function expirePageManager(): void
   {
     $QPages = $this->db->query('select pages_id
                                     from :table_pages_manager
@@ -835,7 +835,7 @@ class PageManagerShop
    * @return string|false The HTML content of the general conditions page for the customer group,
    *                      or false if the customer's group ID is not defined.
    */
-  public function pageManagerGeneralCondition()
+  public function pageManagerGeneralCondition(): string|false
   {
     $general_condition = '';
 
@@ -942,7 +942,7 @@ class PageManagerShop
    *
    * @return void This method does not return any value.
    */
-  private function getClearCache()
+  private function getClearCache(): void
   {
     Cache::clear('boxe_page_manager_primary-lang');
     Cache::clear('boxe_page_manager_secondary-lang');

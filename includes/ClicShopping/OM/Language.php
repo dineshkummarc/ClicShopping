@@ -648,7 +648,7 @@ class Language
       if (is_array($_GET)) {
         foreach ($_GET as $key => $value) {
           if (($key != 'language') && ($key != Registry::get('Session')->getName()) && ($key != 'x') && ($key != 'y')) {
-            $get_params[] = ($value) ? "$key=$value" : $key;
+            $get_params[] = ($value !== null) ? "$key=" . (is_array($value) ? CLICSHOPPING::arrayToString($value) : $value) : $key;
           }
         }
       }
