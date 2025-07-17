@@ -1,6 +1,6 @@
 {
     "config": {
-        "vendor-dir": "includes/ClicShopping/External/vendor",
+        "vendor-dir": "Core/ClicShopping/External/vendor",
         "allow-plugins": {
             "php-http/discovery": true
         }
