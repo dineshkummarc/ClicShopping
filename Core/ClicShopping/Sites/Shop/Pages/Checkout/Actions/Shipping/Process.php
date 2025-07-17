@@ -97,7 +97,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
 
                   $CLICSHOPPING_Hooks->call('Shipping', 'Process');
 
-                  $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/Hooks/Shop/CheckoutShipping/';
+                  $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/Shop/CheckoutShipping/';
 
                   if (is_dir($source_folder)) {
                     $files_get = $CLICSHOPPING_Template->getSpecificFiles($source_folder, 'CheckoutShipping*');
@@ -125,7 +125,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
         } else {
           $_SESSION['shipping'] = false;
 
-          $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/Hooks/Shop/CheckoutShipping/';
+          $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/Shop/CheckoutShipping/';
 
           if (is_dir($source_folder)) {
             $files_get = $CLICSHOPPING_Template->getSpecificFiles($source_folder, 'CheckoutShipping*');

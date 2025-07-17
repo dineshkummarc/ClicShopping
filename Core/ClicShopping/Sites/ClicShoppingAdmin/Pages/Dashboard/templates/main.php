@@ -43,7 +43,7 @@ $CLICSHOPPING_Hooks = Registry::get('Hooks');
         <?php
         echo $CLICSHOPPING_Hooks->output('TopDashboard', 'TopDashboard', null, 'display');
 
-        $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/Hooks/ClicShoppingAdmin/TopDashboard/';
+        $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/ClicShoppingAdmin/TopDashboard/';
 
         if (is_dir($source_folder)) {
         $files_get = $CLICSHOPPING_Template->getSpecificFiles($source_folder, 'TopDashboard*');

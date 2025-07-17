@@ -186,7 +186,7 @@ class ClicShoppingAdmin extends \ClicShopping\OM\SitesAbstract
     }
 
 // configuration generale du systeme
-    require_once(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/config_clicshopping.php');
+    require_once(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/config_clicshopping.php');
 
     Registry::set('Service', new Service());
     Registry::get('Service')->start();

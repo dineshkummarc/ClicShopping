@@ -30,7 +30,7 @@
   <link rel="icon" type="image/webp"  href="<?php echo CLICSHOPPING::link('Shop/images/logo_clicshopping.webp'); ?>" />
 
   <?php
-     $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/Hooks/ClicShoppingAdmin/Header/';
+     $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/ClicShoppingAdmin/Header/';
      $output = 'HeaderOutput*';
      $call = 'HeaderCall*';
      $hook_call = 'Header';

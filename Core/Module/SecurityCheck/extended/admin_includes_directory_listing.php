@@ -30,7 +30,7 @@ class securityCheckExtended_admin_includes_directory_listing
   {
     $CLICSHOPPING_Language = Registry::get('Language');
 
-    $CLICSHOPPING_Language->loadDefinitions('modules/security_check/extended/admin_Core_directory_listing', null, null, 'Shop');
+    $CLICSHOPPING_Language->loadDefinitions('modules/security_check/extended/admin_includes_directory_listing', null, null, 'Shop');
     /**
      *
      */

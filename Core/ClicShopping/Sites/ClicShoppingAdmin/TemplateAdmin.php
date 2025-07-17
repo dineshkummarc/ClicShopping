@@ -28,7 +28,7 @@ class TemplateAdmin extends \ClicShopping\Sites\Shop\Template
   protected string $directoryAdmin = 'ClicShoppingAdmin/';
   protected string $directoryAdminBoxes = 'boxes/';
   protected string $directoryAdminImages = 'images/';
-  protected string $directoryAdminIncludes = 'includes/';
+  protected string $directoryAdminIncludes = 'Core/';
   protected string $directoryAdminModules = 'modules/';
   protected string $directoryAdminSources = 'sources/';
   public $default;

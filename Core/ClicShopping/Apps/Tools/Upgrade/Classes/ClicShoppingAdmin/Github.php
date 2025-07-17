@@ -119,7 +119,7 @@ class Github
       $result = $versionCache->get();
     } else {
       $response = HTTP::getResponse([
-        'url' => $this->getGithubincludesRepo() . '/contents/includes/ClicShopping/version.json?ref=master'
+        'url' => $this->getGithubincludesRepo() . '/contents/Core/ClicShopping/version.json?ref=master'
       ]);
 
       if ($response !== false) {

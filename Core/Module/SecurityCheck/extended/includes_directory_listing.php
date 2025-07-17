@@ -29,7 +29,7 @@ class securityCheckExtended_includes_directory_listing
   {
     $CLICSHOPPING_Language = Registry::get('Language');
 
-    $CLICSHOPPING_Language->loadDefinitions('modules/security_check/extended/includes_directory_listing', null, null, 'Shop');
+    $CLICSHOPPING_Language->loadDefinitions('modules/security_check/extended/Core_directory_listing', null, null, 'Shop');
 
     $this->title = CLICSHOPPING::getDef('module_security_check_extended_includes_directory_listing_title');
   }

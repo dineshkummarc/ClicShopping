@@ -57,7 +57,7 @@ if (VERTICAL_MENU_CONFIGURATION == 'true') {
 <script defer
         src="<?php echo CLICSHOPPING::link("Shop/ext/javascript/clicshopping/ClicShoppingAdmin/page_loader.js"); ?>"></script>
 <?php
-$source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/Hooks/ClicShoppingAdmin/Footer/';
+$source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/ClicShoppingAdmin/Footer/';
 $file_get_output = 'FooterOutput*';
 $file_get_call = 'FooterCall*';
 $hook_call = 'Footer';

@@ -12,8 +12,19 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Sites\ClicShoppingAdmin\Pages\
 
 use ClicShopping\OM\Registry;
 
+/** * Class DeleteAll
+ * @package ClicShopping\Apps\Configuration\ChatGpt\Sites\ClicShoppingAdmin\Pages\Home\Actions\ChatGpt
+ *
+ * This class handles the deletion of multiple GPT entries from the database.
+ */
 class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
 {
+    /**
+     * Execute the action to delete selected GPT entries
+     *
+     * This method checks for selected entries in the POST request,
+     * deletes them from the database, and redirects back to the ChatGpt page.
+     */
   public function execute()
   {
     $CLICSHOPPING_ChatGpt = Registry::get('ChatGpt');
