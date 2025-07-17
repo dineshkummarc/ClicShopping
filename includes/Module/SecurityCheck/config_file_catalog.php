@@ -36,7 +36,7 @@ class securityCheck_config_file_catalog
    */
   public function pass()
   {
-    return !FileSystem::isWritable(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/configure.php');
+    return !FileSystem::isWritable(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/configure.php');
   }
 
   /**
@@ -47,7 +47,7 @@ class securityCheck_config_file_catalog
   public function getMessage()
   {
     return CLICSHOPPING::getDef('warning_config_file_writeable', [
-      'configure_file_path' => CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/configure.php'
+      'configure_file_path' => CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/configure.php'
     ]);
   }
 }

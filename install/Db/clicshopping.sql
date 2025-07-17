@@ -682,7 +682,7 @@ INSERT INTO configuration VALUES(115, 'Autorisation achat hors stock', 'STOCK_AL
 INSERT INTO configuration VALUES(116, 'Affichage des produits hors stock', 'STOCK_MARK_PRODUCT_OUT_OF_STOCK', '***', 'Affiche la remarque suivante si le produit n\'est plus en stock.', 9, 4, NULL, '2006-04-09 16:13:48', NULL, NULL);
 INSERT INTO configuration VALUES(117, 'Stock niveau d\'alerte', 'STOCK_REORDER_LEVEL', '5', 'Niveau pour l\'alerte de réapprovisionnement du stock.', 9, 5, NULL, '2006-04-09 16:13:48', NULL, NULL);
 INSERT INTO configuration VALUES(118, 'Stockage du temps d\'exécution', 'STORE_PAGE_PARSE_TIME', 'false', 'Stocke le temps d\'exécution d\'une page.<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 10, 1, '2007-05-20 01:00:47', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
-INSERT INTO configuration VALUES(119, 'Emplacement du fichier pour le stocke d\'exécution', 'STORE_PAGE_PARSE_TIME_LOG', '/home/www/site/shop/includes/Work/Log/admin.log', 'Chemin d\'accès et nom du fichier des temps d\'exécution.', 10, 2, '2008-09-15 10:07:36', '2006-04-09 16:13:48', NULL, NULL);
+INSERT INTO configuration VALUES(119, 'Emplacement du fichier pour le stocke d\'exécution', 'STORE_PAGE_PARSE_TIME_LOG', '/home/www/site/shop/Core/Work/Log/admin.log', 'Chemin d\'accès et nom du fichier des temps d\'exécution.', 10, 2, '2008-09-15 10:07:36', '2006-04-09 16:13:48', NULL, NULL);
 INSERT INTO configuration VALUES(120, 'Format de date des exécutions', 'STORE_PARSE_DATE_TIME_FORMAT', '%d/%m/%Y %H:%M:%S', 'Format de la date des exécutions.', 10, 3, NULL, '2006-04-09 16:13:48', NULL, NULL);
 INSERT INTO configuration VALUES(121, 'Affichage du temps d\'exécution', 'DISPLAY_PAGE_PARSE_TIME', 'false', 'Affiche le temps d\'exécution d\'une page (le stockage du temps d\'exécution doit &ecirc;tre activé et l\'emplacement choisi du fichier pour le stockage d\'exécution).<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 10, 4, '2007-06-03 16:58:14', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
 INSERT INTO configuration VALUES(123, 'Utiliser le cache (fichiers)', 'USE_CACHE', 'false', 'Utiliser les fonctionnalités de cache.<br><br><i>(Valeur True = Oui - Valeur False = Non)</i>', 11, 1, '2006-07-18 00:13:26', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
@@ -2247,12 +2247,12 @@ INSERT INTO return_orders_action VALUES(3, 2, 'Problème crédit');
 INSERT INTO return_orders_action VALUES(4, 1, 'Replacement Sent');
 INSERT INTO return_orders_action VALUES(4, 2, 'Remplacement envoyé');
 
-INSERT INTO sec_directory_whitelist VALUES(1, 'includes/ClicShopping/Work/Backups');
+INSERT INTO sec_directory_whitelist VALUES(1, 'Core/ClicShopping/Work/Backups');
 INSERT INTO sec_directory_whitelist VALUES(2, 'ext/images');
 INSERT INTO sec_directory_whitelist VALUES(4, 'sources');
 INSERT INTO sec_directory_whitelist VALUES(5, 'sources/images');
 INSERT INTO sec_directory_whitelist VALUES(6, 'pub');
-INSERT INTO sec_directory_whitelist VALUES(7, 'includes/Work');
+INSERT INTO sec_directory_whitelist VALUES(7, 'Core/Work');
 
 
 INSERT INTO seo VALUES(1, 1, 'ClicShopping AI B2B B2C Solution', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'ClicShopping AI B2B B2C Solution', '', '', '');

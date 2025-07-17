@@ -19,7 +19,7 @@ $CLICSHOPPING_Page = Registry::get('Site')->getPage();
 
 $hooks = [];
 
-$directory = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/Hooks/';
+$directory = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/';
 
 if (is_dir($directory)) {
   if ($dir = new \DirectoryIterator($directory)) {

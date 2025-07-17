@@ -138,7 +138,7 @@ class Shop extends \ClicShopping\OM\SitesAbstract
     }
 
 // Security
-    require_once(CLICSHOPPING::getConfig('dir_root') . 'includes/Module/SecurityPro/Security.php');
+    require_once(CLICSHOPPING::getConfig('dir_root') . 'Core/Module/SecurityPro/Security.php');
     $security_pro = new \Security();
 
 // If you need to exclude a file from cleansing then you can add it like below
@@ -174,8 +174,8 @@ class Shop extends \ClicShopping\OM\SitesAbstract
       WhosOnlineShop::getWhosOnlineUpdateSession_id($parameters['old_id'], session_id());
     });
 
-    if (is_file(CLICSHOPPING::getConfig('dir_root') . 'includes/config_clicshopping.php')) {
-      require_once(CLICSHOPPING::getConfig('dir_root') . 'includes/config_clicshopping.php');
+    if (is_file(CLICSHOPPING::getConfig('dir_root') . 'Core/config_clicshopping.php')) {
+      require_once(CLICSHOPPING::getConfig('dir_root') . 'Core/config_clicshopping.php');
     }
 
     Registry::set('Service', new Service());

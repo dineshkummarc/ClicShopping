@@ -87,7 +87,7 @@ class securityCheckExtended_admin_backup_file
 
     if (isset($backup_file)) {
       if (is_file(CLICSHOPPING::BASE_DIR . 'Work/Backups/' . $backup_file)) {
-        $request = $this->getHttpRequest(HTTP::getShopUrlDomain() . 'includes/Work/Backups/' . $backup_file);
+        $request = $this->getHttpRequest(HTTP::getShopUrlDomain() . 'Core/Work/Backups/' . $backup_file);
 
         $result = ($request['http_code'] !== 200);
       }
@@ -104,7 +104,7 @@ class securityCheckExtended_admin_backup_file
   public function getMessage(): string
   {
     return CLICSHOPPING::getDef('module_security_check_extended_admin_backup_file_http_200', [
-      'backups_path' => CLICSHOPPING::getConfig('http_path', 'Shop') . 'includes/ClicShopping/Work/Backups/'
+      'backups_path' => CLICSHOPPING::getConfig('http_path', 'Shop') . 'Core/ClicShopping/Work/Backups/'
     ]);
   }
 

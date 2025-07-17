@@ -108,7 +108,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
 // load the after_process function from the payment modules
     $CLICSHOPPING_Payment->after_process();
 
-    $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/Hooks/Shop/CheckoutProcess/';
+    $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/Shop/CheckoutProcess/';
 
     if (is_dir($source_folder)) {
       $files_get = $CLICSHOPPING_Template->getSpecificFiles($source_folder, 'CheckoutProcess*');

@@ -42,7 +42,7 @@ class securityCheckExtended_admin_backup_directory_listing
    */
   public function pass()
   {
-    $request = $this->getHttpRequest(CLICSHOPPING::link('Shop/includes/ClicShopping/Work/Backups/'));
+    $request = $this->getHttpRequest(CLICSHOPPING::link('Shop/Core/ClicShopping/Work/Backups/'));
 
     return $request['http_code'] != 200;
   }
@@ -55,8 +55,8 @@ class securityCheckExtended_admin_backup_directory_listing
   public function getMessage()
   {
     return CLICSHOPPING::getDef('module_security_check_extended_admin_backup_directory_listing_http_200', [
-        'backups_url' => CLICSHOPPING::link('Shop/includes/ClicShopping/Work/Backups/'),
-        'backups_path' => CLICSHOPPING::getConfig('http_path', 'Shop') . 'includes/ClicShopping/Work/Backups/'
+        'backups_url' => CLICSHOPPING::link('Shop/Core/ClicShopping/Work/Backups/'),
+        'backups_path' => CLICSHOPPING::getConfig('http_path', 'Shop') . 'Core/ClicShopping/Work/Backups/'
       ]
     );
   }

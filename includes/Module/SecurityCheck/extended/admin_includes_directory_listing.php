@@ -12,7 +12,7 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
 /**
- * Class that performs a security check to verify if the "admin/includes" directory is correctly secured.
+ * Class that performs a security check to verify if the "admin/Core" directory is correctly secured.
  * It verifies that the directory does not provide a directory listing by checking the HTTP response code.
  */
 class securityCheckExtended_admin_includes_directory_listing
@@ -30,7 +30,7 @@ class securityCheckExtended_admin_includes_directory_listing
   {
     $CLICSHOPPING_Language = Registry::get('Language');
 
-    $CLICSHOPPING_Language->loadDefinitions('modules/security_check/extended/admin_includes_directory_listing', null, null, 'Shop');
+    $CLICSHOPPING_Language->loadDefinitions('modules/security_check/extended/admin_Core_directory_listing', null, null, 'Shop');
     /**
      *
      */
@@ -43,7 +43,7 @@ class securityCheckExtended_admin_includes_directory_listing
    */
   public function pass()
   {
-    $request = $this->getHttpRequest(CLICSHOPPING::link('includes/'));
+    $request = $this->getHttpRequest(CLICSHOPPING::link('Core/'));
 
     return $request['http_code'] != 200;
   }

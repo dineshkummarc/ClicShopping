@@ -36,9 +36,9 @@ class Expire extends \ClicShopping\OM\PagesActionsAbstract
     $file_extension = substr(CLICSHOPPING::getIndex(), strrpos(CLICSHOPPING::getIndex(), '.'));
     $directory_array = [];
 
-    if ($dir = @dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/modules/action_recorder/')) {
+    if ($dir = @dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/modules/action_recorder/')) {
       while ($file = $dir->read()) {
-        if (!is_dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/modules/action_recorder/' . $file)) {
+        if (!is_dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/modules/action_recorder/' . $file)) {
           if (substr($file, strrpos($file, '.')) == $file_extension) {
             $directory_array[] = $file;
           }

@@ -30,7 +30,7 @@ class Github
   protected string $githubRepo;
   protected $context;
   protected string $coreName;
-  protected string $githubRepoClicShoppingincludes;
+  protected string $githubRepoClicShoppingCore;
   public ?string $githubRepoName;
   protected string $saveFileFromGithub;
   protected string $cacheGithub;
@@ -123,7 +123,7 @@ class Github
       ]);
 
       if ($response !== false) {
-        $json = @file_get_contents($this->getGithubincludesRepo() . '/contents/includes/ClicShopping/version.json?ref=master', true, $this->context);
+        $json = @file_get_contents($this->getGithubincludesRepo() . '/contents/Core/ClicShopping/version.json?ref=master', true, $this->context);
 
         $url = json_decode($json);
         $url_download = @file_get_contents($url->download_url, true, $this->setContext()); //content of readme.
@@ -572,7 +572,7 @@ class Github
       $this->getCloseOpenStore('false');
     }
 
-    $this->app->redirect('includesUpgrade');
+    $this->app->redirect('CoreUpgrade');
   }
 
   /**

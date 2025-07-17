@@ -35,7 +35,7 @@ class Confirmation extends \ClicShopping\OM\PagesActionsAbstract
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 
-    $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/Hooks/Shop/Checkout/';
+    $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/Shop/Checkout/';
 
     if (is_dir($source_folder)) {
       $files_get = $CLICSHOPPING_Template->getSpecificFiles($source_folder, 'CheckoutConfirmation*');

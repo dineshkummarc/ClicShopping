@@ -683,7 +683,7 @@ INSERT INTO configuration VALUES(115, 'Authorization purchase out of stock', 'ST
 INSERT INTO configuration VALUES(116, 'Showing out of stock the products', 'STOCK_MARK_PRODUCT_OUT_OF_STOCK', '***', 'Displays the following note if the product is no longer in stock.', 9, 4, NULL, '2006-04-09 16:13:48', NULL, NULL);
 INSERT INTO configuration VALUES(117, 'Stock level warning', 'STOCK_REORDER_LEVEL', '5', 'Level alert stock replenishment.', 9, 5, NULL, '2006-04-09 16:13:48', NULL, NULL);
 INSERT INTO configuration VALUES(118, 'Storage runtime', 'STORE_PAGE_PARSE_TIME', 'false', 'Stores the execution time of a page.<br />', 10, 1, '2007-05-20 01:00:47', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
-INSERT INTO configuration VALUES(119, 'File location for the execution stores', 'STORE_PAGE_PARSE_TIME_LOG', '/home/www/site/shop/includes/Work/Log/admin.log', 'Path and file name of the runtime.', 10, 2, '2008-09-15 10:07:36', '2006-04-09 16:13:48', NULL, NULL);
+INSERT INTO configuration VALUES(119, 'File location for the execution stores', 'STORE_PAGE_PARSE_TIME_LOG', '/home/www/site/shop/Core/Work/Log/admin.log', 'Path and file name of the runtime.', 10, 2, '2008-09-15 10:07:36', '2006-04-09 16:13:48', NULL, NULL);
 INSERT INTO configuration VALUES(120, 'Date format executions', 'STORE_PARSE_DATE_TIME_FORMAT', '%d/%m/%Y %H:%M:%S', 'Date format executions.', 10, 3, NULL, '2006-04-09 16:13:48', NULL, NULL);
 INSERT INTO configuration VALUES(121, 'Display runtime', 'DISPLAY_PAGE_PARSE_TIME', 'false', 'displays the execution time of a page (storage runtime must be enabled and the selected location in the file for the execution storage).<br />', 10, 4, '2007-06-03 16:58:14', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
 INSERT INTO configuration VALUES(123, 'Use the file cache', 'USE_CACHE', 'false', 'Use the cache functionalities', 11, 1, '2006-07-18 00:13:26', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'true\', \'false\'))');
@@ -2247,12 +2247,12 @@ INSERT INTO return_orders_action VALUES(3, 2, 'Problème crédit');
 INSERT INTO return_orders_action VALUES(4, 1, 'Replacement Sent');
 INSERT INTO return_orders_action VALUES(4, 2, 'Remplacement envoyé');
 
-INSERT INTO sec_directory_whitelist VALUES(1, 'includes/ClicShopping/Work/Backups');
+INSERT INTO sec_directory_whitelist VALUES(1, 'Core/ClicShopping/Work/Backups');
 INSERT INTO sec_directory_whitelist VALUES(2, 'ext/images');
 INSERT INTO sec_directory_whitelist VALUES(4, 'sources');
 INSERT INTO sec_directory_whitelist VALUES(5, 'sources/images');
 INSERT INTO sec_directory_whitelist VALUES(6, 'pub');
-INSERT INTO sec_directory_whitelist VALUES(7, 'includes/Work');
+INSERT INTO sec_directory_whitelist VALUES(7, 'Core/Work');
 
 
 INSERT INTO seo VALUES(1, 1, 'ClicShopping AI B2B B2C Solution', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'ClicShopping AI B2B B2C Solution', '', '', '');

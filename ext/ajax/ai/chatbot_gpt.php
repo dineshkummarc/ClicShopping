@@ -19,7 +19,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MultiDBRAGManager;
 use \ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
 
-define('CLICSHOPPING_BASE_DIR', __DIR__ . '/../../../includes/ClicShopping/');
+define('CLICSHOPPING_BASE_DIR', __DIR__ . '/../../../Core/ClicShopping/');
 
 require_once(CLICSHOPPING_BASE_DIR . 'OM/CLICSHOPPING.php');
 spl_autoload_register('ClicShopping\OM\CLICSHOPPING::autoload');

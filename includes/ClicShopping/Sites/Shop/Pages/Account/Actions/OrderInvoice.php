@@ -45,7 +45,7 @@ class OrderInvoice extends \ClicShopping\OM\PagesActionsAbstract
     define('FPDF_FONTPATH', CLICSHOPPING::BASE_DIR . 'External/vendor/setasign/fpdf/font/');
     require_once(CLICSHOPPING::BASE_DIR . 'External/vendor/setasign/fpdf/fpdf.php');
 
-    require_once('includes/ClicShopping/Sites/Common/pdfInvoice.php');
+    require_once('Core/ClicShopping/Sites/Common/pdfInvoice.php');
 
     $pdf = new pdfInvoice();
     $_SESSION['pdf'] = $pdf;

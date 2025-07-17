@@ -32,7 +32,7 @@ class Template
   protected $_dynamicTemplate = SITE_THEMA;
   protected string $_directoryTemplateDefault = 'Default';
 
-  protected string $_directoryIncludes = 'includes/';
+  protected string $_directoryCore = 'Core/';
   protected string $_directoryModules = 'modules/';
   protected string $_directoryTemplateSources = 'sources/';
   protected string $_directoryTemplateCss = 'css/';

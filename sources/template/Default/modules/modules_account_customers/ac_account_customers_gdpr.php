@@ -42,7 +42,7 @@ class ac_account_customers_gdpr
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
     if (isset($_GET['Account']) && isset($_GET['Gdpr'])) {
-      $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/Hooks/Shop/Account/';
+      $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/Shop/Account/';
 
       $files_get = $CLICSHOPPING_Template->getSpecificFiles($source_folder, 'AccountGdpr*');
 

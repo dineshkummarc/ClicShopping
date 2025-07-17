@@ -41,7 +41,7 @@ class securityCheckExtended_includes_directory_listing
    */
   public function pass()
   {
-    $request = $this->getHttpRequest(CLICSHOPPING::link('Shop/includes/'));
+    $request = $this->getHttpRequest(CLICSHOPPING::link('Shop/Core/'));
 
     return $request['http_code'] != 200;
   }

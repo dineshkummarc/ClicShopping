@@ -31,13 +31,13 @@ $types = ['info', 'warning', 'error', 'danger'];
 
 $modules = [];
 
-if ($secdir = @dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/SecurityCheck/')) {
+if ($secdir = @dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/SecurityCheck/')) {
   while ($file = $secdir->read()) {
-    if (!is_dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/SecurityCheck/' . $file)) {
+    if (!is_dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/SecurityCheck/' . $file)) {
       if (substr($file, strrpos($file, '.')) == '.php') {
         $class = 'securityCheck_' . substr($file, 0, strrpos($file, '.'));
 
-        include(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/SecurityCheck/' . $file);
+        include(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/SecurityCheck/' . $file);
         $$class = new $class();
 
         $modules[] = [
@@ -52,14 +52,14 @@ if ($secdir = @dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Modul
   $secdir->close();
 }
 
-if ($extdir = @dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/SecurityCheck/extended/')) {
+if ($extdir = @dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/SecurityCheck/extended/')) {
   while ($file = $extdir->read()) {
-    if (!is_dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/SecurityCheck/extended/' . $file)) {
+    if (!is_dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/SecurityCheck/extended/' . $file)) {
 
       if (substr($file, strrpos($file, '.')) == '.php') {
         $class = 'securityCheckExtended_' . substr($file, 0, strrpos($file, '.'));
 
-        include(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/SecurityCheck/extended/' . $file);
+        include(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/SecurityCheck/extended/' . $file);
 
         $$class = new $class();
 

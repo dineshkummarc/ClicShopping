@@ -27,8 +27,8 @@ class CfgmDashboard
    */
   public function __construct()
   {
-    $this->directory = CLICSHOPPING::getConfig('dir_root', $this->site) . 'includes/modules/dashboard/';
-    $this->language_directory = CLICSHOPPING::getConfig('dir_root') . 'includes/languages/';
+    $this->directory = CLICSHOPPING::getConfig('dir_root', $this->site) . 'Core/modules/dashboard/';
+    $this->language_directory = CLICSHOPPING::getConfig('dir_root') . 'Core/languages/';
 
     $this->title = CLICSHOPPING::getDef('module_cfg_module_dashboard_title');
   }

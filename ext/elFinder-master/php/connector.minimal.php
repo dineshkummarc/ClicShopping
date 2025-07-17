@@ -144,7 +144,7 @@ function access($attr, $path, $data, $volume, $isDir, $relpath) {
 
 //*****************************************************************************
 
-  require('../../../includes/ClicShopping/Conf/ElFinderConfig.php');
+  require('../../../Core/ClicShopping/Conf/ElFinderConfig.php');
 
 // Documentation for connector options:
 // https://github.com/Studio-42/elFinder/wiki/Connector-configuration-options

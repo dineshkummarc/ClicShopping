@@ -33,7 +33,7 @@ class RestoreLocalNow extends \ClicShopping\OM\PagesActionsAbstract
     $sql_file = new Upload('sql_file', CLICSHOPPING::BASE_DIR . 'Work/Backups/');
 
     if ($sql_file->check() && $sql_file->save()) {
-      $restore_query = fread(fopen(CLICSHOPPING::BASE_DIR . 'Work/Backups/' . $sql_file->getFilename(), 'r'), filesize(CLICSHOPPING::getConfig('dir_root', 'ClicShoppingAdmin') . 'includes/backups/' . $sql_file->getFilename()));
+      $restore_query = fread(fopen(CLICSHOPPING::BASE_DIR . 'Work/Backups/' . $sql_file->getFilename(), 'r'), filesize(CLICSHOPPING::getConfig('dir_root', 'ClicShoppingAdmin') . 'Core/backups/' . $sql_file->getFilename()));
       $read_from = CLICSHOPPING::BASE_DIR . 'Work/Backups/' . $sql_file->getFilename();
     }
 

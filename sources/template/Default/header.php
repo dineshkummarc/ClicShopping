@@ -21,7 +21,7 @@ $CLICSHOPPING_Customer = Registry::get('Customer');
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <?php
   // Meta Tag
-  $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/Hooks/Shop/Header/';
+  $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/Shop/Header/';
   $output = 'HeaderOutput*';
   $call = 'HeaderCall*';
   $hook_call = 'Header';

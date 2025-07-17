@@ -27,7 +27,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
       $process = false;
 
       if ($process === false) {
-        $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/Hooks/Shop/Account/';
+        $source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/Shop/Account/';
 
         if (is_dir($source_folder)) {
           $files_get = $CLICSHOPPING_Template->getSpecificFiles($source_folder, 'AccountGdprCall*');

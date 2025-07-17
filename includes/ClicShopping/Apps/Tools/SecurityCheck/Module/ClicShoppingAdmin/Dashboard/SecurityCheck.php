@@ -68,9 +68,9 @@ class SecurityCheck extends \ClicShopping\OM\Modules\AdminDashboardAbstract
 
     $secmodules_array = [];
 
-    if ($secdir = @dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/SecurityCheck/')) {
+    if ($secdir = @dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/SecurityCheck/')) {
       while (false !== ($file = $secdir->read())) {
-        if (!is_file(CLICSHOPPING::getConfig('dir_root') . 'includes/Module/SecurityCheck/' . $file)) {
+        if (!is_file(CLICSHOPPING::getConfig('dir_root') . 'Core/Module/SecurityCheck/' . $file)) {
           if (substr($file, strrpos($file, '.')) == $file_extension) {
             $secmodules_array[] = $file;
           }
@@ -81,7 +81,7 @@ class SecurityCheck extends \ClicShopping\OM\Modules\AdminDashboardAbstract
     }
 
     foreach ($secmodules_array as $secmodule) {
-      include(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/SecurityCheck/' . $secmodule);
+      include(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/SecurityCheck/' . $secmodule);
 
       $secclass = 'securityCheck_' . substr($secmodule, 0, strrpos($secmodule, '.'));
       if (class_exists($secclass)) {

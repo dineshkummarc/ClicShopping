@@ -178,7 +178,7 @@ class Save extends \ClicShopping\OM\PagesActionsAbstract
     $path_name = str_replace('-', '/', substr($content_group, ($groups[0] != 'Apps' ? \strlen($groups[0]) : \strlen($groups[0] . '-' . $groups[1] . '-' . $groups[2])))) . '.txt';
 
     for ($i = 0, $n = \count($languages); $i < $n; $i++) {
-      $language_dir = CLICSHOPPING::getConfig('dir_root', ($groups[0] == 'Apps' ? 'Shop' : $groups[0])) . ($groups[0] == 'Apps' ? 'includes/ClicShopping/Apps/' . $groups[1] . '/' . $groups[2] . '/' : 'includes/') . 'languages/' . $languages[$i]['directory'];
+      $language_dir = CLICSHOPPING::getConfig('dir_root', ($groups[0] == 'Apps' ? 'Shop' : $groups[0])) . ($groups[0] == 'Apps' ? 'Core/ClicShopping/Apps/' . $groups[1] . '/' . $groups[2] . '/' : 'Core/') . 'languages/' . $languages[$i]['directory'];
 
       if (!is_file($language_dir . $path_name)) {
         if (!is_dir($language_dir . $path_to_file)) {

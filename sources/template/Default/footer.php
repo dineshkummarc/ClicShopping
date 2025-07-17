@@ -51,7 +51,7 @@ if ($CLICSHOPPING_Template->hasBlocks('boxes_column_right')) {
 <?php
 echo $CLICSHOPPING_Template->getBlocks('footer_scripts');
 
-$source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'includes/Module/Hooks/Shop/Footer/';
+$source_folder = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/Shop/Footer/';
 $file_get_output = 'FooterOutput*';
 $file_get_call = 'FooterCall*';
 $hook_call = 'Footer';

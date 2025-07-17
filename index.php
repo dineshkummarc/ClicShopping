@@ -14,7 +14,7 @@ use ClicShopping\OM\HTTP;
 
 // start the timer for the page parse time log
 define('PAGE_PARSE_START_TIME', microtime());
-define('CLICSHOPPING_BASE_DIR', __DIR__ . '/includes/ClicShopping/');
+define('CLICSHOPPING_BASE_DIR', __DIR__ . '/Core/ClicShopping/');
 
 require_once(CLICSHOPPING_BASE_DIR . 'OM/CLICSHOPPING.php');
 spl_autoload_register('ClicShopping\OM\CLICSHOPPING::autoload');

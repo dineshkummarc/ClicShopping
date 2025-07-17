@@ -54,7 +54,7 @@ foreach (glob(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'sources/languages/*
   ];
 }
 
-foreach (glob(CLICSHOPPING::getConfig('dir_root', 'ClicShoppingAdmin') . 'includes/languages/*', GLOB_ONLYDIR) as $dir) {
+foreach (glob(CLICSHOPPING::getConfig('dir_root', 'ClicShoppingAdmin') . 'Core/languages/*', GLOB_ONLYDIR) as $dir) {
   $code = basename($dir);
 
   if (array_search($code, array_column($directories, 'id')) === false) {
