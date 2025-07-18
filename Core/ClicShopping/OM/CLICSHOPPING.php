@@ -822,7 +822,7 @@ class CLICSHOPPING
    * Retrieves detailed information about the system, MySQL, PHP, and other server configurations.
    *
    * @return array An associative array containing the following information:
-   *               - clicshopping: Version details of the application.
+   *               - ClicShopping: Version details of the application.
    *               - system: Details about the system including date, hostname, operating system,
    *                 kernel version, uptime, and HTTP server.
    *               - mysql: MySQL server version and current date/time.
@@ -836,11 +836,27 @@ class CLICSHOPPING
 
     $Qdate = $CLICSHOPPING_Db->query('select now() as datetime');
 
-    [$system, $host, $kernel] = preg_split('/[\s,]+/', @exec('uname -a'), 5);
+    try {
+      [$system, $host, $kernel] = preg_split('/[\s,]+/', @exec('uname -a'), 5);
+    } catch (\Throwable $e) {
+      $system = $host = $kernel = 'unavailable';
+    }
+
+    try {
+      $uptime = @exec('uptime');
+    } catch (\Throwable $e) {
+      $uptime = 'unavailable';
+    }
+
+    try {
+      $version = self::getVersion();
+    } catch (\Throwable $e) {
+      $version = 'unavailable';
+    }
 
     $data = [];
 
-    $data['clicshopping'] = ['version' => self::getVersion()];
+    $data['clicshopping'] = ['version' => $version];
 
     $data['system'] = [
       'date' => date('Y-m-d H:i:s O T'),
@@ -848,8 +864,8 @@ class CLICSHOPPING
       'host' => $host,
       'os' => PHP_OS,
       'kernel' => $kernel,
-      'uptime' => @exec('uptime'),
-      'http_server' => $_SERVER['SERVER_SOFTWARE']
+      'uptime' => $uptime,
+      'http_server' => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown'
     ];
 
     $data['mysql'] = [
