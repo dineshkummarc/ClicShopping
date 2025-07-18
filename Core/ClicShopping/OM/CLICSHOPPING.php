@@ -68,16 +68,26 @@ class CLICSHOPPING
   public static function getVersion(): string|null
   {
     if (!isset(self::$version)) {
-      $file = self::BASE_DIR . 'version.json';
+      try {
+        $file = self::BASE_DIR . 'version.json';
 
-      $current = trim(file_get_contents($file));
+        $current = @file_get_contents($file);
+        if ($current === false) {
+          throw new \Exception('Cannot read file: ' . $file);
+        }
 
-      $v = json_decode($current);
+        $v = json_decode($current);
+        if (!isset($v->version)) {
+          throw new \Exception('Missing version field in: ' . $file);
+        }
 
-      if (is_numeric($v->version)) {
-        self::$version = $v->version;
-      } else {
-        trigger_error('Version number is not numeric. Please verify: ' . $file);
+        if (is_numeric($v->version)) {
+          self::$version = $v->version;
+        } else {
+          trigger_error('Version number is not numeric. Please verify: ' . $file);
+        }
+      } catch (\Throwable $e) {
+        return null;
       }
     }
 

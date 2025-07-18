@@ -118,19 +118,35 @@ class Github
     if ($versionCache->exists(30) !== false) {
       $result = $versionCache->get();
     } else {
-      $response = HTTP::getResponse([
-        'url' => $this->getGithubincludesRepo() . '/contents/Core/ClicShopping/version.json?ref=master'
-      ]);
+      try {
+        $response = HTTP::getResponse([
+          'url' => $this->getGithubincludesRepo() . '/contents/Core/ClicShopping/version.json?ref=master'
+        ]);
 
-      if ($response !== false) {
-        $json = @file_get_contents($this->getGithubincludesRepo() . '/contents/Core/ClicShopping/version.json?ref=master', true, $this->context);
+        if ($response !== false) {
+          $json = @file_get_contents($this->getGithubincludesRepo() . '/contents/Core/ClicShopping/version.json?ref=master', true, $this->context);
 
-        $url = json_decode($json);
-        $url_download = @file_get_contents($url->download_url, true, $this->setContext()); //content of readme.
-        $data = json_decode($url_download);
+          if ($json === false) {
+            throw new \Exception('Failed to fetch version metadata');
+          }
 
-        $result = $versionCache->save($data);
-      } else {
+          $url = json_decode($json);
+          if (!isset($url->download_url)) {
+            throw new \Exception('Download URL not found in metadata');
+          }
+
+          $url_download = @file_get_contents($url->download_url, true, $this->setContext());
+
+          if ($url_download === false) {
+            throw new \Exception('Failed to fetch version content');
+          }
+
+          $data = json_decode($url_download);
+          $result = $versionCache->save($data);
+        } else {
+          $result = false;
+        }
+      } catch (\Throwable $e) {
         $result = false;
       }
     }
