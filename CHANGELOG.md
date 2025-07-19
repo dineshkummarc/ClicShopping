@@ -1,9 +1,10 @@
 Version4.02
-small fix
 librairies updated
 Improve secuirty content html editor 
 Rename Includes Directory by Core
-librairies updated
+small improvment and fix
+Remane includes directory into Core
+
 
 ------------------
 version4.011
@@ -18,7 +19,7 @@ remove schema forgotten
 -----------------
 version4.00
 
-Tthe version 4.x integrate the embeddings and need to be used with mariaDB 11.7 at least if you want to use it. An database update is available in GTP Apps.
+The version 4.x integrate the embeddings and need to be used with mariaDB 11.7 at least if you want to use it. An database update is available in GTP Apps.
 
 note : This update works only with mariaDb and not mySQL 9.x due a difference in the vectorization.
 

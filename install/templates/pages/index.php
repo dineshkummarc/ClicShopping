@@ -111,15 +111,6 @@ if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
 </div>
 
 <div class="container">
-  <div class="card bg-warning">
-    <div class="card-body text-center">
-      <i class="bi bi-exclamation-triangle-fill text-danger"></i> <?php echo TEXT_ALERT_DATABASE; ?>
-    </div>
-  </div>
-</div>
-<br/></br />
-
-<div class="container">
   <div class="card">
     <div class="card-header"><i class="bi bi-sliders"></i>Please configure your PHP settings to match requirements
       listed below.

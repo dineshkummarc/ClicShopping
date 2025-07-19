@@ -41,6 +41,7 @@ use ClicShopping\OM\HTML;
                   </div>
                 </div>
               </div>
+
               <div class="col-md-8 order-md-1">
                 <div class="form-row">
                   <div class="form-group col required">
