@@ -45,12 +45,6 @@ class ProductGpt extends \ClicShopping\OM\PagesAbstract
     switch ($requestMethod) {
       case 'GET':
         return $this->handleGetRequest($statusCheck);
-      case 'DELETE':
-        return $this->handleDeleteRequest($statusCheck);
-      case 'POST':
-        return $this->handlePostRequest($statusCheck);
-      case 'PUT':
-        return $this->handlePutRequest($statusCheck);
       default:
         return $this->sendErrorResponse('Unsupported request method');
     }
@@ -66,9 +60,6 @@ class ProductGpt extends \ClicShopping\OM\PagesAbstract
   {
     return [
       'get' => $this->statusCheck('get_product_status', $token),
-      'delete' => $this->statusCheck('delete_product_status', $token),
-      'update' => $this->statusCheck('update_product_status', $token),
-      'insert' => $this->statusCheck('insert_product_status', $token)
     ];
   }
 
@@ -84,54 +75,6 @@ class ProductGpt extends \ClicShopping\OM\PagesAbstract
     return $this->sendSuccessResponse(static::getProductsGpt());
   }
 
-  /**
-   * Handle PUT request
-   */
-  private function handlePutRequest(array $statusCheck)
-  {
-    if (!$statusCheck['update']) {
-      return $this->sendErrorResponse('Update not allowed');
-    }
-
-    // Lire le corps PUT brut
-    $data = json_decode(file_get_contents('php://input'), true);
-
-    if (!isset($data['products_id'], $data['language_id'])) {
-      return $this->sendErrorResponse('Missing parameters');
-    }
-
-    // Effectue la mise à jour dans la base de données ici...
-
-    return $this->sendSuccessResponse('Product updated successfully');
-  }
-
-  /**
-   * Handle DELETE request
-   */
-  private function handleDeleteRequest(array $statusCheck)
-  {
-    if ($statusCheck['delete'] == 0) {
-      return $this->sendErrorResponse('Product deletion not allowed');
-    }
-
-    return $this->sendSuccessResponse(static::deleteProducts());
-  }
-
-  /**
-   * Handle POST request
-   */
-  private function handlePostRequest(array $statusCheck)
-  {
-    if (isset($_GET['update']) && $statusCheck['update'] == 0) {
-      return $this->sendErrorResponse('Product update not allowed');
-    }
-
-    if (isset($_GET['insert']) && $statusCheck['insert'] == 0) {
-      return $this->sendErrorResponse('Product insertion not allowed');
-    }
-
-    return $this->sendSuccessResponse(self::saveProducts());
-  }
 
   /**
    * Sends a success response with the provided data.
@@ -164,28 +107,7 @@ class ProductGpt extends \ClicShopping\OM\PagesAbstract
    */
   private static function getProductsGpt(): array
   {
-    return self::handleProductGptAction('ApiGetProduct');
-  }
-
-  /**
-   * Deletes products by invoking the 'ApiDeleteProducts' hook.
-   * Clears the API cache after the operation is completed.
-   *
-   * @return array The HTTP response indicating the success or failure of the operation.
-   */
-  private static function deleteProductsGpt(): array
-  {
-    return self::handleProductGptAction('ApiDeleteProduct');
-  }
-
-  /**
-   * Saves the provided productGpt data through the API call and handles the response.
-   *
-   * @return array The API response, either an HTTP OK response with the results or a not found response if the operation fails.
-   */
-  private static function saveProductsGpt(): array
-  {
-    return self::handleProductGptAction('ApiPutProduct');
+    return self::handleProductGptAction('ApiGetProductGpt');
   }
 
   /**

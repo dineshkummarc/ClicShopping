@@ -31,7 +31,7 @@ class ApiGetProductGpt
     if (ApiSecurity::isLocalEnvironment()) {
       ApiSecurity::logSecurityEvent('Local environment detected', ['ip' => $_SERVER['REMOTE_ADDR'] ?? '']);
     }
-   
+
     if (!isset($_GET['token'])) {
       ApiSecurity::logSecurityEvent('Missing token in product request');
       return false;
@@ -121,14 +121,19 @@ class ApiGetProductGpt
             'depth' => number_format($row['products_depth'], 2, '.', ''),
             'volume' => number_format(($row['products_width'] * $row['products_height'] * $row['products_depth']), 2, '.', '')
           ],
-          'localizations' => []  // Initialize empty localizations
+          'localizations' => [],  // Initialize empty localizations
+          'product_url' => []  // Initialize url
         ];
       }
 
       // Ajouter la traduction dans le tableau 'localizations'
       $products[$product_id]['localizations'][$language_code] = [
         'name' => $row['products_name'],
-        'description' => $row['products_description']
+        'description' => html_entity_decode(strip_tags($row['products_description']), ENT_QUOTES, 'UTF-8')
+      ];
+
+      $products[$product_id]['product_url'][$language_code] = [
+        'product_url' => CLICSHOPPING::link('index.php', 'Products&Description&Id=' . $product_id .'&language=' . $language_code),
       ];
     }
 
