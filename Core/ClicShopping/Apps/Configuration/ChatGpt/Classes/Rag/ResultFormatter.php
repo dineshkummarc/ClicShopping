@@ -12,6 +12,7 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
 use ClicShopping\OM\Hash;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 
 /**
  * ResultFormatter Class
@@ -36,26 +37,32 @@ class ResultFormatter
 
     // If it's an analytics result, format it properly
     if (isset($results['type']) && ($results['type'] === 'analytics_results' || $results['type'] === 'analytics_response')) {
-      return [
+
+      $result = [
         'type' => 'formatted_results',
         'content' => $this->formatAnalyticsResults($results)
       ];
+
+      return $result;
     }
 
     // If it's a semantic search result, format it
     if (isset($results['type']) && $results['type'] === 'semantic_results') {
-
-      return [
+      $result = [
         'type' => 'formatted_results',
         'content' => $this->formatSemanticResults($results)
       ];
+
+      return $result;
     }
 
     // For unknown types, return a formatted error message
-    return [
+    $result = [
       'type' => 'formatted_results',
       'content' => $this->formatUnknownResults($results)
     ];
+    
+    return $result;
   }
 
   private function generateTableHeaders(array $firstRow): string
@@ -86,6 +93,7 @@ class ResultFormatter
       $rows .= "</tr>";
     }
     $rows .= "</tbody>";
+
     return $rows;
   }
 
@@ -97,8 +105,11 @@ class ResultFormatter
    */
   private function formatAnalyticsResults(array $results): string
   {
+
+    $question = $results['question'] ?? $results['query'] ?? 'Requête inconnue';
+
     $output = "<div class='analytics-results'>";
-    $output .= "<h4>Résultats pour : " . htmlspecialchars($results['question'] ?? $results['query'] ?? 'Requête inconnue') . "</h4>";
+    $output .= "<h4>Résultats pour : " . htmlspecialchars($question) . "</h4>";
 
     if (isset($results['sql_query'])) {
       $output .= "<div class='sql-query'><strong>SQL request :</strong> <pre>" . htmlspecialchars($results['sql_query']) . "</pre></div>";
@@ -126,6 +137,8 @@ class ResultFormatter
 
     $output .= "</div>";
 
+     Gpt::saveData($question, $output);
+
     return $output;
   }
 
@@ -137,8 +150,10 @@ class ResultFormatter
    */
   private function formatSemanticResults(array $results): string
   {
+    $question = $results['query'] ?? 'Unknown request';
+
     $output = "<div class='semantic-results'>";
-    $output .= "<h3>Résultats pour : " . htmlspecialchars($results['query'] ?? 'Requête inconnue') . "</h3>";
+    $output .= "<h3>Résultats pour : " . htmlspecialchars($question) . "</h3>";
 
     // Display the response
     if (!empty($results['response'])) {
@@ -168,6 +183,8 @@ class ResultFormatter
     }
 
     $output .= "</div>";
+
+    Gpt::saveData($question, $output);
 
     return $output;
   }

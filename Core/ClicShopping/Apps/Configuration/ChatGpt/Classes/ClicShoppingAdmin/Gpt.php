@@ -21,6 +21,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\InputValidator;
 use LLPhant\Chat\MistralAIChat;
 use LLPhant\Chat\OllamaChat;
 use LLPhant\Chat\OpenAIChat;
+use LLPhant\Evaluation\Criteria\CriteriaEvaluatorPromptBuilder;
 use LLPhant\OpenAIConfig;
 use LLPhant\OllamaConfig;
 use LLPhant\AnthropicConfig;
@@ -405,6 +406,9 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
       return false;
     }
 
+    // Call evaluation function
+    $result .= self::evaluateLlmResponse($question, $result);
+
     if (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'gpt') === 0) {
       $lastResponse = $chat->getLastResponse();
 
@@ -416,22 +420,6 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
         ];
 
         statistics::saveStats($usage, $engine);
-      }
-
-      // Validate and sanitize the saveGpt parameter from POST data
-      $saveData = isset($_POST['saveGpt']) ? 
-        InputValidator::validateParameter(
-          $_POST['saveGpt'],
-          'int',
-          0,
-          [
-            'min' => 0,
-            'max' => 1
-          ]
-        ) : 0;
-
-      if ($saveData === 1) {
-        self::saveData($question, $result);
       }
     }
 
@@ -446,51 +434,65 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
    * @param string $result The result or response to the question.
    * @return void
    */
-  private static function saveData(string $question, string $result): void
+  public static function saveData(string $question, string $result): void
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
-    // Validate and sanitize the question and result before saving to database
-    $validatedQuestion = InputValidator::validateParameter(
-      $question,
-      'string',
-      '',
-      [
-        'maxLength' => 4096, // Reasonable limit for question length
-        'escape' => true // Apply HTML escaping
-      ]
-    );
+    // Validate and sanitize the saveGpt parameter from POST data
+    $saveData = isset($_POST['saveGpt']) ?
+      InputValidator::validateParameter(
+        $_POST['saveGpt'],
+        'int',
+        0,
+        [
+          'min' => 0,
+          'max' => 1
+        ]
+      ) : 0;
 
-    $validatedResult = InputValidator::validateParameter(
-      $result,
-      'string',
-      '',
-      [
-        'maxLength' => 8192, // Reasonable limit for result length
-        'escape' => true // Apply HTML escaping
-      ]
-    );
+    if ($saveData === 1) {
+      // Validate and sanitize the question and result before saving to database
+      $validatedQuestion = InputValidator::validateParameter(
+        $question,
+        'string',
+        '',
+        [
+          'maxLength' => 4096, // Reasonable limit for question length
+          'escape' => true // Apply HTML escaping
+        ]
+      );
 
-    // Validate the user admin value
-    $validatedUserAdmin = InputValidator::validateParameter(
-      AdministratorAdmin::getUserAdmin(),
-      'string',
-      'system',
-      [
-        'maxLength' => 255,
-        'pattern' => '/^[a-zA-Z0-9_\-\.\s]+$/' // Allow alphanumeric, underscore, hyphen, period, and spaces
-      ]
-    );
+      $validatedResult = InputValidator::validateParameter(
+        $result,
+        'string',
+        '',
+        [
+          'maxLength' => 8192, // Reasonable limit for result length
+          'escape' => true // Apply HTML escaping
+        ]
+      );
 
-    $array_sql = [
-      'question' => $validatedQuestion,
-      'response' => $validatedResult,
-      'date_added' => 'now()',
-      'user_admin' => $validatedUserAdmin
-    ];
+      // Validate the user admin value
+      $validatedUserAdmin = InputValidator::validateParameter(
+        AdministratorAdmin::getUserAdmin(),
+        'string',
+        'system',
+        [
+          'maxLength' => 255,
+          'pattern' => '/^[a-zA-Z0-9_\-\.\s]+$/' // Allow alphanumeric, underscore, hyphen, period, and spaces
+        ]
+      );
 
-    // Use the database layer's save method which should handle parameterization
-    $CLICSHOPPING_Db->save('gpt', $array_sql);
+      $array_sql = [
+        'question' => $validatedQuestion,
+        'response' => $validatedResult,
+        'date_added' => 'now()',
+        'user_admin' => $validatedUserAdmin
+      ];
+
+      // Use the database layer's save method which should handle parameterization
+      $CLICSHOPPING_Db->save('gpt', $array_sql);
+    }
   }
 
   /**

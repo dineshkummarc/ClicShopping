@@ -76,7 +76,12 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
             </div>
             <div class="mt-1"></div>
             <div class="col-md-12" id="gptResponse">
-              <?php echo $QchatGpt->value('response'); ?>
+              <?php
+              $response = $QchatGpt->value('response');
+              $decoded_response_Html = html_entity_decode($response);
+
+              echo $decoded_response_Html;
+              ?>
             </div>
           </div>
           <div class="separator">
