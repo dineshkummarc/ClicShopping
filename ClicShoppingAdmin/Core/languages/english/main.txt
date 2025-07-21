@@ -666,3 +666,41 @@ text_error_executing_query = An error occurred while executing the query. Try re
 text_no_valid_sql_query_could_extracted = No valid SQL query could be extracted from the response.
 text_correction_cancelled = Corrections canceled as they did not resolve all issues
 text_no_applied_confidence = Not applied – insufficient confidence
+
+
+error_llm_guardrails_block = I cannot provide this answer due to detected reliability issues. Could you please rephrase your question?
+error_llm_guardrails_manual_review = Note: This answer requires manual review regarding this response: {{result}}
+success_llm_guardrails_manual_confidence_score = Confidence level: {{confidenceScore}}. The answer has been accepted: {{result}}
+error_llm_guardrails_validation = Error during validation
+error_llm_guardrails_evaluation = Error during evaluation
+error_llm_guardrails_invalid_format = Unreadable or invalid format response
+
+llm_guardrails_prompt_relevance = Improve relevance.
+llm_guardrails_prompt_accuracy = Check business accuracy.
+llm_guardrails_prompt_completeness = Add details.
+llm_guardrails_prompt_clarity = Clarify the writing.
+
+llm_guardrails_prompt = As an expert in e-commerce BI analysis, evaluate the following answer according to these criteria:
+QUESTION: {{question}}
+ANSWER: {{result}}
+
+Evaluation criteria (rate from 1 to 5):
+1. ACCURACY: Are the data and metrics correct?
+2. RELEVANCE: Does the answer address the question asked?
+3. COMPLETENESS: Are all necessary information present?
+4. CLARITY: Is the answer clear and understandable?
+5. RELIABILITY: Are there any signs of hallucination or error?
+
+Reply in JSON format:
+{
+    'scores': {
+        'accuracy': X,
+        'relevance': X,
+        'completeness': X,
+        'clarity': X,
+        'reliability': X
+    },
+    'detected_issues': ['list of issues'],
+    'recommendations': ['list of improvements'],
+    'confidence_level': 'high/medium/low'
+}

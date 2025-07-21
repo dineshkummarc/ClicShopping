@@ -196,8 +196,6 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
           data-sortable="true"><?php echo $CLICSHOPPING_ChatGpt->getDef('table_heading_chatgpt_id'); ?></th>
       <th data-field="question" class="text-center"
           data-sortable="true"><?php echo $CLICSHOPPING_ChatGpt->getDef('table_heading_chatgpt_question'); ?></th>
-      <th data-field="response" class="text-center"
-          data-sortable="true"><?php echo $CLICSHOPPING_ChatGpt->getDef('table_heading_chatgpt_response'); ?></th>
       <th data-field="date_added"
           data-sortable="true"><?php echo $CLICSHOPPING_ChatGpt->getDef('table_heading_chatgpt_date_added'); ?></th>
       <th data-field="user_admin"
@@ -231,7 +229,6 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
           <td></td>
           <td><?php echo $QchatGpt->valueInt('gpt_id'); ?></td>
           <td class="test-start"><?php echo substr($QchatGpt->value('question'), 0, 200) . "..."; ?></td>
-          <td class="test-start"><?php echo substr($QchatGpt->value('response'), 0, 200) . "..."; ?></td>
           <td><?php echo DateTime::toShort($QchatGpt->value('date_added')); ?></td>
           <td><?php echo $QchatGpt->value('user_admin'); ?></td>
           <td class="text-end">

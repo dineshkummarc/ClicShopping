@@ -9,10 +9,10 @@
  */
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
-
 use ClicShopping\OM\Hash;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\LlmGuardrails;
 
 /**
  * ResultFormatter Class
@@ -105,8 +105,7 @@ class ResultFormatter
    */
   private function formatAnalyticsResults(array $results): string
   {
-
-    $question = $results['question'] ?? $results['query'] ?? 'Requête inconnue';
+    $question = $results['question'] ?? $results['query'] ?? 'Unknown request';
 
     $output = "<div class='analytics-results'>";
     $output .= "<h4>Résultats pour : " . htmlspecialchars($question) . "</h4>";
@@ -121,8 +120,25 @@ class ResultFormatter
 
     if (isset($results['results']) && is_array($results['results'])) {
       $output .= "<div class='results-table'>";
-      $output .= "<div class='mt-1'></div>";
-      $output .= "<h5>Données brutes :</h5>";
+      // Call evaluation function
+      $output .= "<div class='mt-2'></div>";
+
+      $lmGuardrails = LlmGuardrails::checkGuardrails($question, Hash::displayDecryptedDataText($results['interpretation']));
+
+      if (is_array($lmGuardrails)) {
+        $output .= "<ul>";
+        $output .= "<li>Pertinence : " . round($lmGuardrails['relevance'] * 100) . "%</li>";
+        $output .= "<li>Exactitude métier : " . round($lmGuardrails['accuracy'] * 100) . "%</li>";
+        $output .= "<li>Complétude : " . round($lmGuardrails['completeness'] * 100) . "%</li>";
+        $output .= "<li>Clarté : " . round($lmGuardrails['clarity'] * 100) . "%</li>";
+        $output .= "<li>Score global : " . round($lmGuardrails['overall_score'] * 100) . "%</li>";
+        $output .= "</ul>";
+      } else {
+        $output .= "<div class='alert alert-warning'>" . htmlspecialchars($lmGuardrails) . "</div>";
+      }
+
+      $output .= "<div class='mt-2'></div>";
+      $output .= "<h5>Données :</h5>";
       $output .= "<table class='table table-bordered table-striped'>";
 
       $firstRow = !empty($results['results']) ? array_values($results['results'])[0] : null;
@@ -137,7 +153,7 @@ class ResultFormatter
 
     $output .= "</div>";
 
-     Gpt::saveData($question, $output);
+    Gpt::saveData($question, $output);
 
     return $output;
   }

@@ -662,3 +662,40 @@ text_error_executing_query = Une erreur est survenue lors de l’exécution de l
 text_no_valid_sql_query_could_extracted = Aucune requête SQL valide n’a pu être extraite de la réponse.
 text_correction_cancelled = Corrections annulées car elles n’ont pas résolu tous les problèmes
 text_no_applied_confidence = Non appliqué – confiance insuffisante
+
+error_llm_guardrails_block = Je ne peux pas fournir cette réponse en raison de problèmes de fiabilité détectés. Pouvez-vous reformuler votre question ?
+error_llm_guardrails_manual_review = Note: Cette réponse nécessite une vérification manuelle concernant cette réponse : {{result}}
+success_llm_guardrails_manual_confidence_score = Niveau de confiance: {{confidenceScore}}. La réponse a été acceptée  : {{result}}
+error_llm_guardrails_validation = Erreur lors de la validation
+error_llm_guardrails_evaluation = Erreur lors de l'évaluation
+error_llm_guardrails_invalid_format = Réponse illisible ou format invalide
+
+llm_guardrails_prompt_relevance = Améliorer la pertinence.
+llm_guardrails_prompt_accuracy = Vérifier l’exactitude métier.
+llm_guardrails_prompt_completeness = Ajouter des détails.
+llm_guardrails_prompt_clarity = Clarifier la rédaction.
+
+llm_guardrails_prompt = En tant qu'expert en analyse BI e-commerce, évaluez la réponse suivante selon ces critères:
+QUESTION: {{question}}
+RÉPONSE: {{result}}
+
+Critères d'évaluation (notez de 1 à 5):
+1. EXACTITUDE: Les données et métriques sont-elles correctes?
+2. PERTINENCE: La réponse répond-elle à la question posée?
+3. COMPLETUDE: Toutes les informations nécessaires sont-elles présentes?
+4. CLARTÉ: La réponse est-elle claire et compréhensible?
+5. FIABILITÉ: Y a-t-il des signes d'hallucination ou d'erreur?
+
+Répondez au format JSON:
+{
+    'scores': {
+        'exactitude': X,
+        'pertinence': X,
+        'completude': X,
+        'clarté': X,
+        'fiabilité': X
+    },
+    'problèmes_détectés': ['liste des problèmes'],
+    'recommandations': ['liste des améliorations'],
+    'niveau_confiance': 'élevé/moyen/faible'
+}

@@ -1,5 +1,6 @@
 version4.03
-
+librairies updated
+includes Guardrails classes to evaluate the prompt analytics result
 
 
 ------------------
