@@ -1725,7 +1725,7 @@ INSERT INTO configuration VALUES(1769, 'Debug / Log', 'CLICSHOPPING_APP_CHATGPT_
 
 INSERT INTO configuration_group VALUES(1, 'Store Setup', 'General Information on the Store.', 1, 1);
 INSERT INTO configuration_group VALUES(2, 'Setup credit card', 'Minimum value: functions / data', 2, 1);
-INSERT INTO configuration_group VALUES(3, 'Setup maximum and minimum values', 'Values​​: functions / data', 3, 1);
+INSERT INTO configuration_group VALUES(3, 'Setup maximum and minimum values', 'Values functions / data', 3, 1);
 INSERT INTO configuration_group VALUES(4, 'Image Setup', 'Image setting', 4, 1);
 INSERT INTO configuration_group VALUES(5, 'Setup B2C customers', 'Customer account setting.', 5, 1);
 INSERT INTO configuration_group VALUES(6, 'Setup options Modules', 'Hidden setting.', 6, 0);
@@ -2159,14 +2159,14 @@ INSERT INTO products_featured VALUES(2, 8, '2023-04-30 15:18:21', NULL, NULL, NU
 INSERT INTO products_featured VALUES(3, 6, '2023-04-30 15:18:34', NULL, NULL, NULL, NULL, 1, 0);
 INSERT INTO products_featured VALUES(4, 5, '2023-04-30 15:18:44', NULL, NULL, NULL, NULL, 1, 0);
 
-INSERT INTO products_groups VALUES(1, 47.5000, 2, 50.0000, '1', '1', '1', 0, '', 1);
-INSERT INTO products_groups VALUES(1, 76.0000, 3, 80.0000, '1', '1', '1', 0, '', 1);
-INSERT INTO products_groups VALUES(1, 9.5000, 4, 10.0000, '1', '1', '1', 0, '', 1);
-INSERT INTO products_groups VALUES(1, 47.5000, 6, 50.0000, '1', '1', '1', 0, '', 1);
-INSERT INTO products_groups VALUES(1, 47.5000, 7, 50.0000, '1', '1', '1', 0, '', 1);
-INSERT INTO products_groups VALUES(1, 190.0000, 8, 200.0000, '1', '1', '1', 0, '', 1);
-INSERT INTO products_groups VALUES(1, 332.5000, 9, 350.0000, '1', '1', '1', 0, '', 1);
-INSERT INTO products_groups VALUES(1, 76.0000, 10, 80.0000, '1', '1', '1', 0, '', 1);
+INSERT INTO products_groups VALUES(1, 1, 47.5000, 2, 50.0000, '1', '1', '1', 0, '', 1);
+INSERT INTO products_groups VALUES(2, 1, 76.0000, 3, 80.0000, '1', '1', '1', 0, '', 1);
+INSERT INTO products_groups VALUES(3, 1, 9.5000, 4, 10.0000, '1', '1', '1', 0, '', 1);
+INSERT INTO products_groups VALUES(4, 1, 47.5000, 6, 50.0000, '1', '1', '1', 0, '', 1);
+INSERT INTO products_groups VALUES(5, 1, 47.5000, 7, 50.0000, '1', '1', '1', 0, '', 1);
+INSERT INTO products_groups VALUES(6, 1, 190.0000, 8, 200.0000, '1', '1', '1', 0, '', 1);
+INSERT INTO products_groups VALUES(7, 1, 332.5000, 9, 350.0000, '1', '1', '1', 0, '', 1);
+INSERT INTO products_groups VALUES(8, 1, 76.0000, 10, 80.0000, '1', '1', '1', 0, '', 1);
 
 
 INSERT INTO products_images VALUES(2, 2, 'products/cook/ricardo-ricardo-set-of-2-double-wall-glasses1.png', '', 1);
