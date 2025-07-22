@@ -689,13 +689,21 @@ Critères d'évaluation (notez de 1 à 5):
 Répondez au format JSON:
 {
     'scores': {
-        'exactitude': X,
+        'éxactitude': X,
         'pertinence': X,
-        'completude': X,
+        'complétude': X,
         'clarté': X,
         'fiabilité': X
     },
+
     'problèmes_détectés': ['liste des problèmes'],
     'recommandations': ['liste des améliorations'],
     'niveau_confiance': 'élevé/moyen/faible'
 }
+
+llm_guardrails_accuracy = Exactitude
+llm_guardrails_relevance = Pertinence
+llm_guardrails_completeness = Complétude
+llm_guardrails_clarity = Clarté
+llm_guardrails_reliability = Fiabilité
+llm_guardrails_overall_score = Score global

@@ -12,6 +12,7 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin;
 
 use ClicShopping\OM\CLICSHOPPING;
 use DateTime;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
 
 /**
  * LlmGuardrails
@@ -26,7 +27,10 @@ class LlmGuardrails
   private const MAX_RESPONSE_LENGTH = 8192;
   private const MIN_CONFIDENCE_SCORE = 0.6; // a implementer
 
+  protected static ?SecurityLogger $securityLogger = null;
   // Patterns de détection d'hallucinations e-commerce
+
+
   private const SUSPICIOUS_PATTERNS = [
     '/ventes?\s+de\s+\d+\s*%\s*(?:en\s+)?(?:hausse|baisse)/i',
     '/augmentation\s+de\s+[0-9,]+%/i',
@@ -36,6 +40,19 @@ class LlmGuardrails
   ];
 
 
+  /**
+   * Initializes the security logger if not already done.
+   *
+   * This method ensures that the SecurityLogger instance is created only once,
+   * following the singleton pattern. It is called before any logging operations.
+   */
+  private static function initLogger(): void
+  {
+    if (self::$securityLogger === null) {
+      self::$securityLogger = new SecurityLogger();
+    }
+  }
+  
   /**
    * Checks guardrails on the LLM response.
    *
@@ -48,20 +65,20 @@ class LlmGuardrails
    */
   public static function checkGuardrails(string $question, string $result): array|string
   {
-
+    self::initLogger();
     $guardrailsValidation = LlmGuardrails::GuardrailsResult($result);
 
     // Décision basée sur la validation
     switch ($guardrailsValidation['action']) {
       case 'block':
         if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True') {
-          error_log('Response blocked by guardrails: ' . json_encode($guardrailsValidation));
+          self::$securityLogger->logSecurityEvent('Response blocked by guardrails: ' . json_encode($guardrailsValidation), 'warning');
         }
 
         return CLICSHOPPING::getDef('error_llm_guardrails_block');
       case 'manual_review':
         if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True') {
-          error_log('Response requires manual review: ' . json_encode($guardrailsValidation));
+          self::$securityLogger->logSecurityEvent('Response requires manual review: ' . json_encode($guardrailsValidation), 'warning');
         }
 
         $result = CLICSHOPPING::getDef('error_llm_guardrails_manual_review', ['result' => $result]);
@@ -96,6 +113,7 @@ class LlmGuardrails
  */
   public static function GuardrailsResult(string $result): array
   {
+    self::initLogger();
     $validationResults = [];
 
     try {
@@ -128,13 +146,13 @@ class LlmGuardrails
 
       // Log pour debug
       if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True') {
-        error_log('Guardrails Validation: ' . json_encode($validationResults));
+        self::$securityLogger->logSecurityEvent('Guardrails Validation: ' . json_encode($validationResults), 'info');
       }
 
       return $validationResults;
 
     } catch (Exception $e) {
-      error_log('Guardrails Error: ' . $e->getMessage());
+      self::$securityLogger->logSecurityEvent('Guardrails Error: ' . $e->getMessage(), 'error');
 
       return [
         'error' => true,
@@ -327,6 +345,7 @@ class LlmGuardrails
  */
   public static function evaluateLlmResponse(string $question, string $result): array
   {
+    self::initLogger();
     $evaluationResults = [];
 
     try {
@@ -364,13 +383,13 @@ class LlmGuardrails
       self::saveEvaluationResults($question, $result, $evaluationResults);
 
       if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True') {
-        error_log('LLM Evaluation Results: ' . json_encode($evaluationResults));
+        self::$securityLogger->logSecurityEvent('LLM Evaluation Results: '  . json_encode($evaluationResults), 'error');
       }
 
       return $evaluationResults;
 
     } catch (Exception $e) {
-      error_log('Evaluation Error: ' . $e->getMessage());
+      self::$securityLogger->logSecurityEvent('Evaluation Error: '  . $e->getMessage(), 'error');
 
       return [
         'error' => true,
@@ -389,19 +408,22 @@ class LlmGuardrails
  */
   private static function performLlmEvaluation(string $question, string $result): array
   {
+    self::initLogger();
     $criteriaPrompt = self::getDefaultCriteriaEvaluatorPromptBuilder();
     $evaluationPrompt = $criteriaPrompt->getEvaluationPromptForQuestion($question, $result);
 
     if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True') {
-      error_log('LLM Evaluation Prompt: ' . $evaluationPrompt);
+      self::$securityLogger->logSecurityEvent('LLM Evaluation Prompt: '  . $evaluationPrompt, 'error');
     }
 
     // Appel au modèle d'évaluation (implémentation selon votre architecture)
     try {
       $evaluationResponse = self::callEvaluationModel($evaluationPrompt);
+
       return self::parseLlmEvaluationResponse($evaluationResponse);
     } catch (Exception $e) {
-      error_log('LLM Evaluation failed: ' . $e->getMessage());
+      self::$securityLogger->logSecurityEvent('LLM Evaluation failed: '  . $e->getMessage(), 'error');
+
       return ['error' => 'LLM evaluation failed'];
     }
   }
@@ -417,6 +439,8 @@ class LlmGuardrails
   */
   private static function callEvaluationModel(string $prompt): string
   {
+    self::initLogger();
+
     // Exemple d'appel à un wrapper interne LLM
     try {
       $chat = Gpt::getChat($prompt);
@@ -424,7 +448,7 @@ class LlmGuardrails
 
       return trim($response);
     } catch (\Throwable $e) {
-      error_log('LLM evaluation call failed: ' . $e->getMessage());
+      self::$securityLogger->logSecurityEvent('LLM evaluation call failed: '  . $e->getMessage(), 'error');
 
       return '';
     }
@@ -554,6 +578,8 @@ class LlmGuardrails
    */
   private static function saveEvaluationResults(string $question, string $result, array $evaluation): void
   {
+    self::initLogger();
+
     // Sauvegarde des résultats d'évaluation pour analyse future // todo
     $data = [
       'timestamp' => date('Y-m-d H:i:s'),
@@ -565,7 +591,7 @@ class LlmGuardrails
 
     // Implémentation selon votre système de stockage
     if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True') {
-      error_log('Evaluation saved: ' . json_encode($data));
+      self::$securityLogger->logSecurityEvent('Evaluation saved: '  .  json_encode($data), 'success');
     }
   }
 
@@ -580,9 +606,11 @@ class LlmGuardrails
   private static function containsMaliciousCode(string $text): bool
   {
     $patterns = ['/<script/', '/<iframe/', '/javascript:/', '/onclick=/'];
+
     foreach ($patterns as $pattern) {
       if (preg_match($pattern, $text)) return true;
     }
+
     return false;
   }
 
@@ -596,7 +624,6 @@ class LlmGuardrails
   {
     // Si le texte contient du JSON, vérifier sa validité
     if (strpos($text, '{') !== false || strpos($text, '[') !== false) {
-      $json = json_decode($text);
       return json_last_error() === JSON_ERROR_NONE;
     }
 
@@ -648,11 +675,31 @@ class LlmGuardrails
   /**
    * Evaluates the clarity of the LLM response.
    *
-   * Checks for sentence structure, keyword presence, and overall readability.
-   * Returns a float score between 0.0 and 1.0 based on these criteria.
+   * Analyzes sentence length and structure to determine clarity.
+   * Returns a float score between 0.0 and 1.0 based on the analysis.
    *
-   * @param string $result The response generated by the LLM.
+   * @param string $text The text to evaluate for clarity.
    * @return float Clarity score (0.0 to 1.0).
+   */
+  private static function evaluateClarity(string $text): float
+  {
+    $sentences = preg_split('/[.!?]+/u', $text);
+    $longSentences = array_filter($sentences, fn($s) => mb_strlen($s) > 200);
+
+    $penalty = count($longSentences) / max(1, count($sentences));
+    $score = 1.0 - $penalty;
+
+    return min(1.0, max(0.0, $score));
+  }
+
+  /**
+   * Validates percentages in the AI-generated response.
+   *
+   * Checks if all percentages are within a realistic range (0% to 500%).
+   * Returns true if all percentages are valid, false otherwise.
+   *
+   * @param string $result The AI-generated response to validate.
+   * @return bool True if all percentages are valid, false otherwise.
    */
   private static function validatePercentages(string $result): bool
   {
@@ -720,6 +767,7 @@ class LlmGuardrails
     // Exemple : "Total: 100€, Produit A: 60€, Produit B: 40€"
     if (preg_match_all('/(\d+(?:[.,]\d+)?)\s*(€|\$)?/', $result, $matches)) {
       $values = array_map(fn($v) => (float)str_replace(',', '.', $v), $matches[1]);
+
       if (count($values) >= 3) {
         $sum = array_sum(array_slice($values, 1));
         $delta = abs($values[0] - $sum);
@@ -743,6 +791,7 @@ class LlmGuardrails
   private static function validateCurrencyAmounts(string $result): bool
   {
     preg_match_all('/[€$]\s*(\d+(?:[.,]\d+)?)/', $result, $matches);
+
     foreach ($matches[1] as $value) {
       $amount = (float)str_replace(',', '.', $value);
       if ($amount < 0 || $amount > 1000000) return false;
@@ -763,6 +812,7 @@ class LlmGuardrails
   private static function validateAttribution(string $result): float
   {
     $citations = substr_count($result, 'source:') + substr_count($result, '(voir') + preg_match_all('/\[.*?\]/', $result);
+
     if ($citations === 0) return 0.0;
 
     return min(1.0, $citations / 3);
@@ -788,6 +838,7 @@ class LlmGuardrails
     ];
 
     $penalties = 0;
+
     foreach ($patterns as $pattern) {
       if (preg_match($pattern, $result)) {
         $penalties += 1;
@@ -819,6 +870,7 @@ class LlmGuardrails
     ];
 
     $total = 0;
+
     foreach ($weights as $k => $w) {
       if (isset($evaluationResults[$k]) && is_numeric($evaluationResults[$k])) {
         $total += $evaluationResults[$k] * $w;

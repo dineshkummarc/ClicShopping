@@ -9,6 +9,8 @@
  */
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
+
+use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
@@ -118,7 +120,7 @@ class ResultFormatter
       $output .= "<div class='interpretation'><strong>Interpretation :</strong> " . Hash::displayDecryptedDataText($results['interpretation']) . "</div>";
     }
 
-    if (isset($results['results']) && is_array($results['results'])) {
+    if (isset($results['results']) && is_array($results['results'], )) {
       $output .= "<div class='results-table'>";
       // Call evaluation function
       $output .= "<div class='mt-2'></div>";
@@ -126,13 +128,13 @@ class ResultFormatter
       $lmGuardrails = LlmGuardrails::checkGuardrails($question, Hash::displayDecryptedDataText($results['interpretation']));
 
       if (is_array($lmGuardrails)) {
-        $output .= "<ul>";
-        $output .= "<li>Pertinence : " . round($lmGuardrails['relevance'] * 100) . "%</li>";
-        $output .= "<li>Exactitude métier : " . round($lmGuardrails['accuracy'] * 100) . "%</li>";
-        $output .= "<li>Complétude : " . round($lmGuardrails['completeness'] * 100) . "%</li>";
-        $output .= "<li>Clarté : " . round($lmGuardrails['clarity'] * 100) . "%</li>";
-        $output .= "<li>Score global : " . round($lmGuardrails['overall_score'] * 100) . "%</li>";
-        $output .= "</ul>";
+        $output .= '<ul>';
+        $output .= '<li>' . CLICSHOPPING::getDef('llm_guardrails_relevance') . ' : ' . round($lmGuardrails['relevance'] * 100) . '%</li>';
+        $output .= '<li>' . CLICSHOPPING::getDef('llm_guardrails_accuracy') . ' : ' . round($lmGuardrails['accuracy'] * 100) . '%</li>';
+        $output .= '<li>' . CLICSHOPPING::getDef('llm_guardrails_completeness') . ' : ' . round($lmGuardrails['completeness'] * 100) . '%</li>';
+        $output .= '<li>' . CLICSHOPPING::getDef('llm_guardrails_clarity') . ' : ' . round($lmGuardrails['clarity'] * 100) . '%</li>';
+        $output .= '<li>' . CLICSHOPPING::getDef('llm_guardrails_overall_score') . ' : ' . round($lmGuardrails['overall_score'] * 100) . '%</li>';
+        $output .= '</ul>';
       } else {
         $output .= "<div class='alert alert-warning'>" . htmlspecialchars($lmGuardrails) . "</div>";
       }

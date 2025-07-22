@@ -704,3 +704,10 @@ Reply in JSON format:
     'recommendations': ['list of improvements'],
     'confidence_level': 'high/medium/low'
 }
+
+llm_guardrails_accuracy = Accuracy
+llm_guardrails_relevance = Relevance
+llm_guardrails_completeness = Completeness
+llm_guardrails_clarity = Clarity
+llm_guardrails_reliability = Reliability
+llm_guardrails_overall_score = Overall Score
