@@ -29,15 +29,9 @@ class LlmGuardrails
 
   protected static ?SecurityLogger $securityLogger = null;
   // Patterns de détection d'hallucinations e-commerce
+  //possible to create a specific suspicious pattern
+  private const SUSPICIOUS_PATTERNS = [];
 
-
-  private const SUSPICIOUS_PATTERNS = [
-    '/ventes?\s+de\s+\d+\s*%\s*(?:en\s+)?(?:hausse|baisse)/i',
-    '/augmentation\s+de\s+[0-9,]+%/i',
-    '/chiffre\s+d\'affaires?\s+de\s+[€$]\s*[0-9,]+/i',
-    '/(?:hier|demain|la\s+semaine\s+prochaine)/i',
-    '/produits?\s+inexistants?/i'
-  ];
 
 
   /**
@@ -205,10 +199,7 @@ class LlmGuardrails
   {
     $validation = [
       'realistic_metrics' => self::validateRealisticMetrics($result),
-     // 'temporal_consistency' => self::validateTemporalConsistency($result),
-     // 'currency_format' => self::validateCurrencyFormat($result),
       'percentage_validity' => self::validatePercentages($result),
-     // 'product_references' => self::validateProductReferences($result)
     ];
 
     $validation['score'] = array_sum($validation) / count($validation);
@@ -364,6 +355,11 @@ class LlmGuardrails
       // 4. Évaluation de la clarté
       $clarityScore = self::evaluateClarity($result);
       $evaluationResults['clarity'] = $clarityScore;
+
+      // Debug des scores individuels
+      if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True') {
+        self::$securityLogger->logSecurityEvent("Individual Scores: Relevance=$relevanceScore, " . "Accuracy=$accuracyScore, Completeness=$completenessScore, Clarity=$clarityScore", 'info');
+      }
 
       // 5. Utilisation du modèle d'évaluation si disponible
       if (str_starts_with(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'gpt') || str_starts_with(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'anth')) {
