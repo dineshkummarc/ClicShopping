@@ -13,14 +13,23 @@ class ImageSource implements JsonSerializable
 
     public function __construct(string $urlOrBase64Image, private readonly ImageQuality $detail = ImageQuality::Auto)
     {
+        $this->url = $this->decodeUrl($urlOrBase64Image);
+    }
+
+    private function decodeUrl(string $urlOrBase64Image): string
+    {
         if ($this->isUrl($urlOrBase64Image)) {
-            $this->url = $urlOrBase64Image;
-        } elseif ($this->isBase64($urlOrBase64Image)) {
-            $this->base64 = $urlOrBase64Image;
-            $this->url = 'data:image/jpeg;base64,'.$urlOrBase64Image;
-        } else {
-            throw new \InvalidArgumentException('Invalid image URL or base64 format.');
+            return $urlOrBase64Image;
         }
+        if ($this->isBase64($urlOrBase64Image)) {
+            $imageType = $this->imageType($urlOrBase64Image);
+            if ($imageType !== null) {
+                $this->base64 = $urlOrBase64Image;
+
+                return "data:{$imageType};base64,${urlOrBase64Image}";
+            }
+        }
+        throw new \InvalidArgumentException('Invalid image URL or base64 format.');
     }
 
     protected function isUrl(string $image): bool
@@ -56,5 +65,29 @@ class ImageSource implements JsonSerializable
                 'detail' => $this->detail->value,
             ],
         ];
+    }
+
+    private function imageType(string $urlOrBase64Image): ?string
+    {
+        $binaryData = base64_decode($urlOrBase64Image, true);
+
+        if ($binaryData === false) {
+            return null;
+        }
+
+        if (str_starts_with($binaryData, "\x89PNG\x0D\x0A\x1A\x0A")) {
+            return 'image/png';
+        }
+
+        $gifHeader = \substr($binaryData, 0, 6);
+        if ($gifHeader === 'GIF87a' || $gifHeader === 'GIF89a') {
+            return 'image/gif';
+        }
+
+        if (str_starts_with($binaryData, "\xFF\xD8") && str_ends_with($binaryData, "\xFF\xD9")) {
+            return 'image/jpeg';
+        }
+
+        return null;
     }
 }

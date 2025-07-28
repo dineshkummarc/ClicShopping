@@ -23,9 +23,9 @@
         "symfony/http-client": "^7.3",
         "php-http/discovery": "^1.20",
         "stymiee/email-validator": "^2.1",
-        "theodo-group/llphant": "^0.10.8",
         "stripe/stripe-php": "^17.4",
-        "doctrine/orm": "^3.5"
+        "doctrine/orm": "^3.5",
+        "theodo-group/llphant": "^0.11.0"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"
