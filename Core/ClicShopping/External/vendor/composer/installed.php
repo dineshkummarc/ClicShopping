@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'ff560870d72a0c166dfeb9d0935ec50791c54369',
+        'reference' => '28ec8d182316947c0229f36a78203f13d954377d',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,16 +13,16 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'ff560870d72a0c166dfeb9d0935ec50791c54369',
+            'reference' => '28ec8d182316947c0229f36a78203f13d954377d',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
         'amnuts/opcache-gui' => array(
-            'pretty_version' => '3.5.5',
-            'version' => '3.5.5.0',
-            'reference' => '4ad9866c4bb5a96fd8a40353afb15f6934f4919b',
+            'pretty_version' => '3.6.0',
+            'version' => '3.6.0.0',
+            'reference' => 'a70fe575c9014cf08f68fe17f9cb3dccc4f13197',
             'type' => 'library',
             'install_path' => __DIR__ . '/../amnuts/opcache-gui',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => '2699ef22973a999fb9b79ed9e5fe576381068928',
+            'reference' => '81355a1946c1cb0d4dd1966161015b8522f30173',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
