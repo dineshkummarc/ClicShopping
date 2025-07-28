@@ -1,4 +1,0 @@
-cfg_chatgpt_embedding_model_title = Embedding modéle à appliquer
-cfg_chatgpt_embedding_model_description = Veuillez sélectionner le modéle d'embedding par défaut que vous souhaitez appliquer.<br />
-Tous les modéles n'utilisent pas les mêmes paramétres et peuvent générer une erreur dans la rèponse<br />
-Veuillez vous informer avant d'utiliser un modéle et regarder le wiki sur Github.

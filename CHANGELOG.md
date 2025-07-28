@@ -1,20 +1,23 @@
 version4.04
+Libraries updated
+Limit the analytics context sent to the AI
+
 
 
 ------------------
 version4.03
-librairies updated
+Libraries updated
 includes Guardrails classes to evaluate the prompt analytics result
-fix db data
+
 
 ------------------
 
 Version4.02
 librairies updated
-Improve secuirty content html editor 
+Improve security content html editor 
 Rename Includes Directory by Core
-small improvment and fix
-Remane includes directory into Core
+small improvement and fix
+Rename includes directory into Core
 
 
 ------------------

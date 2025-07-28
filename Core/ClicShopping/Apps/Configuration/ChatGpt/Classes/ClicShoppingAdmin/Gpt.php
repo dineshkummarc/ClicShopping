@@ -153,10 +153,13 @@ class Gpt {
 
      $config->apiKey = $api_key;
 
-     if (!is_null($parameters)) {
-        $config->model = $parameters['model'];
-        $config->modelOptions = $parameters;
-      }
+    if (!is_null($parameters) && array_key_exists('model', $parameters)) {
+      $config->model = $parameters['model'];
+      $config->modelOptions = $parameters;
+    } elseif (!is_null($parameters)) {
+      $config->model = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
+      $config->modelOptions = $parameters;
+    }
 
       $chat = new OpenAIChat($config);
 

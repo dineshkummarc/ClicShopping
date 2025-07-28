@@ -1,3 +1,0 @@
-cfg_chatgpt_api_key_voyage_ai_title = Clef Api VoyageAi
-cfg_chatgpt_api_key_voyage_ai_description =  Veuillez insérer la clef API (https://www.voyageai.com)<br />
- (uniquement pour les embedding)

@@ -901,40 +901,5 @@ class LlmGuardrails
     return $reco;
   }
 
-  public static function getSalesAnalysisPrompt(string $question, string $result): string
-  {
-    return "
-        Évaluez cette analyse de ventes e-commerce:
-        
-        Question: {$question}
-        Réponse: {$result}
-        
-        Points d'attention spécifiques:
-        - Cohérence des chiffres de vente
-        - Plausibilité des évolutions
-        - Présence de sources de données
-        - Logique business respectée
-        
-        Retournez un score de 0 à 100 et listez les problèmes détectés.
-        ";
-  }
 
-  public static function getProductAnalysisPrompt(string $question, string $result): string
-  {
-    return "
-        Évaluez cette analyse produit e-commerce:
-        
-        Question: {$question}
-        Réponse: {$result}
-        
-        Vérifiez:
-        - Références produits existantes
-        - Métriques réalistes (stock, prix, ventes)
-        - Cohérence catégorielle
-        - Données de performance plausibles
-        ";
-  }
 }
-
-
-

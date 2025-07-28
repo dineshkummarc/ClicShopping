@@ -83,6 +83,8 @@ class AnalyticsAgent
 
     $this->setSystemMessage();
 
+    $this->maxRowsForInterpretation = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_ROWS_PROMPT') ? (int)CLICSHOPPING_APP_CHATGPT_RA_MAX_ROWS_PROMPT : 100;
+
     try {
       $this->initializeTableRelationships();
       $this->buildDatabaseSchema();
@@ -152,16 +154,19 @@ class AnalyticsAgent
           $table = $safeTable;
         }
 
+
         $schema = $this->getTableSchema($table);
 
         foreach ($schema as $column => $type) {
           // Validate column name
           $safeColumn = InputValidator::sanitizeIdentifier($column);
+
           if ($safeColumn !== $column) {
             $this->securityLogger->logSecurityEvent(
               "Suspicious column name sanitized: {$column} -> {$safeColumn}",
               'warning'
             );
+
             $column = $safeColumn;
           }
 
@@ -176,6 +181,7 @@ class AnalyticsAgent
                 "Suspicious related table name sanitized: {$relatedTable} -> {$safeRelatedTable}",
                 'warning'
               );
+
               $relatedTable = $safeRelatedTable;
             }
 
@@ -236,11 +242,13 @@ class AnalyticsAgent
       foreach ($tables as $table) {
         // Validate table name
         $safeTable = InputValidator::sanitizeIdentifier($table);
+
         if ($safeTable !== $table) {
           $this->securityLogger->logSecurityEvent(
             "Suspicious table name sanitized in buildDatabaseSchema: {$table} -> {$safeTable}",
             'warning'
           );
+
           $table = $safeTable;
         }
 
@@ -309,10 +317,12 @@ class AnalyticsAgent
     // Collect all columns from all tables
     foreach ($tables as $table) {
       $schema = $this->getTableSchema($table);
+
       foreach ($schema as $column => $type) {
         if (!isset($allColumns[$column])) {
           $allColumns[$column] = [];
         }
+
         $allColumns[$column][] = $table;
       }
     }
@@ -326,6 +336,7 @@ class AnalyticsAgent
         if (!isset($this->columnSynonyms[$baseName])) {
           $this->columnSynonyms[$baseName] = [];
         }
+
         $this->columnSynonyms[$baseName][] = $column;
       }
     }
@@ -444,6 +455,7 @@ class AnalyticsAgent
         "SQL query sanitized in resolvePlaceholders",
         'warning'
       );
+
       $sqlQuery = $safeSqlQuery;
     }
 
@@ -526,6 +538,7 @@ class AnalyticsAgent
     // Check the balance of parentheses
     $openParenCount = substr_count($sqlQuery, '(');
     $closeParenCount = substr_count($sqlQuery, ')');
+
     if ($openParenCount !== $closeParenCount) {
       $issues[] = CLICSHOPPING::getDef('text_parentheses_mismatch_error', ['openParenCount' => $openParenCount, 'closeParenCount' => $closeParenCount]);
     }
@@ -653,6 +666,7 @@ class AnalyticsAgent
       } elseif ($closeCount > $openCount) {
         // Remove excess closing parentheses
         $correctedQuery = $sqlQuery;
+
         for ($i = 0; $i < $closeCount - $openCount; $i++) {
           $pos = strrpos($correctedQuery, ')');
           if ($pos !== false) {
@@ -1226,6 +1240,7 @@ class AnalyticsAgent
 
     // Extract tables in JOINs
     preg_match_all('/JOIN\s+(\w+)(?:\s+(?:AS\s+)?(\w+))?/i', $sqlQuery, $joinMatches, PREG_SET_ORDER);
+
     foreach ($joinMatches as $match) {
       $tableName = $match[1];
       $alias = !empty($match[2]) ? $match[2] : $tableName;
@@ -1299,6 +1314,7 @@ class AnalyticsAgent
 
     // Validate input
     $safeQuestion = InputValidator::validateParameter($question, 'string');
+
     if ($safeQuestion !== $question) {
       $this->securityLogger->logSecurityEvent(
         "Question sanitized in executeQuery",
@@ -1720,8 +1736,22 @@ class AnalyticsAgent
    */
   private function interpretResults(string $question, array $results): string
   {
+
+    // Check if the number of rows exceeds the configured limit
+    if (count($results) > $this->maxRowsForInterpretation) {
+      // Generate a message indicating the result set is too large
+      $array = [
+        'maxRows' => $this->maxRowsForInterpretation,
+        'count' => count($results)
+      ];
+
+      return CLICSHOPPING::getDef('vtext_error_context_sql_number_request', $array);
+    }
+
+
     $cleanResults = $this->sanitizeResultsForPrompt($results);
     $safeQuestion = InputValidator::validateParameter($question, 'string');
+
     if ($safeQuestion !== $question) {
       $this->securityLogger->logSecurityEvent(
         "Question sanitized in generateSqlQuery",

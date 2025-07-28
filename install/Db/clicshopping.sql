@@ -1719,7 +1719,7 @@ INSERT INTO configuration VALUES(1766, 'Durée de verrouillage du compte', 'CLIC
 INSERT INTO configuration VALUES(1767, 'Nombre maximal de tentatives de connexion', 'CLICSHOPPING_APP_API_AI_MAX_LOGIN_ATTEMPTS', '5', 'Spécifie le nombre maximal de tentatives de connexion autorisées avant restriction.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
 INSERT INTO configuration VALUES(1768, 'Nombre maximal de requêtes par fenêtre', 'CLICSHOPPING_APP_API_AI_MAX_REQUEST_PER_WINDOW', '20', 'Limite le nombre de requêtes à 20 sur une période de 15 minutes.', 6, 0, NULL, '2025-06-14 11:43:58', NULL, NULL);
 INSERT INTO configuration VALUES(1769, 'Debug / Log', 'CLICSHOPPING_APP_CHATGPT_CH_DEBUG', 'False', 'Son activation vous permettra d\'avoir des informations complétes sur les erreurs et les problèmes rencontrés par l\'application ChatGPT.<br>\nIl est recommandé de l\'activer uniquement en cas de besoin pour le débogage.', 6, 0, NULL, '2025-06-30 11:46:10', NULL, NULL);
-
+INSERT INTO configuration VALUES(1770, 'Fenetre de contexte d\'analyse maximum des donnnées analytiques', 'CLICSHOPPING_APP_CHATGPT_RA_MAX_ROW_PROMPT', '150', 'Le nombre maximum de lignes qui seront envoyées à l\'IA pour analyse. Si le nombre de lignes est supérieur, l\'IA ne pourra pas analyser les données. Veuillez affiner votre requête ou ajuster les paramètres.', 6, 0, NULL, '2025-07-28 11:21:54', NULL, NULL);
 
 
 
