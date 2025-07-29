@@ -87,7 +87,8 @@ class ProductsContentTab1 implements \ClicShopping\OM\Modules\HooksInterface
     $content .= '</div>';
     $content .= '</div>';
 
-    $suppliers_ajax = CLICSHOPPING::link('ajax/suppliers.php');
+    $suppliers_ajax =  $this->app->link('Ajax');
+    $suppliers_ajax = HTML::AjaxAppLink($suppliers_ajax);
 
     $output = <<<EOD
 <!-- ######################## -->
@@ -137,7 +138,8 @@ function hinterSupplier(event) {
       }
     };
 
-     window.hinterSupplierXHR.open("GET", "{$suppliers_ajax}?q=" + input.value, true);
+     window.hinterSupplierXHR.open("GET", "{$suppliers_ajax}" + "&q=" + input.value, true);
+     
      window.hinterSupplierXHR.send()
   }
 }
@@ -147,6 +149,6 @@ function hinterSupplier(event) {
 <!-- ######################## -->
 EOD;
 
-    return $output;
+    return  $output;
   }
 }

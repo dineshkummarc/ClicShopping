@@ -15,6 +15,9 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Catalog\Suppliers\Suppliers as SuppliersApp;
 
+use function count;
+use function is_array;
+
 class ProductsContentTab1 implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
@@ -59,6 +62,11 @@ class ProductsContentTab1 implements \ClicShopping\OM\Modules\HooksInterface
     return $suppliers_id;
   }
 
+  /**
+   * Generates and returns the HTML content and JavaScript required for a manufacturer autocomplete and modal dialog.
+   *
+   * @return string The HTML and JavaScript output for the manufacturer autocomplete and modal dialog.
+   */
   public function display(): string
   {
     if (!\defined('CLICSHOPPING_APP_SUPPLIERS_CS_STATUS') || CLICSHOPPING_APP_SUPPLIERS_CS_STATUS == 'False') {

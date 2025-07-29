@@ -109,6 +109,20 @@ class HTML
     return '<a href="' . $url . '" ' . (!empty($parameters) ? ' ' . $parameters : '') . '>' . $element . '</a>';
   }
 
+  /**
+   * Converts a URL link to a format suitable for AJAX applications.
+   *
+   * @param string $link The URL link to be converted.
+   * @return string The converted link with specific characters replaced for AJAX compatibility.
+   */
+  public static function AjaxAppLink(string $link): string
+  {
+    $link = str_replace('&amp;', '&', $link);
+    $link = str_replace('%5C', '\\\\', $link);
+
+    return $link;
+  }
+
   /*
   * read the first bit of a file
   *

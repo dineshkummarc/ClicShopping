@@ -23,7 +23,6 @@ use function is_array;
 class ProductsContentTab1 implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
-  protected $manufacturerAdmin;
 
   /**
    * Constructor method for initializing the Manufacturers application module.
@@ -86,7 +85,8 @@ class ProductsContentTab1 implements \ClicShopping\OM\Modules\HooksInterface
     $content .= '</div>';
     $content .= '</div>';
 
-    $smanufacturers_ajax = CLICSHOPPING::link('ajax/manufacturers.php');
+    $smanufacturers_ajax =  $this->app->link('Ajax');
+    $smanufacturers_ajax = HTML::AjaxAppLink($smanufacturers_ajax);
 
     $output = <<<EOD
 <!-- ######################## -->
@@ -136,7 +136,8 @@ function hinterManufacturer(event) {
       }
     };
 
-    window.hinterManufacturerXHR.open("GET", "{$smanufacturers_ajax}?q=" + input.value, true);
+    window.hinterManufacturerXHR.open("GET", "{$smanufacturers_ajax}" + "&q=" + input.value, true);
+
     window.hinterManufacturerXHR.send()
   }
 }
