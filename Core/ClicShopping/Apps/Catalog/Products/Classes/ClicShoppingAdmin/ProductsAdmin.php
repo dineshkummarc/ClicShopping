@@ -564,21 +564,21 @@ class ProductsAdmin
   {
     $Qimage = $this->getImage($id);
 
-    $QduplicateImageCategories = $this->db->prepare('select count(*) as total
+    $Qchek = $this->db->prepare('select count(*) as total
                                                        from :table_categories
                                                        where categories_image = :products_image
                                                        or categories_image = :products_image_zoom
                                                        or categories_image = :products_image_medium
                                                        or categories_image = :products_image_small
                                                       ');
-    $QduplicateImageCategories->bindValue(':products_image', $Qimage['products_image']);
-    $QduplicateImageCategories->bindValue(':products_image_zoom', $Qimage['products_image_zoom']);
-    $QduplicateImageCategories->bindValue(':products_image_medium', $Qimage['products_image_medium']);
-    $QduplicateImageCategories->bindValue(':products_image_small', $Qimage['products_image_small']);
+    $Qchek->bindValue(':products_image', $Qimage['products_image']);
+    $Qchek->bindValue(':products_image_zoom', $Qimage['products_image_zoom']);
+    $Qchek->bindValue(':products_image_medium', $Qimage['products_image_medium']);
+    $Qchek->bindValue(':products_image_small', $Qimage['products_image_small']);
 
-    $QduplicateImageCategories->execute();
+    $Qchek->execute();
 
-    return $QduplicateImageCategories->valueint('total');;
+    return $Qchek->valueint('total');
   }
 
   /**
@@ -591,21 +591,21 @@ class ProductsAdmin
   {
     $Qimage = $this->getImage($id);
 
-    $QduplicateImageProductDescription = $this->db->prepare('select count(*) as total
+    $Qchek = $this->db->prepare('select count(*) as total
                                                                from :table_products_description
                                                                where products_description like :products_description
                                                                or products_description like :products_description1
                                                                or products_description like :products_description2
                                                                or products_description like :products_description3
                                                               ');
-    $QduplicateImageProductDescription->bindValue(':products_description', '%' . $Qimage['products_image'] . '%');
-    $QduplicateImageProductDescription->bindValue(':products_description1', '%' . $Qimage['products_image_zoom'] . '%');
-    $QduplicateImageProductDescription->bindValue(':products_description2', '%' . $Qimage['products_image_medium'] . '%');
-    $QduplicateImageProductDescription->bindValue(':products_description3', '%' . $Qimage['products_image_small'] . '%');
+    $Qchek->bindValue(':products_description', '%' . $Qimage['products_image'] . '%');
+    $Qchek->bindValue(':products_description1', '%' . $Qimage['products_image_zoom'] . '%');
+    $Qchek->bindValue(':products_description2', '%' . $Qimage['products_image_medium'] . '%');
+    $Qchek->bindValue(':products_description3', '%' . $Qimage['products_image_small'] . '%');
 
-    $QduplicateImageProductDescription->execute();
+    $Qchek->execute();
 
-    return $QduplicateImageProductDescription->valueInt('total');;
+    return $Qchek->valueInt('total');
   }
 
   /**
@@ -617,7 +617,7 @@ class ProductsAdmin
   {
     $Qimage = $this->getImage($id);
 
-    $QduplicateImageBanners = $this->db->prepare('select count(*) as total
+    $Qchek = $this->db->prepare('select count(*) as total
                                                      from :table_banners
                                                      where banners_image = :products_image
                                                      or banners_image = :products_image_zoom
@@ -625,14 +625,14 @@ class ProductsAdmin
                                                      or banners_image = :products_image_small
                                                     ');
 
-    $QduplicateImageBanners->bindValue(':products_image', $Qimage['products_image']);
-    $QduplicateImageBanners->bindValue(':products_image_zoom', $Qimage['products_image_zoom']);
-    $QduplicateImageBanners->bindValue(':products_image_medium', $Qimage['products_image_medium']);
-    $QduplicateImageBanners->bindValue(':products_image_small', $Qimage['products_image_small']);
+    $Qchek->bindValue(':products_image', $Qimage['products_image']);
+    $Qchek->bindValue(':products_image_zoom', $Qimage['products_image_zoom']);
+    $Qchek->bindValue(':products_image_medium', $Qimage['products_image_medium']);
+    $Qchek->bindValue(':products_image_small', $Qimage['products_image_small']);
 
-    $QduplicateImageBanners->execute();
+    $Qchek->execute();
 
-    return $QduplicateImageBanners->valueInt('total');;
+    return $Qchek->valueInt('total');
   }
 
   /**
@@ -645,21 +645,21 @@ class ProductsAdmin
   {
     $Qimage = $this->getImage($id);
 
-    $QduplicateImageManufacturers = $this->db->prepare('select count(*) as total
+    $Qchek = $this->db->prepare('select count(*) as total
                                                          from :table_manufacturers
                                                          where manufacturers_image = :products_image
                                                          or manufacturers_image = :products_image_zoom
                                                          or manufacturers_image = :products_image_medium
                                                          or manufacturers_image = :products_image_small
                                                         ');
-    $QduplicateImageManufacturers->bindValue(':products_image', $Qimage['products_image']);
-    $QduplicateImageManufacturers->bindValue(':products_image_zoom', $Qimage['products_image_zoom']);
-    $QduplicateImageManufacturers->bindValue(':products_image_medium', $Qimage['products_image_medium']);
-    $QduplicateImageManufacturers->bindValue(':products_image_small', $Qimage['products_image_small']);
+    $Qchek->bindValue(':products_image', $Qimage['products_image']);
+    $Qchek->bindValue(':products_image_zoom', $Qimage['products_image_zoom']);
+    $Qchek->bindValue(':products_image_medium', $Qimage['products_image_medium']);
+    $Qchek->bindValue(':products_image_small', $Qimage['products_image_small']);
 
-    $QduplicateImageManufacturers->execute();
+    $Qchek->execute();
 
-    return $QduplicateImageManufacturers->valueInt('total');
+    return $Qchek->valueInt('total');
   }
 
   /**
@@ -672,21 +672,21 @@ class ProductsAdmin
   {
     $Qimage = $this->getImage($id);
 
-    $QduplicateImageSuppliers = $this->db->prepare('select count(*) as total
+    $Qchek = $this->db->prepare('select count(*) as total
                                                      from :table_suppliers
                                                      where suppliers_image  = :products_image
                                                      or suppliers_image  = :products_image_zoom
                                                      or suppliers_image  = :products_image_medium
                                                      or suppliers_image  = :products_image_small
                                                     ');
-    $QduplicateImageSuppliers->bindValue(':products_image', $Qimage['products_image']);
-    $QduplicateImageSuppliers->bindValue(':products_image_zoom', $Qimage['products_image_zoom']);
-    $QduplicateImageSuppliers->bindValue(':products_image_medium', $Qimage['products_image_medium']);
-    $QduplicateImageSuppliers->bindValue(':products_image_small', $Qimage['products_image_small']);
+    $Qchek->bindValue(':products_image', $Qimage['products_image']);
+    $Qchek->bindValue(':products_image_zoom', $Qimage['products_image_zoom']);
+    $Qchek->bindValue(':products_image_medium', $Qimage['products_image_medium']);
+    $Qchek->bindValue(':products_image_small', $Qimage['products_image_small']);
 
-    $QduplicateImageSuppliers->execute();
+    $Qchek->execute();
 
-    return $QduplicateImageSuppliers->valueInt('total');
+    return $Qchek->valueInt('total');
   }
 
   /**
@@ -699,19 +699,19 @@ class ProductsAdmin
   {
     $Qimage = $this->getImage($id);
 
-    $duplicate_image_total = $this->checkProductImage($id);
-    $duplicate_image_categories_total = $this->checkCategoriesImage($id);
-    $duplicate_image_product_description_total = $this->checkImagesDescription($id);
-    $duplicate_image_banners_total = $this->checkBannerImages($id);
-    $duplicate_image_manufacturers_total = $this->checkManufacturerImages($id);
-    $duplicate_image_suppliers_total = $this->checkSupplierImages($id);
+    $check_image_total = $this->checkProductImage($id);
+    $check_image_categories_total = $this->checkCategoriesImage($id);
+    $check_image_product_description_total = $this->checkImagesDescription($id);
+    $check_image_banners_total = $this->checkBannerImages($id);
+    $check_image_manufacturers_total = $this->checkManufacturerImages($id);
+    $check_image_suppliers_total = $this->checkSupplierImages($id);
 
-    if (($duplicate_image_total < 2) &&
-      ($duplicate_image_categories_total == 0) &&
-      ($duplicate_image_product_description_total == 0) &&
-      ($duplicate_image_banners_total == 0) &&
-      ($duplicate_image_manufacturers_total == 0) &&
-      ($duplicate_image_suppliers_total == 0)) {
+    if (($check_image_total < 2) &&
+      ($check_image_categories_total == 0) &&
+      ($check_image_product_description_total == 0) &&
+      ($check_image_banners_total == 0) &&
+      ($check_image_manufacturers_total == 0) &&
+      ($check_image_suppliers_total == 0)) {
 
       if (file_exists($this->template->getDirectoryPathTemplateShopImages() . $Qimage['products_image'])) {
         unlink($this->template->getDirectoryPathTemplateShopImages() . $Qimage['products_image']);
@@ -730,7 +730,7 @@ class ProductsAdmin
       }
     }
 
-    $Qimages = $this->db->get('products_images', 'image', ['products_id' => (int)$id]);
+    $Qimages = $this->db->get('products_images', 'image', ['products_id' => $id]);
 
     if ($Qimages->fetch() !== false) {
       do {
@@ -742,39 +742,39 @@ class ProductsAdmin
           ]
         ];
 
-        $Qduplicate = $this->db->get('products_images', 'id', $sql_array, null, 1);
+        $QcheckImage = $this->db->get('products_images', 'id', $sql_array, null, 1);
 
-        if ($Qduplicate->fetch() === false) {
+        if ($QcheckImage->fetch() === false) {
           if (file_exists($this->template->getDirectoryPathTemplateShopImages() . $Qimages->value('image'))) {
             unlink($this->template->getDirectoryPathTemplateShopImages() . $Qimages->value('image'));
           }
         }
       } while ($Qimages->fetch());
 
-      $this->db->delete('products_images', ['products_id' => (int)$id]);
+      $this->db->delete('products_images', ['products_id' => $id]);
     }
 
-    $this->db->delete('products', ['products_id' => (int)$id]);
-    $this->db->delete('products_description', ['products_id' => (int)$id]);
-    $this->db->delete('products_to_categories', ['products_id' => (int)$id]);
-    $this->db->delete('products_notifications', ['products_id' => (int)$id]);
+    $this->db->delete('products', ['products_id' => $id]);
+    $this->db->delete('products_description', ['products_id' => $id]);
+    $this->db->delete('products_to_categories', ['products_id' => $id]);
+    $this->db->delete('products_notifications', ['products_id' => $id]);
 
     $Qdelete = $this->db->prepare('delete
-                                     from :table_customers_basket
-                                     where products_id = :products_id
-                                     or products_id like :products_id_att
-                                  ');
-    $Qdelete->bindInt(':products_id', (int)$id);
-    $Qdelete->bindInt(':products_id_att', (int)$id . '{%');
+                                   from :table_customers_basket
+                                   where products_id = :products_id
+                                   or products_id like :products_id_att
+                                ');
+    $Qdelete->bindInt(':products_id', $id);
+    $Qdelete->bindInt(':products_id_att', $id . '{%');
     $Qdelete->execute();
 
     $Qdel = $this->db->prepare('delete
-                                  from :table_customers_basket_attributes
-                                  where products_id = :products_id
-                                  or products_id like :products_id_att
-                                 ');
-    $Qdel->bindInt(':products_id', (int)$id);
-    $Qdel->bindInt(':products_id_att', (int)$id . '{%');
+                                from :table_customers_basket_attributes
+                                where products_id = :products_id
+                                or products_id like :products_id_att
+                               ');
+    $Qdel->bindInt(':products_id', $id);
+    $Qdel->bindInt(':products_id_att', $id . '{%');
     $Qdel->execute();
 
 // for hooks
@@ -1363,7 +1363,7 @@ class ProductsAdmin
       $update_sql_data = ['products_last_modified' => 'now()'];
       $sql_data_array = array_merge($sql_data_array, $update_sql_data);
 
-      $this->db->save('products', $sql_data_array, ['products_id' => (int)$id]);
+      $this->db->save('products', $sql_data_array, ['products_id' => $id]);
     } else {
 //insert
       $insert_sql_data = ['products_date_added' => 'now()'];
