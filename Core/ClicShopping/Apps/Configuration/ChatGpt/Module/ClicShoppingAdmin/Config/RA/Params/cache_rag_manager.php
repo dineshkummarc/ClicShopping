@@ -15,7 +15,7 @@ use ClicShopping\OM\HTML;
 class cache_rag_manager extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Config\ConfigParamAbstract
 {
   public $default = 'False';
-  public int|null $sort_order = 39;
+  public int|null $sort_order = 70;
 
   protected function init()
   {

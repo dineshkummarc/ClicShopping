@@ -16,7 +16,7 @@ use ClicShopping\OM\HTML;
 class embedding_model extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Config\ConfigParamAbstract
 {
   public $default = 'GPT‑4.1-nano';
-  public int|null $sort_order = 35;
+  public int|null $sort_order = 40;
 
   protected function init()
   {

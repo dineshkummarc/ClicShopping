@@ -16,7 +16,6 @@ class api_key_voyage_ai extends \ClicShopping\Apps\Configuration\ChatGpt\Module\
 {
   public $default = '';
   public int|null $sort_order = 35;
-  public bool $app_configured = true;
 
   protected function init()
   {

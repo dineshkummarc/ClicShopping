@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Confi
 class max_row_prompt extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Config\ConfigParamAbstract
 {
   public $default = '150';
-  public int|null $sort_order = 50;
+  public int|null $sort_order = 80;
 
   protected function init()
   {

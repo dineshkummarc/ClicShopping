@@ -144,7 +144,9 @@ class ResultFormatter
     $output = "<div class='analytics-results'>";
     $output .= "<h4>Résultats pour : " . htmlspecialchars($question) . "</h4>";
 
-    if (isset($results['sql_query'])) {
+    $display_sql = defined('CLICSHOPPING_APP_CHATGPT_RA_DISPLAY_SQL') && CLICSHOPPING_APP_CHATGPT_RA_DISPLAY_SQL === 'True';
+
+    if (isset($results['sql_query']) && $display_sql) {
       $formatted = $this->prettySql($results['sql_query']);
 
       $escaped = htmlspecialchars($formatted,ENT_NOQUOTES | ENT_SUBSTITUTE,'UTF-8');
