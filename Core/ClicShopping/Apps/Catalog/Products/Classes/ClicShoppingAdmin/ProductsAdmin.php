@@ -1369,9 +1369,6 @@ class ProductsAdmin
       $this->db->save('products', $sql_data_array);
 
       $id = $this->db->lastInsertId();
-
-//for hooks
-      $_POST['insertId'] = $id; // take the new id of the product
     }
 
     $this->image->saveGalleryImage($id);
