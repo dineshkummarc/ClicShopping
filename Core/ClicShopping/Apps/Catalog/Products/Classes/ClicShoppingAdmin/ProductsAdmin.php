@@ -1393,7 +1393,7 @@ class ProductsAdmin
   public function getProductsInCategoryCount(int $products_id, bool $include_deactivated = false): int
   {
     if ($include_deactivated) {
-      $Qproducts = $this->products->get([
+      $Qproducts = $this->db->get([
         'products p',
         'products_to_products p2c'
       ], [
@@ -1406,7 +1406,7 @@ class ProductsAdmin
         ]
       );
     } else {
-      $Qproducts = $this->products->db->get([
+      $Qproducts = $this->db->get([
         'products p',
         'products_to_products p2c'
       ], [
