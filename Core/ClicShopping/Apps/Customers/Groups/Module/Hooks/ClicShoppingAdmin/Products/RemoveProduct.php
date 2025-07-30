@@ -49,15 +49,26 @@ class RemoveProduct implements \ClicShopping\OM\Modules\HooksInterface
   }
 
   /**
-   * Executes the action of removing a group based on the POST parameter 'remove_id'.
+   * Executes the removal of groups associated with a product.
    *
-   * @return void
+   * This method checks if the product ID is provided in the parameters, sanitizes it,
+   * and then calls the method to remove the associated groups.
+   *
+   * @param array $parameters An associative array containing 'products_id'.
+   * @return mixed Returns true if the operation was successful, false otherwise.
    */
-  public function execute()
+  public function execute(array $parameters): mixed
   {
-    if (isset($_POST['remove_id'])) {
-      $id = HTML::sanitize($_POST['remove_id']);
-      $this->removeGroups($id);
+    $products_id = $parameters['products_id'] ?? null;
+
+    if (empty($products_id)) {
+      return false;
     }
+
+    $products_id = HTML::sanitize($products_id);
+
+    $this->removeGroups($products_id);
+
+    return true;
   }
 }

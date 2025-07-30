@@ -777,10 +777,7 @@ class ProductsAdmin
     $Qdel->bindInt(':products_id_att', $id . '{%');
     $Qdel->execute();
 
-// for hooks
-    $_POST['remove_id'] = $id;
-
-    $this->hooks->call('Products', 'RemoveProduct');
+    $this->hooks->call('Products', 'RemoveProduct', ['products_id' => $id]);
 
     Cache::clear('categories');
     Cache::clear('products-also_purchased');
@@ -873,19 +870,19 @@ class ProductsAdmin
    * properties preserved.
    *
    * @param int $id The ID of the product to be cloned.
-   * @param mixed $categories_id The ID of the category (or categories) where the product will be cloned. Can be an integer or string.
+   * @param mixed $new_categories_id The ID of the category (or categories) where the product will be cloned. Can be an integer or string.
    *
    * @return void
    */
-  public function cloneProductsInOtherCategory(int $id, $categories_id): void
+  public function cloneProductsInOtherCategory(int $id, mixed $new_categories_id): void
   {
-    if (is_string($categories_id)) {
-      $categories_id = 0;
+    if (!is_numeric($new_categories_id)) {
+      $new_categories_id = 0;
     }
 
     $multi_clone_categories_id_to = [];
 
-    $multi_clone_categories_id_to[] = $categories_id;
+    $multi_clone_categories_id_to[] = $new_categories_id;
 
     $Qproducts = $this->db->prepare('select *
                                       from :table_products

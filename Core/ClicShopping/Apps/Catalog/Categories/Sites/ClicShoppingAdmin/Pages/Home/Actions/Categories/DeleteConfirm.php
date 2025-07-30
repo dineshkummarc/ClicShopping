@@ -59,11 +59,11 @@ class DeleteConfirm extends \ClicShopping\OM\PagesActionsAbstract
         $category_ids = substr($category_ids, 0, -2);
 
         $Qcheck = $this->app->db->prepare('select products_id
-                                              from :table_products_to_categories
-                                              where products_id = :products_id
-                                              and categories_id not in (' . $category_ids . ')
-                                              limit 1
-                                              ');
+                                            from :table_products_to_categories
+                                            where products_id = :products_id
+                                            and categories_id not in (' . $category_ids . ')
+                                            limit 1
+                                            ');
 
         $Qcheck->bindInt(':products_id', $key);
         $Qcheck->execute();

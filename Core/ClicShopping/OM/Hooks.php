@@ -50,90 +50,90 @@ class Hooks
    * @param string|null $context Optional context identifier (ex: tab, position, etc.) to filter hooks.
    * @return array The results returned by the executed hook actions.
    */
-  public function call(string $group, string $hook, ?array $parameters = null, ?string $action = null, ?string $context = null): array
-  {
-    if (!isset($action)) {
-      $action = 'execute';
-    }
+    public function call(string $group, string $hook, ?array $parameters = null, ?string $action = null, ?string $context = null): array
+    {
+      if (!isset($action)) {
+        $action = 'execute';
+      }
 
-    if (!isset($this->hooks[$this->site][$group][$hook][$action])) {
-      $this->register($group, $hook, $action);
-    }
+      if (!isset($this->hooks[$this->site][$group][$hook][$action])) {
+        $this->register($group, $hook, $action);
+      }
 
-    $calls = [];
+      $calls = [];
 
-    if (isset($this->hooks[$this->site][$group][$hook][$action])) {
-      $calls = $this->hooks[$this->site][$group][$hook][$action];
-    }
+      if (isset($this->hooks[$this->site][$group][$hook][$action])) {
+        $calls = $this->hooks[$this->site][$group][$hook][$action];
+      }
 
-    if (isset($this->watches[$this->site][$group][$hook][$action])) {
-      // Filtrer les watches selon le contexte si spécifié
-      foreach ($this->watches[$this->site][$group][$hook][$action] as $watchEntry) {
-        //Cjekcif it's a structure with context or simple code
-        if (is_array($watchEntry) && isset($watchEntry['code'])) {
-          // Structure avec contexte
-          if ($context !== null) {
-            // Si le watch a un contexte défini, il doit correspondre
-            if (isset($watchEntry['context']) && $watchEntry['context'] !== $context) {
-              continue; // Skip ce watch, le contexte ne correspond pas
+      if (isset($this->watches[$this->site][$group][$hook][$action])) {
+        // Filtrer les watches selon le contexte si spécifié
+        foreach ($this->watches[$this->site][$group][$hook][$action] as $watchEntry) {
+          //Cjekcif it's a structure with context or simple code
+          if (is_array($watchEntry) && isset($watchEntry['code'])) {
+            // Structure avec contexte
+            if ($context !== null) {
+              // Si le watch a un contexte défini, il doit correspondre
+              if (isset($watchEntry['context']) && $watchEntry['context'] !== $context) {
+                continue; // Skip ce watch, le contexte ne correspond pas
+              }
+              // Si le watch n'a pas de contexte mais qu'on en demande un spécifique, skip aussi
+              if (!isset($watchEntry['context']) && $context !== 'global') {
+                continue;
+              }
             }
-            // Si le watch n'a pas de contexte mais qu'on en demande un spécifique, skip aussi
-            if (!isset($watchEntry['context']) && $context !== 'global') {
-              continue;
+            $calls[] = $watchEntry['code'];
+          } else {
+            // Structure simple (code directement) - rétrocompatibilité
+            if ($context === null || $context === 'global') {
+              $calls[] = $watchEntry;
             }
-          }
-          $calls[] = $watchEntry['code'];
-        } else {
-          // Structure simple (code directement) - rétrocompatibilité
-          if ($context === null || $context === 'global') {
-            $calls[] = $watchEntry;
           }
         }
       }
-    }
 
-    $result = [];
+      $result = [];
 
-    foreach ($calls as $code) {
-      $bait = null;
+      foreach ($calls as $code) {
+        $bait = null;
 
-      if (is_string($code)) {
-        $class = Apps::getModuleClass($code, 'Hooks');
-        $obj = new $class();
+        if (is_string($code)) {
+          $class = Apps::getModuleClass($code, 'Hooks');
+          $obj = new $class();
 
-        // Passer le contexte à l'objet s'il supporte cette méthode
-        if (method_exists($obj, 'setContext') && $context !== null) {
-          $obj->setContext($context);
-        }
+          // Passer le contexte à l'objet s'il supporte cette méthode
+          if (method_exists($obj, 'setContext') && $context !== null) {
+            $obj->setContext($context);
+          }
 
-        // Ajouter le contexte aux paramètres
-        $contextualParameters = $parameters ?? [];
-        if ($context !== null) {
-          $contextualParameters['_context'] = $context;
-        }
-
-        $bait = $obj->$action($contextualParameters);
-      } else {
-        $ref = new ReflectionFunction($code);
-
-        if ($ref->isClosure()) {
-          // Ajouter le contexte aux paramètres pour les closures
+          // Ajouter le contexte aux paramètres
           $contextualParameters = $parameters ?? [];
           if ($context !== null) {
             $contextualParameters['_context'] = $context;
           }
 
-          $bait = $code($contextualParameters);
+          $bait = $obj->$action($contextualParameters);
+        } else {
+          $ref = new ReflectionFunction($code);
+
+          if ($ref->isClosure()) {
+            // Ajouter le contexte aux paramètres pour les closures
+            $contextualParameters = $parameters ?? [];
+            if ($context !== null) {
+              $contextualParameters['_context'] = $context;
+            }
+
+            $bait = $code($contextualParameters);
+          }
+        }
+
+        if (!empty($bait)) {
+          $result[] = $bait;
         }
       }
 
-      if (!empty($bait)) {
-        $result[] = $bait;
-      }
+      return $result;
     }
-
-    return $result;
-  }
 
   /**
    * Combines and returns the result of calling the 'call' method with the provided arguments.

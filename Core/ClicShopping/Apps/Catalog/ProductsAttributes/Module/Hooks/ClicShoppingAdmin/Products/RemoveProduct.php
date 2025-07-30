@@ -45,7 +45,7 @@ class RemoveProduct implements \ClicShopping\OM\Modules\HooksInterface
    */
   private function removeProducts(int $id): void
   {
-    $this->app->db->delete('products_attributes', ['products_id' => (int)$id]);
+    $this->app->db->delete('products_attributes', ['products_id' => $id]);
   }
 
   /**
@@ -54,22 +54,20 @@ class RemoveProduct implements \ClicShopping\OM\Modules\HooksInterface
    * @return bool Returns false if the Products Attributes application is disabled or not properly defined;
    *              otherwise void if the operation proceeds.
    */
-  public function execute()
+  public function execute(array $parameters): mixed
   {
-    if (!\defined('CLICSHOPPING_APP_PRODUCTS_ATTRIBUTES_PA_STATUS') || CLICSHOPPING_APP_PRODUCTS_ATTRIBUTES_PA_STATUS == 'False') {
+    if (!\defined('CLICSHOPPING_APP_PRODUCTS_ATTRIBUTES_PA_STATUS') || CLICSHOPPING_APP_PRODUCTS_ATTRIBUTES_PA_STATUS === 'False') {
       return false;
     }
 
-    if (isset($_POST['remove_id'])) {
-      $pID = HTML::sanitize($_POST['remove_id']);
-    } elseif (isset($_POST['pID'])) {
-      $pID = HTML::sanitize($_POST['pID']);
-    } else {
-      $pID = false;
+    $products_id = $parameters['products_id'] ?? null;
+
+    if (empty($products_id)) {
+      return false;
     }
 
-    if ($pID !== false) {
-      $this->removeProducts($pID);
-    }
+    $this->removeProducts($products_id);
+
+    return true;
   }
 }

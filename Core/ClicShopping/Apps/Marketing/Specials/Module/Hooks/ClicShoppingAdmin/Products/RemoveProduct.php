@@ -47,22 +47,31 @@ class RemoveProduct implements \ClicShopping\OM\Modules\HooksInterface
   }
 
   /**
-   * Executes the removal of products based on the provided product identifier.
+   * Executes the removal of a product.
    *
-   * @return void
+   * @param array $parameters Associative array of parameters passed by the hook.
+   *                          Must contain the key 'products_id'.
+   *
+   * @return bool
+   *   - false if no valid product ID is provided.
+   *   - true  after successfully removing the product.
    */
-  public function execute()
+  public function execute(array $parameters): bool
   {
-    if (isset($_POST['remove_id'])) {
-      $pID = HTML::sanitize($_POST['remove_id']);
-    } elseif (isset($_POST['pID'])) {
-      $pID = HTML::sanitize($_POST['pID']);
-    } else {
-      $pID = false;
+    if (!\defined('CLICSHOPPING_APP_SPECIALS_SP_STATUS') || CLICSHOPPING_APP_SPECIALS_SP_STATUS === 'False') {
+      return false;
     }
 
-    if ($pID !== false) {
-      $this->removeProducts($pID);
+    $products_id = $parameters['products_id'] ?? null;
+
+    if (empty($products_id)) {
+      return false;
     }
+
+    $products_id = HTML::sanitize($products_id);
+
+    $this->removeProducts($products_id);
+
+    return true;
   }
 }

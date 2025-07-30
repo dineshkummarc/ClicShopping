@@ -51,26 +51,25 @@ class RemoveProduct implements \ClicShopping\OM\Modules\HooksInterface
   }
 
   /**
-   * Executes the functionality for removing products based on the provided input parameters.
-   *
-   * @return bool Returns false if the application status is not defined or set to 'False', otherwise performs the operation and does not return any value.
+   * @param array $parameters
+   * @return bool
    */
-  public function execute()
+  public function execute(array $parameters): bool
   {
-    if (!\defined('CLICSHOPPING_APP_FAVORITES_FA_STATUS') || CLICSHOPPING_APP_FAVORITES_FA_STATUS == 'False') {
+    if (!\defined('CLICSHOPPING_APP_FAVORITES_FA_STATUS') || CLICSHOPPING_APP_FAVORITES_FA_STATUS === 'False') {
       return false;
     }
 
-    if (isset($_POST['remove_id'])) {
-      $pID = HTML::sanitize($_POST['remove_id']);
-    } elseif (isset($_POST['pID'])) {
-      $pID = HTML::sanitize($_POST['pID']);
-    } else {
-      $pID = false;
+    $products_id = $parameters['products_id'] ?? null;
+
+    if (empty($products_id)) {
+      return false;
     }
 
-    if ($pID !== false) {
-      $this->removeProducts($pID);
-    }
+    $products_id = HTML::sanitize($products_id);
+
+    $this->removeProducts($products_id);
+
+    return true;
   }
 }

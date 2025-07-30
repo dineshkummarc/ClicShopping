@@ -17,11 +17,11 @@ use ClicShopping\OM\Registry;
 
 class MoveConfirm extends \ClicShopping\OM\PagesActionsAbstract
 {
-  public mixed $app;
-  protected $ID;
-  protected $cPath;
-  protected $moveToCategoryID;
-  protected $categoriesAdmin;
+  private mixed $app;
+  private $Id;
+  private $cPath;
+  private $moveToCategoryID;
+  private $categoriesAdmin;
 
   public function __construct()
   {

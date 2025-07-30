@@ -53,27 +53,31 @@ class RemoveProduct implements \ClicShopping\OM\Modules\HooksInterface
   }
 
   /**
-   * Executes the main functionality of the method. Checks if the recommendations module is active
-   * and processes a product removal request if a product ID is provided.
+   * Executes the removal of a product from the recommendations module.
    *
-   * @return bool Returns false if the recommendations module is inactive, otherwise void.
+   * @param array $parameters Associative array of parameters passed by the hook.
+   *                          Must contain the key 'products_id'.
+   *
+   * @return bool
+   *   - false if the Recommendations app is disabled or if no valid product ID is provided.
+   *   - true  after successfully removing the product.
    */
-  public function execute()
+  public function execute(array $parameters): bool
   {
-    if (!defined('CLICSHOPPING_APP_RECOMMENDATIONS_PR_STATUS') || CLICSHOPPING_APP_RECOMMENDATIONS_PR_STATUS == 'False') {
+    if (!defined('CLICSHOPPING_APP_RECOMMENDATIONS_PR_STATUS') || CLICSHOPPING_APP_RECOMMENDATIONS_PR_STATUS === 'False') {
       return false;
     }
 
-    if (isset($_POST['remove_id'])) {
-      $pID = HTML::sanitize($_POST['remove_id']);
-    } elseif (isset($_POST['pID'])) {
-      $pID = HTML::sanitize($_POST['pID']);
-    } else {
-      $pID = false;
+    $products_id = $parameters['products_id'] ?? null;
+
+    if (empty($products_id)) {
+      return false;
     }
 
-    if ($pID !== false) {
-      $this->removeProducts($pID);
-    }
+    $products_id = HTML::sanitize($products_id);
+
+    $this->removeProducts($products_id);
+
+    return true;
   }
 }

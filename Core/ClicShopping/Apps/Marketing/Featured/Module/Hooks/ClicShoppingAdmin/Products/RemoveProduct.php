@@ -49,27 +49,25 @@ class RemoveProduct implements \ClicShopping\OM\Modules\HooksInterface
   }
 
   /**
-   * Executes the main functionality of the method. Checks if the Featured App feature is enabled,
-   * then processes the removal of a product if a valid product ID is provided through the POST request.
-   *
-   * @return bool Returns false if the Featured App feature is disabled, otherwise void.
+   * @param array $parameters
+   * @return bool
    */
-  public function execute()
+  public function execute(array $parameters): bool
   {
-    if (!\defined('CLICSHOPPING_APP_FEATURED_FE_STATUS') || CLICSHOPPING_APP_FEATURED_FE_STATUS == 'False') {
+    if (!\defined('CLICSHOPPING_APP_FEATURED_FE_STATUS') || CLICSHOPPING_APP_FEATURED_FE_STATUS === 'False') {
       return false;
     }
 
-    if (isset($_POST['remove_id'])) {
-      $pID = HTML::sanitize($_POST['remove_id']);
-    } elseif (isset($_POST['pID'])) {
-      $pID = HTML::sanitize($_POST['pID']);
-    } else {
-      $pID = false;
+    $products_id = $parameters['products_id'] ?? null;
+
+    if (empty($products_id)) {
+      return false;
     }
 
-    if ($pID !== false) {
-      $this->removeProducts($pID);
-    }
+    $products_id = HTML::sanitize($products_id);
+
+    $this->removeProducts($products_id);
+
+    return true;
   }
 }

@@ -19,19 +19,20 @@ use function is_null;
 
 class CopyConfirm extends \ClicShopping\OM\PagesActionsAbstract
 {
-  public mixed $app;
-  protected $ID;
-  protected $categoriesId;
-  protected $currentCategoryId;
-  protected $copyAs;
-  protected $productsAdmin;
+  private mixed $app;
+  private $Id;
+  private $categoriesId;
+  private $currentCategoryId;
+  private $copyAs;
+  private $productsAdmin;
+  private $messageStack;
 
   public function __construct()
   {
     $this->app = Registry::get('Products');
     $this->messageStack = Registry::get('MessageStack');
 
-    $this->ID = HTML::sanitize($_POST['products_id']);
+    $this->Id = HTML::sanitize($_POST['products_id']);
 
     $this->currentCategoryId = HTML::sanitize($_POST['current_category_id']);
     $this->copyAs = $_POST['copy_as'];
@@ -40,14 +41,15 @@ class CopyConfirm extends \ClicShopping\OM\PagesActionsAbstract
       $this->categoriesId = isset($_POST['categories_id']);
     } else {
       $this->messageStack->add($this->app->getDef('alert_copy_category'), 'warning');
-      $this->app->redirect('Products&cPath=' . $this->currentCategoryId . '&pID=' . $this->ID);
+      $this->app->redirect('Products&cPath=' . $this->currentCategoryId . '&pID=' . $this->Id);
     }
 
     $this->productsAdmin = new ProductsAdmin();
   }
 
   /**
-   *
+   * Link products to categories
+   * @return void
    */
   private function Link(): void
   {
@@ -58,7 +60,7 @@ class CopyConfirm extends \ClicShopping\OM\PagesActionsAbstract
         foreach ($new_category as $value_id) {
 
           $update_array = [
-            'products_id' => (int)$this->ID,
+            'products_id' => (int)$this->Id,
             'categories_id' => (int)$value_id
           ];
 
@@ -66,9 +68,11 @@ class CopyConfirm extends \ClicShopping\OM\PagesActionsAbstract
 
           if ($Qcheck->fetch() === false) {
             if ($value_id != $this->currentCategoryId) {
-              $count = $this->productsAdmin->getCountProductsToCategory($this->ID, $value_id);
+              $count = $this->productsAdmin->getCountProductsToCategory($this->Id, $value_id);
+
               if ($count < 1) {
-                $sql_array = ['products_id' => $this->ID,
+                $sql_array = [
+                  'products_id' => $this->Id,
                   'categories_id' => $value_id
                 ];
 
@@ -82,7 +86,8 @@ class CopyConfirm extends \ClicShopping\OM\PagesActionsAbstract
   }
 
   /**
-   *
+   * Duplicate products in other categories
+   * @return void
    */
   private function productsDuplicate(): void
   {
@@ -91,14 +96,15 @@ class CopyConfirm extends \ClicShopping\OM\PagesActionsAbstract
     if (\is_array($new_category) && isset($new_category)) {
       foreach ($new_category as $value_id) {
         if ($this->copyAs == 'duplicate') {
-          $this->productsAdmin->cloneProductsInOtherCategory($this->ID, $value_id);
+          $this->productsAdmin->cloneProductsInOtherCategory($this->Id, $value_id);
         }
       }
     }
   }
 
   /**
-   *
+   * Link products in other categories
+   * @return void
    */
   private function productsLink(): void
   {
@@ -111,11 +117,14 @@ class CopyConfirm extends \ClicShopping\OM\PagesActionsAbstract
     }
   }
 
+  /**
+   * Execute the action
+   */
   public function execute()
   {
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
-    if (isset($this->ID) && isset($this->categoriesId)) {
+    if (isset($this->Id) && isset($this->categoriesId)) {
       $this->productsDuplicate();
       $this->productsLink();
 
@@ -129,7 +138,7 @@ class CopyConfirm extends \ClicShopping\OM\PagesActionsAbstract
 
       $this->messageStack->add($this->app->getDef('alert_message_b2b_update'), 'warning');
 
-      $this->app->redirect('Products&cPath=' . $this->currentCategoryId . '&pID=' . $this->ID);
+      $this->app->redirect('Products&cPath=' . $this->currentCategoryId . '&pID=' . $this->Id);
     }
   }
 }
