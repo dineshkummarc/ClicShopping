@@ -100,6 +100,38 @@ class ResultFormatter
   }
 
   /**
+   * Formats SQL queries for better readability.
+   *
+   * @param string $sql The SQL query to format.
+   * @return string The formatted SQL query.
+   */
+  private function prettySql(string $sql): string
+  {
+    // On normalise tous les retours à la ligne existants
+    $sql = preg_replace('/\s+/', ' ', trim($sql));
+
+    // Liste de mots clés devant être passés à la ligne
+    $keywords = [
+      'SELECT', 'FROM', 'JOIN', 'WHERE', 'GROUP BY',
+      'ORDER BY', 'LIMIT', 'ON', 'AND', 'OR'
+    ];
+
+    // On place un \n avant chaque mot clé
+    foreach ($keywords as $kw) {
+      // \b pour ne matcher QUE le mot exact (cas‐insensible)
+      $sql = preg_replace("/\b$kw\b/i", "\n$kw", $sql);
+    }
+
+    // On place un \n après chaque virgule
+    $sql = str_replace(',', ",\n    ", $sql);
+
+    // On débarrasse d'éventuels sauts de ligne consécutifs
+    $sql = preg_replace("/\n{2,}/", "\n", $sql);
+
+    return trim($sql);
+  }
+
+  /**
    * Formats analytics results for display.
    *
    * @param array $results The analytics results to format.
@@ -113,7 +145,14 @@ class ResultFormatter
     $output .= "<h4>Résultats pour : " . htmlspecialchars($question) . "</h4>";
 
     if (isset($results['sql_query'])) {
-      $output .= "<div class='sql-query'><strong>SQL request :</strong> <pre>" . htmlspecialchars($results['sql_query']) . "</pre></div>";
+      $formatted = $this->prettySql($results['sql_query']);
+
+      $escaped = htmlspecialchars($formatted,ENT_NOQUOTES | ENT_SUBSTITUTE,'UTF-8');
+
+      $output .= "<div class='col-md-12 row sql-query'>
+                  <strong>SQL request :</strong>
+                  <pre>{$escaped}</pre>
+                </div>";
     }
 
     if (isset($results['interpretation'])) {

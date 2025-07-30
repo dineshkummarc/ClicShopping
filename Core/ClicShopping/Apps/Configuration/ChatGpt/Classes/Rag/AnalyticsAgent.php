@@ -1672,55 +1672,62 @@ class AnalyticsAgent
         return $results;
       }
 
-      // Adjust to handle multiple results
+      // Ajuster pour gérer plusieurs jeux de résultats
       if (isset($results['multi_query_results'])) {
         $allResults = [];
-
-        foreach ($results as $result) {
-          foreach ($result['results'] as $item) {
-            $allResults[] = $item; // Append items directly
+        foreach ($results['multi_query_results'] as $queryBlock) {
+          foreach ($queryBlock['results'] as $item) {
+            $allResults[] = $item;
           }
         }
-
         $interpretation = $this->interpretResults($question, $allResults);
       } else {
         $interpretation = $this->interpretResults($question, $results['results']);
       }
 
-      // Prepare the response
+      // Construction de la réponse de base
       $response = [
-        'type' => 'analytics_response',
-        'question' => $question,
+        'type'           => 'analytics_response',
+        'question'       => $question,
         'interpretation' => $interpretation,
-        'count' => $results['count']
+        'count'          => $results['count']
       ];
 
-      // Add query details based on result type
+      // Si plusieurs requêtes ont été executées, on les renvoie
       if (isset($results['multi_query_results'])) {
-        $response['multi_query_results'] = $results['multi_query_results'];
+        if ($includeSQL) {
+          $response['multi_query_results'] = $results['multi_query_results'];
+        }
       } else {
-        $response['sql_query'] = $results['sql_query'];
-        $response['original_sql_query'] = $results['original_sql_query'] ?? $results['sql_query'];
+        // On ajoute les résultats (toujours)
         $response['results'] = $results['results'];
 
-        // Add correction information if available
-        if (isset($results['corrections']) && !empty($results['corrections'])) {
-          $response['corrections'] = $results['corrections'];
+        // On ajoute les SQL uniquement si demandé
+        if ($includeSQL) {
+          $response['sql_query']           = $results['sql_query'];
+          $response['original_sql_query']  = $results['original_sql_query'] ?? $results['sql_query'];
+
+          if (!empty($results['corrections'])) {
+            $response['corrections'] = $results['corrections'];
+          }
         }
       }
 
       return $response;
     } catch (\Exception $e) {
-      // Log the error for debugging
+      // Log pour le mode debug
       if ($this->debug == 'True') {
-        $this->securityLogger->logSecurityEvent("Analytics Processing Error: " . $e->getMessage(), 'error');
+        $this->securityLogger->logSecurityEvent(
+          "Analytics Processing Error: " . $e->getMessage(),
+          'error'
+        );
       }
 
       return [
-        'type' => 'error',
-        'message' => 'Error processing business query: ' . $e->getMessage(),
-        'question' => $question,
-        'suggestion' => $this->generateErrorSuggestion($e->getMessage(), $question)
+        'type'       => 'error',
+        'message'    => 'Error processing business query: ' . $e->getMessage(),
+        'question'   => $question,
+        'suggestion'=> $this->generateErrorSuggestion($e->getMessage(), $question)
       ];
     }
   }

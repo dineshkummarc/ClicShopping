@@ -501,39 +501,55 @@ class MultiDBRAGManager
 
       //Check the request
       if (!$analyticsAgent->isAnalyticsQuery($query)) {
-        $array = [
-          'type' => 'not_analytics',
+        return [
+          'type'    => 'not_analytics',
           'message' => CLICSHOPPING::getDef('text_not_analytics')
         ];
-	
-        return $array;
       }
 
       $results = $analyticsAgent->processBusinessQuery($query);
 
       if ($results['type'] === 'error') {
         return [
-          'type' => 'error',
+          'type'    => 'error',
           'message' => $results['message']
         ];
       }
 
-      $matchedCategories = $analyticsAgent->getAnalyticsCategories($query);
+        $matchedCategories = $analyticsAgent->getAnalyticsCategories($query);
 
-      $array = [
-        'type' => 'analytics_results',
-        'query' => $query,
+        $response = [
+        'type'               => 'analytics_results',
+        'query'              => $query,
         'matched_categories' => $matchedCategories,
-        'sql_query' => $results['query'] ?? '',
-        'interpretation' => Hash::displayDecryptedDataText($results['interpretation']),
-        'count' => $results['count'],
-        'results' => $results['results']
+        'interpretation'     => Hash::displayDecryptedDataText($results['interpretation']),
+        'count'              => $results['count'],
+        'results'            => $results['results']
       ];
 
-      return $array;
+      // Si on a plusieurs blocs de requêtes SQL
+      if (isset($results['multi_query_results'])) {
+        $response['multi_query_results'] = $results['multi_query_results'];
+      }
+      // Sinon on renvoie la requête SQL unique
+      else {
+        // clé sql_query créée par processBusinessQuery
+        $response['sql_query'] = $results['sql_query'] ?? '';
+        // si vous conservez l’originale
+        if (isset($results['original_sql_query'])) {
+          $response['original_sql_query'] = $results['original_sql_query'];
+        }
+        // corrections éventuelles
+        if (isset($results['corrections'])) {
+          $response['corrections'] = $results['corrections'];
+        }
+      }
+
+      return $response;
+
     } catch (\Exception $e) {
       return [
-        'type' => 'error',
+        'type'    => 'error',
         'message' => 'Error executing analytics query: ' . $e->getMessage()
       ];
     }
