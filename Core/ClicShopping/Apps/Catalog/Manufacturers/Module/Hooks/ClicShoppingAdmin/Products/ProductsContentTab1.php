@@ -85,7 +85,7 @@ class ProductsContentTab1 implements \ClicShopping\OM\Modules\HooksInterface
     $content .= '</div>';
     $content .= '</div>';
 
-    $smanufacturers_ajax =  $this->app->link('Ajax');
+    $smanufacturers_ajax =  $this->app->link('ProductsAjax');
     $smanufacturers_ajax = HTML::AjaxAppLink($smanufacturers_ajax);
 
     $output = <<<EOD
