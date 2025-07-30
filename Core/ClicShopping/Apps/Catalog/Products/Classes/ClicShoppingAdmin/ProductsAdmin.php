@@ -1010,11 +1010,10 @@ class ProductsAdmin
       $this->db->save('products_to_categories', $sql_array);
 
       $clone_products_id = $dup_products_id;
-      $_POST['clone_products_id'] = $clone_products_id; // for hooks
 
-// ---------------------
-// groupe client clonage
-// ----------------------
+      // ---------------------
+      // groupe client clonage
+      // ----------------------
       $QcustomersGroup = $this->db->prepare('select distinct customers_group_id,
                                                                customers_group_name,
                                                                customers_group_discount
@@ -1133,7 +1132,7 @@ class ProductsAdmin
         }
       } // end while
 
-      $this->hooks->call('Products', 'CloneProducts');
+      $this->hooks->call('Products', 'CloneProducts', ['clone_products_id' => $clone_products_id]);
     } //End for
   }
 

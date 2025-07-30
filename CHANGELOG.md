@@ -1,7 +1,8 @@
 version4.04
 Libraries updated
 Limit the analytics context sent to the AI
-
+Refactoring
+fix small bugs
 
 
 ------------------

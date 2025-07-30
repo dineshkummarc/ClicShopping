@@ -37,27 +37,31 @@ class CloneProducts implements \ClicShopping\OM\Modules\HooksInterface
   /**
    * Executes the logic for handling the suppliers' application state and cloning product information.
    *
-   * @return bool Returns false if the suppliers' application status is disabled or undefined. Otherwise, no explicit return value is provided.
+   * @return mixed Returns false if the suppliers' application status is disabled or undefined. Otherwise, no explicit return value is provided.
    */
-  public function execute()
+  public function execute(array $parameters): mixed
   {
     if (!\defined('CLICSHOPPING_APP_SUPPLIERS_CS_STATUS') || CLICSHOPPING_APP_SUPPLIERS_CS_STATUS == 'False') {
       return false;
     }
 
     if (isset($_GET['Update'], $_POST['clone_categories_id_to'])) {
+      $clone_products_id = $parameters['products_id'] ?? null;
+
       $Qproducts = $this->app->db->prepare('select *
-                                              from :table_products
-                                              where products_id = :products_id
-                                             ');
+                                            from :table_products
+                                            where products_id = :products_id
+                                           ');
       $Qproducts->bindInt(':products_id', $_GET['pID']);
 
       $Qproducts->execute();
 
       $sql_array = ['manufacturers_id' => (int)$Qproducts->valueInt('manufacturers_id')];
-      $insert_array = ['products_id' => HTML::sanitize($_POST['clone_products_id'])];
+      $insert_array = ['products_id' => $clone_products_id];
 
       $this->app->db->save('products', $sql_array, $insert_array);
     }
+    
+    return true;
   }
 }

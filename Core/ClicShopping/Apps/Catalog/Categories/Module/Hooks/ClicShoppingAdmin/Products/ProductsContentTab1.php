@@ -135,7 +135,8 @@ class ProductsContentTab1 implements \ClicShopping\OM\Modules\HooksInterface
     $content .= '</div>';
     $content .= '<!-- End Categories -->';
 
-    $categories_ajax = CLICSHOPPING::link('ajax/products_categories.php');
+   $categories_ajax =  $this->app->link('ProductsCategoriesAjax');
+   $categories_ajax = HTML::AjaxAppLink($categories_ajax);
 
     $output = <<<EOD
 <!-- ######################## -->
@@ -150,7 +151,7 @@ $('#tab1ContentRow1').append(
   $(document).on('click', '#myCategoriesAjax', function(e) {
     const selectedOptionVal = document.querySelector('#move_to_category_id').value;
     let options_html = "";
-    fetch("<? $categories_ajax ?>?" + selectedOptionVal)
+    fetch("{$categories_ajax}&" + selectedOptionVal)
       .then(response => response.json())
       .then(jsonResponse => {
         options_html = "";

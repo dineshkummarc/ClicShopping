@@ -42,23 +42,28 @@ class CloneProducts implements \ClicShopping\OM\Modules\HooksInterface
    * Retrieves product data from the database for the specified product ID.
    * Updates the products database table with the quantity unit ID of the cloned product and the cloned product ID.
    *
-   * @return void
+   * @param array $parameters
+   * @return mixed
    */
-  public function execute()
+  public function execute(array $parameters): mixed
   {
     if (isset($_GET['Update'], $_POST['clone_categories_id_to'])) {
+      $clone_products_id = $parameters['products_id'] ?? null;
+
       $Qproducts = $this->app->db->prepare('select *
-                                              from :table_products
-                                              where products_id = :products_id
-                                             ');
+                                            from :table_products
+                                            where products_id = :products_id
+                                           ');
       $Qproducts->bindInt(':products_id', $_GET['pID']);
 
       $Qproducts->execute();
 
       $sql_array = ['products_quantity_unit_id' => (int)$Qproducts->valueInt('products_quantity_unit_id')];
-      $insert_array = ['products_id' => HTML::sanitize($_POST['clone_products_id'])];
+      $insert_array = ['products_id' => $clone_products_id];
 
       $this->app->db->save('products', $sql_array, $insert_array);
     }
+
+    return true;
   }
 }
