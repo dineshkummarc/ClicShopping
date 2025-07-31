@@ -14,17 +14,16 @@ use DateTimeZone;
 use function count;
 use function strlen;
 
-
 /**
  * A class to handle date and time operations, providing functionalities
  * for formatting and conversion based on specific patterns and time zones.
  */
 class DateTime
 {
-  protected $datetime = false;
+  private bool $datetime = false;
 
-  protected string $raw_pattern_date = 'Y-m-d';
-  protected string $raw_pattern_time = 'H:i:s';
+  private string $raw_pattern_date = 'Y-m-d';
+  private string $raw_pattern_time = 'H:i:s';
 
   /**
    * Constructs a DateTime object based on the provided parameters.
@@ -50,7 +49,7 @@ class DateTime
     if ($new_datetime !== false) {
       $new_datetime = date($pattern, $new_datetime);
 
-      $this->datetime = \DateTime::createFromFormat($pattern, $new_datetime);
+      $this->datetime = \DateTimeImmutable::createFromFormat($pattern, $new_datetime);
 
       $strict_log = false;
     }
@@ -58,7 +57,7 @@ class DateTime
     if ($this->datetime === false) {
       $strict_log = true;
     } else {
-      $errors = \DateTime::getLastErrors();
+      $errors = \DateTimeImmutable::getLastErrors();
 
       if (is_array($errors)) {
         if (($errors['warning_count'] > 0) || ($errors['error_count'] > 0)) {
@@ -77,11 +76,11 @@ class DateTime
   /**
    * Checks if the current object's datetime property is a valid DateTime instance.
    *
-   * @return bool True if the datetime property is an instance of \DateTime, false otherwise.
+   * @return bool True if the datetime property is an instance of \DateTimeImmutable, false otherwise.
    */
   public function isValid(): bool
   {
-    return $this->datetime instanceof \DateTime;
+    return $this->datetime instanceof \DateTimeImmutable;
   }
 
   /**
@@ -121,28 +120,21 @@ class DateTime
   }
 
   /**
-   * Converts a raw datetime string into a formatted short or long date string.
+   * Converts a raw datetime string into a formatted short date string.
    *
    * @param string $raw_datetime The raw datetime string to be converted.
-   * @param bool $with_time Whether to include the time in the formatted result. Defaults to false.
-   * @param bool $strict Whether to enable strict validation when parsing the datetime. Defaults to true.
-   * @return string The formatted date string, with or without time, based on the input parameters.
+   * @param bool $with_time Indicates whether the result should include time. Defaults to false.
+   * @return string The formatted short date string or an empty string if the input is invalid.
    */
-  public static function toShort(string $raw_datetime, bool $with_time = false, bool $strict = true): string
+  public static function toShort(string $raw_datetime, bool $with_time = false): string
   {
-    $result = '';
-
-    if (!empty($raw_datetime)) {
-      $date = new DateTime($raw_datetime, true, $strict);
-
-      if ($date->isValid()) {
-        $pattern = ($with_time === false) ? CLICSHOPPING::getDef('date_format_short') : CLICSHOPPING::getDef('date_format_long');
-
-        $result = date($pattern, $date->getTimestamp());
-      }
+    try {
+      $dt = new \DateTimeImmutable($raw_datetime);
+      $pattern = $with_time ? CLICSHOPPING::getDef('date_format_long') : CLICSHOPPING::getDef('date_format_short');
+      return $dt->format($pattern);
+    } catch (\Exception) {
+      return '';
     }
-
-    return $result;
   }
 
   /**
@@ -150,33 +142,19 @@ class DateTime
    *
    * @param string $raw_datetime The raw datetime string to be converted.
    * @param bool $with_time Indicates whether the result should include time. Defaults to false.
-   * @param bool $strict Controls whether strict validation is applied to the datetime. Defaults to true.
    * @return string The formatted date string or an empty string if the input is invalid.
    */
-  public static function toShortWithoutFormat(string $raw_datetime, bool $with_time = false, bool $strict = true): string
+  public static function toShortWithoutFormat(string $raw_datetime, bool $with_time = false): string
   {
-    $result = '';
+    try {
+      $dt = new \DateTimeImmutable($raw_datetime);
+      $pattern = $with_time ? CLICSHOPPING::getDef('date_time_format') : CLICSHOPPING::getDef('date_format_short_sql');
 
-    if (!empty($raw_datetime)) {
-      $date = new DateTime($raw_datetime, true, $strict);
-
-      if ($date->isValid()) {
-        $pattern = ($with_time === false) ? CLICSHOPPING::getDef('date_format_short_sql') : CLICSHOPPING::getDef('date_time_format');
-
-        $result = date($pattern, $date->getTimestamp());
-      }
+      return $dt->format($pattern);
+    } catch (\Exception) {
+      return '';
     }
-
-    return $result;
   }
-
-  /*
-   * Output a  date string in the selected locale date format
-   * @param : $date,date format
-   * @return string long date
-   * $date needs to be in this format: YYYY-MM-DD HH:MM:SS
-    * $date needs to be in this format: Saturday february 2015
-   */
 
   /**
    * Retrieves the formatted date string based on the long date format.
@@ -198,20 +176,18 @@ class DateTime
    * Converts a raw datetime string into a formatted long date string.
    *
    * @param string $raw_datetime The raw datetime string to be converted.
-   * @param bool $strict Optional. If set to true, applies strict validation on the datetime string. Defaults to true.
    * @return string The formatted long date string, or an empty string if the datetime string is invalid.
    */
-  public static function toLong(string $raw_datetime, bool $strict = true): string
+  public static function toLong(string $raw_datetime): string
   {
-    $result = '';
+    try {
+      $dt = new \DateTimeImmutable($raw_datetime);
 
-    $date = new DateTime($raw_datetime, true, $strict);
+      return $dt->format(CLICSHOPPING::getDef('date_format_long'));
 
-    if ($date->isValid()) {
-      $result = date(CLICSHOPPING::getDef('date_format_long'), $date->getTimestamp());
+    } catch (\Exception) {
+      return '';
     }
-
-    return $result;
   }
 
   /**
@@ -231,15 +207,9 @@ class DateTime
     return $this->datetime->format($pattern);
   }
 
-  /*
-  * Date Timestamp
-  * @param $date
-  * @return
-  * ex : 1430965442
-  */
   /**
    * Retrieves the Unix timestamp from the stored DateTime object.
-   *
+   * ex : 1430965442
    * @return int The Unix timestamp representing the date and time.
    */
   public function getTimestamp(): int
@@ -310,15 +280,12 @@ class DateTime
    * @param string|null $format The date format to use. If null, a default long date format is applied.
    * @return string The formatted current date and time.
    */
-  public static function getNow(string|null $format = null): string
-  {
+    public static function getNow(?string $format = null): string
+    {
+      $format = $format ?? CLICSHOPPING::getDef('date_format_long');
 
-    if (!isset($format)) {
-      $format = CLICSHOPPING::getDef('date_format_long');
+      return (new \DateTimeImmutable())->format($format);
     }
-
-    return date($format);
-  }
 
   /**
    * Retrieves a short date reference string formatted according to the defined date format.
@@ -340,23 +307,17 @@ class DateTime
    * Converts a raw datetime string into a formatted short date reference.
    *
    * @param string $raw_datetime The raw datetime string to be converted.
-   * @param bool $strict Specifies whether to apply strict parsing of the input datetime.
    * @return string The formatted short date reference. Returns an empty string if the datetime is invalid or empty.
    */
-  public static function toDateReferenceShort(string $raw_datetime, bool $strict = true): string
+  public static function toDateReferenceShort(string $raw_datetime): string
   {
-    $result = '';
+    try {
+      $dt = new \DateTimeImmutable($raw_datetime);
 
-    if (!empty($raw_datetime)) {
-      $date = new DateTime($raw_datetime, true, $strict);
-
-      if ($date->isValid()) {
-        $pattern = CLICSHOPPING::getDef('date_invoice');
-        $result = date($pattern, $date->getTimestamp());
-      }
+      return $dt->format(CLICSHOPPING::getDef('date_invoice'));
+    } catch (\Exception) {
+      return '';
     }
-
-    return $result;
   }
 
   /**
@@ -385,22 +346,8 @@ class DateTime
    */
   public static function isLeapYear(?string $year = null): bool
   {
-
-    if (!isset($year)) {
-      $year = self::getNow('Y');
-    }
-
-    if ($year % 100 == 0) {
-      if ($year % 400 == 0) {
-        return true;
-      }
-    } else {
-      if (($year % 4) == 0) {
-        return true;
-      }
-    }
-
-    return false;
+    $year = $year ?? (new \DateTimeImmutable())->format('Y');
+    return ((int) $year % 4 === 0) && (((int) $year % 100 !== 0) || ((int) $year % 400 === 0));
   }
 
   /**
@@ -531,10 +478,15 @@ class DateTime
    */
   public static function getIntervalDate(string $dateStart, string $dateEnd, string $differenceFormat = '%r%a'): string
   {
-    $start = date_create($dateStart);
-    $end = date_create($dateEnd);
-    $interval = date_diff($start, $end);
+    try {
+      $start = new \DateTimeImmutable($dateStart);
+      $end = new \DateTimeImmutable($dateEnd);
 
-    return $interval->format($differenceFormat);
+      $interval = $start->diff($end);
+
+      return $interval->format($differenceFormat);
+    } catch (\Exception) {
+      return '';
+    }
   }
 }

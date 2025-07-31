@@ -641,7 +641,7 @@ class ProductsFunctionTemplate
   },
   "offers": {
     "@type": "Offer",
-    "url": "' . $this->getProductsUrlRewrited()->getProductNameUrl($products_id) . '",
+    "url": "' . $this->rewriteUrl->getProductNameUrl($products_id) . '",
     "priceCurrency": "' . HTML::output(HTML::sanitize($_SESSION['currency'])) . '",
     "price": "' . $price . '",
     "priceValidUntil": "",

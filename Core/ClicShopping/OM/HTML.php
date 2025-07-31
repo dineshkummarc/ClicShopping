@@ -145,17 +145,6 @@ class HTML
     return false;
   }
 
-  /*
-  * Generate an <img> tag
-  *
-  * @param string $image The image filename to display
-  * @param string $title The title of the image button
-  * @param int $width The width of the image
-  * @param int $height The height of the image
-  * @param string $parameters Additional parameters for the image
-  * @return string
-  */
-
   /**
    * Generates an HTML image element with various customizable attributes.
    *
