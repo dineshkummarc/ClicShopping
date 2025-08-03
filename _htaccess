@@ -45,6 +45,9 @@
 #RewriteCond %{REQUEST_FILENAME} !-d
 #RewriteRule ^(.*)$ index.php/$1 [L]
 
+#log
+#RewriteLog /path/to/rewrite.log
+#RewriteLogLevel 3
 </IfModule>
 
 
@@ -55,6 +58,13 @@
 # Be carefull approach is different : Linux, Ngix, IIS
 # Below for linux
 ##################################
+# Protection des fichiers de configuration
+<FilesMatch "\.(ini|init|log|conf|env)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+
   <IfModule mod_headers.c>
     # prevent mime based attacks
     Header set X-Content-Type-Options "nosniff"
@@ -118,29 +128,33 @@ Deny from env=bots
 ## https://gtmetrix.com/leverage-browser-caching.html ##
 <IfModule mod_expires.c>
     ExpiresActive On
-    ExpiresDefault "access plus 1 month"
+    # Images
     ExpiresByType image/gif "access plus 1 month"
     ExpiresByType image/jpeg "access plus 1 month"
     ExpiresByType image/png "access plus 1 month"
     ExpiresByType image/webp "access plus 1 month"
-    ExpiresByType text/css "access plus 1 week"
-    ExpiresByType text/javascript "access plus 1 week"
-    ExpiresByType application/javascript "access plus 1 week"
-    ExpiresByType application/x-javascript "access plus 1 week"
     ExpiresByType image/x-icon "access plus 1 year"
     ExpiresByType image/svg+xml "access plus 1 year"
     ExpiresByType image/vnd.microsoft.icon "access plus 1 year"
+
+    # CSS
+    ExpiresByType text/css "access plus 1 year"
+
+    # JavaScript
+    ExpiresByType text/javascript "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType application/x-javascript "access plus 1 year"
+
+    # Polices
     ExpiresByType application/font-woff "access plus 1 year"
     ExpiresByType application/x-font-woff "access plus 1 year"
     ExpiresByType font/woff2 "access plus 1 year"
-    ExpiresByType application/vnd.ms-fontobject "access plus 1 year"
     ExpiresByType font/opentype "access plus 1 year"
     ExpiresByType font/ttf "access plus 1 year"
     ExpiresByType font/otf "access plus 1 year"
     ExpiresByType application/x-font-ttf "access plus 1 year"
     ExpiresByType application/x-font-otf "access plus 1 year"
-    ExpiresByType text/css "access plus 1 year"
-    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType application/vnd.ms-fontobject "access plus 1 year"
 </IfModule>
 
 ##################################
