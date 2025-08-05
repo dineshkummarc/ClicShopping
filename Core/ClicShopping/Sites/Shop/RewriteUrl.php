@@ -60,7 +60,7 @@ class RewriteUrl
   /**
    * Sanitize and validate input string
    *
-   * @param string $input The input string to sanitize
+   * @param string|null $input The input string to sanitize
    * @return string|null Returns sanitized string or null if invalid
    */
   protected function sanitizeInput(?string $input): ?string
@@ -879,9 +879,9 @@ class RewriteUrl
     if (extension_loaded('intl')) {
       $transliterator = Transliterator::create('Any-Latin; Latin-ASCII');
       $str = $transliterator->transliterate(mb_convert_encoding(htmlspecialchars_decode($str), $charset, 'auto'));
-      $str = static::getRemoveAccents($str);
+      $str = self::getRemoveAccents($str);
     } else {
-      $str = static::getRemoveAccents($str);
+      $str = self::getRemoveAccents($str);
     }
 
     $str = preg_replace('#&([A-za-z]{2})(?:lig);#', '\1', $str);
@@ -997,7 +997,6 @@ class RewriteUrl
 
     return $title;
   }
-
 
   /**
    * Generates a URL for the category tree based on the provided category ID and optional parameters.

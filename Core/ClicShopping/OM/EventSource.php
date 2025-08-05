@@ -10,26 +10,39 @@
 
 namespace ClicShopping\OM;
 
-use Exception;
-use ClicShopping\OM\HTTP;
+use ClicShopping\OM\Core\HttpRequest\Stream;
+use CLICSHOPPING;
+
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-
-
-/*
- // Configuration pour ClicShopping
-$eventSource = new EventSource('https://api.example.com/events');
-$eventSource->setHttpOptions([
-    'cafile' => CLICSHOPPING::BASE_DIR . 'External/cacert.pem',
-    'certificate' => '/path/to/client.pem' // si nécessaire
-]);
- */
+use Exception;
 
 /**
  * Class EventSource
  *
- * This class implements a server-sent events (SSE) client that connects to an event source URL,
- * processes incoming events, and supports automatic reconnection with exponential backoff.
+ * A PHP implementation of the EventSource client for Server-Sent Events (SSE).
+ *
+ * This class allows connecting to an SSE endpoint, handling incoming events,
+ * managing reconnections, and providing hooks for event processing.
+ *
+ * Example usage:
+ * ```php
+ * $eventSource = new EventSource('https://example.com/sse');
+ *
+ * $eventSource->onOpen(function() {
+ *     echo "Connection opened\n";
+ * });
+ *
+ * $eventSource->onMessage(function($event) {
+ *     echo "Received event: " . $event->getData() . "\n";
+ * });
+ *
+ * $eventSource->onError(function($error) {
+ *     echo "Error: " . $error->getMessage() . "\n";
+ * });
+ *
+ * $eventSource->connect();
+ * ```
  */
 class EventSource
 {
@@ -54,49 +67,67 @@ class EventSource
   private LoggerInterface $logger;
   private ?string $lastEventId = null;
 
+  // Buffer pour le parsing des événements
+  private string $eventBuffer = '';
+
   /**
-   * EventSource constructor.
+   * Constructor
    *
-   * @param string $url The URL of the event source to connect to.
-   * @param LoggerInterface|null $logger Optional logger for debugging and error handling.
+   * @param string $url The URL of the EventSource endpoint
+   * @param LoggerInterface|null $logger Optional PSR-3 logger for logging events and errors
+   * @throws Exception if streaming is not supported
    */
   public function __construct(string $url, LoggerInterface $logger = null)
   {
     $this->url = $url;
     $this->logger = $logger ?? new NullLogger();
 
+    if (!Stream::canStream()) {
+      throw new Exception('Streaming is not supported on this system');
+    }
+
     $this->setDefaultHeaders();
-    $this->setDefaultGuzzleOptions();
+    $this->setDefaultHttpOptions();
   }
 
   /**
    * Set default headers for the EventSource connection.
-   * These headers are typically required for SSE connections.
+   * @return void
    */
   private function setDefaultHeaders(): void
   {
     $this->headers = [
       'Accept' => 'text/event-stream',
       'Cache-Control' => 'no-cache',
-      'Connection' => 'keep-alive'
+      'Connection' => 'keep-alive',
+      'User-Agent' => 'ClicShopping-EventSource/1.0'
     ];
   }
 
   /**
-   * Set default Guzzle options for the EventSource connection.
-   * This includes SSL certificate verification settings.
+   * Set default HTTP options for the EventSource connection.
+   * @return void
    */
-  private function setDefaultGuzzleOptions(): void
+  private function setDefaultHttpOptions(): void
   {
     $this->httpOptions = [
-      'cafile' => CLICSHOPPING::BASE_DIR . 'External/cacert.pem'
+      'read_timeout' => 60,
+      'connection_timeout' => 15
     ];
+
+    // Ajout du certificat CA par défaut
+    if (defined('CLICSHOPPING::BASE_DIR')) {
+      $defaultCaFile = CLICSHOPPING::BASE_DIR . 'External/cacert.pem';
+      if (file_exists($defaultCaFile)) {
+        $this->httpOptions['cafile'] = $defaultCaFile;
+      }
+    }
   }
 
-   /**
-   * Setters for configuration options
+  /**
+   * Set additional HTTP headers.
    *
-   * These methods allow you to customize the EventSource connection settings.
+   * @param array $headers Associative array of headers (e.g. ['Authorization'
    */
   public function setHeaders(array $headers): self
   {
@@ -105,11 +136,15 @@ class EventSource
   }
 
   /**
-   * Set custom HTTP options for the EventSource connection.
-   * This can include SSL certificates, timeouts, etc.
+   * Set additional HTTP options.
    *
-   * @param array $options Associative array of HTTP options.
-   * @return self
+   * Supported options include:
+   * - read_timeout: Timeout for reading data (in seconds)
+   * - connection_timeout: Timeout for establishing the connection (in seconds)
+   * - cafile: Path to a CA certificate file for SSL verification
+   *
+   * @param array $options Associative array of HTTP options
+   * @return $this
    */
   public function setHttpOptions(array $options): self
   {
@@ -118,10 +153,9 @@ class EventSource
   }
 
   /**
-   * Set the URL for the EventSource connection.
-   *
-   * @param string $url The URL to connect to.
-   * @return self
+   * Configuration methods
+   * @param int $milliseconds Delay in milliseconds before attempting to reconnect
+   * @return $this
    */
   public function setReconnectDelay(int $milliseconds): self
   {
@@ -132,8 +166,8 @@ class EventSource
   /**
    * Set the maximum number of reconnection attempts.
    *
-   * @param int $attempts The maximum number of reconnection attempts.
-   * @return self
+   * @param int $attempts Maximum number of reconnection attempts
+   * @return $this
    */
   public function setMaxReconnectAttempts(int $attempts): self
   {
@@ -142,10 +176,10 @@ class EventSource
   }
 
   /**
-   * Set whether to automatically reconnect on connection loss.
+   * Enable or disable automatic reconnection.
    *
-   * @param bool $autoReconnect True to enable automatic reconnection, false to disable.
-   * @return self
+   * @param bool $autoReconnect True to enable auto-reconnect, false to disable
+   * @return $this
    */
   public function setAutoReconnect(bool $autoReconnect): self
   {
@@ -154,11 +188,36 @@ class EventSource
   }
 
   /**
-   * Set the Last-Event-ID header for the EventSource connection.
-   * This is used to resume the connection from the last event received.
+   * Set the read timeout for the HTTP connection.
    *
-   * @param string $lastEventId The Last-Event-ID to set.
-   * @return self
+   * @param int $seconds Read timeout in seconds
+   * @return $this
+   */
+  public function setReadTimeout(int $seconds): self
+  {
+    $this->httpOptions['read_timeout'] = $seconds;
+    return $this;
+  }
+
+  /**
+   * Set the connection timeout for the HTTP connection.
+   *
+   * @param int $seconds Connection timeout in seconds
+   * @return $this
+   */
+  public function setConnectionTimeout(int $seconds): self
+  {
+    $this->httpOptions['connection_timeout'] = $seconds;
+    return $this;
+  }
+
+  /**
+   * Register a message handler callback.
+   *
+   * The callback will be invoked with an Event object whenever a new event is received.
+   *
+   * @param callable $handler Function with signature function(Event $event)
+   * @return $this
    */
   public function onMessage(callable $handler): self
   {
@@ -167,10 +226,12 @@ class EventSource
   }
 
   /**
-   * Set a callback to be called when the connection opens.
+   * Register a callback for the 'open' event.
    *
-   * @param callable $handler The callback to call on open.
-   * @return self
+   * The callback will be invoked when the connection is successfully opened.
+   *
+   * @param callable $handler Function with signature function()
+   * @return $this
    */
   public function onOpen(callable $handler): self
   {
@@ -179,10 +240,12 @@ class EventSource
   }
 
   /**
-   * Set a callback to be called when an error occurs.
+   * Register a callback for the 'error' event.
    *
-   * @param callable $handler The callback to call on error.
-   * @return self
+   * The callback will be invoked when an error occurs.
+   *
+   * @param callable $handler Function with signature function(Exception $error)
+   * @return $this
    */
   public function onError(callable $handler): self
   {
@@ -191,10 +254,12 @@ class EventSource
   }
 
   /**
-   * Set a callback to be called when the connection closes.
+   * Register a callback for the 'close' event.
    *
-   * @param callable $handler The callback to call on close.
-   * @return self
+   * The callback will be invoked when the connection is closed.
+   *
+   * @param callable $handler Function with signature function()
+   * @return $this
    */
   public function onClose(callable $handler): self
   {
@@ -203,12 +268,9 @@ class EventSource
   }
 
   /**
-   * Connect to the EventSource URL and start processing events.
+   * Connect to the EventSource endpoint and start receiving events.
    *
-   * This method initiates the connection and begins listening for events.
-   * It will automatically handle reconnections if configured to do so.
-   *
-   * @throws Exception If the connection fails or is already connected.
+   * @throws Exception if already connected or if connection fails
    */
   public function connect(): void
   {
@@ -226,16 +288,52 @@ class EventSource
   }
 
   /**
-   * Perform the actual connection to the EventSource URL.
-   *
-   * This method handles the HTTP request and processes incoming events.
-   * It will also manage reconnections if configured to do so.
-   *
-   * @throws Exception If the connection fails or an error occurs during processing.
+   * Perform the actual connection and handle the streaming.
+   * This method uses the Stream class to manage the HTTP connection and data streaming.
+   * It sets up the necessary parameters and callbacks for processing incoming data.
+   * @throws Exception if the connection fails
+   * @return void
    */
   private function performConnection(): void
   {
-    // Préparer les headers pour ClicShopping HTTP
+    // Préparation des paramètres pour Stream
+    $parameters = $this->prepareStreamParameters();
+
+    $this->connected = true;
+    $this->currentReconnectAttempt = 0;
+    $this->eventBuffer = '';
+
+    if ($this->onOpen && is_callable($this->onOpen)) {
+      ($this->onOpen)();
+    }
+
+    try {
+      // Utilisation du streaming de la nouvelle classe Stream
+      Stream::executeStreaming($parameters, [$this, 'processStreamData']);
+    } catch (Exception $e) {
+      throw $e;
+    } finally {
+      $this->connected = false;
+
+      if ($this->onClose && is_callable($this->onClose)) {
+        ($this->onClose)();
+      }
+
+      // Auto-reconnect if needed
+      if (!$this->aborted && $this->autoReconnect &&
+        $this->currentReconnectAttempt < $this->maxReconnectAttempts) {
+        $this->scheduleReconnect();
+      }
+    }
+  }
+
+  /**
+   * Prepare the parameters for the Stream::executeStreaming method.
+   *
+   * @return array Associative array of parameters for Stream
+   */
+  private function prepareStreamParameters(): array
+  {
     $headers = $this->headers;
 
     // Ajouter Last-Event-ID si disponible
@@ -243,107 +341,58 @@ class EventSource
       $headers['Last-Event-ID'] = $this->lastEventId;
     }
 
-    // Convertir les headers au format attendu par ClicShopping HTTP
+    // Convertir les headers au format attendu par Stream
     $headerStrings = [];
     foreach ($headers as $name => $value) {
       $headerStrings[] = "{$name}: {$value}";
     }
 
-    // Préparer les données pour la classe HTTP de ClicShopping
-    $httpData = [
+    $parameters = [
       'url' => $this->url,
       'method' => 'get',
-      'header' => $headerStrings
+      'header' => $headerStrings,
+      'parameters' => ''
     ];
 
-    // Ajouter les options HTTP personnalisées
-    if (isset($this->httpOptions['cafile'])) {
-      $httpData['cafile'] = $this->httpOptions['cafile'];
-    }
-    if (isset($this->httpOptions['certificate'])) {
-      $httpData['certificate'] = $this->httpOptions['certificate'];
-    }
-
-    $response = HTTP::getResponse($httpData);
-
-    if ($response === false) {
-      throw new Exception("HTTP request failed for URL: {$this->url}");
-    }
-
-    $this->connected = true;
-    $this->currentReconnectAttempt = 0;
-
-    if ($this->onOpen && is_callable($this->onOpen)) {
-      ($this->onOpen)();
-    }
-
-    // Traitement du stream de données
-    $this->processStreamData($response);
-
-    $this->connected = false;
-
-    if ($this->onClose && is_callable($this->onClose)) {
-      ($this->onClose)();
-    }
-
-    // Reconnexion automatique si nécessaire
-    if (!$this->aborted && $this->autoReconnect &&
-      $this->currentReconnectAttempt < $this->maxReconnectAttempts) {
-
-      $this->scheduleReconnect();
-    }
+    // Ajouter les options HTTP
+    return array_merge($parameters, $this->httpOptions);
   }
 
   /**
-   * Process the incoming stream data from the EventSource.
+   * Process incoming stream data.
    *
-   * This method reads the response data in chunks, processes each event,
-   * and handles reconnections if necessary.
+   * This method is called by the Stream class whenever new data is received.
+   * It buffers the data and processes complete events.
    *
-   * @param string $responseData The raw response data from the EventSource.
+   * @param string $data The incoming data chunk
+   * @return void
    */
-  private function processStreamData(string $responseData): void
+  public function processStreamData(string $data): void
   {
-    $buffer = '';
-    $offset = 0;
-    $dataLength = strlen($responseData);
-
-    // Simulation du streaming en traitant les données par chunks
-    while ($offset < $dataLength && !$this->aborted) {
-      $chunkSize = min(1024, $dataLength - $offset);
-      $chunk = substr($responseData, $offset, $chunkSize);
-      $buffer .= $chunk;
-      $offset += $chunkSize;
-
-      // Traiter les événements complets (séparés par double retour ligne)
-      while (($pos = strpos($buffer, "\n\n")) !== false) {
-        $eventData = substr($buffer, 0, $pos);
-        $buffer = substr($buffer, $pos + 2);
-
-        if (!empty(trim($eventData))) {
-          $this->processEventData($eventData);
-        }
-      }
-
-      // Petite pause pour simuler le streaming et permettre l'interruption
-      if (!$this->aborted) {
-        usleep(10000); // 10ms
-      }
+    if ($this->aborted) {
+      return;
     }
 
-    // Traiter le reste du buffer s'il contient des données
-    if (!empty(trim($buffer))) {
-      $this->processEventData($buffer);
+    $this->eventBuffer .= $data;
+
+    // Traiter les événements complets (séparés par double retour ligne)
+    while (($pos = strpos($this->eventBuffer, "\n\n")) !== false) {
+      $eventData = substr($this->eventBuffer, 0, $pos);
+      $this->eventBuffer = substr($this->eventBuffer, $pos + 2);
+
+      if (!empty(trim($eventData))) {
+        $this->processEventData($eventData);
+      }
     }
   }
 
   /**
-   * Process a single event from the EventSource.
+   * Process a single event data block.
    *
-   * This method parses the event data, calls the appropriate handlers,
-   * and handles any errors that occur during processing.
+   * This method parses the event data and invokes the registered message handlers.
    *
-   * @param string $eventData The raw event data to process.
+   * @param string $eventData The raw event data block
+   * @return void
    */
   private function processEventData(string $eventData): void
   {
@@ -362,10 +411,16 @@ class EventSource
         }
       }
 
+      $this->logger->debug('Event processed', [
+        'hasId' => $event->hasId(),
+        'hasName' => $event->hasName(),
+        'dataLength' => strlen($event->getData())
+      ]);
+
     } catch (Exception $e) {
       $this->logger->warning('Failed to process event', [
         'error' => $e->getMessage(),
-        'eventData' => $eventData
+        'eventData' => substr($eventData, 0, 200) . '...'
       ]);
 
       if ($this->onError && is_callable($this->onError)) {
@@ -375,12 +430,11 @@ class EventSource
   }
 
   /**
-   * Handle connection errors and manage reconnection logic.
+   * Handle connection errors and manage reconnection attempts.
    *
-   * This method logs the error, calls the onError callback if set,
-   * and schedules a reconnection if autoReconnect is enabled.
-   *
-   * @param Exception $e The exception that occurred during the connection.
+   * @param Exception $e The exception that occurred
+   * @return void
+   * @throws Exception if maximum reconnection attempts are exceeded
    */
   private function handleConnectionError(Exception $e): void
   {
@@ -396,7 +450,6 @@ class EventSource
 
     if (!$this->aborted && $this->autoReconnect &&
       $this->currentReconnectAttempt < $this->maxReconnectAttempts) {
-
       $this->scheduleReconnect();
     } else {
       throw $e;
@@ -404,22 +457,21 @@ class EventSource
   }
 
   /**
-   * Schedule a reconnection attempt with exponential backoff.
+   * Schedule a reconnection attempt after a delay.
    *
-   * This method increases the reconnect attempt count, calculates the delay,
-   * and attempts to reconnect after the specified delay.
+   * @return void
    */
   private function scheduleReconnect(): void
   {
     $this->currentReconnectAttempt++;
-    $delay = $this->reconnectDelay * $this->currentReconnectAttempt; // Backoff exponentiel
+    $delay = min($this->reconnectDelay * $this->currentReconnectAttempt, 30000); // Max 30s
 
     $this->logger->info('Scheduling reconnect', [
       'attempt' => $this->currentReconnectAttempt,
-      'delay' => $delay
+      'delay' => $delay . 'ms'
     ]);
 
-    usleep($delay * 1000); // Convertir ms en microseconds
+    usleep($delay * 1000); // Convert ms to microseconds
 
     if (!$this->aborted) {
       try {
@@ -430,11 +482,10 @@ class EventSource
     }
   }
 
-  /**
-   * Abort the EventSource connection.
+ /**
+   * Abort the connection and stop any reconnection attempts.
    *
-   * This method stops the connection and prevents any further events from being processed.
-   * It can be called to gracefully shut down the connection.
+   * @return void
    */
   public function abort(): void
   {
@@ -444,9 +495,8 @@ class EventSource
   }
 
   /**
-   * Check if the EventSource is currently connected.
-   *
-   * @return bool True if connected, false otherwise.
+   * Check if currently connected
+   * @return bool True if connected, false otherwise
    */
   public function isConnected(): bool
   {
@@ -454,9 +504,8 @@ class EventSource
   }
 
   /**
-   * Check if the EventSource connection has been aborted.
-   *
-   * @return bool True if the connection has been aborted, false otherwise.
+   * Check if the connection has been aborted
+   * @return bool True if aborted, false otherwise
    */
   public function isAborted(): bool
   {
@@ -464,11 +513,8 @@ class EventSource
   }
 
   /**
-   * Get the last event ID received from the EventSource.
-   *
-   * This ID can be used to resume the connection from the last event received.
-   *
-   * @return string|null The last event ID, or null if not set.
+   * Get the last received event ID
+   * @return string|null The last event ID or null if none
    */
   public function getLastEventId(): ?string
   {
@@ -476,14 +522,30 @@ class EventSource
   }
 
   /**
-   * Get the current reconnect attempt count.
-   *
-   * This method returns the number of reconnection attempts made so far.
-   *
-   * @return int The current reconnect attempt count.
+   * Get the current reconnect attempt count
+   * @return int The current reconnect attempt number
    */
   public function getReconnectAttempt(): int
   {
     return $this->currentReconnectAttempt;
+  }
+
+  /**
+   * Get the EventSource URL
+   * @return string The EventSource URL
+   */
+  public function getUrl(): string
+  {
+    return $this->url;
+  }
+
+  /**
+   * Static method to check if streaming is supported on the system.
+   *
+   * @return bool True if streaming is supported, false otherwise
+   */
+  public static function isStreamingAvailable(): bool
+  {
+    return Stream::canStream();
   }
 }
