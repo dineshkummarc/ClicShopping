@@ -16,7 +16,6 @@ use InvalidArgumentException;
 
 use function count;
 use function in_array;
-use function strlen;
 use const JSON_PRETTY_PRINT;
 
 /**
@@ -224,8 +223,6 @@ class HTTP
   {
     if (headers_sent()) {
       throw new InvalidArgumentException('HTTP::setResponseCode() - headers already sent, cannot set response code.');
-
-      return false;
     }
 
     http_response_code($code);

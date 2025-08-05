@@ -1,8 +1,10 @@
 version4.05
+Libraries updated
+Refactoring
+fix small bugs
+Event system improved
 
-
-
-------------------
+-----------------
 version4.04
 Libraries updated
 Limit the analytics context sent to the AI

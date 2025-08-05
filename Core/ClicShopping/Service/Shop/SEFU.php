@@ -53,10 +53,15 @@ class SEFU implements \ClicShopping\OM\ServiceInterface
           $param_array[1] = '';
         }
 
-        if (str_contains($param_array[0], '[]')) {
-          $GET_array[substr($param_array[0], 0, -2)][] = $param_array[1];
+        $raw_key = $param_array[0];
+        $key = preg_replace('/[^a-zA-Z0-9_\[\]]/', '', $raw_key);
+        $value = htmlspecialchars($param_array[1], ENT_QUOTES, 'UTF-8');
+
+        if (str_ends_with($key, '[]')) {
+          $clean_key = substr($key, 0, -2);
+          $GET_array[$clean_key][] = $value;
         } else {
-          $_GET[$param_array[0]] = $param_array[1];
+          $_GET[$key] = $value;
         }
       }
 
