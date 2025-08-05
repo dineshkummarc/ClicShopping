@@ -68,7 +68,7 @@ class XML
    */
   public static function fromArray($data, string $encoding = 'UTF-8')
   {
-    $xml = new XMLWriter();
+    $xml = new \XMLWriter();
     $xml->openMemory();
     $xml->setIndent(true);
     $xml->setIndentString('  ');
@@ -89,7 +89,7 @@ class XML
    *
    * @return void
    */
-  protected static function _write(XMLWriter $xml, $data, $parent = null, bool $add_to_parent_element = false)
+  protected static function _write(\XMLWriter $xml, $data, $parent = null, bool $add_to_parent_element = false)
   {
     foreach ($data as $key => $value) {
       if (is_array($value)) {
