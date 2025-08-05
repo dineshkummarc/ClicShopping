@@ -9,311 +9,114 @@
  */
 
 namespace ClicShopping\OM\HttpRequest;
-
-use Exception;
-use InvalidArgumentException;
+use ClicShopping\OM\HTTP;
 
 /**
- * Class Stream
+ * CURL class for handling HTTP requests using cURL
  *
- * Provides low-level HTTP(S) communication using socket streams.
- * Supports basic HTTP requests, SSL configuration, and streaming data consumption.
+ * This class provides methods to execute HTTP requests using cURL,
+ * including handling redirects and SSL verification.
  */
-class CURL
-{
+class Curl {
   /**
-   * Default SSL context options for HTTPS connections.
-   */
-  private static array $defaultSslOptions = [
-    'verify_peer' => true,
-    'verify_peer_name' => true
-  ];
-
-  /**
-   * Default read timeout in seconds.
-   */
-  private static int $defaultTimeout = 30;
-
-  /**
-   * Default connection timeout in seconds.
-   */
-  private static int $defaultConnectionTimeout = 10;
-
-  /**
-   * Execute an HTTP request with error handling.
+   * Executes an HTTP request using cURL.
    *
-   * @param array $parameters Request configuration.
-   * @return string|false Response body or false on failure.
+   * @param array $parameters An associative array containing the request parameters:
+   *                          - 'server': An array with 'scheme', 'host', 'port', 'path', and optionally 'query'.
+   *                          - 'method': The HTTP method ('get' or 'post').
+   *                          - 'parameters': The request body for POST requests.
+   *                          - 'header': An array of headers to include in the request.
+   *                          - 'cafile': Path to the CA file for SSL verification.
+   *                          - 'certificate': Path to the client certificate for SSL.
+   *                          - 'redir_counter': Counter for redirects (optional).
+   *
+   * @return string The response body from the HTTP request.
    */
   public static function execute($parameters)
   {
-    try {
-      return self::executeHttpRequest($parameters);
-    } catch (Exception $e) {
-      trigger_error($e->getMessage());
-      return false;
-    }
-  }
+    $url = $parameters['server']['scheme'] . '://' .
+      $parameters['server']['host'] .
+      $parameters['server']['path'] .
+      (isset($parameters['server']['query']) ? '?' . $parameters['server']['query'] : '');
 
-  /**
-   * Perform an HTTP request and return the response body.
-   *
-   * @param array $parameters Request configuration (url, method, parameters, header).
-   * @return string Response body.
-   * @throws Exception on error or invalid response.
-   */
-  public static function executeHttpRequest(array $parameters): string
-  {
-    self::validateParameters($parameters);
+    $curl = curl_init($url);
 
-    $parsedUrl = parse_url($parameters['url']);
-    if (!$parsedUrl || !isset($parsedUrl['host'])) {
-      throw new InvalidArgumentException("Invalid URL: {$parameters['url']}");
-    }
-
-    $socket = self::createSocket($parsedUrl, $parameters);
-
-    try {
-      self::sendHttpRequest($socket, $parsedUrl, $parameters);
-      return self::readHttpResponse($socket);
-    } finally {
-      fclose($socket);
-    }
-  }
-
-  /**
-   * Perform a streaming HTTP request and invoke a callback on each chunk of data.
-   *
-   * @param array $parameters Request configuration.
-   * @param callable $onData Callback receiving string chunks of response body.
-   * @throws Exception on error or invalid response.
-   */
-  public static function executeStreaming(array $parameters, callable $onData): void
-  {
-    self::validateParameters($parameters);
-
-    $parsedUrl = parse_url($parameters['url']);
-    if (!$parsedUrl || !isset($parsedUrl['host'])) {
-      throw new InvalidArgumentException("Invalid URL: {$parameters['url']}");
-    }
-
-    $socket = self::createSocket($parsedUrl, $parameters);
-
-    try {
-      self::sendHttpRequest($socket, $parsedUrl, $parameters);
-      self::readHttpHeaders($socket); // Skip headers
-      self::streamHttpBody($socket, $onData);
-    } finally {
-      fclose($socket);
-    }
-  }
-
-  /**
-   * Validate required parameters for HTTP requests.
-   *
-   * @param array $parameters
-   * @throws InvalidArgumentException
-   */
-  private static function validateParameters(array $parameters): void
-  {
-    if (!isset($parameters['url'])) {
-      throw new InvalidArgumentException('URL parameter is required');
-    }
-
-    if (!isset($parameters['method'])) {
-      $parameters['method'] = 'get';
-    }
-
-    if (!isset($parameters['parameters'])) {
-      $parameters['parameters'] = '';
-    }
-
-    if (!isset($parameters['header'])) {
-      $parameters['header'] = [];
-    }
-  }
-
-  /**
-   * Create a socket connection to the target server.
-   *
-   * @param array $parsedUrl Parsed result of parse_url().
-   * @param array $parameters Connection options.
-   * @return resource Socket resource.
-   * @throws Exception on connection failure.
-   */
-  private static function createSocket(array $parsedUrl, array $parameters)
-  {
-    $scheme = $parsedUrl['scheme'] ?? 'http';
-    $host = $parsedUrl['host'];
-    $port = $parsedUrl['port'] ?? ($scheme === 'https' ? 443 : 80);
-    $socketUrl = ($scheme === 'https' ? 'ssl://' : '') . $host . ':' . $port;
-    $timeout = $parameters['connection_timeout'] ?? self::$defaultConnectionTimeout;
-
-    $context = null;
-    if ($scheme === 'https') {
-      $sslOptions = self::$defaultSslOptions;
-
-      if (isset($parameters['cafile']) && file_exists($parameters['cafile'])) {
-        $sslOptions['cafile'] = $parameters['cafile'];
-      } elseif (defined('CLICSHOPPING::BASE_DIR')) {
-        $defaultCaFile = \CLICSHOPPING::BASE_DIR . 'External/cacert.pem';
-        if (file_exists($defaultCaFile)) {
-          $sslOptions['cafile'] = $defaultCaFile;
-        }
-      }
-
-      if (isset($parameters['certificate']) && file_exists($parameters['certificate'])) {
-        $sslOptions['local_cert'] = $parameters['certificate'];
-      }
-
-      $context = stream_context_create(['ssl' => $sslOptions]);
-    }
-
-    $socket = stream_socket_client(
-      $socketUrl,
-      $errno,
-      $errstr,
-      $timeout,
-      STREAM_CLIENT_CONNECT,
-      $context
-    );
-
-    if (!$socket) {
-      throw new Exception("Failed to connect to {$socketUrl}: {$errstr} ({$errno})");
-    }
-
-    $readTimeout = $parameters['read_timeout'] ?? self::$defaultTimeout;
-    stream_set_timeout($socket, $readTimeout);
-
-    return $socket;
-  }
-
-  /**
-   * Send an HTTP request through the socket.
-   *
-   * @param resource $socket
-   * @param array $parsedUrl
-   * @param array $parameters
-   * @throws Exception on write failure.
-   */
-  private static function sendHttpRequest($socket, array $parsedUrl, array $parameters): void
-  {
-    $method = strtoupper($parameters['method']);
-    $path = ($parsedUrl['path'] ?? '/') . (isset($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '');
-
-    $headers = [
-      'Host' => $parsedUrl['host'],
-      'User-Agent' => 'ClicShopping-HttpClient/1.0',
-      'Connection' => 'close'
+    $curl_options = [
+      CURLOPT_PORT => $parameters['server']['port'],
+      CURLOPT_HEADER => true,
+      CURLOPT_SSL_VERIFYPEER => true,
+      CURLOPT_SSL_VERIFYHOST => 2,
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_FORBID_REUSE => true,
+      CURLOPT_FRESH_CONNECT => true,
+      CURLOPT_FOLLOWLOCATION => false
     ];
 
     if (!empty($parameters['header'])) {
-      foreach ($parameters['header'] as $header) {
-        if (strpos($header, ':') !== false) {
-          [$name, $value] = explode(':', $header, 2);
-          $headers[trim($name)] = trim($value);
-        }
+      $curl_options[CURLOPT_HTTPHEADER] = $parameters['header'];
+    }
+
+    if (isset($parameters['cafile']) && file_exists($parameters['cafile'])) {
+      $curl_options[CURLOPT_CAINFO] = $parameters['cafile'];
+    }
+
+    if (isset($parameters['certificate'])) {
+      $curl_options[CURLOPT_SSLCERT] = $parameters['certificate'];
+    }
+
+    if ($parameters['method'] === 'post') {
+      $curl_options[CURLOPT_POST] = true;
+      $curl_options[CURLOPT_POSTFIELDS] = $parameters['parameters'];
+    }
+
+    curl_setopt_array($curl, $curl_options);
+
+    $result = curl_exec($curl);
+
+    if ($result === false) {
+      trigger_error(curl_error($curl));
+      curl_close($curl);
+      return false;
+    }
+
+    $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $header_size = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
+    $headers = trim(substr($result, 0, $header_size));
+    $body = trim(substr($result, $header_size));
+
+    curl_close($curl);
+
+    if (($http_code === 301 || $http_code === 302) && (!isset($parameters['redir_counter']) || $parameters['redir_counter'] < 6)) {
+
+      if (!isset($parameters['redir_counter'])) {
+        $parameters['redir_counter'] = 0;
       }
-    }
 
-    $body = '';
-    if ($method === 'POST' && !empty($parameters['parameters'])) {
-      $body = $parameters['parameters'];
-      $headers['Content-Type'] = $headers['Content-Type'] ?? 'application/x-www-form-urlencoded';
-      $headers['Content-Length'] = strlen($body);
-    } elseif ($method === 'POST' && empty($parameters['parameters'])) {
-      $method = 'GET';
-    }
+      if (preg_match('/(Location:|URI:)(.*?)\n/i', $headers, $matches)) {
+        $redir_url = trim(array_pop($matches));
+        $parameters['redir_counter']++;
 
-    $request = "{$method} {$path} HTTP/1.1\r\n";
-    foreach ($headers as $name => $value) {
-      $request .= "{$name}: {$value}\r\n";
-    }
-    $request .= "\r\n";
+        $parsed = parse_url($redir_url);
+        $scheme = $parsed['scheme'] ?? 'http';
 
-    if (!empty($body)) {
-      $request .= $body;
-    }
+        $redir_parameters = [
+          'server' => [
+            'scheme' => $scheme,
+            'host'   => $parsed['host'],
+            'port'   => $parsed['port'] ?? ($scheme === 'https' ? 443 : 80),
+            'path'   => $parsed['path'] ?? '/',
+            'query'  => $parsed['query'] ?? ''
+          ],
+          'method'         => $parameters['method'],
+          'parameters'     => $parameters['parameters'] ?? '',
+          'header'         => $parameters['header'] ?? [],
+          'cafile'         => $parameters['cafile'] ?? null,
+          'certificate'    => $parameters['certificate'] ?? null,
+          'redir_counter'  => $parameters['redir_counter']
+        ];
 
-    $written = fwrite($socket, $request);
-    if ($written === false || $written < strlen($request)) {
-      throw new Exception('Failed to send HTTP request');
-    }
-  }
-
-  /**
-   * Read and parse the HTTP response.
-   *
-   * @param resource $socket
-   * @return string Response body.
-   * @throws Exception on protocol or status error.
-   */
-  private static function readHttpResponse($socket): string
-  {
-    $headers = self::readHttpHeaders($socket);
-    return self::readHttpBody($socket, $headers);
-  }
-
-  /**
-   * Read and parse the HTTP headers.
-   *
-   * @param resource $socket
-   * @return array Parsed headers.
-   * @throws Exception on malformed or error response.
-   */
-  private static function readHttpHeaders($socket): array
-  {
-    $statusLine = fgets($socket);
-    if ($statusLine === false) {
-      throw new Exception('Failed to read HTTP status line');
-    }
-
-    if (!preg_match('/^HTTP\/\d\.\d\s+(\d+)/', trim($statusLine), $matches)) {
-      throw new Exception('Invalid HTTP response: ' . trim($statusLine));
-    }
-
-    $statusCode = (int)$matches[1];
-    $headers = ['status_code' => $statusCode];
-
-    while (($line = fgets($socket)) !== false) {
-      $line = trim($line);
-      if ($line === '') break;
-      if (strpos($line, ':') !== false) {
-        [$name, $value] = explode(':', $line, 2);
-        $headers[strtolower(trim($name))] = trim($value);
-      }
-    }
-
-    if ($statusCode >= 400) {
-      throw new Exception("HTTP error: {$statusCode}");
-    }
-
-    return $headers;
-  }
-
-  /**
-   * Read the HTTP body based on headers.
-   *
-   * @param resource $socket
-   * @param array $headers
-   * @return string Response body.
-   */
-  private static function readHttpBody($socket, array $headers): string
-  {
-    $body = '';
-    $contentLength = isset($headers['content-length']) ? (int)$headers['content-length'] : null;
-    $isChunked = isset($headers['transfer-encoding']) &&
-      stripos($headers['transfer-encoding'], 'chunked') !== false;
-
-    if ($isChunked) {
-      $body = self::readChunkedBody($socket);
-    } elseif ($contentLength !== null) {
-      $body = self::readFixedLengthBody($socket, $contentLength);
-    } else {
-      while (!feof($socket)) {
-        $chunk = fread($socket, 8192);
-        if ($chunk === false) break;
-        $body .= $chunk;
+        $response = HTTP::getResponse($redir_parameters);
+        $body = $response['body'] ?? '';
       }
     }
 
@@ -321,126 +124,11 @@ class CURL
   }
 
   /**
-   * Stream HTTP body chunks and pass them to a callback.
+   * Checks if cURL is available.
    *
-   * @param resource $socket
-   * @param callable $onData
+   * @return bool True if cURL is available, false otherwise.
    */
-  private static function streamHttpBody($socket, callable $onData): void
-  {
-    while (!feof($socket)) {
-      $chunk = fread($socket, 8192);
-      if ($chunk === false || $chunk === '') {
-        usleep(1000);
-        continue;
-      }
-
-      $onData($chunk);
-    }
-  }
-
-  /**
-   * Read chunked HTTP body.
-   *
-   * @param resource $socket
-   * @return string
-   */
-  private static function readChunkedBody($socket): string
-  {
-    $body = '';
-
-    while (true) {
-      $sizeLine = fgets($socket);
-      if ($sizeLine === false) break;
-
-      $chunkSize = hexdec(trim($sizeLine));
-      if ($chunkSize === 0) {
-        while (($line = fgets($socket)) !== false) {
-          if (trim($line) === '') break;
-        }
-        break;
-      }
-
-      $chunk = fread($socket, $chunkSize);
-      if ($chunk === false) break;
-
-      $body .= $chunk;
-      fgets($socket);
-    }
-
-    return $body;
-  }
-
-  /**
-   * Read fixed-length HTTP body.
-   *
-   * @param resource $socket
-   * @param int $length
-   * @return string
-   */
-  private static function readFixedLengthBody($socket, int $length): string
-  {
-    $body = '';
-    $remaining = $length;
-
-    while ($remaining > 0 && !feof($socket)) {
-      $chunk = fread($socket, min(8192, $remaining));
-      if ($chunk === false) break;
-
-      $body .= $chunk;
-      $remaining -= strlen($chunk);
-    }
-
-    return $body;
-  }
-
-  /**
-   * Check if the environment supports HTTP requests via stream.
-   *
-   * @return bool
-   */
-  public static function canUse(): bool
-  {
-    return extension_loaded('openssl') && function_exists('stream_socket_client');
-  }
-
-  /**
-   * Check if the environment supports streaming operations.
-   *
-   * @return bool
-   */
-  public static function canStream(): bool
-  {
-    return self::canUse() && function_exists('stream_set_timeout');
-  }
-
-  /**
-   * Override default SSL context options.
-   *
-   * @param array $options
-   */
-  public static function setDefaultSslOptions(array $options): void
-  {
-    self::$defaultSslOptions = array_merge(self::$defaultSslOptions, $options);
-  }
-
-  /**
-   * Set the default socket read timeout.
-   *
-   * @param int $seconds
-   */
-  public static function setDefaultTimeout(int $seconds): void
-  {
-    self::$defaultTimeout = $seconds;
-  }
-
-  /**
-   * Set the default socket connection timeout.
-   *
-   * @param int $seconds
-   */
-  public static function setDefaultConnectionTimeout(int $seconds): void
-  {
-    self::$defaultConnectionTimeout = $seconds;
+  public static function canUse() {
+    return function_exists('curl_init');
   }
 }

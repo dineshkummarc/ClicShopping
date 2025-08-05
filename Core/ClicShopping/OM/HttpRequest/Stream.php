@@ -115,23 +115,17 @@ class Stream
    * @param array $parameters
    * @throws InvalidArgumentException
    */
-  private static function validateParameters(array $parameters): void
+  private static function validateParameters(array $parameters): array
   {
     if (!isset($parameters['url'])) {
       throw new InvalidArgumentException('URL parameter is required');
     }
 
-    if (!isset($parameters['method'])) {
-      $parameters['method'] = 'get';
-    }
+    $parameters['method']     = $parameters['method']     ?? 'get';
+    $parameters['parameters'] = $parameters['parameters'] ?? '';
+    $parameters['header']     = $parameters['header']     ?? [];
 
-    if (!isset($parameters['parameters'])) {
-      $parameters['parameters'] = '';
-    }
-
-    if (!isset($parameters['header'])) {
-      $parameters['header'] = [];
-    }
+    return $parameters;
   }
 
   /**
