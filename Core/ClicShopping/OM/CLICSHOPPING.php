@@ -239,7 +239,7 @@ class CLICSHOPPING
    * @param bool $search_engine_safe Specifies if the URL should be transformed to a search engine friendly format. Default is true.
    * @return string The constructed URL based on the provided parameters and configuration.
    */
-  public static function link(string $page = null, string $parameters = null, bool $add_session_id = true, bool $search_engine_safe = true): string
+  public static function link(?string $page = null, ?string $parameters = null, bool $add_session_id = true, bool $search_engine_safe = true): string
   {
     /*
      * remove index.php for the seo

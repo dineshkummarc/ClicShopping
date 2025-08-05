@@ -10,7 +10,6 @@
 
 namespace ClicShopping\OM\HttpRequest;
 
-use ClicShopping\OM\CLICSHOPPING;
 use Exception;
 use InvalidArgumentException;
 
@@ -20,7 +19,7 @@ use InvalidArgumentException;
  * Provides low-level HTTP(S) communication using socket streams.
  * Supports basic HTTP requests, SSL configuration, and streaming data consumption.
  */
-class Stream
+class CURL
 {
   /**
    * Default SSL context options for HTTPS connections.
@@ -157,7 +156,7 @@ class Stream
       if (isset($parameters['cafile']) && file_exists($parameters['cafile'])) {
         $sslOptions['cafile'] = $parameters['cafile'];
       } elseif (defined('CLICSHOPPING::BASE_DIR')) {
-        $defaultCaFile = CLICSHOPPING::BASE_DIR . 'External/cacert.pem';
+        $defaultCaFile = \CLICSHOPPING::BASE_DIR . 'External/cacert.pem';
         if (file_exists($defaultCaFile)) {
           $sslOptions['cafile'] = $defaultCaFile;
         }
@@ -265,7 +264,6 @@ class Stream
   private static function readHttpHeaders($socket): array
   {
     $statusLine = fgets($socket);
-
     if ($statusLine === false) {
       throw new Exception('Failed to read HTTP status line');
     }
