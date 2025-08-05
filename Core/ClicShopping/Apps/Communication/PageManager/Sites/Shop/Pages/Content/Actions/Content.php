@@ -19,6 +19,8 @@ use ClicShopping\Apps\Communication\PageManager\PageManager as PageManagerApp;
 
 class Content extends \ClicShopping\OM\PagesActionsAbstract
 {
+  protected mixed $app;
+
   public function execute()
   {
     $CLICSHOPPING_Template = Registry::get('Template');

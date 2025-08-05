@@ -905,6 +905,9 @@ class RewriteUrl
 
     $string = str_replace('--', '-', $string);
 
+    $string = self::generate($string);
+    $string = $this->sanitizeInput($string);
+
     return $string;
   }
 
@@ -938,7 +941,7 @@ class RewriteUrl
 
         if (empty($products_seo_url) || is_null($products_seo_url)) {
           $products_name = $CLICSHOPPING_ProductsCommon->getProductsName($products_id);
-          $products_name = $this->replaceString($products_name);
+          $products_name = $this->replaceString($products_name) ?? 'product';
           $products_url_rewrited = 'Products&Description&' . $products_name . '&Id=' . $products_id;
         } else {
           $products_name = $this->replaceString($products_seo_url);
@@ -971,7 +974,7 @@ class RewriteUrl
     if (defined('SEARCH_ENGINE_FRIENDLY_URLS') && SEARCH_ENGINE_FRIENDLY_URLS == 'true' && CLICSHOPPING::getSite() != 'ClicShoppingAdmin') {
       if (defined('SEARCH_ENGINE_FRIENDLY_URLS_PRO') && SEARCH_ENGINE_FRIENDLY_URLS_PRO == 'true') {
         $page_title = $CLICSHOPPING_PageManagerShop->pageManagerDisplayTitle($page_id);
-        $page_title = $this->replaceString($page_title);
+        $page_title = $this->replaceString($page_title) ?? 'Info';
         $content_url_rewrited = 'Info&Content&' . $page_title . '&pagesId=' . $page_id;
       } else {
         $content_url_rewrited = 'Info&Content&pagesId=' . $page_id;
@@ -1027,7 +1030,7 @@ class RewriteUrl
         $categories_seo_url = $Qseo->value('categories_seo_url');
 
         if (empty($categories_seo_url) || is_null($categories_seo_url)) {
-          $link_title = $this->title;
+          $link_title = $this->title ?? 'category';
           $link_title = $this->replaceString($link_title);
 
           $categories_url_rewrited = $link_title . '&cPath=' . $categories_id;
@@ -1054,21 +1057,27 @@ class RewriteUrl
    * @param string $parameters Optional additional parameters to append to the URL.
    * @return string The generated URL for the category image.
    */
-
   public function getCategoryImageUrl(string $categories_id, string $parameters = ''): string
   {
     if (defined('SEARCH_ENGINE_FRIENDLY_URLS') && SEARCH_ENGINE_FRIENDLY_URLS == 'true' && CLICSHOPPING::getSite() != 'ClicShoppingAdmin') {
       if (defined('SEARCH_ENGINE_FRIENDLY_URLS_PRO') && SEARCH_ENGINE_FRIENDLY_URLS_PRO == 'true') {
-        $link_title = $this->title;
+        $link_title = $this->title ?? 'category';
         $link_title = $this->replaceString($link_title);
+
         $categories_url_rewrited = $link_title . '&' . $categories_id;
       } else {
         $categories_url_rewrited = $categories_id;
 //          $categories_url_rewrited = 'cPath=' . $categories_id;	  
       }
     } else {
-      $categories_url_rewrited = $categories_id;
-//        $categories_url_rewrited = 'cPath=' . $categories_id;	
+      if (defined('SEARCH_ENGINE_FRIENDLY_URLS_PRO') && SEARCH_ENGINE_FRIENDLY_URLS_PRO == 'true') {
+        $link_title = $this->title ?? 'category';
+        $link_title = $this->replaceString($link_title);
+
+        $categories_url_rewrited = $link_title . '&' . $categories_id;
+      } else {
+        $categories_url_rewrited = $categories_id;
+      }
     }
 
     $url = CLICSHOPPING::link(null, $categories_url_rewrited . $parameters);
@@ -1089,7 +1098,7 @@ class RewriteUrl
 
     if (defined('SEARCH_ENGINE_FRIENDLY_URLS') && SEARCH_ENGINE_FRIENDLY_URLS == 'true' && CLICSHOPPING::getSite() != 'ClicShoppingAdmin') {
       if (defined('SEARCH_ENGINE_FRIENDLY_URLS_PRO') && SEARCH_ENGINE_FRIENDLY_URLS_PRO == 'true') {
-        $manufacturer_title = $CLICSHOPPING_Manufacturers->getTitle($manufacturer_id);
+        $manufacturer_title = $CLICSHOPPING_Manufacturers->getTitle($manufacturer_id) ?? 'Manufacturer';
         $manufacturer_title = $this->replaceString($manufacturer_title);
 
         $manufacturer_url_rewrited = $manufacturer_title . '&manufacturersId=' . (int)$manufacturer_id;
@@ -1103,5 +1112,21 @@ class RewriteUrl
     $url = CLICSHOPPING::link(null, $manufacturer_url_rewrited . $parameters);
 
     return $url;
+  }
+
+  /**
+   * Génère une version propre d'un titre pour une URL (slug).
+   *
+   * @param string $title Le titre original à convertir.
+   * @return string Le slug généré, propre pour une URL.
+   */
+  private static function generate(string $title): string
+  {
+    $title = str_replace("\0", '', $title);
+    $title = preg_replace('/[^a-z0-9-]+/i', '-', $title);
+    $title = preg_replace('/-+/', '-', $title);
+    $title = trim($title, '-');
+
+    return $title;
   }
 }
