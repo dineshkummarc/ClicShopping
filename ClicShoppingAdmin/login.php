@@ -425,7 +425,7 @@ if (!\is_null($action)) {
 
       if ($details !== null && isset($details['country'])) {
         $country = $details['country'];
-        echo "<script>$('svg path[data-country-code={$country}]').attr('fill', '#197ac6').attr('fill-opacity', '0.15');</script>";
+        echo "<script>$('svg path[data-country-code=' + " . json_encode($country) . " + ']').attr('fill', '#197ac6').attr('fill-opacity', '0.15');</script>";
       }
     }
   }
@@ -493,7 +493,7 @@ if (!\is_null($action)) {
     </form>
     <?php
   } elseif ($form_action == 'emailVerify') {
-    echo HTML::form('login', CLICSHOPPING::link('login.php', 'action=' . $form_action));
+    echo HTML::form('login', CLICSHOPPING::link('login.php', 'action=' . $form_action), 'post', 'id="login"', ['tokenize' => true]);
     ?>
   <div id="loginModal" tabindex="-1" role="document" aria-hidden="true" style="padding-top:10rem;">
     <div class="modal-dialog">
