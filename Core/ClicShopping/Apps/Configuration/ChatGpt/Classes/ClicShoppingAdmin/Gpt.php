@@ -105,12 +105,12 @@ class Gpt {
   public static function getGptModel(): array
   {
     $array = [
+      ['id' => 'gpt-5-nano', 'text' => 'OpenAi gpt-5-nano'],
+      ['id' => 'gpt-5-mini', 'text' => 'OpenAi gpt-5-mini'],
+      ['id' => 'gpt-5', 'text' => 'OpenAi gpt-5'],
       ['id' => 'gpt-4.1-mini', 'text' => 'OpenAi gpt 4.1-mini'],
       ['id' => 'gpt-4.1-nano', 'text' => 'OpenAi gpt-4.1-nano'],
-      ['id' => 'gpt-4o-mini', 'text' => 'OpenAi gpt-4o-mini'],
       ['id' => 'gpt-4o', 'text' => 'OpenAi gpt-4o'],
-      ['id' => 'o3-mini', 'text' => 'OpenAI o3-mini'],
-      ['id' => 'gpt-o1-mini', 'text' => 'OpenAi gpt-01-mini'],
       ['id' => 'gpt-3.5-turbo', 'text' => 'OpenAi gpt-3.5-turbo'],
       ['id' => 'gemma3:7b', 'text' => 'Ollama Gemma3 7b'],
       ['id' => 'phi4', 'text' => 'Ollama Phi4'],

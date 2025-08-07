@@ -1,7 +1,7 @@
 version4.05
 Libraries updated
 Refactoring
-fix small bugs
+fix small bugs and security
 Event system improved
 
 -----------------
