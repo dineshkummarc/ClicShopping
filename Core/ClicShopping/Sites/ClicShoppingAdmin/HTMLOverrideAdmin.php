@@ -226,7 +226,7 @@ class HTMLOverrideAdmin extends HTML
     $fp = fopen('php://output', 'w');
 
     // Insert the UTF-8 BOM in the file
-    fputs($fp, $bom = (chr(0xEF) . chr(0xBB) . chr(0xBF)));
+    fwrite($fp, $bom = (chr(0xEF) . chr(0xBB) . chr(0xBF)));
 
     // I add the array keys as CSV headers
     fputcsv($fp, array_keys($data[0]), $delimiter, $enclosure);

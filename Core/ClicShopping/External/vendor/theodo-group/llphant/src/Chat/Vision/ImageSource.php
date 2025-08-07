@@ -26,7 +26,7 @@ class ImageSource implements JsonSerializable
             if ($imageType !== null) {
                 $this->base64 = $urlOrBase64Image;
 
-                return "data:{$imageType};base64,${urlOrBase64Image}";
+                return "data:{$imageType};base64,{$urlOrBase64Image}";
             }
         }
         throw new \InvalidArgumentException('Invalid image URL or base64 format.');
@@ -69,7 +69,7 @@ class ImageSource implements JsonSerializable
 
     private function imageType(string $urlOrBase64Image): ?string
     {
-        $binaryData = base64_decode($urlOrBase64Image, true);
+        $binaryData = base64_decode(\substr($urlOrBase64Image, 0, 20), true);
 
         if ($binaryData === false) {
             return null;
@@ -84,8 +84,12 @@ class ImageSource implements JsonSerializable
             return 'image/gif';
         }
 
-        if (str_starts_with($binaryData, "\xFF\xD8") && str_ends_with($binaryData, "\xFF\xD9")) {
+        if (\str_starts_with($binaryData, "\xFF\xD8")) {
             return 'image/jpeg';
+        }
+
+        if (\str_starts_with($binaryData, 'RIFF') && \substr($binaryData, 8, 4) === 'WEBP') {
+            return 'image/webp';
         }
 
         return null;

@@ -777,14 +777,14 @@ class CategoryTree
    * The method retrieves categories from the database and formats them into a nested structure
    * suitable for displays such as dropdown menus or navigational elements.
    *
-   * @param int $parent_id The ID of the parent category to start building the tree from, defaults to 0.
+   * @param int|string $parent_id The ID of the parent category to start building the tree from, defaults to 0.
    * @param string $spacing The string used to visually indent category names for child categories.
    * @param string $exclude The ID of a category to exclude from the tree, if any.
-   * @param array|string $category_tree_array The current category tree array being built. If not provided, an empty array will be initialized.
+   * @param string $category_tree_array The current category tree array being built. If not provided, an empty array will be initialized.
    * @param bool $include_itself Indicates whether to include the parent category itself in the tree, defaults to false.
    * @return array An array representing the hierarchical category tree structure.
    */
-  public function getShopCategoryTree(int $parent_id = 0, string $spacing = '', $exclude = '', $category_tree_array = '', bool $include_itself = false): array
+  public function getShopCategoryTree(int|string $parent_id = 0, string $spacing = '', $exclude = '', $category_tree_array = '', bool $include_itself = false): array
   {
     $this->lang = Registry::get('Language');
 
@@ -800,11 +800,12 @@ class CategoryTree
     }
 
     if ($include_itself) {
-      $Qcategory = $this->db->get('categories_description', 'categories_name', [
-          'language_id' => $this->lang->getId(),
-          'categories_id' => (int)$parent_id
-        ]
-      );
+    $array = [
+              'language_id' => (int)$this->lang->getId(),
+              'categories_id' => (int)$parent_id
+              ];
+
+      $Qcategory = $this->db->get('categories_description', 'categories_name', $array);
 
       $category_tree_array[] = [
         'id' => $parent_id,
@@ -823,7 +824,7 @@ class CategoryTree
       'c.categories_id' => [
         'rel' => 'cd.categories_id'
       ],
-      'cd.language_id' => $this->lang->getId(),
+      'cd.language_id' => (int)$this->lang->getId(),
       'c.parent_id' => (int)$parent_id
     ], [
         'c.sort_order',
@@ -833,10 +834,18 @@ class CategoryTree
 
     while ($Qcategories->fetch()) {
       if ($exclude != $Qcategories->valueInt('categories_id')) {
-        $category_tree_array[] = [
-          'id' => $Qcategories->valueInt('categories_id'),
-          'text' => $spacing . $Qcategories->value('categories_name')
-        ];
+        if ($Qcategories->valueInt('parent_id') !== 0) {
+          $category_tree_array[] = [
+            'id' => $Qcategories->valueInt('parent_id') . '_' . $Qcategories->valueInt('categories_id'),
+            'text' => $spacing . $Qcategories->value('categories_name')
+          ];
+        } else {
+          $category_tree_array[] = [
+            'id' => $Qcategories->valueInt('categories_id'),
+            'text' => $spacing . $Qcategories->value('categories_name')
+          ];
+        }
+
       }
 
       $category_tree_array = $this->getShopCategoryTree($Qcategories->valueInt('categories_id'), $spacing . '&nbsp;&nbsp;&nbsp;', $exclude, $category_tree_array);

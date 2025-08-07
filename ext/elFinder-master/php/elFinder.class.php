@@ -4384,7 +4384,7 @@ var go = function() {
     protected function utime()
     {
         $time = explode(" ", microtime());
-        return (double)$time[1] + (double)$time[0];
+        return (float)$time[1] + (float)$time[0];
     }
 
     /**
