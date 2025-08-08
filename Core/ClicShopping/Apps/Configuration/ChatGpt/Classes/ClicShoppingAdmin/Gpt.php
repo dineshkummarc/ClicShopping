@@ -193,20 +193,33 @@ class Gpt {
         $max = (float)CLICSHOPPING_APP_CHATGPT_CH_MAX_RESPONSE;
       }
 
+      // Paramètres communs
       $parameters = [
-        'temperature' => $temperature, // Controls the model's creativity
-        'top_p' => (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P,
-        'frequency_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY, // Frequency penalty to encourage the model to generate more varied responses
-        'presence_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY, // Presence penalty to encourage the model to generate responses with words not used in the prompt
-        'max_tokens' => $maxtoken, // Maximum number of tokens to generate in the response
-        'stop' => $top, // Characters to stop the response
-        'n' => $max, // Number of responses to generate
-        'user' => AdministratorAdmin::getUserAdmin(), // User's name
+        'user' => AdministratorAdmin::getUserAdmin(),
         'messages' => [
-                        'role' => 'system',
-                        'content' => 'You are an e-commerce expert in marketing.'
-                      ]
+          'role' => 'system',
+          'content' => 'You are an e-commerce expert in marketing.'
+        ]
       ];
+
+// Paramètres selon modèle
+      if (strpos($engine, 'gpt-5-') === 0) {
+        // Modèles GPT-5 : paramètres supportés uniquement
+        $parameters['max_completion_tokens'] = $maxtoken; // nouveau nom
+        $parameters['reasoning_effort'] = CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT;   //  minimal, low, medium, high
+        $parameters['verbosity'] = CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY; // low, medium (par défaut), high
+        $parameters['stop_sequences'] = $top;
+        // Pas de temperature, top_p, frequency_penalty, presence_penalty, n
+      } else {
+        // Autres modèles : paramètres classiques
+        $parameters['temperature'] = (float)$temperature;
+        $parameters['top_p'] = (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P;
+        $parameters['frequency_penalty'] = (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY;
+        $parameters['presence_penalty'] = (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY;
+        $parameters['max_tokens'] = $maxtoken; // ancien nom
+        $parameters['stop'] = $top;
+        $parameters['n'] = $max;
+      }
 
       if (!empty(CLICSHOPPING_APP_CHATGPT_CH_ORGANIZATION)) {
         $parameters['organization'] = CLICSHOPPING_APP_CHATGPT_CH_ORGANISATION;
@@ -313,7 +326,7 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
     $model = 'mistral-large-latest';
   }
 
-  $config = new OpenAIConfig();
+  $config = new MistralAIChat();
   $config->apiKey = $api_key;
   $config->model = $model;
 
@@ -638,45 +651,54 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
     }
 
     $script = '<script>
-     let apiGptUrl = "' . $url . '";
-     ' . $organization . '
-     let modelGpt = "' . $model . '";
-     let frequency_penalty_gpt = parseFloat("' . (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY . '");
-     let presence_penalty_gpt = parseFloat("' . (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY . '");
-     let max_tokens_gpt = parseInt("' . (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN . '");
-     let temperatureGpt = parseFloat("' . (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE . '");
-     let nGpt = parseInt("' . (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_RESPONSE . '");
-     let best_of_gpt = parseInt("' . (int)CLICSHOPPING_APP_CHATGPT_CH_BESTOFF . '");
-     let top_p_gpt = parseFloat("' . (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P . '");
-     let titleGpt = "' . CLICSHOPPING::getDef('text_chat_title') . '";
-    </script>';
+ let apiGptUrl = "' . $url . '";
+ ' . $organization . '
+ let modelGpt = "' . $model . '";
+ let temperatureGpt = parseFloat("' . (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE . '");
+ let top_p_gpt = parseFloat("' . (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P . '");
+ let frequency_penalty_gpt = parseFloat("' . (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY . '");
+ let presence_penalty_gpt = parseFloat("' . (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY . '");
+ let max_tokens_gpt = parseInt("' . (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN . '");
+ let reasoning_effort_gpt = "' . CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT . '";
+ let verbosity_gpt = "' . CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY . '";
+ let nGpt = parseInt("' . (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_RESPONSE . '");
+ let best_of_gpt = parseInt("' . (int)CLICSHOPPING_APP_CHATGPT_CH_BESTOFF . '");
+ let titleGpt = "' . CLICSHOPPING::getDef('text_chat_title') . '";
+</script>';
 
     $script .= '<script>
-     function callChatGpt(prompt, callback) {
-       const payload = {
-         prompt: prompt,
-         model: modelGpt,
-         max_tokens: max_tokens_gpt,
-         temperature: temperatureGpt,
-         top_p: top_p_gpt,
-         frequency_penalty: frequency_penalty_gpt,
-         presence_penalty: presence_penalty_gpt,
-         n: nGpt,
-         best_of: best_of_gpt
-       };
+ function callChatGpt(prompt, callback) {
+   const payload = {
+     prompt: prompt,
+     model: modelGpt
+   };
 
-       fetch(apiGptUrl, {
-         method: "POST",
-         headers: {
-           "Content-Type": "application/json"
-         },
-         body: JSON.stringify(payload)
-       })
-       .then(response => response.json())
-       .then(data => callback(data))
-       .catch(error => console.error("Erreur GPT :", error));
-     }
-    </script>';
+   if (modelGpt.startsWith("gpt-5-")) {
+     payload.max_output_tokens = max_tokens_gpt;
+     payload.reasoning_effort = reasoning_effort_gpt;
+     payload.verbosity = verbosity_gpt;
+   } else {
+     payload.temperature = temperatureGpt;
+     payload.top_p = top_p_gpt;
+     payload.frequency_penalty = frequency_penalty_gpt;
+     payload.presence_penalty = presence_penalty_gpt;
+     payload.max_tokens = max_tokens_gpt;
+     payload.n = nGpt;
+     payload.best_of = best_of_gpt;
+   }
+
+   fetch(apiGptUrl, {
+     method: "POST",
+     headers: {
+       "Content-Type": "application/json"
+     },
+     body: JSON.stringify(payload)
+   })
+   .then(response => response.json())
+   .then(data => callback(data))
+   .catch(error => console.error("Erreur GPT :", error));
+ }
+</script>';
 
     $script .= '<!--start wysiwig preloader--><style>.blur {filter: blur(1px);opacity: 0.4;}</style><!--end wysiwzg preloader-->';
     $script .= '<script src="' . CLICSHOPPING::link('Shop/ext/javascript/cKeditor/dialogs/chatgpt.js') . '"></script>';

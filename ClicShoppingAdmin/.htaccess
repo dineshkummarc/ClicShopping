@@ -1,4 +1,4 @@
-#Options -Indexes
+Options -Indexes
 #Options +FollowSymlinks
 #Options -MultiViews
 
@@ -11,8 +11,19 @@
 ##################################
 <IfModule mod_rewrite.c>
 RewriteEngine Off
+
+#log
+#RewriteLog /path/to/rewrite.log
+#RewriteLogLevel 3
+
+    <FilesMatch "\.(ini|init|log|conf|env)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
 </IfModule>
 
+# Protection against Clickjacking
+TraceEnable off
 
 ##################################
 # Bot

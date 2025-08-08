@@ -58,23 +58,23 @@ class CostEstimation extends \ClicShopping\OM\Modules\AdminDashboardAbstract
   public function getOutput(): string
   {
     $modelPrices = [
-      'gpt-4.1-mini'   => 0.0012,
-      'gpt-4.1-nano'   => 0.0008,
-      'gpt-4o-mini'    => 0.0010,
-      'gpt-4o'         => 0.0025,
-      'gpt-3o-mini'    => 0.0007,
-      'gpt-o1-mini'    => 0.0006,
-      'gpt-3.5-turbo'  => 0.0005,
+      'gpt-5-nano'    => 0.0005,
+      'gpt-5-mini'    => 0.0025,
+      'gpt-5'         => 0.0125,
+      'gpt-4.1-mini'  => 0.0012,
+      'gpt-4.1-nano'  => 0.0008,
+      'gpt-4o'        => 0.0025,
+      'gpt-3.5-turbo' => 0.0005,
     ];
 
     $colors = [
-      'gpt-4.1-mini'   => 'rgba(255, 99, 132, 0.5)',    // Red-ish
-      'gpt-4.1-nano'   => 'rgba(54, 162, 235, 0.5)',    // Blue
-      'gpt-4o-mini'    => 'rgba(255, 206, 86, 0.5)',    // Yellow
-      'gpt-4o'         => 'rgba(75, 192, 192, 0.5)',    // Teal
-      'gpt-3o-mini'    => 'rgba(153, 102, 255, 0.5)',   // Purple
-      'gpt-o1-mini'    => 'rgba(255, 159, 64, 0.5)',    // Orange
-      'gpt-3.5-turbo'  => 'rgba(100, 255, 218, 0.5)',   // Aqua Green
+      'gpt-5-nano'    => 'rgba(255, 99, 132, 0.5)',    // Red-ish
+      'gpt-5-mini'    => 'rgba(54, 162, 235, 0.5)',    // Blue
+      'gpt-5'         => 'rgba(255, 206, 86, 0.5)',    // Yellow
+      'gpt-4.1-mini'  => 'rgba(75, 192, 192, 0.5)',    // Teal
+      'gpt-4.1-nano'  => 'rgba(153, 102, 255, 0.5)',   // Purple
+      'gpt-4o'        => 'rgba(255, 159, 64, 0.5)',    // Orange
+      'gpt-3.5-turbo' => 'rgba(100, 255, 218, 0.5)',   // Aqua Green
     ];
 
     // Query by month *and* model

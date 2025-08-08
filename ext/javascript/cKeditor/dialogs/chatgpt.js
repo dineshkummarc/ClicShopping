@@ -74,25 +74,48 @@ CKEDITOR.dialog.add('chatgptDialog', function (editor) {
                 }
               };
 
-              xhr.send(JSON.stringify({
-                model: modelGpt, //'gpt-3.5-turbo',
-                frequency_penalty: frequency_penalty_gpt,
-                presence_penalty: presence_penalty_gpt,
-                max_tokens: max_tokens_gpt,
-                temperature: temperatureGpt,
-                top_p: top_p_gpt,
-                n: nGpt,
-                messages: [
-                  {
-                    role: 'system',
-                    content: "\n\nYou are an expert in E-Commerce Marketing."
-                  },
-                  {
-                    role: 'user',
-                    content: conversationState + message,
-                  }
-                ]
-              }));
+              let payload;
+
+              if (modelGpt.startsWith("gpt-5-")) {
+                payload = {
+                  model: modelGpt,
+                  max_output_tokens: max_tokens_gpt,
+                  reasoning_effort: reasoning_effort_gpt,
+                  verbosity: verbosity_gpt,
+                  messages: [
+                    {
+                      role: 'system',
+                      content: "\n\nYou are an expert in E-Commerce Marketing."
+                    },
+                    {
+                      role: 'user',
+                      content: conversationState + message,
+                    }
+                  ]
+                };
+              } else {
+                payload = {
+                  model: modelGpt,
+                  frequency_penalty: frequency_penalty_gpt,
+                  presence_penalty: presence_penalty_gpt,
+                  max_tokens: max_tokens_gpt,
+                  temperature: temperatureGpt,
+                  top_p: top_p_gpt,
+                  n: nGpt,
+                  messages: [
+                    {
+                      role: 'system',
+                      content: "\n\nYou are an expert in E-Commerce Marketing."
+                    },
+                    {
+                      role: 'user',
+                      content: conversationState + message,
+                    }
+                  ]
+                };
+              }
+
+              xhr.send(JSON.stringify(payload));
 
               conversationState += message + '\n';
             },

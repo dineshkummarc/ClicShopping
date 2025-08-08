@@ -1722,6 +1722,8 @@ INSERT INTO configuration VALUES(1768, 'Maximum requests per window', 'CLICSHOPP
 INSERT INTO configuration VALUES(1769, 'Debug / Log', 'CLICSHOPPING_APP_CHATGPT_CH_DEBUG', 'False', 'Enabling this will provide you with complete information about errors and issues encountered by the ChatGPT application.<br>\nIt is recommended to enable it only when needed for debugging.', 6, 0, NULL, '2025-06-30 11:46:10', NULL, NULL);
 INSERT INTO configuration VALUES(1770, 'Maximum analytical data context window', 'CLICSHOPPING_APP_CHATGPT_RA_MAX_ROW_PROMPT', '150', 'The maximum number of rows that will be sent to the AI for analysis. If the number of rows exceeds this limit, the AI will not be able to analyze the data. Please refine your query or adjust the settings.', 6, 0, NULL, '2025-07-28 11:21:54', NULL, NULL);
 INSERT INTO configuration VALUES(1771, 'Sql Display inside the report', 'CLICSHOPPING_APP_CHATGPT_RA_DISPLAY_SQL', 'True', 'Set True to display the report SQL query in the ChatGPT response.', 6, 0, NULL, '2025-07-30 13:54:50', NULL, NULL);
+INSERT INTO configuration VALUES(1772, 'Reasoning Effort', 'CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT', 'minimal', 'Select your option. Works only with chatgpt-5.', 6, 0, NULL, '2025-08-08 10:00:54', NULL, NULL);
+INSERT INTO configuration VALUES(1773, 'Verbosity', 'CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY', 'medium', 'Level of detail or elaboration in the response. Works only with chatgpt-5.', 6, 0, NULL, '2025-08-08 10:08:28', NULL, NULL);
 
 
 INSERT INTO configuration_group VALUES(1, 'Store Setup', 'General Information on the Store.', 1, 1);

@@ -1,8 +1,10 @@
 version4.05
 Libraries updated
 Refactoring
-fix small bugs and security
+fix small bugs
 Event system improved
+url rewriting secure improvement
+Add gpt-5 model
 
 -----------------
 version4.04

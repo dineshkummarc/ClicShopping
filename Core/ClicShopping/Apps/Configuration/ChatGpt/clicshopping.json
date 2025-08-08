@@ -1,7 +1,7 @@
 {
   "title": "ChatGpt App",
   "app": "ChatGpt",
-  "vendor": "ChatGpt",
+  "vendor": "Configuration",
   "version": "1.2",
   "req_core_version": "4.0",
   "license": "GPL-2",
