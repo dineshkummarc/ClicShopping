@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '41e8d8ab99bf8e322a2160d550b9cb5097f1001a',
+        'reference' => 'baa6a3b62801f9a0d4f9ca99186a7d8991952f21',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '41e8d8ab99bf8e322a2160d550b9cb5097f1001a',
+            'reference' => 'baa6a3b62801f9a0d4f9ca99186a7d8991952f21',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -74,9 +74,9 @@
             'dev_requirement' => false,
         ),
         'doctrine/inflector' => array(
-            'pretty_version' => '2.0.10',
-            'version' => '2.0.10.0',
-            'reference' => '5817d0659c5b50c9b950feb9af7b9668e2c436bc',
+            'pretty_version' => '2.1.0',
+            'version' => '2.1.0.0',
+            'reference' => '6d6c96277ea252fc1304627204c3d5e6e15faa3b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../doctrine/inflector',
             'aliases' => array(),
@@ -110,9 +110,9 @@
             'dev_requirement' => false,
         ),
         'doctrine/orm' => array(
-            'pretty_version' => '3.5.1',
-            'version' => '3.5.1.0',
-            'reference' => '64444dcfd511089d526cd2c7f74b9d7ed583bdfc',
+            'pretty_version' => '3.5.2',
+            'version' => '3.5.2.0',
+            'reference' => '5a541b8b3a327ab1ea5f93b1615b4ff67a34e109',
             'type' => 'library',
             'install_path' => __DIR__ . '/../doctrine/orm',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => '90fce983a76dd90a53a5b8171a98421aa703d58d',
+            'reference' => 'fc5feda437d44655ee5df703bda813e00674b227',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(

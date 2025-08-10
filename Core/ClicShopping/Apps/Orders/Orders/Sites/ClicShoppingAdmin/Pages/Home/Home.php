@@ -20,8 +20,9 @@ class Home extends \ClicShopping\OM\PagesAbstract
 
   protected function init()
   {
-    $CLICSHOPPING_Orders = new Orders();
-    Registry::set('Orders', $CLICSHOPPING_Orders);
+    if (!Registry::exists('Orders')) {
+      Registry::set('Orders', new Orders());
+    }
 
     $this->app = Registry::get('Orders');
 
