@@ -2,9 +2,9 @@ version4.05
 Libraries updated
 Refactoring
 fix small bugs
-Event system improved
+Event / event source / stream system improved
 url rewriting secure improvement
-Add gpt-5 model
+Add gpt-5 / and Gpt-Goss model
 
 -----------------
 version4.04

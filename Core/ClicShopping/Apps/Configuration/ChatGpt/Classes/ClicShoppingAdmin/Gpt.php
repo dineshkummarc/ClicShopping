@@ -114,6 +114,7 @@ class Gpt {
       ['id' => 'gpt-3.5-turbo', 'text' => 'OpenAi gpt-3.5-turbo'],
       ['id' => 'gemma3:7b', 'text' => 'Ollama Gemma3 7b'],
       ['id' => 'phi4', 'text' => 'Ollama Phi4'],
+      ['id' => 'gpt-oss:latest', 'text' => 'Ollama Gpt-Oss 20b'],
       ['id' => 'anth-sonnet', 'text' => 'Anthropic Claude Sonnet 3.5'],
       ['id' => 'anth-opus', 'text' => 'Anthropic Claude Opus'],
       ['id' => 'anth-haiku', 'text' => 'Anthropic Claude Haiku'],
@@ -208,8 +209,7 @@ class Gpt {
         $parameters['max_completion_tokens'] = $maxtoken; // nouveau nom
         $parameters['reasoning_effort'] = CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT;   //  minimal, low, medium, high
         $parameters['verbosity'] = CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY; // low, medium (par défaut), high
-        $parameters['stop_sequences'] = $top;
-        // Pas de temperature, top_p, frequency_penalty, presence_penalty, n
+        // no temperature, top_p, frequency_penalty, presence_penalty, n
       } else {
         // Autres modèles : paramètres classiques
         $parameters['temperature'] = (float)$temperature;

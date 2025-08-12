@@ -10,8 +10,8 @@
 
 namespace ClicShopping\OM;
 
-use ClicShopping\OM\Core\HttpRequest\Stream;
 use CLICSHOPPING;
+use ClicShopping\OM\HttpRequest\Stream;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
