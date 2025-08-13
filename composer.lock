@@ -3788,16 +3788,16 @@
         },
         {
             "name": "theodo-group/llphant",
-            "version": "0.11.1",
+            "version": "0.11.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/LLPhant/LLPhant.git",
-                "reference": "54863b05ebcb1bb5cf82d0542285e3980a3c4111"
+                "reference": "a9b5573a9d2abaa39cb47a0ff7df11f327c2c154"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/LLPhant/LLPhant/zipball/54863b05ebcb1bb5cf82d0542285e3980a3c4111",
-                "reference": "54863b05ebcb1bb5cf82d0542285e3980a3c4111",
+                "url": "https://api.github.com/repos/LLPhant/LLPhant/zipball/a9b5573a9d2abaa39cb47a0ff7df11f327c2c154",
+                "reference": "a9b5573a9d2abaa39cb47a0ff7df11f327c2c154",
                 "shasum": ""
             },
             "require": {
@@ -3871,9 +3871,9 @@
             ],
             "support": {
                 "issues": "https://github.com/LLPhant/LLPhant/issues",
-                "source": "https://github.com/LLPhant/LLPhant/tree/0.11.1"
+                "source": "https://github.com/LLPhant/LLPhant/tree/0.11.2"
             },
-            "time": "2025-08-02T10:08:26+00:00"
+            "time": "2025-08-13T09:42:46+00:00"
         },
         {
             "name": "yethee/tiktoken",
@@ -3937,12 +3937,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Roave/SecurityAdvisories.git",
-                "reference": "fc5feda437d44655ee5df703bda813e00674b227"
+                "reference": "0479005335290f5c772337cf359599dad65bb63f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/fc5feda437d44655ee5df703bda813e00674b227",
-                "reference": "fc5feda437d44655ee5df703bda813e00674b227",
+                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/0479005335290f5c772337cf359599dad65bb63f",
+                "reference": "0479005335290f5c772337cf359599dad65bb63f",
                 "shasum": ""
             },
             "conflict": {
@@ -4143,7 +4143,7 @@
                 "encore/laravel-admin": "<=1.8.19",
                 "endroid/qr-code-bundle": "<3.4.2",
                 "enhavo/enhavo-app": "<=0.13.1",
-                "enshrined/svg-sanitize": "<0.15",
+                "enshrined/svg-sanitize": "<0.22",
                 "erusev/parsedown": "<1.7.2",
                 "ether/logs": "<3.0.4",
                 "evolutioncms/evolution": "<=3.2.3",
@@ -4891,7 +4891,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-08-08T20:05:48+00:00"
+            "time": "2025-08-12T21:05:30+00:00"
         }
     ],
     "aliases": [],
