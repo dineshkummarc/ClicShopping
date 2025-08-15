@@ -40,10 +40,7 @@ class ActionRecorderAdmin extends \ClicShopping\Apps\Tools\ActionsRecorder\Class
 
     $module = HTML::sanitize(str_replace(' ', '', $module));
 
-    /**
-     *
-     */
-      $this->_module = $module;
+    $this->_module = $module;
 
     $this->isInstalled();
 
