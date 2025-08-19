@@ -10,5 +10,6 @@ return array(
     'Deprecated' => $vendorDir . '/symfony/polyfill-php84/Resources/stubs/Deprecated.php',
     'FPDF' => $vendorDir . '/setasign/fpdf/fpdf.php',
     'Normalizer' => $vendorDir . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
+    'ReflectionConstant' => $vendorDir . '/symfony/polyfill-php84/Resources/stubs/ReflectionConstant.php',
     '©' => $vendorDir . '/symfony/cache/Traits/ValueWrapper.php',
 );
