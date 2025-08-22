@@ -161,7 +161,7 @@ class ResultFormatter
       $output .= "<div class='interpretation'><strong>Interpretation :</strong> " . Hash::displayDecryptedDataText($results['interpretation']) . "</div>";
     }
 
-    if (isset($results['results']) && is_array($results['results'], )) {
+    if (isset($results['results']) && is_array($results['results']) && !empty($results['results'])) {
       $output .= "<div class='results-table'>";
       // Call evaluation function
       $output .= "<div class='mt-2'></div>";
@@ -196,7 +196,13 @@ class ResultFormatter
 
     $output .= "</div>";
 
-    Gpt::saveData($question, $output);
+    $auditExtra = [
+      'embeddings_context' => $results['embeddings_context'] ?? [],
+      'similarity_scores'  => $results['similarity_scores'] ?? [],
+      'processing_chain'   => $results['processing_chain'] ?? []
+    ];
+
+    Gpt::saveData($question, $output, $auditExtra);
 
     return $output;
   }
@@ -243,7 +249,13 @@ class ResultFormatter
 
     $output .= "</div>";
 
-    Gpt::saveData($question, $output);
+    $auditExtra = [
+      'embeddings_context' => $results['embeddings_context'] ?? [],
+      'similarity_scores'  => $results['similarity_scores'] ?? [],
+      'processing_chain'   => $results['processing_chain'] ?? []
+    ];
+
+    Gpt::saveData($question, $output, $auditExtra);
 
     return $output;
   }
@@ -257,8 +269,8 @@ class ResultFormatter
   private function formatUnknownResults(array $results): string
   {
     $output = "<div class='unknown-results'>";
-    $output .= "<h3>Type de résultat non géré : " . htmlspecialchars($results['type'] ?? 'inconnu') . "</h3>";
-    $output .= "<p>Contenu brut des résultats : </p>";
+    $output .= "<h3>Unhandled result type: " . htmlspecialchars($results['type'] ?? 'unknown') . "</h3>";
+    $output .= "<p>Raw result content:</p>";
     $output .= "<pre>" . htmlspecialchars(json_encode($results, JSON_PRETTY_PRINT)) . "</pre>";
     $output .= "</div>";
 

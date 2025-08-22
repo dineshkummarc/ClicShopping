@@ -5,6 +5,7 @@ fix small bugs
 Event / event source / stream system improved
 url rewriting secure improvement
 Add gpt-5 / and Gpt-Goss model
+AI audit improvement
 
 -----------------
 version4.04

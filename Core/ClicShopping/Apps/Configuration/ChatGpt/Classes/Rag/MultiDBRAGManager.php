@@ -364,6 +364,18 @@ class MultiDBRAGManager
         $this->securityLogger->logSecurityEvent("Total number of results found: " . count($finalResults), 'info');
       }
 
+      //with metadata audit
+      $auditMetadata = [
+        'embeddings_context' => array_keys($this->vectorStores),
+        'similarity_scores' => $allResults,
+        'processing_chain' => ['tables_searched' => count($this->vectorStores), 'query' => $query]
+      ];
+
+      $finalResults = [
+        'documents' => $finalResults,
+        'audit_metadata' => $auditMetadata
+      ];
+
       return $finalResults;
     } catch (\Exception $e) {
       if ($this->debug == 'True') {
@@ -389,13 +401,15 @@ class MultiDBRAGManager
    * @param int|null $languageId Language ID for filtering results
    * @param string|null $entityType Entity type for filtering results
    * @param array $modelOptions Additional options for the model
-   * @return string Generated answer
+   * @return string|array Generated answer
    */
-  public function answerQuestion(string $question, int $limit = 5, float $minScore = 0.5, int|null $languageId = null, string|null $entityType = null, array $modelOptions = []): string
+  public function answerQuestion(string $question, int $limit = 5, float $minScore = 0.5, int|null $languageId = null, string|null $entityType = null, array $modelOptions = []): string|array
   {
     try {
       // research document
-      $documents = $this->searchDocuments($question, $limit, $minScore, $languageId, $entityType);
+      $searchResult = $this->searchDocuments($question, $limit, $minScore, $languageId, $entityType);
+      $documents = $searchResult['documents'] ?? [];
+      $auditMetadata = $searchResult['audit_metadata'] ?? [];
 
       if (empty($documents) || !is_array($documents)) {
         return CLICSHOPPING::getDef('text_rag_answer_question_not_found');
@@ -449,6 +463,11 @@ class MultiDBRAGManager
 
       if (!empty($modelOptions)) {
         $response = Gpt::getGptResponse($prompt);
+
+        $response = [
+          'response' => $response,
+          'audit_metadata' => $auditMetadata
+        ];
 
         return $response;
       } else {

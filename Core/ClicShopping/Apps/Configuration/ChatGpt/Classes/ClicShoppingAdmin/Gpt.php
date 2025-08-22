@@ -11,17 +11,19 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin;
 
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
+use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Statistics;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\InputValidator;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Statistics;
 
+use DateTimeImmutable;
 use LLPhant\Chat\MistralAIChat;
 use LLPhant\Chat\OllamaChat;
 use LLPhant\Chat\OpenAIChat;
-use LLPhant\Evaluation\Criteria\CriteriaEvaluatorPromptBuilder;
 use LLPhant\OpenAIConfig;
 use LLPhant\OllamaConfig;
 use LLPhant\AnthropicConfig;
@@ -30,11 +32,16 @@ use LLPhant\Chat\AnthropicChat;
 use function defined;
 use function is_null;
 
+/**
+* Gpt
+*
+* Class to manage interactions with GPT models (OpenAI, Ollama, Anthropic, Mistral)
+* This class encapsulates the logic to check the status of GPT integration,
+* retrieve available models, generate responses, and manage configurations.
+*
+*/
 class Gpt {
-  /**
-   *
-   * @return void
-   */
+
   public function __construct() {
   }
 
@@ -322,7 +329,6 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
   ];
 
   if (empty($model) || !in_array($model, $valid_models)) {
-    // Utiliser le modèle par défaut si le modèle spécifié n'est pas valide
     $model = 'mistral-large-latest';
   }
 
@@ -441,13 +447,15 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
 
 
   /**
-   * Saves data to the database, including question details and token usage statistics.
+   * Saves data to the database, including question details,audit trials.
    *
    * @param string $question The question being saved.
    * @param string $result The result or response to the question.
+   * @param array|null $auditExtra Optional additional data for auditing purposes, such as embeddings context, similarity scores, and processing chain.
    * @return void
+   * @throws \Exception
    */
-  public static function saveData(string $question, string $result): void
+  public static function saveData(string $question, string $result, ?array $auditExtra = []): void
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
@@ -496,14 +504,31 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
         ]
       );
 
-      $array_sql = [
-        'question' => $validatedQuestion,
-        'response' => $validatedResult,
-        'date_added' => 'now()',
-        'user_admin' => $validatedUserAdmin
+      // Audit trail
+      $auditPayload = [
+        'session' => [
+          'id'         => session_id(),
+          'ip'         => HTTP::getIpAddress() ?? null,
+          'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null
+        ],
+        'embeddings_context' => $auditExtra['embeddings_context'] ?? [],
+        'similarity_scores'  => $auditExtra['similarity_scores'] ?? [],
+        'processing_chain'   => $auditExtra['processing_chain'] ?? []
       ];
 
-      // Use the database layer's save method which should handle parameterization
+      $timestamp = (new DateTimeImmutable())->format('Y-m-d H:i:s');
+
+      // Hash d’intégrité via API interne ClicShopping
+      $auditPayload['hash'] = Hash::encryptDatatext($validatedUserAdmin . session_id() . $timestamp);
+
+      $array_sql = [
+        'question'   => $validatedQuestion,
+        'response'   => $validatedResult,
+        'date_added' => 'now()',
+        'user_admin' => $validatedUserAdmin,
+        'audit_data' => json_encode($auditPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+      ];
+
       $CLICSHOPPING_Db->save('gpt', $array_sql);
     }
   }

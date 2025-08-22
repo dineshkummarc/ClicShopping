@@ -1,4 +1,6 @@
 
+ALTER TABLE `clic_gpt` ADD `audit_data` JSON NULL DEFAULT NULL AFTER `user_admin`;
+
 
 -- french
 INSERT INTO `clic_configuration` VALUES(null, 'Effort de raisonnement', 'CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT', 'minimal', 'Selectionnez votre option. Fonctionne uniquement avec chatgpt-5.', 6, 0, NULL, '2025-08-08 10:00:54', NULL, NULL);
