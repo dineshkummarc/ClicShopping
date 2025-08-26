@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '7f4055a378a57b835601df558e60532cdb07bda6',
+        'reference' => 'ac96ab3694b48b06359246b538fab9969f3f5eb0',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '7f4055a378a57b835601df558e60532cdb07bda6',
+            'reference' => 'ac96ab3694b48b06359246b538fab9969f3f5eb0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -289,8 +289,8 @@
         'psr/http-client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '*',
-                1 => '1.0',
+                0 => '1.0',
+                1 => '*',
             ),
         ),
         'psr/http-factory' => array(
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => 'f9827bdb1caa9af2bde8def6899734610e7bddf9',
+            'reference' => '89119781c396a203ca5ab467d0e0729f61e34880',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
