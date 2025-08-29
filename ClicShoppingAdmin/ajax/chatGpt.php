@@ -147,6 +147,7 @@ try {
         } else {
           //If no information found, use openAI directly
           $result = Gpt::getGptResponse($prompt);
+          Gpt::saveData($prompt, $result);
         }
 
         $pos = strstr($result, ':');

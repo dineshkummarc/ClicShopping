@@ -179,12 +179,11 @@ Instructions:
 // 5️ Si des documents pertinents ont été trouvés, les envoyer à OpenAI pour une réponse enrichie
 //
     if (!empty($context)) {
-      //$result = Gpt::getGptResponse($context . "\n\nQuestion : " . $prompt);
-       $result = GptShop::getGptResponse($$context . "\n\nQuestion : " . $prompt, $max_token = 100, $temperature = 0);
+       $result = GptShop::getGptResponse($context . "\n\nQuestion : " . $prompt, 100, 0);
     } else {
       // 6 Si aucune information pertinente n'a été trouvée, poser directement la question à OpenAI
-      //$result = Gpt::getGptResponse($prompt);
-      $result = GptShop::getGptResponse($prompt, $max_token = 100, $temperature = 0);
+      $result = GptShop::getGptResponse($prompt, 100, 0);
+     Gpt::saveData($prompt, $result);
     }
 
     // 7️⃣ Traitement de la réponse d'OpenAI
@@ -194,15 +193,5 @@ Instructions:
     }
   }
 
-//    
-// 8️ Sauvegarder la conversation si demandé
-//
-  /*
-  if ($saveGpt === 'true') {
-    // Implémentation de la sauvegarde si nécessaire
-    // ...
-  }
-*/
-  // 9️⃣ Afficher la réponse formatée avec les sauts de ligne HTML
   echo nl2br($result);
 }
