@@ -65,12 +65,14 @@ class Composer
    */
   public static function checkComposerInstalled(): bool
   {
-    if (self::checkExecEnabled() === true) {
-      $cmd = 'cd ' . self::$root . ' && composer show';
-      return !\exec($cmd, $output, $return) && $return === 0;
+    if (!self::checkExecEnabled()) {
+      return false;
     }
 
-    return false;
+    $cmd = 'cd ' . escapeshellarg(self::$root) . ' && composer --no-ansi --no-interaction show 2>/dev/null';
+    exec($cmd, $output, $return);
+
+    return $return === 0;
   }
 
   /**
@@ -79,17 +81,17 @@ class Composer
    * @param string|null $libray The name of the library to check. Defaults to null.
    * @return bool Returns true if the library is installed and command execution is enabled, otherwise false.
    */
-  public static function checkLibrayInstalled(?string $libray = null): bool
-  {
-    if (!is_null($libray) && self::checkExecute() === true) {
-      $cmd = 'cd ' . self::$root . ' && composer show ' . $libray;
-      \exec($cmd, $output, $return);
-
-      return !($return === 0);
-    }
+public static function checkLibrayInstalled(?string $library = null): bool
+{
+  if (is_null($library) || !self::checkExecute()) {
     return false;
   }
 
+  $cmd = 'cd ' . escapeshellarg(self::$root) . ' && composer show ' . escapeshellarg($library) . ' 2>/dev/null';
+  exec($cmd, $output, $return);
+
+  return $return === 0;
+}
   /**
    * Verifies if the necessary conditions for executing commands are met.
    *
@@ -120,27 +122,26 @@ class Composer
    * @param string|null $library The name of the library whose version is to be checked. If null, the function will return false.
    * @return string|false The version information of the specified library if successful, or false if an error occurs or the library is not provided.
    */
-  public static function checkOnlineVersion(null|string $library = null): bool|string
+  public static function checkOnlineVersion(?string $library = null): string|false
   {
-    if (self::checkExecute() === true) {
-      if (!is_null($library)) {
-        $result = '';
-
-        $cmd = 'cd ' . self::$root . ' && composer show ' . $library;
-        exec($cmd, $output, $return);
-
-        if ($return === 0) {
-          if (isset($output)) {
-            $result = $output[3];
-          }
-
-          return $result;
-        }
-      } else {
-        return false;
-      }
+    if (!self::checkExecute() || is_null($library)) {
+      return false;
     }
-    
+
+    $cmd = 'cd ' . escapeshellarg(self::$root) . ' && composer show ' . escapeshellarg($library) . ' 2>/dev/null';
+    exec($cmd, $output, $return);
+
+    if ($return === 0 && !empty($output)) {
+      // Recherche la ligne contenant la version
+      foreach ($output as $line) {
+        if (str_starts_with($line, 'versions')) {
+          return trim($line);
+        }
+      }
+      // Fallback : retourne la 4e ligne si présente
+      return $output[3] ?? '';
+    }
+
     return false;
   }
 
@@ -152,6 +153,7 @@ class Composer
   public static function getLibrary(): array
   {
     $composer_file = self::$composerJson;
+
     if (!file_exists($composer_file)) {
       return [];
     }
@@ -167,22 +169,23 @@ class Composer
    * @param string|null $library The name of the specific library to update. If null, updates all dependencies.
    * @return string The output message from the update operation, typically the third line of the composer output.
    */
-  public static function update(?string $library = null): string
-  {
-    if (!self::checkExecute()) {
-      return '';
-    }
-
-    $cmd = 'cd ' . self::$root . ' && composer update';
-    if ($library !== null) {
-      $cmd .= ' ' . $library;
-    }
-    $cmd .= ' 2>&1';
-
-    \exec($cmd, $output, $return);
-
-    return $output[2] ?? '';
+public static function update(?string $library = null): string
+{
+  if (!self::checkExecute()) {
+    return '';
   }
+
+  $cmd = 'cd ' . escapeshellarg(self::$root) . ' && composer update';
+  if ($library !== null) {
+    $cmd .= ' ' . escapeshellarg($library);
+  }
+  $cmd .= ' 2>&1';
+
+  exec($cmd, $output, $return);
+
+  // Retourne toute la sortie pour plus d'informations, ou une chaîne vide si rien
+  return !empty($output) ? implode("\n", $output) : '';
+}
 
 
   /**
@@ -191,27 +194,17 @@ class Composer
    * @param string|null $library The name of the library to install. If null, installation will not proceed.
    * @return string|bool Returns the output message of the installation process or false if the library parameter is null.
    */
-  public static function install(null|string $library = null):string|bool
-  {
-    $result = '';
-
-    if (self::checkExecute() === true) {
-      if (is_null($library)) {
-        $result = false;
-      } else {
-        $cmd = 'cd ' . self::$root . ' && composer require  ' . $library . ' 2>&1';
-        exec($cmd, $output, $return); // update dependencies
-
-        if (isset($output) && is_array($output)) {
-          $result = $output[2];
-        }
-      }
-
-      return $result;
-    }
-
-    return false; // <-- Add this line
+public static function install(?string $library = null): string|bool
+{
+  if (!self::checkExecute() || is_null($library)) {
+    return false;
   }
+
+  $cmd = 'cd ' . escapeshellarg(self::$root) . ' && composer require ' . escapeshellarg($library) . ' 2>&1';
+  exec($cmd, $output, $return);
+
+  return !empty($output) ? implode("\n", $output) : '';
+}
 
   /**
    *
@@ -220,23 +213,17 @@ class Composer
    * @param string|null $library The name of the library to remove. Defaults to null.
    * @return string The result message from the remove operation.
    */
-  public static function remove(string|null $library = null): string
+  public static function remove(?string $library = null): string
   {
-    if (self::checkExecute() === true) {
-      $result = '';
-
-      $cmd = 'cd ' . self::$root . ' && composer remove ' . $library . ' 2>&1';
-      exec($cmd, $output, $return);
-
-      if (isset($output)) {
-        $result = $output[2];
-      }
-
-      return $result;
+    if (!self::checkExecute() || is_null($library)) {
+      return '';
     }
-    return ''; // Ensure a string is always returned
-  }
 
+    $cmd = 'cd ' . escapeshellarg(self::$root) . ' && composer remove ' . escapeshellarg($library) . ' 2>&1';
+    exec($cmd, $output, $return);
+
+    return !empty($output) ? implode("\n", $output) : '';
+  }
 
   /**
    * Clears the cache by executing the composer clearcache command.
@@ -245,19 +232,14 @@ class Composer
    */
   public static function clearCache(): string
   {
-    if (self::checkExecute() === true) {
-      $result = '';
-
-      $cmd = 'cd ' . self::$root . ' && composer clearcache 2>&1';
-      exec($cmd, $output, $return);
-
-      if (isset($output)) {
-        $result = $output[2];
-      }
-
-      return $result;
+    if (!self::checkExecute()) {
+      return '';
     }
 
-    return ''; // Ensure a string is always returned
+    $cmd = 'cd ' . escapeshellarg(self::$root) . ' && composer clearcache 2>&1';
+    exec($cmd, $output, $return);
+
+    // Retourne toute la sortie pour plus d'informations, ou une chaîne vide si rien
+    return !empty($output) ? implode("\n", $output) : '';
   }
 }
