@@ -202,6 +202,7 @@ store_sessions = "MySQL"
 time_zone = "{$timezone}"
 db_server_persistent_connections = "false"
 data_encryption = "{$data_encryption}"
+dir_core = "Core"
 EOD;
 
 ENDCFG;
@@ -220,6 +221,7 @@ http_path = "{$http_catalog}"
 http_images_path = "images/"
 http_cookie_domain = ""
 http_cookie_path = "{$http_catalog}"
+dir_core = "Core"
 EOD;
 
 ENDCFG;
@@ -255,6 +257,7 @@ http_path = "{$admin_http_path}"
 http_images_path = "images/"
 http_cookie_domain = ""
 http_cookie_path = "{$admin_http_path}"
+dir_core = "Core"
 EOD;
 
 ENDCFG;
