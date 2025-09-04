@@ -20,8 +20,7 @@ use function strlen;
  */
 class DateTime
 {
-  private bool $datetime = false;
-
+  private \DateTimeImmutable|bool $datetime;
   private string $raw_pattern_date = 'Y-m-d';
   private string $raw_pattern_time = 'H:i:s';
 
