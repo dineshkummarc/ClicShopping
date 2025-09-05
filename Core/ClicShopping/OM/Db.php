@@ -785,12 +785,20 @@ class Db extends PDO
         $field_name = array_shift($details);
 
         if ($is_index === true) {
-          $schema['index'][$field_name] = $details;
+          $schema['index'][$field_name] = array_values($details);
 
           continue;
         } elseif ($is_foreign === true) {
           foreach ($details as $d) {
             if (!str_contains($d, '(')) {
+              if (!is_array($schema['foreign'][$field_name] ?? null)) {
+                $schema['foreign'][$field_name] = [];
+              }
+
+              if (!isset($schema['foreign'][$field_name]['col']) || !is_array($schema['foreign'][$field_name]['col'])) {
+                $schema['foreign'][$field_name]['col'] = [];
+              }
+
               $schema['foreign'][$field_name]['col'][] = $d;
 
               continue;
@@ -802,12 +810,15 @@ class Db extends PDO
                 case 'on_delete':
                 case 'on_update':
                 case 'prefix':
-                  $schema['foreign'][$field_name][$info[1]] = $info[2];
+                  if (!isset($schema['foreign'][$field_name]) || !is_array($schema['foreign'][$field_name])) {
+                    $schema['foreign'][$field_name] = [];
+                  }
 
+                  $schema['foreign'][$field_name][$info[1]] = $info[2];
                   break;
 
                 case 'ref_col':
-                  $schema['foreign'][$field_name]['ref_col'] = explode(' ', $info[2]);
+                  $schema['foreign'][$field_name]['ref_col'] = array_filter(explode(' ', $info[2]), fn($v) => $v !== null && $v !== '');
                   break;
               }
             }
@@ -817,14 +828,27 @@ class Db extends PDO
         } elseif ($is_property === true) {
           switch ($field_name) {
             case 'engine':
+              if (!isset($schema['property']) || !is_array($schema['property'])) {
+                $schema['property'] = [];
+              }
+
+
               $schema['property']['engine'] = implode(' ', $details);
               break;
 
             case 'character_set':
+              if (!isset($schema['property']) || !is_array($schema['property'])) {
+                $schema['property'] = [];
+              }
+
               $schema['property']['character_set'] = implode(' ', $details);
               break;
 
             case 'collate':
+              if (!isset($schema['property']) || !is_array($schema['property'])) {
+                $schema['property'] = [];
+              }
+
               $schema['property']['collate'] = implode(' ', $details);
               break;
           }
@@ -835,10 +859,11 @@ class Db extends PDO
         $field_type = array_shift($details);
 
         if (preg_match('/(.*)\((.*)\)/', $field_type, $type_details)) {
-          $schema['col'][$field_name]['type'] = $type_details[1];
-          $schema['col'][$field_name]['length'] = $type_details[2];
+          $schema['col'][(string)$field_name]['type'] = $type_details[1];
+          $schema['col'][(string)$field_name]['length'] = $type_details[2];
         } else {
-          $schema['col'][$field_name]['type'] = $field_type;
+         $schema['col'][$field_name] = (array)($schema['col'][$field_name] ?? []);
+         $schema['col'][$field_name]['type'] = $field_type;
         }
 
         if (preg_match('/default\((.*)\)/', implode(' ', $details), $type_default)) {
@@ -850,28 +875,28 @@ class Db extends PDO
 
         $is_binary = array_search('binary', $details);
 
-        if (is_integer($is_binary)) {
+        if (is_int($is_binary)) {
           array_splice($details, $is_binary, 1);
           $schema['col'][$field_name]['binary'] = true;
         }
 
         $is_unsigned = array_search('unsigned', $details);
 
-        if (is_integer($is_unsigned)) {
+        if (is_int($is_unsigned)) {
           array_splice($details, $is_unsigned, 1);
           $schema['col'][$field_name]['unsigned'] = true;
         }
 
         $is_not_null = array_search('not_null', $details);
 
-        if (is_integer($is_not_null)) {
+        if (is_int($is_not_null)) {
           array_splice($details, $is_not_null, 1);
           $schema['col'][$field_name]['not_null'] = true;
         }
 
         $is_auto_increment = array_search('auto_increment', $details);
 
-        if (is_integer($is_auto_increment)) {
+        if (is_int($is_auto_increment)) {
           array_splice($details, $is_auto_increment, 1);
           $schema['col'][$field_name]['auto_increment'] = true;
         }
