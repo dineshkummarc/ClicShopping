@@ -20,8 +20,7 @@ use function strlen;
  */
 class DateTime
 {
-  private bool $datetime = false;
-
+  private $datetime = false;
   private string $raw_pattern_date = 'Y-m-d';
   private string $raw_pattern_time = 'H:i:s';
 
@@ -41,7 +40,7 @@ class DateTime
       $pattern = $this->raw_pattern_date . ' ' . $this->raw_pattern_time;
     }
 
-    $strict_log = false;
+    //$strict_log = false;
 
 // format time as 00:00:00 if it is missing from the date
     $new_datetime = strtotime($datetime);
@@ -49,7 +48,7 @@ class DateTime
     if ($new_datetime !== false) {
       $new_datetime = date($pattern, $new_datetime);
 
-      $this->datetime = \DateTimeImmutable::createFromFormat($pattern, $new_datetime);
+      $this->datetime = \DateTime::createFromFormat($pattern, $new_datetime);
 
       $strict_log = false;
     }
@@ -57,7 +56,7 @@ class DateTime
     if ($this->datetime === false) {
       $strict_log = true;
     } else {
-      $errors = \DateTimeImmutable::getLastErrors();
+        $errors = \DateTime::getLastErrors();
 
       if (is_array($errors)) {
         if (($errors['warning_count'] > 0) || ($errors['error_count'] > 0)) {
@@ -80,7 +79,7 @@ class DateTime
    */
   public function isValid(): bool
   {
-    return $this->datetime instanceof \DateTimeImmutable;
+    return $this->datetime instanceof \DateTime;
   }
 
   /**
@@ -114,6 +113,7 @@ class DateTime
     if (!$this->isValid()) {
       return '';
     }
+    
     $pattern = ($with_time === false) ? CLICSHOPPING::getDef('date_format_short') : CLICSHOPPING::getDef('date_time_format');
 
     return $this->datetime->format($pattern);
@@ -126,16 +126,22 @@ class DateTime
    * @param bool $with_time Indicates whether the result should include time. Defaults to false.
    * @return string The formatted short date string or an empty string if the input is invalid.
    */
-  public static function toShort(string $raw_datetime, bool $with_time = false): string
-  {
-    try {
-      $dt = new \DateTimeImmutable($raw_datetime);
-      $pattern = $with_time ? CLICSHOPPING::getDef('date_format_long') : CLICSHOPPING::getDef('date_format_short');
-      return $dt->format($pattern);
-    } catch (\Exception) {
-      return '';
+  public static function toShort(string $raw_datetime, bool $with_time = false, bool $strict = true): string
+    {
+      $result = '';
+
+      if (!empty($raw_datetime)) {
+        $date = new DateTime($raw_datetime, true, $strict);
+
+        if ($date->isValid()) {
+          $pattern = ($with_time === false) ? CLICSHOPPING::getDef('date_format_short') : CLICSHOPPING::getDef('date_time_format');
+
+          $result = $date->get($pattern);
+        }
+      }
+
+      return $result;
     }
-  }
 
   /**
    * Converts a raw datetime string into a formatted date string without custom formatting.
@@ -144,17 +150,23 @@ class DateTime
    * @param bool $with_time Indicates whether the result should include time. Defaults to false.
    * @return string The formatted date string or an empty string if the input is invalid.
    */
-  public static function toShortWithoutFormat(string $raw_datetime, bool $with_time = false): string
-  {
-    try {
-      $dt = new \DateTimeImmutable($raw_datetime);
-      $pattern = $with_time ? CLICSHOPPING::getDef('date_time_format') : CLICSHOPPING::getDef('date_format_short_sql');
+    public static function toShortWithoutFormat(string $raw_datetime, bool $with_time = false, bool $strict = true) :string
+    {
+      $result = '';
 
-      return $dt->format($pattern);
-    } catch (\Exception) {
-      return '';
+      if (!empty($raw_datetime)) {
+        $date = new DateTime($raw_datetime, true, $strict);
+
+        if ($date->isValid()) {
+
+          $pattern = ($with_time === false) ? CLICSHOPPING::getDef('date_format_short_sql') : CLICSHOPPING::getDef('date_time_format');
+
+          $result = $date->get($pattern);
+        }
+
+      }
+      return $result;
     }
-  }
 
   /**
    * Retrieves the formatted date string based on the long date format.
@@ -167,9 +179,7 @@ class DateTime
       return '';
     }
 
-    $pattern = CLICSHOPPING::getDef('date_format_long');
-
-    return $this->datetime->format($pattern);
+    return date(CLICSHOPPING::getDef('date_format_long'), $this->getTimestamp());
   }
 
   /**
@@ -178,17 +188,18 @@ class DateTime
    * @param string $raw_datetime The raw datetime string to be converted.
    * @return string The formatted long date string, or an empty string if the datetime string is invalid.
    */
-  public static function toLong(string $raw_datetime): string
-  {
-    try {
-      $dt = new \DateTimeImmutable($raw_datetime);
+    public static function toLong(string $raw_datetime, bool $strict = true) :string
+    {
+      $result = '';
 
-      return $dt->format(CLICSHOPPING::getDef('date_format_long'));
+      $date = new DateTime($raw_datetime, true, $strict);
 
-    } catch (\Exception) {
-      return '';
+      if ($date->isValid()) {
+        $result = date(CLICSHOPPING::getDef('date_format_long'), $date->getTimestamp());
+      }
+
+      return $result;
     }
-  }
 
   /**
    * Retrieves the raw formatted date and optionally the time based on the provided pattern.
@@ -230,7 +241,7 @@ class DateTime
   {
     $time_zones_array = [];
 
-    foreach (DateTimeZone::listIdentifiers() as $id) {
+    foreach (\DateTimeZone::listIdentifiers() as $id) {
       $tz_string = str_replace('_', ' ', $id);
 
       $id_array = explode('/', $tz_string, 2);
@@ -282,9 +293,11 @@ class DateTime
    */
     public static function getNow(?string $format = null): string
     {
-      $format = $format ?? CLICSHOPPING::getDef('date_format_long');
+      if (!isset($format)) {
+        $format = CLICSHOPPING::getDef('date_format_long');
+      }
 
-      return (new \DateTimeImmutable())->format($format);
+      return date($format);
     }
 
   /**
@@ -298,9 +311,7 @@ class DateTime
       return '';
     }
 
-    $pattern = CLICSHOPPING::getDef('date_format');
-
-    return $this->datetime->format($pattern);
+    return strftime(CLICSHOPPING::getDef('date_format'), $this->getTimestamp());
   }
 
   /**
@@ -309,16 +320,19 @@ class DateTime
    * @param string $raw_datetime The raw datetime string to be converted.
    * @return string The formatted short date reference. Returns an empty string if the datetime is invalid or empty.
    */
-  public static function toDateReferenceShort(string $raw_datetime): string
-  {
-    try {
-      $dt = new \DateTimeImmutable($raw_datetime);
+    public static function toDateReferenceShort(string $raw_datetime, bool $strict = true): string
+    {
 
-      return $dt->format(CLICSHOPPING::getDef('date_invoice'));
-    } catch (\Exception) {
-      return '';
+      $result = '';
+
+      $date = new DateTime($raw_datetime, true, $strict);
+
+      if ($date->isValid()) {
+        $result = date(CLICSHOPPING::getDef('date_format'), $date->getTimestamp());
+      }
+
+      return $result;
     }
-  }
 
   /**
    * Converts a Unix timestamp into a formatted date string.
