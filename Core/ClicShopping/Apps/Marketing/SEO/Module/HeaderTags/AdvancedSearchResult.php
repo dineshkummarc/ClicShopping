@@ -17,7 +17,7 @@ use ClicShopping\Apps\Marketing\SEO\SEO as SEOApp;
 
 class AdvancedSearchResult extends \ClicShopping\OM\Modules\HeaderTagsAbstract
 {
-  private mixed $lang;
+  public mixed $lang;
   public mixed $app;
   private mixed $template;
 

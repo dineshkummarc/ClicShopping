@@ -36,13 +36,6 @@ class ImageResample
 {
   private $image;
   private $image_type;
-  private $filename;
-  private $height;
-  private $width;
-  private $size;
-  private $scale;
-  private $x;
-  private $y;
 
   /**
    * Constructor method.

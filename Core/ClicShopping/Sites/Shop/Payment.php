@@ -27,8 +27,8 @@ class Payment
 {
   public array $modules = [];
   public string $selected_module;
-  private mixed $template;
-  private mixed $lang;
+  public mixed $template;
+  public mixed $lang;
 
 // class constructor
 

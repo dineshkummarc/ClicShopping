@@ -20,7 +20,7 @@ class pi_products_info_gallery_baguettebox
   public $description;
   public int|null $sort_order = 0;
   public bool $enabled = false;
-  private mixed $lang;
+  public mixed $lang;
 
   public function __construct()
   {

@@ -17,7 +17,7 @@ use ClicShopping\Apps\Orders\Orders\Orders as OrdersApp;
 
 class TotalMonth extends \ClicShopping\OM\Modules\AdminDashboardAbstract
 {
-  private mixed $lang;
+  public mixed $lang;
   public mixed $app;
   public $group;
 

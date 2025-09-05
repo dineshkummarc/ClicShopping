@@ -18,7 +18,7 @@ use ClicShopping\Apps\Tools\ActionsRecorder\ActionsRecorder as ActionsRecorderAp
 
 class AdminLogins extends \ClicShopping\OM\Modules\AdminDashboardAbstract
 {
-  private mixed $lang;
+  public mixed $lang;
   public mixed $app;
   public $group;
 

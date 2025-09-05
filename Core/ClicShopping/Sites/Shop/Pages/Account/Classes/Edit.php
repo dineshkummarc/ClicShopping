@@ -14,13 +14,8 @@ use ClicShopping\OM\Registry;
 
 class Edit
 {
-  private mixed $db;
-  private $customer;
-
   public function __construct()
   {
-    $this->db = Registry::get('Db');
-    $this->customer = Registry::get('Customer');
   }
 
   /**

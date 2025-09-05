@@ -16,7 +16,7 @@ use ClicShopping\Apps\Marketing\Recommendations\Recommendations as Recommendatio
 
 class Recommendations extends \ClicShopping\OM\Modules\HeaderTagsAbstract
 {
-  private mixed $lang;
+  public mixed $lang;
   public mixed $app;
   private mixed $template;
 

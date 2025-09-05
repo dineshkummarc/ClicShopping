@@ -22,7 +22,6 @@ use function is_object;
 class CfgModulesAdmin
 {
   public array $_modules = [];
-  private mixed $lang;
 
   /**
    * Constructor method.

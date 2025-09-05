@@ -17,9 +17,8 @@ use ClicShopping\Apps\Customers\Gdpr\Gdpr as GdprApp;
 
 class Gdpr extends \ClicShopping\OM\Modules\HeaderTagsAbstract
 {
-  private mixed $lang;
+  public mixed $lang;
   public mixed $app;
-  private mixed $template;
 
   /**
    * Initializes the GDPR module by setting up the required application bindings,

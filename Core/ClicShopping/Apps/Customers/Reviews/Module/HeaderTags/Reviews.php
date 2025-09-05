@@ -16,7 +16,7 @@ use ClicShopping\OM\Registry;
 
 class Reviews extends \ClicShopping\OM\Modules\HeaderTagsAbstract
 {
-  private mixed $lang;
+  public mixed $lang;
   public mixed $app;
   private mixed $template;
   public $group;

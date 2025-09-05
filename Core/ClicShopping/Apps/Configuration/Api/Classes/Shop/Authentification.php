@@ -19,7 +19,7 @@ use ClicShopping\OM\Registry;
 class Authentification extends ApiSecurity
 {
   private string $username;
-  private string $key;
+  public string $key;
   private ?string $ip;
 
   /**

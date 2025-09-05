@@ -21,7 +21,7 @@ use function is_array;
 class ProductsContentTab1 implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
-  private mixed $db;
+  public mixed $db;
 
   /**
    * Constructor method to initialize the Suppliers application.

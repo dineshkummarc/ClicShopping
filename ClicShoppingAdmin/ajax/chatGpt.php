@@ -166,9 +166,9 @@ try {
     if ($pos !== false) {
       $result = substr($pos, 2); // Pour enlever les deux-points et l'espace
       echo nl2br($result);
-    } else {
-      echo nl2br($result); // Si "Keywords:" n'est pas trouvé, imprimez la chaîne d'origine.
     }
+
+    echo nl2br($result);
   }
 } catch
   (\Exception $e) {

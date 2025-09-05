@@ -17,7 +17,7 @@ use ClicShopping\Apps\Catalog\Products\Products as ProductsApp;
 
 class ProductsDescription extends \ClicShopping\OM\Modules\HeaderTagsAbstract
 {
-  private mixed $lang;
+  public mixed $lang;
   public mixed $app;
   public string $group;
 

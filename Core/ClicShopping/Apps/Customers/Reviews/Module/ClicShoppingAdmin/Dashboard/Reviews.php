@@ -19,7 +19,7 @@ use ClicShopping\Apps\Customers\Reviews\Reviews as ReviewsApp;
 
 class Reviews extends \ClicShopping\OM\Modules\AdminDashboardAbstract
 {
-  private mixed $lang;
+  public mixed $lang;
   public mixed $app;
   public $group;
 

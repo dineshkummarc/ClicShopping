@@ -22,10 +22,10 @@ use ZipArchive;
 class ExtractFile
 {
   public mixed $app;
-  private string $saveFileFromGithub;
-  private string $cacheGithub;
-  private string $cacheGithubTemp;
-  private string $ModuleInfosJson;
+  public string $saveFileFromGithub;
+  public string $cacheGithub;
+  public string $cacheGithubTemp;
+  public string $ModuleInfosJson;
 
   /**
    * Represents the DT module configuration for the ClicShoppingAdmin application.

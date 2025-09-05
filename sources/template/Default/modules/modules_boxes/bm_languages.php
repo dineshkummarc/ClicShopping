@@ -20,7 +20,7 @@ class bm_languages
   public int|null $sort_order = 0;
   public bool $enabled = false;
   public $pages;
-  private mixed $lang;
+  public mixed $lang;
 
   public function __construct()
   {

@@ -17,7 +17,6 @@ class ProductsAjax extends \ClicShopping\OM\PagesActionsAbstract
 {
   protected $file = null;
   protected bool $use_site_template = false;
-  private mixed $Db;
 
   public function execute()
   {

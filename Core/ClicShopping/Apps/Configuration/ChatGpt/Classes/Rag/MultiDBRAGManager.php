@@ -44,9 +44,9 @@ use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
  */
 class MultiDBRAGManager
 {
-  private mixed $app;
-  private mixed $db;
-  private mixed $language;
+  public mixed $app;
+  public mixed $db;
+  public mixed $language;
   private mixed $embeddingGenerator;
   private array $vectorStores = [];
 

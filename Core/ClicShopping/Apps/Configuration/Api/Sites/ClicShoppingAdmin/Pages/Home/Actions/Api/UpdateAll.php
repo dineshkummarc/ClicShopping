@@ -18,7 +18,6 @@ use ClicShopping\Apps\Configuration\Api\Classes\ClicShoppingAdmin\ApiAdmin;
 class UpdateAll extends \ClicShopping\OM\PagesActionsAbstract
 {
   public mixed $app;
-  private mixed $db;
 
   public function __construct()
   {
