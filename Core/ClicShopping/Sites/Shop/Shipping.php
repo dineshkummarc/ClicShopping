@@ -26,8 +26,6 @@ use function is_null;
 class Shipping
 {
   public array $modules = [];
-  public $selected_module;
-  private mixed $lang;
 
   /**
    * Constructor for initializing the shipping modules.
@@ -37,8 +35,6 @@ class Shipping
    */
   public function __construct($module = null)
   {
-    $this->lang = Registry::get('Language');
-
     if (defined('MODULE_SHIPPING_INSTALLED') && !is_null(MODULE_SHIPPING_INSTALLED)) {
       $this->modules = explode(';', MODULE_SHIPPING_INSTALLED);
 

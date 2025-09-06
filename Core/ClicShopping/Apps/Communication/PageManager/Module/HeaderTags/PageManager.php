@@ -17,11 +17,11 @@ use ClicShopping\Apps\Communication\PageManager\PageManager as PageManagerApp;
 
 class PageManager extends \ClicShopping\OM\Modules\HeaderTagsAbstract
 {
-  private mixed $db;
   private mixed $lang;
   public mixed $app;
-  private mixed $template;
-
+  public mixed $template;
+  public mixed $group;
+  
   /**
    * Initializes the PageManager module by setting up necessary configurations,
    * loading language definitions, and determining the module's status and sort order.

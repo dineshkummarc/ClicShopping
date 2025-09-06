@@ -785,22 +785,19 @@ class Db extends PDO
         $field_name = array_shift($details);
 
         if ($is_index === true) {
-          $schema['index'][$field_name] = array_values($details);
+          $schema['index'][$field_name] = array_values(array_filter($details, fn($v) => $v !== null && $v !== ''));
 
           continue;
         } elseif ($is_foreign === true) {
-          foreach ($details as $d) {
+         foreach ($details as $d) {
             if (!str_contains($d, '(')) {
-              if (!is_array($schema['foreign'][$field_name] ?? null)) {
+              if (!isset($schema['foreign'][$field_name]) || !is_array($schema['foreign'][$field_name])) {
                 $schema['foreign'][$field_name] = [];
               }
-
               if (!isset($schema['foreign'][$field_name]['col']) || !is_array($schema['foreign'][$field_name]['col'])) {
                 $schema['foreign'][$field_name]['col'] = [];
               }
-
               $schema['foreign'][$field_name]['col'][] = $d;
-
               continue;
             }
 
@@ -813,12 +810,11 @@ class Db extends PDO
                   if (!isset($schema['foreign'][$field_name]) || !is_array($schema['foreign'][$field_name])) {
                     $schema['foreign'][$field_name] = [];
                   }
-
-                  $schema['foreign'][$field_name][$info[1]] = $info[2];
+                  $schema['foreign'][$field_name][$info[1]] = (string)$info[2];
                   break;
 
                 case 'ref_col':
-                  $schema['foreign'][$field_name]['ref_col'] = array_filter(explode(' ', $info[2]), fn($v) => $v !== null && $v !== '');
+                  $schema['foreign'][$field_name]['ref_col'] = array_values(array_filter(explode(' ', $info[2]), fn($v) => $v !== null && $v !== ''));
                   break;
               }
             }
@@ -859,11 +855,15 @@ class Db extends PDO
         $field_type = array_shift($details);
 
         if (preg_match('/(.*)\((.*)\)/', $field_type, $type_details)) {
+          if (!isset($schema['col'][(string)$field_name]) || !is_array($schema['col'][(string)$field_name])) {
+            $schema['col'][(string)$field_name] = [];
+          }
+
           $schema['col'][(string)$field_name]['type'] = $type_details[1];
           $schema['col'][(string)$field_name]['length'] = $type_details[2];
         } else {
-         $schema['col'][$field_name] = (array)($schema['col'][$field_name] ?? []);
-         $schema['col'][$field_name]['type'] = $field_type;
+           $schema['col'][$field_name] = (array)($schema['col'][$field_name] ?? []);
+           $schema['col'][$field_name]['type'] = $field_type;
         }
 
         if (preg_match('/default\((.*)\)/', implode(' ', $details), $type_default)) {

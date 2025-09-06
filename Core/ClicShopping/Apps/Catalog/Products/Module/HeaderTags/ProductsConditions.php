@@ -16,9 +16,8 @@ use ClicShopping\Apps\Catalog\Products\Products as ProductsApp;
 
 class ProductsConditions extends \ClicShopping\OM\Modules\HeaderTagsAbstract
 {
-  private mixed $lang;
   public mixed $app;
-
+  public mixed $group;
   /**
    * Initializes the module by setting up dependencies, language definitions, and module properties.
    *
@@ -31,7 +30,6 @@ class ProductsConditions extends \ClicShopping\OM\Modules\HeaderTagsAbstract
     }
 
     $this->app = Registry::get('Products');
-    $this->lang = Registry::get('Language');
     $this->group = 'footer_scripts'; // could be header_tags or footer_scripts
 
     $this->app->loadDefinitions('Module/HeaderTags/products_conditions');
@@ -84,8 +82,8 @@ class ProductsConditions extends \ClicShopping\OM\Modules\HeaderTagsAbstract
 
       $output =
         <<<EOD
-{$display_result}
-EOD;
+        {$display_result}
+        EOD;
 
       return $output;
     }

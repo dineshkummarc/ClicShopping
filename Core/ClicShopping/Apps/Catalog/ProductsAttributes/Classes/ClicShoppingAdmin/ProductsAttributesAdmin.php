@@ -22,13 +22,11 @@ use ClicShopping\Apps\Catalog\Products\Classes\ClicShoppingAdmin\ImageResample;
 class ProductsAttributesAdmin
 {
   private mixed $lang;
-  private mixed $db;
   public mixed $app;
 
   public function __construct()
   {
     $this->lang = Registry::get('Language');
-    $this->db = Registry::get('Db');
     $this->app = Registry::get('ProductsAttributes');
   }
 

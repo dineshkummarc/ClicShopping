@@ -412,7 +412,7 @@ class ShoppingCart
     $this->weight = 0;
     $this->content_type = false;
 
-    unset($this->cartID);
+    $this->cartID = null;
 
     if (isset($_SESSION['cartID'])) {
       unset($_SESSION['cartID']);
