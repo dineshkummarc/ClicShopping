@@ -83,7 +83,7 @@ class EventManager
         // Picks the hash code related to that listener
         $hash = spl_object_hash($listener);
 
-        foreach ((array) $events as $event) {
+        foreach ( $events as $event) {
             // Overrides listener if a previous one was associated already
             // Prevents duplicate listeners on same event (same instance only)
             $this->listeners[$event][$hash] = $listener;
@@ -100,7 +100,7 @@ class EventManager
         // Picks the hash code related to that listener
         $hash = spl_object_hash($listener);
 
-        foreach ((array) $events as $event) {
+        foreach ( $events as $event) {
             unset($this->listeners[$event][$hash]);
         }
     }

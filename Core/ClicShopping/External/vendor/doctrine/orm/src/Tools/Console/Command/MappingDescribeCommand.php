@@ -273,7 +273,7 @@ EOT);
         foreach ($propertyMappings as $propertyName => $mapping) {
             $output[] = $this->formatField(sprintf('  %s', $propertyName), '');
 
-            foreach ((array) $mapping as $field => $value) {
+            foreach ( $mapping as $field => $value) {
                 $output[] = $this->formatField(sprintf('    %s', $field), $this->formatValue($value));
             }
         }

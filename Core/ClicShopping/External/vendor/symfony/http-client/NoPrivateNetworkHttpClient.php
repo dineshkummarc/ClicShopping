@@ -53,7 +53,7 @@ final class NoPrivateNetworkHttpClient implements HttpClientInterface, LoggerAwa
             $ipFlags = \FILTER_FLAG_IPV4 | \FILTER_FLAG_IPV6;
         } else {
             $ipFlags = 0;
-            foreach ((array) $subnets as $subnet) {
+            foreach ( $subnets as $subnet) {
                 $ipFlags |= str_contains($subnet, ':') ? \FILTER_FLAG_IPV6 : \FILTER_FLAG_IPV4;
             }
         }

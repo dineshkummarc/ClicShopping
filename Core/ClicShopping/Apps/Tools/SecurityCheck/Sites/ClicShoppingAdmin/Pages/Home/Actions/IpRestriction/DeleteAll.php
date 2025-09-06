@@ -26,7 +26,7 @@ class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
     $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page'] : 1;
 
     if (isset($_POST['selected'])) {
-      foreach ((array)$_POST['selected'] as $id) {
+      foreach ($_POST['selected'] as $id) {
         $Qselect = $this->app->db->prepare('select ip_restriction
                                               from :table_ip_restriction
                                               where id = :id

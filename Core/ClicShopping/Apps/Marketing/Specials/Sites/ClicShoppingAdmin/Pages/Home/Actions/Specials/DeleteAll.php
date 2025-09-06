@@ -21,7 +21,7 @@ class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
     $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page'] : 1;
 
     if (isset($_POST['selected'])) {
-      foreach ((array)$_POST['selected'] as $id) {
+      foreach ($_POST['selected'] as $id) {
         $Qdelete = $CLICSHOPPING_Specials->db->prepare('delete
                                                     from :table_specials
                                                     where specials_id = :specials_id

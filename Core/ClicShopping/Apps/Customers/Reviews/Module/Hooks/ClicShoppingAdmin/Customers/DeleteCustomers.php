@@ -72,7 +72,7 @@ class DeleteCustomers implements \ClicShopping\OM\Modules\HooksInterface
   {
     if (isset($_GET['DeleteAll'])) {
       if (isset($_POST['selected'])) {
-        foreach ((array)$_POST['selected'] as $id) {
+        foreach ($_POST['selected'] as $id) {
           $this->deleteCustomer($id);
         }
       } else {

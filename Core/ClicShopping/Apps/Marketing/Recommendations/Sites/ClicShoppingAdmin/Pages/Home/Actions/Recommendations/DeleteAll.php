@@ -22,7 +22,7 @@ class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
     $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page'] : 1;
 
     if (isset($_POST['selected'], $_GET['DeleteAll'], $_GET['Recommendations'])) {
-      foreach ((array)$_POST['selected'] as $id) {
+      foreach ($_POST['selected'] as $id) {
         $CLICSHOPPING_Recommendations->db->delete('customers_basket', ['products_id' => (int)$id]);
 
         $CLICSHOPPING_Hooks->call('Recommendations', 'RemoveRecommendations');

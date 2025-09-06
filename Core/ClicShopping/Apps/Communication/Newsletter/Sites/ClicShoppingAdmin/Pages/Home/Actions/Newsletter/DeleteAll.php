@@ -27,7 +27,7 @@ class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
     }
 
     if (isset($_POST['selected'])) {
-      foreach ((array)$_POST['selected'] as $id) {
+      foreach ($_POST['selected'] as $id) {
         $Qdelete = $CLICSHOPPING_Newsletter->db->prepare('delete
                                                             from :table_newsletters
                                                             where newsletters_id = :newsletters_id

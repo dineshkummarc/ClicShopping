@@ -50,7 +50,7 @@ class DeleteAll implements \ClicShopping\OM\Modules\HooksInterface
   public function execute()
   {
     if (isset($_POST['selected']) && is_array($_POST['selected']) && isset($_POST['DeleteAll'])) {
-      foreach ((array)$_POST['selected'] as $items) {
+      foreach ($_POST['selected'] as $items) {
         if (isset($items)) {
           $this->app->delete('reviews_sentiment_embedding', 'entity_id', $items);
         }

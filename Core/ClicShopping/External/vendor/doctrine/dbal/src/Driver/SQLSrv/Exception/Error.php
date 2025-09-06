@@ -20,7 +20,7 @@ final class Error extends AbstractException
         $sqlState = null;
         $code     = 0;
 
-        foreach ((array) sqlsrv_errors(SQLSRV_ERR_ERRORS) as $error) {
+        foreach ( sqlsrv_errors(SQLSRV_ERR_ERRORS) as $error) {
             $message   .= 'SQLSTATE [' . $error['SQLSTATE'] . ', ' . $error['code'] . ']: ' . $error['message'] . "\n";
             $sqlState ??= $error['SQLSTATE'];
 

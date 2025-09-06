@@ -23,7 +23,7 @@ class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
     $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page'] : 1;
 
     if (isset($_POST['selected'])) {
-      foreach ((array)$_POST['selected'] as $id) {
+      foreach ($_POST['selected'] as $id) {
         $Qid = $CLICSHOPPING_Reviews->db->get('reviews_sentiment', 'id', ['reviews_id' => (int)$id]);
 
         $CLICSHOPPING_Reviews->db->delete('reviews_sentiment', ['reviews_id' => (int)$id]);

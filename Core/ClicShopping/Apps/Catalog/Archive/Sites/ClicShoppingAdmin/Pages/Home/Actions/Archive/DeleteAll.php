@@ -20,7 +20,7 @@ class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
     $CLICSHOPPING_Archive = Registry::get('Archive');
 
     if (isset($_POST['selected'])) {
-      foreach ((array)$_POST['selected'] as $id) {
+      foreach ($_POST['selected'] as $id) {
         $Qupdate = $CLICSHOPPING_Archive->db->prepare('update :table_products
                                                         set products_archive = :products_archive
                                                         where products_id = :products_id

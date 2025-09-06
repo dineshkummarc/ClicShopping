@@ -55,7 +55,7 @@ class MockResponse implements ResponseInterface, StreamableInterface
         $responseHeaders = [];
 
         foreach ($info['response_headers'] as $k => $v) {
-            foreach ((array) $v as $v) {
+            foreach ( $v as $v) {
                 $responseHeaders[] = (\is_string($k) ? $k.': ' : '').$v;
             }
         }
