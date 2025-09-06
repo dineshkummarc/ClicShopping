@@ -22,7 +22,7 @@ class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
     $this->Hooks = Registry::get('Hooks');
 
     if (isset($_POST['selected']) && is_array($_POST['selected']) && isset($_POST['DeleteAll'])) {
-      foreach ($_POST['selected'] as $id) {
+      foreach ((array)$_POST['selected'] as $id) {
 
         $this->app->db->delete('manufacturers', ['manufacturers_id' => (int)$id]);
         $this->app->db->delete('manufacturers_info', ['manufacturers_id' => (int)$id]);

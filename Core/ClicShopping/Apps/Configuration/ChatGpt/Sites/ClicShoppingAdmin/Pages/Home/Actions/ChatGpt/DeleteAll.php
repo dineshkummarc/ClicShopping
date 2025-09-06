@@ -33,7 +33,7 @@ class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
     $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page'] : 1;
 
     if (isset($_POST['selected']) && !\is_null($_POST['selected'])) {
-      foreach ($_POST['selected'] as $id) {
+      foreach ((array)$_POST['selected'] as $id) {
         $CLICSHOPPING_ChatGpt->db->delete('gpt', ['gpt_id' => (int)$id]);
 
         $CLICSHOPPING_Hooks->call('Gpt', 'DeleteAll');

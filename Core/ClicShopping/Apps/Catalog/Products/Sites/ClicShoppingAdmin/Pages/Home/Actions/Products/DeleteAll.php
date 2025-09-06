@@ -34,7 +34,7 @@ class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
     if (isset($_POST['selected']) && is_array($_POST['selected'])) {
-      foreach ($_POST['selected'] as $items) {
+      foreach ((array)$_POST['selected'] as $items) {
         if (isset($items)) {
           $Qcheck = $this->app->db->prepare('select count(*)
                                                from :table_products_to_categories

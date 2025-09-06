@@ -23,7 +23,7 @@ class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
     $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page'] : 1;
 
     if (isset($_POST['selected']) && isset($_GET['DeleteAll'])) {
-      foreach ($_POST['selected'] as $id) {
+      foreach ((array)$_POST['selected'] as $id) {
         $CLICSHOPPING_Customers->db->delete('address_book', ['customers_id' => $id]);
         $CLICSHOPPING_Customers->db->delete('customers', ['customers_id' => $id]);
         $CLICSHOPPING_Customers->db->delete('customers_info', ['customers_info_id' => $id]);

@@ -25,7 +25,7 @@ class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
   public function execute()
   {
     if (isset($_POST['selected'])) {
-      foreach ($_POST['selected'] as $id) {
+      foreach ((array)$_POST['selected'] as $id) {
         $Qdelete = $this->app->db->prepare('delete
                                               from :table_suppliers
                                               where suppliers_id = :suppliers_id
