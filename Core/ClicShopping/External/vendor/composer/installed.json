@@ -1492,17 +1492,17 @@
         },
         {
             "name": "openai-php/client",
-            "version": "v0.15.0",
-            "version_normalized": "0.15.0.0",
+            "version": "v0.16.1",
+            "version_normalized": "0.16.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/openai-php/client.git",
-                "reference": "4db080738104be6a1144fa9f203c428ea4e58128"
+                "reference": "7a59e4d896d83f8c923e0b3a5ebae0a5cddad2d6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/openai-php/client/zipball/4db080738104be6a1144fa9f203c428ea4e58128",
-                "reference": "4db080738104be6a1144fa9f203c428ea4e58128",
+                "url": "https://api.github.com/repos/openai-php/client/zipball/7a59e4d896d83f8c923e0b3a5ebae0a5cddad2d6",
+                "reference": "7a59e4d896d83f8c923e0b3a5ebae0a5cddad2d6",
                 "shasum": ""
             },
             "require": {
@@ -1526,7 +1526,7 @@
                 "phpstan/phpstan": "^1.12.25",
                 "symfony/var-dumper": "^7.2.6"
             },
-            "time": "2025-08-04T17:44:21+00:00",
+            "time": "2025-09-04T14:32:16+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -1566,7 +1566,7 @@
             ],
             "support": {
                 "issues": "https://github.com/openai-php/client/issues",
-                "source": "https://github.com/openai-php/client/tree/v0.15.0"
+                "source": "https://github.com/openai-php/client/tree/v0.16.1"
             },
             "funding": [
                 {
@@ -5001,23 +5001,23 @@
         },
         {
             "name": "theodo-group/llphant",
-            "version": "0.11.3",
-            "version_normalized": "0.11.3.0",
+            "version": "0.11.4",
+            "version_normalized": "0.11.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/LLPhant/LLPhant.git",
-                "reference": "35b421632d6a81b5aa05ad7dfd782909183915f8"
+                "reference": "c87bda522fc4b41db0bbd309dcd85cf5cfcec329"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/LLPhant/LLPhant/zipball/35b421632d6a81b5aa05ad7dfd782909183915f8",
-                "reference": "35b421632d6a81b5aa05ad7dfd782909183915f8",
+                "url": "https://api.github.com/repos/LLPhant/LLPhant/zipball/c87bda522fc4b41db0bbd309dcd85cf5cfcec329",
+                "reference": "c87bda522fc4b41db0bbd309dcd85cf5cfcec329",
                 "shasum": ""
             },
             "require": {
                 "guzzlehttp/guzzle": "^7.4.5",
                 "guzzlehttp/psr7": "^2.7",
-                "openai-php/client": "^v0.15.0",
+                "openai-php/client": "^v0.16.1",
                 "php": "^8.1.0",
                 "php-http/discovery": "^1.20.0",
                 "php-http/multipart-stream-builder": "^1.4.2",
@@ -5055,7 +5055,7 @@
                 "predis/predis": "This is required for the RedisVectoreStore.",
                 "symfony/cache": "This is one of the possible types of psr/cache needed by doctrine/orm"
             },
-            "time": "2025-08-18T09:35:41+00:00",
+            "time": "2025-09-09T11:07:36+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -5087,7 +5087,7 @@
             ],
             "support": {
                 "issues": "https://github.com/LLPhant/LLPhant/issues",
-                "source": "https://github.com/LLPhant/LLPhant/tree/0.11.3"
+                "source": "https://github.com/LLPhant/LLPhant/tree/0.11.4"
             },
             "install-path": "../theodo-group/llphant"
         },

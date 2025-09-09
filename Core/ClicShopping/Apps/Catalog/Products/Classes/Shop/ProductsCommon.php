@@ -24,6 +24,11 @@ use function strlen;
  */
 class ProductsCommon extends Prod
 {
+  public mixed $app;
+  private mixed $db;
+  protected mixed $language;
+  protected mixed $customer;
+
   protected $id;
   protected $products_name;
   protected $products_short_description;
@@ -58,11 +63,7 @@ class ProductsCommon extends Prod
   protected $products_weight_class_id;
   protected $infoPriceDiscountByQuantity;
   protected $saveMoney;
-
-  public mixed $app;
-  private mixed $db;
-  protected $language;
-  protected $customer;
+ 
 
   public function __construct()
   {
@@ -809,7 +810,7 @@ class ProductsCommon extends Prod
    * @param mixed $size_button The size button value to be sanitized.
    * @return string The sanitized size button value.
    */
-  public function getSizeButton($size_button)
+  public function getSizeButton($size_button): string
   {
     $size_button = HTML::sanitize($size_button);
 
@@ -1519,7 +1520,6 @@ class ProductsCommon extends Prod
     return $this->setProductQuantityUnitTypeCustomersGroup($id);
   }
 
-
   /**
    * Sets the minimum quantity of a product that can be ordered based on the product's or customer's group configuration.
    *
@@ -1582,7 +1582,7 @@ class ProductsCommon extends Prod
    * Sets the minimum quantity of a product required to place an order based on various conditions.
    *
    * @param int|null $id The ID of the product. If null, the method will use the current product ID.
-   * @return string The minimum order quantity display value or an empty string if conditions are not met.
+   * @return ?string|?int The minimum order quantity display value or an empty string if conditions are not met.
    */
   private function setProductsMinimumQuantityToTakeAnOrder($id = null)
   {
@@ -1922,10 +1922,8 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
    * @return float The price of the product after considering customer group pricing (if any), or the default price.
    */
-
   private function setPrice($id = null)
   {
-
     if (is_null($id)) {
       $id = $this->getID();
     }
@@ -1938,7 +1936,6 @@ class ProductsCommon extends Prod
                                        and products_archive = 0
                                      ');
     $Qproduct->bindInt(':products_id', $id);
-
     $Qproduct->execute();
 
     if ($this->customer->getCustomersGroupID() != 0) {
@@ -2059,7 +2056,6 @@ class ProductsCommon extends Prod
       if ($new_price = $this->setSpecialPriceGroup($id)) {
         $products_price = '<span class="normalPrice"><del>' . $this->setDisplayPriceGroup($id) . '</del></span><span class="specialPrice">' . $CLICSHOPPING_Currencies->displayPrice($new_price, $CLICSHOPPING_Tax->getTaxRate($this->getProductsTaxClassId())) . '</span>';
       } else {
-
         $products_price = $this->setDisplayPriceGroup($id);
       }
     }
