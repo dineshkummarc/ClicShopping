@@ -105,6 +105,7 @@ class DynamicPricingRules {
     }
 
     foreach ($cached_rules as $rule) {
+      $rule_id = $rule['rules_id'];
       $condition = $rule['rules_condition'];
       $ruleName = $rule['rules_name'];
       $ruleType = $rule['rules_type'];
@@ -137,7 +138,7 @@ class DynamicPricingRules {
             break;
         }
 
-        $this->logVariation($product_id, $base_price, $finalPrice, $ruleName);
+        $this->logVariation($rule_id, $product_id, $base_price, $finalPrice, $ruleName);
 
         return $finalPrice;
       }
@@ -190,15 +191,17 @@ class DynamicPricingRules {
   /**
    * Save historic log of price variations.
    *
+   * @param int $rules_id
    * @param int $product_id
    * @param float|int $base_price
    * @param float|int $final_price
    * @param string $rule
    * @param string $source
    */
-  private function logVariation(int $product_id, float|int $base_price, float|int $final_price, string $rule, string $source = 'system'): void
+  private function logVariation(int $rules_id, int $product_id, float|int $base_price, float|int $final_price, string $rule, string $source = 'system'): void
   {
     $insert_array = [
+      'rules_id' => $rules_id,
       'products_id' => $product_id,
       'base_price' => $base_price,
       'dynamic_price' => $final_price,

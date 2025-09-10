@@ -63,7 +63,9 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 - B2B - B2C full functionalities
 - Ready for mobile, tablet, and desktop with BootStrap 5.x technology
 - Multi-template
-
+- Dynamic Pricing with special prices, and customer groups
+- Product reviews and ratings
+... and Lot of common ecommerce functionalities
 
 ##Generative AI functionalities :
 - GPT API integration
@@ -113,7 +115,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 - Memcached
 - Static template cache (front office)
 
-#content management
+#content management and SEO
 - WYSIWYG to create your products description, content with CKeditor
 - Image Editor management with El-Finder 2.x - drag and drop - webp
 - Full SEO functionalities optimization and url
@@ -124,7 +126,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 
 #Shipping & Payment
 - Multiple Shipping Options: Flat rate, free shipping, and real-time rates
-- Payment Gateways: Stripe, and more
+- Payment Gateways: Stripe and more
 
 ##Other features
 - Extension System to install new Applications via the back-office
@@ -142,7 +144,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 
 #Requirement (more information in the wiki)
  - Apache 2.x <br>
- - MYSQL 9.x / MariaDb 11.7 (recommended)<br>
+ - MYSQL 8.x / MariaDb 11.x but 11.7 (recommended for embeddings and vectors)<br>
  - PHP >= 8.3
  - More information in the Github Wiki
 

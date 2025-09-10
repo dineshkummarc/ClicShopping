@@ -22,7 +22,6 @@ $CLICSHOPPING_Page = Registry::get('Site')->getPage();
 $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page'] : 1;
 
 $rows = 0;
-echo HTML::form('stats_products_viewed', $CLICSHOPPING_Products->link('Products&UpdateStatsProductsViewed&resetViewed=0'));
 ?>
 <div class="contentBody">
   <div class="row">
@@ -34,8 +33,14 @@ echo HTML::form('stats_products_viewed', $CLICSHOPPING_Products->link('Products&
           <span
             class="col-md-4 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_Products->getDef('heading_title'); ?></span>
           <span
-            class="col-md-7 text-end"><?php echo HTML::button($CLICSHOPPING_Products->getDef('button_delete'), $CLICSHOPPING_Products->link('Products&Update&resetViewed=0&page=' . $page), null, 'danger'); ?></span>
-          </form>
+            class="col-md-7 text-end">
+	    <?php 
+	    echo HTML::form('stats_products_viewed', $CLICSHOPPING_Products->link('Products&UpdateStatsProductsViewed&resetViewed=0'));
+	    echo HTML::button($CLICSHOPPING_Products->getDef('button_delete'), $CLICSHOPPING_Products->link('Products&Update&resetViewed=0&page=' . $page), null, 'danger'); 
+	    ?>
+           </form>
+
+	   </span>
         </div>
       </div>
     </div>
@@ -143,3 +148,4 @@ echo HTML::form('stats_products_viewed', $CLICSHOPPING_Products->link('Products&
   ?>
 </div>
 </form>
+<div class="py-4"></div>

@@ -140,7 +140,7 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
           <td scope="row"
               width="50px"></td>
           <td><?php echo $CLICSHOPPING_Image->getSmallImageAdmin($Qproducts->valueInt('products_id')); ?></td>
-          <th>&nbsp;<?php echo $Qproducts->value('products_name'); ?></th>
+          <td>&nbsp;<?php echo $Qproducts->value('products_name'); ?></td>
           <td><?php echo $Qproducts->value('products_model'); ?></td>
           <td><?php echo $Qproducts->value('products_warehouse_time_replenishment'); ?></td>
           <td><?php echo $Qproducts->value('products_warehouse'); ?></td>
@@ -178,3 +178,5 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
   } // end $listingTotalRow
   ?>
 </div>
+</form>
+<div class="py-4"></div>

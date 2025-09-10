@@ -16,7 +16,6 @@ use ClicShopping\OM\Registry;
 $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 $CLICSHOPPING_Language = Registry::get('Language');
 $CLICSHOPPING_Image = Registry::get('Image');
-
 $CLICSHOPPING_Products = Registry::get('Products');
 
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
@@ -144,5 +143,4 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
   } // end $listingTotalRow
   ?>
 </div>
-
-
+<div class="py-4"></div>
