@@ -12,8 +12,20 @@ namespace ClicShopping\Apps\Catalog\Products\Sites\ClicShoppingAdmin\Pages\Home\
 
 use ClicShopping\OM\Registry;
 
+/**
+ * Class Preview
+ *
+ * This action class handles the preview functionality in the admin interface.
+ * It sets up the preview page and loads necessary definitions.
+ */
 class Preview extends \ClicShopping\OM\PagesActionsAbstract
 {
+  /**
+   * Execute the preview action.
+   *
+   * This method sets the page file to 'preview.php', assigns the action name,
+   * and loads language definitions for the Products app.
+   */
   public function execute()
   {
     $CLICSHOPPING_Products = Registry::get('Products');

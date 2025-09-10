@@ -13,8 +13,21 @@ namespace ClicShopping\Apps\Catalog\Products\Sites\ClicShoppingAdmin\Pages\Home\
 use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
+/**
+ * Class Configure
+ *
+ * This action class is responsible for handling the configuration of the Products app in the admin interface.
+ * It sets up the configuration page, determines the current module to be configured, and loads necessary language definitions.
+ */
 class Configure extends \ClicShopping\OM\PagesActionsAbstract
 {
+  /**
+   * Execute the action to display the configuration page for the Products app.
+   *
+   * This method checks user access, sets the appropriate file for the configuration page,
+   * loads language definitions, retrieves available configuration modules, and determines
+   * the current module to be displayed based on user input or defaults.
+   */
   public function execute()
   {
     $CLICSHOPPING_Products = Registry::get('Products');

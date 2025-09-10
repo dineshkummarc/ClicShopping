@@ -12,8 +12,20 @@ namespace ClicShopping\Apps\Catalog\Products\Sites\ClicShoppingAdmin\Pages\Home\
 
 use ClicShopping\OM\Registry;
 
+/**
+ * Class StatsProductsExpected
+ *
+ * This action class is responsible for setting up the environment to display
+ * statistics about expected products in the admin interface.
+ */
 class StatsProductsExpected extends \ClicShopping\OM\PagesActionsAbstract
 {
+  /**
+   * Execute the action to display expected products statistics.
+   *
+   * This method sets the appropriate template file for rendering the statistics
+   * and loads the necessary language definitions for the admin interface.
+   */
   public function execute()
   {
     $CLICSHOPPING_Products = Registry::get('Products');

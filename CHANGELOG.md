@@ -1,7 +1,16 @@
 version4.06
-
-
-
+Dynamic Price action in function of the stock and sales introduction
+Libraries updated
+Refactoring
+fix small bugs
+cache improvment
+* - Gestion des exceptions
+* - Support des namespaces pour éviter les collisions
+* - Compression des données
+* - Métadonnées de cache
+* - Méthodes de batch operations
+* - Interface fluide
+* - Gestion de la mémoire
 
 
 -----------------

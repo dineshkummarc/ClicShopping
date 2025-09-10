@@ -12,8 +12,19 @@ namespace ClicShopping\Apps\Catalog\Products\Sites\ClicShoppingAdmin\Pages\Home\
 
 use ClicShopping\OM\Registry;
 
+/**
+ * Class StatsProductsLowStock
+ *
+ * This action class is responsible for displaying the low stock products statistics page in the admin interface.
+ * It sets the appropriate template file and loads the necessary language definitions.
+ */
 class StatsProductsLowStock extends \ClicShopping\OM\PagesActionsAbstract
 {
+  /**
+   * Execute the action to display low stock products statistics.
+   *
+   * This method sets the template file for the low stock statistics page and loads the relevant language definitions.
+   */
   public function execute()
   {
     $CLICSHOPPING_Products = Registry::get('Products');

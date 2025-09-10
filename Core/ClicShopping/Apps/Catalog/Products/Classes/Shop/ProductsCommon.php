@@ -14,6 +14,9 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+
+use ClicShopping\Apps\Catalog\Products\Classes\Shop\DynamicPricingRules;
+
 use function is_null;
 use function strlen;
 
@@ -63,13 +66,16 @@ class ProductsCommon extends Prod
   protected $products_weight_class_id;
   protected $infoPriceDiscountByQuantity;
   protected $saveMoney;
- 
+  protected $dynamicPricingRules;
 
   public function __construct()
   {
     $this->db = Registry::get('Db');
     $this->customer = Registry::get('Customer');
     $this->language = Registry::get('Language');
+
+    Registry::set('DynamicPricingRules',new DynamicPricingRules());
+    $this->dynamicPricingRules = Registry::get('DynamicPricingRules');
   }
 
   /**
@@ -1913,14 +1919,21 @@ class ProductsCommon extends Prod
 
     $Qproducts->execute();
 
-    return $Qproducts->valueDecimal('specials_new_products_price');
+    $specials_price = $Qproducts->valueDecimal('specials_new_products_price');
+
+    //Si DynamicPricing Rules special option ok
+    $specials_price = $this->getDynamicPricing($id, $specials_price, $this->customer->getCustomersGroupID());
+
+    return $specials_price;
+
   }
 
   /**
    * Sets and retrieves the price for a specific product from the database, considering customer group pricing if applicable.
+   * Now includes dynamic pricing rules.
    *
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
-   * @return float The price of the product after considering customer group pricing (if any), or the default price.
+   * @return float The price of the product after considering customer group pricing and dynamic rules.
    */
   private function setPrice($id = null)
   {
@@ -1938,6 +1951,7 @@ class ProductsCommon extends Prod
     $Qproduct->bindInt(':products_id', $id);
     $Qproduct->execute();
 
+    // Apply customer group pricing if applicable
     if ($this->customer->getCustomersGroupID() != 0) {
       $QcustomerGroupPrice = $this->db->prepare('select customers_group_price,
                                                           price_group_view
@@ -1945,7 +1959,7 @@ class ProductsCommon extends Prod
                                                   where products_id = :products_id
                                                   and customers_group_id =  :customers_group_id
                                                   ');
-      $QcustomerGroupPrice->bindInt(':customers_group_id', (int)$this->customer->getCustomersGroupID());
+      $QcustomerGroupPrice->bindInt(':customers_group_id', $this->customer->getCustomersGroupID());
       $QcustomerGroupPrice->bindInt(':products_id', $Qproduct->valueInt('products_id'));
       $QcustomerGroupPrice->execute();
 
@@ -1961,6 +1975,9 @@ class ProductsCommon extends Prod
     } else {
       $products_price = $Qproduct->valueDecimal('products_price');
     }
+
+    //dynamic pricing rules
+    $products_price = $this->getDynamicPricing($id, $products_price, $this->customer->getCustomersGroupID());
 
     return $products_price;
   }
@@ -1991,7 +2008,6 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
    * @return float The price of the product group without currency adjustments.
    */
-
   public function getDisplayPriceGroupWithoutCurrencies($id = null): float
   {
     if (is_null($id)) {
@@ -2004,10 +2020,10 @@ class ProductsCommon extends Prod
   }
 
   /**
-   * Calculates and formats the price for a product based on group settings, special prices, and tax rates.
+   * Calculates and formats the price for a product based on group settings, special prices, dynamic pricing, and tax rates.
    *
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
-   * @return string The formatted price for the product, including group pricing and any applicable special prices.
+   * @return string The formatted price for the product, including all pricing rules.
    */
   private function setCalculPrice($id = null)
   {
@@ -2037,7 +2053,7 @@ class ProductsCommon extends Prod
 
       $price_group_view = $Qproducts->valueInt('price_group_view');
 
-//do not change
+      // Check for special price first, then apply dynamic pricing
       if ($new_price = $this->setSpecialPriceGroup($id)) {
         if ($price_group_view == 1) {
           $products_price = '<span class="normalPrice"><del>' . $this->setDisplayPriceGroup($id) . '</del></span><span class="specialPrice">' . $CLICSHOPPING_Currencies->displayPrice($new_price, $CLICSHOPPING_Tax->getTaxRate($this->getProductsTaxClassId())) . '</span>';
@@ -2052,7 +2068,7 @@ class ProductsCommon extends Prod
     }
 
     if (($this->customer->getCustomersGroupID() == 0) || ($normal_price == 1)) {
-//do not change
+      // Check for special price first, then apply dynamic pricing
       if ($new_price = $this->setSpecialPriceGroup($id)) {
         $products_price = '<span class="normalPrice"><del>' . $this->setDisplayPriceGroup($id) . '</del></span><span class="specialPrice">' . $CLICSHOPPING_Currencies->displayPrice($new_price, $CLICSHOPPING_Tax->getTaxRate($this->getProductsTaxClassId())) . '</span>';
       } else {
@@ -2571,10 +2587,10 @@ class ProductsCommon extends Prod
     }
 
     $Qproducts = $this->db->prepare('select distinct products_featured_date_added
-                                        from  :table_products_featured
-                                        where status = 1
-                                        and products_id = :products_id
-                                       ');
+                                      from  :table_products_featured
+                                      where status = 1
+                                      and products_id = :products_id
+                                     ');
 
     $Qproducts->bindInt(':products_id', $id);
 
@@ -2876,6 +2892,7 @@ class ProductsCommon extends Prod
   public function getWeightClassIdByProducts($id)
   {
     $id = HTML::sanitize($id);
+
     return $this->setWeightClassIdByProducts($id);
   }
 
@@ -2910,5 +2927,23 @@ class ProductsCommon extends Prod
     $weight_class_id = HTML::sanitize($weight_class_id);
 
     return $this->setSymbolWeightByProducts($weight_class_id);
+  }
+  
+   /**
+   * Gets the percentage change due to dynamic pricing
+   *
+   * @param int|null $id The ID of the product. If null, the method will use the current ID.
+   * @param $base_price
+   * @return float The percentage change (positive for increase, negative for decrease)
+   */
+  public function getDynamicPricing(?int $id , $base_price, int $customers_group)
+  {
+    if (is_null($id)) {
+      $id = $this->getID();
+    }
+
+    $dynamic_price = $this->dynamicPricingRules->apply($id, $base_price, $customers_group);
+
+    return $dynamic_price;
   }
 } // end class

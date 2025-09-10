@@ -24,6 +24,7 @@ class DeleteConfirm extends \ClicShopping\OM\PagesActionsAbstract
   public mixed $app;
   protected $ID;
   protected $cPath;
+  protected $hooks;
   protected $productCategoriesId;
 
   /**

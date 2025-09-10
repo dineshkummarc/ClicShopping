@@ -20,6 +20,7 @@ class MoveConfirm extends \ClicShopping\OM\PagesActionsAbstract
   public mixed $app;
   protected $newParentId;
   protected $currentCategoryId;
+  protected $ID;
 
   public function __construct()
   {

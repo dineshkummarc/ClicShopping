@@ -12,8 +12,20 @@ namespace ClicShopping\Apps\Catalog\Products\Sites\ClicShoppingAdmin\Pages\Home\
 
 use ClicShopping\OM\Registry;
 
+/**
+ * Class Delete
+ *
+ * This action class handles the deletion of products in the admin interface.
+ * It sets up the page to confirm the deletion of a product.
+ */
 class Delete extends \ClicShopping\OM\PagesActionsAbstract
 {
+  /**
+   * Execute the action to set up the delete confirmation page.
+   *
+   * This method configures the page to display the delete confirmation interface,
+   * setting the appropriate file and loading necessary language definitions.
+   */
   public function execute()
   {
     $CLICSHOPPING_Products = Registry::get('Products');

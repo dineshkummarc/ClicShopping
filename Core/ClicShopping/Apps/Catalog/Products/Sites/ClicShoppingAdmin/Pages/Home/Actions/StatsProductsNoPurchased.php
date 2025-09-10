@@ -12,8 +12,20 @@ namespace ClicShopping\Apps\Catalog\Products\Sites\ClicShoppingAdmin\Pages\Home\
 
 use ClicShopping\OM\Registry;
 
+/**
+ * Class StatsProductsNoPurchased
+ *
+ * This action class is responsible for displaying the statistics of products that have never been purchased.
+ * It sets the appropriate page file and loads the necessary language definitions for the admin interface.
+ */
 class StatsProductsNoPurchased extends \ClicShopping\OM\PagesActionsAbstract
 {
+  /**
+   * Execute the action to display products with no purchases.
+   *
+   * This method sets the page file to 'stats_products_no_purchased.php' and loads the relevant
+   * language definitions for displaying statistics about products that have never been purchased.
+   */
   public function execute()
   {
     $CLICSHOPPING_Products = Registry::get('Products');
