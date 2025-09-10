@@ -244,7 +244,12 @@ class Tax
       $group_taxed = 'false';
     }
 
-    static::$tag = CLICSHOPPING::getDef('tax_excluded');
+    // defined the tag to use on the product price with tax or without tax (HT or TTC)
+    if (DISPLAY_PRODUCT_PRICE_VALUE_TAX == 'true' || DISPLAY_PRODUCT_PRICE_VALUE_TAX_PRO == 'true') {
+      static::$tag = CLICSHOPPING::getDef('tax_included');
+    } else {
+      static::$tag = CLICSHOPPING::getDef('tax_excluded');
+    }
 
     return match ($group_taxed) {
       'true' => round($price, $CLICSHOPPING_Currencies->currencies[DEFAULT_CURRENCY]['decimal_places']) + static::calculate($price, $tax),
