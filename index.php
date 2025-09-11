@@ -27,8 +27,12 @@ if (!CLICSHOPPING::configExists('db_server') || (\strlen(CLICSHOPPING::getConfig
     $realDocRoot = realpath($_SERVER['DOCUMENT_ROOT']);
     $realDirPath = realpath(__DIR__);
     $suffix = str_replace($realDocRoot, '', $realDirPath);
+
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    $host = filter_var($host, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME);
+
     $prefix = isset($_SERVER['HTTPS']) ? 'https://' : 'http://';
-    $folderUrl = $prefix . $_SERVER['HTTP_HOST'] . $suffix . '/install/index.php';
+    $folderUrl = $prefix . $host . $suffix . '/install/index.php';
 
     header('Location:' . $folderUrl);
     exit;
@@ -49,13 +53,19 @@ if (CLICSHOPPING::hasSitePage()) {
     }
 
     if (CLICSHOPPING::useSiteTemplateWithPageFile()) {
-      include_once(Registry::get('Template')->getFile('header.php', 'Default'));
+      $headerFile = Registry::get('Template')->getFile('header.php', 'Default');
+      if (is_file($headerFile)) {
+        include_once($headerFile);
+      }
     }
 
     include_once($page_file);
 
     if (CLICSHOPPING::useSiteTemplateWithPageFile()) {
-      require_once(Registry::get('Template')->getFile('footer.php', 'Default'));
+      $footerFile = Registry::get('Template')->getFile('footer.php', 'Default');
+      if (is_file($footerFile)) {
+        include_once($footerFile);
+      }
     }
   }
 
@@ -64,4 +74,7 @@ if (CLICSHOPPING::hasSitePage()) {
 
 main_sub3: // Sites and Apps skip to here
 
-require_once(CLICSHOPPING::BASE_DIR . '/Sites/Shop/Templates/Default/footer.php');
+$footerFile = CLICSHOPPING::BASE_DIR . '/Sites/Shop/Templates/Default/footer.php';
+if (is_file($footerFile)) {
+  require_once($footerFile);
+}
