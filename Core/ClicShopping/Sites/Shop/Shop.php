@@ -105,7 +105,11 @@ class Shop extends \ClicShopping\OM\SitesAbstract
         while ($Qcfg->fetch()) {
           $key = $Qcfg->value('k');
           $value = $Qcfg->value('v');
-          define($key, $value);
+
+          if (!defined($key)) {
+            define($key, $value);
+          }
+
           $config_data[$key] = $value;
         }
 
