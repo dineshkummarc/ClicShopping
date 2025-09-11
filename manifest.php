@@ -61,30 +61,35 @@ $code_langue = $CLICSHOPPING_Language->getCode();
 
 $manifest = [
   "dir" => "ltr",
-  "lang" => "{$code_langue}",
-  "name" => "{$siteName}",
-  "short_name" => "{$shortName}",
-  "description" => "{$description}",
-  "scope" => "{$scope}",
+  "lang" => $code_langue,
+  "name" => $siteName,
+  "short_name" => $shortName,
+  "description" => $description,
+  "scope" => $scope,
   "display" => "standalone",
-  "start_url" => "{$start_url}",
+  "start_url" => $start_url,
   "theme_color" => "#317EFB",
   "orientation" => "any",
   "background_color" => "#fff",
   "related_applications" => [],
   "prefer_related_applications" => false,
   "screenshots" => [],
-  "generated" => "true",
-  "icons" => [[
-    "src" => "{$image_512}",
-    "sizes" => "192x192 512x512",
-    "type" => "image/png",
-    "purpose" => "maskable"
-  ]],
-  "src" => "{$image_512}",
-  "sizes" => "512x512",
-  "type" => "image/png"
+  "icons" => [
+    [
+      "src" => $image_192,
+      "sizes" => "192x192",
+      "type" => "image/png",
+      "purpose" => "maskable"
+    ],
+    [
+      "src" => $image_512,
+      "sizes" => "512x512",
+      "type" => "image/png",
+      "purpose" => "maskable"
+    ]
+  ]
 ];
+
 
 $json_manifest = json_encode($manifest);
 
