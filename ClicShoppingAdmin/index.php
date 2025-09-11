@@ -31,17 +31,27 @@ if (CLICSHOPPING::hasSitePage()) {
     $page_file = CLICSHOPPING::getSitePageFile();
 
     if (empty($page_file) || !is_file($page_file)) {
-      HTTP::redirect(CLICSHOPPING::getConfig('http_server', 'Shop') . CLICSHOPPING::getConfig('http_path', 'Shop') . 'error_documents/404.php');
+      HTTP::redirect(
+        CLICSHOPPING::getConfig('http_server', 'Shop') .
+        CLICSHOPPING::getConfig('http_path', 'Shop') .
+        'error_documents/404.php'
+      );
     }
 
     if (CLICSHOPPING::useSiteTemplateWithPageFile()) {
-      require_once($CLICSHOPPING_Template->getTemplateHeaderFooterAdmin('header.php'));
+      $headerFile = $CLICSHOPPING_Template->getTemplateHeaderFooterAdmin('header.php');
+      if (is_file($headerFile)) {
+        require_once($headerFile);
+      }
     }
 
     include($page_file);
 
     if (CLICSHOPPING::useSiteTemplateWithPageFile()) {
-      require_once($CLICSHOPPING_Template->getTemplateHeaderFooterAdmin('footer.php'));
+      $footerFile = $CLICSHOPPING_Template->getTemplateHeaderFooterAdmin('footer.php');
+      if (is_file($footerFile)) {
+        require_once($footerFile);
+      }
     }
   }
 
@@ -50,4 +60,7 @@ if (CLICSHOPPING::hasSitePage()) {
 
 main_sub3: // Sites and Apps skip to here
 
-require_once($CLICSHOPPING_Template->getTemplateHeaderFooterAdmin('application_bottom.php'));
+$bottomFile = $CLICSHOPPING_Template->getTemplateHeaderFooterAdmin('application_bottom.php');
+if (is_file($bottomFile)) {
+  require_once($bottomFile);
+}
