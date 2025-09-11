@@ -3,8 +3,8 @@ Dynamic Price action in function of the stock and sales introduction
 Libraries updated
 Refactoring
 fix small bugs
-cache improvment
-cache improvment
+security improvement
+cache improvement
 * - Exception handling
 * - Namespace support to avoid collisions
 * - Data compression

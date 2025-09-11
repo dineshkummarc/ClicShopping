@@ -21,7 +21,7 @@ class Cache
   protected static string $path;
   protected const SAFE_KEY_NAME_REGEX = 'a-zA-Z0-9-_';
   protected string $key;
-  protected mixed $data;
+  protected mixed $data = null;
   protected bool $compressionEnabled = false;
   protected string $namespace = '';
 
