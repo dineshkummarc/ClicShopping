@@ -76,17 +76,7 @@ class Cache
   }
 
   /**
-   * Gets the full key including namespace
-   *
-   * @return string
-   */
-  protected function getFullKey(): string
-  {
-    return $this->namespace ? $this->namespace . '_' . $this->key : $this->key;
-  }
-
-  /**
-   * Saves the provided data to a cache file with metadata.
+   * Saves the provided data to a cache file with metadata - Version simplifiée sans rename()
    *
    * @param mixed $data The data to be saved
    * @param array $metadata Optional metadata (tags, dependencies, etc.)
@@ -107,7 +97,7 @@ class Cache
       'metadata' => array_merge($metadata, [
         'created_at' => time(),
         'compressed' => $this->compressionEnabled,
-        'size' => 0 // sera calculé après sérialisation
+        'size' => 0
       ])
     ];
 
@@ -115,33 +105,88 @@ class Cache
 
     // Compression si activée
     if ($this->compressionEnabled && function_exists('gzcompress')) {
-      $serializedData = gzcompress($serializedData, 6);
-      $cacheData['metadata']['compressed'] = true;
+      $compressedData = gzcompress($serializedData, 6);
+      if ($compressedData !== false) {
+        $serializedData = $compressedData;
+        $cacheData['metadata']['compressed'] = true;
+      }
     }
 
-    $cacheData['metadata']['size'] = strlen($serializedData);
-
-    // Écriture atomique
-    $tempFile = $filename . '.tmp';
-    $result = file_put_contents($tempFile, $serializedData, LOCK_EX);
+    // Écriture directe avec verrouillage exclusif
+    // LOCK_EX empêche les écritures concurrentes
+    $result = file_put_contents($filename, $serializedData, LOCK_EX);
 
     if ($result !== false) {
-      $success = rename($tempFile, $filename);
+      // Forcer les permissions pour contourner le umask
+      @chmod($filename, 0664);
 
       // Mettre à jour le cache mémoire
-      if ($success) {
-        $this->updateMemoryCache($fullKey, $data);
-      }
+      $this->updateMemoryCache($fullKey, $data);
 
-      return $success;
-    }
-
-    // Nettoyer le fichier temporaire si l'écriture a échoué
-    if (file_exists($tempFile)) {
-      unlink($tempFile);
+      return true;
     }
 
     return false;
+  }
+
+  /**
+   * Gets the full key including namespace
+   *
+   * @return string
+   */
+  protected function getFullKey(): string
+  {
+    return $this->namespace ? $this->namespace . '_' . $this->key : $this->key;
+  }
+
+  /**
+   * Diagnostic method to check cache directory permissions
+   *
+   * @return array Diagnostic information
+   */
+  public static function getDiagnosticInfo(): array
+  {
+    $cachePath = static::getPath();
+
+    $info = [
+      'cache_path' => $cachePath,
+      'cache_path_exists' => is_dir($cachePath),
+      'cache_path_readable' => is_readable($cachePath),
+      'cache_path_writable' => is_writable($cachePath),
+      'php_user' => get_current_user(),
+      'php_uid' => getmyuid(),
+      'php_gid' => getmygid(),
+    ];
+
+    if (is_dir($cachePath)) {
+      $info['cache_path_permissions'] = substr(sprintf('%o', fileperms($cachePath)), -4);
+      $info['cache_path_owner'] = fileowner($cachePath);
+      $info['cache_path_group'] = filegroup($cachePath);
+    }
+
+    // Test de création de fichier temporaire
+    $testTempFile = @tempnam($cachePath, 'diagnostic_test_');
+    if ($testTempFile !== false) {
+      $info['temp_file_creation'] = 'success';
+      $info['temp_file_permissions'] = substr(sprintf('%o', fileperms($testTempFile)), -4);
+
+      // Test d'écriture
+      $writeResult = @file_put_contents($testTempFile, 'test', LOCK_EX);
+      $info['temp_file_write'] = $writeResult !== false ? 'success' : 'failed';
+
+      // Test de rename
+      $testTargetFile = $cachePath . 'diagnostic_test.cache';
+      $renameResult = @rename($testTempFile, $testTargetFile);
+      $info['temp_file_rename'] = $renameResult ? 'success' : 'failed';
+
+      // Nettoyage
+      @unlink($testTargetFile);
+      @unlink($testTempFile);
+    } else {
+      $info['temp_file_creation'] = 'failed';
+    }
+
+    return $info;
   }
 
   /**
@@ -544,6 +589,12 @@ class Cache
   }
 
   /**
+   * Format bytes to human readable format
+   *
+   * @param int $bytes The number of bytes
+   * @param int $precision The decimal precision
+   * @return string Formatted bytes string
+   */
   protected static function formatBytes(int $bytes, int $precision = 2): string
   {
     $units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -554,7 +605,7 @@ class Cache
 
     return round($bytes, $precision) . ' ' . $units[$i];
   }
-
+  
   /**
    * Purge expired cache files
    *

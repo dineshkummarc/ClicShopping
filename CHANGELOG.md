@@ -4,13 +4,14 @@ Libraries updated
 Refactoring
 fix small bugs
 cache improvment
-* - Gestion des exceptions
-* - Support des namespaces pour éviter les collisions
-* - Compression des données
-* - Métadonnées de cache
-* - Méthodes de batch operations
-* - Interface fluide
-* - Gestion de la mémoire
+cache improvment
+* - Exception handling
+* - Namespace support to avoid collisions
+* - Data compression
+* - Cache metadata
+* - Batch operation methods
+* - Fluent interface
+* - Memory management
 
 
 -----------------
