@@ -140,56 +140,6 @@ class Cache
   }
 
   /**
-   * Diagnostic method to check cache directory permissions
-   *
-   * @return array Diagnostic information
-   */
-  public static function getDiagnosticInfo(): array
-  {
-    $cachePath = static::getPath();
-
-    $info = [
-      'cache_path' => $cachePath,
-      'cache_path_exists' => is_dir($cachePath),
-      'cache_path_readable' => is_readable($cachePath),
-      'cache_path_writable' => is_writable($cachePath),
-      'php_user' => get_current_user(),
-      'php_uid' => getmyuid(),
-      'php_gid' => getmygid(),
-    ];
-
-    if (is_dir($cachePath)) {
-      $info['cache_path_permissions'] = substr(sprintf('%o', fileperms($cachePath)), -4);
-      $info['cache_path_owner'] = fileowner($cachePath);
-      $info['cache_path_group'] = filegroup($cachePath);
-    }
-
-    // Test de création de fichier temporaire
-    $testTempFile = @tempnam($cachePath, 'diagnostic_test_');
-    if ($testTempFile !== false) {
-      $info['temp_file_creation'] = 'success';
-      $info['temp_file_permissions'] = substr(sprintf('%o', fileperms($testTempFile)), -4);
-
-      // Test d'écriture
-      $writeResult = @file_put_contents($testTempFile, 'test', LOCK_EX);
-      $info['temp_file_write'] = $writeResult !== false ? 'success' : 'failed';
-
-      // Test de rename
-      $testTargetFile = $cachePath . 'diagnostic_test.cache';
-      $renameResult = @rename($testTempFile, $testTargetFile);
-      $info['temp_file_rename'] = $renameResult ? 'success' : 'failed';
-
-      // Nettoyage
-      @unlink($testTargetFile);
-      @unlink($testTempFile);
-    } else {
-      $info['temp_file_creation'] = 'failed';
-    }
-
-    return $info;
-  }
-
-  /**
    * Checks if the cache file exists and optionally verifies if it has not expired.
    *
    * @param string|null $expire Optional expiration time in minutes. If provided, checks if the cache file's age is less than the given value.
