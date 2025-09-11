@@ -13,6 +13,30 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
+
+use function count;
+use function define;
+use function defined;
+use function file_exists;
+use function file_get_contents;
+use function file_put_contents;
+use function is_array;
+use function is_dir;
+use function json_decode;
+use function json_encode;
+use function mkdir;
+use function preg_replace;
+use function rename;
+use function strip_tags;
+use function dirname;
+use function time;
+use function mb_strtolower;
+use function iconv;
+use function md5;
+use function trim;
+use function uasort;
+use function array_slice;
+
 /**
  * Class Cache
  *
@@ -27,9 +51,12 @@ class Cache
   private bool $debug = false;
   private bool $cache = false;
   private bool $useMemcached = false;
+  private bool $useRedis = false;
   private ?\Memcached $memcached = null;
+  private ?\Redis $redis = null;
   private SecurityLogger $securityLogger;
   private const MEMCACHED_PREFIX = 'rag_cache_';
+  private const REDIS_PREFIX = 'rag_cache_';
 
   /**
    * Cache constructor.
@@ -60,6 +87,9 @@ class Cache
       if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'True') {
         $this->useMemcached = true;
         $this->initMemcached();
+      } elseif (defined('USE_REDIS') && USE_REDIS === 'True') {
+        $this->useRedis = true;
+        $this->initRedis();
       }
     }
   }
@@ -105,21 +135,61 @@ class Cache
   }
 
   /**
+   * Initializes the Redis connection for caching.
+   *
+   * @return void
+   */
+  private function initRedis(): void
+  {
+    if (class_exists('Redis')) {
+      try {
+        $this->redis = new \Redis();
+        // Assuming Redis is on localhost with default port
+        if (!$this->redis->connect('localhost', 6379, 1)) {
+          throw new \Exception('Could not connect to Redis server');
+        }
+
+        if ($this->debug) {
+          $this->securityLogger->logSecurityEvent("Redis initialized", 'info');
+        }
+      } catch (\Exception $e) {
+        if ($this->debug) {
+          $this->securityLogger->logSecurityEvent("Redis initialization failed: " . $e->getMessage(), 'error');
+        }
+        $this->useRedis = false;
+        $this->redis = null;
+      }
+    } else {
+      $this->useRedis = false;
+      if ($this->debug) {
+        $this->securityLogger->logSecurityEvent("Redis extension not available", 'warning');
+      }
+    }
+  }
+
+  /**
    * Gets statistics about the prompt cache.
    *
    * Returns information about the cache status, number of entries, and source.
    * If Memcached is used, returns Memcached stats; otherwise, returns file cache stats.
    *
    * @return array An array containing cache statistics with keys:
-   *               - 'enabled': boolean indicating if cache is enabled
-   *               - 'entries': integer count of cached items
-   *               - 'source' (optional): 'memcached' if using Memcached
-   *               - 'size_bytes' (optional): size of file cache in bytes
-   *               - 'cache_file' (optional): file path of the cache file
+   * - 'enabled': boolean indicating if cache is enabled
+   * - 'entries': integer count of cached items
+   * - 'source' (optional): 'memcached' if using Memcached
+   * - 'size_bytes' (optional): size of file cache in bytes
+   * - 'cache_file' (optional): file path of the cache file
    */
   public function getPromptCacheStats(): array
   {
-    if ($this->useMemcached && $this->memcached) {
+    if ($this->useRedis && $this->redis) {
+      $entries = count($this->redis->keys(self::REDIS_PREFIX . '*'));
+      return [
+        'enabled' => true,
+        'entries' => $entries,
+        'source' => 'redis'
+      ];
+    } elseif ($this->useMemcached && $this->memcached) {
       $stats = $this->memcached->getStats();
       $entries = array_sum(array_column($stats, 'curr_items'));
       return [
@@ -283,7 +353,8 @@ class Cache
    * @param string $prompt The prompt text to generate a key for
    * @return string MD5 hash of the normalized prompt
    */
-  public function generateCacheKey(string $prompt): string {
+  public function generateCacheKey(string $prompt): string
+  {
     // strip tags, collapse whitespace, remove punctuation, lowercase, strip accents
     $clean = strip_tags($prompt);
     $clean = mb_strtolower($clean, 'UTF-8');
@@ -311,7 +382,9 @@ class Cache
   {
     $cacheKey = $this->generateCacheKey($prompt);
 
-    if ($this->useMemcached && $this->memcached) {
+    if ($this->useRedis && $this->redis) {
+      return $this->redis->exists(self::REDIS_PREFIX . $cacheKey);
+    } elseif ($this->useMemcached && $this->memcached) {
       return $this->memcached->get(self::MEMCACHED_PREFIX . $cacheKey) !== false;
     }
 
@@ -350,7 +423,16 @@ class Cache
       'ttl' => $ttl
     ];
 
-    if ($this->useMemcached && $this->memcached) {
+    if ($this->useRedis && $this->redis) {
+      if (!$this->redis->setex(self::REDIS_PREFIX . $cacheKey, $ttl, json_encode($data))) {
+        if ($this->debug) {
+          $this->securityLogger->logSecurityEvent(
+            "Redis setex failed",
+            'warning'
+          );
+        }
+      }
+    } elseif ($this->useMemcached && $this->memcached) {
       if (!$this->memcached->set(self::MEMCACHED_PREFIX . $cacheKey, $data, $ttl)) {
         if ($this->debug) {
           $this->securityLogger->logSecurityEvent(
@@ -389,7 +471,17 @@ class Cache
 
     $cacheKey = $this->generateCacheKey($prompt);
 
-    if ($this->useMemcached && $this->memcached) {
+    if ($this->useRedis && $this->redis) {
+      $data = $this->redis->get(self::REDIS_PREFIX . $cacheKey);
+      if ($data !== false) {
+        $data = json_decode($data, true);
+        if ($data !== null) {
+          $data['last_used'] = time();
+          $this->redis->setex(self::REDIS_PREFIX . $cacheKey, $data['ttl'], json_encode($data));
+          return $data['response'];
+        }
+      }
+    } elseif ($this->useMemcached && $this->memcached) {
       $data = $this->memcached->get(self::MEMCACHED_PREFIX . $cacheKey);
       if ($data !== false) {
         $data['last_used'] = time();

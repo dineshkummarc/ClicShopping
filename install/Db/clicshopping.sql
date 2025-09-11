@@ -1728,7 +1728,8 @@ INSERT INTO configuration VALUES(1768, 'Nombre maximal de requêtes par fenêtre
 INSERT INTO configuration VALUES(1769, 'Debug / Log', 'CLICSHOPPING_APP_CHATGPT_CH_DEBUG', 'False', 'Son activation vous permettra d\'avoir des informations complétes sur les erreurs et les problèmes rencontrés par l\'application ChatGPT.<br>\nIl est recommandé de l\'activer uniquement en cas de besoin pour le débogage.', 6, 0, NULL, '2025-06-30 11:46:10', NULL, NULL);
 INSERT INTO configuration VALUES(1770, 'Effort de raisonnement', 'CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT', 'minimal', 'Selectionnez votre option. Fonctionne uniquement avec chatgpt-5.', 6, 0, NULL, '2025-08-08 10:00:54', NULL, NULL);
 INSERT INTO configuration VALUES(1771, 'Verbosity', 'CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY', 'medium', 'niveau de détail ou de développement de la réponse. Fonctionne uniquement avec chatgpt-5.', 6, 0, NULL, '2025-08-08 10:08:28', NULL, NULL);
-
+INSERT INTO configuration VALUES(1772, 'Durée du TTL de Memcached', 'MEMCACHED_CACHE_LIFETIME', '3600', 'Durée de la session de memcached', 11, 3, NULL, '2025-05-19 17:16:52', NULL, null);
+INSERT INTO configuration VALUES(1773, 'Utiliser Redis', 'USE_REDIS', 'False', 'Activer la mise en cache Redis. Pour du debug, veuillez laisser sur false', 11,4, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 
 
 INSERT INTO configuration_group VALUES(1, 'Gestion de ma boutique', 'Informations générales sur la boutique.', 1, 1);

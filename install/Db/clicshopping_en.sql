@@ -1728,7 +1728,8 @@ INSERT INTO configuration VALUES(1768, 'Maximum requests per window', 'CLICSHOPP
 INSERT INTO configuration VALUES(1769, 'Debug / Log', 'CLICSHOPPING_APP_CHATGPT_CH_DEBUG', 'False', 'Enabling this will provide you with complete information about errors and issues encountered by the ChatGPT application.<br>\nIt is recommended to enable it only when needed for debugging.', 6, 0, NULL, '2025-06-30 11:46:10', NULL, NULL);
 INSERT INTO configuration VALUES(1770, 'Reasoning Effort', 'CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT', 'minimal', 'Select your option. Works only with chatgpt-5.', 6, 0, NULL, '2025-08-08 10:00:54', NULL, NULL);
 INSERT INTO configuration VALUES(1771, 'Verbosity', 'CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY', 'medium', 'Level of detail or elaboration in the response. Works only with chatgpt-5.', 6, 0, NULL, '2025-08-08 10:08:28', NULL, NULL);
-
+INSERT INTO configuration VALUES(1772, 'Memcached TTL duration', 'MEMCACHED_CACHE_LIFETIME', '3600', 'Memcached session duration', 11, 3, NULL, '2025-05-19 17:16:52', NULL, null);
+INSERT INTO configuration VALUES(1773, 'Use Redis', 'USE_REDIS', 'False', 'Enable Redis caching. For debugging, please leave as false', 11,4, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 
 INSERT INTO configuration_group VALUES(1, 'Store Setup', 'General Information on the Store.', 1, 1);
 INSERT INTO configuration_group VALUES(2, 'Setup credit card', 'Minimum value: functions / data', 2, 1);

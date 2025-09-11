@@ -4,6 +4,7 @@ Libraries updated
 Refactoring
 fix small bugs
 security improvement
+Add Redis cache as option
 cache improvement
 * - Exception handling
 * - Namespace support to avoid collisions

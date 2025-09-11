@@ -113,6 +113,8 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 ##Server performance
 - OpCache
 - Memcached
+- Cache files
+- Redis
 - Static template cache (front office)
 
 #content management and SEO

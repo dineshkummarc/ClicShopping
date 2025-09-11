@@ -38,3 +38,12 @@ INSERT INTO `clic_administrator_menu_description` VALUES(814, 'Dynamic Pricing',
 INSERT INTO `clic_administrator_menu_description` VALUES(814, 'Tarification dynamique', 2);
 INSERT INTO `clic_administrator_menu_description` VALUES(815, 'Dynamic Pricing', 1);
 INSERT INTO `clic_administrator_menu_description` VALUES(815, 'Tarification dynamique', 2);
+
+
+#french
+INSERT INTO clic_configuration VALUES(null, 'Durée du TTL de Memcached', 'MEMCACHED_CACHE_LIFETIME', '3600', 'Durée de la session de memcached', 11, 3, NULL, '2025-05-19 17:16:52', NULL, null);
+INSERT INTO clic_configuration VALUES(null, 'Utiliser Redis', 'USE_REDIS', 'False', 'Activer la mise en cache Redis. Pour du debug, veuillez laisser sur false', 11,4, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+
+#english
+INSERT INTO clic_configuration VALUES(null, 'Memcached TTL duration', 'MEMCACHED_CACHE_LIFETIME', '3600', 'Memcached session duration', 11, 3, NULL, '2025-05-19 17:16:52', NULL, null);
+INSERT INTO clic_configuration VALUES(null, 'Use Redis', 'USE_REDIS', 'False', 'Enable Redis caching. For debugging, please leave as false', 11,4, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');

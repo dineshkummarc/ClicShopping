@@ -91,7 +91,15 @@ class Shop extends \ClicShopping\OM\SitesAbstract
       $cache_key = 'shop_configuration';
       $cached_config = false;
 
-      if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'True') {
+      if (defined('USE_REDIS') && USE_REDIS == 'True') {
+        try {
+          $redis = new \Redis();
+          $redis->connect('localhost', 6379, 1);
+          $cached_config = $redis->get($cache_key);
+        } catch (\Exception $e) {
+          $cached_config = false;
+        }
+      } elseif (defined('USE_MEMCACHED') && USE_MEMCACHED == 'True') {
         $memcached = CacheAdmin::getMemcached();
         if ($memcached !== false) {
           $cached_config = $memcached->get($cache_key);
@@ -113,17 +121,25 @@ class Shop extends \ClicShopping\OM\SitesAbstract
           $config_data[$key] = $value;
         }
 
-        // Stocker dans Memcached pour les prochaines requêtes
-        if (isset($memcached)) {
-          $memcached->set($cache_key, $config_data, 3600); // Cache pour 1 heure
+        // Définir la durée de vie du cache en s'assurant qu'elle est un entier positif
+        $cache_ttl = isset($config_data['MEMCACHED_CACHE_LIFETIME']) ? (int)$config_data['MEMCACHED_CACHE_LIFETIME'] : 3600;
+
+        if ($cache_ttl <= 0) {
+          $cache_ttl = 3600; // Valeur par défaut si la valeur de la DB est 0 ou invalide
+        }
+
+        // Stocker dans le cache
+        if (defined('USE_REDIS') && USE_REDIS == 'True' && isset($redis)) {
+          $redis->setex($cache_key, $cache_ttl, $config_data);
+        } elseif (defined('USE_MEMCACHED') && USE_MEMCACHED == 'True' && isset($memcached)) {
+          $memcached->set($cache_key, $config_data, $cache_ttl);
         }
       } else {
-        // Utiliser les données du cache Memcached
+        // Utiliser les données du cache
         foreach ($cached_config as $key => $value) {
           define($key, $value);
         }
       }
-
 
 // set the session name and save path
     $CLICSHOPPING_Session = Session::load();
