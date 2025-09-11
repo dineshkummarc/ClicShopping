@@ -10,11 +10,11 @@
 
 namespace ClicShopping\OM;
 
+use ClicShopping\OM\Is\IpAddress;
 use Exception;
 use GuzzleHttp\Client as GuzzleClient;
 use InvalidArgumentException;
 
-use function count;
 use function in_array;
 use const JSON_PRETTY_PRINT;
 
@@ -66,16 +66,28 @@ class HTTP
       return false;
     }
 
-    if (static::$request_type == 'SSL' && isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') {
-      if ($use_sts === true) {
-        header('Strict-Transport-Security: max-age=500; includeSubDomains; preload');
-      } else {
-        header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], true, 301);
-        exit();
-      }
+    if (static::$request_type !== 'SSL') {
+      return false; // pas en HTTPS
     }
 
-    return true;
+    if ($use_sts === true) {
+      header('Strict-Transport-Security: max-age=15768000; includeSubDomains; preload'); // 6 mois
+      return true;
+    }
+
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+
+    // Nettoyage sécurisé
+    $host = preg_replace('/[^a-zA-Z0-9\.\-]/', '', $host);
+    $uri = filter_var($uri, FILTER_SANITIZE_URL);
+
+    if ($host && $uri) {
+      header('Location: https://' . $host . $uri, true, 301);
+      exit();
+    }
+
+    return false;
   }
 
   /**
@@ -243,75 +255,82 @@ class HTTP
 
   public static function getIpAddress(bool $to_int = false): string
   {
-    $ips = [];
-    if (isset($_SERVER['HTTP_X_FORWARDED_FOR']) && !empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-      foreach (array_reverse(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])) as $x_ip) {
-        $ips[] = trim($x_ip);
-      }
-    }
-    if (isset($_SERVER['HTTP_CLIENT_IP'])) {
-      $ips[] = trim($_SERVER['HTTP_CLIENT_IP']);
-    }
-    if (isset($_SERVER['HTTP_X_CLUSTER_CLIENT_IP'])) {
-      $ips[] = trim($_SERVER['HTTP_X_CLUSTER_CLIENT_IP']);
-    }
-    if (isset($_SERVER['HTTP_PROXY_USER'])) {
-      $ips[] = trim($_SERVER['HTTP_PROXY_USER']);
-    }
-    if (isset($_SERVER['REMOTE_ADDR'])) {
-      $ips[] = trim($_SERVER['REMOTE_ADDR']);
+    $ip = null;
+
+    // Priorité aux proxys
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+      $ips = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']));
+      $ip = $ips[0]; // IP client réel
+    } elseif (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+      $ip = $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_CLUSTER_CLIENT_IP'])) {
+      $ip = $_SERVER['HTTP_X_CLUSTER_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_PROXY_USER'])) {
+      $ip = $_SERVER['HTTP_PROXY_USER'];
+    } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+      $ip = $_SERVER['REMOTE_ADDR'];
     }
 
-    $ip = '0.0.0.0';
-
-    foreach ($ips as $req_ip) {
-      if (Is::IpAddress($req_ip)) {
-        $ip = $req_ip;
-        break;
-      }
+    // Validation IP (IPv4 ou IPv6)
+    if (empty($ip) || !IpAddress::execute($ip, 'any')) {
+      $ip = '0.0.0.0';
     }
 
     if ($to_int === true) {
-      $ip = sprintf('%u', ip2long($ip));
+      // Conversion IPv4 uniquement
+      if (IpAddress::execute($ip, 'ipv4')) {
+        $ipLong = ip2long($ip);
+        return sprintf('%u', $ipLong);
+      }
+      return '0'; // IPv6 ou IP invalide ne peut pas être convertie
     }
 
     return $ip;
   }
 
-  /*
-   * Get the provider name of the client
-   * $isp_provider_client the provider name
-   * return string
-   */
   /**
-   * Retrieves the provider name for the customer based on their IP address.
+   * Retrieves the name of the internet service provider (ISP) for the customer based on their IP address.
    *
-   * This method attempts to resolve the remote client's IP address to a hostname
-   * and constructs a name based on the first two segments of the resolved hostname.
-   * If the IP is local or cannot be resolved, it returns 'Unknown or localhost'.
+   * This method checks various server variables to determine the client's IP address, prioritizing
+   * proxy headers if present. It then performs a reverse DNS lookup to obtain the hostname associated
+   * with the IP address and extracts a simplified provider name from it.
    *
-   * @return string The provider name constructed from the resolved hostname, or 'Unknown or localhost'.
+   * @return string The name of the internet service provider or 'Unknown or localhost' if the IP is not defined or is localhost.
    */
   public static function getProviderNameCustomer(): string
   {
-    if (!empty($_SERVER["REMOTE_ADDR"]) && $_SERVER["REMOTE_ADDR"] != '::1') { //check ip from share internet
-      $provider_client_ip = gethostbyaddr($_SERVER["REMOTE_ADDR"]);
-      $str = preg_split("/\./", $provider_client_ip);
-      $i = count($str);
+    $ip = null;
 
-      $x = $str[0];
-
-      if ($i > 1) {
-        $n = $str[1];
-      } else {
-        $n = '';
-      }
-
-      return $x . '.' . $n;
-    } else {
-      return  'Unknown or localhost';
+    // Priorité aux proxies si présents
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+      $ips = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']));
+      $ip = $ips[0]; // IP réelle du client
+    } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+      $ip = $_SERVER['REMOTE_ADDR'];
     }
+
+    // IP non définie ou localhost
+    if (empty($ip) || $ip === '::1' || $ip === '127.0.0.1') {
+      return 'Unknown or localhost';
+    }
+
+    // Résolution DNS inversée
+    $hostname = @gethostbyaddr($ip);
+    if ($hostname === false || filter_var($hostname, FILTER_VALIDATE_IP)) {
+      return 'Unknown or localhost';
+    }
+
+    // Extraire deux premiers segments pour une forme simplifiée
+    $segments = preg_split('/[.:]/', $hostname); // support IPv6 segmenté
+    $provider = $segments[0] ?? '';
+    if (isset($segments[1])) {
+      $provider .= '.' . $segments[1];
+    }
+
+    // Nettoyage pour sécurité (évite injection HTML/JS)
+    return htmlspecialchars($provider, ENT_QUOTES, 'UTF-8');
   }
+
 
   /**
    * Determines the URL domain based on the current site type.
@@ -393,6 +412,7 @@ class HTTP
         array_unshift($arrn, '.');
       }
       $arrn[0] = rtrim($base, $separator);
+      
       return join($separator, $arrn);
     }
 
