@@ -121,7 +121,6 @@ class Gpt {
       ['id' => 'gpt-3.5-turbo', 'text' => 'OpenAi gpt-3.5-turbo'],
       ['id' => 'gemma3:7b', 'text' => 'Ollama Gemma3 7b'],
       ['id' => 'phi4', 'text' => 'Ollama Phi4'],
-      ['id' => 'gpt-oss:latest', 'text' => 'Ollama Gpt-Oss 20b'],
       ['id' => 'anth-sonnet', 'text' => 'Anthropic Claude Sonnet 3.5'],
       ['id' => 'anth-opus', 'text' => 'Anthropic Claude Opus'],
       ['id' => 'anth-haiku', 'text' => 'Anthropic Claude Haiku'],
