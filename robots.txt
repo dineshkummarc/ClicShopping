@@ -2,7 +2,6 @@
 User-Agent: *
 
 # Block pages with no unique content
-/account/address-book
 Disallow: /Account/CreatePro
 Disallow: /Account/Create
 Disallow: /Account/LogIn
