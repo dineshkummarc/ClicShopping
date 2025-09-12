@@ -557,29 +557,26 @@ class Template
    *
    * @return string The path to the selected theme template, or an empty string if no theme is selected or configured.
    */
-  public function getPathTemplateDemo()
+  public function getPathTemplateDemo(): string
   {
-    $thema = '';
-
-    if (defined('MODULE_HEADER_SELECT_TEMPLATE_STATUS')) {
-      if (MODULE_HEADER_SELECT_TEMPLATE_STATUS == 'True') {
-        if (isset($_POST['TemplateCustomerSelected'])) {
-          if ($_SESSION['TemplateCustomerSelected'] != $_POST['TemplateCustomerSelected']) {
-            $_SESSION['TemplateCustomerSelected'] = HTML::sanitize($_POST['TemplateCustomerSelected']);
-            $thema = $this->_directoryTemplateSources . $this->_directoryTemplate . $_SESSION['TemplateCustomerSelected'] . '/';
-          } else {
-            unset($_SESSION['TemplateCustomerSelected']);
-            $thema = $this->_directoryTemplateSources . $this->_directoryTemplate . HTML::sanitize($_POST['TemplateCustomerSelected']) . '/';
-          }
-        }
-      } else {
-        if (isset($_SESSION['TemplateCustomerSelected'])) {
-          unset($_SESSION['TemplateCustomerSelected']);
-        }
-      }
+    if (!defined('MODULE_HEADER_SELECT_TEMPLATE_STATUS') || MODULE_HEADER_SELECT_TEMPLATE_STATUS !== 'True') {
+      unset($_SESSION['TemplateCustomerSelected']);
+      return '';
     }
 
-    return $thema;
+    if (!isset($_POST['TemplateCustomerSelected'])) {
+      return '';
+    }
+
+    $selectedTemplate = HTML::sanitize($_POST['TemplateCustomerSelected']);
+
+    if (!isset($_SESSION['TemplateCustomerSelected']) || $_SESSION['TemplateCustomerSelected'] !== $selectedTemplate) {
+      $_SESSION['TemplateCustomerSelected'] = $selectedTemplate;
+    } else {
+      unset($_SESSION['TemplateCustomerSelected']);
+    }
+
+    return $this->_directoryTemplateSources . $this->_directoryTemplate . $selectedTemplate . '/';
   }
 
   /**
