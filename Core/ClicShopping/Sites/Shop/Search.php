@@ -13,6 +13,7 @@ namespace ClicShopping\Sites\Shop;
 use ClicShopping\OM\DateTime;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+
 use function count;
 use function defined;
 use function in_array;
@@ -27,7 +28,7 @@ class Search
 {
   protected $_period_min_year;
   protected $_period_max_year;
-  protected string $_keywords;
+  protected string $_keywords = '';
   protected $_description;
   protected $_date_from;
   protected $_date_to;
@@ -43,20 +44,22 @@ class Search
   protected $listing;
 
   /**
-   * Initializes the object by setting up the database connection and querying the minimum and maximum years
-   * from the products table. The resulting values are used to initialize the period range.
-   *
-   * @return void
+   * Constructor to initialize the Search class and set up the database connection.
    */
   public function __construct()
   {
     $this->db = Registry::get('Db');
+    $this->initializeDateRange();
+  }
 
-    $Qproducts = $this->db->query('select min(year(products_date_added)) as min_year,
-                                             max(year(products_date_added)) as max_year
-                                      from :table_products
-                                      limit 1
-                                      ');
+  /**
+   * Initializes the minimum and maximum years from the product addition dates in the database.
+   */
+  private function initializeDateRange(): void
+  {
+    $Qproducts = $this->db->query('SELECT MIN(YEAR(products_date_added)) as min_year,
+                                          MAX(YEAR(products_date_added)) as max_year
+                                   FROM :table_products LIMIT 1');
     $Qproducts->execute();
 
     $this->_period_min_year = $Qproducts->valueInt('min_year');
@@ -64,23 +67,23 @@ class Search
   }
 
   /**
-   * Retrieves the minimum year of the period.
+   * Retrieves the minimum year from the product addition dates.
    *
    * @return string The minimum year as a string.
    */
   public function getMinYear(): string
   {
-    return $this->_period_min_year;
+    return (string)$this->_period_min_year;
   }
 
   /**
-   * Retrieves the maximum year of the period.
+   * Retrieves the maximum year from the product addition dates.
    *
-   * @return string The maximum year of the period.
+   * @return string The maximum year as a string.
    */
   public function getMaxYear(): string
   {
-    return $this->_period_max_year;
+    return (string)$this->_period_max_year;
   }
 
   /**
@@ -105,28 +108,20 @@ class Search
   }
 
   /**
-   * Determines if the dateFrom property is valid.
+   * Checks if a start date is provided for the search.
    *
-   * @return bool True if the dateFrom property is valid, false otherwise.
+   * @return bool True if a start date is set and valid, false otherwise.
    */
   public function hasDateFrom(): bool
   {
     $dfromDateTime = new DateTime($this->getDateFrom(), false);
-
-    if ($dfromDateTime->isValid() === false) {
-      $datefrom = false;
-    } else {
-      $datefrom = true;
-    }
-
-    return $datefrom;
+    return $dfromDateTime->isValid();
   }
 
   /**
-   * Retrieves the ending date value based on the 'dto' parameter from the POST or GET request.
-   * Sanitizes the retrieved value to ensure safety.
+   * Retrieves and sanitizes the end date for the search from POST or GET parameters.
    *
-   * @return string The sanitized 'dto' value or an empty string if not provided.
+   * @return string The sanitized end date.
    */
   public function getDateTo(): string
   {
@@ -142,51 +137,42 @@ class Search
   }
 
   /**
-   * Checks if there is a valid "date to" value.
+   * Checks if an end date is provided for the search.
    *
-   * @return bool Returns true if the "date to" value is valid, otherwise false.
+   * @return bool True if an end date is set and valid, false otherwise.
    */
   public function hasDateTo(): bool
   {
     $dtoDateTime = new DateTime($this->getDateTo(), false);
-
-    if ($dtoDateTime->isValid() === false) {
-      $dateto = false;
-    } else {
-      $dateto = true;
-    }
-
-    return $dateto;
+    return $dtoDateTime->isValid();
   }
 
   /**
+   * Sets the start date for the search.
    *
-   * @param string $timestamp The timestamp to set as the starting date.
-   * @return string The set starting date.
+   * @param string $timestamp The start date to set.
+   * @return string The set start date.
    */
   public function setDateFrom(string $timestamp): string
   {
     $this->_date_from = $timestamp;
-
     return $this->_date_from;
   }
 
   /**
-   * Sets the date to the specified timestamp.
+   * Sets the end date for the search.
    *
-   * @param int|string $timestamp The timestamp to set as the date.
-   * @return void
+   * @param string $timestamp The end date to set.
    */
-  public function setDateTo($timestamp)
+  public function setDateTo($timestamp): void
   {
     $this->_date_to = $timestamp;
   }
 
   /**
-   * Retrieves the "price from" value from either the POST or GET request.
-   * Sanitizes the input if it is set, not empty, and numeric. If not available, returns an empty string.
+   * Retrieves and sanitizes the minimum price for the search from POST or GET parameters.
    *
-   * @return string The sanitized "price from" value or an empty string if not set or invalid.
+   * @return string The sanitized minimum price.
    */
   public function getPriceFrom(): string
   {
@@ -198,73 +184,51 @@ class Search
       $this->_price_from = '';
     }
 
-    return $this->_price_from;
+    return (string)$this->_price_from;
   }
 
-  /**
-   * Determines whether a price is set for the entity.
+  /***
+   * Checks if a minimum price is provided for the search.
    *
-   * @return bool Returns true if a price is set, otherwise false.
+   * @return bool True if a minimum price is set, false otherwise.
    */
   public function hasPriceFrom(): bool
   {
-    if (empty($this->getPriceFrom())) {
-      $pricefrom = false;
-    } else {
-      $pricefrom = true;
-    }
-
-    return $pricefrom;
+    return !empty($this->getPriceFrom());
   }
 
   /**
-   * Retrieves the maximum price value from request parameters.
+   * Retrieves and sanitizes the maximum price for the search from POST or GET parameters.
    *
-   * @return string The sanitized maximum price value or an empty string if no valid value is found.
+   * @return string The sanitized maximum price.
    */
   public function getPriceTo(): string
   {
     if (isset($_POST['pto']) && !empty($_POST['pto']) && is_numeric($_POST['pto'])) {
       $this->_price_to = HTML::sanitize((float)$_POST['pto']);
-    } elseif (isset($_GET['pto']) && !empty($_POST['pto']) && is_numeric($_GET['pto'])) {
+    } elseif (isset($_GET['pto']) && !empty($_GET['pto']) && is_numeric($_GET['pto'])) {
       $this->_price_to = HTML::sanitize((float)$_GET['pto']);
     } else {
       $this->_price_to = '';
     }
 
-    return $this->_price_to;
+    return (string)$this->_price_to;
   }
 
   /**
-   * Determines if there is a price for the "to" field.
+   * Checks if a maximum price is provided for the search.
    *
-   * @return bool True if the "to" price is set, otherwise false.
+   * @return bool True if a maximum price is set, false otherwise.
    */
   public function hasPriceTo(): bool
   {
-    if (empty($this->getPriceTo())) {
-      $priceto = false;
-    } else {
-      $priceto = true;
-    }
-
-    return $priceto;
+    return !empty($this->getPriceTo());
   }
 
   /**
-   * Retrieves the total number of results.
+   * Retrieves and sanitizes the keywords for the search from POST or GET parameters.
    *
-   * @return int The total number of results.
-   */
-  public function getNumberOfResults(): int
-  {
-    return $this->_result['total'];
-  }
-
-  /**
-   * Retrieves and sanitizes the 'keywords' parameter from either POST or GET request.
-   *
-   * @return string The sanitized keywords or an empty string if not present in the request.
+   * @return string The sanitized keywords.
    */
   public function getKeywords(): string
   {
@@ -281,32 +245,21 @@ class Search
 
 
   /**
-   * Determines if keywords are present.
+   * Checks if keywords are provided for the search.
    *
-   * @return bool Returns true if there are keywords, false otherwise.
+   * @return bool True if keywords are set, false otherwise.
    */
   public function hasKeywords(): bool
   {
-    if (!empty($this->getKeywords())) {
-      return true;
-    } else {
-      return false;
-    }
+    return !empty($this->getKeywords());
   }
 
-  /*
-   * explode keywords
-   * @param $keywords, keywords
-   * @return keywords under an array
-   *
-  */
   /**
-   * Sets and sanitizes the input keywords, limiting the processed terms to a maximum of five unique words.
+   * Sets and sanitizes the keywords for the search.
    *
-   * @param string $keywords The input keywords string to be sanitized and processed.
-   * @return void
+   * @param string $keywords The keywords to set.
    */
-  public function setKeywords(string $keywords)
+  public function setKeywords(string $keywords): void
   {
     if (isset($keywords)) {
       $this->_keywords = HTML::sanitize($keywords);
@@ -314,12 +267,10 @@ class Search
 
     $terms = explode(' ', trim($keywords));
     $terms_array = [];
-
     $counter = 0;
 
     foreach ($terms as $word) {
       $counter++;
-
       if ($counter > 5) {
         break;
       } elseif (!empty($word)) {
@@ -332,22 +283,15 @@ class Search
     $this->_keywords = implode(' ', $terms_array);
   }
 
-  /*
-   * Search in description
-   * @param
-   * @return $this->_description, the keywords
-   *
-  */
   /**
-   * Determines whether to search within descriptions based on POST or GET values.
+   * Retrieves and sanitizes the description search parameter from POST or GET.
    *
-   * @return bool Returns true if searching in descriptions is enabled; otherwise, false.
+   * @return bool True if searching in descriptions, false otherwise.
    */
   private function getDescription(): bool
   {
-    if (isset($_POST['search_in_description']) == 1) {
-      $this->_description = true;
-    } elseif (isset($_GET['search_in_description']) == 1) {
+    if ((isset($_POST['search_in_description']) && $_POST['search_in_description'] == 1) ||
+      (isset($_GET['search_in_description']) && $_GET['search_in_description'] == 1)) {
       $this->_description = true;
     } else {
       $this->_description = false;
@@ -356,33 +300,26 @@ class Search
     return $this->_description;
   }
 
-
   /**
-   * Checks if a description is present.
+   * Checks if the search should include product descriptions.
    *
-   * @return bool True if a description exists, false otherwise.
+   * @return bool True if descriptions should be included, false otherwise.
    */
   private function hasDescription(): bool
   {
     return $this->getDescription();
   }
 
-  /*
-   * Search in category
-   * @param
-   * @return $this->_category, the categorie
-   *
-  */
   /**
-   * Determines and returns the category status based on input parameters.
+   * Retrieves and sanitizes the category ID from POST or GET parameters.
    *
-   * @return bool True if a valid categories_id is found in POST or GET data, otherwise false.
+   * @return bool True if a valid category ID is found, false otherwise.
    */
   private function getCategory(): bool
   {
     if (isset($_POST['categories_id']) && !empty($_POST['categories_id']) && is_numeric($_POST['categories_id'])) {
       $this->_category = true;
-    } elseif (isset($_GET['categories_id']) && !empty($_GET['categories_id']) && is_numeric($_POST['categories_id'])) {
+    } elseif (isset($_GET['categories_id']) && !empty($_GET['categories_id']) && is_numeric($_GET['categories_id'])) {
       $this->_category = true;
     } else {
       $this->_category = false;
@@ -392,31 +329,24 @@ class Search
   }
 
   /**
-   * Checks if a category exists.
+   * Checks if a category filter is applied.
    *
-   * @return bool Returns true if a category exists, otherwise false.
+   * @return bool True if a category is set, false otherwise.
    */
   private function hasCategory(): bool
   {
     return $this->getCategory();
   }
 
-  /*
-   * Category recusive
-   * array id of recursive category
-   * @return $this->_recursive, id fo categories
-   *
-  */
   /**
-   * Determines if the operation should be recursive based on a specific POST parameter.
+   * Determines if the search should include subcategories based on POST or GET parameters.
    *
-   * @return bool Whether the operation is recursive.
+   * @return bool True if subcategories should be included, false otherwise.
    */
   private function isRecursive(): bool
   {
-    if (isset($_POST['inc_subcat']) && ($_POST['inc_subcat'] == '1')) {
-      $this->_recursive = true;
-    } elseif (isset($_POST['inc_subcat']) && ($_POST['inc_subcat'] == '1')) {
+    if ((isset($_POST['inc_subcat']) && $_POST['inc_subcat'] == '1') ||
+      (isset($_GET['inc_subcat']) && $_GET['inc_subcat'] == '1')) {
       $this->_recursive = true;
     } else {
       $this->_recursive = false;
@@ -424,15 +354,10 @@ class Search
     return $this->_recursive;
   }
 
-  /**
-   * Retrieves the category ID from the request parameters if available.
-   *
-   * @return int|null The sanitized category ID if present, null otherwise.
-   */
   private function getCategoryID(): int|null
   {
     $category_id = null;
-    
+
     if (isset($_POST['categories_id']) && !empty($_POST['categories_id'])) {
       $category_id = (int)HTML::sanitize($_POST['categories_id']);
     } elseif (isset($_GET['categories_id']) && !empty($_GET['categories_id'])) {
@@ -441,16 +366,11 @@ class Search
     return $category_id;
   }
 
-  /*
-  * Search in manufacturer
-  * @param
-  * @return $this->_manufacturer, the manufacturer
-  *
-  */
+
   /**
-   * Determines the manufacturer based on provided POST or GET data.
+   * Retrieves and sanitizes the manufacturer ID from POST or GET parameters.
    *
-   * @return bool Returns true if a valid manufacturer ID is found and set, otherwise false.
+   * @return bool True if a valid manufacturer ID is found, false otherwise.
    */
   private function getManufacturer(): bool
   {
@@ -460,242 +380,275 @@ class Search
       $this->_manufacturer = HTML::sanitize($_POST['manufacturersId']);
       $this->checkManufacturer = true;
     } elseif (isset($_GET['manufacturersId']) && !empty($_GET['manufacturersId']) && is_numeric($_GET['manufacturersId'])) {
-      $this->_manufacturer = HTML::sanitize($_POST['manufacturersId']);
+      $this->_manufacturer = HTML::sanitize($_GET['manufacturersId']);
       $this->checkManufacturer = true;
     }
 
-    return $this->_manufacturer;
-  }
-
-  /*
-   * manufacturer
-   * Boolean true False
-   * @return true or False
-   * @access private
-  */
-  /**
-   *
-   * @return bool|null Indicates whether a manufacturer is present or null if not determined.
-   */
-  private function hasManufacturer(): ?bool
-  {
     return $this->checkManufacturer;
   }
 
-  /*
-  * Sort order list
-  * String
-  * @return array $define_list, sort order type
-  *
-  */
+  /**
+   * Checks if a manufacturer filter is applied.
+   *
+   * @return bool|null True if a manufacturer is set, false if not, null if not checked yet.
+   */
+  private function hasManufacturer(): ?bool
+  {
+    $this->getManufacturer(); // S'assurer que la vérification est faite
+    return $this->checkManufacturer;
+  }
 
   /**
-   * Sorts and filters the search list configuration settings based on their defined values.
+   * Sorts and returns the list of columns available for product search results.
    *
-   * @return array Sorted and filtered array of column identifiers for the search list.
+   * @return array An array of column identifiers sorted by their defined order.
    */
   public function sortListSearch(): array
   {
-    if (defined('MODULE_PRODUCTS_SEARCH_LIST_NAME')) {
-      $define_list = [
-        'MODULE_PRODUCTS_SEARCH_LIST_NAME' => MODULE_PRODUCTS_SEARCH_LIST_NAME,
-        'MODULE_PRODUCTS_SEARCH_LIST_MODEL' => MODULE_PRODUCTS_SEARCH_LIST_MODEL,
-        'MODULE_PRODUCTS_SEARCH_LIST_MANUFACTURER' => MODULE_PRODUCTS_SEARCH_LIST_MANUFACTURER,
-        'MODULE_PRODUCTS_SEARCH_LIST_PRICE' => MODULE_PRODUCTS_SEARCH_LIST_PRICE,
-        'MODULE_PRODUCTS_SEARCH_LIST_QUANTITY' => MODULE_PRODUCTS_SEARCH_LIST_QUANTITY,
-        'MODULE_PRODUCTS_SEARCH_LIST_WEIGHT' => MODULE_PRODUCTS_SEARCH_LIST_WEIGHT,
-        'MODULE_PRODUCTS_SEARCH_LIST_DATE_ADDED' => MODULE_PRODUCTS_SEARCH_LIST_DATE_ADDED
-      ];
-
-      asort($define_list);
-
-      $column_list = [];
-
-      foreach ($define_list as $key => $value) {
-        if ($value > 0) $column_list[] = $key;
-      }
-
-      return $column_list;
+    if (!defined('MODULE_PRODUCTS_SEARCH_LIST_NAME')) {
+      return [];
     }
 
-    return [];
+    $define_list = [
+      'MODULE_PRODUCTS_SEARCH_LIST_NAME' => MODULE_PRODUCTS_SEARCH_LIST_NAME,
+      'MODULE_PRODUCTS_SEARCH_LIST_MODEL' => MODULE_PRODUCTS_SEARCH_LIST_MODEL,
+      'MODULE_PRODUCTS_SEARCH_LIST_MANUFACTURER' => MODULE_PRODUCTS_SEARCH_LIST_MANUFACTURER,
+      'MODULE_PRODUCTS_SEARCH_LIST_PRICE' => MODULE_PRODUCTS_SEARCH_LIST_PRICE,
+      'MODULE_PRODUCTS_SEARCH_LIST_QUANTITY' => MODULE_PRODUCTS_SEARCH_LIST_QUANTITY,
+      'MODULE_PRODUCTS_SEARCH_LIST_WEIGHT' => MODULE_PRODUCTS_SEARCH_LIST_WEIGHT,
+      'MODULE_PRODUCTS_SEARCH_LIST_DATE_ADDED' => MODULE_PRODUCTS_SEARCH_LIST_DATE_ADDED
+    ];
+
+    asort($define_list);
+
+    $column_list = [];
+    foreach ($define_list as $key => $value) {
+      if ($value > 0) {
+        $column_list[] = $key;
+      }
+    }
+
+    return $column_list;
   }
 
-  /*
-   * Execute
-   *
-   * @return $result : sql sesult
-   *
-  */
+
   /**
-   * Executes a comprehensive product search based on various criteria such as price, category, manufacturer, and keywords.
-   * The search conditions are dynamically constructed to filter results from the product database.
+   * Builds the base SQL query for product search.
    *
-   * @return array An array of search results based on the specified filters and sorting criteria.
+   * @return string The base SQL query string.
    */
-  public function execute()
+  private function buildBaseQuery(): string
   {
     $CLICSHOPPING_Customer = Registry::get('Customer');
-    $CLICSHOPPING_CategoryTree = Registry::get('CategoryTree');
-    $CLICSHOPPING_Currencies = Registry::get('Currencies');
+
+    $sql = 'SELECT SQL_CALC_FOUND_ROWS p.*, pd.*, m.*';
+
+    if ($CLICSHOPPING_Customer->getCustomersGroupID() != 0) {
+      $sql .= ', g.*';
+    }
+
+    $sql .= ' FROM :table_products p';
+
+    if ($CLICSHOPPING_Customer->getCustomersGroupID() != 0) {
+      $sql .= ' LEFT JOIN :table_products_groups g ON p.products_id = g.products_id';
+    }
+
+    $sql .= ' LEFT JOIN :table_specials s ON p.products_id = s.products_id';
+    $sql .= ' LEFT JOIN :table_manufacturers m USING(manufacturers_id)';
+
+    return $sql;
+  }
+
+  /**
+   * Adds tax-related joins to the SQL query if price filtering is applied and prices are displayed with tax.
+   *
+   * @param string $sql The base SQL query.
+   * @return string The SQL query with tax joins added if applicable.
+   */
+  private function addTaxJoins(string $sql): string
+  {
+    if (($this->hasPriceFrom() || $this->hasPriceTo()) && (DISPLAY_PRICE_WITH_TAX == 'true')) {
+      $sql .= ' LEFT JOIN :table_tax_rates tr ON p.products_tax_class_id = tr.tax_class_id';
+      $sql .= ' LEFT JOIN :table_zones_to_geo_zones gz ON tr.tax_zone_id = gz.geo_zone_id
+                   AND (gz.zone_country_id IS NULL OR gz.zone_country_id = 0 OR gz.zone_country_id = :zone_country_id)
+                   AND (gz.zone_id IS NULL OR gz.zone_id = 0 OR gz.zone_id = :zone_id)';
+    }
+
+    return $sql;
+  }
+
+  /**
+   * Adds basic joins to the SQL query for product descriptions, categories, and product-to-category relationships.
+   *
+   * @param string $sql The base SQL query.
+   * @return string The SQL query with basic joins added.
+   */
+  private function addBasicJoins(string $sql): string
+  {
+    $sql .= ', :table_products_description pd,
+             :table_categories c,
+             :table_products_to_categories p2c';
+
+    return $sql;
+  }
+
+  /**
+   * Builds the WHERE conditions for the SQL query based on customer group and product status.
+   *
+   * @return string The WHERE conditions as a string.
+   */
+  private function buildWhereConditions(): string
+  {
+    $CLICSHOPPING_Customer = Registry::get('Customer');
     $CLICSHOPPING_Language = Registry::get('Language');
 
-    $dtoDateTime = new DateTime($this->getDateTo(), false);
-    $dfromDateTime = new DateTime($this->getDateFrom(), false);
-
-    $dtoDateTime1 = $this->getDateTo();
-    $dfromDateTime1 = $this->getDateFrom();
-
-    if (defined('MODULE_PRODUCTS_SEARCH_MAX_DISPLAY')) {
-      $max_display = MODULE_PRODUCTS_SEARCH_MAX_DISPLAY;
-    } else {
-      $max_display = 1;
-    }
-
-    $result = [];
-
-    if ($this->hasPriceFrom()) {
-      if ($CLICSHOPPING_Currencies->getValue($_SESSION['currency'])) {
-        $this->_price_from /= $CLICSHOPPING_Currencies->getValue($_SESSION['currency']);
-      }
-    }
-
-    if ($this->hasPriceTo()) {
-      if ($CLICSHOPPING_Currencies->getValue($_SESSION['currency'])) {
-        $this->_price_to /= $CLICSHOPPING_Currencies->getValue($_SESSION['currency']);
-      }
-    }
-
-    $listing_sql = 'select SQL_CALC_FOUND_ROWS ';
-
-    $listing_sql .= ' p.*,
-                        pd.*,
-                        m.*
-                       ';
-    /*
-                            if(s.status, s.specials_new_products_price, null) as specials_new_products_price,
-                            if(s.status, s.specials_new_products_price, p.products_price) as final_price
-    ';
-    */
-    if ($CLICSHOPPING_Customer->getCustomersGroupID() != 0) {
-      $listing_sql .= ', g.*';
-      $listing_sql .= ' from :table_products p';
-      $listing_sql .= ' left join :table_products_groups g on p.products_id = g.products_id';
-      $listing_sql .= ' left join :table_specials s on p.products_id = s.products_id ';
-    } else {
-      $listing_sql .= ' from :table_products p';
-      $listing_sql .= ' left join :table_specials s on p.products_id = s.products_id ';
-    }
-
-    $listing_sql .= ' left join :table_manufacturers m using(manufacturers_id) ';
-
-
-    if (($this->hasPriceFrom() || $this->hasPriceTo()) && (DISPLAY_PRICE_WITH_TAX == 'true')) {
-      $listing_sql .= ' left join :table_tax_rates tr on p.products_tax_class_id = tr.tax_class_id';
-      $listing_sql .= ' left join :table_zones_to_geo_zones gz on tr.tax_zone_id = gz.geo_zone_id
-                           and (gz.zone_country_id is null
-                               or gz.zone_country_id = 0
-                               or gz.zone_country_id = :zone_country_id
-                               )
-                           and (gz.zone_id is null
-                                or gz.zone_id = 0
-                                or gz.zone_id = :zone_id
-                                )
-                           ';
-    }
-
-    $listing_sql .= ', :table_products_description pd,
-                         :table_categories c,
-                         :table_products_to_categories p2c
-                       ';
+    $where = '';
 
     if ($CLICSHOPPING_Customer->getCustomersGroupID() != 0) {
-      $listing_sql .= ' where g.products_group_view = 1 ';
-      $listing_sql .= ' and g.customers_group_id = :customers_group_id ';
+      $where .= ' WHERE g.products_group_view = 1';
+      $where .= ' AND g.customers_group_id = :customers_group_id';
     } else {
-      $listing_sql .= ' where p.products_view = 1 ';
+      $where .= ' WHERE p.products_view = 1';
     }
 
-    $listing_sql .= ' and p.products_status = 1
-                        and p.products_archive = 0
-                        and c.virtual_categories = 0
-                        and c.status = 1
-                        and p.products_id = pd.products_id
-                        and p.products_id = p2c.products_id
-                        and p2c.categories_id = c.categories_id
-                        and pd.language_id = :language_id
-                      ';
+    // Conditions obligatoires
+    $where .= ' AND p.products_status = 1
+                AND p.products_archive = 0
+                AND c.virtual_categories = 0
+                AND c.status = 1
+                AND p.products_id = pd.products_id
+                AND p.products_id = p2c.products_id
+                AND p2c.categories_id = c.categories_id
+                AND pd.language_id = :language_id';
 
+    return $where;
+  }
+
+  /**
+   * Adds category and manufacturer search conditions to the SQL query based on the search criteria.
+   *
+   * @param string $sql The base SQL query.
+   * @return string The SQL query with category and manufacturer conditions added.
+   */
+  private function addSearchConditions(string $sql): string
+  {
+    $CLICSHOPPING_CategoryTree = Registry::get('CategoryTree');
+
+    // Condition catégorie
     if ($this->hasCategory()) {
       if ($this->isRecursive()) {
-        $subcategories_array = [$this->_category];
-
-        $listing_sql .= ' and p2c.products_id = p.products_id
-                             and p2c.products_id = pd.products_id
-                             and p2c.categories_id in (' . implode(',', $CLICSHOPPING_CategoryTree->getChildren($this->_category, $subcategories_array)) . ')
-                             and c.status = 1
-                           ';
+        $subcategories_array = [$this->getCategoryID()];
+        $children = $CLICSHOPPING_CategoryTree->getChildren($this->getCategoryID(), $subcategories_array);
+        $sql .= ' AND p2c.products_id = p.products_id
+                     AND p2c.products_id = pd.products_id
+                     AND p2c.categories_id IN (' . implode(',', $children) . ')
+                     AND c.status = 1';
       } else {
-        $listing_sql .= ' and p2c.products_id = p.products_id
-                             and p2c.products_id = pd.products_id
-                             and pd.language_id = :language_id_c
-                             and p2c.categories_id = :categories_id
-                             and c.status = 1
-                          ';
+        $sql .= ' AND p2c.products_id = p.products_id
+                     AND p2c.products_id = pd.products_id
+                     AND pd.language_id = :language_id_c
+                     AND p2c.categories_id = :categories_id
+                     AND c.status = 1';
       }
     }
+
 
     if ($this->hasManufacturer()) {
-      $listing_sql .= ' and m.manufacturers_id = :manufacturers_id ';
+      $sql .= ' AND m.manufacturers_id = :manufacturers_id';
     }
 
-    if ($this->hasKeywords() === true) {
+    return $sql;
+  }
+
+  /**
+   * Adds keyword search conditions to the SQL query based on the search criteria.
+   *
+   * @param string $sql The base SQL query.
+   * @return string The SQL query with keyword conditions added.
+   */
+  private function addKeywordConditions(string $sql): string
+  {
+    if ($this->hasKeywords()) {
       $array = explode(' ', $this->_keywords);
+      $counter = 0; // Ajout d'un compteur
 
-      foreach ($array as $this->_keywords) {
-        $listing_sql .= ' and (';
-        $listing_sql .= ' pd.products_name like :products_name_keywords or
-                            p.products_model like :products_model_keywords or
-                            p.products_ean like :products_ean_keywords or
-                            p.products_sku like :products_sku_keywords or
-                            m.manufacturers_name like :manufacturers_name_keywords
-                          ';
+      foreach ($array as $keyword) {
+        $sql .= ' AND (';
+        $sql .= ' pd.products_name LIKE :products_name_keywords_' . $counter . '
+                 OR p.products_model LIKE :products_model_keywords_' . $counter . '
+                 OR p.products_ean LIKE :products_ean_keywords_' . $counter . '
+                 OR p.products_sku LIKE :products_sku_keywords_' . $counter . '
+                 OR m.manufacturers_name LIKE :manufacturers_name_keywords_' . $counter;
 
-        if ($this->hasDescription() === true) {
-          $listing_sql .= ' or pd.products_description like :products_description_keywords';
+        if ($this->hasDescription()) {
+          $sql .= ' OR pd.products_description LIKE :products_description_keywords_' . $counter;
         }
 
-        $listing_sql .= ') ';
+        $sql .= ')';
+        $counter++;
       }
     }
 
-    if (($this->hasDateFrom() === true) && isset($dfromDateTime) && $dfromDateTime->isValid()) {
-      $listing_sql .= ' and p.products_date_added >= :products_date_added_from';
+    return $sql;
+  }
+
+  /**
+   * Adds date range conditions to the SQL query based on the search criteria.
+   *
+   * @param string $sql The base SQL query.
+   * @return string The SQL query with date conditions added.
+   */
+  private function addDateConditions(string $sql): string
+  {
+    if ($this->hasDateFrom()) {
+      $sql .= ' AND p.products_date_added >= :products_date_added_from';
     }
 
-    if (($this->hasDateTo() === true) && isset($dtoDateTime) && $dtoDateTime->isValid()) {
-      $listing_sql .= ' and p.products_date_added <= :products_date_added_to';
+    if ($this->hasDateTo()) {
+      $sql .= ' AND p.products_date_added <= :products_date_added_to';
     }
 
+    return $sql;
+  }
+
+  /**
+   * Adds price range conditions to the SQL query based on the search criteria.
+   *
+   * @param string $sql The base SQL query.
+   * @return string The SQL query with price conditions added.
+   */
+  private function addPriceConditions(string $sql): string
+  {
     if (DISPLAY_PRICE_WITH_TAX == 'true') {
       if ($this->_price_from > 0) {
-        $listing_sql .= ' and (if(s.status, s.specials_new_products_price, p.products_price) * if(gz.geo_zone_id is null, 1, 1 + (tr.tax_rate / 100) ) >= :price_from)';
+        $sql .= ' AND (IF(s.status, s.specials_new_products_price, p.products_price) * IF(gz.geo_zone_id IS NULL, 1, 1 + (tr.tax_rate / 100)) >= :price_from)';
       }
 
       if ($this->_price_to > 0) {
-        $listing_sql .= ' and (if(s.status, s.specials_new_products_price, p.products_price) * if(gz.geo_zone_id is null, 1, 1 + (tr.tax_rate / 100) ) <= :price_to)';
+        $sql .= ' AND (IF(s.status, s.specials_new_products_price, p.products_price) * IF(gz.geo_zone_id IS NULL, 1, 1 + (tr.tax_rate / 100)) <= :price_to)';
       }
     } else {
       if ($this->_price_from > 0) {
-        $listing_sql .= ' and (if(s.status, s.specials_new_products_price, p.products_price) >= :price_from)';
+        $sql .= ' AND (IF(s.status, s.specials_new_products_price, p.products_price) >= :price_from)';
       }
 
       if ($this->_price_to > 0) {
-        $listing_sql .= ' and (if(s.status, s.specials_new_products_price, p.products_price) <= :price_to)';
+        $sql .= ' AND (IF(s.status, s.specials_new_products_price, p.products_price) <= :price_to)';
       }
     }
 
-    $listing_sql .= ' group by p.products_id';
+    return $sql;
+  }
+
+  /**
+   * Adds ORDER BY clause to the SQL query based on sorting parameters.
+   *
+   * @param string $sql The base SQL query.
+   * @return string The SQL query with ORDER BY clause added.
+   */
+  private function addOrderBy(string $sql): string
+  {
+    $sql .= ' GROUP BY p.products_id';
 
     $column_list = $this->sortListSearch();
 
@@ -704,52 +657,55 @@ class Search
         for ($i = 0, $n = count($column_list); $i < $n; $i++) {
           if ($column_list[$i] == 'MODULE_PRODUCTS_SEARCH_LIST_DATE_ADDED') {
             $_GET['sort'] = $i + 1 . 'a';
-            $listing_sql .= ' order by p.products_sort_order DESC,
-                                         pd.products_name
-                             ';
+            $sql .= ' ORDER BY p.products_sort_order DESC, pd.products_name';
             break;
           }
         }
       }
     } else {
-
       $sort_col = substr($_GET['sort'], 0, 1);
       $sort_order = substr($_GET['sort'], 1);
 
       switch ($column_list[$sort_col - 1]) {
         case 'MODULE_PRODUCTS_SEARCH_LIST_DATE_ADDED':
-          $listing_sql .= ' order by p.products_date_added ' . ($sort_order == 'd' ? 'desc' : ' ');
+          $sql .= ' ORDER BY p.products_date_added ' . ($sort_order == 'd' ? 'DESC' : 'ASC');
           break;
         case 'MODULE_PRODUCTS_SEARCH_LIST_PRICE':
-          $listing_sql .= ' order by p.products_price ' . ($sort_order == 'd' ? 'desc' : '') . ', p.products_date_added DESC ';
+          $sql .= ' ORDER BY p.products_price ' . ($sort_order == 'd' ? 'DESC' : 'ASC') . ', p.products_date_added DESC';
           break;
         case 'MODULE_PRODUCTS_SEARCH_LIST_MODEL':
-          $listing_sql .= ' order by p.products_model ' . ($sort_order == 'd' ? 'desc' : '') . ', p.products_date_added DESC ';
+          $sql .= ' ORDER BY p.products_model ' . ($sort_order == 'd' ? 'DESC' : 'ASC') . ', p.products_date_added DESC';
           break;
         case 'MODULE_PRODUCTS_SEARCH_LIST_QUANTITY':
-          $listing_sql .= ' order by p.products_quantity ' . ($sort_order == 'd' ? 'desc' : '') . ', p.products_date_added DESC ';
+          $sql .= ' ORDER BY p.products_quantity ' . ($sort_order == 'd' ? 'DESC' : 'ASC') . ', p.products_date_added DESC';
           break;
         case 'MODULE_PRODUCTS_SEARCH_LIST_WEIGHT':
-          $listing_sql .= ' order by p.products_weight ' . ($sort_order == 'd' ? 'desc' : '') . ', p.products_date_added DESC ';
+          $sql .= ' ORDER BY p.products_weight ' . ($sort_order == 'd' ? 'DESC' : 'ASC') . ', p.products_date_added DESC';
           break;
         case 'MODULE_PRODUCTS_SEARCH_LIST_NAME':
-          $listing_sql .= ' order by pd.products_name ' . ($sort_order == 'd' ? 'desc' : '') . ', p.products_date_added DESC ';
+          $sql .= ' ORDER BY pd.products_name ' . ($sort_order == 'd' ? 'DESC' : 'ASC') . ', p.products_date_added DESC';
           break;
         case 'MODULE_PRODUCTS_SEARCH_LIST_MANUFACTURER':
-          $listing_sql .= ' order by m.manufacturers_name ' . ($sort_order == 'd' ? 'desc' : '') . ', p.products_date_added DESC ';
-          break;
-        case 'MODULE_PRODUCTS_SEARCH_DATE_ADDED':
-          $listing_sql .= ' order by p.products_date_added ' . ($sort_order == 'd' ? 'desc' : '') . ', pd.products_name DESC ';
+          $sql .= ' ORDER BY m.manufacturers_name ' . ($sort_order == 'd' ? 'DESC' : 'ASC') . ', p.products_date_added DESC';
           break;
       }
     }
 
-    $listing_sql .= ' limit :page_set_offset,
-                             :page_set_max_results
-                      ';
+    return $sql;
+  }
 
-    $Qlisting = $this->db->prepare($listing_sql);
+  /**
+   * Binds parameters to the prepared statement based on the search criteria.
+   *
+   * @param \ClicShopping\OM\PDOStatement $stmt The prepared statement to bind parameters to.
+   */
+  private function bindParameters($stmt): void
+  {
+    $CLICSHOPPING_Customer = Registry::get('Customer');
+    $CLICSHOPPING_Language = Registry::get('Language');
+    $CLICSHOPPING_Currencies = Registry::get('Currencies');
 
+    // Paramètres de taxes
     if (($this->hasPriceFrom() || $this->hasPriceTo()) && (DISPLAY_PRICE_WITH_TAX == 'true')) {
       if ($CLICSHOPPING_Customer->isLoggedOn()) {
         $customer_country_id = $CLICSHOPPING_Customer->getCountryID();
@@ -759,109 +715,137 @@ class Search
         $customer_zone_id = (int)STORE_ZONE;
       }
 
-      $Qlisting->bindInt(':zone_country_id', $customer_country_id);
-      $Qlisting->bindInt(':zone_id', $customer_zone_id);
+      $stmt->bindInt(':zone_country_id', $customer_country_id);
+      $stmt->bindInt(':zone_id', $customer_zone_id);
     }
 
-    if ($this->hasCategory()) {
-      if (!$this->isRecursive()) {
-        $Qlisting->bindInt(':categories_id', $this->getCategoryID());
-        $Qlisting->bindInt(':language_id_c', $CLICSHOPPING_Language->getId());
-      }
+    // Paramètres de base
+    $stmt->bindInt(':language_id', $CLICSHOPPING_Language->getId());
+
+    if ($CLICSHOPPING_Customer->getCustomersGroupID() != 0) {
+      $stmt->bindInt(':customers_group_id', $CLICSHOPPING_Customer->getCustomersGroupID());
+    }
+
+    // Paramètres conditionnels
+    if ($this->hasCategory() && !$this->isRecursive()) {
+      $stmt->bindInt(':categories_id', $this->getCategoryID());
+      $stmt->bindInt(':language_id_c', $CLICSHOPPING_Language->getId());
     }
 
     if ($this->hasManufacturer()) {
-      $Qlisting->bindInt(':manufacturers_id', $this->getManufacturer());
+      $stmt->bindInt(':manufacturers_id', (int)$this->_manufacturer);
+    }
+
+    // Gestion des devises pour les prix
+    $price_from = $this->_price_from;
+    $price_to = $this->_price_to;
+
+    if ($this->hasPriceFrom() && $CLICSHOPPING_Currencies->getValue($_SESSION['currency'])) {
+      $price_from /= $CLICSHOPPING_Currencies->getValue($_SESSION['currency']);
+    }
+
+    if ($this->hasPriceTo() && $CLICSHOPPING_Currencies->getValue($_SESSION['currency'])) {
+      $price_to /= $CLICSHOPPING_Currencies->getValue($_SESSION['currency']);
+    }
+
+    if ($price_from > 0) {
+      $stmt->bindDecimal(':price_from', $price_from);
+    }
+
+    if ($price_to > 0) {
+      $stmt->bindDecimal(':price_to', $price_to);
+    }
+
+    if ($this->hasDateFrom()) {
+      $stmt->bindValue(':products_date_added_from', $this->getDateFrom());
+    }
+
+    if ($this->hasDateTo()) {
+      $stmt->bindValue(':products_date_added_to', $this->getDateTo());
     }
 
     if ($this->hasKeywords()) {
       $array = explode(' ', $this->_keywords);
+      $counter = 0; // Ajout d'un compteur
 
       foreach ($array as $keyword) {
-        $Qlisting->bindValue(':products_name_keywords', '%' . $keyword . '%');
-        $Qlisting->bindValue(':products_model_keywords', '%' . $keyword . '%');
-        $Qlisting->bindValue(':products_sku_keywords', '%' . $keyword . '%');
-        $Qlisting->bindValue(':products_ean_keywords', '%' . $keyword . '%');
-        $Qlisting->bindValue(':manufacturers_name_keywords', '%' . $keyword . '%');
+        $stmt->bindValue(':products_name_keywords_' . $counter, '%' . $keyword . '%');
+        $stmt->bindValue(':products_model_keywords_' . $counter, '%' . $keyword . '%');
+        $stmt->bindValue(':products_sku_keywords_' . $counter, '%' . $keyword . '%');
+        $stmt->bindValue(':products_ean_keywords_' . $counter, '%' . $keyword . '%');
+        $stmt->bindValue(':manufacturers_name_keywords_' . $counter, '%' . $keyword . '%');
 
-        if ($this->hasDescription() === true) {
-          $Qlisting->bindValue(':products_description_keywords', '%' . $keyword . '%');
+        if ($this->hasDescription()) {
+          $stmt->bindValue(':products_description_keywords_' . $counter, '%' . $keyword . '%');
         }
+        $counter++;
       }
     }
-
-    if ($this->hasDateFrom()) {
-      if (isset($dfromDateTime) && $dfromDateTime->isValid()) {
-        $Qlisting->bindValue(':products_date_added_from', $dfromDateTime1);
-      }
-    }
-
-    if ($this->hasDateTo()) {
-      if (isset($dtoDateTime) && $dtoDateTime->isValid()) {
-        $Qlisting->bindValue(':products_date_added_to', $dtoDateTime1);
-      }
-    }
-
-    if (DISPLAY_PRICE_WITH_TAX == 'true') {
-      if ($this->_price_from > 0) {
-        $Qlisting->bindDecimal(':price_from', $this->_price_from);
-      }
-
-      if ($this->_price_to > 0) {
-        $Qlisting->bindDecimal(':price_to', $this->_price_to);
-      }
-    } else {
-      if ($this->_price_from > 0) {
-        $Qlisting->bindDecimal(':price_from', $this->_price_from);
-      }
-
-      if ($this->_price_to > 0) {
-        $Qlisting->bindDecimal(':price_to', $this->_price_to);
-      }
-    }
-
-    $Qlisting->bindInt(':language_id', $CLICSHOPPING_Language->getId());
-
-    if ($CLICSHOPPING_Customer->getCustomersGroupID() != 0) {
-      $Qlisting->bindInt(':customers_group_id', $CLICSHOPPING_Customer->getCustomersGroupID());
-    }
-
-    $Qlisting->setPageSet($max_display);
-
-    $Qlisting->execute();
-
-    $result['entries'] = $Qlisting->fetchAll();
-
-    $result['total'] = $Qlisting->getPageSetTotalRows();
-
-    $this->listing = $Qlisting;
-
-    $this->_result = $result;
   }
 
-
   /**
-   * Retrieves the listing.
+   * Execute the search query and store the results.
    *
-   * @return mixed The listing associated with the instance.
+   * This method constructs the SQL query based on the search criteria,
+   * prepares and executes it, and stores the results for later retrieval.
    */
-  public function getListing()
+  public function execute(): void
   {
-    return $this->listing;
+    $max_display = defined('MODULE_PRODUCTS_SEARCH_MAX_DISPLAY') ? MODULE_PRODUCTS_SEARCH_MAX_DISPLAY : 20;
+
+    // Construction de la requête par étapes
+    $sql = $this->buildBaseQuery();
+    $sql = $this->addTaxJoins($sql);
+    $sql = $this->addBasicJoins($sql);
+    $sql .= $this->buildWhereConditions();
+    $sql = $this->addSearchConditions($sql);
+    $sql = $this->addKeywordConditions($sql);
+    $sql = $this->addDateConditions($sql);
+    $sql = $this->addPriceConditions($sql);
+    $sql = $this->addOrderBy($sql);
+    $sql .= ' LIMIT :page_set_offset, :page_set_max_results';
+
+    $stmt = $this->db->prepare($sql);
+    $this->bindParameters($stmt);
+    $stmt->setPageSet($max_display);
+    $stmt->execute();
+
+    $this->listing = $stmt;
+    $this->_result = [
+      'entries' => $stmt->fetchAll(),
+      'total' => $stmt->getPageSetTotalRows()
+    ];
   }
 
-  /**
-   * Retrieves the result of an operation.
-   * If the result is not already set, it will execute the operation to generate it.
+  /** Get the search results.
    *
-   * @return mixed The result of the operation.
+   * @return array An associative array containing the search results and total count.
    */
   public function getResult()
   {
     if (!isset($this->_result)) {
       $this->execute();
     }
-
     return $this->_result;
+  }
+
+  /** Get the listing object for paginated results.
+   *
+   * @return \ClicShopping\OM\PDOStatement The listing object containing paginated results.
+   */
+  public function getListing()
+  {
+    return $this->listing;
+  }
+
+
+  /**
+   * Get the total number of search results.
+   *
+   * @return int The total number of results found.
+   */
+  public function getNumberOfResults(): int
+  {
+    return $this->_result['total'] ?? 0;
   }
 }
