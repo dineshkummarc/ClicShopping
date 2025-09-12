@@ -211,7 +211,8 @@ class co_contact_us_form
 
       if (!empty(CONTACT_DEPARTMENT_LIST)) {
         if (is_array($_POST['send_to_array'])) {
-          $contact = HTML::selectMenu('send_to', $_POST['send_to_array'], null, null, false, 'inputContacUsPullDownMenu');
+          $sanitized_array = array_map(fn($item) => HTML::sanitize($item), $_POST['send_to_array']);
+          $contact = HTML::selectMenu('send_to', $sanitized_array, null, null, false, 'inputContacUsPullDownMenu');
         } else {
           $contact = '';
         }
