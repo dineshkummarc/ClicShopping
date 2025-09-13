@@ -723,11 +723,13 @@ class HTML
     $CLICSHOPPING_Template = Registry::get('Template');
     $CLICSHOPPING_Language = Registry::get('Language');
 
+    $image_responsive = '';
+
     if (!empty($responsive) && ($responsive === false)) {
       $image_responsive = ' class="img-fluid"';
     }
 
-    return static::image($CLICSHOPPING_Template->getDirectoryTemplateImages() . 'template/' . SITE_THEMA . DIRECTORY_SEPARATOR . $CLICSHOPPING_Language->get('directory') . DIRECTORY_SEPARATOR . $image, $title, '', '', $parameters, $image_responsive);
+    return static::image($CLICSHOPPING_Template->getDirectoryTemplateImages() . 'template/' . SITE_THEMA . DIRECTORY_SEPARATOR . $CLICSHOPPING_Language->get('directory') . DIRECTORY_SEPARATOR . $image, $title, '', '', $parameters, $responsive, $image_responsive);
   }
 
   /**

@@ -383,18 +383,17 @@ class HTTP
   {
     $systemroot = CLICSHOPPING::getSite('Shop');
 
-    $base = CLICSHOPPING::getSite('Shop');
 
     // Normalize system root and base paths
     $systemroot = rtrim($systemroot, $separator) . $separator;
-    $base = rtrim($base, $separator) . $separator;
+    $base = rtrim($systemroot, $separator) . $separator;
 
     if ($path === '' || $path === '.' . $separator) {
-      return $base;
+      return $systemroot;
     }
 
     if (substr($path, 0, 3) === '..' . $separator) {
-      $path = $base . $path;
+      $path = $systemroot . $path;
     }
 
     // Normalize path

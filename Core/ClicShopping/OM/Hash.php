@@ -10,8 +10,10 @@
 
 namespace ClicShopping\OM;
 
-use Exception;
 use PasswordHash;
+
+use Exception;
+use InvalidArgumentException;
 use function count;
 use function in_array;
 use function strlen;
@@ -255,48 +257,34 @@ class Hash
    */
   public static function getRandomString(int $length, string $type = 'mixed'): string
   {
-    if (!in_array($type, [
-      'mixed',
-      'chars',
-      'digits'
-    ])) {
-      throw new InvalidArgumentException('Hash::getRandomString() $type not recognized: ' . $type);
-
-      return false;
+    $types = ['mixed', 'chars', 'digits'];
+    if (!in_array($type, $types, true)) {
+      throw new InvalidArgumentException("Hash::getRandomString() invalid type: {$type}");
     }
 
-    $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    $digits = '0123456789';
+    $sets = [
+      'chars' => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+      'digits' => '0123456789',
+    ];
 
-    $base = '';
+    $base = match ($type) {
+      'chars' => $sets['chars'],
+      'digits' => $sets['digits'],
+      default => $sets['chars'] . $sets['digits'],
+    };
 
-    if (($type == 'mixed') || ($type == 'chars')) {
-      $base .= $chars;
-    }
+    $result = '';
+    $baseLength = strlen($base);
 
-    if (($type == 'mixed') || ($type == 'digits')) {
-      $base .= $digits;
-    }
-
-    $rand_value = '';
-
-    do {
-      $random = base64_encode(static::getRandomBytes($length));
-
-      for ($i = 0, $n = strlen($random); $i < $n; $i++) {
-        $char = substr($random, $i, 1);
-
-        if (str_contains($base, $char)) {
-          $rand_value .= $char;
-        }
+    while (strlen($result) < $length) {
+      $bytes = static::getRandomBytes($length);
+      for ($i = 0, $n = strlen($bytes); $i < $n && strlen($result) < $length; $i++) {
+        $index = ord($bytes[$i]) % $baseLength;
+        $result .= $base[$index];
       }
-    } while (strlen($rand_value) < $length);
-
-    if (strlen($rand_value) > $length) {
-      $rand_value = substr($rand_value, 0, $length);
     }
 
-    return $rand_value;
+    return $result;
   }
 
   /**
