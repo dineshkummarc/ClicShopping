@@ -11,6 +11,11 @@
 namespace ClicShopping\OM;
 
 use ClicShopping\Service\Shop\SEFU;
+use ClicShopping\OM\HTTP;
+use ClicShopping\OM\HTML;
+use ClicShopping\OM\Registry;
+
+
 use DirectoryIterator;
 use PDO;
 use function array_slice;
