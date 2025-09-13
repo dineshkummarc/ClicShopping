@@ -592,7 +592,7 @@ class CustomerShop
 
       $greeting_string = CLICSHOPPING::getDef('text_greeting_personal', $text_array);
     } else {
-      if (MODE_MANAGEMENT_B2C_B2B == 'B2C_B2B' || MODE_MANAGEMENT_B2C_B2B == 'B2B') {
+      if (\defined('MODE_MANAGEMENT_B2C_B2B') && (MODE_MANAGEMENT_B2C_B2B == 'B2C_B2B' || MODE_MANAGEMENT_B2C_B2B == 'B2B')) {
         $text_array = [
           'url_login' => CLICSHOPPING::redirect(null, 'Account&LogIn'),
           'url_create_account' => CLICSHOPPING::link(null, 'Account&Create'),

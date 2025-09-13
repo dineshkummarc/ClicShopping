@@ -132,7 +132,7 @@ class ProductsAdmin
   {
     if (empty($_POST['products_model'])) {
       $rand = rand();
-      $products_model = CONFIGURATION_PREFIX_MODEL . $rand;
+      $products_model = \defined('CONFIGURATION_PREFIX_MODEL') ? CONFIGURATION_PREFIX_MODEL . $rand : '';
     } else {
       $products_model = HTML::sanitize($_POST['products_model']);
     }
@@ -1222,7 +1222,7 @@ class ProductsAdmin
 
       $Qproducts->bindInt(':categories_id', (int)$current_category_id);
       $Qproducts->bindInt(':language_id', $this->lang->getId());
-      $Qproducts->setPageSet((int)MAX_DISPLAY_SEARCH_RESULTS_ADMIN);
+      $Qproducts->setPageSet(\defined('MAX_DISPLAY_SEARCH_RESULTS_ADMIN') ? (int)MAX_DISPLAY_SEARCH_RESULTS_ADMIN : 0);
       $Qproducts->execute();
     }
 

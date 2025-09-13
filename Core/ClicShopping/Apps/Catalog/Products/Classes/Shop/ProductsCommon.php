@@ -851,7 +851,7 @@ class ProductsCommon extends Prod
     }
 
 //  2592000 = 30 days in the unix timestamp format
-    $day_new_products = 86400 * (int)DAY_NEW_PRODUCTS_ARRIVAL;
+    $day_new_products = 86400 * (\defined('DAY_NEW_PRODUCTS_ARRIVAL') ? (int)DAY_NEW_PRODUCTS_ARRIVAL : 0);
     $today_time = time();
 
     if (($today_time - strtotime($products_date_added)) < $day_new_products) {
@@ -1018,7 +1018,7 @@ class ProductsCommon extends Prod
     $products_shipping_delay = $Qproducts->value('products_shipping_delay');
 
     if (empty($products['products_shipping_delay'])) {
-      $products_shipping_delay = HTML::outputProtected(DISPLAY_SHIPPING_DELAY);
+      $products_shipping_delay = HTML::outputProtected(\defined('DISPLAY_SHIPPING_DELAY') ? DISPLAY_SHIPPING_DELAY : '');
     }
 
     return $products_shipping_delay;
@@ -1050,7 +1050,7 @@ class ProductsCommon extends Prod
     $products_shipping_delay_out_of_stock = $Qproducts->value('products_shipping_delay_out_of_stock');
 
     if (empty($products['products_shipping_delay_out_of_stock'])) {
-      $products_shipping_delay_out_of_stock = HTML::outputProtected(DISPLAY_SHIPPING_DELAY_OUT_OF_STOCK);
+      $products_shipping_delay_out_of_stock = HTML::outputProtected(\defined('DISPLAY_SHIPPING_DELAY_OUT_OF_STOCK') ? DISPLAY_SHIPPING_DELAY_OUT_OF_STOCK : '');
     }
 
     return $products_shipping_delay_out_of_stock;
@@ -1179,7 +1179,7 @@ class ProductsCommon extends Prod
     $products_weight = $Qproducts->value('products_weight');
     $products_weight_class_id = $Qproducts->value('products_weight_class_id');
 
-    $products_weight = $CLICSHOPPING_Weight->convert($products_weight, $products_weight_class_id, SHIPPING_WEIGHT_UNIT);
+    $products_weight = $CLICSHOPPING_Weight->convert($products_weight, $products_weight_class_id, \defined('SHIPPING_WEIGHT_UNIT') ? SHIPPING_WEIGHT_UNIT : '');
 
     if ($products_weight == '0.00') {
       $products_weight = '';
@@ -1237,12 +1237,12 @@ class ProductsCommon extends Prod
       $product_price_kilo_display = '';
     }
 
-    if ((PRICES_LOGGED_IN == 'true') && !$this->customer->isLoggedOn()) {
+    if ((\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'true') && !$this->customer->isLoggedOn()) {
       $product_price_kilo_display = '';
     }
 
 
-    if (NOT_DISPLAY_PRICE_ZERO == 'false' && $products_price == 0) {
+    if (\defined('NOT_DISPLAY_PRICE_ZERO') && NOT_DISPLAY_PRICE_ZERO == 'false' && $products_price == 0) {
       $product_price_kilo_display = '';
     }
 
@@ -1546,9 +1546,9 @@ class ProductsCommon extends Prod
       if ($QproductMinOrder->valueInt('products_min_qty_order') > 0.1) {
         $min_quantity_order = $QproductMinOrder->valueInt('products_min_qty_order');
       } else {
-        $min_quantity_order = (int)MAX_MIN_IN_CART;
-        if ((int)MAX_MIN_IN_CART > (int)MAX_QTY_IN_CART) {
-          $min_quantity_order = (int)MAX_QTY_IN_CART;
+        $min_quantity_order = \defined('MAX_MIN_IN_CART') ? (int)MAX_MIN_IN_CART : 0;
+        if (\defined('MAX_MIN_IN_CART') && (int)MAX_MIN_IN_CART > \defined('MAX_QTY_IN_CART') ? (int)MAX_QTY_IN_CART : 0) {
+          $min_quantity_order = \defined('MAX_QTY_IN_CART') ? (int)MAX_QTY_IN_CART : 0;
         }
       }
     } else {
@@ -1608,7 +1608,7 @@ class ProductsCommon extends Prod
       $min_order_quantity_products_display = '';
     }
 
-    if (PRICES_LOGGED_IN == 'true' && !$this->customer->isLoggedOn()) {
+    if (\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'true' && !$this->customer->isLoggedOn()) {
       $min_order_quantity_products_display = '';
     }
 
@@ -1652,10 +1652,10 @@ class ProductsCommon extends Prod
     }
 
     if ($this->customer->getCustomersGroupID() == 0 && $this->getProductsOrdersView() != 0) {
-      if (PRICES_LOGGED_IN == 'false') {
+      if (\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'false') {
         $input_quantity = '<label for="Quantity' . $id . '" class="visually-hidden"></label>';
         $input_quantity .= HTML::inputField('cart_quantity', (int)$this->setProductsMinimumQuantityToTakeAnOrder($id), 'id="Quantity' . $id . '" placeholder="qty" class="input-small" maxlength="4" size="4" min="1"') . '&nbsp;&nbsp;';
-      } elseif (PRICES_LOGGED_IN == 'true' && $this->customer->isLoggedOn()) {
+      } elseif (\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'true' && $this->customer->isLoggedOn()) {
         $input_quantity = '<label for="Quantity' . $id . '" class="visually-hidden"></label>';
         $input_quantity .= HTML::inputField('cart_quantity', (int)$this->setProductsMinimumQuantityToTakeAnOrder($id), 'id="Quantity' . $id . '" placeholder="qty" class="input-small" maxlength="4" size="4" min="1"') . '&nbsp;&nbsp;';
       } else {
@@ -1663,7 +1663,7 @@ class ProductsCommon extends Prod
       }
     }
 
-    if ($this->setProductsMinimumQuantityToTakeAnOrder($id) == 0 && MAX_MIN_IN_CART == 0) {
+    if ($this->setProductsMinimumQuantityToTakeAnOrder($id) == 0 && \defined('MAX_MIN_IN_CART') && MAX_MIN_IN_CART == 0) {
       $input_quantity = '';
     }
 
@@ -1731,19 +1731,19 @@ class ProductsCommon extends Prod
   {
     $buy_button = $this->button;
 
-    if ((PRICES_LOGGED_IN == 'true' && !$this->customer->isLoggedOn())) {
+    if ((\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'true' && !$this->customer->isLoggedOn())) {
       $buy_button = '';
     } elseif ($this->getProductsOrdersView() == 0 && $this->customer->getCustomersGroupID() == 0) {
       $buy_button = '';
     }
 
-    if (PRICES_LOGGED_IN == 'true' && $this->customer->isLoggedOn()) {
+    if (\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'true' && $this->customer->isLoggedOn()) {
       if ($this->getProductsOrdersView() == 0 && $this->customer->getCustomersGroupID() == 0) {
         $buy_button = '';
       } elseif ($this->getOrdersGroupView() == 0 && $this->customer->getCustomersGroupID() != 0) {
         $buy_button = '';
       }
-    } elseif (PRICES_LOGGED_IN == 'false' && $this->customer->isLoggedOn()) {
+    } elseif (\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'false' && $this->customer->isLoggedOn()) {
       if ($this->getProductsOrdersView() == 0 && $this->customer->getCustomersGroupID() == 0) {
         $buy_button = '';
       } elseif ($this->getOrdersGroupView() == 0 && $this->customer->getCustomersGroupID() != 0) {
@@ -1782,7 +1782,7 @@ class ProductsCommon extends Prod
       $button_type = 'btn-warning btn-sm';
     }
 
-    if (PRE_ORDER_AUTORISATION == 'false') {
+    if (\defined('PRE_ORDER_AUTORISATION') && PRE_ORDER_AUTORISATION == 'false') {
       $product_button_sold_out = '<button type="button" class="btn ' . $button_type . '">' . CLICSHOPPING::getDef('button_sold_out') . '</button>';
     }
 
@@ -1814,13 +1814,13 @@ class ProductsCommon extends Prod
     $QproductSoldOut->execute();
 
     if ($QproductSoldOut->fetch()) {
-      if (STOCK_CHECK == 'true' && STOCK_ALLOW_CHECKOUT == 'false' && PRICES_LOGGED_IN == 'false') {
+      if (\defined('STOCK_CHECK') && STOCK_CHECK == 'true' && \defined('STOCK_ALLOW_CHECKOUT') && STOCK_ALLOW_CHECKOUT == 'false' && \defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'false') {
         $product_sold_out = $this->getProductButtonSoldOut($button_type);
-      } elseif (PRICES_LOGGED_IN == 'true' && $this->customer->getCustomersGroupID() == 0 && !$this->customer->isLoggedOn() && STOCK_CHECK == 'true' && STOCK_ALLOW_CHECKOUT == 'false') {
+      } elseif (\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'true' && $this->customer->getCustomersGroupID() == 0 && !$this->customer->isLoggedOn() && \defined('STOCK_CHECK') && STOCK_CHECK == 'true' && \defined('STOCK_ALLOW_CHECKOUT') && STOCK_ALLOW_CHECKOUT == 'false') {
         $product_sold_out = ' ';
-      } elseif (PRICES_LOGGED_IN == 'true' && $this->customer->getCustomersGroupID() != 0 && STOCK_CHECK == 'true' && STOCK_ALLOW_CHECKOUT == 'false') {
+      } elseif (\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'true' && $this->customer->getCustomersGroupID() != 0 && \defined('STOCK_CHECK') && STOCK_CHECK == 'true' && \defined('STOCK_ALLOW_CHECKOUT') && STOCK_ALLOW_CHECKOUT == 'false') {
         $product_sold_out = $this->getProductButtonSoldOut($button_type);
-      } elseif (PRICES_LOGGED_IN == 'true' && $this->customer->getCustomersGroupID() == 0 && $this->customer->isLoggedOn() && STOCK_CHECK == 'true' && STOCK_ALLOW_CHECKOUT == 'false') {
+      } elseif (\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'true' && $this->customer->getCustomersGroupID() == 0 && $this->customer->isLoggedOn() && \defined('STOCK_CHECK') && STOCK_CHECK == 'true' && \defined('STOCK_ALLOW_CHECKOUT') && STOCK_ALLOW_CHECKOUT == 'false') {
         $product_sold_out = $this->getProductButtonSoldOut($button_type);
       }
     }
@@ -1855,11 +1855,11 @@ class ProductsCommon extends Prod
   private function setCustomersPrice($id = null)
   {
 
-    if (PRICES_LOGGED_IN == 'false') {
+    if (\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'false') {
       $product_price = $this->setCalculPrice($id);
     }
 
-    if ((PRICES_LOGGED_IN == 'true') && (!$this->customer->isLoggedOn())) {
+    if (\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'true' && (!$this->customer->isLoggedOn())) {
       $product_price = HTML::link(CLICSHOPPING::link(null, 'Account&LogIn'), CLICSHOPPING::getDef('prices_logged_in_text')) . '&nbsp;';
     } else {
       $product_price = $this->setCalculPrice($id);
@@ -2126,9 +2126,9 @@ class ProductsCommon extends Prod
     $out_of_stock = '';
 
     if ($stock_left < 0) {
-      if (PRE_ORDER_AUTORISATION == 'true') {
+      if (\defined('PRE_ORDER_AUTORISATION') && PRE_ORDER_AUTORISATION == 'true') {
         $out_of_stock = '<span class="markProductOutOfStock" id="markProductOutOfStock">' . CLICSHOPPING::getDef('text_out_of_stock_pre_order') . '</span>';
-      } elseif (STOCK_ALLOW_CHECKOUT == 'true') {
+      } elseif (\defined('STOCK_ALLOW_CHECKOUT') && STOCK_ALLOW_CHECKOUT == 'true') {
         $out_of_stock = '<span class="markProductOutOfStock" id="markProductOutOfStock">' . CLICSHOPPING::getDef('text_out_of_stock_allow_checkout') . '</span>';
       } else {
         $out_of_stock = '<span class="markProductOutOfStock" id="markProductOutOfStock">' . CLICSHOPPING::getDef('text_out_of_stock') . '</span>';
@@ -2148,9 +2148,9 @@ class ProductsCommon extends Prod
   {
     $display_products_stock = $this->getProductsStock($id);
 
-    if ($display_products_stock > STOCK_REORDER_LEVEL) {
+    if ($display_products_stock > \defined('STOCK_REORDER_LEVEL') ? STOCK_REORDER_LEVEL : 0) {
       $display_stock_values = HTML::tickerImage(CLICSHOPPING::getDef('text_in_stock'), 'ModulesTickerBootstrapTickerStockGood', true);
-    } elseif ($display_products_stock <= STOCK_REORDER_LEVEL && $display_products_stock > 0) {
+    } elseif ($display_products_stock <= \defined('STOCK_REORDER_LEVEL') ? STOCK_REORDER_LEVEL : 0  && $display_products_stock > 0) {
       $display_stock_values = HTML::tickerImage(CLICSHOPPING::getDef('text_alert_stock'), 'ModulesTickerBootstrapTickerStockWarning', true);
     } else {
       $display_stock_values = HTML::tickerImage(CLICSHOPPING::getDef('text_out_of_stock'), 'ModulesTickerBootstrapTickerStockDanger', true);
@@ -2497,7 +2497,7 @@ class ProductsCommon extends Prod
     $Qproducts->execute();
 
 // 2592000 = 30 days in the unix timestamp format
-    $day_new_products = 86400 * (int)DAY_NEW_PRODUCTS_ARRIVAL;
+    $day_new_products = 86400 *  \defined('DAY_NEW_PRODUCTS_ARRIVAL') ? (int)DAY_NEW_PRODUCTS_ARRIVAL : 0;
     $today_time = time();
 
     if (($today_time - strtotime($Qproducts->value('specials_date_added'))) < $day_new_products) {
@@ -2562,7 +2562,7 @@ class ProductsCommon extends Prod
     $Qproducts->execute();
 
 // 2592000 = 30 days in the unix timestamp format
-    $day_new_products = 86400 * DAY_NEW_PRODUCTS_ARRIVAL;
+    $day_new_products = 86400 * \defined('DAY_NEW_PRODUCTS_ARRIVAL') ? (int)DAY_NEW_PRODUCTS_ARRIVAL : 0;
     $today_time = time();
 
     if (($today_time - strtotime($Qproducts->value('products_favorites_date_added'))) < $day_new_products) {
@@ -2597,7 +2597,7 @@ class ProductsCommon extends Prod
     $Qproducts->execute();
 
 // 2592000 = 30 days in the unix timestamp format
-    $day_new_products = 86400 * DAY_NEW_PRODUCTS_ARRIVAL;
+    $day_new_products = 86400 * \defined('DAY_NEW_PRODUCTS_ARRIVAL') ? (int)DAY_NEW_PRODUCTS_ARRIVAL : 0;
     $today_time = time();
 
     if (($today_time - strtotime($Qproducts->value('products_featured_date_added'))) < $day_new_products) {
@@ -2637,7 +2637,7 @@ class ProductsCommon extends Prod
     $Qproducts->execute();
 
 // 2592000 = 30 days in the unix timestamp format
-    $day_new_products = 86400 * DAY_NEW_PRODUCTS_ARRIVAL;
+    $day_new_products = 86400 * \defined('DAY_NEW_PRODUCTS_ARRIVAL') ? (int)DAY_NEW_PRODUCTS_ARRIVAL : 0;
     $today_time = time();
 
     if (($today_time - strtotime($Qproducts->value('date_added'))) < $day_new_products) {

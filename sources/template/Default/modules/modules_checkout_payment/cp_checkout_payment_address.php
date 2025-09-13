@@ -31,8 +31,8 @@ class cp_checkout_payment_address
     $this->description = CLICSHOPPING::getDef('module_checkout_payment_address_description');
 
     if (\defined('MODULE_CHECKOUT_PAYMENT_ADDRESS_STATUS')) {
-      $this->sort_order = (int)MODULE_CHECKOUT_PAYMENT_ADDRESS_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_CHECKOUT_PAYMENT_ADDRESS_STATUS == 'True');
+      $this->sort_order = (\defined('MODULE_CHECKOUT_PAYMENT_ADDRESS_SORT_ORDER') ? (int)MODULE_CHECKOUT_PAYMENT_ADDRESS_SORT_ORDER : 0);
+      $this->enabled = (\defined('MODULE_CHECKOUT_PAYMENT_ADDRESS_STATUS') && MODULE_CHECKOUT_PAYMENT_ADDRESS_STATUS == 'True');
     }
   }
 
@@ -43,7 +43,7 @@ class cp_checkout_payment_address
 
     if (isset($_GET['Checkout'], $_GET['Billing'])) {
 
-      $content_width = (int)MODULE_CHECKOUT_PAYMENT_ADDRESS_CONTENT_WIDTH;
+      $content_width = (\defined('MODULE_CHECKOUT_PAYMENT_ADDRESS_CONTENT_WIDTH') ? (int)MODULE_CHECKOUT_PAYMENT_ADDRESS_CONTENT_WIDTH : 12);
 
       $payment_process = '<!-- start cp_checkout_payment_address -->' . "\n";
 

@@ -31,8 +31,8 @@ class cp_checkout_payment_listing
     $this->description = CLICSHOPPING::getDef('module_checkout_payment_listing_description');
 
     if (\defined('MODULE_CHECKOUT_PAYMENT_LISTING_STATUS')) {
-      $this->sort_order = (int)MODULE_CHECKOUT_PAYMENT_LISTING_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_CHECKOUT_PAYMENT_LISTING_STATUS == 'True');
+      $this->sort_order = (int)(\defined('MODULE_CHECKOUT_PAYMENT_LISTING_SORT_ORDER') ? MODULE_CHECKOUT_PAYMENT_LISTING_SORT_ORDER : 0);
+      $this->enabled = (\defined('MODULE_CHECKOUT_PAYMENT_LISTING_STATUS') && MODULE_CHECKOUT_PAYMENT_LISTING_STATUS == 'True');
     }
   }
 
@@ -49,7 +49,7 @@ class cp_checkout_payment_listing
 
       $selection = $CLICSHOPPING_Payment->selection();
 
-      $content_width = (int)MODULE_CHECKOUT_PAYMENT_LISTING_CONTENT_WIDTH;
+      $content_width = (int)(\defined('MODULE_CHECKOUT_PAYMENT_LISTING_CONTENT_WIDTH') ? MODULE_CHECKOUT_PAYMENT_LISTING_CONTENT_WIDTH : 12);
 
       $payment_process = '<!-- start cp_checkout_payment_listing -->' . "\n";
 

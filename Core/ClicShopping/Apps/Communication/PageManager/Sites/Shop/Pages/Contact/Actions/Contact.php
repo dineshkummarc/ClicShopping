@@ -23,12 +23,12 @@ class Contact extends \ClicShopping\OM\PagesActionsAbstract
     $CLICSHOPPING_PageManager = Registry::get('PageManager');
 
 // select multiple contact for the form
-    if (!empty(CONTACT_DEPARTMENT_LIST)) {
+    if (!empty(\defined('CONTACT_DEPARTMENT_LIST') ? CONTACT_DEPARTMENT_LIST : '')) {
       $send_to_array = [];
-      $contact_department_list = explode(",", CONTACT_DEPARTMENT_LIST);
+      $contact_department_list = explode(",", \defined('CONTACT_DEPARTMENT_LIST') ? CONTACT_DEPARTMENT_LIST : '');
 
       if (\is_array($contact_department_list)) {
-        foreach (explode(",", CONTACT_DEPARTMENT_LIST) as $k => $v) {
+        foreach (explode(",", \defined('CONTACT_DEPARTMENT_LIST') ? CONTACT_DEPARTMENT_LIST : '') as $k => $v) {
           $send_to_array[] = [
             'id' => $k,
             'text' => preg_replace('/\<[^*]*/', '', $v)

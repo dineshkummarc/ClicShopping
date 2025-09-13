@@ -30,8 +30,8 @@ class cp_checkout_payment_comment
     $this->description = CLICSHOPPING::getDef('module_checkout_payment_comment_description');
 
     if (\defined('MODULE_CHECKOUT_PAYMENT_COMMENT_STATUS')) {
-      $this->sort_order = (int)MODULE_CHECKOUT_PAYMENT_COMMENT_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_CHECKOUT_PAYMENT_COMMENT_STATUS == 'True');
+      $this->sort_order = (int)(\defined('MODULE_CHECKOUT_PAYMENT_COMMENT_SORT_ORDER') ? MODULE_CHECKOUT_PAYMENT_COMMENT_SORT_ORDER : 0);
+      $this->enabled = (\defined('MODULE_CHECKOUT_PAYMENT_COMMENT_STATUS') && MODULE_CHECKOUT_PAYMENT_COMMENT_STATUS == 'True');
     }
   }
 
@@ -42,7 +42,7 @@ class cp_checkout_payment_comment
 
     if (isset($_GET['Checkout'], $_GET['Billing'])) {
 
-      $content_width = (int)MODULE_CHECKOUT_PAYMENT_COMMENT_CONTENT_WIDTH;
+      $content_width = (int)(\defined('MODULE_CHECKOUT_PAYMENT_COMMENT_CONTENT_WIDTH') ? MODULE_CHECKOUT_PAYMENT_COMMENT_CONTENT_WIDTH : 12);
 
       $payment_process = '<!-- start cp_checkout_payment_comment -->' . "\n";
 

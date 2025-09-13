@@ -27,6 +27,10 @@ class Image
   private mixed $db;
   private mixed $template;
   private mixed $imageResample;
+  private mixed $products_image;
+  private mixed $products_image_zoom;
+  private mixed $products_image_medium;
+  private mixed $products_image_small;
 
   /**
    * Initializes the class by setting up the template, database connection,
@@ -136,7 +140,7 @@ class Image
    */
   protected function getImageExtensionWebp(string $image): string
   {
-    if (CONFIGURATION_CONVERT_IMAGE == 'true') {
+    if (\defined('CONFIGURATION_CONVERT_IMAGE') && CONFIGURATION_CONVERT_IMAGE == 'true') {
       $p = pathinfo($this->template->getDirectoryPathTemplateShopImages() . $image);
       $ext = mb_strtolower($p['extension']);
 
@@ -225,10 +229,10 @@ class Image
 //
 // Zoom image
 //
-      if (empty(BIG_IMAGE_WIDTH)) {
+      if (empty(\defined('BIG_IMAGE_WIDTH') ? BIG_IMAGE_WIDTH : '')) {
         $big_catalg_image_with = 640;
       } else {
-        $big_catalg_image_with = (int)BIG_IMAGE_WIDTH;
+        $big_catalg_image_with = \defined('BIG_IMAGE_WIDTH') ? (int)BIG_IMAGE_WIDTH : '';
       }
 
       $this->imageResample->resizeToWidth($big_catalg_image_with);
@@ -247,10 +251,10 @@ class Image
 //
 // medium image
 //
-      if (empty(MEDIUM_IMAGE_WIDTH)) {
+      if (empty(\defined('MEDIUM_IMAGE_WIDTH') ? MEDIUM_IMAGE_WIDTH : '')) {
         $medium_catalog_image_with = 250;
       } else {
-        $medium_catalog_image_with = (int)MEDIUM_IMAGE_WIDTH;
+        $medium_catalog_image_with = \defined('MEDIUM_IMAGE_WIDTH') ? (int)MEDIUM_IMAGE_WIDTH : '';
       }
 
       $this->imageResample->resizeToWidth($medium_catalog_image_with);
@@ -269,10 +273,10 @@ class Image
 //
 // medium image
 //
-      if (empty(SMALL_IMAGE_WIDTH)) {
+      if (empty(\defined('SMALL_IMAGE_WIDTH') ? SMALL_IMAGE_WIDTH : '')) {
         $small_catalog_image_with = 130;
       } else {
-        $small_catalog_image_with = (int)SMALL_IMAGE_WIDTH;
+        $small_catalog_image_with = \defined('SMALL_IMAGE_WIDTH') ? (int)SMALL_IMAGE_WIDTH : '';
       }
 
       $this->imageResample->resizeToWidth($small_catalog_image_with);
@@ -292,10 +296,10 @@ class Image
 //
 // Admin Image
 //
-      if (empty(SMALL_IMAGE_WIDTH_ADMIN)) {
+      if (empty(\defined('SMALL_IMAGE_WIDTH_ADMIN') ? SMALL_IMAGE_WIDTH_ADMIN : '')) {
         $small_admin_image_with = 70;
       } else {
-        $small_admin_image_with = (int)SMALL_IMAGE_WIDTH_ADMIN;
+        $small_admin_image_with = \defined('SMALL_IMAGE_WIDTH_ADMIN') ? (int)SMALL_IMAGE_WIDTH_ADMIN : '';
       }
 
       $this->imageResample->resizeToWidth($small_admin_image_with);
@@ -593,7 +597,7 @@ class Image
       $small_image = $Qimages->value('products_image');
     }
 
-    $small_image = HTML::image($CLICSHOPPING_Template->getDirectoryShopTemplateImages() . $small_image, $Qimages->value('products_name'), (int)SMALL_IMAGE_WIDTH_ADMIN, (int)SMALL_IMAGE_HEIGHT_ADMIN);
+    $small_image = HTML::image($CLICSHOPPING_Template->getDirectoryShopTemplateImages() . $small_image, $Qimages->value('products_name'), \defined('SMALL_IMAGE_WIDTH_ADMIN') ? (int)SMALL_IMAGE_WIDTH_ADMIN : '', \defined('SMALL_IMAGE_HEIGHT_ADMIN') ? (int)SMALL_IMAGE_HEIGHT_ADMIN : '');
 
     return $small_image;
   }

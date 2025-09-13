@@ -66,8 +66,8 @@ class ml_login_connexion
     $this->description = CLICSHOPPING::getDef('module_login_connexion_description');
 
     if (\defined('MODULE_LOGIN_CONNEXION_STATUS')) {
-      $this->sort_order = (int)MODULE_LOGIN_CONNEXION_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_LOGIN_CONNEXION_STATUS == 'True');
+      $this->sort_order = (int)(defined('MODULE_LOGIN_CONNEXION_SORT_ORDER') ? MODULE_LOGIN_CONNEXION_SORT_ORDER : 0);
+      $this->enabled = (defined('MODULE_LOGIN_CONNEXION_STATUS') && MODULE_LOGIN_CONNEXION_STATUS == 'True');
     }
   }
 
@@ -80,7 +80,7 @@ class ml_login_connexion
 
     if (isset($_GET['Account'], $_GET['LogIn'])) {
 
-      $content_width = (int)MODULE_LOGIN_CONNEXION_CONTENT_WIDTH;
+      $content_width = (int)(defined('MODULE_LOGIN_CONNEXION_CONTENT_WIDTH') ? MODULE_LOGIN_CONNEXION_CONTENT_WIDTH : 12);
 
       $ml_login_connexion = '<!-- ml_login_connexion start-->' . "\n";
 

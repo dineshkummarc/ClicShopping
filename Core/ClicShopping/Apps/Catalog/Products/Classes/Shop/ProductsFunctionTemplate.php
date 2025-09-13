@@ -235,12 +235,12 @@ class ProductsFunctionTemplate
   {
     if ($constant == 'Medium') {
       if ($this->productsCommon->getProductsImageMedium($products_id) !== false) {
-        $products_image = HTML::link($this->rewriteUrl->getProductNameUrl($products_id), HTML::image($this->template->getDirectoryTemplateImages() . $this->productsCommon->getProductsImageMedium($products_id), HTML::outputProtected($this->productsCommon->getProductsName($products_id)), (int)MEDIUM_IMAGE_WIDTH, (int)MEDIUM_IMAGE_HEIGHT, $parameters, $responsive, $css));
+        $products_image = HTML::link($this->rewriteUrl->getProductNameUrl($products_id), HTML::image($this->template->getDirectoryTemplateImages() . $this->productsCommon->getProductsImageMedium($products_id), HTML::outputProtected($this->productsCommon->getProductsName($products_id)), \defined('MEDIUM_IMAGE_WIDTH') ? (int)MEDIUM_IMAGE_WIDTH : 0, defined('MEDIUM_IMAGE_HEIGHT') ? (int)MEDIUM_IMAGE_HEIGHT : 0, $parameters, $responsive, $css));
       } else {
-        $products_image = HTML::link($this->rewriteUrl->getProductNameUrl($products_id), HTML::image($this->template->getDirectoryTemplateImages() . $this->productsCommon->getProductsImage($products_id), HTML::outputProtected($this->productsCommon->getProductsName($products_id)), (int)SMALL_IMAGE_WIDTH, (int)SMALL_IMAGE_HEIGHT, $parameters, $responsive, $css));
+        $products_image = HTML::link($this->rewriteUrl->getProductNameUrl($products_id), HTML::image($this->template->getDirectoryTemplateImages() . $this->productsCommon->getProductsImage($products_id), HTML::outputProtected($this->productsCommon->getProductsName($products_id)), \defined('SMALL_IMAGE_WIDTH') ? (int)SMALL_IMAGE_WIDTH : 0, \defined('SMALL_IMAGE_HEIGHT') ? (int)SMALL_IMAGE_HEIGHT : 0, $parameters, $responsive, $css));
       }
     } else {
-      $products_image = HTML::link($this->rewriteUrl->getProductNameUrl($products_id), HTML::image($this->template->getDirectoryTemplateImages() . $this->productsCommon->getProductsImage($products_id), HTML::outputProtected($this->productsCommon->getProductsName($products_id)), (int)SMALL_IMAGE_WIDTH, (int)SMALL_IMAGE_HEIGHT, $parameters, $responsive, $css));
+      $products_image = HTML::link($this->rewriteUrl->getProductNameUrl($products_id), HTML::image($this->template->getDirectoryTemplateImages() . $this->productsCommon->getProductsImage($products_id), HTML::outputProtected($this->productsCommon->getProductsName($products_id)), \defined('SMALL_IMAGE_WIDTH') ? (int)SMALL_IMAGE_WIDTH : 0, \defined('SMALL_IMAGE_HEIGHT') ? (int)SMALL_IMAGE_HEIGHT : 0, $parameters, $responsive, $css));
     }
 
     return $products_image;
@@ -586,7 +586,7 @@ class ProductsFunctionTemplate
       $stock = 'OutofStock';
     }
 
-    if (STOCK_ALLOW_CHECKOUT == 'true') {
+    if (\defined('STOCK_ALLOW_CHECKOUT') && STOCK_ALLOW_CHECKOUT == 'true') {
       $stock = 'InStock';
     }
 

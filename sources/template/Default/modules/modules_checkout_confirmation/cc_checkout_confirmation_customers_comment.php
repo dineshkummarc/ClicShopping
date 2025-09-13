@@ -30,8 +30,8 @@ class cc_checkout_confirmation_customers_comment
     $this->description = CLICSHOPPING::getDef('module_checkout_confirmation_customers_comment_description');
 
     if (\defined('MODULE_CHECKOUT_CONFIRMATION_CUSTOMERS_COMMENT_STATUS')) {
-      $this->sort_order = (int)MODULE_CHECKOUT_CONFIRMATION_CUSTOMERS_COMMENT_SORT_ORDER;
-      $this->enabled = (MODULE_CHECKOUT_CONFIRMATION_CUSTOMERS_COMMENT_STATUS == 'True');
+      $this->sort_order = (\defined('MODULE_CHECKOUT_CONFIRMATION_CUSTOMERS_COMMENT_SORT_ORDER') ? (int)MODULE_CHECKOUT_CONFIRMATION_CUSTOMERS_COMMENT_SORT_ORDER : 0);
+      $this->enabled = (\defined('MODULE_CHECKOUT_CONFIRMATION_CUSTOMERS_COMMENT_STATUS') && MODULE_CHECKOUT_CONFIRMATION_CUSTOMERS_COMMENT_STATUS == 'True');
     }
   }
 
@@ -43,7 +43,7 @@ class cc_checkout_confirmation_customers_comment
 
     if (isset($_GET['Checkout'], $_GET['Confirmation']) && $CLICSHOPPING_Customer->isLoggedOn()) {
       if (!empty($CLICSHOPPING_Order->info['comments'])) {
-        $content_width = (int)MODULE_CHECKOUT_CONFIRMATION_CUSTOMERS_COMMENT_CONTENT_WIDTH;
+        $content_width = (\defined('MODULE_CHECKOUT_CONFIRMATION_CUSTOMERS_COMMENT_CONTENT_WIDTH') ? (int)MODULE_CHECKOUT_CONFIRMATION_CUSTOMERS_COMMENT_CONTENT_WIDTH : 12);
 
         $edit_comment = HTML::link(CLICSHOPPING::link(null, 'Checkout&Billing'), '<span class="orderEdit">(' . CLICSHOPPING::getDef('module_checkout_confirmation_customers_comment_text_edit') . ')</span>');
         $comment = nl2br(HTML::outputProtected($CLICSHOPPING_Order->info['comments'])) . HTML::hiddenField('comments', $CLICSHOPPING_Order->info['comments']);

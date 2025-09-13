@@ -119,8 +119,8 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
 
       if ($error === false) {
         $today = date("Y-m-d H:i:s");
-        if (!empty(CONTACT_DEPARTMENT_LIST)) {
-          $email_address_department = TemplateEmail::getExtractEmailAddress(CONTACT_DEPARTMENT_LIST);
+        if (!empty(\defined('CONTACT_DEPARTMENT_LIST') ? CONTACT_DEPARTMENT_LIST : '')) {
+          $email_address_department = TemplateEmail::getExtractEmailAddress(\defined('CONTACT_DEPARTMENT_LIST') ? CONTACT_DEPARTMENT_LIST : '');
 
           if (empty($send_to)) {
             $email_number = 0;
@@ -143,7 +143,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
               $message_info_admin = '';
             }
 
-            $message_to_admin = $email_subject . ' ' . STORE_NAME . "\n\n" .
+            $message_to_admin = $email_subject . ' ' . \defined('STORE_NAME') ? STORE_NAME : '' . "\n\n" .
               $message_info_admin . "\n\n" . $CLICSHOPPING_PageManager->getDef('entry_date') . ' ' . $today . "\n" .
               $num_customer_id . "\n" .
               $CLICSHOPPING_PageManager->getDef('entry_order') . ' ' . $order_id . "\n" .
@@ -152,7 +152,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
               $CLICSHOPPING_PageManager->getDef('entry_admin_read_message') . "\n\n";
 // aadmin
             $to_addr = $email_address_department;
-            $from_name = STORE_NAME;
+            $from_name = \defined('STORE_NAME') ? STORE_NAME : '';
             $from_addr = $email_address;
             $to_name = $name;
             $subject = $email_subject;
@@ -161,7 +161,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
             $CLICSHOPPING_Mail->send($to_addr, $from_name, $from_addr, $to_name, $subject);
 
 // send information to customer
-            $message_to_customer = $email_subject . ' ' . STORE_NAME . "\n\n" .
+            $message_to_customer = $email_subject . ' ' . \defined('STORE_NAME') ? STORE_NAME : '' . "\n\n" .
               $CLICSHOPPING_PageManager->getDef('entry_date') . ' ' . $today . "\n" .
               $num_customer_id . "\n\n" .
               $CLICSHOPPING_PageManager->getDef('entry_order') . ' ' . $order_id . "\n" .
@@ -173,8 +173,8 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
               $template_email_footer;
 
             $to_addr = $email_address;
-            $from_name = STORE_NAME;
-            $from_addr = STORE_OWNER_EMAIL_ADDRESS;
+            $from_name = \defined('STORE_NAME') ? STORE_NAME : '';
+            $from_addr = \defined('STORE_OWNER_EMAIL_ADDRESS') ? STORE_OWNER_EMAIL_ADDRESS : '';
             $to_name = $name;
             $subject = $CLICSHOPPING_PageManager->getDef('entry_email_object_customer');
 
@@ -182,7 +182,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
             $CLICSHOPPING_Mail->send($to_addr, $from_name, $from_addr, $to_name, $subject);
           }
         } else {
-          $message_to_admin = $email_subject . ' ' . STORE_NAME . "\n\n" .
+          $message_to_admin = $email_subject . ' ' . \defined('STORE_NAME') ? STORE_NAME : '' . "\n\n" .
             $CLICSHOPPING_PageManager->getDef('entry_date') . ' ' . $today . "\n" .
             $CLICSHOPPING_PageManager->getDef('entry_customers_id') . ' ' . $customer_id . "\n\n" .
             $CLICSHOPPING_PageManager->getDef('entry_name') . ' ' . $name . "\n" .
@@ -200,7 +200,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
           $CLICSHOPPING_Mail->addHtml($message_to_admin);
           $CLICSHOPPING_Mail->send($to_addr, $from_name, $from_addr, $to_name, $subject);
 // send information to customer
-          $message_to_customer = $email_subject . ' ' . STORE_NAME . "\n\n" .
+          $message_to_customer = $email_subject . ' ' . \defined('STORE_NAME') ? STORE_NAME : '' . "\n\n" .
             $CLICSHOPPING_PageManager->getDef('entry_date') . ' ' . $today . "\n" .
             $CLICSHOPPING_PageManager->getDef('entry_customers_id') . ' ' . $customer_id . "\n\n" .
             $CLICSHOPPING_PageManager->getDef('entry_name') . ' ' . $name . "\n" .
@@ -211,8 +211,8 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
 
           $CLICSHOPPING_Mail->addHtmlCkeditor($message_to_customer);
           $to_addr = $email_address;
-          $from_name = STORE_NAME;
-          $from_addr = STORE_OWNER_EMAIL_ADDRESS;
+          $from_name = \defined('STORE_NAME') ? STORE_NAME : '';
+          $from_addr = \defined('STORE_OWNER_EMAIL_ADDRESS') ? STORE_OWNER_EMAIL_ADDRESS : '';
           $to_name = $name;
           $subject = $CLICSHOPPING_PageManager->getDef('entry_email_object_customer');
 

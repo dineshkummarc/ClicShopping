@@ -99,7 +99,7 @@ class ImageResample
    */
   public function save(string $filename, string $ext = IMAGETYPE_WEBP, int $compression = 80, $permissions = null)
   {
-    if (CONFIGURATION_CONVERT_IMAGE == 'true') {
+    if (\defined('CONFIGURATION_CONVERT_IMAGE') && CONFIGURATION_CONVERT_IMAGE == 'true') {
       imagewebp($this->image, $filename, $compression);
     } else {
       if ($ext == IMAGETYPE_JPEG) {

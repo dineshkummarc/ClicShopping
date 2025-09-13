@@ -29,8 +29,8 @@ class cp_checkout_payment_agreement
     $this->description = CLICSHOPPING::getDef('module_checkout_payment_agreement_description');
 
     if (\defined('MODULE_CHECKOUT_PAYMENT_AGREEMENT_STATUS')) {
-      $this->sort_order = (int)MODULE_CHECKOUT_PAYMENT_AGREEMENT_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_CHECKOUT_PAYMENT_AGREEMENT_STATUS == 'True');
+      $this->sort_order = (\defined('MODULE_CHECKOUT_PAYMENT_AGREEMENT_SORT_ORDER') ? (int)MODULE_CHECKOUT_PAYMENT_AGREEMENT_SORT_ORDER : 0);
+      $this->enabled = (\defined('MODULE_CHECKOUT_PAYMENT_AGREEMENT_STATUS') && MODULE_CHECKOUT_PAYMENT_AGREEMENT_STATUS == 'True');
     }
   }
 
@@ -41,8 +41,8 @@ class cp_checkout_payment_agreement
 
     if (isset($_GET['Checkout'], $_GET['Billing'])) {
 
-      if (CONFIGURATION_LAW_HAMON == 'true') {
-        $content_width = (int)MODULE_CHECKOUT_PAYMENT_AGREEMENT_CONTENT_WIDTH;
+      if (defined('CONFIGURATION_LAW_HAMON') && CONFIGURATION_LAW_HAMON == 'true') {
+        $content_width = (\defined('MODULE_CHECKOUT_PAYMENT_AGREEMENT_CONTENT_WIDTH') ? (int)MODULE_CHECKOUT_PAYMENT_AGREEMENT_CONTENT_WIDTH : 12);
 
         $payment_process = '<!-- start cp_checkout_payment_aggreement -->' . "\n";
 

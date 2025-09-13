@@ -82,7 +82,7 @@ class SH implements \ClicShopping\OM\Modules\OrderTotalInterface
     $CLICSHOPPING_Order = Registry::get('Order');
     $CLICSHOPPING_Tax = Registry::get('Tax');
 
-    if (\defined('CLICSHOPPING_APP_ORDER_TOTAL_SHIPPING_SH_OVER')) {
+    if (\defined('CLICSHOPPING_APP_ORDER_TOTAL_SHIPPING_SH_OVER') && \defined('CLICSHOPPING_APP_ORDER_TOTAL_SHIPPING_SH_DESTINATION') && \defined('STORE_COUNTRY')) {
       if (CLICSHOPPING_APP_ORDER_TOTAL_SHIPPING_SH_OVER == 'True') {
         $pass = false;
         switch (CLICSHOPPING_APP_ORDER_TOTAL_SHIPPING_SH_DESTINATION) {
@@ -135,7 +135,9 @@ class SH implements \ClicShopping\OM\Modules\OrderTotalInterface
 
         $CLICSHOPPING_Order->info['total'] += $CLICSHOPPING_Tax->calculate($CLICSHOPPING_Order->info['shipping_cost'], $shipping_tax);
 
-        if (DISPLAY_PRICE_WITH_TAX == 'True') $CLICSHOPPING_Order->info['shipping_cost'] += $CLICSHOPPING_Tax->calculate($CLICSHOPPING_Order->info['shipping_cost'], $shipping_tax);
+        if (\defined('DISPLAY_PRICE_WITH_TAX') && DISPLAY_PRICE_WITH_TAX == 'True') {
+          $CLICSHOPPING_Order->info['shipping_cost'] += $CLICSHOPPING_Tax->calculate($CLICSHOPPING_Order->info['shipping_cost'], $shipping_tax);
+        }
       }
 
       $this->output[] = ['title' => $CLICSHOPPING_Order->info['shipping_method'],
