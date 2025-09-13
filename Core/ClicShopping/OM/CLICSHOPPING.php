@@ -595,11 +595,14 @@ class CLICSHOPPING
   }
 
   /**
-   * Autoloads classes based on their namespace and directory structure.
+   * Autoloads classes based on their namespace and file structure.
    *
-   * @param string $class The fully-qualified class name to be autoloaded.
+   * This method checks if the class belongs to the 'ClicShopping' namespace and attempts to load
+   * the corresponding file from predefined directories. It supports loading from both core and custom
+   * directories, as well as handling external libraries.
    *
-   * @return bool True if the class file is successfully loaded, otherwise false.
+   * @param string $class The fully qualified name of the class to be autoloaded.
+   * @return bool Returns true if the class file was successfully loaded, false otherwise.
    */
   public static function autoload(string $class)
   {

@@ -369,17 +369,13 @@ class TemplateAdmin extends \ClicShopping\Sites\Shop\Template
   }
 
   /**
-   * Retrieves a list of template files from the specified module's template directory
-   * and generates a dropdown menu for selection.
+   * Generates a dropdown menu for selecting multiple templates from a specified module.
    *
-   * @param string $filename The default filename, not directly used in this function.
-   * @param string $module The module name whose template directory is to be scanned.
-   *
-   * @return array Returns an array containing options for a dropdown menu,
-   *               where each option includes 'id' and 'text' keys corresponding
-   *               to available template files.
+   * @param string $filename The name of the configuration key to retrieve the current template value.
+   * @param string $module The name of the module to fetch templates from.
+   * @return string The HTML string for the dropdown menu with available templates.
    */
-  public function getMultiTemplatePullDown(string $filename, string $module): array
+  public function getMultiTemplatePullDown(string $filename, string $module): string
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
@@ -449,7 +445,7 @@ class TemplateAdmin extends \ClicShopping\Sites\Shop\Template
    *
    * @return mixed The result of the parent method processing the recursive module hooks.
    */
-  public function useRecursiveModulesHooksForTemplate(string $source_folder, string $file_get_output, string $files_get_call, string $hook_call)
+  public function useRecursiveModulesHooksForTemplate(string $source_folder, string $file_get_output, string $files_get_call, string $hook_call): mixed
   {
     $result = parent::useRecursiveModulesHooksForTemplate($source_folder, $file_get_output, $files_get_call, $hook_call);
 
