@@ -31,7 +31,7 @@ class chs_downloads
 
     if (\defined('MODULE_CHECKOUT_SUCCESS_DOWNLOADS_STATUS')) {
       $this->sort_order = \defined('MODULE_CHECKOUT_SUCCESS_DOWNLOADS_SORT_ORDER') ? (int)MODULE_CHECKOUT_SUCCESS_DOWNLOADS_SORT_ORDER : 0;
-      $this->enabled = (MODULE_CHECKOUT_SUCCESS_DOWNLOADS_STATUS == 'True');
+      $this->enabled = (\defined('MODULE_CHECKOUT_SUCCESS_DOWNLOADS_STATUS') && MODULE_CHECKOUT_SUCCESS_DOWNLOADS_STATUS == 'True');
     }
   }
 
@@ -43,7 +43,7 @@ class chs_downloads
     $CLICSHOPPING_Customer = Registry::get('Customer');
 
     if (isset($_GET['Checkout'], $_GET['Success'])) {
-      if (DOWNLOAD_ENABLED == 'true') {
+      if (\defined('DOWNLOAD_ENABLED') && DOWNLOAD_ENABLED == 'true') {
         $download = '<!-- Product download start -->' . "\n";
 
 // Get last order id for checkout_success

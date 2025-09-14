@@ -30,7 +30,7 @@ class co_contact_us_success
     $this->description = CLICSHOPPING::getDef('modules_contact_us_success_description');
 
     if (\defined('MODULES_CONTACT_US_SUCCESS_STATUS')) {
-      $this->sort_order = (int)MODULES_CONTACT_US_SUCCESS_SORT_ORDER ?? 0;
+      $this->sort_order = (\defined('MODULES_CONTACT_US_SUCCESS_SORT_ORDER') ? (int)MODULES_CONTACT_US_SUCCESS_SORT_ORDER : 0);
       $this->enabled = (MODULES_CONTACT_US_SUCCESS_STATUS == 'True');
     }
   }
@@ -42,7 +42,7 @@ class co_contact_us_success
 
     if (isset($_GET['Contact']) && isset($_GET['Success'])) {
 
-      $content_width = (int)MODULES_CONTACT_US_SUCCESS_CONTENT_WIDTH;
+      $content_width = (\defined('MODULES_CONTACT_US_SUCCESS_CONTENT_WIDTH') ? (int)MODULES_CONTACT_US_SUCCESS_CONTENT_WIDTH : 12);
 
       $button_process = HTML::button(CLICSHOPPING::getDef('button_continue'), null, CLICSHOPPING::link(), 'success', null, null);
 

@@ -32,8 +32,8 @@ class ac_account_customers_history_info_invoice_pdf
     $this->description = CLICSHOPPING::getDef('module_account_customers_history_info_invoice_pdf_description');
 
     if (\defined('MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_INVOICE_PDF_TITLE_STATUS')) {
-      $this->sort_order = (int)MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_INVOICE_PDF_TITLE_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_INVOICE_PDF_TITLE_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_INVOICE_PDF_TITLE_SORT_ORDER') ? (int)MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_INVOICE_PDF_TITLE_SORT_ORDER : 0;
+      $this->enabled = (\defined('MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_INVOICE_PDF_TITLE_STATUS') && MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_INVOICE_PDF_TITLE_STATUS == 'True');
     }
   }
 
@@ -43,7 +43,7 @@ class ac_account_customers_history_info_invoice_pdf
 
     if (isset($_GET['Account'], $_GET['HistoryInfo'])) {
 
-      $content_width = (int)MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_INVOICE_PDF_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_INVOICE_PDF_CONTENT_WIDTH') ? (int)MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_INVOICE_PDF_CONTENT_WIDTH : 12;
 // Count the number of the history order
       $count_history_info = HistoryInfo::getHistoryInfoCount();
 // Display the pdf type in function the status

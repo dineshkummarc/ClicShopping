@@ -31,10 +31,10 @@ class bm_languages
     $this->description = CLICSHOPPING::getDef('module_boxes_languages_description');
 
     if (\defined('MODULE_BOXES_LANGUAGES_STATUS')) {
-      $this->sort_order = (int)MODULE_BOXES_LANGUAGES_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_BOXES_LANGUAGES_STATUS == 'True');
-      $this->pages = MODULE_BOXES_LANGUAGES_DISPLAY_PAGES;
-      $this->group = ((MODULE_BOXES_LANGUAGES_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right');
+      $this->sort_order = \defined('MODULE_BOXES_LANGUAGES_SORT_ORDER') ? (int)MODULE_BOXES_LANGUAGES_SORT_ORDER : 0;
+      $this->enabled = (\defined('MODULE_BOXES_LANGUAGES_STATUS') && MODULE_BOXES_LANGUAGES_STATUS == 'True');
+      $this->pages = \defined('MODULE_BOXES_LANGUAGES_DISPLAY_PAGES') ? MODULE_BOXES_LANGUAGES_DISPLAY_PAGES : '';
+      $this->group = ((\defined('MODULE_BOXES_LANGUAGES_CONTENT_PLACEMENT') && MODULE_BOXES_LANGUAGES_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right');
     }
   }
 
@@ -50,7 +50,7 @@ class bm_languages
       $languages_banner = '';
 
       if ($CLICSHOPPING_Service->isStarted('Banner')) {
-        if ($banner = $CLICSHOPPING_Banner->bannerExists('dynamic', MODULE_BOXES_LANGUAGES_BANNER_GROUP)) {
+        if ($banner = $CLICSHOPPING_Banner->bannerExists('dynamic', \defined('MODULE_BOXES_LANGUAGES_BANNER_GROUP') ? MODULE_BOXES_LANGUAGES_BANNER_GROUP : '')) {
           $languages_banner = $CLICSHOPPING_Banner->displayBanner('static', $banner) . '<br /><br />';
         }
       }

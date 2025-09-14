@@ -31,8 +31,8 @@ class ac_account_product_return_history_info
     $this->description = CLICSHOPPING::getDef('module_account_product_return_history_info_description');
 
     if (\defined('MODULE_ACCOUNT_PRODUCT_RETURN_HISTORY_INFO_STATUS')) {
-      $this->sort_order = (int)MODULE_ACCOUNT_PRODUCT_RETURN_HISTORY_INFO_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_ACCOUNT_PRODUCT_RETURN_HISTORY_INFO_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_ACCOUNT_PRODUCT_RETURN_HISTORY_INFO_SORT_ORDER') ? (int)MODULE_ACCOUNT_PRODUCT_RETURN_HISTORY_INFO_SORT_ORDER : 0;
+      $this->enabled = (\defined('MODULE_ACCOUNT_PRODUCT_RETURN_HISTORY_INFO_STATUS') && MODULE_ACCOUNT_PRODUCT_RETURN_HISTORY_INFO_STATUS == 'True');
     }
   }
 
@@ -59,7 +59,7 @@ class ac_account_product_return_history_info
       $form = HTML::form('product_return_history_info', CLICSHOPPING::link(null, 'Account&ProductReturnHistoryInfo&Process&rId=' . $rId . '&oId=' . $oID), 'post', 'id="ProductReturnHistoryInfo"', ['tokenize' => true, 'action' => 'process']);
       $endform = '</form>';
 
-      $content_width = (int)MODULE_ACCOUNT_PRODUCT_RETURN_HISTORY_INFO_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_ACCOUNT_PRODUCT_RETURN_HISTORY_INFO_CONTENT_WIDTH') ? (int)MODULE_ACCOUNT_PRODUCT_RETURN_HISTORY_INFO_CONTENT_WIDTH : 12;
 
       ob_start();
       require_once($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/account_product_return_history_info'));

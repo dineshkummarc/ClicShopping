@@ -30,10 +30,10 @@ class bm_manufacturers
     $this->description = CLICSHOPPING::getDef('module_boxes_manufacturers_description');
 
     if (\defined('MODULE_BOXES_MANUFACTURERS_STATUS')) {
-      $this->sort_order = (int)MODULE_BOXES_MANUFACTURERS_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_BOXES_MANUFACTURERS_STATUS == 'True');
-      $this->pages = MODULE_BOXES_MANUFACTURERS_DISPLAY_PAGES;
-      $this->group = ((MODULE_BOXES_MANUFACTURERS_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right');
+      $this->sort_order = defined('MODULE_BOXES_MANUFACTURERS_SORT_ORDER') ? (int)MODULE_BOXES_MANUFACTURERS_SORT_ORDER : 0;
+      $this->enabled = defined('MODULE_BOXES_MANUFACTURERS_STATUS') && MODULE_BOXES_MANUFACTURERS_STATUS == 'True';
+      $this->pages = defined('MODULE_BOXES_MANUFACTURERS_DISPLAY_PAGES') ? MODULE_BOXES_MANUFACTURERS_DISPLAY_PAGES : '';
+      $this->group = (defined('MODULE_BOXES_MANUFACTURERS_CONTENT_PLACEMENT') && MODULE_BOXES_MANUFACTURERS_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right';
     }
   }
 
@@ -47,14 +47,14 @@ class bm_manufacturers
 
     if (!empty($manufacturers)) {
 // Display a list
-      if (MODULE_BOXES_MANUFACTURERS_MANUFACTURERS_LIST == 'list') {
-        if (\count($manufacturers) <= MODULE_BOXES_MANUFACTURERS_MAX_MANUFACTURERS_LIST) {
+      if (defined('MODULE_BOXES_MANUFACTURERS_MANUFACTURERS_LIST') && MODULE_BOXES_MANUFACTURERS_MANUFACTURERS_LIST == 'list') {
+        if (\count($manufacturers) <= (defined('MODULE_BOXES_MANUFACTURERS_MAX_MANUFACTURERS_LIST') ? (int)MODULE_BOXES_MANUFACTURERS_MAX_MANUFACTURERS_LIST : 0)) {
           $manufacturers_list = '<ul style="list-style: none; margin: 0; padding: 0;">';
 
           foreach ($manufacturers as $m) {
             $manufacturer_url = $CLICSHOPPING_Manufacturers->getManufacturerUrlRewrited()->getManufacturerUrl((int)$m['id']);
 
-            $manufacturers_name = ((\strlen($m['name']) > (int)MODULE_BOXES_MANUFACTURERS_MAX_DISPLAY_MANUFACTURER_NAME_LEN) ? substr($m['name'], 0, MAX_DISPLAY_MANUFACTURER_NAME_LEN) . '..' : $m['name']);
+            $manufacturers_name = ((\strlen($m['name']) > (defined('MODULE_BOXES_MANUFACTURERS_MAX_DISPLAY_MANUFACTURER_NAME_LEN') ? (int)MODULE_BOXES_MANUFACTURERS_MAX_DISPLAY_MANUFACTURER_NAME_LEN : 0)) ? substr($m['name'], 0, defined('MAX_DISPLAY_MANUFACTURER_NAME_LEN') ? MAX_DISPLAY_MANUFACTURER_NAME_LEN : 0) . '..' : $m['name']);
             if (isset($_GET['manufacturersId']) && ($_GET['manufacturersId'] == $m['id'])) {
               $manufacturers_name = '<strong>' . $manufacturers_name . '</strong>';
             }
@@ -77,7 +77,7 @@ class bm_manufacturers
         }
 
         foreach ($manufacturers as $m) {
-          $manufacturers_name = ((\strlen($m['name']) > (int)MODULE_BOXES_MANUFACTURERS_MAX_DISPLAY_MANUFACTURER_NAME_LEN) ? substr($m['name'], 0, MAX_DISPLAY_MANUFACTURER_NAME_LEN) . '..' : $m['name']);
+          $manufacturers_name = ((\strlen($m['name']) > (defined('MODULE_BOXES_MANUFACTURERS_MAX_DISPLAY_MANUFACTURER_NAME_LEN') ? (int)MODULE_BOXES_MANUFACTURERS_MAX_DISPLAY_MANUFACTURER_NAME_LEN : 0)) ? substr($m['name'], 0, defined('MAX_DISPLAY_MANFACTURER_NAME_LEN') ? MAX_DISPLAY_MANFACTURER_NAME_LEN : 0) . '..' : $m['name']);
 
           $manufacturers_array[] = ['id' => $m['id'],
             'text' => $manufacturers_name
@@ -86,7 +86,7 @@ class bm_manufacturers
 
         $data = HTML::form('manufacturers', CLICSHOPPING::link(), 'get', null, ['session_id' => true]);
         $data .= '<label for="manufacturerDropDown" class="visually-hidden"></label>';
-        $data .= HTML::selectField('manufacturersId', $manufacturers_array, ($_GET['manufacturersId'] ?? ''), 'onchange="this.form.submit();" id="manufacturerDropDown" class="boxePullDownManufacturer" size="' . MODULE_BOXES_MANUFACTURERS_MANUFACTURERS_LIST . '"');
+        $data .= HTML::selectField('manufacturersId', $manufacturers_array, (isset($_GET['manufacturersId']) ? $_GET['manufacturersId'] : ''), 'onchange="this.form.submit();" id="manufacturerDropDown" class="boxePullDownManufacturer" size="' . (defined('MODULE_BOXES_MANUFACTURERS_MANUFACTURERS_LIST') ? MODULE_BOXES_MANUFACTURERS_MANUFACTURERS_LIST : '') . '"');
         $data .= '</form>';
         $data .= '<div class="mt-1"></div>';
       }
@@ -235,4 +235,3 @@ class bm_manufacturers
       'MODULE_BOXES_MANUFACTURERS_DISPLAY_PAGES');
   }
 }
-

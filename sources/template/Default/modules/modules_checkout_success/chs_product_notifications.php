@@ -33,7 +33,7 @@ class chs_product_notifications
 
     if (\defined('MODULE_CHECKOUT_SUCCESS_PRODUCT_NOTIFICATIONS_STATUS')) {
       $this->sort_order = \defined('MODULE_CHECKOUT_SUCCESS_PRODUCT_NOTIFICATIONS_SORT_ORDER') ? (int)MODULE_CHECKOUT_SUCCESS_PRODUCT_NOTIFICATIONS_SORT_ORDER : 0;
-      $this->enabled = (MODULE_CHECKOUT_SUCCESS_PRODUCT_NOTIFICATIONS_STATUS == 'True');
+      $this->enabled = (\defined('MODULE_CHECKOUT_SUCCESS_PRODUCT_NOTIFICATIONS_STATUS') && MODULE_CHECKOUT_SUCCESS_PRODUCT_NOTIFICATIONS_STATUS == 'True');
     }
   }
 
@@ -48,7 +48,7 @@ class chs_product_notifications
 
       $order_id = CheckoutSuccess::getCheckoutSuccessOrderId();
 
-      $content_width = (int)MODULE_CHECKOUT_SUCCESS_PRODUCT_NOTIFICATIONS_CONTENT_WIDTH;
+      $content_width = (\defined('MODULE_CHECKOUT_SUCCESS_PRODUCT_NOTIFICATIONS_CONTENT_WIDTH') ? (int)MODULE_CHECKOUT_SUCCESS_PRODUCT_NOTIFICATIONS_CONTENT_WIDTH : 12);
 
       $form = HTML::form('order', CLICSHOPPING::link(null, 'Checkout&Success&action=update'), 'post');
       $endform = '</form>';

@@ -32,8 +32,8 @@ class ac_account_customers_newsletter
     $this->description = CLICSHOPPING::getDef('module_account_customers_newsletter_description');
 
     if (\defined('MODULE_ACCOUNT_CUSTOMERS_NEWSLETTER_TITLE_STATUS')) {
-      $this->sort_order = (int)MODULE_ACCOUNT_CUSTOMERS_NEWSLETTER_TITLE_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_ACCOUNT_CUSTOMERS_NEWSLETTER_TITLE_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_ACCOUNT_CUSTOMERS_NEWSLETTER_TITLE_SORT_ORDER') ? (int)MODULE_ACCOUNT_CUSTOMERS_NEWSLETTER_TITLE_SORT_ORDER : 0;
+      $this->enabled = (\defined('MODULE_ACCOUNT_CUSTOMERS_NEWSLETTER_TITLE_STATUS') && MODULE_ACCOUNT_CUSTOMERS_NEWSLETTER_TITLE_STATUS == 'True');
     }
   }
 
@@ -43,7 +43,7 @@ class ac_account_customers_newsletter
 
     if (isset($_GET['Account']) && isset($_GET['Newsletters'])) {
 
-      $content_width = (int)MODULE_ACCOUNT_CUSTOMERS_NEWSLETTER_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_ACCOUNT_CUSTOMERS_NEWSLETTER_CONTENT_WIDTH') ? (int)MODULE_ACCOUNT_CUSTOMERS_NEWSLETTER_CONTENT_WIDTH : 12;
 
       $account = '<!-- Start account_customers_my_account --> ' . "\n";
       $newsletter_checkbox = Newsletters::getCustomerNewsletter();

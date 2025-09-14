@@ -33,8 +33,8 @@ class ac_account_product_return
     $this->description = CLICSHOPPING::getDef('module_account_product_return_description');
 
     if (\defined('MODULE_ACCOUNT_PRODUCT_RETURN_STATUS')) {
-      $this->sort_order = (int)MODULE_ACCOUNT_PRODUCT_RETURN_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_ACCOUNT_PRODUCT_RETURN_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_ACCOUNT_PRODUCT_RETURN_SORT_ORDER') ? (int)MODULE_ACCOUNT_PRODUCT_RETURN_SORT_ORDER : 0;
+      $this->enabled = (\defined('MODULE_ACCOUNT_PRODUCT_RETURN_STATUS') && MODULE_ACCOUNT_PRODUCT_RETURN_STATUS == 'True');
     }
   }
 
@@ -50,7 +50,7 @@ class ac_account_product_return
 
       $info_customer = ReturnProduct::getInfoCustomer($order_id);
 
-      $content_width = (int)MODULE_ACCOUNT_PRODUCT_RETURN_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_ACCOUNT_PRODUCT_RETURN_CONTENT_WIDTH') ? (int)MODULE_ACCOUNT_PRODUCT_RETURN_CONTENT_WIDTH : 12;
 // main customer
       $customers_name = Hash::displayDecryptedDataText($info_customer['customers_name']);
       $customers_street_address = Hash::displayDecryptedDataText($info_customer['customers_street_address']);

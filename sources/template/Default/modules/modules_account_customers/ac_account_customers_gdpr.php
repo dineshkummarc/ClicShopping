@@ -31,8 +31,8 @@ class ac_account_customers_gdpr
     $this->description = CLICSHOPPING::getDef('module_account_customers_gdpr_description');
 
     if (\defined('MODULE_ACCOUNT_CUSTOMERS_GDPR_TITLE_STATUS')) {
-      $this->sort_order = (int)MODULE_ACCOUNT_CUSTOMERS_GDPR_TITLE_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_ACCOUNT_CUSTOMERS_GDPR_TITLE_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_ACCOUNT_CUSTOMERS_GDPR_TITLE_SORT_ORDER') ? (int)MODULE_ACCOUNT_CUSTOMERS_GDPR_TITLE_SORT_ORDER : 0;
+      $this->enabled = (\defined('MODULE_ACCOUNT_CUSTOMERS_GDPR_TITLE_STATUS') && MODULE_ACCOUNT_CUSTOMERS_GDPR_TITLE_STATUS == 'True');
     }
   }
 
@@ -46,7 +46,7 @@ class ac_account_customers_gdpr
 
       $files_get = $CLICSHOPPING_Template->getSpecificFiles($source_folder, 'AccountGdpr*');
 
-      $content_width = (int)MODULE_ACCOUNT_CUSTOMERS_GDPR_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_ACCOUNT_CUSTOMERS_GDPR_CONTENT_WIDTH') ? (int)MODULE_ACCOUNT_CUSTOMERS_GDPR_CONTENT_WIDTH : 12;
 
       $account_gdpr = '<!-- Start account_customers_gdpr --> ' . "\n";
 

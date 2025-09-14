@@ -33,8 +33,8 @@ class co_contact_us_invisible_antispam
       if (\defined('CLICSHOPPING_APP_ANTISPAM_IN_STATUS') && CLICSHOPPING_APP_ANTISPAM_IN_STATUS == 'True') {
         if (\defined('CLICSHOPPING_APP_ANTISPAM_IN_CONTACT') && CLICSHOPPING_APP_ANTISPAM_IN_CONTACT == 'True') {
           if (\defined('MODULES_CONTACT_US_INVISIBLE_ANTISPAM_STATUS')) {
-            $this->enabled = (MODULES_CONTACT_US_INVISIBLE_ANTISPAM_STATUS == 'True');
-            $this->sort_order = (int)MODULES_CONTACT_US_INVISIBLE_ANTISPAM_SORT_ORDER ?? 0;
+            $this->enabled = (\defined('MODULES_CONTACT_US_INVISIBLE_ANTISPAM_STATUS') && MODULES_CONTACT_US_INVISIBLE_ANTISPAM_STATUS == 'True');
+            $this->sort_order = (\defined('MODULES_CONTACT_US_INVISIBLE_ANTISPAM_SORT_ORDER') ? (int)MODULES_CONTACT_US_INVISIBLE_ANTISPAM_SORT_ORDER : 0);
           }
         } else {
           $this->enabled = false;

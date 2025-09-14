@@ -33,8 +33,8 @@ class co_contact_us_numeric_antispam
       if (\defined('CLICSHOPPING_APP_ANTISPAM_AM_STATUS') && CLICSHOPPING_APP_ANTISPAM_AM_STATUS == 'True') {
         if (CLICSHOPPING_APP_ANTISPAM_AM_STATUS == 'True' && CLICSHOPPING_APP_ANTISPAM_STATUS == 'True') {
           if (\defined('MODULES_CONTACT_US_NUMERIC_ANTISPAM_STATUS')) {
-            $this->enabled = (MODULES_CONTACT_US_NUMERIC_ANTISPAM_STATUS == 'True');
-            $this->sort_order = (int)MODULES_CONTACT_US_NUMERIC_ANTISPAM_SORT_ORDER ?? 0;
+            $this->enabled = (\defined('MODULES_CONTACT_US_NUMERIC_ANTISPAM_STATUS') && MODULES_CONTACT_US_NUMERIC_ANTISPAM_STATUS == 'True');
+            $this->sort_order = (\defined('MODULES_CONTACT_US_NUMERIC_ANTISPAM_SORT_ORDER') ? (int)MODULES_CONTACT_US_NUMERIC_ANTISPAM_SORT_ORDER : 0);
           }
         } else {
           $this->enabled = false;
@@ -48,7 +48,7 @@ class co_contact_us_numeric_antispam
     $CLICSHOPPING_Template = Registry::get('Template');
 
     if (isset($_GET['Info'], $_GET['Contact']) && !isset($_GET['Success'])) {
-      $content_width = (int)MODULES_CONTACT_US_NUMERIC_ANTISPAM_CONTENT_WIDTH;
+      $content_width = (\defined('MODULES_CONTACT_US_NUMERIC_ANTISPAM_CONTENT_WIDTH') ? (int)MODULES_CONTACT_US_NUMERIC_ANTISPAM_CONTENT_WIDTH : 12);
 
       $antispam = AntiSpam::getConfirmationNumericAntiSpam();
       $contact_us_antispam = '<!--  contact_us_antispam start -->' . "\n";

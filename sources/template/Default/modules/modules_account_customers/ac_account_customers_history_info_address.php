@@ -30,8 +30,8 @@ class ac_account_customers_history_info_address
     $this->description = CLICSHOPPING::getDef('module_account_customers_info_history_address_descrition');
 
     if (\defined('MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_ADDRESS_TITLE_STATUS')) {
-      $this->sort_order = (int)MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_ADDRESS_TITLE_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_ADDRESS_TITLE_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_ADDRESS_TITLE_SORT_ORDER') ? (int)MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_ADDRESS_TITLE_SORT_ORDER : 0;
+      $this->enabled = (\defined('MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_ADDRESS_TITLE_STATUS') && MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_ADDRESS_TITLE_STATUS == 'True');
     }
   }
 
@@ -45,7 +45,7 @@ class ac_account_customers_history_info_address
 
     if (isset($_GET['Account'], $_GET['HistoryInfo'])) {
 
-      $content_width = (int)MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_ADDRESS_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_ADDRESS_CONTENT_WIDTH') ? (int)MODULE_ACCOUNT_CUSTOMERS_HISTORY_INFO_ADDRESS_CONTENT_WIDTH : 12;
 
       $address_delivery = $CLICSHOPPING_Address->addressFormat($CLICSHOPPING_Order->delivery['format_id'], $CLICSHOPPING_Order->delivery, 1, ' ', '<br />');
       $shipping_method = $CLICSHOPPING_Order->info['shipping_method'];

@@ -31,10 +31,10 @@ class bm_shopping_cart
     $this->description = CLICSHOPPING::getDef('module_boxes_shopping_cart_description');
 
     if (\defined('MODULE_BOXES_SHOPPING_CART_STATUS')) {
-      $this->sort_order = (int)MODULE_BOXES_SHOPPING_CART_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_BOXES_SHOPPING_CART_STATUS == 'True');
-      $this->pages = MODULE_BOXES_SHOPPING_CART_DISPLAY_PAGES;
-      $this->group = ((MODULE_BOXES_SHOPPING_CART_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right');
+      $this->sort_order = \defined('MODULE_BOXES_SHOPPING_CART_SORT_ORDER') ? (int)MODULE_BOXES_SHOPPING_CART_SORT_ORDER : 0;
+      $this->enabled = (\defined('MODULE_BOXES_SHOPPING_CART_STATUS') && MODULE_BOXES_SHOPPING_CART_STATUS == 'True');
+      $this->pages = \defined('MODULE_BOXES_SHOPPING_CART_DISPLAY_PAGES') ? MODULE_BOXES_SHOPPING_CART_DISPLAY_PAGES : '';
+      $this->group = ((\defined('MODULE_BOXES_SHOPPING_CART_CONTENT_PLACEMENT') && MODULE_BOXES_SHOPPING_CART_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right');
     }
   }
 
@@ -96,11 +96,11 @@ class bm_shopping_cart
             $cart_contents_string .= '<div class="boxContentsShoppingCart">' . CLICSHOPPING::getDef('module_boxes_shopping_cart_box_cart_empty') . '</div>';
           }
     */
-    if ($CLICSHOPPING_ShoppingCart->getCountContents() > 0 || MODULE_BOXES_SHOPPING_CART_DISPLAY == 'True') {
+    if ($CLICSHOPPING_ShoppingCart->getCountContents() > 0 || \defined('MODULE_BOXES_SHOPPING_CART_DISPLAY') && MODULE_BOXES_SHOPPING_CART_DISPLAY == 'True') {
       $shopping_cart_banner = '';
 
       if ($CLICSHOPPING_Service->isStarted('Banner')) {
-        if ($banner = $CLICSHOPPING_Banner->bannerExists('dynamic', MODULE_BOXES_SHOPPING_CART_BANNER_GROUP)) {
+        if ($banner = $CLICSHOPPING_Banner->bannerExists('dynamic', \defined('MODULE_BOXES_SHOPPING_CART_BANNER_GROUP') ? MODULE_BOXES_SHOPPING_CART_BANNER_GROUP : '')) {
           $shopping_cart_banner = $CLICSHOPPING_Banner->displayBanner('static', $banner) . '<br /><br />';
         } else {
           $shopping_cart_banner = '';

@@ -31,11 +31,11 @@ class bm_specials
     $this->description = CLICSHOPPING::getDef('module_boxes_specials_description');
 
     if (\defined('MODULE_BOXES_SPECIALS_STATUS')) {
-      $this->sort_order = (int)MODULE_BOXES_SPECIALS_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_BOXES_SPECIALS_STATUS == 'True');
-      $this->pages = MODULE_BOXES_SPECIALS_DISPLAY_PAGES;
+      $this->sort_order = defined('MODULE_BOXES_SPECIALS_SORT_ORDER') ? (int)MODULE_BOXES_SPECIALS_SORT_ORDER : 0;
+      $this->enabled = defined('MODULE_BOXES_SPECIALS_STATUS') && MODULE_BOXES_SPECIALS_STATUS == 'True';
+      $this->pages = defined('MODULE_BOXES_SPECIALS_DISPLAY_PAGES') ? MODULE_BOXES_SPECIALS_DISPLAY_PAGES : '';
 
-      $this->group = ((MODULE_BOXES_SPECIALS_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right');
+      $this->group = (defined('MODULE_BOXES_SPECIALS_CONTENT_PLACEMENT') && MODULE_BOXES_SPECIALS_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right';
     }
   }
 
@@ -78,7 +78,7 @@ class bm_specials
 
       $Qproducts->bindInt(':customers_group_id', (int)$CLICSHOPPING_Customer->getCustomersGroupID());
       $Qproducts->bindInt(':products_id', $CLICSHOPPING_ProductsCommon->getID());
-      $Qproducts->bindInt(':limit', (int)MODULE_BOXES_SPECIALS_MAX_DISPLAY_LIMIT);
+      $Qproducts->bindInt(':limit', defined('MODULE_BOXES_SPECIALS_MAX_DISPLAY_LIMIT') ? (int)MODULE_BOXES_SPECIALS_MAX_DISPLAY_LIMIT : 0);
       $Qproducts->execute();
 
     } else {
@@ -104,7 +104,7 @@ class bm_specials
                                                 ');
 
       $Qproducts->bindInt(':products_id', $CLICSHOPPING_ProductsCommon->getID());
-      $Qproducts->bindInt(':limit', (int)MODULE_BOXES_SPECIALS_MAX_DISPLAY_LIMIT);
+      $Qproducts->bindInt(':limit', defined('MODULE_BOXES_SPECIALS_MAX_DISPLAY_LIMIT') ? (int)MODULE_BOXES_SPECIALS_MAX_DISPLAY_LIMIT : 0);
       $Qproducts->execute();
     }
 
@@ -114,7 +114,7 @@ class bm_specials
       $specials_banner = '';
 
       if ($CLICSHOPPING_Service->isStarted('Banner')) {
-        if ($banner = $CLICSHOPPING_Banner->bannerExists('dynamic', MODULE_BOXES_SPECIALS_BANNER_GROUP)) {
+        if ($banner = $CLICSHOPPING_Banner->bannerExists('dynamic', defined('MODULE_BOXES_SPECIALS_BANNER_GROUP') ? MODULE_BOXES_SPECIALS_BANNER_GROUP : '')) {
           $specials_banner = $CLICSHOPPING_Banner->displayBanner('static', $banner) . '<br /><br />';
         }
       }
@@ -153,28 +153,28 @@ class bm_specials
         // **************************
         // See the button more view details
         // **************************
-        if (MODULE_BOXES_SPECIAL_DETAIL_BUTTON == 'True') {
+        if (defined('MODULE_BOXES_SPECIAL_DETAIL_BUTTON') && MODULE_BOXES_SPECIAL_DETAIL_BUTTON == 'True') {
           $button_small_view_details = HTML::button(CLICSHOPPING::getDef('button_detail'), null, $products_name_url, 'info', null, 'sm');
         } else {
           $button_small_view_details = '';
         }
 
-        $products_image = HTML::link($products_name_url, HTML::image($CLICSHOPPING_Template->getDirectoryTemplateImages() . $CLICSHOPPING_ProductsCommon->getProductsImage($products_id), HTML::outputProtected($products_name), (int)SMALL_IMAGE_WIDTH, (int)SMALL_IMAGE_HEIGHT));
+        $products_image = HTML::link($products_name_url, HTML::image($CLICSHOPPING_Template->getDirectoryTemplateImages() . $CLICSHOPPING_ProductsCommon->getProductsImage($products_id), HTML::outputProtected($products_name), defined('SMALL_IMAGE_WIDTH') ? (int)SMALL_IMAGE_WIDTH : 0, defined('SMALL_IMAGE_HEIGHT') ? (int)SMALL_IMAGE_HEIGHT : 0));
 
         // **************************
         //Ticker Image
         // **************************
-        if ($CLICSHOPPING_ProductsCommon->getProductsTickerSpecials($products_id) == 'True' && MODULE_BOXES_SPECIALS_TICKER == 'True') {
+        if ($CLICSHOPPING_ProductsCommon->getProductsTickerSpecials($products_id) == 'True' && defined('MODULE_BOXES_SPECIALS_TICKER') && MODULE_BOXES_SPECIALS_TICKER == 'True') {
           $products_image .= HTML::link($products_name_url, HTML::tickerImage(CLICSHOPPING::getDef('text_ticker_specials'), 'ModulesBoxeBootstrapTickerSpecial', $CLICSHOPPING_ProductsCommon->getProductsTickerSpecials($products_id)));
-        } elseif ($CLICSHOPPING_ProductsCommon->getProductsTickerFavorites($products_id) == 'True' && MODULE_BOXES_SPECIALS_TICKER == 'True') {
+        } elseif ($CLICSHOPPING_ProductsCommon->getProductsTickerFavorites($products_id) == 'True' && defined('MODULE_BOXES_SPECIALS_TICKER') &&  MODULE_BOXES_SPECIALS_TICKER == 'True') {
           $products_image .= HTML::link($products_name_url, HTML::tickerImage(CLICSHOPPING::getDef('text_ticker_favorite'), 'ModulesBoxeBootstrapTickerFavorite', $CLICSHOPPING_ProductsCommon->getProductsTickerFavorites($products_id)));
-        } elseif ($CLICSHOPPING_ProductsCommon->getProductsTickerFeatured($products_id) == 'True' && MODULE_BOXES_SPECIALS_TICKER == 'True') {
+        } elseif ($CLICSHOPPING_ProductsCommon->getProductsTickerFeatured($products_id) == 'True' && defined('MODULE_BOXES_SPECIALS_TICKER') && MODULE_BOXES_SPECIALS_TICKER == 'True') {
           $products_image .= HTML::link($products_name_url, HTML::tickerImage(CLICSHOPPING::getDef('text_ticker_featured'), 'ModulesBoxeBootstrapTickerFeatured', $CLICSHOPPING_ProductsCommon->getProductsTickerFeatured($products_id)));
-        } elseif ($CLICSHOPPING_ProductsCommon->getProductsTickerProductsNew($products_id) == 'True' && MODULE_BOXES_SPECIALS_TICKER == 'True') {
+        } elseif ($CLICSHOPPING_ProductsCommon->getProductsTickerProductsNew($products_id) == 'True' && defined('MODULE_BOXES_SPECIALS_TICKER') && MODULE_BOXES_SPECIALS_TICKER == 'True') {
           $products_image .= HTML::link($products_name_url, HTML::tickerImage(CLICSHOPPING::getDef('text_ticker_products_new'), 'ModulesBoxeBootstrapTickerNew', $CLICSHOPPING_ProductsCommon->getProductsTickerProductsNew($products_id)));
         }
 
-        if (MODULE_BOXES_SPECIALS_POURCENTAGE_TICKER == 'True' && !\is_null($CLICSHOPPING_ProductsCommon->getProductsTickerSpecialsPourcentage($products_id))) {
+        if (defined('MODULE_BOXES_SPECIALS_POURCENTAGE_TICKER') && MODULE_BOXES_SPECIALS_POURCENTAGE_TICKER == 'True' && !\is_null($CLICSHOPPING_ProductsCommon->getProductsTickerSpecialsPourcentage($products_id))) {
           $ticker = HTML::link($products_name_url, HTML::tickerImage($CLICSHOPPING_ProductsCommon->getProductsTickerSpecialsPourcentage($products_id), 'ModulesBoxeBootstrapTickerSpecialPourcentage', true));
         } else {
           $ticker = '';

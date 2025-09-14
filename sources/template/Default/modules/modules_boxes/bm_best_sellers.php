@@ -31,10 +31,10 @@ class bm_best_sellers
     $this->description = CLICSHOPPING::getDef('module_boxes_best_sellers_description');
 
     if (\defined('MODULE_BOXES_BEST_SELLERS_STATUS')) {
-      $this->sort_order = (int)MODULE_BOXES_BEST_SELLERS_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_BOXES_BEST_SELLERS_STATUS == 'True');
-      $this->pages = MODULE_BOXES_BEST_SELLERS_DISPLAY_PAGES;
-      $this->group = ((MODULE_BOXES_BEST_SELLERS_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right');
+      $this->sort_order = defined('MODULE_BOXES_BEST_SELLERS_SORT_ORDER') ? (int)MODULE_BOXES_BEST_SELLERS_SORT_ORDER : 0;
+      $this->enabled = defined('MODULE_BOXES_BEST_SELLERS_STATUS') && MODULE_BOXES_BEST_SELLERS_STATUS == 'True';
+      $this->pages = defined('MODULE_BOXES_BEST_SELLERS_DISPLAY_PAGES') ? MODULE_BOXES_BEST_SELLERS_DISPLAY_PAGES : '';
+      $this->group = (defined('MODULE_BOXES_BEST_SELLERS_CONTENT_PLACEMENT') && MODULE_BOXES_BEST_SELLERS_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right';
     }
   }
 
@@ -76,7 +76,7 @@ class bm_best_sellers
         $QBestSellers->bindInt(':language_id', (int)$CLICSHOPPING_Language->getId());
         $QBestSellers->bindInt(':customers_group_id', $CLICSHOPPING_Customer->getCustomersGroupID());
         $QBestSellers->bindInt(':categories_id', $CLICSHOPPING_Category->getID());
-        $QBestSellers->bindInt(':limit', (int)MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY);
+        $QBestSellers->bindInt(':limit', defined('MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY') ? (int)MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY : 0);
 
         $QBestSellers->execute();
 
@@ -102,7 +102,7 @@ class bm_best_sellers
                                                    ');
         $QBestSellers->bindInt(':language_id', (int)$CLICSHOPPING_Language->getId());
         $QBestSellers->bindInt(':categories_id', $CLICSHOPPING_Category->getID());
-        $QBestSellers->bindInt(':limit', (int)MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY);
+        $QBestSellers->bindInt(':limit', defined('MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY') ? (int)MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY : 0);
 
         $QBestSellers->execute();
       }
@@ -129,7 +129,7 @@ class bm_best_sellers
                                                  ');
         $QBestSellers->bindInt(':language_id', (int)$CLICSHOPPING_Language->getId());
         $QBestSellers->bindInt(':customers_group_id', (int)$CLICSHOPPING_Customer->getCustomersGroupID());
-        $QBestSellers->bindInt(':limit', (int)MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY);
+        $QBestSellers->bindInt(':limit', defined('MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY') ? (int)MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY : 0);
 
         $QBestSellers->execute();
 
@@ -154,7 +154,7 @@ class bm_best_sellers
                                                   limit :limit
                                              ');
         $QBestSellers->bindInt(':language_id', (int)$CLICSHOPPING_Language->getId());
-        $QBestSellers->bindInt(':limit', (int)MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY);
+        $QBestSellers->bindInt(':limit', defined('MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY') ? (int)MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY : 0);
 
         $QBestSellers->execute();
 
@@ -163,7 +163,7 @@ class bm_best_sellers
 
     $best_sellers = $QBestSellers->fetchAll();
 
-    if (\count($best_sellers) >= (int)MODULE_BOXES_BEST_SELLERS_MIN_DISPLAY && \count($best_sellers) <= (int)MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY) {
+    if (\count($best_sellers) >= (defined('MODULE_BOXES_BEST_SELLERS_MIN_DISPLAY') ? (int)MODULE_BOXES_BEST_SELLERS_MIN_DISPLAY : 0) && \count($best_sellers) <= (defined('MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY') ? (int)MODULE_BOXES_BEST_SELLERS_MAX_DISPLAY : 0)) {
       $position = 1;
 
       $bestsellers_list = '<ol class="olBestSellers">';
@@ -179,7 +179,7 @@ class bm_best_sellers
       $best_sellers_banner = '';
 
       if ($CLICSHOPPING_Service->isStarted('Banner')) {
-        if ($banner = $CLICSHOPPING_Banner->bannerExists('dynamic', MODULE_BOXES_BEST_SELLERS_BANNER_GROUP)) {
+        if ($banner = $CLICSHOPPING_Banner->bannerExists('dynamic', defined('MODULE_BOXES_BEST_SELLERS_BANNER_GROUP') ? MODULE_BOXES_BEST_SELLERS_BANNER_GROUP : '')) {
           $best_sellers_banner = $CLICSHOPPING_Banner->displayBanner('static', $banner) . '<br /><br />';
         }
       }

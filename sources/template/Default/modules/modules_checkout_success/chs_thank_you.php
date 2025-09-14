@@ -30,7 +30,7 @@ class chs_thank_you
 
     if (\defined('MODULE_CHECKOUT_SUCCESS_THANK_YOU_STATUS')) {
       $this->sort_order = \defined('MODULE_CHECKOUT_SUCCESS_THANK_YOU_SORT_ORDER') ? (int)MODULE_CHECKOUT_SUCCESS_THANK_YOU_SORT_ORDER : 0;
-      $this->enabled = (MODULE_CHECKOUT_SUCCESS_THANK_YOU_STATUS == 'True');
+      $this->enabled = (\defined('MODULE_CHECKOUT_SUCCESS_THANK_YOU_STATUS') && MODULE_CHECKOUT_SUCCESS_THANK_YOU_STATUS == 'True');
     }
   }
 
@@ -43,21 +43,21 @@ class chs_thank_you
     if (isset($_GET['Checkout'], $_GET['Success'])) {
       if ($CLICSHOPPING_Customer->getCustomerGuestAccount($CLICSHOPPING_Customer->getID()) == 1) {
         $guest_account = 1;
-        $text_info = CLICSHOPPING::getDef('module_checkout_success_create_account_success', ['store_name' => STORE_NAME,
+        $text_info = CLICSHOPPING::getDef('module_checkout_success_create_account_success', ['store_name' => \defined('STORE_NAME') ? STORE_NAME : '',
             'store_name_address' => STORE_NAME_ADDRESS,
           ]
         );
         $contact = '';
       } else {
         $guest_account = 0;
-        $text_info = sprintf(CLICSHOPPING::getDef('module_checkout_success_text_see_orders', ['store_name' => STORE_NAME, 'store_name_address' => STORE_NAME_ADDRESS,
+        $text_info = sprintf(CLICSHOPPING::getDef('module_checkout_success_text_see_orders', ['store_name' => \defined('STORE_NAME') ? STORE_NAME : '', 'store_name_address' => \defined('STORE_NAME_ADDRESS') ? STORE_NAME_ADDRESS : '',
             'account_history' => '<a href="' . CLICSHOPPING::link(null, 'Account&History') . '">' . CLICSHOPPING::getDef('module_checkout_success_text_order_history') . '</a>',
             'my_account' => '<a href="' . CLICSHOPPING::link(null, 'Account&Main') . '">' . CLICSHOPPING::getDef('module_checkout_success_text_account') . '</a>',
           ]
         ), CLICSHOPPING::link(null, 'Account&HistoryInfo')
         );
 
-        $contact = sprintf(CLICSHOPPING::getDef('module_checkout_success_text_contact_store_owner', ['store_name' => STORE_NAME,
+        $contact = sprintf(CLICSHOPPING::getDef('module_checkout_success_text_contact_store_owner', ['store_name' => \defined('STORE_NAME') ? STORE_NAME : '',
             'account_history' => '<a href="' . CLICSHOPPING::link(null, 'Account&History') . '">' . CLICSHOPPING::getDef('module_checkout_success_text_order_history') . '</a>',
             'contact' => '<a href="index.php?Info&Contact">' . CLICSHOPPING::getDef('module_checkout_success_text_contact') . '</a>'
           ]
@@ -65,7 +65,7 @@ class chs_thank_you
         );
       }
 
-      $content_width = (int)MODULE_CHECKOUT_SUCCESS_THANK_YOU_CONTENT_WIDTH;
+      $content_width = (\defined('MODULE_CHECKOUT_SUCCESS_THANK_YOU_CONTENT_WIDTH') ? (int)MODULE_CHECKOUT_SUCCESS_THANK_YOU_CONTENT_WIDTH : 12)  ;
 
       $thank_you = '<!-- cs_thank_you start -->' . "\n";
 

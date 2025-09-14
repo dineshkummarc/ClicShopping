@@ -32,8 +32,8 @@ class ac_account_customers_password
     $this->description = CLICSHOPPING::getDef('module_account_customers_password_description');
 
     if (\defined('MODULE_ACCOUNT_CUSTOMERS_PASSWORD_TITLE_STATUS')) {
-      $this->sort_order = (int)MODULE_ACCOUNT_CUSTOMERS_PASSWORD_TITLE_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_ACCOUNT_CUSTOMERS_PASSWORD_TITLE_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_ACCOUNT_CUSTOMERS_PASSWORD_TITLE_SORT_ORDER') ? (int)MODULE_ACCOUNT_CUSTOMERS_PASSWORD_TITLE_SORT_ORDER : 0;
+      $this->enabled = (\defined('MODULE_ACCOUNT_CUSTOMERS_PASSWORD_TITLE_STATUS') && MODULE_ACCOUNT_CUSTOMERS_PASSWORD_TITLE_STATUS == 'True');
     }
   }
 
@@ -42,7 +42,7 @@ class ac_account_customers_password
     $CLICSHOPPING_Template = Registry::get('Template');
 
     if (isset($_GET['Account']) && isset($_GET['Password'])) {
-      $content_width = (int)MODULE_ACCOUNT_CUSTOMERS_PASSWORD_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_ACCOUNT_CUSTOMERS_PASSWORD_CONTENT_WIDTH') ? (int)MODULE_ACCOUNT_CUSTOMERS_PASSWORD_CONTENT_WIDTH : 12;
 
       $footer_tag = '<!-- password start  -->' . "\n";
       $footer_tag .= '<script defer src="' . CLICSHOPPING::link($CLICSHOPPING_Template->getTemplateDefaultJavaScript('clicshopping/generate_password.js')) . '"></script>' . "\n";

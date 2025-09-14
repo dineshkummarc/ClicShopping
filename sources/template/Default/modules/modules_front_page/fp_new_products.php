@@ -30,8 +30,8 @@ class fp_new_products
     $this->description = CLICSHOPPING::getDef('module_front_page_new_products_description');
 
     if (\defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_STATUS')) {
-      $this->sort_order = (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_FRONT_PAGE_NEW_PRODUCTS_STATUS == 'True');
+      $this->sort_order = defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_SORT_ORDER') ? (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_SORT_ORDER : 0;
+      $this->enabled = (defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_STATUS') && MODULE_FRONT_PAGE_NEW_PRODUCTS_STATUS == 'True');
     }
   }
 
@@ -49,7 +49,7 @@ class fp_new_products
     $new_products_category_id = $CLICSHOPPING_Category->getID();
 
     if (CLICSHOPPING::getBaseNameIndex() && !$CLICSHOPPING_Category->getPath()) {
-      if ((int)MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY != 0) {
+      if (defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY') && (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY != 0) {
         if ($CLICSHOPPING_Customer->getCustomersGroupID() != 0) {
           if ((!isset($new_products_category_id)) || ($new_products_category_id == 0)) {
 // Display products no inside categories
@@ -71,7 +71,7 @@ class fp_new_products
                                                     limit :products_limit
                                                     ');
             $Qproduct->bindInt(':customers_group_id', (int)$CLICSHOPPING_Customer->getCustomersGroupID());
-            $Qproduct->bindInt(':products_limit', (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY);
+            $Qproduct->bindInt(':products_limit', defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY') ? (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY : 0);
             $Qproduct->execute();
           } else {
 // Requetes SQL pour afficher les nouveaux produits groupe B2B lorsque l'on se trouve dans une categorie
@@ -96,7 +96,7 @@ class fp_new_products
                                                       ');
             $Qproduct->bindInt(':parent_id', (int)$new_products_category_id);
             $Qproduct->bindInt(':customers_group_id', $CLICSHOPPING_Customer->getCustomersGroupID());
-            $Qproduct->bindInt(':products_limit', MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY);
+            $Qproduct->bindInt(':products_limit', defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY') ? (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY : 0);
             $Qproduct->execute();
           }
         } else {
@@ -119,7 +119,7 @@ class fp_new_products
                                                              p.products_date_added DESC
                                                     limit :products_limit
                                                   ');
-            $Qproduct->bindInt(':products_limit', (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY);
+            $Qproduct->bindInt(':products_limit', defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY') ? (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY : 0);
             $Qproduct->execute();
           } else {
 // Requetes SQL pour afficher les nouveaux produits lors que l'on ce trouve dans une categorie
@@ -143,18 +143,18 @@ class fp_new_products
                                                   ');
 
             $Qproduct->bindInt(':parent_id', (int)$new_products_category_id);
-            $Qproduct->bindInt(':products_limit', (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY);
+            $Qproduct->bindInt(':products_limit', defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY') ? (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_MAX_DISPLAY : 0);
             $Qproduct->execute();
           }
         }
 
         if ($Qproduct->rowCount() > 0) {
 // display number of short description
-          $products_short_description_number = (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_SHORT_DESCRIPTION;
+          $products_short_description_number = defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_SHORT_DESCRIPTION') ? (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_SHORT_DESCRIPTION : 0;
 // delete words
-          $delete_word = (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_SHORT_DESCRIPTION_DELETE_WORLDS;
+          $delete_word = defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_SHORT_DESCRIPTION_DELETE_WORLDS') ? (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_SHORT_DESCRIPTION_DELETE_WORLDS : 0;
 // nbr of column to display  boostrap
-          $bootstrap_column = (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_COLUMNS;
+          $bootstrap_column = defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_COLUMNS') ? (int)MODULE_FRONT_PAGE_NEW_PRODUCTS_COLUMNS : 0;
 // initialisation des boutons
           $size_button = $CLICSHOPPING_ProductsCommon->getSizeButton('md');
 
@@ -164,7 +164,7 @@ class fp_new_products
           $new_prods_content = '<!-- New Products start -->' . "\n";
           $new_prods_content .= '<div class="col-md-12 ModuleFrontPageNewProductsContainer5">';
 
-          if (MODULE_FRONT_PAGE_NEW_PRODUCTS_FRONT_TITLE == 'True') {
+          if (defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_FRONT_TITLE') && MODULE_FRONT_PAGE_NEW_PRODUCTS_FRONT_TITLE == 'True') {
             $new_prods_content .= '<div class="ModuleFrontPageProductsNewHeading"><h2>' . CLICSHOPPING::getDef('module_front_page_new_products_heading_title') . '</h2></div>';
           }
 
@@ -179,7 +179,7 @@ class fp_new_products
 //product name
             $products_name = $CLICSHOPPING_ProductsCommon->getProductsName($products_id);
 //Stock (good, alert, out of stock).
-            $products_stock = $CLICSHOPPING_ProductsFunctionTemplate->getStock(MODULE_FRONT_PAGE_NEW_PRODUCTS_DISPLAY_STOCK, $products_id);
+            $products_stock = $CLICSHOPPING_ProductsFunctionTemplate->getStock(defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_DISPLAY_STOCK') ? MODULE_FRONT_PAGE_NEW_PRODUCTS_DISPLAY_STOCK : '', $products_id);
 //Flash discount
             $products_flash_discount = $CLICSHOPPING_ProductsFunctionTemplate->getFlashDiscount($products_id, '<br />');
 // Minimum quantity to take an order
@@ -193,7 +193,7 @@ class fp_new_products
 
 // Display an input allowing for the customer to insert a quantity
             if ($CLICSHOPPING_ProductsCommon->getProductsQuantity() > 0) {
-              $input_quantity = $CLICSHOPPING_ProductsFunctionTemplate->getDisplayInputQuantity(MODULE_FRONT_PAGE_NEW_PRODUCTS_DELETE_BUY_BUTTON, $products_id);
+              $input_quantity = $CLICSHOPPING_ProductsFunctionTemplate->getDisplayInputQuantity(defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_DELETE_BUY_BUTTON') ? MODULE_FRONT_PAGE_NEW_PRODUCTS_DELETE_BUY_BUTTON : '', $products_id);
             } else {
               $input_quantity = '';
             }
@@ -212,7 +212,7 @@ class fp_new_products
             $form = '';
             $endform = '';
 
-            if (MODULE_FRONT_PAGE_NEW_PRODUCTS_DELETE_BUY_BUTTON == 'False') {
+            if (defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_DELETE_BUY_BUTTON') && MODULE_FRONT_PAGE_NEW_PRODUCTS_DELETE_BUY_BUTTON == 'False') {
               if ($CLICSHOPPING_ProductsCommon->getProductsMinimumQuantity($products_id) != 0 && $CLICSHOPPING_ProductsCommon->getProductsQuantity($products_id) != 0) {
                 if ($CLICSHOPPING_ProductsAttributes->getHasProductAttributes($products_id) === false) {
                   $form = HTML::form('cart_quantity', CLICSHOPPING::link(null, 'Cart&Add'), 'post', 'class="justify-content-center"', ['tokenize' => true]) . "\n";
@@ -229,7 +229,7 @@ class fp_new_products
 // **************************************************
 // Button Free - Must be above getProductsSoldOut
 // **************************************************
-            if ($CLICSHOPPING_ProductsCommon->getProductsOrdersView($products_id) != 1 && NOT_DISPLAY_PRICE_ZERO == 'false') {
+            if ($CLICSHOPPING_ProductsCommon->getProductsOrdersView($products_id) != 1 && defined('NOT_DISPLAY_PRICE_ZERO') && NOT_DISPLAY_PRICE_ZERO == 'false') {
               $submit_button = HTML::button(CLICSHOPPING::getDef('text_products_free'), '', $products_name_url, 'danger');
               $min_quantity = 0;
               $form = '';
@@ -251,15 +251,15 @@ class fp_new_products
             }
 
 // See the button more view details
-            $button_small_view_details = $CLICSHOPPING_ProductsFunctionTemplate->getButtonViewDetails(MODULE_FRONT_PAGE_NEW_PRODUCTS_DELETE_BUY_BUTTON, $products_id);
+            $button_small_view_details = $CLICSHOPPING_ProductsFunctionTemplate->getButtonViewDetails(defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_DELETE_BUY_BUTTON') ? MODULE_FRONT_PAGE_NEW_PRODUCTS_DELETE_BUY_BUTTON : '', $products_id);
 
 // Display the image
-            $products_image = $CLICSHOPPING_ProductsFunctionTemplate->getImage(MODULE_FRONT_PAGE_NEW_PRODUCTS_IMAGE_MEDIUM, $products_id);
+            $products_image = $CLICSHOPPING_ProductsFunctionTemplate->getImage(defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_IMAGE_MEDIUM') ? MODULE_FRONT_PAGE_NEW_PRODUCTS_IMAGE_MEDIUM : '', $products_id);
 
 // Ticker Image
-            $products_image .= $CLICSHOPPING_ProductsFunctionTemplate->getTicker(MODULE_FRONT_PAGE_NEW_PRODUCTS_TICKER, $products_id, 'ModulesFrontPageTickerBootstrapTickerSpecial', 'ModulesFrontPageTickerBootstrapTickerFavorite', 'ModulesFrontPageTickerBootstrapTickerFeatured', 'ModulesFrontPageTickerBootstrapTickerNew');
+            $products_image .= $CLICSHOPPING_ProductsFunctionTemplate->getTicker(defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_TICKER') ? MODULE_FRONT_PAGE_NEW_PRODUCTS_TICKER : '', $products_id, 'ModulesFrontPageTickerBootstrapTickerSpecial', 'ModulesFrontPageTickerBootstrapTickerFavorite', 'ModulesFrontPageTickerBootstrapTickerFeatured', 'ModulesFrontPageTickerBootstrapTickerNew');
 
-            $ticker = $CLICSHOPPING_ProductsFunctionTemplate->getTickerPourcentage(MODULE_FRONT_PAGE_NEW_PRODUCTS_POURCENTAGE_TICKER, $products_id, 'ModulesFrontPageTickerBootstrapTickerPourcentage');
+            $ticker = $CLICSHOPPING_ProductsFunctionTemplate->getTickerPourcentage(defined('MODULE_FRONT_PAGE_NEW_PRODUCTS_POURCENTAGE_TICKER') ? MODULE_FRONT_PAGE_NEW_PRODUCTS_POURCENTAGE_TICKER : '', $products_id, 'ModulesFrontPageTickerBootstrapTickerPourcentage');
 
 //******************************************************************************************************************
 //            Options -- activate and insert code in template and css

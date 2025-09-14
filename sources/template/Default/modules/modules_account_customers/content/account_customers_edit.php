@@ -46,7 +46,7 @@ echo $form;
     <div class="hr"></div>
     <div class="mt-1"></div>
     <?php
-    if (((ACCOUNT_GENDER == 'true') && ($CLICSHOPPING_Customer->getCustomersGroupID() == 0)) || ((ACCOUNT_GENDER_PRO == 'true') && ($CLICSHOPPING_Customer->getCustomersGroupID() != 0))) {
+    if (((\defined('ACCOUNT_GENDER') && ACCOUNT_GENDER == 'true') && ($CLICSHOPPING_Customer->getCustomersGroupID() == 0)) || ((\defined('ACCOUNT_GENDER_PRO') && ACCOUNT_GENDER_PRO == 'true') && ($CLICSHOPPING_Customer->getCustomersGroupID() != 0))) {
       if (isset($customers_gender)) {
         $male = ($customers_gender == 'm') ? true : false;
       } else {

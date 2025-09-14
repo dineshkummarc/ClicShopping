@@ -30,10 +30,10 @@ class bm_page_manager
     $this->description = CLICSHOPPING::getDef('module_boxes_page_manager_description');
 
     if (\defined('MODULE_BOXES_PAGE_MANAGER_STATUS')) {
-      $this->sort_order = (int)MODULE_BOXES_PAGE_MANAGER_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_BOXES_PAGE_MANAGER_STATUS == 'True');
-      $this->pages = MODULE_BOXES_PAGE_MANAGER_DISPLAY_PAGES;
-      $this->group = ((MODULE_BOXES_PAGE_MANAGER_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right');
+      $this->sort_order = \defined('MODULE_BOXES_PAGE_MANAGER_SORT_ORDER') ? (int)MODULE_BOXES_PAGE_MANAGER_SORT_ORDER : 0;
+      $this->enabled = (\defined('MODULE_BOXES_PAGE_MANAGER_STATUS') && MODULE_BOXES_PAGE_MANAGER_STATUS == 'True');
+      $this->pages = \defined('MODULE_BOXES_PAGE_MANAGER_DISPLAY_PAGES') ? MODULE_BOXES_PAGE_MANAGER_DISPLAY_PAGES : '';
+      $this->group = (defined('MODULE_BOXES_PAGE_MANAGER_CONTENT_PLACEMENT') && MODULE_BOXES_PAGE_MANAGER_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right';
     }
   }
 
@@ -61,7 +61,7 @@ class bm_page_manager
       $page_manager_banner = '';
 
       if ($CLICSHOPPING_Service->isStarted('Banner')) {
-        if ($banner = $CLICSHOPPING_Banner->bannerExists('dynamic', MODULE_BOXES_PAGE_MANAGER_BANNER_GROUP)) {
+        if ($banner = $CLICSHOPPING_Banner->bannerExists('dynamic', \defined('MODULE_BOXES_PAGE_MANAGER_BANNER_GROUP') ? MODULE_BOXES_PAGE_MANAGER_BANNER_GROUP : '')) {
           $page_manager_banner = $CLICSHOPPING_Banner->displayBanner('static', $banner) . '<br /><br />';
         }
       }

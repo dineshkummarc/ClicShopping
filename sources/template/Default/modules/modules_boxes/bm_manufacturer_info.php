@@ -30,9 +30,9 @@ class bm_manufacturer_info
     $this->description = CLICSHOPPING::getDef('module_boxes_manufacturer_info_description');
 
     if (\defined('MODULE_BOXES_MANUFACTURER_INFO_STATUS')) {
-      $this->sort_order = (int)MODULE_BOXES_MANUFACTURER_INFO_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_BOXES_MANUFACTURER_INFO_STATUS == 'True');
-      $this->group = ((MODULE_BOXES_MANUFACTURER_INFO_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right');
+      $this->sort_order = defined('MODULE_BOXES_MANUFACTURER_INFO_SORT_ORDER') ? (int)MODULE_BOXES_MANUFACTURER_INFO_SORT_ORDER : 0;
+      $this->enabled = (defined('MODULE_BOXES_MANUFACTURER_INFO_STATUS') && MODULE_BOXES_MANUFACTURER_INFO_STATUS == 'True');
+      $this->group = (defined('MODULE_BOXES_MANUFACTURER_INFO_CONTENT_PLACEMENT') && MODULE_BOXES_MANUFACTURER_INFO_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right';
     }
   }
 
@@ -88,7 +88,7 @@ class bm_manufacturer_info
         $manufacturer_infos_banner = '';
 
         if ($CLICSHOPPING_Service->isStarted('Banner')) {
-          if ($banner = $CLICSHOPPING_Banner->bannerExists('dynamic', MODULE_BOXES_MANUFACTURER_INFO_BANNER_GROUP)) {
+          if ($banner = $CLICSHOPPING_Banner->bannerExists('dynamic', defined('MODULE_BOXES_MANUFACTURER_INFO_BANNER_GROUP') ? MODULE_BOXES_MANUFACTURER_INFO_BANNER_GROUP : '')) {
             $manufacturer_infos_banner = $CLICSHOPPING_Banner->displayBanner('static', $banner) . '<br /><br />';
           }
         }
