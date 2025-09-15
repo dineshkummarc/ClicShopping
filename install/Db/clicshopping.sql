@@ -1730,6 +1730,8 @@ INSERT INTO configuration VALUES(1770, 'Effort de raisonnement', 'CLICSHOPPING_A
 INSERT INTO configuration VALUES(1771, 'Verbosity', 'CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY', 'medium', 'niveau de détail ou de développement de la réponse. Fonctionne uniquement avec chatgpt-5.', 6, 0, NULL, '2025-08-08 10:08:28', NULL, NULL);
 INSERT INTO configuration VALUES(1772, 'Durée du TTL de Memcached', 'MEMCACHED_CACHE_LIFETIME', '3600', 'Durée de la session de memcached', 11, 3, NULL, '2025-05-19 17:16:52', NULL, null);
 INSERT INTO configuration VALUES(1773, 'Utiliser Redis', 'USE_REDIS', 'False', 'Activer la mise en cache Redis. Pour du debug, veuillez laisser sur false', 11,4, NULL, '2025-05-19 17:16:52', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1774, 'Pondération des ventes', 'CLICSHOPPING_APP_RECOMMENDATIONS_PR_WEIGHT_SALES', '0.4', 'Poids appliqué au score issu des ventes. Contrôle l\'influence des ventes produit (normalisées par le maximum commandé) dans la stratégie Multiple.', 6, 0, NULL, '2025-09-15 17:07:51', NULL, NULL);
+INSERT INTO configuration VALUES(1775, 'Pondération des sources externes', 'CLICSHOPPING_APP_RECOMMENDATIONS_PR_WEIGHT_EXTERNAL', '0.3', 'Poids appliqué au score issu des recommandations externes (moyenne des scores de recommandations normalisée entre min et max). Utilisé dans la stratégie Multiple.', 6, 0, NULL, '2025-09-15 17:07:51', NULL, NULL);
 
 
 INSERT INTO configuration_group VALUES(1, 'Gestion de ma boutique', 'Informations générales sur la boutique.', 1, 1);
