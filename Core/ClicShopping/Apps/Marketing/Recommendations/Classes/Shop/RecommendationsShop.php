@@ -32,15 +32,37 @@ class RecommendationsShop
    */
   public static function getGptSentiment(): mixed
   {
+    // Validate GPT availability
     if (ChatGptShop::checkGptStatus() === false) {
       return null;
-    } else {
-      $userComments = HTML::sanitize($_POST['review']);
-      $userComments = [$userComments];
+    }
 
+    // Validate review payload
+    if (!isset($_POST['review']) || !is_string($_POST['review'])) {
+      error_log('[Recommendations Security] Missing or invalid review payload');
+      return null;
+    }
+
+    $rawReview = trim($_POST['review']);
+
+    // Basic length constraints to avoid abuse
+    if ($rawReview === '' || mb_strlen($rawReview) < 5 || mb_strlen($rawReview) > 4000) {
+      error_log('[Recommendations Security] Review length out of bounds');
+      return null;
+    }
+
+    // Sanitize for safe handling
+    $sanitizedReview = HTML::sanitize($rawReview);
+
+    // Prepare payload for sentiment
+    $userComments = [$sanitizedReview];
+
+    try {
       $sentiment = ChatGptShop::performSentimentPrediction($userComments);
-
       return $sentiment;
+    } catch (\Throwable $e) {
+      error_log('[Recommendations] Sentiment prediction failed: ' . $e->getMessage());
+      return null;
     }
   }
 
@@ -54,6 +76,12 @@ class RecommendationsShop
    */
   public function saveRecommendations(int $products_id, float $reviewRate = 0): void
   {
+    // Additional validation of the review rate
+    if ($reviewRate < 0 || $reviewRate > 5) {
+      error_log('[Recommendations Security] Invalid review rate provided: ' . $reviewRate);
+      $reviewRate = 0; // Use default value
+    }
+
     $CLICSHOPPING_Customer = Registry::get('Customer');
     $CLICSHOPPING_Db = Registry::get('Db');
 
@@ -64,7 +92,7 @@ class RecommendationsShop
     $customer_id = $CLICSHOPPING_Customer->getID();
     $customer_group_id = $CLICSHOPPING_Customer->getCustomersGroupID();
 
-    $score = $this->RecommendationsAdmin->calculateRecommendationScore($products_rate_weight, $reviewRate, null, CLICSHOPPING_APP_RECOMMENDATIONS_PR_STRATEGY, $sentiment);
+    $score = $this->RecommendationsAdmin->calculateRecommendationScore($products_id, $products_rate_weight, $reviewRate, null, CLICSHOPPING_APP_RECOMMENDATIONS_PR_STRATEGY, $sentiment);
 
     if ($score != 0) {
       $sql_data_array = [

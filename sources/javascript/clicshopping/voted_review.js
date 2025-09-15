@@ -13,6 +13,18 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!votedReviews.includes(reviewId)) {
       votedReviews.push(reviewId);
       localStorage.setItem('votedReviews', JSON.stringify(votedReviews));
+    }<
+  }
+
+  function updateVoteCounts(response) {
+    //  Serveru update
+    if (response.yesCount !== undefined) {
+      const yesValue = document.querySelector('.yesValue');
+      if (yesValue) yesValue.textContent = '(' + response.yesCount + ')';
+    }
+    if (response.noCount !== undefined) {
+      const noValue = document.querySelector('.noValue');
+      if (noValue) noValue.textContent = '(' + response.noCount + ')';
     }
   }
 
@@ -23,7 +35,14 @@ document.addEventListener("DOMContentLoaded", function () {
     xhr.onreadystatechange = function () {
       if (xhr.readyState === 4) {
         if (xhr.status === 200) {
-          console.log('Vote enregistré pour review ' + reviewId);
+          try {
+            const response = JSON.parse(xhr.responseText);
+            updateVoteCounts(response);
+            console.log('Vote enregistré et compteurs mis à jour pour review ' + reviewId);
+          } catch (e) {
+            console.error('Erreur parsing JSON:', e);
+            console.log('Réponse brute:', xhr.responseText);
+          }
         } else {
           console.error('Erreur serveur vote : ' + xhr.statusText);
         }
@@ -53,10 +72,9 @@ document.addEventListener("DOMContentLoaded", function () {
       const noValue = parentDiv.querySelector(".noValue");
       const thankYouMessage = parentDiv.querySelector(".thankYouMessage");
 
+      // Hide buttomn but keep the visible value for update
       yesButton.style.display = "none";
       noButton.style.display = "none";
-      yesValue.style.display = "none";
-      noValue.style.display = "none";
       thankYouMessage.style.display = "inline";
 
       markReviewAsVoted(reviewId);

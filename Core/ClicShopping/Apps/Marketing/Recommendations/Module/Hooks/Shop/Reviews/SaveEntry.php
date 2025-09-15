@@ -12,6 +12,7 @@ namespace ClicShopping\Apps\Marketing\Recommendations\Module\Hooks\Shop\Reviews;
 
 use ClicShopping\Apps\Marketing\Recommendations\Classes\Shop\RecommendationsShop;
 use ClicShopping\Apps\Marketing\Recommendations\Classes\Shop\ProductsAutomation;
+use ClicShopping\Apps\Marketing\Recommendations\Classes\Shop\RatingValidator;
 
 use ClicShopping\OM\Registry;
 use function defined;
@@ -49,7 +50,16 @@ class saveEntry implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
-    $this->recommendationsShop->saveRecommendations($this->productsCommon->getID(), (int)$_POST['rating']);
+    // Validate and sanitize the rating input securely
+    $validatedRating = RatingValidator::validatePostRating($_POST);
+    
+    if ($validatedRating === null) {
+      // Log the security issue and use default rating
+      error_log('[Recommendations Security] Invalid rating provided, using default value');
+      $validatedRating = RatingValidator::getDefaultRating();
+    }
+
+    $this->recommendationsShop->saveRecommendations($this->productsCommon->getID(), $validatedRating);
 
 //productsAutomation
     if (defined('CLICSHOPPING_APP_RECOMMENDATIONS_PR_FAVORITES_STATUS') || CLICSHOPPING_APP_RECOMMENDATIONS_PR_FAVORITES_STATUS == 'True') {

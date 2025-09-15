@@ -32,7 +32,7 @@ class RecommendationsAdmin
    * @param float|null $sentimentScore Sentiment analysis score for the product, normalized to a range between -1 and 1 (optional).
    * @return float The calculated recommendation score for the product.
    */
-  private static function calculateRecommendationScoreWithMultipleSources(float $productsRateWeight = 0.8, float $reviewRate = 0, ?float $userFeedback = 0, ?float $sentimentScore = null): float
+  private static function calculateRecommendationScoreWithMultipleSources(int $productsId, float $productsRateWeight = 0.8, float $reviewRate = 0, ?float $userFeedback = 0, ?float $sentimentScore = null): float
   {
     // Normalize the user feedback to a value between -1 and 1
     $userFeedback = static::calculateUserFeedbackScore($userFeedback);
@@ -42,13 +42,13 @@ class RecommendationsAdmin
       $sentimentScore = max(-1, min(1, $sentimentScore));
     }
 
-    // Get scores from other recommendation sources (e.g., sales data, external recommendations)
-    $salesDataScore = 0.9; // Example: get the score from sales data
-    $externalRecommendationScore = 0.85; // Example: get the score from external recommendations
+    // Get scores from other recommendation sources (computed from data)
+    $salesDataScore = static::getSalesDataScore($productsId);
+    $externalRecommendationScore = static::getExternalRecommendationScore($productsId);
 
     // Weigh the scores from different sources (adjust weights as needed)
-    $salesDataWeight = 0.4;
-    $externalRecommendationWeight = 0.3;
+    $salesDataWeight = \defined('CLICSHOPPING_APP_RECOMMENDATIONS_PR_WEIGHT_SALES') ? (float)CLICSHOPPING_APP_RECOMMENDATIONS_PR_WEIGHT_SALES : 0.4;
+    $externalRecommendationWeight = \defined('CLICSHOPPING_APP_RECOMMENDATIONS_PR_WEIGHT_EXTERNAL') ? (float)CLICSHOPPING_APP_RECOMMENDATIONS_PR_WEIGHT_EXTERNAL : 0.3;
 
     // Calculate the combined score as a weighted sum of individual scores
     $combinedScore = ($reviewRate * $productsRateWeight) +
@@ -96,13 +96,19 @@ class RecommendationsAdmin
       $feedbackWeight = 0.7; // You can adjust this weight to your preference
     }
 
-    // Calculate the final recommendation score using a weighted average of review rate, user feedback, and sentiment score (if available)
-    $score = ($reviewRate * (1 - $feedbackWeight)) + ($userFeedback * $feedbackWeight);
+    // Calculate base score with normalized weights
+    $baseWeight = 1 - $feedbackWeight;
+    $score = ($reviewRate * $baseWeight) + ($userFeedback * $feedbackWeight);
 
-    // If a sentiment score is available, incorporate it into the final score calculation with a specific weight
+    // If a sentiment score is available, incorporate it with proper weight normalization
     if (!is_null($sentimentScore)) {
       $sentimentWeight = (float)CLICSHOPPING_APP_RECOMMENDATIONS_PR_WEIGHTING_SENTIMENT;
-      $score = ($score + ($sentimentScore * $sentimentWeight)) / 2; // Adjust the weighting between the sentiment and other factors as needed
+      
+      // Normalize weights so they sum to 1.0
+      $totalWeight = $baseWeight + $feedbackWeight + $sentimentWeight;
+      if ($totalWeight > 0) {
+        $score = ($score * ($baseWeight + $feedbackWeight) + ($sentimentScore * $sentimentWeight)) / $totalWeight;
+      }
     }
 
     // Apply the products rate weight (from reviews) to the final score
@@ -123,8 +129,9 @@ class RecommendationsAdmin
    *
    * @return float The calculated recommendation score based on the provided inputs and strategy.
    */
-  public function calculateRecommendationScore(float $productsRateWeight =  0.8, float|null $reviewRate = 0, float|null $userFeedback = 0, string|null $strategy = 'Range', float|null $sentimentScore = null): float
+  public function calculateRecommendationScore(int $productsId, float $productsRateWeight =  0.8, float|null $reviewRate = 0, float|null $userFeedback = 0, string|null $strategy = 'Range', float|null $sentimentScore = null): float
   {
+    // Normalize review rate consistently for both strategies
     $maxReviewRate = 5; // Maximum possible review rate
     $reviewRate = $reviewRate / $maxReviewRate;
 
@@ -134,8 +141,65 @@ class RecommendationsAdmin
     if ($strategy == 'Range') {
       return self::calculateRecommendationScoreBasedOnRange($productsRateWeight, $reviewRate, $userFeedback, null, $sentimentScore);
     } else {
-      return self::calculateRecommendationScoreWithMultipleSources($productsRateWeight, $reviewRate, $userFeedback, $sentimentScore);
+      return self::calculateRecommendationScoreWithMultipleSources($productsId, $productsRateWeight, $reviewRate, $userFeedback, $sentimentScore);
     }
+  }
+
+  /**
+   * Computes a normalized sales data score for a product based on products_ordered.
+   * Returns a value in [0,1]. If max is 0, returns 0.
+   */
+  private static function getSalesDataScore(int $productsId): float
+  {
+    $db = Registry::get('Db');
+
+    // Current product sales
+    $Qcur = $db->prepare('select products_ordered as po from :table_products where products_id = :pid');
+    $Qcur->bindInt(':pid', $productsId);
+    $Qcur->execute();
+    $current = (float)$Qcur->valueDecimal('po');
+
+    // Max sales across catalog
+    $Qmax = $db->prepare('select max(products_ordered) as max_po from :table_products');
+    $Qmax->execute();
+    $max = (float)$Qmax->valueDecimal('max_po');
+
+    if ($max <= 0) {
+      return 0.0;
+    }
+
+    $score = $current / $max; // normalize [0,1]
+    return max(0.0, min(1.0, $score));
+  }
+
+  /**
+   * Computes a normalized external recommendation score from the recommendations table.
+   * Uses min/max thresholds if defined; otherwise normalizes by observed min/max.
+   * Returns a value in [0,1].
+   */
+  private static function getExternalRecommendationScore(int $productsId): float
+  {
+    $db = Registry::get('Db');
+
+    // Average score for this product
+    $Qavg = $db->prepare('select avg(score) as avg_score from :table_products_recommendations where products_id = :pid');
+    $Qavg->bindInt(':pid', $productsId);
+    $Qavg->execute();
+    $avg = (float)$Qavg->valueDecimal('avg_score');
+
+    // Bounds for normalization
+    $minCfg = \defined('CLICSHOPPING_APP_RECOMMENDATIONS_PR_MIN_SCORE') ? (float)CLICSHOPPING_APP_RECOMMENDATIONS_PR_MIN_SCORE : 0.0;
+    $maxCfg = \defined('CLICSHOPPING_APP_RECOMMENDATIONS_PR_MAX_SCORE') ? (float)CLICSHOPPING_APP_RECOMMENDATIONS_PR_MAX_SCORE : 5.0;
+
+    $min = $minCfg;
+    $max = $maxCfg;
+
+    if ($max <= $min) {
+      return 0.0;
+    }
+
+    $normalized = ($avg - $min) / ($max - $min);
+    return max(0.0, min(1.0, $normalized));
   }
 
   /**

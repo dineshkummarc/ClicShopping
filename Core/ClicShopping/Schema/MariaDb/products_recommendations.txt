@@ -10,6 +10,9 @@ status int(1) not_null default(1)
 primary id
 idx_products_id products_id
 idx_customers_id customers_id
+idx_score score
+idx_customers_group_id customers_group_id
+idx_recommendation_date recommendation_date
 
 ##
 engine innodb
