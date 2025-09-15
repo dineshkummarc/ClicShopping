@@ -241,6 +241,7 @@ table_heading_date = Date
 table_heading_manufacturer = Modèle
 table_heading_products = Nom de produit
 table_heading_buy_now = Quantité minimum
+table_heading_total = Total
 
 text_products_info_price_by_weight =
 text_login_error = Erreur de connexion, veuillez recommencer

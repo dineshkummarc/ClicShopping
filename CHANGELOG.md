@@ -13,7 +13,7 @@ cache improvement
 * - Batch operation methods
 * - Fluent interface
 * - Memory management
-
+little design modification
 
 -----------------
 version4.05

@@ -240,6 +240,7 @@ table_heading_date = Date
 table_heading_manufacturer = Manufacturer
 table_heading_products = Product Name
 table_heading_buy_now = Minimum quantity
+table_heading_total = Total
 
 text_products_info_price_by_weight =
 text_login_error = Login error, please try again
