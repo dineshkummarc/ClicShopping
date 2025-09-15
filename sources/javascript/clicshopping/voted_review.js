@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!votedReviews.includes(reviewId)) {
       votedReviews.push(reviewId);
       localStorage.setItem('votedReviews', JSON.stringify(votedReviews));
-    }<
+    }
   }
 
   function updateVoteCounts(response) {
