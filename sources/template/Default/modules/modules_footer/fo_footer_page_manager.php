@@ -62,7 +62,7 @@ class fo_footer_page_manager
     $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
 
-    if (\defined('MODE_VENTE_PRIVEE') && (MODE_VENTE_PRIVEE == 'false' || (\defined('MODE_VENTE_PRIVEE') && (MODE_VENTE_PRIVEE == 'true' && $CLICSHOPPING_Customer->isLoggedOn()))) {
+    if (\defined('MODE_VENTE_PRIVEE') && (MODE_VENTE_PRIVEE == 'false' || (\defined('MODE_VENTE_PRIVEE') && (MODE_VENTE_PRIVEE == 'true' && $CLICSHOPPING_Customer->isLoggedOn())))) {
       $cache_id = $this->cache_id . $CLICSHOPPING_Customer->getCustomersGroupID();
 
       if ($this->enabled && $CLICSHOPPING_TemplateCache->isCacheEnabled()) {
