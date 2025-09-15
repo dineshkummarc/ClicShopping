@@ -30,8 +30,8 @@ class pr_products_reviews_write_comment
     $this->description = CLICSHOPPING::getDef('modules_products_reviews_write_comment_description');
 
     if (\defined('MODULES_PRODUCTS_REVIEWS_WRITE_COMMENT_STATUS')) {
-      $this->sort_order = (int)MODULES_PRODUCTS_REVIEWS_WRITE_COMMENT_SORT_ORDER ?? 0;
-      $this->enabled = (MODULES_PRODUCTS_REVIEWS_WRITE_COMMENT_STATUS == 'True');
+      $this->sort_order = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_COMMENT_SORT_ORDER') ? (int)MODULES_PRODUCTS_REVIEWS_WRITE_COMMENT_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_COMMENT_STATUS') ? (MODULES_PRODUCTS_REVIEWS_WRITE_COMMENT_STATUS == 'True') : false;
     }
   }
 
@@ -41,14 +41,14 @@ class pr_products_reviews_write_comment
     $CLICSHOPPING_Customer = Registry::get('Customer');
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
-    $content_width = (int)MODULES_PRODUCTS_REVIEWS_WRITE_COMMENT_CONTENT_WIDTH;
-    $text_position = MODULES_PRODUCTS_REVIEWS_WRITE_COMMENT_POSITION;
+    $content_width = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_COMMENT_CONTENT_WIDTH') ? (int)MODULES_PRODUCTS_REVIEWS_WRITE_COMMENT_CONTENT_WIDTH : 0;
+    $text_position = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_COMMENT_POSITION') ? MODULES_PRODUCTS_REVIEWS_WRITE_COMMENT_POSITION : 'float-none';
 
     if (isset($_GET['Products'], $_GET['ReviewsWrite']) && !isset($_GET['Success'])) {
       $customer_name = HTML::outputProtected($CLICSHOPPING_Customer->getFirstName() . ' ' . $CLICSHOPPING_Customer->getLastName());
       $customer_group_id = $CLICSHOPPING_Customer->getCustomersGroupID();
       $comment = HTML::textAreaField('review', null, 80, 10, 'required aria-required="true" id="productsReview"');
-      $min_caracters_to_write = (int)REVIEW_TEXT_MIN_LENGTH;
+      $min_caracters_to_write = \defined('REVIEW_TEXT_MIN_LENGTH') ? (int)REVIEW_TEXT_MIN_LENGTH : 0;
 
       $data = '<!-- pr_products_reviews_write_comment start -->' . "\n";
 

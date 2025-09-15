@@ -31,8 +31,8 @@ class pr_products_reviews_info_image
 
 
     if (\defined('MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_STATUS')) {
-      $this->sort_order = (int)MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_SORT_ORDER ?? 0;
-      $this->enabled = (MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_STATUS == 'True');
+      $this->sort_order = \defined('MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_SORT_ORDER') ? (int)MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_STATUS') ? (MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_STATUS == 'True') : false;
     }
   }
 
@@ -40,8 +40,8 @@ class pr_products_reviews_info_image
   {
     $CLICSHOPPING_Template = Registry::get('Template');
 
-    $content_width = (int)MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_CONTENT_WIDTH;
-    $text_position = MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_CONTENT_POSITION;
+    $content_width = \defined('MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_CONTENT_WIDTH') ? (int)MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_CONTENT_WIDTH : 0;
+    $text_position = \defined('MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_CONTENT_POSITION') ? MODULES_PRODUCTS_REVIEWS_INFO_IMAGE_CONTENT_POSITION : 'float-none';
 
     if (isset($_GET['Products'], $_GET['ReviewsInfo'])) {
       $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');

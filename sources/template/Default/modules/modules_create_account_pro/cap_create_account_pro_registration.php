@@ -31,8 +31,8 @@ class cap_create_account_pro_registration
     $this->description = CLICSHOPPING::getDef('module_create_account_pro_registration_description');
 
     if (\defined('MODULE_CREATE_ACCOUNT_PRO_REGISTRATION_STATUS')) {
-      $this->sort_order = (int)MODULE_CREATE_ACCOUNT_PRO_REGISTRATION_SORT_ORDER;
-      $this->enabled = (MODULE_CREATE_ACCOUNT_PRO_REGISTRATION_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_CREATE_ACCOUNT_PRO_REGISTRATION_SORT_ORDER') ? (int)MODULE_CREATE_ACCOUNT_PRO_REGISTRATION_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_CREATE_ACCOUNT_PRO_REGISTRATION_STATUS') ? (MODULE_CREATE_ACCOUNT_PRO_REGISTRATION_STATUS == 'True') : false;
     }
   }
 
@@ -44,7 +44,7 @@ class cap_create_account_pro_registration
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
     if (isset($_GET['Account'], $_GET['CreatePro']) && !isset($_GET['Success'])) {
-      $content_width = (int)MODULE_CREATE_ACCOUNT_PRO_REGISTRATION_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_CREATE_ACCOUNT_PRO_REGISTRATION_CONTENT_WIDTH') ? (int)MODULE_CREATE_ACCOUNT_PRO_REGISTRATION_CONTENT_WIDTH : 12;
 
       $process = isset($_SESSION['process']);
 

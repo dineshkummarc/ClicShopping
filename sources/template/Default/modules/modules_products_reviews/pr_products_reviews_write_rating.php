@@ -29,7 +29,7 @@ class pr_products_reviews_write_rating
     $this->description = CLICSHOPPING::getDef('modules_products_reviews_write_rating_description');
 
     if (\defined('MODULES_PRODUCTS_REVIEWS_WRITE_RATING_STATUS')) {
-      $this->sort_order = (int)MODULES_PRODUCTS_REVIEWS_WRITE_RATING_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_RATING_SORT_ORDER') ? (int)MODULES_PRODUCTS_REVIEWS_WRITE_RATING_SORT_ORDER : 0;
       $this->enabled = (MODULES_PRODUCTS_REVIEWS_WRITE_RATING_STATUS == 'True');
     }
   }
@@ -39,8 +39,8 @@ class pr_products_reviews_write_rating
     if (isset($_GET['Products'], $_GET['ReviewsWrite']) && !isset($_GET['Success'])) {
       $CLICSHOPPING_Template = Registry::get('Template');
 
-      $content_width = (int)MODULES_PRODUCTS_REVIEWS_WRITE_RATING_CONTENT_WIDTH;
-      $text_position = MODULES_PRODUCTS_REVIEWS_WRITE_RATING_POSITION;
+      $content_width = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_RATING_CONTENT_WIDTH') ? (int)MODULES_PRODUCTS_REVIEWS_WRITE_RATING_CONTENT_WIDTH : 0;
+      $text_position = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_RATING_POSITION') ? MODULES_PRODUCTS_REVIEWS_WRITE_RATING_POSITION : 'float-none';
 
       $data = '<!-- pr_products_reviews_write start -->' . "\n";
 

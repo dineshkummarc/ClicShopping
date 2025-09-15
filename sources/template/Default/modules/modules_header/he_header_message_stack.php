@@ -35,7 +35,7 @@ class he_header_message_stack
     $this->description = CLICSHOPPING::getDef('module_header_message_stack_description');
 
     if (\defined('MODULE_HEADER_MESSAGE_STACK_STATUS')) {
-      $this->sort_order = (int)MODULE_HEADER_MESSAGE_STACK_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULE_HEADER_MESSAGE_STACK_SORT_ORDER') ? (int)MODULE_HEADER_MESSAGE_STACK_SORT_ORDER : 0;
       $this->enabled = (MODULE_HEADER_MESSAGE_STACK_STATUS == 'True');
     }
   }
@@ -51,7 +51,7 @@ class he_header_message_stack
 
     if ((isset($_GET['error_message']) && !\is_null($_GET['error_message'])) || (isset($_GET['info_message']) && !\is_null($_GET['info_message']))) {
 
-      $content_width = (int)MODULE_HEADER_MESSAGE_STACK_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_HEADER_MESSAGE_STACK_CONTENT_WIDTH') ? (int)MODULE_HEADER_MESSAGE_STACK_CONTENT_WIDTH : 12;
 
       $data = '<!-- Start header Message Stack -->' . "\n";
 

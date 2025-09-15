@@ -31,8 +31,8 @@ class pi_products_info_also_purchased
     $this->description = CLICSHOPPING::getDef('module_products_info_also_purchased_description');
 
     if (\defined('MODULE_PRODUCTS_INFO_ALSO_PURCHASED_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_INFO_ALSO_PURCHASED_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_PRODUCTS_INFO_ALSO_PURCHASED_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_PRODUCTS_INFO_ALSO_PURCHASED_SORT_ORDER') ? (int)MODULE_PRODUCTS_INFO_ALSO_PURCHASED_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_PRODUCTS_INFO_ALSO_PURCHASED_STATUS') ? (MODULE_PRODUCTS_INFO_ALSO_PURCHASED_STATUS == 'True') : false;
     }
   }
 

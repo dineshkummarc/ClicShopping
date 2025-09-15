@@ -31,7 +31,7 @@ class pre_products_recommendations
     $this->description = CLICSHOPPING::getDef('module_products_recommendations_description');
 
     if (\defined('MODULE_PRODUCTS_RECOMMENDATIONS_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_RECOMMENDATIONS_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULE_PRODUCTS_RECOMMENDATIONS_SORT_ORDER') ? (int)MODULE_PRODUCTS_RECOMMENDATIONS_SORT_ORDER : 0;
       $this->enabled = (MODULE_PRODUCTS_RECOMMENDATIONS_STATUS == 'True');
     }
   }
@@ -45,7 +45,7 @@ class pre_products_recommendations
     $CLICSHOPPING_Reviews = Registry::get('Reviews');
 
     if (isset($_GET['Products'], $_GET['Recommendations'])) {
-      if (MODULE_PRODUCTS_RECOMMENDATIONS_MAX_DISPLAY != 0) {
+      if (\defined('MODULE_PRODUCTS_RECOMMENDATIONS_MAX_DISPLAY') && (int)MODULE_PRODUCTS_RECOMMENDATIONS_MAX_DISPLAY != 0) {
         $Qlisting = RecommendationsShop::getListing();
 
         $Qlisting->setPageSet((int)MODULE_PRODUCTS_RECOMMENDATIONS_MAX_DISPLAY);
@@ -136,11 +136,11 @@ class pre_products_recommendations
           $new_prods_content .= '<div class="d-flex flex-wrap">';
 
 // display number of short description
-          $products_short_description_number = (int)MODULE_PRODUCTS_RECOMMENDATIONS_SHORT_DESCRIPTION;
+          $products_short_description_number = \defined('MODULE_PRODUCTS_RECOMMENDATIONS_SHORT_DESCRIPTION') ? (int)MODULE_PRODUCTS_RECOMMENDATIONS_SHORT_DESCRIPTION : 0;
 // delete words
           $delete_word = (int)MODULE_PRODUCTS_RECOMMENDATIONS_SHORT_DESCRIPTION_DELETE_WORLDS;
 // nbr of column to display  boostrap
-          $bootstrap_column = (int)MODULE_PRODUCTS_RECOMMENDATIONS_COLUMNS;
+          $bootstrap_column = \defined('MODULE_PRODUCTS_RECOMMENDATIONS_COLUMNS') ? (int)MODULE_PRODUCTS_RECOMMENDATIONS_COLUMNS : 0;
 // initialisation des boutons
           $size_button = $CLICSHOPPING_ProductsCommon->getSizeButton('md');
 

@@ -30,8 +30,8 @@ class pl_products_listing_categories_name
     $this->description = CLICSHOPPING::getDef('module_products_listing_categories_name_description');
 
     if (\defined('MODULE_PRODUCTS_LISTING_CATEGORIES_NAME_STATUS')) {
-      $this->sort_order = (int)(int)MODULE_PRODUCTS_LISTING_CATEGORIES_NAME_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_PRODUCTS_LISTING_CATEGORIES_NAME_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_PRODUCTS_LISTING_CATEGORIES_NAME_SORT_ORDER') ? (int)MODULE_PRODUCTS_LISTING_CATEGORIES_NAME_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_PRODUCTS_LISTING_CATEGORIES_NAME_STATUS') ? (MODULE_PRODUCTS_LISTING_CATEGORIES_NAME_STATUS == 'True') : false;
     }
   }
 
@@ -43,7 +43,7 @@ class pl_products_listing_categories_name
     if (!empty($CLICSHOPPING_Category->getPath())) {
       if ($CLICSHOPPING_Category->getID()) {
         if ($CLICSHOPPING_Category->getDepth() == 'nested' || $CLICSHOPPING_Category->getDepth() == 'products') {
-          $bootstrap_column = (int)MODULE_PRODUCTS_LISTING_CATEGORIES_COLUMNS;
+          $bootstrap_column = \defined('MODULE_PRODUCTS_LISTING_CATEGORIES_COLUMNS') ? (int)MODULE_PRODUCTS_LISTING_CATEGORIES_COLUMNS : 0;
 
           $products_listing_categories_name = $CLICSHOPPING_Category->getTitle();
 

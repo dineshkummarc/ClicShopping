@@ -30,7 +30,7 @@ class pi_products_info_options
     $this->description = CLICSHOPPING::getDef('module_products_info_options_description');
 
     if (\defined('MODULE_PRODUCTS_INFO_OPTIONS_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_INFO_OPTIONS_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULE_PRODUCTS_INFO_OPTIONS_SORT_ORDER') ? (int)MODULE_PRODUCTS_INFO_OPTIONS_SORT_ORDER : 0;
       $this->enabled = (MODULE_PRODUCTS_INFO_OPTIONS_STATUS == 'True');
     }
   }
@@ -43,8 +43,8 @@ class pi_products_info_options
 
     if ($CLICSHOPPING_ProductsCommon->getID() && isset($_GET['Products'])) {
 
-      $content_width = (int)MODULE_PRODUCTS_INFO_OPTIONS_CONTENT_WIDTH;
-      $text_position = MODULE_PRODUCTS_INFO_OPTIONS_POSITION;
+      $content_width = \defined('MODULE_PRODUCTS_INFO_OPTIONS_CONTENT_WIDTH') ? (int)MODULE_PRODUCTS_INFO_OPTIONS_CONTENT_WIDTH : 12;
+      $text_position = \defined('MODULE_PRODUCTS_INFO_OPTIONS_POSITION') ? MODULE_PRODUCTS_INFO_OPTIONS_POSITION : 'float-none';
 
       $CLICSHOPPING_Customer = Registry::get('Customer');
       $CLICSHOPPING_Db = Registry::get('Db');
@@ -217,7 +217,7 @@ class pi_products_info_options
         $products_options_content_display .= '</div>' . "\n";
 
 // Strong relations with pi_products_info_price.php Don't delete
-        if (MODULE_PRODUCTS_INFO_PRICE_SORT_ORDER == '') {
+        if (\defined('MODULE_PRODUCTS_INFO_PRICE_SORT_ORDER') && MODULE_PRODUCTS_INFO_PRICE_SORT_ORDER == '') {
           $module_produts_info_price_sort_order = -1;
         } else {
           $module_produts_info_price_sort_order = MODULE_PRODUCTS_INFO_PRICE_SORT_ORDER ?? 0;

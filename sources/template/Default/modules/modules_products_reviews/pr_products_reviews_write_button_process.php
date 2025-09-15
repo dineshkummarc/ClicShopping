@@ -77,8 +77,8 @@ class pr_products_reviews_write_button_process
     $this->description = CLICSHOPPING::getDef('modules_products_reviews_write_button_process_description');
 
     if (\defined('MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_STATUS')) {
-      $this->sort_order = (int)MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_SORT_ORDER ?? 0;
-      $this->enabled = (MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_STATUS == 'True');
+      $this->sort_order = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_SORT_ORDER') ? (int)MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_STATUS') ? (MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_STATUS == 'True') : false;
     }
   }
 
@@ -104,8 +104,8 @@ class pr_products_reviews_write_button_process
         }
       }
 
-      $content_width = (int)MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_CONTENT_WIDTH;
-      $text_position = MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_POSITION;
+      $content_width = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_CONTENT_WIDTH') ? (int)MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_CONTENT_WIDTH : 0;
+      $text_position = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_POSITION') ? MODULES_PRODUCTS_REVIEWS_WRITE_BUTTON_PROCESS_POSITION : 'float-none';
 
       if (isset($_GET['Products'], $_GET['ReviewsWrite']) && !isset($_GET['Success'])) {
       $products_name_url = $CLICSHOPPING_ProductsFunctionTemplate->getProductsUrlRewrited()->getProductNameUrl($CLICSHOPPING_ProductsCommon->getID());

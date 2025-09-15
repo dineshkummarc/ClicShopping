@@ -31,8 +31,8 @@ class pl_products_listing
     $this->description = CLICSHOPPING::getDef('module_products_listing_description');
 
     if (\defined('MODULE_PRODUCTS_LISTING_STATUS')) {
-      $this->sort_order = (int)(int)MODULE_PRODUCTS_LISTING_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_PRODUCTS_LISTING_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_PRODUCTS_LISTING_SORT_ORDER') ? (int)MODULE_PRODUCTS_LISTING_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_PRODUCTS_LISTING_STATUS') ? (MODULE_PRODUCTS_LISTING_STATUS == 'True') : false;
     }
   }
 
@@ -124,11 +124,11 @@ class pl_products_listing
         $new_prods_content .= '<div class="d-flex flex-wrap modulesProductsListing">';
 
 // display number of short description
-        $products_short_description_number = (int)MODULE_PRODUCTS_LISTING_SHORT_DESCRIPTION;
+        $products_short_description_number = \defined('MODULE_PRODUCTS_LISTING_SHORT_DESCRIPTION') ? (int)MODULE_PRODUCTS_LISTING_SHORT_DESCRIPTION : 0;
 // delete words
-        $delete_word = (int)MODULE_PRODUCTS_LISTING_SHORT_DESCRIPTION_DELETE_WORLDS;
+        $delete_word = \defined('MODULE_PRODUCTS_LISTING_SHORT_DESCRIPTION_DELETE_WORLDS') ? (int)MODULE_PRODUCTS_LISTING_SHORT_DESCRIPTION_DELETE_WORLDS : 0;
 // nbr of column to display  boostrap
-        $bootstrap_column = (int)MODULE_PRODUCTS_LISTING_COLUMNS;
+        $bootstrap_column = \defined('MODULE_PRODUCTS_LISTING_COLUMNS') ? (int)MODULE_PRODUCTS_LISTING_COLUMNS : 0;
 // initialisation des boutons
         $size_button = $CLICSHOPPING_ProductsCommon->getSizeButton('md');
 

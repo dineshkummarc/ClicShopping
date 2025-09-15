@@ -29,8 +29,8 @@ class fp_seo_title_h1
     $this->description = CLICSHOPPING::getDef('module_seo_title_h1_description');
 
     if (\defined('MODULE_SEO_TITLE_H1_STATUS')) {
-      $this->sort_order = (int)MODULE_SEO_TITLE_H1_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_SEO_TITLE_H1_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_SEO_TITLE_H1_SORT_ORDER') ? (int)MODULE_SEO_TITLE_H1_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_SEO_TITLE_H1_STATUS') ? (MODULE_SEO_TITLE_H1_STATUS == 'True') : false;
     }
   }
 
@@ -53,7 +53,7 @@ class fp_seo_title_h1
     $CLICSHOPPING_Language = Registry::get('Language');
 
     if (CLICSHOPPING::getBaseNameIndex() && !$CLICSHOPPING_Category->getPath()) {
-      $content_width = (int)MODULE_SEO_TITLE_H1_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_SEO_TITLE_H1_CONTENT_WIDTH') ? (int)MODULE_SEO_TITLE_H1_CONTENT_WIDTH : 12;
       $language_id = $CLICSHOPPING_Language->getId();
 
 // Recuperation de la page d'acceuil personnalisee

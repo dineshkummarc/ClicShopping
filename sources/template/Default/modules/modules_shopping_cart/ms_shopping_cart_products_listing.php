@@ -30,7 +30,7 @@ class ms_shopping_cart_products_listing
     $this->description = CLICSHOPPING::getDef('module_shopping_cart_products_listing_description');
 
     if (\defined('MODULE_SHOPPING_CART_PRODUCTS_LISTING_STATUS')) {
-      $this->sort_order = (int)MODULE_SHOPPING_CART_PRODUCTS_LISTING_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULE_SHOPPING_CART_PRODUCTS_LISTING_SORT_ORDER') ? (int)MODULE_SHOPPING_CART_PRODUCTS_LISTING_SORT_ORDER : 0;
       $this->enabled = (MODULE_SHOPPING_CART_PRODUCTS_LISTING_STATUS == 'True');
     }
   }
@@ -124,7 +124,7 @@ class ms_shopping_cart_products_listing
 
         $image = HTML::link($products_name_url, HTML::image($CLICSHOPPING_Template->getDirectoryTemplateImages() . $products[$i]['image'], $products[$i]['name'], 50, 50)) . '&nbsp;&nbsp;&nbsp;';
 
-        if (STOCK_CHECK == 'true') {
+        if (\defined('STOCK_CHECK') && STOCK_CHECK == 'true') {
 // select the good qty in B2B to decrease the stock (see checkout_process to update stock)
           if ($CLICSHOPPING_Customer->getCustomersGroupID() != 0) {
             $QproductsQuantityCustomersGroupQuery = $CLICSHOPPING_Db->prepare('select products_quantity_fixed_group

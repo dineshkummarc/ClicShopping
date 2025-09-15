@@ -34,7 +34,7 @@ class ta_tell_a_friend_invisible_antispam
         if (\defined('CLICSHOPPING_APP_ANTISPAM_IN_TELL_A_FRIEND') && CLICSHOPPING_APP_ANTISPAM_IN_TELL_A_FRIEND == 'True') {
           if (\defined('MODULES_TELL_A_FRIEND_INVISIBLE_ANTISPAM_STATUS')) {
             $this->enabled = (MODULES_TELL_A_FRIEND_INVISIBLE_ANTISPAM_STATUS == 'True');
-            $this->sort_order = (int)MODULES_TELL_A_FRIEND_INVISIBLE_ANTISPAM_SORT_ORDER ?? 0;
+            $this->sort_order = \defined('MODULES_TELL_A_FRIEND_INVISIBLE_ANTISPAM_SORT_ORDER') ? (int)MODULES_TELL_A_FRIEND_INVISIBLE_ANTISPAM_SORT_ORDER : 0;
           }
         } else {
           $this->enabled = false;

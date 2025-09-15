@@ -61,8 +61,8 @@ class ph_products_favorites_title
     $this->description = CLICSHOPPING::getDef('module_products_favorites_title_description');
 
     if (\defined('MODULE_PRODUCTS_FAVORITES_TITLE_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_FAVORITES_TITLE_SORT_ORDER;
-      $this->enabled = (MODULE_PRODUCTS_FAVORITES_TITLE_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_PRODUCTS_FAVORITES_TITLE_SORT_ORDER') ? (int)MODULE_PRODUCTS_FAVORITES_TITLE_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_PRODUCTS_FAVORITES_TITLE_STATUS') ? (MODULE_PRODUCTS_FAVORITES_TITLE_STATUS == 'True') : false;
     }
   }
 
@@ -86,8 +86,8 @@ class ph_products_favorites_title
           }
         }
 
-          $content_width = (int)MODULE_PRODUCTS_FAVORITES_CONTENT_WIDTH;
-          $text_position = MODULE_PRODUCTS_FAVORITES_POSITION;
+          $content_width = \defined('MODULE_PRODUCTS_FAVORITES_CONTENT_WIDTH') ? (int)MODULE_PRODUCTS_FAVORITES_CONTENT_WIDTH : 12;
+          $text_position = \defined('MODULE_PRODUCTS_FAVORITES_POSITION') ? MODULE_PRODUCTS_FAVORITES_POSITION : 'float-none';
 
           $content = '<!-- products favorites title start -->' . "\n";
           $content .= '<div class="ModulesProductsFavoritesContainer">';

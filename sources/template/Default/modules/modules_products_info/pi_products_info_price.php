@@ -40,8 +40,8 @@ class pi_products_info_price
     $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
 
     if ($CLICSHOPPING_ProductsCommon->getID() && isset($_GET['Products'])) {
-      $content_width = (int)MODULE_PRODUCTS_INFO_PRICE_CONTENT_WIDTH;
-      $text_position = MODULE_PRODUCTS_INFO_PRICE_POSITION;
+      $content_width = \defined('MODULE_PRODUCTS_INFO_PRICE_CONTENT_WIDTH') ? (int)MODULE_PRODUCTS_INFO_PRICE_CONTENT_WIDTH : 12;
+      $text_position = \defined('MODULE_PRODUCTS_INFO_PRICE_POSITION') ? MODULE_PRODUCTS_INFO_PRICE_POSITION : 'float-none';
 
       $CLICSHOPPING_Customer = Registry::get('Customer');
       $CLICSHOPPING_Template = Registry::get('Template');

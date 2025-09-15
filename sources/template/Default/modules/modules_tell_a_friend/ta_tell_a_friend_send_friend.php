@@ -30,7 +30,7 @@ class ta_tell_a_friend_send_friend
     $this->description = CLICSHOPPING::getDef('modules_tell_a_friend_send_friend_description');
 
     if (\defined('MODULES_TELL_A_FRIEND_SEND_FRIEND_STATUS')) {
-      $this->sort_order = (int)MODULES_TELL_A_FRIEND_SEND_FRIEND_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULES_TELL_A_FRIEND_SEND_FRIEND_SORT_ORDER') ? (int)MODULES_TELL_A_FRIEND_SEND_FRIEND_SORT_ORDER : 0;
       $this->enabled = (MODULES_TELL_A_FRIEND_SEND_FRIEND_STATUS == 'True');
     }
   }

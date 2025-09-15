@@ -42,7 +42,7 @@ class he_header_noscript
     $this->description = CLICSHOPPING::getDef('module_header_noscript_description');
 
     if (\defined('MODULE_HEADER_NOSCRIPT_STATUS')) {
-      $this->sort_order = (int)MODULE_HEADER_NOSCRIPT_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULE_HEADER_NOSCRIPT_SORT_ORDER') ? (int)MODULE_HEADER_NOSCRIPT_SORT_ORDER : 0;
       $this->enabled = (MODULE_HEADER_NOSCRIPT_STATUS == 'True');
     }
   }
@@ -67,7 +67,7 @@ class he_header_noscript
         }
       }
 
-      $content_width = (int)MODULE_HEADER_NOSCRIPT_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_HEADER_NOSCRIPT_CONTENT_WIDTH') ? (int)MODULE_HEADER_NOSCRIPT_CONTENT_WIDTH : 12;
 
       $header_template = '<!-- Start noscript header message -->' . "\n";
 

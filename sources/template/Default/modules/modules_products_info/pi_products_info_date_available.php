@@ -87,8 +87,8 @@ class pi_products_info_date_available
         }
       }
 
-      $content_width = (int)MODULE_PRODUCTS_INFO_DATE_AVAILABLE_CONTENT_WIDTH;
-      $text_position = MODULE_PRODUCTS_INFO_DATE_AVAILABLE_POSITION;
+      $content_width = \defined('MODULE_PRODUCTS_INFO_DATE_AVAILABLE_CONTENT_WIDTH') ? (int)MODULE_PRODUCTS_INFO_DATE_AVAILABLE_CONTENT_WIDTH : 12;
+      $text_position = \defined('MODULE_PRODUCTS_INFO_DATE_AVAILABLE_POSITION') ? MODULE_PRODUCTS_INFO_DATE_AVAILABLE_POSITION : 'float-none';
 
       $products_date_available = $CLICSHOPPING_ProductsCommon->getProductsDateAvailable();
 

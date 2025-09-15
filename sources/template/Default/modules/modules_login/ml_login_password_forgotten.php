@@ -30,8 +30,8 @@ class ml_login_password_forgotten
     $this->description = CLICSHOPPING::getDef('module_login_password_forgotten_description');
 
     if (\defined('MODULE_LOGIN_PASSWORD_FORGOTTEN_STATUS')) {
-      $this->sort_order = (int)MODULE_LOGIN_PASSWORD_FORGOTTEN_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_LOGIN_PASSWORD_FORGOTTEN_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_LOGIN_PASSWORD_FORGOTTEN_SORT_ORDER') ? (int)MODULE_LOGIN_PASSWORD_FORGOTTEN_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_LOGIN_PASSWORD_FORGOTTEN_STATUS') ? (MODULE_LOGIN_PASSWORD_FORGOTTEN_STATUS == 'True') : false;
     }
   }
 
@@ -40,7 +40,7 @@ class ml_login_password_forgotten
     $CLICSHOPPING_Template = Registry::get('Template');
 
     if (isset($_GET['Account'], $_GET['PasswordForgotten'])) {
-      $content_width = (int)MODULE_LOGIN_PASSWORD_FORGOTTEN_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_LOGIN_PASSWORD_FORGOTTEN_CONTENT_WIDTH') ? (int)MODULE_LOGIN_PASSWORD_FORGOTTEN_CONTENT_WIDTH : 12;
 
       $ml_login_connexion = '<!-- ml_login_password_forgotten start-->' . "\n";
 

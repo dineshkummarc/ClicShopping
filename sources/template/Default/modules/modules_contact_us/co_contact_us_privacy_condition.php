@@ -32,8 +32,8 @@ class co_contact_us_privacy_condition
     $this->description = CLICSHOPPING::getDef('modules_contact_us_privacy_condition_description');
 
     if (\defined('MODULES_CONTACT_US_PRIVACY_CONDITION_STATUS')) {
-      $this->sort_order = (int)MODULES_CONTACT_US_PRIVACY_CONDITION_SORT_ORDER ?? 0;
-      $this->enabled = (MODULES_CONTACT_US_PRIVACY_CONDITION_STATUS == 'True');
+      $this->sort_order = \defined('MODULES_CONTACT_US_PRIVACY_CONDITION_SORT_ORDER') ? (int)MODULES_CONTACT_US_PRIVACY_CONDITION_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULES_CONTACT_US_PRIVACY_CONDITION_STATUS') ? (MODULES_CONTACT_US_PRIVACY_CONDITION_STATUS == 'True') : false;
     }
   }
 
@@ -54,9 +54,9 @@ class co_contact_us_privacy_condition
         }
       }
 
-      $content_width = (int)MODULES_CONTACT_US_PRIVACY_CONDITION_CONTENT_WIDTH;
+      $content_width = \defined('MODULES_CONTACT_US_PRIVACY_CONDITION_CONTENT_WIDTH') ? (int)MODULES_CONTACT_US_PRIVACY_CONDITION_CONTENT_WIDTH : 12;
 
-      if (DISPLAY_PRIVACY_CONDITIONS == 'true') {
+      if (\defined('DISPLAY_PRIVACY_CONDITIONS') && DISPLAY_PRIVACY_CONDITIONS == 'true') {
         $privacy_condition = '<!-- Start contact us privacy condition -->' . "\n";
 
         ob_start();

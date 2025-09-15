@@ -31,7 +31,7 @@ class co_contact_us_success
 
     if (\defined('MODULES_CONTACT_US_SUCCESS_STATUS')) {
       $this->sort_order = (\defined('MODULES_CONTACT_US_SUCCESS_SORT_ORDER') ? (int)MODULES_CONTACT_US_SUCCESS_SORT_ORDER : 0);
-      $this->enabled = (MODULES_CONTACT_US_SUCCESS_STATUS == 'True');
+      $this->enabled = \defined('MODULES_CONTACT_US_SUCCESS_STATUS') ? (MODULES_CONTACT_US_SUCCESS_STATUS == 'True') : false;
     }
   }
 

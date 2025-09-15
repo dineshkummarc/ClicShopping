@@ -31,8 +31,8 @@ class pf_products_featured
     $this->description = CLICSHOPPING::getDef('module_products_featured_description');
 
     if (\defined('MODULE_PRODUCTS_FEATURED_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_FEATURED_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_PRODUCTS_FEATURED_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_PRODUCTS_FEATURED_SORT_ORDER') ? (int)MODULE_PRODUCTS_FEATURED_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_PRODUCTS_FEATURED_STATUS') ? (MODULE_PRODUCTS_FEATURED_STATUS == 'True') : false;
     }
   }
 
@@ -45,9 +45,9 @@ class pf_products_featured
     $CLICSHOPPING_Reviews = Registry::get('Reviews');
 
     if (isset($_GET['Products'], $_GET['Featured'])) {
-      if (MODULE_PRODUCTS_FEATURED_MAX_DISPLAY != 0) {
+      if (\defined('MODULE_PRODUCTS_FEATURED_MAX_DISPLAY') && (int)MODULE_PRODUCTS_FEATURED_MAX_DISPLAY != 0) {
 
-        $products_template = MODULE_PRODUCTS_FEATURED_TEMPLATE;
+        $products_template = \defined('MODULE_PRODUCTS_FEATURED_TEMPLATE') ? MODULE_PRODUCTS_FEATURED_TEMPLATE : 'products_featured.php';
 
         $Qlisting = FeaturedClass::getListing();
 

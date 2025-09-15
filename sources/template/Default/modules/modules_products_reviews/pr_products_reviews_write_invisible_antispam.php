@@ -33,8 +33,8 @@ class pr_products_reviews_write_invisible_antispam
       if (\defined('CLICSHOPPING_APP_ANTISPAM_IN_STATUS') && CLICSHOPPING_APP_ANTISPAM_IN_STATUS == 'True') {
         if (\defined('CLICSHOPPING_APP_ANTISPAM_IN_REVIEWS_WRITE') && CLICSHOPPING_APP_ANTISPAM_IN_REVIEWS_WRITE == 'True') {
           if (\defined('MODULES_PRODUCTS_REVIEWS_WRITE_INVISIBLE_ANTISPAM_STATUS')) {
-            $this->enabled = (MODULES_PRODUCTS_REVIEWS_WRITE_INVISIBLE_ANTISPAM_STATUS == 'True');
-            $this->sort_order = (int)MODULES_PRODUCTS_REVIEWS_WRITE_INVISIBLE_ANTISPAM_SORT_ORDER ?? 0;
+            $this->enabled = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_INVISIBLE_ANTISPAM_STATUS') ? (MODULES_PRODUCTS_REVIEWS_WRITE_INVISIBLE_ANTISPAM_STATUS == 'True') : false;
+            $this->sort_order = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_INVISIBLE_ANTISPAM_SORT_ORDER') ? (int)MODULES_PRODUCTS_REVIEWS_WRITE_INVISIBLE_ANTISPAM_SORT_ORDER : 0;
           } else {
             $this->enabled = false;
           }

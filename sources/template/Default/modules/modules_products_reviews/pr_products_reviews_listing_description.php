@@ -30,8 +30,8 @@ class pr_products_reviews_listing_description
     $this->description = CLICSHOPPING::getDef('modules_products_reviews_listing_description_description');
 
     if (\defined('MODULES_PRODUCTS_REVIEWS_LISTING_DESCRIPTION_STATUS')) {
-      $this->sort_order = (int)MODULES_PRODUCTS_REVIEWS_LISTING_DESCRIPTION_SORT_ORDER ?? 0;
-      $this->enabled = (MODULES_PRODUCTS_REVIEWS_LISTING_DESCRIPTION_STATUS == 'True');
+      $this->sort_order = \defined('MODULES_PRODUCTS_REVIEWS_LISTING_DESCRIPTION_SORT_ORDER') ? (int)MODULES_PRODUCTS_REVIEWS_LISTING_DESCRIPTION_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULES_PRODUCTS_REVIEWS_LISTING_DESCRIPTION_STATUS') ? (MODULES_PRODUCTS_REVIEWS_LISTING_DESCRIPTION_STATUS == 'True') : false;
     }
   }
 
@@ -39,8 +39,8 @@ class pr_products_reviews_listing_description
   {
     $CLICSHOPPING_Template = Registry::get('Template');
 
-    $content_width = (int)MODULES_PRODUCTS_REVIEWS_LISTING_DESCRIPTION_CONTENT_WIDTH;
-    $text_position = MODULES_PRODUCTS_REVIEWS_LISTING_DESCRIPTION_POSITION;
+    $content_width = \defined('MODULES_PRODUCTS_REVIEWS_LISTING_DESCRIPTION_CONTENT_WIDTH') ? (int)MODULES_PRODUCTS_REVIEWS_LISTING_DESCRIPTION_CONTENT_WIDTH : 0;
+    $text_position = \defined('MODULES_PRODUCTS_REVIEWS_LISTING_DESCRIPTION_POSITION') ? MODULES_PRODUCTS_REVIEWS_LISTING_DESCRIPTION_POSITION : 'float-none';
 
     if (isset($_GET['Products'], $_GET['Review'])) {
       $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');

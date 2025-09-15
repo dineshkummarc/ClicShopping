@@ -32,8 +32,8 @@ class pr_products_reviews_info_content
     $this->description = CLICSHOPPING::getDef('modules_products_reviews_info_content_description');
 
     if (\defined('MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_STATUS')) {
-      $this->sort_order = (int)MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_SORT_ORDER ?? 0;
-      $this->enabled = (MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_STATUS == 'True');
+      $this->sort_order = \defined('MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_SORT_ORDER') ? (int)MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_STATUS') ? (MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_STATUS == 'True') : false;
     }
   }
 
@@ -47,12 +47,12 @@ class pr_products_reviews_info_content
       $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
       $CLICSHOPPING_ProductsFunctionTemplate = Registry::get('ProductsFunctionTemplate');
 
-      $content_width = (int)MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_WIDTH;
+      $content_width = \defined('MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_WIDTH') ? (int)MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_WIDTH : 0;
       $reviews_id = HTML::sanitize($_GET['reviews_id']);
       $reviews = $CLICSHOPPING_Reviews->getDataReviews($reviews_id);
 
-      $delete_comment = MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_DELETE_COMMENT;
-      $text_postion = MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_POSITION;
+      $delete_comment = \defined('MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_DELETE_COMMENT') ? MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_DELETE_COMMENT : 'False';
+      $text_postion = \defined('MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_POSITION') ? MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_POSITION : 'float-none';
 
       $products_name_url = $CLICSHOPPING_ProductsFunctionTemplate->getProductsUrlRewrited()->getProductNameUrl($CLICSHOPPING_ProductsCommon->getID());
 
@@ -76,7 +76,7 @@ class pr_products_reviews_info_content
         $customer_text = HTML::breakString(nl2br(HTML::outputProtected($reviews_text)), 60, '-<br />');
         $customer_rating = '<span class="productsInfoReviewsContentRating" itemprop="ratingValue">' . HTML::stars($reviews_rating) . '</span>';
 
-        if (MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_SENTIMENT_TAG == 'True') {
+        if (\defined('MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_SENTIMENT_TAG') && MODULES_PRODUCTS_REVIEWS_INFO_CONTENT_SENTIMENT_TAG == 'True') {
           $customer_tag = $reviews['customers_tag'];
           $customer_tag = explode(',', $customer_tag);
         }

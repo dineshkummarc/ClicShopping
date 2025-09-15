@@ -98,9 +98,9 @@ class he_header_page_manager_header_menu
     $this->description = CLICSHOPPING::getDef('module_header_page_manager_header_menu_description');
 
     if (\defined('MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_STATUS')) {
-      $this->sort_order = (int)MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_STATUS == 'True');
-      $this->pages = MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_DISPLAY_PAGES;
+      $this->sort_order = \defined('MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_SORT_ORDER') ? (int)MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_STATUS') ? (MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_STATUS == 'True') : false;
+      $this->pages = \defined('MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_DISPLAY_PAGES') ? MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_DISPLAY_PAGES : 'all';
     }
   }
 
@@ -116,7 +116,7 @@ class he_header_page_manager_header_menu
     $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
     $CLICSHOPPING_Customer = Registry::get('Customer');
 
-    if (MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_STATUS == 'True') {
+    if (\defined('MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_STATUS') && MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_STATUS == 'True') {
     if ($this->enabled) {
       if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
         // Include customer group ID to manage group-specific menus
@@ -129,7 +129,7 @@ class he_header_page_manager_header_menu
         }
       }
 
-        $content_width = (int)MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_CONTENT_WIDTH;
+        $content_width = \defined('MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_CONTENT_WIDTH') ? (int)MODULE_HEADER_PAGE_MANAGER_HEADER_MENU_CONTENT_WIDTH : 12;
         $header_menu = $CLICSHOPPING_PageManagerShop->pageManagerDisplayHeaderMenu('<div class="menuHeaderPageManager">', '</div>');
 
         $data = '<!-- Start Page Manager Header Menu -->' . "\n";

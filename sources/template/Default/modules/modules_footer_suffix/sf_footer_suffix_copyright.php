@@ -68,7 +68,7 @@ class sf_footer_suffix_copyright
     $this->description = CLICSHOPPING::getDef('modules_footer_suffix_copyright_description');
 
     if (\defined('MODULES_FOOTER_SUFFIX_COPYRIGHT_STATUS')) {
-      $this->sort_order = (int)MODULES_FOOTER_SUFFIX_COPYRIGHT_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULES_FOOTER_SUFFIX_COPYRIGHT_SORT_ORDER') ? (int)MODULES_FOOTER_SUFFIX_COPYRIGHT_SORT_ORDER : 0;
       $this->enabled = (MODULES_FOOTER_SUFFIX_COPYRIGHT_STATUS == 'True');
     }
   }
@@ -94,7 +94,7 @@ class sf_footer_suffix_copyright
 
       $logo = '<img width="24" height="24" alt="ClicShopping AI , Free Artificial intelligence E-commerce Open Source Solution B2B - B2C for everybody" title="ClicShopping, Free E-commerce Open Source Solution B2B - B2C for everybody" src="' . HTTP::getShopUrlDomain() . 'images/logo_clicshopping_24.webp">';
       $clicshopping_copyright = date('Y');
-      $shop_owner_copyright = date('Y') . ' - ' . STORE_NAME;
+      $shop_owner_copyright = date('Y') . ' - ' . \defined('STORE_NAME') ? STORE_NAME : '';
 
       $footer_copyright = '<!-- footer copyright start -->' . "\n";
 

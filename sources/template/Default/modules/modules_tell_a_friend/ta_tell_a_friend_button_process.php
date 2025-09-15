@@ -30,7 +30,7 @@ class ta_tell_a_friend_button_process
     $this->description = CLICSHOPPING::getDef('modules_tell_a_friend_button_process_description');
 
     if (\defined('MODULES_TELL_A_FRIEND_BUTTON_PROCESS_STATUS')) {
-      $this->sort_order = (int)MODULES_TELL_A_FRIEND_BUTTON_PROCESS_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULES_TELL_A_FRIEND_BUTTON_PROCESS_SORT_ORDER') ? (int)MODULES_TELL_A_FRIEND_BUTTON_PROCESS_SORT_ORDER : 0;
       $this->enabled = (MODULES_TELL_A_FRIEND_BUTTON_PROCESS_STATUS == 'True');
     }
   }
@@ -45,7 +45,7 @@ class ta_tell_a_friend_button_process
       $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
       $CLICSHOPPING_ProductsFunctionTemplate = Registry::get('ProductsFunctionTemplate');
 
-      $content_width = (int)MODULES_TELL_A_FRIEND_BUTTON_PROCESS_CONTENT_WIDTH;
+      $content_width = \defined('MODULES_TELL_A_FRIEND_BUTTON_PROCESS_CONTENT_WIDTH') ? (int)MODULES_TELL_A_FRIEND_BUTTON_PROCESS_CONTENT_WIDTH : 0;
 
       $products_name_url = $CLICSHOPPING_ProductsFunctionTemplate->getProductsUrlRewrited()->getProductNameUrl($CLICSHOPPING_ProductsCommon->getID());
 

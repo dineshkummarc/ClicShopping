@@ -85,8 +85,8 @@ class pf_products_featured_title
     $this->description = CLICSHOPPING::getDef('module_products_featured_title_title_description');
 
     if (\defined('MODULE_PRODUCTS_FEATURED_TITLE_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_FEATURED_TITLE_SORT_ORDER;
-      $this->enabled = (MODULE_PRODUCTS_FEATURED_TITLE_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_PRODUCTS_FEATURED_TITLE_SORT_ORDER') ? (int)MODULE_PRODUCTS_FEATURED_TITLE_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_PRODUCTS_FEATURED_TITLE_STATUS') ? (MODULE_PRODUCTS_FEATURED_TITLE_STATUS == 'True') : false;
     }
   }
 
@@ -112,8 +112,8 @@ class pf_products_featured_title
         }
       }
 
-        $content_width = (int)MODULE_PRODUCTS_FEATURED_CONTENT_WIDTH;
-        $text_position = MODULE_PRODUCTS_FEATURED_POSITION;
+        $content_width = \defined('MODULE_PRODUCTS_FEATURED_CONTENT_WIDTH') ? (int)MODULE_PRODUCTS_FEATURED_CONTENT_WIDTH : 12;
+        $text_position = \defined('MODULE_PRODUCTS_FEATURED_POSITION') ? MODULE_PRODUCTS_FEATURED_POSITION : 'float-none';
 
         $products_featured_title = '<!-- products featured title start -->' . "\n";
         $products_featured_title .= '<div class="ModulesProductsFeaturedContainer">';

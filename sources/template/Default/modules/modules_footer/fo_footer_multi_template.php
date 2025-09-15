@@ -34,9 +34,9 @@ class fo_footer_multi_template
     $this->description = CLICSHOPPING::getDef('module_footer_multi_template_description');
 
     if (\defined('MODULE_FOOTER_MULTI_TEMPLATE_STATUS')) {
-      $this->sort_order = (int)MODULE_FOOTER_MULTI_TEMPLATE_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_FOOTER_MULTI_TEMPLATE_STATUS == 'True');
-      $this->pages = MODULE_FOOTER_MULTI_TEMPLATE_DISPLAY_PAGES;
+      $this->sort_order = \defined('MODULE_FOOTER_MULTI_TEMPLATE_SORT_ORDER') ? (int)MODULE_FOOTER_MULTI_TEMPLATE_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_FOOTER_MULTI_TEMPLATE_STATUS') ? (MODULE_FOOTER_MULTI_TEMPLATE_STATUS == 'True') : false;
+      $this->pages = \defined('MODULE_FOOTER_MULTI_TEMPLATE_DISPLAY_PAGES') ? MODULE_FOOTER_MULTI_TEMPLATE_DISPLAY_PAGES : 'all';
     }
   }
 
@@ -68,7 +68,7 @@ class fo_footer_multi_template
           }
         }
 
-        $content_width = (int)MODULE_FOOTER_MULTI_TEMPLATE_CONTENT_WIDTH;
+        $content_width = \defined('MODULE_FOOTER_MULTI_TEMPLATE_CONTENT_WIDTH') ? (int)MODULE_FOOTER_MULTI_TEMPLATE_CONTENT_WIDTH : 12;
         $menu_footer = $CLICSHOPPING_PageManagerShop->pageManagerDisplayFooterMenu();
 
         $footer_tag = '<!-- Start footer social footer -->' . "\n";
@@ -79,19 +79,19 @@ class fo_footer_multi_template
             "name" : "' . STORE_NAME . '",
           ';
 
-        if (!empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL) || !empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL) || !empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL)) {
+        if (!empty(\defined('MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL') ? MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL : '') || !empty(\defined('MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL') ? MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL : '') || !empty(\defined('MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL') ? MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL : '')) {
           $footer_tag .= '"url" : "' . CLICSHOPPING::getConfig('http_server', 'Shop');
 
           $footer_tag .= '
               "sameAs" : [
             ';
-          if (!empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL)) {
+          if (!empty(\defined('MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL') ? MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL : '')) {
             $footer_tag .= ' "" ';
           }
-          if (!empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL)) {
+          if (!empty(\defined('MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL') ? MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL : '')) {
             $footer_tag .= ' ,"" ';
           }
-          if (!empty(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL)) {
+          if (!empty(\defined('MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL') ? MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL : '')) {
             $footer_tag .= ' ,"" ';
           }
           $footer_tag .= '
@@ -111,21 +111,21 @@ class fo_footer_multi_template
 
         $filename = $CLICSHOPPING_Template->getTemplateModulesFilename($this->group . '/template_html/' . MODULE_FOOTER_MULTI_TEMPLATE);
 
-        $facebook = MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL;
+        $facebook = \defined('MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL') ? MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_FACEBOOK_URL : '';
         if (!empty($facebook)) {
           $facebook_url = rawurldecode($facebook);
         } else {
           $facebook_url = '#';
         }
 
-        $twitter = MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL;
+        $twitter = \defined('MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL') ? MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL : '';
         if (!empty($twitter)) {
           $twitter_url = rawurldecode(MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_TWITTER_URL);
         } else {
           $twitter_url = '#';
         }
 
-        $pinterest = MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL;
+        $pinterest = \defined('MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL') ? MODULE_FOOTER_MULTI_TEMPLATE_CONTENTS_PINTEREST_URL : '';
         if (!empty($pinterest)) {
           $pinterest_url = rawurldecode($pinterest);
         } else {

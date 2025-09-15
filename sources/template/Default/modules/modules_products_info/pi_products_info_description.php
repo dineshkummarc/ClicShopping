@@ -58,8 +58,8 @@ class pi_products_info_description
     $this->description = CLICSHOPPING::getDef('module_products_info_description_description');
 
     if (\defined('MODULE_PRODUCTS_INFO_DESCRIPTION_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_INFO_DESCRIPTION_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_PRODUCTS_INFO_DESCRIPTION_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_PRODUCTS_INFO_DESCRIPTION_SORT_ORDER') ? (int)MODULE_PRODUCTS_INFO_DESCRIPTION_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_PRODUCTS_INFO_DESCRIPTION_STATUS') ? (MODULE_PRODUCTS_INFO_DESCRIPTION_STATUS == 'True') : false;
     }
   }
 
@@ -84,8 +84,8 @@ class pi_products_info_description
         }
       }
 
-      $content_width = (int)MODULE_PRODUCTS_INFO_DESCRIPTION_CONTENT_WIDTH;
-      $text_position = MODULE_PRODUCTS_INFO_DESCRIPTION_POSITION;
+      $content_width = \defined('MODULE_PRODUCTS_INFO_DESCRIPTION_CONTENT_WIDTH') ? (int)MODULE_PRODUCTS_INFO_DESCRIPTION_CONTENT_WIDTH : 12;
+      $text_position = \defined('MODULE_PRODUCTS_INFO_DESCRIPTION_POSITION') ? MODULE_PRODUCTS_INFO_DESCRIPTION_POSITION : 'float-none';
 
       $products_description = stripslashes($CLICSHOPPING_ProductsCommon->getProductsDescription());
 

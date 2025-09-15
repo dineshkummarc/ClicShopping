@@ -33,8 +33,8 @@ class pi_products_info_gallery_baguettebox
     $this->lang = Registry::get('Language');
 
     if (\defined('MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_SORT_ORDER') ? (int)MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_STATUS') ? (MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_STATUS == 'True') : false;
     }
   }
 
@@ -43,8 +43,8 @@ class pi_products_info_gallery_baguettebox
     $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
 
     if ($CLICSHOPPING_ProductsCommon->getID() && isset($_GET['Products'])) {
-      $content_width = (int)MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_CONTENT_WIDTH;
-      $text_position = MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_POSITION;
+      $content_width = \defined('MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_CONTENT_WIDTH') ? (int)MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_CONTENT_WIDTH : 12;
+      $text_position = \defined('MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_POSITION') ? MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_POSITION : 'float-none';
 
       $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
       $CLICSHOPPING_Template = Registry::get('Template');
@@ -64,8 +64,8 @@ class pi_products_info_gallery_baguettebox
       $products_image_zoom = $Qproducts->value('products_image_zoom');
       $products_image_medium = $Qproducts->value('products_image_medium');
 
-      $thumbail_height = MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_THUMBAIL_HEIGHT;
-      $thumbail_width = MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_THUMBAIL_WIDTH;
+      $thumbail_height = \defined('MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_THUMBAIL_HEIGHT') ? MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_THUMBAIL_HEIGHT : 70;
+      $thumbail_width = \defined('MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_THUMBAIL_WIDTH') ? MODULE_PRODUCTS_INFO_GALLERY_BAGUETTEBOX_THUMBAIL_WIDTH : 70;
 
       $id = $CLICSHOPPING_ProductsCommon->getID();
       $products_name = $CLICSHOPPING_ProductsCommon->getProductsName($id);

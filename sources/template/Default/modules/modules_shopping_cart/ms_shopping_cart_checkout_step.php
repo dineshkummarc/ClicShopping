@@ -30,7 +30,7 @@ class ms_shopping_cart_checkout_step
     $this->description = CLICSHOPPING::getDef('module_shopping_cart_checkout_step_description');
 
     if (\defined('MODULE_SHOPPING_CART_CHECKOUT_STEP_STATUS')) {
-      $this->sort_order = (int)MODULE_SHOPPING_CART_CHECKOUT_STEP_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULE_SHOPPING_CART_CHECKOUT_STEP_SORT_ORDER') ? (int)MODULE_SHOPPING_CART_CHECKOUT_STEP_SORT_ORDER : 0;
       $this->enabled = (MODULE_SHOPPING_CART_CHECKOUT_STEP_STATUS == 'True');
     }
   }
@@ -43,7 +43,7 @@ class ms_shopping_cart_checkout_step
 
     if (isset($_GET['Cart']) && $CLICSHOPPING_ShoppingCart->getCountContents() > 0) {
 
-      $content_width = (int)MODULE_SHOPPING_CART_CHECKOUT_STEP_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_SHOPPING_CART_CHECKOUT_STEP_CONTENT_WIDTH') ? (int)MODULE_SHOPPING_CART_CHECKOUT_STEP_CONTENT_WIDTH : 0;
 
       $shopping_cart_information_customers = '  <!-- start ms_shopping_cart_step -->' . "\n";
 

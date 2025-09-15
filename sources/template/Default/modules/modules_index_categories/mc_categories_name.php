@@ -30,8 +30,8 @@ class mc_categories_name
     $this->description = CLICSHOPPING::getDef('module_index_categories_name_description');
 
     if (\defined('MODULE_INDEX_CATEGORIES_NAME_STATUS')) {
-      $this->sort_order = (int)MODULE_INDEX_CATEGORIES_NAME_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_INDEX_CATEGORIES_NAME_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_INDEX_CATEGORIES_NAME_SORT_ORDER') ? (int)MODULE_INDEX_CATEGORIES_NAME_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_INDEX_CATEGORIES_NAME_STATUS') ? (MODULE_INDEX_CATEGORIES_NAME_STATUS == 'True') : false;
     }
   }
 
@@ -39,7 +39,7 @@ class mc_categories_name
   {
     $CLICSHOPPING_Category = Registry::get('Category');
 
-    $content_width = (int)MODULE_INDEX_CATEGORIES_NAME_CONTENT_WIDTH;
+    $content_width = \defined('MODULE_INDEX_CATEGORIES_NAME_CONTENT_WIDTH') ? (int)MODULE_INDEX_CATEGORIES_NAME_CONTENT_WIDTH : 12;
 
     if (CLICSHOPPING::getBaseNameIndex() && $CLICSHOPPING_Category->getPath()) {
 

@@ -31,7 +31,7 @@ class pn_products_new
     $this->description = CLICSHOPPING::getDef('module_products_new_description');
 
     if (\defined('MODULE_PRODUCTS_NEW_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_NEW_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULE_PRODUCTS_NEW_SORT_ORDER') ? (int)MODULE_PRODUCTS_NEW_SORT_ORDER : 0;
       $this->enabled = (MODULE_PRODUCTS_NEW_STATUS == 'True');
     }
   }
@@ -45,7 +45,7 @@ class pn_products_new
     $CLICSHOPPING_Reviews = Registry::get('Reviews');
 
     if (isset($_GET['Products'], $_GET['ProductsNew'])) {
-      if ((int)MODULE_PRODUCTS_NEW_MAX_DISPLAY != 0) {
+      if (\defined('MODULE_PRODUCTS_NEW_MAX_DISPLAY') && (int)MODULE_PRODUCTS_NEW_MAX_DISPLAY != 0) {
         $Qlisting = ProductsNewClass::getListing();
 
         $Qlisting->setPageSet((int)MODULE_PRODUCTS_NEW_MAX_DISPLAY);
@@ -147,11 +147,11 @@ class pn_products_new
           $new_prods_content .= '<div class="d-flex flex-wrap">';
 
 // display number of short description
-          $products_short_description_number = (int)MODULE_PRODUCTS_NEW_SHORT_DESCRIPTION;
+          $products_short_description_number = \defined('MODULE_PRODUCTS_NEW_SHORT_DESCRIPTION') ? (int)MODULE_PRODUCTS_NEW_SHORT_DESCRIPTION : 0;
 // delete words
-          $delete_word = (int)MODULE_PRODUCTS_NEW_SHORT_DESCRIPTION_DELETE_WORLDS;
+          $delete_word = \defined('MODULE_PRODUCTS_NEW_SHORT_DESCRIPTION_DELETE_WORLDS') ? (int)MODULE_PRODUCTS_NEW_SHORT_DESCRIPTION_DELETE_WORLDS : 0;
 // nbr of column to display  boostrap
-          $bootstrap_column = (int)MODULE_PRODUCTS_NEW_COLUMNS;
+          $bootstrap_column = \defined('MODULE_PRODUCTS_NEW_COLUMNS') ? (int)MODULE_PRODUCTS_NEW_COLUMNS : 0;
 // initialisation des boutons
           $size_button = $CLICSHOPPING_ProductsCommon->getSizeButton('md');
 

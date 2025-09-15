@@ -31,8 +31,8 @@ class pi_products_info_reviews
     $this->description = CLICSHOPPING::getDef('module_products_info_reviews_description');
 
     if (\defined('MODULE_PRODUCTS_INFO_REVIEWS_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_INFO_REVIEWS_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_PRODUCTS_INFO_REVIEWS_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_PRODUCTS_INFO_REVIEWS_SORT_ORDER') ? (int)MODULE_PRODUCTS_INFO_REVIEWS_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_PRODUCTS_INFO_REVIEWS_STATUS') ? (MODULE_PRODUCTS_INFO_REVIEWS_STATUS == 'True') : false;
     }
   }
 
@@ -41,7 +41,7 @@ class pi_products_info_reviews
     $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
 
     if ($CLICSHOPPING_ProductsCommon->getID()) {
-      $content_width = (int)MODULE_PRODUCTS_INFO_REVIEWS_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_PRODUCTS_INFO_REVIEWS_CONTENT_WIDTH') ? (int)MODULE_PRODUCTS_INFO_REVIEWS_CONTENT_WIDTH : 12;
 
       $CLICSHOPPING_Db = Registry::get('Db');
       $CLICSHOPPING_Template = Registry::get('Template');
@@ -194,7 +194,7 @@ class pi_products_info_reviews
           $products_reviews_content .= HTML::breakString(HTML::outputProtected($Qreviews->value('reviews_text')), 60, '-<br />') . ((\strlen($Qreviews->value('reviews_text')) >= MODULE_PRODUCTS_INFO_REVIEWS_NUMBER_WORDS) ? '..' : '') . '<br />';
           $products_reviews_content .= '</div>';
 
-          if (MODULE_PRODUCTS_INFO_REVIEWS_CUSTOMERS_SENTIMENT_TAG == 'True') {
+          if (\defined('MODULE_PRODUCTS_INFO_REVIEWS_CUSTOMERS_SENTIMENT_TAG') && MODULE_PRODUCTS_INFO_REVIEWS_CUSTOMERS_SENTIMENT_TAG == 'True') {
             if(is_array($customer_tag)) {
               $products_reviews_content .= '<div class="moduleProductsInfoReviewCustomersBadge">';
               $products_reviews_content .= '<div class="row">';
@@ -212,7 +212,7 @@ class pi_products_info_reviews
             }
           }
 
-          if (MODULE_PRODUCTS_INFO_REVIEWS_CUSTOMERS_DISPLAY_VOTE == 'True') {
+          if (\defined('MODULE_PRODUCTS_INFO_REVIEWS_CUSTOMERS_DISPLAY_VOTE') && MODULE_PRODUCTS_INFO_REVIEWS_CUSTOMERS_DISPLAY_VOTE == 'True') {
           // Uniq ID for every button
             $uniqueId = $reviews_id;
 

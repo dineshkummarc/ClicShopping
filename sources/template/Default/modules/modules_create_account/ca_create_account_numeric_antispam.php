@@ -33,8 +33,8 @@ class ca_create_account_numeric_antispam
       if (\defined('CLICSHOPPING_APP_ANTISPAM_AM_STATUS') && CLICSHOPPING_APP_ANTISPAM_AM_STATUS == 'True') {
         if (\defined('CLICSHOPPING_APP_ANTISPAM_AM_CREATE_ACCOUNT') && CLICSHOPPING_APP_ANTISPAM_AM_CREATE_ACCOUNT == 'True') {
           if (\defined('MODULES_CREATE_ACCOUNT_NUMERIC_ANTISPAM_STATUS')) {
-            $this->enabled = (MODULES_CREATE_ACCOUNT_NUMERIC_ANTISPAM_STATUS == 'True');
-            $this->sort_order = (int)MODULES_CREATE_ACCOUNT_NUMERIC_ANTISPAM_SORT_ORDER ?? 0;
+            $this->enabled = \defined('MODULES_CREATE_ACCOUNT_NUMERIC_ANTISPAM_STATUS') ? (MODULES_CREATE_ACCOUNT_NUMERIC_ANTISPAM_STATUS == 'True') : false;
+            $this->sort_order = \defined('MODULES_CREATE_ACCOUNT_NUMERIC_ANTISPAM_SORT_ORDER') ? (int)MODULES_CREATE_ACCOUNT_NUMERIC_ANTISPAM_SORT_ORDER : 0;
           }
         } else {
           $this->enabled = false;
@@ -48,7 +48,7 @@ class ca_create_account_numeric_antispam
     $CLICSHOPPING_Template = Registry::get('Template');
 
     if (isset($_GET['Account'], $_GET['Create']) && !isset($_GET['Success'])) {
-      $content_width = (int)MODULES_CREATE_ACCOUNT_NUMERIC_ANTISPAM_CONTENT_WIDTH;
+      $content_width = \defined('MODULES_CREATE_ACCOUNT_NUMERIC_ANTISPAM_CONTENT_WIDTH') ? (int)MODULES_CREATE_ACCOUNT_NUMERIC_ANTISPAM_CONTENT_WIDTH : 12;
 
       $antispam = AntiSpam::getConfirmationNumericAntiSpam();
       $create_account_antispam = '<!--  create_account_antispam start -->' . "\n";

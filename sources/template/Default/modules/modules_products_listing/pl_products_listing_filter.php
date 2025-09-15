@@ -31,8 +31,8 @@ class pl_products_listing_filter
     $this->description = CLICSHOPPING::getDef('module_products_listing_filter_description');
 
     if (\defined('MODULE_PRODUCTS_LISTING_FILTER_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_LISTING_FILTER_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_PRODUCTS_LISTING_FILTER_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_PRODUCTS_LISTING_FILTER_SORT_ORDER') ? (int)MODULE_PRODUCTS_LISTING_FILTER_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_PRODUCTS_LISTING_FILTER_STATUS') ? (MODULE_PRODUCTS_LISTING_FILTER_STATUS == 'True') : false;
     }
   }
 

@@ -29,7 +29,7 @@ class ta_tell_a_friend_customer_agreement
     $this->description = CLICSHOPPING::getDef('modules_tell_a_friend_customer_agreement_description');
 
     if (\defined('MODULES_TELL_A_FRIEND_CUSTOMER_AGREEMENT_STATUS')) {
-      $this->sort_order = (int)MODULES_TELL_A_FRIEND_CUSTOMER_AGREEMENT_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULES_TELL_A_FRIEND_CUSTOMER_AGREEMENT_SORT_ORDER') ? (int)MODULES_TELL_A_FRIEND_CUSTOMER_AGREEMENT_SORT_ORDER : 0;
       $this->enabled = (MODULES_TELL_A_FRIEND_CUSTOMER_AGREEMENT_STATUS == 'True');
     }
   }
@@ -42,7 +42,7 @@ class ta_tell_a_friend_customer_agreement
     if (isset($_GET['Products'], $_GET['TellAFriend'])) {
 
       $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
-      $content_width = (int)MODULES_TELL_A_FRIEND_CUSTOMER_AGREEMENT_CONTENT_WIDTH;
+      $content_width = \defined('MODULES_TELL_A_FRIEND_CUSTOMER_AGREEMENT_CONTENT_WIDTH') ? (int)MODULES_TELL_A_FRIEND_CUSTOMER_AGREEMENT_CONTENT_WIDTH : 0;
 
       $data = '<!-- ta_tell_a_friend_customer_agreement start -->' . "\n";
 

@@ -31,8 +31,8 @@ class cap_create_account_pro_success
 
 
     if (\defined('MODULE_CREATE_ACCOUNT_PRO_SUCCESS_STATUS')) {
-      $this->sort_order = (int)MODULE_CREATE_ACCOUNT_PRO_SUCCESS_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_CREATE_ACCOUNT_PRO_SUCCESS_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_CREATE_ACCOUNT_PRO_SUCCESS_SORT_ORDER') ? (int)MODULE_CREATE_ACCOUNT_PRO_SUCCESS_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_CREATE_ACCOUNT_PRO_SUCCESS_STATUS') ? (MODULE_CREATE_ACCOUNT_PRO_SUCCESS_STATUS == 'True') : false;
     }
   }
 
@@ -43,7 +43,7 @@ class cap_create_account_pro_success
     if (isset($_GET['Account'], $_GET['CreatePro'], $_GET['Success'])) {
       $origin_href = CreateAccount::getOriginHref();
 
-      $content_width = (int)MODULE_CREATE_ACCOUNT_PRO_SUCCESS_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_CREATE_ACCOUNT_PRO_SUCCESS_CONTENT_WIDTH') ? (int)MODULE_CREATE_ACCOUNT_PRO_SUCCESS_CONTENT_WIDTH : 12;
 
       $create_account = '<!-- cap_create_account_pro_success start -->' . "\n";
 

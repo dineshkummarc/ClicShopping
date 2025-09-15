@@ -74,7 +74,7 @@ class si_sitemap_summary
     $this->description = CLICSHOPPING::getDef('modules_sitemap_summary_description');
 
     if (\defined('MODULES_SITEMAP_SUMMARY_STATUS')) {
-      $this->sort_order = (int)MODULES_SITEMAP_SUMMARY_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULES_SITEMAP_SUMMARY_SORT_ORDER') ? (int)MODULES_SITEMAP_SUMMARY_SORT_ORDER : 0;
       $this->enabled = (MODULES_SITEMAP_SUMMARY_STATUS == 'True');
     }
 
@@ -89,7 +89,7 @@ class si_sitemap_summary
   {
     $CLICSHOPPING_Template = Registry::get('Template');
     $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
-    $content_width = (int)MODULES_SITEMAP_SUMMARY_CONTENT_WIDTH;
+    $content_width = \defined('MODULES_SITEMAP_SUMMARY_CONTENT_WIDTH') ? (int)MODULES_SITEMAP_SUMMARY_CONTENT_WIDTH : 0 ;
 
     // Essential to avoid conflicts
     if (isset($_GET['SiteMap'])) {

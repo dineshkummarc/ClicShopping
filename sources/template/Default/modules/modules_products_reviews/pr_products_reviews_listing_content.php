@@ -31,8 +31,8 @@ class pr_products_reviews_listing_content
     $this->description = CLICSHOPPING::getDef('modules_products_reviews_listing_content_description');
 
     if (\defined('MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_STATUS')) {
-      $this->sort_order = (int)MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_SORT_ORDER ?? 0;
-      $this->enabled = (MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_STATUS == 'True');
+      $this->sort_order = \defined('MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_SORT_ORDER') ? (int)MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_STATUS') ? (MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_STATUS == 'True') : false;
     }
   }
 
@@ -47,8 +47,8 @@ class pr_products_reviews_listing_content
 
       $Qreviews = $CLICSHOPPING_Reviews->getData();
 
-      $content_width = (int)MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_WIDTH;
-      $text_position = MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_POSITION;
+      $content_width = \defined('MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_WIDTH') ? (int)MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_WIDTH : 0;
+      $text_position = \defined('MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_POSITION') ? MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_POSITION : 'float-none';
 
       $data = '<!-- pr_products_reviews_listing_content start -->' . "\n";
       $data .= '<div class="col-md-' . $content_width . '">';
@@ -74,7 +74,7 @@ class pr_products_reviews_listing_content
 
       $data .= '<div class="d-flex flex-wrap ">';
       $delete_reviews = '';
-      $delete_comment = MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_DELETE_COMMENT;
+      $delete_comment = \defined('MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_DELETE_COMMENT') ? MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_DELETE_COMMENT : 'False';
 
       while ($Qreviews->fetch()) {
         $date_reviews = CLICSHOPPING::getDef('text_review_date_added') . ' ' . DateTime::toLong($Qreviews->value('date_added'));
@@ -91,7 +91,7 @@ class pr_products_reviews_listing_content
         $review_text = HTML::breakString(HTML::outputProtected($Qreviews->value('reviews_text')), 60, '-<br />') . ((\strlen($Qreviews->value('reviews_text')) >= 100) ? '..' : '');
         $review_star = HTML::stars($Qreviews->valueInt('reviews_rating'));
 
-        if (MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_SENTIMENT_TAG == 'True') {
+        if (\defined('MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_SENTIMENT_TAG') && MODULES_PRODUCTS_REVIEWS_LISTING_CONTENT_SENTIMENT_TAG == 'True') {
           $customer_tag = $Qreviews->value('customers_tag');
           $customer_tag = explode(',', $customer_tag);
         }

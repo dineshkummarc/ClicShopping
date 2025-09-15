@@ -79,8 +79,8 @@ class pr_products_reviews_write_customer_agreement
     $this->description = CLICSHOPPING::getDef('modules_products_reviews_write_customer_agreement_description');
 
     if (\defined('MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_STATUS')) {
-      $this->sort_order = (int)MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_SORT_ORDER ?? 0;
-      $this->enabled = (MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_STATUS == 'True');
+      $this->sort_order = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_SORT_ORDER') ? (int)MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_STATUS') ? (MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_STATUS == 'True') : false;
     }
   }
 
@@ -104,8 +104,8 @@ class pr_products_reviews_write_customer_agreement
         }
       }
 
-      $content_width = (int)MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_CONTENT_WIDTH;
-      $text_position = MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_POSITION;
+      $content_width = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_CONTENT_WIDTH') ? (int)MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_CONTENT_WIDTH : 0;
+      $text_position = \defined('MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_POSITION') ? MODULES_PRODUCTS_REVIEWS_WRITE_CUSTOMER_AGREEMENT_POSITION : 'float-none';
 
       if (isset($_GET['Products'], $_GET['ReviewsWrite']) && !isset($_GET['Success'])) {
       $customer_agree = '<!-- Start customer_agree -->' . "\n";

@@ -29,8 +29,8 @@ class fp_page_manager
     $this->description = CLICSHOPPING::getDef('module_front_page_manager_description');
 
     if (\defined('MODULE_FRONT_PAGE_PAGE_MANAGER_STATUS')) {
-      $this->sort_order = (int)MODULE_FRONT_PAGE_PAGE_MANAGER_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_FRONT_PAGE_PAGE_MANAGER_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_FRONT_PAGE_PAGE_MANAGER_SORT_ORDER') ? (int)MODULE_FRONT_PAGE_PAGE_MANAGER_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_FRONT_PAGE_PAGE_MANAGER_STATUS') ? (MODULE_FRONT_PAGE_PAGE_MANAGER_STATUS == 'True') : false;
     }
   }
 

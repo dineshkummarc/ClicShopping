@@ -32,11 +32,12 @@ class he_header_multi_template
     $this->description = CLICSHOPPING::getDef('modules_header_multi_template_description');
 
     if (\defined('MODULES_HEADER_MULTI_TEMPLATE_STATUS')) {
-      $this->sort_order = (int)MODULES_HEADER_MULTI_TEMPLATE_SORT_ORDER ?? 0;
-      $this->enabled = (MODULES_HEADER_MULTI_TEMPLATE_STATUS == 'True');
-      $this->pages = MODULES_HEADER_MULTI_TEMPLATE_TEMPLATE_DISPLAY_PAGES;
+      $this->sort_order = \defined('MODULES_HEADER_MULTI_TEMPLATE_SORT_ORDER') ? (int)MODULES_HEADER_MULTI_TEMPLATE_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULES_HEADER_MULTI_TEMPLATE_STATUS') ? (MODULES_HEADER_MULTI_TEMPLATE_STATUS == 'True') : false;
+      $this->pages = \defined('MODULES_HEADER_MULTI_TEMPLATE_TEMPLATE_DISPLAY_PAGES') ? MODULES_HEADER_MULTI_TEMPLATE_TEMPLATE_DISPLAY_PAGES : 'all';
     }
   }
+
 
   public function execute()
   {
@@ -59,7 +60,7 @@ class he_header_multi_template
     $cPath = $CLICSHOPPING_Category->getPath();
 
     $languages_string = $CLICSHOPPING_Language->getFlag();
-    $content_width = (int)MODULES_HEADER_MULTI_TEMPLATE_TEMPLATE_CONTENT_WIDTH;
+    $content_width = \defined('MODULES_HEADER_MULTI_TEMPLATE_TEMPLATE_CONTENT_WIDTH') ? (int)MODULES_HEADER_MULTI_TEMPLATE_TEMPLATE_CONTENT_WIDTH : 12;
     $login = HTML::button(CLICSHOPPING::getDef('modules_header_multi_template_account_login'), null, null, 'primary', null, 'sm');
 
     $form_advanced_result = HTML::form('searchData', CLICSHOPPING::link(null, 'Search&Q'), 'post', 'id="searchData"', ['session_id' => true]);

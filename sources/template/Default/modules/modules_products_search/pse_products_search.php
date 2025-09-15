@@ -30,7 +30,7 @@ class pse_products_search
     $this->description = CLICSHOPPING::getDef('module_products_search_description');
 
     if (\defined('MODULE_PRODUCTS_SEARCH_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_SEARCH_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULE_PRODUCTS_SEARCH_SORT_ORDER') ? (int)MODULE_PRODUCTS_SEARCH_SORT_ORDER : 0;
       $this->enabled = (MODULE_PRODUCTS_SEARCH_STATUS == 'True');
     }
   }
@@ -51,11 +51,11 @@ class pse_products_search
       $max_display = 0;
 
       if (\defined('MODULE_PRODUCTS_SEARCH_MAX_DISPLAY')) {
-        $max_display = (int)MODULE_PRODUCTS_SEARCH_MAX_DISPLAY;
+        $max_display = \defined('MODULE_PRODUCTS_SEARCH_MAX_DISPLAY') ? (int)MODULE_PRODUCTS_SEARCH_MAX_DISPLAY : 0;
       }
 
       if ($max_display != 0 && (isset($_GET['Search']) || isset($_GET['Q']))) {
-        $products_template = MODULE_PRODUCTS_SEARCH_TEMPLATE;
+        $products_template = \defined('MODULE_PRODUCTS_SEARCH_TEMPLATE') ? MODULE_PRODUCTS_SEARCH_TEMPLATE : '';
 
         $new_prods_content = '<!-- products seach start -->' . "\n";
         $new_prods_content .= '<div class="clearfix"></div>';
@@ -146,9 +146,9 @@ class pse_products_search
 // display number of short description
           $products_short_description_number = (int)MODULE_PRODUCTS_SEARCH_SHORT_DESCRIPTION;
 // delete words
-          $delete_word = (int)MODULE_PRODUCTS_SEARCH_SHORT_DESCRIPTION_DELETE_WORLDS;
+          $delete_word = \defined('MODULE_PRODUCTS_SEARCH_SHORT_DESCRIPTION_DELETE_WORLDS') ? (int)MODULE_PRODUCTS_SEARCH_SHORT_DESCRIPTION_DELETE_WORLDS : 0;
 // nbr of column to display  boostrap
-          $bootstrap_column = (int)MODULE_PRODUCTS_SEARCH_COLUMNS;
+          $bootstrap_column = \defined('MODULE_PRODUCTS_SEARCH_COLUMNS') ? (int)MODULE_PRODUCTS_SEARCH_COLUMNS : 0;
 // initialisation des boutons
           $size_button = $CLICSHOPPING_ProductsCommon->getSizeButton('md');
 
@@ -195,7 +195,7 @@ class pse_products_search
             $form = '';
             $endform = '';
 
-            if (MODULE_PRODUCTS_SEARCH_DELETE_BUY_BUTTON == 'False') {
+            if (\defined('MODULE_PRODUCTS_SEARCH_DELETE_BUY_BUTTON') && MODULE_PRODUCTS_SEARCH_DELETE_BUY_BUTTON == 'False') {
               if ($CLICSHOPPING_ProductsCommon->getProductsMinimumQuantity($products_id) != 0 && $CLICSHOPPING_ProductsCommon->getProductsQuantity($products_id) != 0) {
                 if ($CLICSHOPPING_ProductsAttributes->getHasProductAttributes($products_id) === false) {
                   $form = HTML::form('cart_quantity', CLICSHOPPING::link(null, 'Cart&Add'), 'post', 'class="justify-content-center"', ['tokenize' => true]) . "\n";

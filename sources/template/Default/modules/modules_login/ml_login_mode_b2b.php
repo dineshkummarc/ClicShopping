@@ -38,8 +38,8 @@ class ml_login_mode_b2b
     $this->description = CLICSHOPPING::getDef('module_login_mode_b2b_description');
 
     if (\defined('MODULE_LOGIN_MODE_B2B_STATUS')) {
-      $this->sort_order = (int)MODULE_LOGIN_MODE_B2B_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_LOGIN_MODE_B2B_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_LOGIN_MODE_B2B_SORT_ORDER') ? (int)MODULE_LOGIN_MODE_B2B_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_LOGIN_MODE_B2B_STATUS') ? (MODULE_LOGIN_MODE_B2B_STATUS == 'True') : false;
     }
   }
 
@@ -52,7 +52,7 @@ class ml_login_mode_b2b
 
     if (isset($_GET['Account'], $_GET['LogIn'])) {
 
-      $content_width = (int)MODULE_LOGIN_MODE_B2B_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_LOGIN_MODE_B2B_CONTENT_WIDTH') ? (int)MODULE_LOGIN_MODE_B2B_CONTENT_WIDTH : 12;
 
       $login_mode_b2b = '<!-- login_mode_b2b start -->' . "\n";
 

@@ -29,8 +29,8 @@ class co_contact_us_page_manager
     $this->description = CLICSHOPPING::getDef('modules_contact_us_page_manager_description');
 
     if (\defined('MODULES_CONTACT_US_PAGE_MANAGER_STATUS')) {
-      $this->sort_order = (int)MODULES_CONTACT_US_PAGE_MANAGER_SORT_ORDER ?? 0;
-      $this->enabled = (MODULES_CONTACT_US_PAGE_MANAGER_STATUS == 'True');
+      $this->sort_order = \defined('MODULES_CONTACT_US_PAGE_MANAGER_SORT_ORDER') ? (int)MODULES_CONTACT_US_PAGE_MANAGER_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULES_CONTACT_US_PAGE_MANAGER_STATUS') ? (MODULES_CONTACT_US_PAGE_MANAGER_STATUS == 'True') : false;
     }
   }
 
@@ -42,7 +42,7 @@ class co_contact_us_page_manager
 
     if (isset($_GET['Info'], $_GET['Contact']) && !isset($_GET['Success'])) {
 
-      $content_width = (int)MODULES_CONTACT_US_PAGE_MANAGER_CONTENT_WIDTH;
+      $content_width = \defined('MODULES_CONTACT_US_PAGE_MANAGER_CONTENT_WIDTH') ? (int)MODULES_CONTACT_US_PAGE_MANAGER_CONTENT_WIDTH : 12;
 
 // Recuperation de la page d'acceuil personnalisee
       $CLICSHOPPING_PageManagerShop->pageManagerDisplayContact();

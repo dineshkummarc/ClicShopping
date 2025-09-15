@@ -32,8 +32,8 @@ class ml_login_password_reset
     $this->description = CLICSHOPPING::getDef('module_login_password_reset_description');
 
     if (\defined('MODULE_LOGIN_PASSWORD_RESET_STATUS')) {
-      $this->sort_order = (int)MODULE_LOGIN_PASSWORD_RESET_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_LOGIN_PASSWORD_RESET_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_LOGIN_PASSWORD_RESET_SORT_ORDER') ? (int)MODULE_LOGIN_PASSWORD_RESET_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_LOGIN_PASSWORD_RESET_STATUS') ? (MODULE_LOGIN_PASSWORD_RESET_STATUS == 'True') : false;
     }
   }
 
@@ -42,7 +42,7 @@ class ml_login_password_reset
     $CLICSHOPPING_Template = Registry::get('Template');
 
     if (isset($_GET['Account'], $_GET['PasswordReset'])) {
-      $content_width = (int)MODULE_LOGIN_PASSWORD_RESET_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_LOGIN_PASSWORD_RESET_CONTENT_WIDTH') ? (int)MODULE_LOGIN_PASSWORD_RESET_CONTENT_WIDTH : 12;
 
       $footer_tag = '<!-- password start  -->' . "\n";
       $footer_tag .= '<script defer src="' . CLICSHOPPING::link($CLICSHOPPING_Template->getTemplateDefaultJavaScript('clicshopping/generate_password.js')) . '"></script>' . "\n";

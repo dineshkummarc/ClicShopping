@@ -30,7 +30,7 @@ class ta_tell_a_friend_customer
     $this->description = CLICSHOPPING::getDef('modules_tell_a_friend_customer_description');
 
     if (\defined('MODULES_TELL_A_FRIEND_STATUS')) {
-      $this->sort_order = (int)MODULES_TELL_A_FRIEND_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULES_TELL_A_FRIEND_SORT_ORDER') ? (int)MODULES_TELL_A_FRIEND_SORT_ORDER : 0;
       $this->enabled = (MODULES_TELL_A_FRIEND_STATUS == 'True');
     }
   }
@@ -40,7 +40,7 @@ class ta_tell_a_friend_customer
     $CLICSHOPPING_Template = Registry::get('Template');
     $CLICSHOPPING_Customer = Registry::get('Customer');
 
-    $content_width = (int)MODULES_TELL_A_FRIEND_CONTENT_WIDTH;
+    $content_width = \defined('MODULES_TELL_A_FRIEND_CONTENT_WIDTH') ? (int)MODULES_TELL_A_FRIEND_CONTENT_WIDTH : 0;
 
     if (isset($_GET['Products'], $_GET['TellAFriend'])) {
 

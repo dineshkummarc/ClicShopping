@@ -86,8 +86,8 @@ class ml_login_customer_privacy
     $this->description = CLICSHOPPING::getDef('module_login_customer_privacy_description');
 
     if (\defined('MODULE_LOGIN_CUSTOMER_PRIVACY_STATUS')) {
-      $this->sort_order = (int)MODULE_LOGIN_CUSTOMER_PRIVACY_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_LOGIN_CUSTOMER_PRIVACY_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_LOGIN_CUSTOMER_PRIVACY_SORT_ORDER') ? (int)MODULE_LOGIN_CUSTOMER_PRIVACY_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_LOGIN_CUSTOMER_PRIVACY_STATUS') ? (MODULE_LOGIN_CUSTOMER_PRIVACY_STATUS == 'True') : false;
     }
   }
 
@@ -110,7 +110,7 @@ class ml_login_customer_privacy
         }
       }
 
-      $content_width = (int)MODULE_LOGIN_CUSTOMER_PRIVACY_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_LOGIN_CUSTOMER_PRIVACY_CONTENT_WIDTH') ? (int)MODULE_LOGIN_CUSTOMER_PRIVACY_CONTENT_WIDTH : 12;
 
       $login_information_customers = '<!-- login_customer_privacy start -->' . "\n";
 

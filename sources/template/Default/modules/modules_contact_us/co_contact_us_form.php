@@ -30,8 +30,8 @@ class co_contact_us_form
     $this->description = CLICSHOPPING::getDef('modules_contact_us_form_description');
 
     if (\defined('MODULES_CONTACT_US_FORM_STATUS')) {
-      $this->sort_order = (int)MODULES_CONTACT_US_FORM_SORT_ORDER ?? 0;
-      $this->enabled = (MODULES_CONTACT_US_FORM_STATUS == 'True');
+      $this->sort_order = \defined('MODULES_CONTACT_US_FORM_SORT_ORDER') ? (int)MODULES_CONTACT_US_FORM_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULES_CONTACT_US_FORM_STATUS') ? (MODULES_CONTACT_US_FORM_STATUS == 'True') : false;
     }
   }
 
@@ -42,8 +42,8 @@ class co_contact_us_form
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
     if (isset($_GET['Info'], $_GET['Contact']) && !isset($_GET['Success'])) {
-      $content_width = (int)MODULE_CONTACT_US_FORM_CONTENT_WIDTH;
-      $min_caracters_to_write = (int)MODULE_CONTACT_US_FORM_CONTENT_CARACTER;
+      $content_width = \defined('MODULE_CONTACT_US_FORM_CONTENT_WIDTH') ? (int)MODULE_CONTACT_US_FORM_CONTENT_WIDTH : 12;
+      $min_caracters_to_write = \defined('MODULE_CONTACT_US_FORM_CONTENT_CARACTER') ? (int)MODULE_CONTACT_US_FORM_CONTENT_CARACTER : 90;
 
       $message_alert = CLICSHOPPING::getDef('entry_text_alert', ['textalert' => $min_caracters_to_write]);
 

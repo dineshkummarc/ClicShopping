@@ -84,8 +84,8 @@ class cap_create_account_pro_button_process
     $this->description = CLICSHOPPING::getDef('module_create_account_pro_button_process_description');
 
     if (\defined('MODULE_CREATE_ACCOUNT_PRO_BUTTON_PROCESS_STATUS')) {
-      $this->sort_order = (int)MODULE_CREATE_ACCOUNT_PRO_BUTTON_PROCESS_SORT_ORDER;
-      $this->enabled = (MODULE_CREATE_ACCOUNT_PRO_BUTTON_PROCESS_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_CREATE_ACCOUNT_PRO_BUTTON_PROCESS_SORT_ORDER') ? (int)MODULE_CREATE_ACCOUNT_PRO_BUTTON_PROCESS_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_CREATE_ACCOUNT_PRO_BUTTON_PROCESS_STATUS') ? (MODULE_CREATE_ACCOUNT_PRO_BUTTON_PROCESS_STATUS == 'True') : false;
     }
   }
 
@@ -111,7 +111,7 @@ class cap_create_account_pro_button_process
         }
       }
 
-      $content_width = (int)MODULE_CREATE_ACCOUNT_PRO_BUTTON_PROCESS_CONTENT_WIDTH;
+      $content_width = \defined('MODULE_CREATE_ACCOUNT_PRO_BUTTON_PROCESS_CONTENT_WIDTH') ? (int)MODULE_CREATE_ACCOUNT_PRO_BUTTON_PROCESS_CONTENT_WIDTH : 12;
 
       $create_account_pro = '<!-- Start create_account_pro_button_process start -->' . "\n";
 

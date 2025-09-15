@@ -29,7 +29,7 @@ class ms_shopping_cart_out_of_stock_message
     $this->description = CLICSHOPPING::getDef('module_shopping_cart_out_of_stock_message_description');
 
     if (\defined('MODULE_SHOPPING_CART_OUT_OF_STOCK_MESSAGE_STATUS')) {
-      $this->sort_order = (int)MODULE_SHOPPING_CART_OUT_OF_STOCK_MESSAGE_SORT_ORDER ?? 0;
+      $this->sort_order = \defined('MODULE_SHOPPING_CART_OUT_OF_STOCK_MESSAGE_SORT_ORDER') ? (int)MODULE_SHOPPING_CART_OUT_OF_STOCK_MESSAGE_SORT_ORDER : 0;
       $this->enabled = (MODULE_SHOPPING_CART_OUT_OF_STOCK_MESSAGE_STATUS == 'True');
     }
   }
@@ -43,8 +43,8 @@ class ms_shopping_cart_out_of_stock_message
 
     if (isset($_GET['Cart']) && $CLICSHOPPING_ShoppingCart->getCountContents() > 0) {
 
-      $content_width = (int)MODULE_SHOPPING_CART_OUT_OF_STOCK_MESSAGE_CONTENT_WIDTH;
-      $position = MODULE_SHOPPING_CART_OUT_OF_STOCK_MESSAGE_POSITION;
+      $content_width = \defined('MODULE_SHOPPING_CART_OUT_OF_STOCK_MESSAGE_CONTENT_WIDTH') ? (int)MODULE_SHOPPING_CART_OUT_OF_STOCK_MESSAGE_CONTENT_WIDTH : 0;
+      $position = \defined('MODULE_SHOPPING_CART_OUT_OF_STOCK_MESSAGE_POSITION') ? MODULE_SHOPPING_CART_OUT_OF_STOCK_MESSAGE_POSITION : 'float-none';
 
       $products = $CLICSHOPPING_ShoppingCart->get_products();
 

@@ -31,8 +31,8 @@ class pi_products_info_recommendation
     $this->description = CLICSHOPPING::getDef('module_products_info_recommendation_description');
 
     if (\defined('MODULE_PRODUCTS_INFO_RECOMMENDATION_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_INFO_RECOMMENDATION_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_PRODUCTS_INFO_RECOMMENDATION_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_PRODUCTS_INFO_RECOMMENDATION_SORT_ORDER') ? (int)MODULE_PRODUCTS_INFO_RECOMMENDATION_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_PRODUCTS_INFO_RECOMMENDATION_STATUS') ? (MODULE_PRODUCTS_INFO_RECOMMENDATION_STATUS == 'True') : false;
     }
 
     if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'False') {
@@ -152,11 +152,11 @@ class pi_products_info_recommendation
 
       if ($Qproducts->rowCount() > 0) {
 // display number of short description
-        $products_short_description_number = (int)MODULE_PRODUCTS_INFO_RECOMMENDATION_SHORT_DESCRIPTION;
+        $products_short_description_number = \defined('MODULE_PRODUCTS_INFO_RECOMMENDATION_SHORT_DESCRIPTION') ? (int)MODULE_PRODUCTS_INFO_RECOMMENDATION_SHORT_DESCRIPTION : 0;
 // delete words
-        $delete_word = (int)MODULE_PRODUCTS_INFO_RECOMMENDATION_SHORT_DESCRIPTION_DELETE_WORLDS;
+        $delete_word = \defined('MODULE_PRODUCTS_INFO_RECOMMENDATION_SHORT_DESCRIPTION_DELETE_WORLDS') ? (int)MODULE_PRODUCTS_INFO_RECOMMENDATION_SHORT_DESCRIPTION_DELETE_WORLDS : 0;
 // nbr of column to display  boostrap
-        $bootstrap_column = (int)MODULE_PRODUCTS_INFO_RECOMMENDATION_COLUMNS;
+        $bootstrap_column = \defined('MODULE_PRODUCTS_INFO_RECOMMENDATION_COLUMNS') ? (int)MODULE_PRODUCTS_INFO_RECOMMENDATION_COLUMNS : 0;
 // initialisation des boutons
         $size_button = $CLICSHOPPING_ProductsCommon->getSizeButton('xs');
 
@@ -171,7 +171,7 @@ class pi_products_info_recommendation
         $new_prods_content .= '<div class="contentContainer">';
         $new_prods_content .= '<div class="contentText">';
 
-        if (MODULE_PRODUCTS_INFO_RECOMMENDATION_TITLE == 'True') {
+        if (\defined('MODULE_PRODUCTS_INFO_RECOMMENDATION_TITLE') && MODULE_PRODUCTS_INFO_RECOMMENDATION_TITLE == 'True') {
           $new_prods_content .= '<div>';
           $new_prods_content .= '<div class="page-title ModuleProductsInfoAlsoPurchasedHeading"><span class="ModuleProductsInfoAlsoPurchasedHeading"><h2>' . sprintf(CLICSHOPPING::getDef('module_products_info_recommendation_name'), DateTime::getNow(CLICSHOPPING::getDef('date_format_short'))) . '</h2></span></div>';
           $new_prods_content .= '</div>';

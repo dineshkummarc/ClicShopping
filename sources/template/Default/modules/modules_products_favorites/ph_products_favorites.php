@@ -57,8 +57,8 @@ class ph_products_favorites
     $this->description = CLICSHOPPING::getDef('module_products_favorites_description');
 
     if (\defined('MODULE_PRODUCTS_FAVORITES_STATUS')) {
-      $this->sort_order = (int)MODULE_PRODUCTS_FAVORITES_SORT_ORDER ?? 0;
-      $this->enabled = (MODULE_PRODUCTS_FAVORITES_STATUS == 'True');
+      $this->sort_order = \defined('MODULE_PRODUCTS_FAVORITES_SORT_ORDER') ? (int)MODULE_PRODUCTS_FAVORITES_SORT_ORDER : 0;
+      $this->enabled = \defined('MODULE_PRODUCTS_FAVORITES_STATUS') ? (MODULE_PRODUCTS_FAVORITES_STATUS == 'True') : false;
     }
   }
 
@@ -74,9 +74,9 @@ class ph_products_favorites
     $CLICSHOPPING_Reviews = Registry::get('Reviews');
 
     if (isset($_GET['Products'], $_GET['Favorites'])) {
-      if ((int)MODULE_PRODUCTS_FAVORITES_MAX_DISPLAY != 0) {
+      if (\defined('MODULE_PRODUCTS_FAVORITES_MAX_DISPLAY') && (int)MODULE_PRODUCTS_FAVORITES_MAX_DISPLAY != 0) {
 
-        $products_template = MODULE_PRODUCTS_FAVORITES_TEMPLATE;
+        $products_template = \defined('MODULE_PRODUCTS_FAVORITES_TEMPLATE') ? MODULE_PRODUCTS_FAVORITES_TEMPLATE : 'products_favorites.php';
 
         $Qlisting = FavoritesClass::getListing();
 

@@ -33,9 +33,9 @@ modules_header_multi_template_shopping_cart_view_cart = Panier
 modules_header_multi_template_shopping_cart_checkout = Commander
 modules_header_multi_template_shopping_cart_total_content = Total
 
-table_heading_quantity = Quantity
+table_heading_quantity = Quantité
 table_heading_total_cart = Total
-table_heading_products = Product
+table_heading_products = Produit
 
 template_does_not_exist = Aucun template
 
