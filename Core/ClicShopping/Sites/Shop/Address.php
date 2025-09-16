@@ -571,7 +571,7 @@ class Address
 
       $zone_id = $Qzone->value('zone_id');
 
-    } elseif ((\defined('ACCOUNT_STATE_DROPDOWN') && ACCOUNT_STATE_DROPDOWN == 'true') && $state > 0) {
+    } elseif (ACCOUNT_STATE_DROPDOWN == 'true' && $state > 0) {
       $Qzone = $this->db->prepare('select distinct zone_id
                                      from :table_zones
                                      where zone_country_id = :zone_country_id
