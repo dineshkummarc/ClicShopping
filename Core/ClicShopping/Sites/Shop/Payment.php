@@ -29,6 +29,7 @@ class Payment
   public string $selected_module;
   public mixed $template;
   public mixed $lang;
+  public string $form_action_url;
 
 // class constructor
 

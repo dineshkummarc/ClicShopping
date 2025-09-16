@@ -46,8 +46,8 @@ class Tax
 
     if (($country_id == -1) && ($zone_id == -1)) {
       if (!$CLICSHOPPING_Customer->isLoggedOn() || !$CLICSHOPPING_Customer->hasDefaultAddress()) {
-        $country_id = STORE_COUNTRY;
-        $zone_id = (int)STORE_ZONE;
+        $country_id = \defined('STORE_COUNTRY') ? STORE_COUNTRY : 0;
+        $zone_id = \defined('STORE_ZONE') ? (int)STORE_ZONE : 0;
       } else {
         $country_id = $CLICSHOPPING_Customer->getCountryID();
         $zone_id = $CLICSHOPPING_Customer->getZoneID();
@@ -106,7 +106,7 @@ class Tax
     $CLICSHOPPING_Db = Registry::get('Db');
 
     if (!isset($this->tax_rates[$class_id][$country_id][$zone_id]['description'])) {
-      if (DISPLAY_PRICE_WITH_TAX == 'true') {
+      if (\defined('DISPLAY_PRICE_WITH_TAX') && DISPLAY_PRICE_WITH_TAX == 'true') {
         $tag = CLICSHOPPING::getDef('text_price_with_tax_tag');
       } else {
         $tag = '';

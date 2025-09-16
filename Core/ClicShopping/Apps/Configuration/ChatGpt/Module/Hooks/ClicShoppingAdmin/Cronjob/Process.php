@@ -19,7 +19,7 @@ use ClicShopping\Apps\Tools\Cronjob\Classes\ClicShoppingAdmin\Cron as Cronjob;
 
 class Process implements \ClicShopping\OM\Modules\HooksInterface
 {
-  private mixed $app;
+  public mixed $app;
   private mixed $cron;
 
   public function __construct()

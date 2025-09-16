@@ -93,10 +93,10 @@ use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
 
     $CLICSHOPPING_Db->save('customers', $update_array, ['customers_email_address' => $email_address]);
 
-    $body_subject = CLICSHOPPING::getDef('email_verification_subject', ['store_name' => STORE_NAME]);
+    $body_subject = CLICSHOPPING::getDef('email_verification_subject', ['store_name' => \defined('STORE_NAME') ? STORE_NAME : '']);
 
     $text_array = [
-      'store_name' => STORE_NAME,
+      'store_name' => \defined('STORE_NAME') ? STORE_NAME : '',
       'verification_code' => $verification_code,
       'expiry_minutes' => $expiry_minutes,
       'remote_address' => $_SERVER['REMOTE_ADDR']
@@ -107,8 +107,8 @@ use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
     $email_body .= TemplateEmail::getTemplateEmailTextFooter();
 
     $to_addr = $email_address;
-    $from_name = STORE_OWNER;
-    $from_addr = STORE_OWNER_EMAIL_ADDRESS;
+    $from_name = \defined('STORE_OWNER') ? STORE_OWNER : '';
+    $from_addr = \defined('STORE_OWNER_EMAIL_ADDRESS') ? STORE_OWNER_EMAIL_ADDRESS : '';
     $to_name = null;
     $subject = $body_subject;
 

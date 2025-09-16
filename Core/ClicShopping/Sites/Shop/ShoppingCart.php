@@ -39,6 +39,7 @@ class ShoppingCart
   private mixed $db;
   private mixed $lang;
   protected $customer;
+  protected $hooks;
   protected $productsCommon;
   protected $prod;
   protected $tax;
@@ -62,10 +63,8 @@ class ShoppingCart
     $this->prod = Registry::get('Prod');
     $this->productsCommon = Registry::get('ProductsCommon');
     $this->tax = Registry::get('Tax');
-    /**
-     *
-     */
-      $this->hooks = Registry::get('Hooks');
+    $this->hooks = Registry::get('Hooks');
+
 
     if (!Registry::exists('ProductsAttributesShop')) {
       Registry::set('ProductsAttributesShop', new ProductsAttributesShop());
@@ -80,8 +79,8 @@ class ShoppingCart
         'total_cost' => 0,
         'total_weight' => 0,
         'shipping_address' => [
-          'zone_id' => (int)STORE_ZONE,
-          'country_id' => STORE_COUNTRY
+          'zone_id' => \defined('STORE_ZONE') ? (int)STORE_ZONE : 0,
+          'country_id' => \defined('STORE_COUNTRY') ? STORE_COUNTRY : 0
         ],
         'order_totals' => []
       ];
@@ -1215,7 +1214,7 @@ class ShoppingCart
   {
     $this->content_type = false;
 
-    if ((DOWNLOAD_ENABLED == 'true') && ($this->getCountContents() > 0)) {
+    if ((\defined('DOWNLOAD_ENABLED') && DOWNLOAD_ENABLED == 'true') && ($this->getCountContents() > 0)) {
       foreach ($this->contents as $item_id => $data) {
         if (isset($data['attributes'])) {
           foreach ($data['attributes'] as $value) {
@@ -1404,7 +1403,7 @@ class ShoppingCart
    */
   public function getCheckGoodQty(string $products_id, int $qty): int
   {
-    if (defined('MAX_QTY_IN_CART') && (MAX_QTY_IN_CART > 0) && ((int)$qty > MAX_QTY_IN_CART)) {
+    if (defined('MAX_QTY_IN_CART') && (MAX_QTY_IN_CART > 0) && ((int)$qty > (int)MAX_QTY_IN_CART)) {
       $qty = (int)MAX_QTY_IN_CART;
     }
 
@@ -1413,7 +1412,7 @@ class ShoppingCart
     }
 
     if ($this->getProductsMinOrderQtyShoppingCart($products_id) == 0) {
-      if (defined('MAX_MIN_IN_CART') && (MAX_MIN_IN_CART > 0) && ((int)$qty < MAX_MIN_IN_CART)) {
+      if (defined('MAX_MIN_IN_CART') && (MAX_MIN_IN_CART > 0) && ((int)$qty < (int)MAX_MIN_IN_CART)) {
         $qty = (int)MAX_MIN_IN_CART;
       }
     }

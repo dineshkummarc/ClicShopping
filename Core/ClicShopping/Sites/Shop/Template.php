@@ -29,7 +29,7 @@ class Template
   protected string $_template = 'template/';
   protected string $_directoryTemplate = 'template/';
 
-  protected $_dynamicTemplate = SITE_THEMA;
+  protected $_dynamicTemplate = \defined('SITE_THEMA') ? SITE_THEMA : 'Default';
   protected string $_directoryTemplateDefault = 'Default';
 
   protected string $_directoryIncludes = 'Core/';
@@ -52,8 +52,8 @@ class Template
 
   protected array $_blocks = [];
   protected array $_content = [];
-  protected $_grid_container_width = GRID_CONTAINER_WITH;
-  protected $_grid_content_width = GRID_CONTENT_WITH;
+  protected $_grid_container_width = \defined('GRID_CONTAINER_WITH') ? GRID_CONTAINER_WITH : 12;
+  protected $_grid_content_width = \defined('GRID_CONTENT_WITH') ? GRID_CONTENT_WITH : 12;
   protected array $_data = [];
 
   protected $width;

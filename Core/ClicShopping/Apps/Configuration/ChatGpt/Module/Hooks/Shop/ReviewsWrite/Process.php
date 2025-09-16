@@ -18,9 +18,8 @@ use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
 class Process implements \ClicShopping\OM\Modules\HooksInterface
 {
-
- private mixed $app;
- private mixed $db;
+  public mixed $app;
+  public mixed $db;
 
   /**
    * Class constructor.

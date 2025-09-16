@@ -68,7 +68,7 @@ class Gpt {
    */
   public static function getEnvironment(): string|null
   {
-    // Use for dev but in production, the API key should be set in the environmen. @todo: update this
+    // Use for dev but in production, the API key should be set in the environment. @todo: update this
     $env = putenv('OPENAI_API_KEY=' . CLICSHOPPING_APP_CHATGPT_CH_API_KEY);
 
     return $env;

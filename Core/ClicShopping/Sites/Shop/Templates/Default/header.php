@@ -20,7 +20,7 @@ if ($CLICSHOPPING_MessageStack->exists('header')) {
   echo $CLICSHOPPING_MessageStack->get('header');
 }
 
-if (MODE_VENTE_PRIVEE == 'true') {
+if (\defined('MODE_VENTE_PRIVEE') && MODE_VENTE_PRIVEE == 'true') {
   if (!$CLICSHOPPING_Customer->isLoggedOn() && (!strstr($_SERVER['QUERY_STRING'], 'Account&LogIn'))) {
     if (
       (!strstr($_SERVER['QUERY_STRING'], 'Account&Create')) &&
