@@ -102,7 +102,7 @@ class LogInAuth extends \ClicShopping\OM\PagesActionsAbstract
           $Qcheck = $CLICSHOPPING_Db->get('customers', $array_sql, ['customers_email_address' => $email_address], null, 1);
 
           if ($Qcheck->fetch()) {
-            CLICSHOPPING::redirect(null, 'Account&LoginAuth&Process');
+            CLICSHOPPING::redirect(null, 'Account&LogInAuth&Process');
           }
         } else {
           $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('text_email_code_invalid'), 'error');
