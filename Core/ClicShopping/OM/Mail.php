@@ -107,7 +107,7 @@ class Mail
         $this->phpMail->SMTPAuth = EMAIL_SMTP_AUTHENTICATION;
 
         $this->phpMail->Username = EMAIL_SMTP_USER;
-        $this->phpMail->Password = EMAIL_SMTP_PASSWORD;
+        $this->phpMail->Password = Hash::displayDecryptedDataText(EMAIL_SMTP_PASSWORD);
 
         if (EMAIL_SMTP_SECURE != 'no') {
           if (EMAIL_SMTP_SECURE == 'tls') {

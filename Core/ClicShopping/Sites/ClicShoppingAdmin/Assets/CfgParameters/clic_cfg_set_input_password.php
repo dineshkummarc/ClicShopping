@@ -8,6 +8,7 @@
  *
  */
 
+use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 
 /**
@@ -19,5 +20,6 @@ use ClicShopping\OM\HTML;
 
 function clic_cfg_set_input_password($password)
 {
-  return HTML::passwordField('configuration_value', $password);
+  $encrypted_password = Hash::displayDecryptedDataText($password);
+  return HTML::passwordField('configuration_value', $encrypted_password);
 }
