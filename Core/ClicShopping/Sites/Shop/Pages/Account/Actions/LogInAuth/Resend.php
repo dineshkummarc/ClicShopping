@@ -13,13 +13,13 @@ namespace ClicShopping\Sites\Shop\Pages\Account\Actions\LogInAuth;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Sites\Shop\EmailVerification;
+use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
 
 class Resend extends \ClicShopping\OM\PagesActionsAbstract
 {
   public function execute()
   {
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
-    $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_Mail = Registry::get('Mail');
 
     if (!isset($_SESSION['email_address'])) {
@@ -31,27 +31,20 @@ class Resend extends \ClicShopping\OM\PagesActionsAbstract
     if (EmailVerification::sendVerificationCode($email_address)) {
       $_SESSION['email_code_sent'] = true;
 
-      if (!empty($admin_check['user_name'])) {
+      if (!empty($email_address)) {
+        // Génération du code
         $code_length = defined('EMAIL_VERIFICATION_CODE_LENGTH') ? (int)EMAIL_VERIFICATION_CODE_LENGTH : 6;
-        $code_length = max(4, min(8, $code_length)); // Limiter entre 4 et 8
+        $code_length = max(4, min(8, $code_length));
 
         $verification_code = '';
-
         for ($i = 0; $i < $code_length; $i++) {
           $verification_code .= mt_rand(0, 9);
         }
 
+        // Durée d'expiration
         $expiry_minutes = defined('EMAIL_VERIFICATION_CODE_EXPIRY') ? (int)EMAIL_VERIFICATION_CODE_EXPIRY : 15;
-        $expiry_time = date('Y-m-d H:i:s', time() + ($expiry_minutes * 60));
 
-        $update_array = [
-          'email_verification_code' => $verification_code,
-          'email_verification_expiry' => $expiry_time
-        ];
-
-        $CLICSHOPPING_Db->save('administrators', $update_array, ['user_name' => $username]);
-
-        // Envoyer l'email avec le code
+        // Préparation de l'email
         $body_subject = CLICSHOPPING::getDef('email_verification_subject', ['store_name' => STORE_NAME]);
 
         $text_array = [
@@ -61,8 +54,10 @@ class Resend extends \ClicShopping\OM\PagesActionsAbstract
         ];
 
         $email_body = CLICSHOPPING::getDef('email_verification_body', $text_array) . "\n";
+        $email_body .= TemplateEmail::getTemplateEmailSignature() . "\n";
+        $email_body .= TemplateEmail::getTemplateEmailTextFooter();
 
-        $to_addr = $username;
+        $to_addr = $email_address;
         $from_name = STORE_OWNER;
         $from_addr = STORE_OWNER_EMAIL_ADDRESS;
         $to_name = null;
@@ -75,6 +70,8 @@ class Resend extends \ClicShopping\OM\PagesActionsAbstract
       } else {
         $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_email_verification_failed'), 'error');
       }
+    } else {
+      $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_email_verification_failed'), 'error');
     }
 
     CLICSHOPPING::redirect(null, 'Account&LogInAuth');

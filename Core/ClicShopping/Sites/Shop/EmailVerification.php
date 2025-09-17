@@ -56,7 +56,7 @@ use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
     $Qcheck->bindValue(':customers_email_address', $email_address);
     $Qcheck->execute();
 
-    if ($Qcheck->fetch() !== false) {
+    if ($Qcheck->fetch() !== false && $Qcheck->valueInt('email_verification') === 1) {
       return true;
     }
 

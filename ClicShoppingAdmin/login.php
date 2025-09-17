@@ -84,7 +84,7 @@ if (!\is_null($action)) {
               $CLICSHOPPING_ActionRecorder->record();
 
               //****************************
-              // Check Doublea uthtification
+              // Check Double authtification
               //****************************
               if (EmailVerification::isEnabledForAdmin($username)) {
                 // Stocker les informations de session pour une utilisation ultérieure
@@ -243,26 +243,25 @@ if (!\is_null($action)) {
 
         $username = $_SESSION['username'];
         $password = $_SESSION['password'];
-      } else {
-        $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_invalid_administrator'), 'error');
 
-        $CLICSHOPPING_Hooks->call('Login', 'ErrorProcess');
-      }
+        $sql_array = [
+          'id',
+          'user_name',
+          'user_password',
+          'access',
+          'status'
+        ];
 
-      $sql_array = [
-        'id',
-        'user_name',
-        'user_password',
-        'access',
-        'status'
-      ];
+        $Qcheck = $CLICSHOPPING_Db->get('administrators', $sql_array, ['user_name' => $username, 'status' => 1]);
 
-      $Qcheck = $CLICSHOPPING_Db->get('administrators', $sql_array, ['user_name' => $username, 'status' => 1]);
-
-      if (!empty($Qcheck->value('user_name'))) {
-        if (Hash::verify($password, $Qcheck->value('user_password'))) {
-          if (EmailVerification::sendVerificationCode($username)) {
-            $_SESSION['email_verified'] = true;
+        if (!empty($Qcheck->value('user_name'))) {
+          if (Hash::verify($password, $Qcheck->value('user_password'))) {
+            if (EmailVerification::sendVerificationCode($username)) {
+              $_SESSION['email_verified'] = true;
+            }
+          } else {
+            $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_invalid_administrator'), 'error');
+            CLICSHOPPING::redirect('login.php');
           }
         } else {
           $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_invalid_administrator'), 'error');
@@ -270,7 +269,8 @@ if (!\is_null($action)) {
         }
       } else {
         $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_invalid_administrator'), 'error');
-        CLICSHOPPING::redirect('login.php');
+
+        $CLICSHOPPING_Hooks->call('Login', 'ErrorProcess');
       }
       break;
 
@@ -360,7 +360,9 @@ if (!\is_null($action)) {
             ];
 
             $email_body = CLICSHOPPING::getDef('email_verification_body', $text_array) . "\n";
-
+            $email_body .= TemplateEmailAdmin::getTemplateEmailSignature() . "\n";
+            $email_body .= TemplateEmailAdmin::getTemplateEmailTextFooter();
+            
             $to_addr = $username;
             $from_name = STORE_OWNER;
             $from_addr = STORE_OWNER_EMAIL_ADDRESS;
