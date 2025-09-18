@@ -1733,8 +1733,8 @@ INSERT INTO configuration VALUES(1773, 'Use Redis', 'USE_REDIS', 'False', 'Enabl
 INSERT INTO configuration VALUES(1774, 'Sales Weighting', 'CLICSHOPPING_APP_RECOMMENDATIONS_PR_WEIGHT_SALES', '0.4', 'Weight applied to the score derived from sales. Controls the influence of product sales (normalized by the maximum ordered) in the Multiple strategy.', 6, 0, NULL, '2025-09-15 17:07:51', NULL, NULL);
 INSERT INTO configuration VALUES(1775, 'External Sources Weighting', 'CLICSHOPPING_APP_RECOMMENDATIONS_PR_WEIGHT_EXTERNAL', '0.3', 'Weight applied to the score derived from external recommendations (average of recommendation scores normalized between min and max). Used in the Multiple strategy.', 6, 0, NULL, '2025-09-15 17:07:51', NULL, NULL);
 
-                                                                                                                                                                                                                             '' ||
-                                                                                                                                                                                                                             '
+
+
 INSERT INTO configuration_group VALUES(1, 'Store Setup', 'General Information on the Store.', 1, 1);
 INSERT INTO configuration_group VALUES(2, 'Setup credit card', 'Minimum value: functions / data', 2, 1);
 INSERT INTO configuration_group VALUES(3, 'Setup maximum and minimum values', 'Values functions / data', 3, 1);
