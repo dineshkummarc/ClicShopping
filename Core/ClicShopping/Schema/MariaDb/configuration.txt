@@ -11,7 +11,7 @@ use_function varchar(255)
 set_function varchar(255)
 --
 primary configuration_id
-idx idx_configuration_key (configuration_key)
+idx_configuration_key (configuration_key)
 ##
 engine innodb
 character_set utf8mb4
