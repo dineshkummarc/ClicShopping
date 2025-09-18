@@ -1,3 +1,6 @@
+version4.07
+
+-----------------
 version4.06
 Dynamic Price action in function of the stock and sales introduction
 Libraries updated
