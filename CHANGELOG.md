@@ -1,6 +1,10 @@
+version4.08
+
+
+-----------------
+
 version4.07
 add files missing in 4.06
-
 -----------------
 version4.06
 Dynamic Price action in function of the stock and sales introduction
