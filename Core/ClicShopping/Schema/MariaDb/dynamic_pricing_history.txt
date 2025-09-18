@@ -1,0 +1,19 @@
+id INT AUTO_INCREMENT
+rules_id INT NOT NULL
+products_id INT not_null
+base_price DECIMAL(10,2) not_null
+dynamic_price DECIMAL(10,2) not_null
+rule_applied VARCHAR(255) not_null
+date_added DATETIME not_null DEFAULT NULL
+source VARCHAR(50) not_null
+--
+primary id
+idx_products_id products_id
+idx_date_added date_added
+
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci
+
+

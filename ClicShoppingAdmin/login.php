@@ -45,13 +45,14 @@ if (!\is_null($action)) {
       if (isset($_SESSION['redirect_origin'], $_SESSION['redirect_origin']['auth_user']) && !isset($_POST['username'])) {
         $username = HTML::sanitize($_SESSION['redirect_origin']['auth_user']);
         $password = HTML::sanitize($_SESSION['redirect_origin']['auth_pw']);
-      } elseif (isset($_POST['username'], $_POST['password'])) {
+      } else {
+        if (isset($_POST['username'], $_POST['password'])) {
           $username = HTML::sanitize($_POST['username']);
           $password = HTML::sanitize($_POST['password']);
-      } else {
-        CLICSHOPPING::redirect('login.php');
+        } else {
+          CLICSHOPPING::redirect('login.php');
+        }
       }
-
 
       if (!empty($username)) {
         Registry::set('ActionRecorderAdmin', new ActionRecorderAdmin('ar_admin_login', null, $username));

@@ -25,10 +25,10 @@ class Contact extends \ClicShopping\OM\PagesActionsAbstract
 // select multiple contact for the form
     if (!empty(\defined('CONTACT_DEPARTMENT_LIST') ? CONTACT_DEPARTMENT_LIST : '')) {
       $send_to_array = [];
-      $contact_department_list = explode(",", \defined('CONTACT_DEPARTMENT_LIST') ? CONTACT_DEPARTMENT_LIST : '');
+      $contact_department_list = explode(",", CONTACT_DEPARTMENT_LIST);
 
       if (\is_array($contact_department_list)) {
-        foreach (explode(",", \defined('CONTACT_DEPARTMENT_LIST') ? CONTACT_DEPARTMENT_LIST : '') as $k => $v) {
+        foreach (explode(",", CONTACT_DEPARTMENT_LIST) as $k => $v) {
           $send_to_array[] = [
             'id' => $k,
             'text' => preg_replace('/\<[^*]*/', '', $v)

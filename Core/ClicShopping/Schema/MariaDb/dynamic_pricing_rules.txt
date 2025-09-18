@@ -1,0 +1,19 @@
+rules_id int(11) not_null AUTO_INCREMENT
+rules_name varchar(255) not_null
+rules_condition text not_null
+rules_type enum('percentage_decrease','percentage_increase','fixed_price') not_null DEFAULT ('percentage_decrease')
+rules_value decimal(15,4) not_null
+rules_priority int(11) not_null DEFAULT (0)
+rules_status tinyint(1) not_null DEFAULT (0)
+date_added datetime not_null
+date_modified datetime DEFAULT NULL
+rules_status_special tinyint(1) not_null DEFAULT (0)
+customers_group tinyint(1) not_null DEFAULT (0)
+--
+primary rules_id
+idx_rules_priority rules_id
+
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci

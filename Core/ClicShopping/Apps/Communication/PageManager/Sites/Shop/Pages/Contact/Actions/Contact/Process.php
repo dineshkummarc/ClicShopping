@@ -120,7 +120,7 @@ class Process extends \ClicShopping\OM\PagesActionsAbstract
       if ($error === false) {
         $today = date("Y-m-d H:i:s");
         if (!empty(\defined('CONTACT_DEPARTMENT_LIST') ? CONTACT_DEPARTMENT_LIST : '')) {
-          $email_address_department = TemplateEmail::getExtractEmailAddress(\defined('CONTACT_DEPARTMENT_LIST') ? CONTACT_DEPARTMENT_LIST : '');
+          $email_address_department = TemplateEmail::getExtractEmailAddress(CONTACT_DEPARTMENT_LIST);
 
           if (empty($send_to)) {
             $email_number = 0;

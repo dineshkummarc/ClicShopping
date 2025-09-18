@@ -1381,11 +1381,11 @@ class Order
 
 // SEND_EXTRA_ORDER_EMAILS_TO does'nt work like this, test<test@test.com>, just with test@test.com
       if (!empty(\defined('SEND_EXTRA_ORDER_EMAILS_TO') ? SEND_EXTRA_ORDER_EMAILS_TO : '')) {
-        $email_text_subject = stripslashes(CLICSHOPPING::getDef('email_text_subject', ['store_name' => \defined('STORE_NAME') ? STORE_NAME : '']));
+        $email_text_subject = stripslashes(CLICSHOPPING::getDef('email_text_subject', ['store_name' => STORE_NAME]));
         $email_text_subject = html_entity_decode($email_text_subject);
 
-        if (!empty(\defined('SEND_EXTRA_ORDER_EMAILS_TO') ? SEND_EXTRA_ORDER_EMAILS_TO : '')) {
-          $email[] = TemplateEmail::getExtractEmailAddress(\defined('SEND_EXTRA_ORDER_EMAILS_TO') ? SEND_EXTRA_ORDER_EMAILS_TO : '');
+        if (!empty(SEND_EXTRA_ORDER_EMAILS_TO)) {
+          $email[] = TemplateEmail::getExtractEmailAddress(SEND_EXTRA_ORDER_EMAILS_TO);
 
           if (is_array($email)) {
             foreach ($email as $key => $value) {
