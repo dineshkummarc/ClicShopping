@@ -5,6 +5,7 @@ namespace LLPhant\Query\SemanticSearch;
 use Http\Discovery\Psr17Factory;
 use Http\Discovery\Psr18ClientDiscovery;
 use LLPhant\Exception\SecurityException;
+use LLPhant\Utility;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -24,14 +25,10 @@ class LakeraPromptInjectionQueryTransformer implements QueryTransformer
         ?string $apiKey = null,
         ?ClientInterface $client = null)
     {
-        if ($endpoint === null && is_string(getenv('LAKERA_ENDPOINT'))) {
-            $endpoint = getenv('LAKERA_ENDPOINT');
-        }
+        $endpoint ??= Utility::readEnvironment('LAKERA_ENDPOINT');
         $this->endpoint = $endpoint ?? throw new \Exception('You have to provide a LAKERA_ENDPOINT env var to connect to LAKERA.');
 
-        if ($apiKey === null && is_string(getenv('LAKERA_API_KEY'))) {
-            $apiKey = getenv('LAKERA_API_KEY');
-        }
+        $apiKey ??= Utility::readEnvironment('LAKERA_API_KEY');
         $this->apiKey = $apiKey ?? throw new \Exception('You have to provide a LAKERA_API_KEY env var to connect to LAKERA.');
 
         $this->client = $client instanceof ClientInterface ? $client : Psr18ClientDiscovery::find();
@@ -43,11 +40,11 @@ class LakeraPromptInjectionQueryTransformer implements QueryTransformer
      */
     public function transformQuery(string $query): array
     {
-        $request = $this->factory->createRequest('POST', sprintf('%s/v1/prompt_injection', rtrim($this->endpoint, '/')))
+        $request = $this->factory->createRequest('POST', sprintf('%s/v2/guard', rtrim($this->endpoint, '/')))
             ->withHeader('Authorization', 'Bearer '.$this->apiKey)
             ->withHeader('Accept', 'application/json')
             ->withHeader('Content-Type', 'application/json')
-            ->withBody($this->factory->createStream(json_encode(['input' => $query], JSON_THROW_ON_ERROR)));
+            ->withBody($this->factory->createStream($this->apiPayloadFor($query)));
 
         $response = $this->client->sendRequest($request);
         $statusCode = $response->getStatusCode();
@@ -58,8 +55,8 @@ class LakeraPromptInjectionQueryTransformer implements QueryTransformer
         $json = $response->getBody()->getContents();
         $responseArray = \json_decode($json, true, 512, JSON_THROW_ON_ERROR);
 
-        if (array_key_exists('results', $responseArray) && array_key_exists(0, $responseArray['results']) && array_key_exists('flagged', $responseArray['results'][0])) {
-            if ($responseArray['results'][0]['flagged'] === true) {
+        if (array_key_exists('flagged', $responseArray)) {
+            if ($responseArray['flagged'] === true) {
                 throw new SecurityException('Prompt flagged as insecure: '.$query);
             }
 
@@ -67,5 +64,15 @@ class LakeraPromptInjectionQueryTransformer implements QueryTransformer
         }
 
         throw new \Exception('Unexpected response from API: '.$json);
+    }
+
+    private function apiPayloadFor(string $query): string
+    {
+        $result = json_encode(['messages' => [['role' => 'user', 'content' => $query]]], JSON_THROW_ON_ERROR);
+        if (! $result) {
+            throw new \Exception('Failed to encode query: '.$query);
+        }
+
+        return $result;
     }
 }
