@@ -58,18 +58,8 @@ try {
         $embeddingTables = [];
 
         // Main tables known
-        $knownTables = [
-          'products_embedding',
-          'categories_embedding',
-          'pages_manager_embedding',
-          'orders_embedding',
-          'manufacturers_embedding',
-          'suppliers_embedding',
-          'reviews_embedding',
-          'reviews_sentiment_embedding',
-          'return_orders_embedding',
-          'suppliers_embedding'
-        ];
+        $knownTables = $ragManager->knownEmbeddingTable();
+
         // Add first the known table
         foreach ($knownTables as $tableName) {
           try {

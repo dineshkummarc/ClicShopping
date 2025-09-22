@@ -454,7 +454,7 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
    * @return void
    * @throws \Exception
    */
-  public static function saveData(string $question, string $result, ?array $auditExtra = []): void
+  public static function saveData(string $question, string $result, ?array $auditExtra = [], bool $force = false): void
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
@@ -470,7 +470,7 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
         ]
       ) : 0;
 
-    if ($saveData === 1) {
+    if ($saveData === 1 && $force === false) {
       // Validate and sanitize the question and result before saving to database
       $validatedQuestion = InputValidator::validateParameter(
         $question,

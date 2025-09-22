@@ -49,7 +49,7 @@ class MultiDBRAGManager
   public mixed $language;
   private mixed $embeddingGenerator;
   private array $vectorStores = [];
-
+  private mixed $securityLogger;
   private bool $debug = false;
   
   /**
@@ -89,6 +89,29 @@ class MultiDBRAGManager
     // Initialize vector stores
     $this->initializeVectorStores($tableNames);
     $this->embeddingGenerator = $this->createEmbeddingGenerator();
+  }
+
+  /**
+   * Return known Embedding table
+   *
+   * @return array
+   */
+  public function knownEmbeddingTable(): array
+  {
+    $knownTables = [
+      'products_embedding',
+      'categories_embedding',
+      'pages_manager_embedding',
+      'orders_embedding',
+      'manufacturers_embedding',
+      'suppliers_embedding',
+      'reviews_embedding',
+      'reviews_sentiment_embedding',
+      'return_orders_embedding',
+      'suppliers_embedding'
+    ];
+
+    return $knownTables;
   }
 
   /**

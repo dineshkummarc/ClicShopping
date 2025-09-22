@@ -73,7 +73,6 @@ class MariaDBVectorStore extends VectorStoreBase
     DoctrineOrm::createTableStructure($this->tableName);
   }
 
-
   /**
    * Validates the format of the embedding
    *
