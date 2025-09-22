@@ -528,10 +528,10 @@ class MultiDBRAGManager
 
       $results = $analyticsAgent->processBusinessQuery($query);
 
-      if ($results['type'] === 'error') {
+      if ($results['type'] ?? '' === 'error') {
         return [
           'type'    => 'error',
-          'message' => $results['message']
+          'message' => $results['message']  ?? 'Unknown error'
         ];
       }
 
@@ -541,9 +541,9 @@ class MultiDBRAGManager
         'type'               => 'analytics_results',
         'query'              => $query,
         'matched_categories' => $matchedCategories,
-        'interpretation'     => Hash::displayDecryptedDataText($results['interpretation']),
-        'count'              => $results['count'],
-        'results'            => $results['results']
+        'interpretation'     => Hash::displayDecryptedDataText($results['interpretation'] ?? ''),
+        'count'              => $results['count'] ?? 0,
+        'results'            => $results['results'] ?? []
       ];
 
       // Si on a plusieurs blocs de requêtes SQL
