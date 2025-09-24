@@ -22,26 +22,36 @@ class Curl {
    * Executes an HTTP request using cURL.
    *
    * @param array $parameters An associative array containing the request parameters:
-   *                          - 'server': An array with 'scheme', 'host', 'port', 'path', and optionally 'query'.
-   *                          - 'method': The HTTP method ('get' or 'post').
-   *                          - 'parameters': The request body for POST requests.
-   *                          - 'header': An array of headers to include in the request.
-   *                          - 'cafile': Path to the CA file for SSL verification.
-   *                          - 'certificate': Path to the client certificate for SSL.
-   *                          - 'redir_counter': Counter for redirects (optional).
+   * - 'server': An array with 'scheme', 'host', 'port', 'path', and optionally 'query'.
+   * - 'method': The HTTP method ('get' or 'post').
+   * - 'parameters': The request body for POST requests.
+   * - 'header': An array of headers to include in the request.
+   * - 'cafile': Path to the CA file for SSL verification.
+   * - 'certificate': Path to the client certificate for SSL.
+   * - 'redir_counter': Counter for redirects (optional).
    *
    * @return string The response body from the HTTP request.
    */
   public static function execute($parameters)
   {
+    // Use a static variable to hold the cURL handle for reusability.
+    static $curl = null;
+
+    if ($curl === null) {
+      $curl = curl_init();
+    } else {
+      // Reset the cURL handle instead of closing and re-initializing it.
+      // This is the correct way to handle cURL resource in modern PHP.
+      curl_reset($curl);
+    }
+
     $url = $parameters['server']['scheme'] . '://' .
       $parameters['server']['host'] .
       $parameters['server']['path'] .
       (isset($parameters['server']['query']) ? '?' . $parameters['server']['query'] : '');
 
-    $curl = curl_init($url);
-
     $curl_options = [
+      CURLOPT_URL => $url,
       CURLOPT_PORT => $parameters['server']['port'],
       CURLOPT_HEADER => true,
       CURLOPT_SSL_VERIFYPEER => true,
@@ -75,7 +85,7 @@ class Curl {
 
     if ($result === false) {
       trigger_error(curl_error($curl));
-      curl_close($curl);
+      // curl_close() is no longer needed here as the handle will be reused.
       return false;
     }
 
@@ -84,7 +94,7 @@ class Curl {
     $headers = trim(substr($result, 0, $header_size));
     $body = trim(substr($result, $header_size));
 
-    curl_close($curl);
+    // curl_close() is no longer called here. The handle persists.
 
     if (($http_code === 301 || $http_code === 302) && (!isset($parameters['redir_counter']) || $parameters['redir_counter'] < 6)) {
 
@@ -115,6 +125,7 @@ class Curl {
           'redir_counter'  => $parameters['redir_counter']
         ];
 
+        // The HTTP::getResponse() method should handle the recursive call.
         $response = HTTP::getResponse($redir_parameters);
         $body = $response['body'] ?? '';
       }
