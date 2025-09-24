@@ -43,6 +43,8 @@ class Db extends PDO
   protected $cache_key;
   protected bool $use_cache = false;
   protected int $cache_expire = 3600; // 1 hour default
+  protected mixed $statement;
+  protected mixed $query;
 
   // Ne pas définir le type ici pour éviter le conflit avec la classe enfant
   protected $memcached;
@@ -286,7 +288,7 @@ class Db extends PDO
     $args = func_get_args();
 
     if (count($args) > 1) {
-      $DbStatement = call_user_func_array(array($this, 'parent::query'), $args);
+      $DbStatement = call_user_func_array(parent::query(...), $args);
     } else {
       $DbStatement = parent::query($statement);
     }
