@@ -54,6 +54,7 @@ text_cronjob_code = Code
 text_cronjob_cycle = Cycle
 text_cronjob_action = Action
 text_cronjob_status = Statut
+text_cronjob_description = Description
 success_expired_entries = Succès
 
 success_cronjob_status_updated = Succès : Mise à jour effectuée

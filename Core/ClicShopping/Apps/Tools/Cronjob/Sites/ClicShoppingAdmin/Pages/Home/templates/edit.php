@@ -139,7 +139,7 @@ $languages = $CLICSHOPPING_Language->getLanguages();
                         <ul class="list-group-slider list-group-flush">
                           <li class="list-group-item-slider">
                             <label class="switch">
-                              <?php echo HTML::checkboxField('status', '1', $cron['status'], 'class="success"'); ?>
+                              <?php echo HTML::checkboxField('status', '1', $cron['status'] ?? 0, 'class="success"'); ?>
                               <span class="slider"></span>
                             </label>
                           </li>
