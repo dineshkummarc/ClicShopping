@@ -1803,6 +1803,7 @@ class AnalyticsAgent
     ];
 
     $prompt = CLICSHOPPING::getDef('text_interpret_results', $array);
+
     $interpretation = $this->chat->generateText($prompt);
 
     // Create the cache with expiration
@@ -1814,6 +1815,7 @@ class AnalyticsAgent
         'last_used' => time(),
         'ttl' => time() + 3600 // Cache expires in 1 hour
       ];
+
       $this->cache->savePromptCache();
     }
 
