@@ -57,16 +57,12 @@ if (isset($_POST['cPath'])) {
           <span
             class="col-md-2 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_AdministratorMenu->getDef('heading_title'); ?></span>
           <span class="col-md-3 text-end">
-           <div>
-             <div>
-              <?php
-                echo HTML::form('search', $CLICSHOPPING_AdministratorMenu->link('AdministratorMenu'), 'post', '', ['session_id' => true]);
-                echo HTML::inputField('search', '', 'id="inputKeywords" placeholder="' . $CLICSHOPPING_AdministratorMenu->getDef('heading_title_search') . '"');
-                echo '&nbsp;&nbsp;&nbsp;';
-              ?>
-               </form>
-           </div>
-         </div>
+          <?php
+            echo HTML::form('search', $CLICSHOPPING_AdministratorMenu->link('AdministratorMenu'), 'post', '', ['session_id' => true]);
+            echo HTML::inputField('search', '', 'id="inputKeywords" placeholder="' . $CLICSHOPPING_AdministratorMenu->getDef('heading_title_search') . '"');
+            echo '&nbsp;&nbsp;&nbsp;';
+          ?>
+           </form>
         </span>
           <span class="col-md-3">
            <div>

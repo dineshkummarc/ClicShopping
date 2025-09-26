@@ -13,6 +13,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
 define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/') . DIRECTORY_SEPARATOR);
 
@@ -25,6 +26,7 @@ CLICSHOPPING::loadSite('ClicShoppingAdmin');
 
 $CLICSHOPPING_Db = Registry::get('Db');
 $CLICSHOPPING_Language = Registry::get('Language');
+AdministratorAdmin::hasUserAccess();
 
 $prompt = HTML::sanitize($_POST['message']);
 $result = Gpt::getGptResponse($prompt);

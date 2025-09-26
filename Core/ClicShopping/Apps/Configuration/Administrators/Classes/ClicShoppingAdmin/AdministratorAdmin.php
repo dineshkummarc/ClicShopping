@@ -55,6 +55,23 @@ class AdministratorAdmin
     return $check_array;
   }
 
+
+  /*
+   * check is the admin session and access
+   *
+   * @return array|bool
+   */
+  public static function hasUserAccess(): array|bool
+  {
+    $check = true;
+    if (!isset($_SESSION['admin']['id'], $_SESSION['admin']['access'])) {
+      http_response_code(403);
+      return json_encode(['error' => 'Access denied']);
+    }
+
+    return $check;
+  }
+
   /**
    * Checks if the current admin user has access rights based on session data and database validation.
    * If the user does not have the required access or session data is missing, redirects to the index page and displays a warning message.

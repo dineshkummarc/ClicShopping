@@ -15,6 +15,8 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Tools\ActionsRecorder\Classes\ClicShoppingAdmin\ActionsRecorder;
 
 $CLICSHOPPING_ActionsRecorder = Registry::get('ActionsRecorder');
+$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
+
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
 
 $CLICSHOPPING_Hooks = Registry::get('Hooks');

@@ -12,9 +12,10 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 $CLICSHOPPING_DataBaseTables = Registry::get('DataBaseTables');
-$CLICSHOPPING_Page = Registry::get('Site')->getPage();
-
+$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
+
+$CLICSHOPPING_Page = Registry::get('Site')->getPage();
 
 $current_module = $CLICSHOPPING_Page->data['current_module'];
 

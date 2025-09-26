@@ -18,6 +18,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MultiDBRAGManager;
 use \ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
+use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
 define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/')  . DIRECTORY_SEPARATOR);
 
@@ -26,6 +27,7 @@ spl_autoload_register('ClicShopping\OM\CLICSHOPPING::autoload');
 
 CLICSHOPPING::initialize();
 CLICSHOPPING::loadSite('ClicShoppingAdmin');
+AdministratorAdmin::hasUserAccess();
 
 try {
   Gpt::getEnvironment();

@@ -76,14 +76,10 @@ while ($Qmodules->fetch()) {
           <span
             class="col-md-6 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_ActionsRecorder->getDef('heading_title'); ?></span>
           <span class="col-md-4 text-end">
-            <div>
-              <div>
-<?php
-echo HTML::form('search', $CLICSHOPPING_ActionsRecorder->link('ActionsRecorder'), 'post', '', ['session_id' => true]);
-echo HTML::selectField('module', $modules_list_array, null, 'onchange="this.form.submit();"');
-?>
-              </div>
-            </div>
+            <?php
+            echo HTML::form('search', $CLICSHOPPING_ActionsRecorder->link('ActionsRecorder'), 'post', '', ['session_id' => true]);
+            echo HTML::selectField('module', $modules_list_array, null, 'onchange="this.form.submit();"');
+            ?>
           </span>
           <span class="col-md-1 text-end">
             <?php echo HTML::button($CLICSHOPPING_ActionsRecorder->getDef('button_reset'), null, $CLICSHOPPING_ActionsRecorder->link('ActionsRecorder&Expire' . (isset($_POST['module']) && \in_array($_POST['module'], $modules_array) ? '&module=' . $_POST['module'] : '')), 'danger'); ?>

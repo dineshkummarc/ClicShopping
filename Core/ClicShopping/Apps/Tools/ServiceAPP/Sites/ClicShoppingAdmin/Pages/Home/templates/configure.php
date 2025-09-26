@@ -13,6 +13,7 @@ use ClicShopping\OM\Registry;
 
 $CLICSHOPPING_ServiceAPP = Registry::get('ServiceAPP');
 $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
+$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
 

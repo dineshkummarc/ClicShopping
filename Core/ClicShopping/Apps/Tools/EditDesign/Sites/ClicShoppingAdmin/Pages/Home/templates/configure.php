@@ -12,6 +12,8 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 $CLICSHOPPING_EditDesign = Registry::get('EditDesign');
+$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
+
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
 
 $CLICSHOPPING_MessageStack = Registry::get('MessageStack');

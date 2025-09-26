@@ -17,6 +17,7 @@ use ClicShopping\Apps\Tools\AdministratorMenu\Classes\ClicShoppingAdmin\Administ
 $CLICSHOPPING_AdministratorMenu = Registry::get('AdministratorMenu');
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
 $CLICSHOPPING_Language = Registry::get('Language');
+$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
 $cPath = HTML::sanitize($_GET['cPath']);

@@ -14,6 +14,7 @@ use ClicShopping\OM\Registry;
 
 $CLICSHOPPING_ActionsRecorder = Registry::get('ActionsRecorder');
 $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
+$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 
 if ($CLICSHOPPING_MessageStack->exists('main')) {
   echo $CLICSHOPPING_MessageStack->get('main');

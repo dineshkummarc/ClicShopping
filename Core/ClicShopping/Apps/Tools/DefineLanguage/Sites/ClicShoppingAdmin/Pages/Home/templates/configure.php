@@ -13,6 +13,7 @@ use ClicShopping\OM\Registry;
 
 $CLICSHOPPING_DefineLanguage = Registry::get('DefineLanguage');
 $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
+$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
 $current_module = $CLICSHOPPING_Page->data['current_module'];
