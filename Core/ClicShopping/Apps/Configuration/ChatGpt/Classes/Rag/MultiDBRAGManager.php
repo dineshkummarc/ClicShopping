@@ -84,7 +84,16 @@ class MultiDBRAGManager
       $parameters['model'] = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
     }
 
-    Gpt::getOpenAiGpt($parameters);
+    if (strpos($parameters['model'], 'gpt') === 0) {
+      Gpt::getOpenAIChat($question, $maxtoken, $temperature, $engine, $max);
+    } elseif (strpos($parameters['model'], 'anth') === 0) {
+      Gpt::getAnthropicChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL, $maxtoken);
+    } elseif (strpos($parameters['model'], 'mistral') === 0) {
+      Gpt::getMistralChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL, $maxtoken);
+    } else {
+      Gpt::getOllamaChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL);
+    }
+
 
     // Initialize vector stores
     $this->initializeVectorStores($tableNames);
@@ -373,7 +382,16 @@ class MultiDBRAGManager
           'max_tokens' => 128
         ];
 
-        $chat = Gpt::getOpenAiGpt($array_parameters);
+
+        if (strpos($array_parameters['model'], 'gpt') === 0) {
+          $chat = Gpt::getOpenAiGpt($array_parameters['model'], $array_parameters['max_tokens']);
+        } elseif (strpos($array_parameters['model'], 'anth') === 0) {
+          $chat = Gpt::getAnthropicChat($array_parameters['model'], $array_parameters['max_tokens']);
+        } elseif (strpos($array_parameters['model'], 'mistral') === 0) {
+          $chat = Gpt::getMistralChat($array_parameters['model'], $array_parameters['max_tokens']);
+        } else {
+          $chat = Gpt::getOllamaChat($array_parameters['model']);
+        }
 
         $reranker = new LLMReranker($chat, $limit);
 
@@ -551,11 +569,13 @@ class MultiDBRAGManager
 
       $results = $analyticsAgent->processBusinessQuery($query);
 
-      if ($results['type'] ?? '' === 'error') {
+      if ($results['type'] === 'error') {
         return [
           'type'    => 'error',
-          'message' => $results['message']  ?? 'Unknown error'
+          'message' => $results['message']
         ];
+	
+	      return $result;
       }
 
         $matchedCategories = $analyticsAgent->getAnalyticsCategories($query);

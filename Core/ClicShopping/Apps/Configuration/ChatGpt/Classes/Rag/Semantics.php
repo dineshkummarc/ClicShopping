@@ -1,4 +1,12 @@
 <?php
+/**
+ *
+ * @copyright 2008 - https://www.clicshopping.org
+ * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
+ * @Licence GPL 2 & MIT
+ * @Info : https://www.clicshopping.org/forum/trademark/
+ *
+ */
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
@@ -7,6 +15,7 @@ use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\TranslationCache;
 
 /*
  * This class is responsible for semantic analysis and classification of queries.
@@ -49,23 +58,33 @@ class Semantics
 
   /**
    * Translate a given text to English using the OpenAI API.
-   * @param string $text
+   * @param string $message
    * @param int|null $token
    * @return string
    */
-  public static function translateToEnglish(string $text, int|null $token = 80): string
+  public static function translateToEnglish(string $message, int|null $token = 80): string
   {
     $language_id = Registry::get('Language')->getId();
-    $language_name = Registry::get('Language')->getLanguagesName($language_id);
+   // $language_name = Registry::get('Language')->getLanguagesName($language_id);
 
-    if (strtolower($language_name) !== 'english') {
-      $question = "Translate the following query to English: {$text}";
-      $query = Gpt::getGptResponse($question, $token);
-    } else {
-      $query = trim($text);
+    if (!Registry::exists('TranslationCache')) {
+      Registry::set('TranslationCache', new TranslationCache());
     }
 
-    return $query;
+    $CLICSHOPPING_translationCache = Registry::get('TranslationCache');
+
+    $translated = $CLICSHOPPING_translationCache->getCachedTranslation($message, $language_id);
+
+    // 2. If not in cache, call GPT and then cache the result
+    if (is_null($translated)) {
+      $translated = Gpt::getGptResponse('Translate the following query to English: ' . $message, $token);
+
+      if (!empty($translated)) {
+        $CLICSHOPPING_translationCache->cacheTranslation($message, $translated, $language_id);
+      }
+    }
+
+    return $translated;
   }
 
   /**
@@ -75,7 +94,8 @@ class Semantics
    */
   public static function checkSemantics(string $text): string
   {
-    $prompt = "Determine whether the following question is of type 'analytics' or 'semantic'. Respond with only one word: 'analytics' or 'semantic'.\nQ: {$text}\nAnswer:";
+    $definition = "An 'analytics' question seeks quantitative data, calculations, comparisons (e.g., trend, growth, total, average, ratio, sales, revenue, profit, stock, price range). A 'semantic' question seeks information, definitions, procedures, or general knowledge (e.g., how-to, policy, location, description, meaning).";
+    $prompt = "Based on these definitions, determine if the following query is 'analytics' or 'semantic'. Respond with ONLY 'analytics' or 'semantic'.\nDefinitions: {$definition}\nQuery: {$text}\nAnswer:";
     $prompt_result = Gpt::getGptResponse($prompt, 20, 0);
     $type = trim(strtolower($prompt_result));
 
@@ -343,6 +363,7 @@ class Semantics
       foreach ($patterns[$type] as $pattern) {
         if (preg_match($pattern, $text)) {
           $hasAnalyticalContext = self::hasAnalyticalContext($text);
+
           if ($hasAnalyticalContext) {
             if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
               self::logSecurityEvent("Critical pattern matched: Type: $type", 'info');

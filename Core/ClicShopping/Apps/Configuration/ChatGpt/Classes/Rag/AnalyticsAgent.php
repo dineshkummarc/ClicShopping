@@ -59,7 +59,17 @@ class AnalyticsAgent
   public function __construct(?int $languageId = null, bool $enablePromptCache = true, string $userId = 'system')
   {
     $this->db = Registry::get('Db');
-    $this->chat = Gpt::getOpenAiGpt(null);
+
+    if (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'gpt') === 0) {
+      $this->chat = Gpt::getOpenAiGpt(null);
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'anth') === 0) {
+      $this->chat = Gpt::getAnthropicChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL);
+    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'mistral') === 0) {
+      $this->chat = Gpt::getMistralChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL);
+    } else {
+      $this->chat = Gpt::getOllamaChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL);
+    }
+
     $this->userId = $userId;
 
     if (is_null($languageId)){
@@ -1752,7 +1762,7 @@ class AnalyticsAgent
         'count' => count($results)
       ];
 
-      return CLICSHOPPING::getDef('vtext_error_context_sql_number_request', $array);
+      return CLICSHOPPING::getDef('text_error_context_sql_number_request', $array);
     }
 
 
@@ -1772,11 +1782,14 @@ class AnalyticsAgent
     // Check the cache with expiration logic
     if ($this->enablePromptCache && isset($this->promptCache[$interpretCacheKey])) {
       $cacheItem = $this->promptCache[$interpretCacheKey];
+
       if (time() < $cacheItem['ttl']) {
         if ($this->debug == 'True') {
           $this->securityLogger->logSecurityEvent("Using cached interpretation for question: " . substr($question, 0, 50) . "...", 'info');
         }
+
         $this->promptCache[$interpretCacheKey]['last_used'] = time();
+
         return $cacheItem['response'];
       } else {
         // Remove expired cache
