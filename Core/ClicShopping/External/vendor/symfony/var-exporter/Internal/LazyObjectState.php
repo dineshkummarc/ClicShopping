@@ -87,7 +87,7 @@ class LazyObjectState
             $reset($instance, $skippedProperties);
         }
 
-        foreach ( $instance as $name => $value) {
+        foreach ((array) $instance as $name => $value) {
             if ("\0" !== ($name[0] ?? '') && !\array_key_exists($name, $skippedProperties)) {
                 unset($instance->$name);
             }
