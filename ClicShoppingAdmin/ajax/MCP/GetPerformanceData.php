@@ -1,0 +1,141 @@
+<?php
+/**
+ *
+ * @copyright 2008 - https://www.clicshopping.org
+ * @Brand : ClicShoppingAI(TM)  at Inpi all right Reserved
+ * @Licence GPL 2 & MIT
+ * @Info : https://www.clicshopping.org/forum/trademark/
+ *
+ */
+
+use ClicShopping\OM\HTML;
+use ClicShopping\OM\Registry;
+use ClicShopping\OM\CLICSHOPPING;
+
+use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
+use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\SimpleLogger;
+use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\McpMockMonitor;
+use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
+
+define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/') . '/');
+
+require_once(CLICSHOPPING_BASE_DIR . 'OM/CLICSHOPPING.php');
+spl_autoload_register('ClicShopping\OM\CLICSHOPPING::autoload');
+
+CLICSHOPPING::initialize();
+CLICSHOPPING::loadSite('ClicShoppingAdmin');
+AdministratorAdmin::hasUserAccess();
+
+$mcpConnector = MCPConnector::getInstance();
+
+$token = $_GET['token'] ?? $_GET['sessiontoken'] ?? null;
+//var_dump($token);
+//var_dump($mcpConnector->getSessionToken());
+
+if ($token !== $mcpConnector->getSessionToken()) {
+  http_response_code(403);
+  echo json_encode(['error' => 'Invalid MCP token']);
+  exit();
+}
+
+// Configuration des headers pour SSE
+header('Content-Type: text/event-stream');
+header('Cache-Control: no-cache');
+header('Connection: keep-alive');
+header('X-Accel-Buffering: no');
+
+// Récupérer la plage de temps demandée
+$range = HTML::sanitize($_GET['range']) ?? '24h';
+
+// Simulation controls (for testing alerts/UI)
+$sim_latency_ms = isset($_GET['sim_latency']) ? (int)$_GET['sim_latency'] : 0;               // e.g. 1200
+$sim_error_pct = isset($_GET['sim_error']) ? (float)$_GET['sim_error'] : null;               // e.g. 35.5
+$sim_fail_rate = isset($_GET['sim_fail']) ? max(0.0, min(1.0, (float)$_GET['sim_fail'])) : 0; // 0..1 probability to emit error event
+$sim_drop = isset($_GET['sim_drop']) ? filter_var($_GET['sim_drop'], FILTER_VALIDATE_BOOLEAN) : false; // randomly close connection
+$sim_sleep_override = isset($_GET['sim_sleep']) ? (int)$_GET['sim_sleep'] : null;             // override loop sleep seconds
+
+// Runtime alert thresholds (optional)
+$threshold_error = isset($_GET['threshold_error']) ? (int)$_GET['threshold_error'] : null;      // percentage
+$threshold_latency = isset($_GET['threshold_latency']) ? (int)$_GET['threshold_latency'] : null; // ms
+$threshold_downtime = isset($_GET['threshold_downtime']) ? (int)$_GET['threshold_downtime'] : null; // seconds
+
+if (!Registry::exists('SimpleLogger')) {
+  $logger = new SimpleLogger('MCP_ClicShopping');
+  Registry::set('Logger', $logger);
+}
+
+// Use real config but create mock monitor to avoid connection issues
+$config = MCPConnector::getConfigDb();
+$monitor = new McpMockMonitor($config);
+
+// Apply runtime thresholds if provided
+$thresholds = [];
+if ($threshold_error !== null) { $thresholds['error_rate'] = $threshold_error; }
+if ($threshold_latency !== null) { $thresholds['latency'] = $threshold_latency; }
+if ($threshold_downtime !== null) { $thresholds['downtime'] = $threshold_downtime; }
+if (!empty($thresholds)) {
+  $monitor->setAlertThresholds($thresholds);
+}
+
+// Boucle infinie pour l'envoi des événements
+while (true) {
+  try {
+    // Simulate random failure before computing data
+    if ($sim_fail_rate > 0 && mt_rand() / mt_getrandmax() < $sim_fail_rate) {
+      throw new \Exception('Simulated failure');
+    }
+
+    // Récupérer les données de performance
+    $data = $monitor->getPerformanceData($range);
+
+    // Apply simulation overrides to metrics
+    if ($sim_latency_ms > 0) {
+      // Optional processing delay to simulate server-side slowness
+      usleep(min($sim_latency_ms, 30000) * 1000); // cap delay to 30s to avoid runaway
+      if (isset($data['metrics'])) {
+        $data['metrics']['average_latency'] = (float)$sim_latency_ms;
+      }
+    }
+
+    if ($sim_error_pct !== null) {
+      if (isset($data['metrics'])) {
+        $data['metrics']['error_frequency'] = max(0.0, (float)$sim_error_pct);
+      }
+    }
+
+    // Optionally force a random connection drop to test auto-reconnect
+    if ($sim_drop && (mt_rand(1, 100) <= 5)) { // ~5% chance per tick
+      // Flush a final event then terminate the connection
+      echo "event: error\n";
+      echo "data: {\"error\":\"Simulated connection drop\"}\n\n";
+      ob_flush();
+      flush();
+      exit();
+    }
+
+    // Envoyer les données au format SSE
+    echo "data: " . json_encode($data) . "\n\n";
+
+    // Vider le buffer de sortie
+    ob_flush();
+    flush();
+
+    // Attendre avant la prochaine mise à jour
+    $sleepSeconds = $sim_sleep_override !== null ? max(0, $sim_sleep_override) : 5;
+    sleep($sleepSeconds);
+  } catch (\Exception $e) {
+    // Log l'erreur
+    error_log('MCP Performance Monitor Error: ' . $e->getMessage());
+
+    // Envoyer un message d'erreur au client
+    echo "event: error\n";
+    echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
+
+    // Vider le buffer
+    ob_flush();
+    flush();
+
+    // Attendre avant de réessayer
+    sleep(5);
+  }
+}

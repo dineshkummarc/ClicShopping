@@ -1,7 +1,17 @@
 <?php
+// PATCHES DE SÉCURITÉ ELFINDER
+require_once __DIR__ . '/php/security_patch.php';
+
 if (!isset($_GET['Admin']) || $_GET['Admin'] !== 'ClicShoppingAdmin') {
-  exit;
+  http_response_code(403);
+  exit('Access denied');
 }
+
+// Headers de sécurité
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+header('Referrer-Policy: strict-origin-when-cross-origin');
 ?>
 <!DOCTYPE html>
 <html>
@@ -20,7 +30,7 @@ if (!isset($_GET['Admin']) || $_GET['Admin'] !== 'ClicShoppingAdmin') {
       // Documentation for client options:
       // https://github.com/Studio-42/elFinder/wiki/Client-configuration-options
       defaultOpts: {
-        url: 'php/connector.minimal.php', // or connector.maximal.php : connector URL (REQUIRED)
+        url: 'php/connector.minimal.php', // Connecteur principal sécurisé
         commandsOptions: {
           edit: {
             extraOptions: {

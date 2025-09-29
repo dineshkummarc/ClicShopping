@@ -1,0 +1,4 @@
+cfg_mcp_data_ssl_title = Souhaitez-vous activer la connexion sécurisée SSL
+cfg_mcp_data_ssl_description = En mode production,nous vous conseillons d'activer cette connexion
+cfg_chatgpt_ssl_status_true = True
+cfg_chatgpt_ssl_status_false = False

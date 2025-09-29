@@ -1,0 +1,37 @@
+INSERT INTO `clic_administrator_menu` VALUES(816, 'index.php?A&Tools\\MCP&MCP', 163, 3, 1, '', 0, 'app_tools_mcp', 1);
+
+INSERT INTO `clic_administrator_menu_description` VALUES(816, 'MCP', 1);
+INSERT INTO `clic_administrator_menu_description` VALUES(816, 'MCP', 2);
+
+CREATE TABLE :table_mcp_alerts (
+  `id` int(11) NOT NULL,
+  `alert_type` varchar(32) NOT NULL,
+  `message` text NOT NULL,
+  `alert_timestamp` datetime NOT NULL,
+  `severity_level` int(11) NOT NULL DEFAULT 1,
+  `context` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE :table_mcp_alerts
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_alert_timestamp` (`alert_timestamp`),
+  ADD KEY `idx_severity` (`severity_level`);
+
+
+CREATE TABLE clic_mcp_performance_history (
+`id` int(11) NOT NULL,
+`timestamp` int(11) NOT NULL,
+`request_rate` decimal(10,2) NOT NULL DEFAULT 0.00,
+`average_latency` decimal(10,2) NOT NULL DEFAULT 0.00,
+`error_frequency` decimal(5,2) NOT NULL DEFAULT 0.00,
+`uptime_percentage` decimal(5,2) NOT NULL DEFAULT 0.00,
+`total_requests` int(11) NOT NULL DEFAULT 0,
+`created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE `clic_mcp_performance_history`
+ADD PRIMARY KEY (`id`),
+ADD KEY `idx_timestamp` (`timestamp`),
+ADD KEY `idx_created_at` (`created_at`);
+
+INSERT INTO `clic_cron` VALUES(6, 'McpHealthCron', 'All 5 minutes', 'minute', 'McpHealthCron', 1, '2025-09-25 09:52:21', '2025-09-25 10:56:07');

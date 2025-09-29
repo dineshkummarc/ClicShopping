@@ -1,0 +1,4 @@
+cfg_mcp_alert_notification_title = Alert Notification
+cfg_mcp_alert_notification_description = Be notified in case of MCP server failure
+cfg_chatgpt_alert_notification_true = True
+cfg_chatgpt_alert_notification_false = False

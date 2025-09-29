@@ -1,0 +1,6 @@
+heading_title = MCP
+button_configure = Configur
+text_mcp_data = MCP
+button_health_monitor = Health monitor
+button_performance_monitor = Perofmance monitor
+button_mcp_alert = Alert monitor

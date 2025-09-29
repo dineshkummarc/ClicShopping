@@ -1,0 +1,13 @@
+heading_title = MCP Health Status - Real Time
+text_disconnected = Disconnected
+text_unknown = Unknown
+text_configuration = Configuration
+text_waiting_data = Waiting for data...
+text_last_update = Last update:
+text_never = Never
+text_start_monitoring = Start monitoring
+text_stop_monitoring = Stop monitoring
+text_event_log = Event log
+text_clear = Clear
+text_no_event = No events identified...
+text_connectivity = Connectivity

@@ -1,0 +1,2 @@
+cfg_mcp_server_host_title = MCP Server Host
+cfg_mcp_server_host_description = Insert the access token to connect to the MCP server

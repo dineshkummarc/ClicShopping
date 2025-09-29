@@ -1,0 +1,3 @@
+cfg_mcp_alert_downtime_thresholds_title = Downtime thresholds in the MCP interface
+cfg_mcp_alert_downtime_thresholds_description = Downtime thresholds, for example the maximum outage duration before an alert is triggered
+cfg_chatgpt_downtime_threshold = Downtime threshold at which an alert will be sent or considered critical

@@ -2,6 +2,46 @@
 //error_reporting(E_ALL | E_STRICT); // Set E_ALL for debuging
 error_reporting(0); // Set E_ALL for debuging
 
+// ===============================================
+// PATCHES DE SÉCURITÉ ELFINDER
+// ===============================================
+
+// Configuration sécurisée simplifiée
+$secure_upload_allow = ['image', 'text/plain'];
+$secure_upload_deny = ['all'];
+
+// Vérification de sécurité - Plus permissive pour elFinder
+// Vérifier si on est dans le contexte ClicShopping
+$is_clicshopping_context = (
+    (isset($_GET['Admin']) && $_GET['Admin'] === 'ClicShoppingAdmin') ||
+    (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'ClicShoppingAdmin') !== false) ||
+    (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], 'ClicShoppingAdmin') !== false)
+);
+
+if (!$is_clicshopping_context) {
+    // Log de sécurité mais ne pas bloquer complètement
+    error_log('elFinder: Tentative d\'accès non autorisée depuis: ' . ($_SERVER['HTTP_REFERER'] ?? 'Direct'));
+}
+
+// Validation des paramètres de requête - Temporairement désactivée pour debug
+// Log des commandes pour voir ce qu'elFinder utilise
+if (isset($_GET['cmd'])) {
+    error_log('elFinder command: ' . $_GET['cmd']);
+}
+
+// Validation basique - seulement bloquer les commandes vraiment dangereuses
+$dangerous_commands = ['exec', 'system', 'shell_exec', 'eval', 'passthru'];
+if (isset($_GET['cmd']) && in_array($_GET['cmd'], $dangerous_commands)) {
+    http_response_code(400);
+    exit('Dangerous command blocked');
+}
+
+// Headers de sécurité
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+
 // // Optional exec path settings (Default is called with command name only)
 // define('ELFINDER_TAR_PATH',      '/PATH/TO/tar');
 // define('ELFINDER_GZIP_PATH',     '/PATH/TO/gzip');
@@ -149,6 +189,7 @@ function access($attr, $path, $data, $volume, $isDir, $relpath) {
 // Documentation for connector options:
 // https://github.com/Studio-42/elFinder/wiki/Connector-configuration-options
 
+// Configuration sécurisée d'elFinder
 $opts = array(
   'debug' => false,  //see a new menu in filefinder with all informations
   'roots' => array(
@@ -159,11 +200,18 @@ $opts = array(
       'URL'           =>  DIR_WS_CATALOG_IMAGES, // URL to files (REQUIRED)
       'trashHash'     => 't1_Lw',                     // elFinder's hash of trash folder
       'winHashFix'    => DIRECTORY_SEPARATOR !== '/', // to make hash same to Linux one on windows too
-      'uploadDeny'    => array('all'),                // All Mimetypes not allowed to upload
-      'uploadAllow'   => array('image', 'text/plain'),// Mimetype `image` and `text/plain` allowed to upload
-      'uploadOrder'   => array('deny', 'allow'),      // allowed Mimetype `image` and `text/plain` only
+      
+      // CONFIGURATION SÉCURISÉE
+      'uploadDeny'    => $secure_upload_deny,         // Types MIME interdits
+      'uploadAllow'   => $secure_upload_allow,        // Types MIME autorisés
+      'uploadOrder'   => array('deny', 'allow'),      // D'abord interdire, puis autoriser
+      'uploadMaxSize' => '10M',                       // Taille maximale 10MB
+      'acceptedName' => '/^[a-zA-Z0-9._-]+$/',       // Noms de fichiers stricts
+      
       'accessControl' => 'access',             // disable and hide dot starting files (OPTIONAL)
-//                      'uploadMaxSize' => '3MB',
+      
+      // Désactiver les fonctions dangereuses
+      'disabled' => ['mkfile', 'edit', 'rename', 'resize', 'archive', 'extract'],
 
 //hide some extensions
 

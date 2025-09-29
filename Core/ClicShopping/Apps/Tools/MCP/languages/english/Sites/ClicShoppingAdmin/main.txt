@@ -1,0 +1,49 @@
+heading_title = MCP
+module_mcp_title = MCP
+module_mcp_short_title = MCP
+
+text_mcp_data = MCP
+text_configure =  configure App Module
+
+text_intro = This app allow you to include a MCP. <br /><br />
+- Click on Configure to access / install or uninstall the app.<br />
+- The App is located in Tools / mcp<br />
+
+module_mcp_introduction = The install process create the database settings for this module and the access menu
+
+button_back = Back
+button_install_title = Install
+button_configure = Configure
+button_save = Save
+button_dialog_uninstall =  Uninstall
+button_uninstall =  Uninstall
+button_delete = Delete
+button_cancel = Cancel
+button_mcp_data = MCP
+button_process =  Launch the migration
+button_continue = Continue
+
+dialog_uninstall_title = Uninstall
+dialog_uninstall_body = Do you want to install this App ?
+dialog_uninstall_title = Uninstall Module?
+dialog_uninstall_body = Are you sure you want to uninstall this module?
+
+alert_module_install_success = Module has been successfully installed.
+alert_module_uninstall_success = Module has been successfully uninstalled.
+alert_cfg_saved_success = Configuration parameters have been successfully saved.
+
+text_alert_mcp_medium = Hello Administrator,/n
+The MCP system has detected a medium priority warning:/n
+{{recommendation}}./n/n
+No automatic corrective action has been taken. Please check the system./n
+Sincerely,/n
+The MCP Monitoring Agent/n
+
+text_alert_mcp_critical_subject = MCP WARNING - Critical Level
+text_alert_mcp_critical = Hello Administrator, /n
+The MCP system has detected a medium priority warning:/n
+{{recommendation}}./n/n
+An automatic reconnection attempt has been initiated./n
+Please check the logs for more details./n/n
+Sincerely,/n
+The MCP Monitoring Agent/n

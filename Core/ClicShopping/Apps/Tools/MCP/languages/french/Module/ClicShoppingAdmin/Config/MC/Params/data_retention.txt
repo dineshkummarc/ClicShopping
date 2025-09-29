@@ -1,0 +1,5 @@
+cfg_mcp_data_retention_title = Conservation des données
+cfg_mcp_data_retention_description = Politique de conservation des données, indiquant combien de temps les données seront stockées avant suppression ou archivage.
+text_one_week = 1 week
+text_one_month = 1 mois
+text_three_months = 3 mois

@@ -1,0 +1,3 @@
+cfg_mcp_alert_downtime_thresholds_title = Seuils d’indisponibilité dans l’interface MCP.
+cfg_mcp_alert_downtime_thresholds_description = Seuils d’indisponibilité, par exemple la durée maximale de panne avant déclenchement d’une alerte.
+cfg_chatgpt_downtime_threshold = Seuil d’indisponibilité à partir duquel une alerte sera envoyée ou considérée critique.

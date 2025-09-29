@@ -46,10 +46,11 @@ try {
 
     if ($queryType === 'analytics') {
       $analyticsResults = $ragManager->executeAnalyticsQuery($prompt);
+
       $result = $ragManager->formatResults($analyticsResults);
 
       if (is_null($result)) {
-        error_log("Error: result is null for analytic query.");
+        error_log("Error: result is null for analytic query and check your LLM.");
       }
     } else {
       if ($queryType === 'semantic') {

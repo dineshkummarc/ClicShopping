@@ -1,0 +1,3 @@
+cfg_mcp_alert_thresholds_title = Seuils d'alerte dans l'interface MCP.
+cfg_mcp_alert_thresholds_description = Objectif des seuils d'alerte, limite au-delà desquelles une alerte sera déclenchée.
+cfg_chatgpt_error_alert_threshold = Seuil d'erreur à partir duquel une alerte sera envoyée ou considérée comme critique.

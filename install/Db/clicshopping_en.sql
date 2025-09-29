@@ -216,7 +216,7 @@ INSERT INTO administrator_menu VALUES(805, 'index.php?A&Configuration\\Cache&OpC
 INSERT INTO administrator_menu VALUES(806, 'index.php?A&Configuration\\Cache&Memcached', 21, 8, 1, '', 0, 'app_configuration_cache', 1);
 INSERT INTO administrator_menu VALUES(807, 'index.php?A&Catalog\\Products&DynamicPricingRules', 5, 3, 0, '', 1, 'app_catalog_products', 1);
 INSERT INTO administrator_menu VALUES(808, 'index.php?A&Catalog\\Products&StatsDynamicPricing', 98, 5, 0, '', 0, 'app_catalog_products', 1);
-
+INSERT INTO administrator_menu VALUES(809, 'index.php?A&Tools\\MCP&MCP', 163, 3, 1, '', 0, 'app_tools_mcp', 1);
 
 INSERT INTO administrator_menu_description VALUES(0, '', 1);
 INSERT INTO administrator_menu_description VALUES(0, '', 2);
@@ -599,6 +599,8 @@ INSERT INTO administrator_menu_description VALUES(807, 'Dynamic Pricing', 1);
 INSERT INTO administrator_menu_description VALUES(807, 'Tarification dynamique', 2);
 INSERT INTO administrator_menu_description VALUES(808, 'Dynamic Pricing', 1);
 INSERT INTO administrator_menu_description VALUES(808, 'Tarification dynamique', 2);
+INSERT INTO administrator_menu_description VALUES(809, 'MCP', 1);
+INSERT INTO administrator_menu_description VALUES(809, 'MCP', 2);
 
 INSERT INTO api VALUES(1, 'Default', 'd0a36b839700b60727fe13998e22aa0af197c61d8b371e26114c133ca51c4864bd0da73ad6d1e5090b02b55cff42b8a0cd23866e64e78fc8884eb6228d32f5e9d76bed468869dd89ee6bb8a3208c5077e88560d0bc238f67cfc732efcf5313a0cb361e297c29c8d82d050d770ed7dee972af6445e801fa9af12e3d478bf5346a', 0, '2022-09-18 14:25:54', '2022-09-18 14:25:54', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 INSERT INTO api_ip VALUES(1, 1, '127.0.0.1', 'localhost');
@@ -2021,6 +2023,7 @@ INSERT INTO cron VALUES(2, 'gdpr', 'Customer Legislation', 'monthly', 'gdpr', 0,
 INSERT INTO cron VALUES(3, 'backup', 'database backup', 'weekly', 'backup', 1, '1900-01-01 00:00:00', '2022-10-08 17:31:47');
 INSERT INTO cron VALUES(4, 'marketplace', 'Apps marketplace', 'monthly', 'marketplace', 1, '2023-01-06 15:51:34', '2023-01-06 18:19:19');
 INSERT INTO cron VALUES(5, 'embeddings', 'Update the embeddings table if it not exist<br>Table updated : categories_embedding, manufacturers_embedding, products_embedding, pages_manager_embedding, reviews_embedding,suppliers_embedding.<br>Table not updated : orders_embedding,return_orders_embedding, reviews_sentiment_embeddings', 'weekly', 'embeddings', 1, '2025-05-15 20:14:27', '2025-05-15 20:19:06');
+INSERT INTO cron VALUES(6, 'McpHealthCron', 'All 5 minutes', 'minute', 'McpHealthCron', 1, '2025-09-25 09:52:21', '2025-09-25 10:56:07');
 
 INSERT INTO currencies VALUES(1, 'Euro', 'EUR', '', 'EUR', '.', ',', '2', 1.00000000, '2008-09-13 18:02:35', 1, 0);
 INSERT INTO currencies VALUES(2, 'Dollard', 'USD', 'USD', '', '.', ',', '2', 1.40750003, '2008-09-13 18:02:36', 1, 0);

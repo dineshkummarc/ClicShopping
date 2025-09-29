@@ -2,7 +2,8 @@ version4.08
 Refactoring
 small fix
 Libraries updated
-
+MCP (model context Protocol) for e-commerce agentic approach
+MCP Wiki on github.com/ClicSHopping
 
 -----------------
 

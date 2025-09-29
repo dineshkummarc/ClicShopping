@@ -88,6 +88,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 - Generative artificial Intelligence product automation
 - Generative artificial Intelligence Web Search
 - Real time safety stock predictive (AI)
+- Server MCP (model context Protocol) for ecommerce agentic approach
 
 ##Security & Compliance
 - GDPR Ready: Built-in compliance tools and data protection
