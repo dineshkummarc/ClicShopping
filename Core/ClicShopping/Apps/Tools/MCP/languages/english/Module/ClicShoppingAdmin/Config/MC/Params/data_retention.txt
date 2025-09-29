@@ -1,5 +1,5 @@
-cfg_mcp_data_retention_title = Data Retention
-cfg_mcp_data_retention_description = Data retention policy, indicating how long data will be stored before deletion or archiving
+cfg_mcp_retention_title = Data Retention
+cfg_mcp_retention_description = Data retention policy, indicating how long data will be stored before deletion or archiving
 text_one_week = 1 week
 text_one_month = 1 month
 text_three_months = 3 months

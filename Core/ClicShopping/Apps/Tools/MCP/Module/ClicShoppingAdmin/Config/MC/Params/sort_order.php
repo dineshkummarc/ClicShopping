@@ -18,7 +18,7 @@ class sort_order extends \ClicShopping\Apps\Tools\MCP\Module\ClicShoppingAdmin\C
 
   protected function init()
   {
-    $this->title = $this->app->getDef('cfg_mcp_data_sort_order_title');
-    $this->description = $this->app->getDef('cfg_mcp_data_sort_order_description');
+    $this->title = $this->app->getDef('cfg_mcp_sort_order_title');
+    $this->description = $this->app->getDef('cfg_mcp_sort_order_description');
   }
 }

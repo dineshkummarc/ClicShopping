@@ -23,8 +23,8 @@ class data_retention extends \ClicShopping\Apps\Tools\MCP\Module\ClicShoppingAdm
    */
   protected function init()
   {
-      $this->title = $this->app->getDef('cfg_mcp_data_retention_title');
-      $this->description = $this->app->getDef('cfg_mcp_data_retention_description');
+      $this->title = $this->app->getDef('cfg_mcp_retention_title');
+      $this->description = $this->app->getDef('cfg_mcp_retention_description');
   }
 
   /**

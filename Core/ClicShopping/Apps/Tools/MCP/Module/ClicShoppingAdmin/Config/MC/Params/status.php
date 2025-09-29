@@ -20,16 +20,16 @@ class status extends \ClicShopping\Apps\Tools\MCP\Module\ClicShoppingAdmin\Confi
 
   protected function init()
   {
-    $this->title = $this->app->getDef('cfg_mcp_data_status_title');
-    $this->description = $this->app->getDef('cfg_mcp_data_status_description');
+    $this->title = $this->app->getDef('cfg_mcp_status_title');
+    $this->description = $this->app->getDef('cfg_mcp_status_description');
   }
 
   public function getInputField()
   {
     $value = $this->getInputValue();
 
-    $input = HTML::radioField($this->key, 'True', $value, 'id="' . $this->key . '1" autocomplete="off"') . $this->app->getDef('cfg_mcp_data_status_true') . ' ';
-    $input .= HTML::radioField($this->key, 'False', $value, 'id="' . $this->key . '2" autocomplete="off"') . $this->app->getDef('cfg_mcp_data_status_false');
+    $input = HTML::radioField($this->key, 'True', $value, 'id="' . $this->key . '1" autocomplete="off"') . $this->app->getDef('cfg_mcp_status_true') . ' ';
+    $input .= HTML::radioField($this->key, 'False', $value, 'id="' . $this->key . '2" autocomplete="off"') . $this->app->getDef('cfg_mcp_status_false');
 
     return $input;
   }
