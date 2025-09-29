@@ -51,58 +51,8 @@ class McpStatus
 
     $this->app = Registry::get('MCP');
     $this->lastCheckTime = date('Y-m-d H:i:s');
-
-    // Ensure MCP configuration is installed
-    $this->ensureMcpConfigInstalled();
   }
 
-  /**
-   * Ensures the necessary MCP configuration is installed in the database.
-   *
-   * This private helper method checks for a specific configuration key and creates it
-   * with a default value if it does not exist. This is crucial for the application's
-   * functionality.
-   */
-  private function ensureMcpConfigInstalled(): void
-  {
-    // Check if MCP configuration is already installed
-    if (!defined('CLICSHOPPING_APP_MCP_MC_STATUS')) {
-      try {
-        // Check if configuration exists in database
-        $Qcheck = $this->app->db->prepare('SELECT configuration_value
-                                           FROM :table_configuration
-                                           WHERE configuration_key = :key');
-        $Qcheck->bindValue(':key', 'CLICSHOPPING_APP_MCP_MC_STATUS');
-        $Qcheck->execute();
-
-        if (!$Qcheck->fetch()) {
-          // Configuration doesn't exist, create it with default value
-          $this->app->db->save('configuration', [
-            'configuration_title' => 'Enable MCP Status Monitoring',
-            'configuration_key' => 'CLICSHOPPING_APP_MCP_MC_STATUS',
-            'configuration_value' => 'True',
-            'configuration_description' => 'Enable or disable MCP status monitoring',
-            'configuration_group_id' => '6',
-            'sort_order' => '10',
-            'set_function' => 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))',
-            'date_added' => 'now()'
-          ]);
-
-          // Define the constant for immediate use
-          define('CLICSHOPPING_APP_MCP_MC_STATUS', 'True');
-        } else {
-          // Configuration exists, define the constant
-          define('CLICSHOPPING_APP_MCP_MC_STATUS', $Qcheck->value('configuration_value'));
-        }
-      } catch (\Exception $e) {
-        // Log error and define default
-        error_log('MCP Config installation error: ' . $e->getMessage());
-        if (!defined('CLICSHOPPING_APP_MCP_MC_STATUS')) {
-          define('CLICSHOPPING_APP_MCP_MC_STATUS', 'True');
-        }
-      }
-    }
-  }
 
   /**
    * Performs a comprehensive health check of the MCP system.

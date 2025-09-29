@@ -70,11 +70,11 @@ class MCPConnector
   {
     $config = [];
 
-    $config['server_host'] = defined('CLICSHOPPING_APP_MCP_MC_SERVER_HOST') ? CLICSHOPPING_APP_MCP_MC_SERVER_HOST : null;
-    $config['server_port'] = defined('CLICSHOPPING_APP_MCP_MC_SERVER_PORT') ? (int)CLICSHOPPING_APP_MCP_MC_SERVER_PORT : 3001;
-    $config['ssl'] = defined('CLICSHOPPING_APP_MCP_MC_SSL') ? filter_var(CLICSHOPPING_APP_MCP_MC_SSL, FILTER_VALIDATE_BOOLEAN) : false;
-    $config['token'] = defined('CLICSHOPPING_APP_MCP_MC_TOKEN') ? CLICSHOPPING_APP_MCP_MC_TOKEN : '';
-    $config['status'] = defined('CLICSHOPPING_APP_MCP_MC_STATUS') ? CLICSHOPPING_APP_MCP_MC_STATUS : '';
+    $config['server_host'] = \defined('CLICSHOPPING_APP_MCP_MC_SERVER_HOST') ? CLICSHOPPING_APP_MCP_MC_SERVER_HOST : null;
+    $config['server_port'] = \defined('CLICSHOPPING_APP_MCP_MC_SERVER_PORT') ? (int)CLICSHOPPING_APP_MCP_MC_SERVER_PORT : 3001;
+    $config['ssl'] = \defined('CLICSHOPPING_APP_MCP_MC_SSL') ? filter_var(CLICSHOPPING_APP_MCP_MC_SSL, FILTER_VALIDATE_BOOLEAN) : false;
+    $config['token'] = \defined('CLICSHOPPING_APP_MCP_MC_TOKEN') ? CLICSHOPPING_APP_MCP_MC_TOKEN : '';
+    $config['status'] = \defined('CLICSHOPPING_APP_MCP_MC_STATUS') ? CLICSHOPPING_APP_MCP_MC_STATUS : '';
 
     //$config['mcp_endpoint'] = defined('CLICSHOPPING_APP_MCP_MC_ENDPOINT') ? CLICSHOPPING_APP_MCP_MC_ENDPOINT : '/api/ai/chat/process';
 

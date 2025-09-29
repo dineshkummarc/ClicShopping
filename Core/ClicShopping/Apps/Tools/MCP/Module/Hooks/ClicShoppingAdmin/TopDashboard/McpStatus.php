@@ -48,8 +48,11 @@ class McpStatus implements \ClicShopping\OM\Modules\HooksInterface
      *
      * @return string The complete HTML content for rendering the MCP status widget.
      */
-  public function Display(): string
+  public function Display(): string | bool
   {
+    if (\defined('CLICSHOPPING_APP_MCP_MC_STATUS') && CLICSHOPPING_APP_MCP_MC_STATUS == 'False') {
+      return false;
+    }
 
     if (!Registry::exists('McpStatusClass')) {
         Registry::set('McpStatusClass', new McpStatusClass());
@@ -60,14 +63,6 @@ class McpStatus implements \ClicShopping\OM\Modules\HooksInterface
 
     $statusClass = $this->getStatusClass($status['status']);
 
-    // Debug information
-    $debugInfo = '';
-    if (defined('CLICSHOPPING_APP_MCP_MC_STATUS')) {
-      $debugInfo = 'Config: ' . CLICSHOPPING_APP_MCP_MC_STATUS;
-    } else {
-      $debugInfo = 'Config not defined';
-    }
-    
     $output = '';
     $output .= '
 <div class="col-md-2 col-12 m-1">
@@ -90,8 +85,7 @@ class McpStatus implements \ClicShopping\OM\Modules\HooksInterface
   </div>
 </div>
 ';
-
-
+    
     return $output;
   }
 
