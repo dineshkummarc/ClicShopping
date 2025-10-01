@@ -253,7 +253,7 @@ class CLICSHOPPING
       if (self::getSite() === 'ClicShoppingAdmin') {
         $page = self::getConfig('bootstrap_file');
       } else {
-        if ((defined('SEARCH_ENGINE_FRIENDLY_URLS_PRO') && SEARCH_ENGINE_FRIENDLY_URLS_PRO == 'true') && (defined('SEARCH_ENGINE_FRIENDLY_URLS') && SEARCH_ENGINE_FRIENDLY_URLS == 'true')) {
+        if ((\defined('SEARCH_ENGINE_FRIENDLY_URLS_PRO') && SEARCH_ENGINE_FRIENDLY_URLS_PRO == 'true') && (defined('SEARCH_ENGINE_FRIENDLY_URLS') && SEARCH_ENGINE_FRIENDLY_URLS == 'true')) {
 //SEO with htaccess
 // force to remove seo htaccess if the customer is connected
           if (isset($_SESSION['login_customer_id'])) {
@@ -261,7 +261,7 @@ class CLICSHOPPING
           } else {
             $page = '';
           }
-        } elseif ((defined('SEARCH_ENGINE_FRIENDLY_URLS') && SEARCH_ENGINE_FRIENDLY_URLS == 'true')) {
+        } elseif ((\defined('SEARCH_ENGINE_FRIENDLY_URLS') && SEARCH_ENGINE_FRIENDLY_URLS == 'true')) {
           $page = self::getConfig('bootstrap_file');
         } else {
           $page = self::getConfig('bootstrap_file');
@@ -315,7 +315,7 @@ class CLICSHOPPING
 
       $p = str_replace($search, $replace, $p);
 //xss patch
-      if ((defined('SEARCH_ENGINE_FRIENDLY_URLS') && SEARCH_ENGINE_FRIENDLY_URLS == 'false')) {
+      if ((\defined('SEARCH_ENGINE_FRIENDLY_URLS') && SEARCH_ENGINE_FRIENDLY_URLS == 'false')) {
         $p = htmlspecialchars($p);
       }
 
@@ -350,7 +350,7 @@ class CLICSHOPPING
 
     if (self::getSite() === 'Shop') {
 //SEO with htaccess
-      if ($search_engine_safe === true && SEFU::start() && defined('SEARCH_ENGINE_FRIENDLY_URLS_PRO') && SEARCH_ENGINE_FRIENDLY_URLS_PRO == 'true' && (defined('SEARCH_ENGINE_FRIENDLY_URLS') && SEARCH_ENGINE_FRIENDLY_URLS == 'true')) {
+      if ($search_engine_safe === true && SEFU::start() && \defined('SEARCH_ENGINE_FRIENDLY_URLS_PRO') && SEARCH_ENGINE_FRIENDLY_URLS_PRO == 'true' && (defined('SEARCH_ENGINE_FRIENDLY_URLS') && SEARCH_ENGINE_FRIENDLY_URLS == 'true')) {
 //SEO with htaccess
 // remove seo htaccess if the customer is connected
         if (isset($_SESSION['login_customer_id'])) {
@@ -358,7 +358,7 @@ class CLICSHOPPING
         } else {
           $link = str_replace(['?', '&', '='], ['', '/', '-'], $link);
         }
-      } elseif ($search_engine_safe === true && SEFU::start() && (defined('SEARCH_ENGINE_FRIENDLY_URLS') && SEARCH_ENGINE_FRIENDLY_URLS == 'true')) {
+      } elseif ($search_engine_safe === true && SEFU::start() && (\defined('SEARCH_ENGINE_FRIENDLY_URLS') && SEARCH_ENGINE_FRIENDLY_URLS == 'true')) {
         $link = str_replace(['?', '&', '='], ['/', '/', '-'], $link);
       }
     }
@@ -410,6 +410,8 @@ class CLICSHOPPING
    * This method dynamically constructs the URL using specific page and site information.
    *
    * @return string The generated URL linking to the public site directory.
+   * http://localhost/clicshopping_test/public/Sites/ClicShoppingAdmin/
+   * http://localhost/clicshopping_test/public/Sites/Shop/
    */
   public static function linkPublic(): string
   {
@@ -435,7 +437,7 @@ class CLICSHOPPING
 
     $args[0] = 'Shop/public/Sites/' . $req_site . DIRECTORY_SEPARATOR . $page;
 
-    $url = forward_static_call_array('self::link()', $args);
+    $url = forward_static_call_array([self::class, 'link'], $args);
 
     return $url;
   }
@@ -449,7 +451,7 @@ class CLICSHOPPING
   {
     $args = func_get_args();
 
-    $url = forward_static_call_array('self::link', $args);
+    $url = call_user_func_array([self::class, 'link'], $args);
 
     if ((strstr($url, "\n") !== false) || (strstr($url, "\r") !== false)) {
       $url = self::link(null, '', false);

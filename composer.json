@@ -24,8 +24,8 @@
         "stymiee/email-validator": "^2.1",
         "doctrine/orm": "^3.5",
         "theodo-group/llphant": "^0.11.0",
-        "stripe/stripe-php": "^17.6",
-        "guzzlehttp/guzzle": "^7.10"
+        "guzzlehttp/guzzle": "^7.10",
+        "stripe/stripe-php": "^18.0"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"
