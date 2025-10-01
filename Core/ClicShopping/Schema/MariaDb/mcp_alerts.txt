@@ -1,0 +1,16 @@
+id int(11) not_null
+alert_type varchar(32) not_null
+message text not_null
+alert_timestamp datetime not_null
+severity_level int(11) not_null DEFAULT 1
+context text DEFAULT NULL
+
+--
+primary id
+idx_alert_timestamp alert_timestamp
+idx_severity severity_level
+
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci

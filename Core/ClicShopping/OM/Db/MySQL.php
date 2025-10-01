@@ -60,16 +60,14 @@ class MySQL extends \ClicShopping\OM\Db
       $this->driver_options[PDO::MYSQL_ATTR_INIT_COMMAND] = 'set session sql_mode="STRICT_ALL_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"';
     }
 
-    $this->connect();
+    $this->establishConnection();
   }
 
   /**
-   * Establishes a connection to the database using the provided configuration settings
-   * and returns the database handle.
-   *
-   * @return string|null Returns the database handle on a successful connection, or null if the connection failed.
+   * Establishes a connection to the database using the provided configuration settings.
+   * Separate name to avoid any potential conflicts with PDO internals.
    */
-  public function connect(): string|null
+  public function establishConnection(): void
   {
     $dsn_array = [];
 
@@ -93,9 +91,7 @@ class MySQL extends \ClicShopping\OM\Db
 
     $this->connected = true;
 
-    $dbh = parent::__construct($dsn, $this->username, $this->password, $this->driver_options);
-
-    return $dbh;
+    parent::__construct($dsn, $this->username, $this->password, $this->driver_options);
   }
 
   /**

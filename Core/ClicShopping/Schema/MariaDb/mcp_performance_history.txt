@@ -1,0 +1,17 @@
+id int(11) not_null
+timestamp int(11) not_null
+request_rate decimal(10,2) not_null DEFAULT 0.00
+average_latency decimal(10,2) not_null DEFAULT 0.00
+error_frequency decimal(5,2) not_null DEFAULT 0.00
+uptime_percentage decimal(5,2) not_null DEFAULT 0.00
+total_requests int(11) not_null DEFAULT 0
+created_at timestamp not_null DEFAULT current_timestamp()
+--
+primary id
+idx_timestamp timestamp
+idx_created_at created_at
+
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci

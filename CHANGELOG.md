@@ -1,13 +1,14 @@
 version4.09
-
-
+fix db error
+fix install for maria db v11.8 (driver)
+librairies updated
 -----------------
 version4.08
 Refactoring
 small fix
 Libraries updated
 MCP (model context Protocol) for e-commerce agentic approach
-MCP Wiki on github.com/ClicSHopping
+MCP Wiki on github.com/ClicShopping
 
 -----------------
 

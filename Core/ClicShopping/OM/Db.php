@@ -10,7 +10,7 @@
 
 namespace ClicShopping\OM;
 
-use  ClicShopping\Apps\Configuration\Cache\Class\CacheAdmin;
+use  ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
 
 use ArrayIterator;
 use CachingIterator;

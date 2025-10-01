@@ -63,7 +63,18 @@ if (isset($_GET['action']) && !empty($_GET['action'])) {
 
     case 'dbCheck':
       try {
-        $CLICSHOPPING_Db = Db::initialize($_POST['server'] ?? '', $_POST['username'] ?? '', $_POST['password'] ?? '', $_POST['name'] ?? '', null, null, ['log_errors' => false]);
+        // Override SQL mode init command for MariaDB 11.x compatibility
+        $driverOptions = [\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4'];
+
+        $CLICSHOPPING_Db = Db::initialize(
+          $_POST['server'] ?? '',
+          $_POST['username'] ?? '',
+          $_POST['password'] ?? '',
+          $_POST['name'] ?? '',
+          null,
+          $driverOptions,
+          ['log_errors' => false]
+        );
 
         $result['status'] = '1';
         $result['message'] = 'success';
@@ -73,7 +84,17 @@ if (isset($_GET['action']) && !empty($_GET['action'])) {
 
         if (($e->getCode() == '1049') && isset($_GET['createDb']) && ($_GET['createDb'] == 'true')) {
           try {
-            $CLICSHOPPING_Db = Db::initialize($_POST['server'], $_POST['username'], $_POST['password'], '', null, null, ['log_errors' => false]);
+            // Create the database with the same safe driver options
+            $driverOptions = [\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4'];
+            $CLICSHOPPING_Db = Db::initialize(
+              $_POST['server'],
+              $_POST['username'],
+              $_POST['password'],
+              '',
+              null,
+              $driverOptions,
+              ['log_errors' => false]
+            );
 
             $CLICSHOPPING_Db->exec('create database ' . Db::prepareIdentifier($_POST['name']) . ' character set utf8mb4 collate utf8mb4_unicode_ci');
 
@@ -90,7 +111,16 @@ if (isset($_GET['action']) && !empty($_GET['action'])) {
 
     case 'dbImport':
       try {
-        $CLICSHOPPING_Db = Db::initialize($_POST['server'] ?? '', $_POST['username'] ?? '', $_POST['password'] ?? '', $_POST['name'] ?? '');
+        // Use safe init command during import as well
+        $driverOptions = [\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4'];
+        $CLICSHOPPING_Db = Db::initialize(
+          $_POST['server'] ?? '',
+          $_POST['username'] ?? '',
+          $_POST['password'] ?? '',
+          $_POST['name'] ?? '',
+          null,
+          $driverOptions
+        );
         $CLICSHOPPING_Db->setTablePrefix('');
 
         $CLICSHOPPING_Db->exec('SET FOREIGN_KEY_CHECKS = 0');
