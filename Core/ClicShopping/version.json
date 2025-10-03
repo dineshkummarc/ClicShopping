@@ -1,6 +1,6 @@
 {
-  "version": "4.09",
+  "version": "4.10",
   "description": "This release introduce new features as embeddings and need the maria db server 11.7 (not mandatory) at least to be used. See sql update if you need to update your shop and changelog",
   "date": "2025",
-  "directory_version": "409"
+  "directory_version": "410"
 }

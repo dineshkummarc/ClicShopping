@@ -1,3 +1,14 @@
+## XML-RPC for PHP version 4.11.3 - 2025/10/3
+
+- improved: fixed deprecation warnings on PHP 8.5
+
+- improved: added CI testing on PHP 8.5
+
+- improved: teach the vm.sh script how to properly configure test envs using PHP 8.5
+
+- improved: do not hardcode `/tmp` as temporary dir in demo files
+
+
 ## XML-RPC for PHP version 4.11.2 - 2025/6/20
 
 * fixed: the Client would not honour the timeout when in Socket mode (issue #127, thanks to @dima-bzzz for PR #84)

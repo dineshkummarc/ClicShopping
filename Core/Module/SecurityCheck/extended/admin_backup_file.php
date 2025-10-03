@@ -127,30 +127,20 @@ class securityCheckExtended_admin_backup_file
     }
 
     if (!empty($server['scheme'])) {
-      $curl = curl_init($server['scheme'] . '://' . $server['host'] . $server['path'] . (isset($server['query']) ? '?' . $server['query'] : ''));
-      curl_setopt($curl, CURLOPT_PORT, $server['port']);
-      curl_setopt($curl, CURLOPT_HEADER, false);
-      curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($curl, CURLOPT_FORBID_REUSE, true);
-      curl_setopt($curl, CURLOPT_FRESH_CONNECT, true);
-      curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'HEAD');
-      curl_setopt($curl, CURLOPT_NOBODY, true);
-
+      $url = $server['scheme'] . '://' . $server['host'] . $server['path'] . (isset($server['query']) ? '?' . $server['query'] : '');
+      $options = [
+        'url' => $url,
+        'method' => 'HEAD',
+        'port' => $server['port'],
+        'timeout' => 10,
+        'headers' => [],
+      ];
       if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
-        curl_setopt($curl, CURLOPT_USERPWD, $_SERVER['PHP_AUTH_USER'] . ':' . $_SERVER['PHP_AUTH_PW']);
-
+        $options['auth'] = $_SERVER['PHP_AUTH_USER'] . ':' . $_SERVER['PHP_AUTH_PW'];
         $this->type = 'warning';
       }
-
-      $result = curl_exec($curl);
-
-      if (empty($result)) {
-        $info = curl_getinfo($curl);
-        curl_close($curl);
-      } else {
-        $info = 'error';
-      }
-
+      $responseData = HTTP::getResponse($options);
+      $info = $responseData['info'] ?? 'error';
       return $info;
     }
   }

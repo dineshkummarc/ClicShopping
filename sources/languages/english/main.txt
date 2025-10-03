@@ -244,7 +244,8 @@ table_heading_total = Total
 
 text_products_info_price_by_weight =
 text_login_error = Login error, please try again
-
+text_general_conditions = Sales conditions
+text_privacy_conditions = Privacy conditions
 
 email_text_subject = Order Process {{store_name}}
 email_text_order_number = Hello,

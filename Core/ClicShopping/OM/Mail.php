@@ -158,7 +158,7 @@ class Mail
    * @param string $string The input string where the replacement occurs.
    * @return string The resulting string after linefeed replacement.
    */
-  private function convertLinefeeds($from, $to, $string): string
+  private function convertLinefeeds(string $from, string $to, string $string = ''): string
   {
     return str_replace($from, $to, $string);
   }
@@ -338,11 +338,11 @@ class Mail
       return false;
     }
 
-    if ((strstr($from_name, "\n") !== false) || (strstr($from_name, "\r") !== false)) {
+    if ((strstr($from_name ?? '', "\n") !== false) || (strstr($from_name ?? '', "\r") !== false)) {
       return false;
     }
 
-    if ((strstr($from_addr, "\n") !== false) || (strstr($from_addr, "\r") !== false)) {
+    if ((strstr($from_addr ?? '', "\n") !== false) || (strstr($from_addr ?? '', "\r") !== false)) {
       return false;
     }
 

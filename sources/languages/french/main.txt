@@ -245,7 +245,8 @@ table_heading_total = Total
 
 text_products_info_price_by_weight =
 text_login_error = Erreur de connexion, veuillez recommencer
-
+text_general_conditions = Conditions générales de vente
+text_privacy_conditions = Politique de confidentialité
 
 email_text_subject = Traitement de votre commande sur {{store_name}}
 email_text_order_number = Bonjour, <br /><br />Veuillez trouver ci joint les éléments concernant la commande passée chez  {{store_name}} .<br /><br />
