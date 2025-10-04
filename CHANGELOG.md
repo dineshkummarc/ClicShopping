@@ -1,7 +1,7 @@
 version4.10
-librairies updated
+Libraries updated
 small fix
-
+App refactoring to tob e more easy to use or to install a new App
 
 
 
@@ -9,7 +9,7 @@ small fix
 version4.09
 fix db error
 fix install for maria db v11.8 (driver)
-librairies updated
+Libraries updated
 -----------------
 version4.08
 Refactoring

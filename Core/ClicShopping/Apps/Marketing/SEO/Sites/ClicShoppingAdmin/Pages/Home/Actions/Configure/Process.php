@@ -12,27 +12,31 @@ namespace ClicShopping\Apps\Marketing\SEO\Sites\ClicShoppingAdmin\Pages\Home\Act
 
 use ClicShopping\OM\Registry;
 
-class Process extends \ClicShopping\OM\PagesActionsAbstract
+/**
+ * Process action for Sites module configuration.
+ * Handles the configuration processing with centralized functionality.
+ */
+class Process extends \ClicShopping\OM\ConfigureActionsAbstract
 {
+  /**
+   * Execute the configuration processing for Sites module
+   */
   public function execute()
   {
-    $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
-    $CLICSHOPPING_SEO = Registry::get('SEO');
-
-    $current_module = $this->page->data['current_module'];
-
-    $m = Registry::get('SEOAdminConfig' . $current_module);
-
+    $this->init();
+    
+    $current_module = $this->getCurrentModule();
+    $m = $this->getConfigModule($current_module);
+    
     foreach ($m->getParameters() as $key) {
       $p = mb_strtolower($key);
-
+      
       if (isset($_POST[$p])) {
-        $CLICSHOPPING_SEO->saveCfgParam($key, $_POST[$p]);
+        $this->app->saveCfgParam($key, $_POST[$p]);
       }
     }
-
-    $CLICSHOPPING_MessageStack->add($CLICSHOPPING_SEO->getDef('alert_cfg_saved_success'), 'success', 'SEO');
-
-    $CLICSHOPPING_SEO->redirect('Configure&module=' . $current_module);
+    
+    $this->addSuccessMessage($this->app->getDef('alert_cfg_saved_success'));
+    $this->redirectToConfigure($current_module);
   }
 }
