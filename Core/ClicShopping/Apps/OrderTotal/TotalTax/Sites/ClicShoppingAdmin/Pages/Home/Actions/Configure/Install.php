@@ -8,33 +8,37 @@
  *
  */
 
-
 namespace ClicShopping\Apps\OrderTotal\TotalTax\Sites\ClicShoppingAdmin\Pages\Home\Actions\Configure;
 
 use ClicShopping\OM\Registry;
 use ClicShopping\Apps\OrderTotal\TotalTax\Sql\MariaDb\MariaDb;
 
-class Install extends \ClicShopping\OM\PagesActionsAbstract
+/**
+ * Install action for Sites module configuration.
+ * Handles the Install process with centralized functionality.
+ */
+class Install extends \ClicShopping\OM\ConfigureActionsAbstract
 {
+    /**
+   * Execute the installation process for Sites module
+   */
   public function execute()
   {
-    $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
-    $CLICSHOPPING_TotalTax = Registry::get('TotalTax');
-
-    $current_module = $this->page->data['current_module'];
-
-    $CLICSHOPPING_TotalTax->loadDefinitions('Sites/ClicShoppingAdmin/install');
-
-    $m = Registry::get('TotalTaxAdminConfig' . $current_module);
+    $this->init();
+    
+    $current_module = $this->getCurrentModule();
+    
+    $this->app->loadDefinitions('Sites/ClicShoppingAdmin/install');
+    
+    $m = $this->getConfigModule($current_module);
     $m->install();
-
-    //add condition to select mariaDb ou postgres
+    
+    // Install database menu - add condition to select MariaDb or PostgreSQL
     Registry::set('MariaDb', new MariaDb());
     $CLICSHOPPING_MariaDb = Registry::get('MariaDb');
     $CLICSHOPPING_MariaDb->execute();
-
-    $CLICSHOPPING_MessageStack->add($CLICSHOPPING_TotalTax->getDef('alert_module_install_success'), 'success', 'TotalTax');
-
-    $CLICSHOPPING_TotalTax->redirect('Configure&module=' . $current_module);
+    
+    $this->addSuccessMessage($this->app->getDef('alert_module_install_success'));
+    $this->redirectToConfigure($current_module);
   }
 }

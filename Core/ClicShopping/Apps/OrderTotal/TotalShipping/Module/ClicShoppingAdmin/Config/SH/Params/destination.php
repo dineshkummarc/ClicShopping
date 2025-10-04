@@ -8,7 +8,6 @@
  *
  */
 
-
 namespace ClicShopping\Apps\OrderTotal\TotalShipping\Module\ClicShoppingAdmin\Config\SH\Params;
 
 use ClicShopping\OM\HTML;
@@ -26,13 +25,14 @@ class destination extends \ClicShopping\Apps\OrderTotal\TotalShipping\Module\Cli
 
   public function getInputField()
   {
+    $value = $this->getInputValue();
 
     $dropdown = array(array('id' => 'national', 'text' => $this->app->getDef('cfg_order_total_shipping_destination_national')),
       array('id' => 'international', 'text' => $this->app->getDef('cfg_order_total_shipping_destination_international')),
       array('id' => 'both', 'text' => $this->app->getDef('cfg_order_total_shipping_destination_both')),
     );
 
-    $input = HTML::selectField($this->key, $dropdown, $this->getInputValue());
+    $input = HTML::selectField($this->key, $dropdown, $value);
 
     return $input;
   }
