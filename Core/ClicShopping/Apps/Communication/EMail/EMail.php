@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Communication\EMail;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class EMail extends \ClicShopping\OM\AppAbstract
+class EMail extends \ClicShopping\OM\ConfigurableAppAbstract
 {
 
   protected $api_version = 1;
@@ -21,101 +21,5 @@ class EMail extends \ClicShopping\OM\AppAbstract
 
   protected function init()
   {
-  }
-
-  /**
-   * Retrieves the list of configuration modules available in the specified directory.
-   *
-   * This method iterates over the directory containing configuration module files,
-   * validates them, and organizes them by their sort order. Only subclasses of
-   * the ConfigAbstract class within the namespace are included.
-   *
-   * @return mixed An array of configuration module names sorted by their respective sort orders.
-   *               If no valid configuration modules are found, an empty array is returned.
-   */
-  public function getConfigModules(): mixed
-  {
-    static $result;
-
-    if (!isset($result)) {
-      $result = [];
-
-      $directory = CLICSHOPPING::BASE_DIR . 'Apps/Communication/EMail/Module/ClicShoppingAdmin/Config';
-      $name_space_config = 'ClicShopping\Apps\Communication\EMail\Module\ClicShoppingAdmin\Config';
-      $trigger_message = 'ClicShopping\Apps\Communication\EMail\EMail::getConfigModules(): ';
-
-      if ($dir = new \DirectoryIterator($directory)) {
-        foreach ($dir as $file) {
-          if (!$file->isDot() && $file->isDir() && is_file($file->getPathname() . '/' . $file->getFilename() . '.php')) {
-            $class = '' . $name_space_config . '\\' . $file->getFilename() . '\\' . $file->getFilename();
-
-            if (is_subclass_of($class, '' . $name_space_config . '\ConfigAbstract')) {
-              $sort_order = $this->getConfigModuleInfo($file->getFilename(), 'sort_order');
-              if ($sort_order > 0) {
-                $counter = $sort_order;
-              } else {
-                $counter = count($result);
-              }
-
-              while (true) {
-                if (isset($result[$counter])) {
-                  $counter++;
-
-                  continue;
-                }
-
-                $result[$counter] = $file->getFilename();
-
-                break;
-              }
-            } else {
-              trigger_error('' . $trigger_message . '' . $name_space_config . '\\' . $file->getFilename() . '\\' . $file->getFilename() . ' is not a subclass of ' . $name_space_config . '\ConfigAbstract and cannot be loaded.');
-            }
-          }
-
-          ksort($result, SORT_NUMERIC);
-        }
-      }
-    }
-
-    return $result;
-  }
-
-  /**
-   * Retrieves specific configuration information from a specified module.
-   *
-   * @param string $module The name of the module for which the configuration information is being requested.
-   * @param string $info The specific configuration information to retrieve from the module.
-   * @return mixed Returns the requested configuration information.
-   */
-  public function getConfigModuleInfo(string $module, string $info): mixed
-  {
-    if (!Registry::exists('EMailAdminConfig' . $module)) {
-      $class = 'ClicShopping\Apps\Communication\EMail\Module\ClicShoppingAdmin\Config\\' . $module . '\\' . $module;
-
-      Registry::set('EMailAdminConfig' . $module, new $class);
-    }
-
-    return Registry::get('EMailAdminConfig' . $module)->$info;
-  }
-
-  /**
-   * Retrieves the API version.
-   *
-   * @return string|int The version of the API.
-   */
-  public function getApiVersion(): string|int
-  {
-    return $this->api_version;
-  }
-
-  /**
-   * Retrieves the identifier associated with the current instance.
-   *
-   * @return string The identifier of the current instance.
-   */
-  public function getIdentifier(): string
-  {
-    return $this->identifier;
   }
 }

@@ -29,17 +29,28 @@ abstract class ConfigAbstract
 
   abstract protected function init();
 
+  /**
+   * Initializes the object by retrieving the application instance from the registry,
+   * determining the class name, loading module definitions, and invoking the initialization process.
+   *
+   * @return void
+   */
   final public function __construct()
   {
     $this->app = Registry::get('Categories');
 
     $this->code = (new \ReflectionClass($this))->getShortName();
 
-    $this->app->loadDefinitions('module/' . $this->code . '/' . $this->code);
+    $this->app->loadDefinitions('Module/' . $this->code . '/' . $this->code);
 
     $this->init();
   }
 
+  /**
+   * Installs the necessary configuration parameters for the module.
+   *
+   * @return void
+   */
   public function install()
   {
     $cut_length = \strlen('CLICSHOPPING_APP_CATEGORIES_' . $this->code . '_');
@@ -53,8 +64,14 @@ abstract class ConfigAbstract
 
       $this->app->saveCfgParam($key, $cfg->default, $cfg->title ?? null, $cfg->description ?? null, $cfg->set_func ?? null);
     }
-  }
+}
 
+  /**
+   * Uninstalls the module by removing configuration entries related to the current module
+   * from the configuration table in the database.
+   *
+   * @return int The number of rows deleted from the configuration table.
+   */
   public function uninstall()
   {
     $Qdelete = $this->app->db->prepare('delete from :table_configuration
@@ -67,6 +84,17 @@ abstract class ConfigAbstract
     return $Qdelete->rowCount();
   }
 
+  /**
+   * Retrieves the list of configuration parameter identifiers for the specified module code.
+   *
+   * This method iterates through a directory of parameter files associated with the given module code.
+   * Each valid PHP file found is checked to ensure it is a subclass of `ConfigParamAbstract`.
+   * If valid, the parameter identifier is added to the result set.
+   * An error is triggered if a file does not extend `ConfigParamAbstract`.
+   *
+   * @return array An array of configuration parameter identifiers. Each identifier is prefixed with `CLICSHOPPING_APP_CATEGORIES_`
+   *               followed by the module code and the uppercase filename (without the `.php` extension).
+   */
   public function getParameters()
   {
     $result = [];
@@ -83,13 +111,18 @@ abstract class ConfigAbstract
           } else {
             trigger_error('ClicShopping\Apps\Catalog\Categories\Module\ClicShoppingAdmin\Config\\ConfigAbstract::getParameters(): ClicShopping\Apps\Catalog\Categories\Module\ClicShoppingAdmin\Config\\' . $this->code . '\\Params\\' . $file->getBasename('.php') . ' is not a subclass of ClicShopping\Apps\Catalog\Categories\Module\ClicShoppingAdmin\Config\ConfigParamAbstract and cannot be loaded.');
           }
-        }
+}
       }
-    }
+}
 
     return $result;
   }
 
+  /**
+   * Retrieves an array of input parameters configured for the application module.
+   *
+   * @return array An array of input parameters sorted based on their sort order.
+   */
   public function getInputParameters()
   {
     $result = [];
@@ -104,7 +137,6 @@ abstract class ConfigAbstract
       $class = 'ClicShopping\Apps\Catalog\Categories\Module\ClicShoppingAdmin\Config\\' . $this->code . '\Params\\' . $p;
 
       $cfg = new $class($this->code);
-
 
       if (!\defined($key)) {
         $this->app->saveCfgParam($key, $cfg->default, $cfg->title ?? null, $cfg->description ?? null, $cfg->set_func ?? null);
@@ -132,7 +164,7 @@ abstract class ConfigAbstract
 
           break;
         }
-      }
+}
     }
 
     ksort($result, SORT_NUMERIC);

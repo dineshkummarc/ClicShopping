@@ -10,7 +10,6 @@
 
 namespace ClicShopping\Apps\Communication\Newsletter\Sites\ClicShoppingAdmin\Pages\Home\Actions;
 
-
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
