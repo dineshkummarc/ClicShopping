@@ -13,27 +13,32 @@ namespace ClicShopping\Apps\Orders\ReturnOrders\Sites\ClicShoppingAdmin\Pages\Ho
 use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Orders\ReturnOrders\Sql\MariaDb\MariaDb;
 
-class Install extends \ClicShopping\OM\PagesActionsAbstract
+/**
+ * Install action for Sites module configuration.
+ * Handles the Install process with centralized functionality.
+ */
+class Install extends \ClicShopping\OM\ConfigureActionsAbstract
 {
+    /**
+   * Execute the installation process for Sites module
+   */
   public function execute()
   {
-    $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
-    $CLICSHOPPING_ReturnOrders = Registry::get('ReturnOrders');
-
-    $current_module = $this->page->data['current_module'];
-
-    $CLICSHOPPING_ReturnOrders->loadDefinitions('Sites/ClicShoppingAdmin/install');
-
-    $m = Registry::get('ReturnOrdersAdminConfig' . $current_module);
+    $this->init();
+    
+    $current_module = $this->getCurrentModule();
+    
+    $this->app->loadDefinitions('Sites/ClicShoppingAdmin/install');
+    
+    $m = $this->getConfigModule($current_module);
     $m->install();
-
-    //add condition to select mariaDb ou postgres
+    
+    // Install database menu - add condition to select MariaDb or PostgreSQL
     Registry::set('MariaDb', new MariaDb());
     $CLICSHOPPING_MariaDb = Registry::get('MariaDb');
     $CLICSHOPPING_MariaDb->execute();
-
-    $CLICSHOPPING_MessageStack->add($CLICSHOPPING_ReturnOrders->getDef('alert_module_install_success'), 'success');
-
-    $CLICSHOPPING_ReturnOrders->redirect('Configure&module=' . $current_module);
+    
+    $this->addSuccessMessage($this->app->getDef('alert_module_install_success'));
+    $this->redirectToConfigure($current_module);
   }
 }
