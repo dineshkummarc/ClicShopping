@@ -54,7 +54,7 @@ class prepare_order_status_id extends \ClicShopping\Apps\Payment\MoneyOrder\Modu
       ];
     }
 
-    $input = HTML::selectField($this->key, $statuses_array, $value));
+    $input = HTML::selectField($this->key, $statuses_array, $value);
 
     return $input;
   }
