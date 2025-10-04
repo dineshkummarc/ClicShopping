@@ -34,9 +34,11 @@ class data_retention extends \ClicShopping\Apps\Tools\MCP\Module\ClicShoppingAdm
    */
   public function getInputField()
   {
+    $value = $this->getInputValue();
+
     $array = McpMonitor::getRetentionOptions();
 
-    $input = HTML::selectField($this->key, $array, $this->getInputValue(), 'id="retention_period"');
+    $input = HTML::selectField($this->key, $array, $value, 'id="retention_period"');
 
     return $input;
   }

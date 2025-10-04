@@ -12,27 +12,31 @@ namespace ClicShopping\Apps\Tools\MCP\Sites\ClicShoppingAdmin\Pages\Home\Actions
 
 use ClicShopping\OM\Registry;
 
-class Process extends \ClicShopping\OM\PagesActionsAbstract
+/**
+ * Process action for Sites module configuration.
+ * Handles the configuration processing with centralized functionality.
+ */
+class Process extends \ClicShopping\OM\ConfigureActionsAbstract
 {
+  /**
+   * Execute the configuration processing for Sites module
+   */
   public function execute()
   {
-    $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
-    $CLICSHOPPING_MCP = Registry::get('MCP');
-
-    $current_module = $this->page->data['current_module'];
-
-    $m = Registry::get('MCPAdminConfig' . $current_module);
-
+    $this->init();
+    
+    $current_module = $this->getCurrentModule();
+    $m = $this->getConfigModule($current_module);
+    
     foreach ($m->getParameters() as $key) {
       $p = mb_strtolower($key);
-
+      
       if (isset($_POST[$p])) {
-        $CLICSHOPPING_MCP->saveCfgParam($key, $_POST[$p]);
+        $this->app->saveCfgParam($key, $_POST[$p]);
       }
     }
-
-    $CLICSHOPPING_MessageStack->add($CLICSHOPPING_MCP->getDef('alert_cfg_saved_success'), 'success', 'MCP');
-
-    $CLICSHOPPING_MCP->redirect('Configure&module=' . $current_module);
+    
+    $this->addSuccessMessage($this->app->getDef('alert_cfg_saved_success'));
+    $this->redirectToConfigure($current_module);
   }
 }

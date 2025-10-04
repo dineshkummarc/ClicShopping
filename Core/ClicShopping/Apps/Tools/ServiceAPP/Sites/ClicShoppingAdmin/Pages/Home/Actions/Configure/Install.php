@@ -13,27 +13,34 @@ namespace ClicShopping\Apps\Tools\ServiceAPP\Sites\ClicShoppingAdmin\Pages\Home\
 use ClicShopping\OM\Cache;
 use ClicShopping\OM\Registry;
 
-class Install extends \ClicShopping\OM\PagesActionsAbstract
+/**
+ * Install action for Sites module configuration.
+ * Handles the Install process with centralized functionality.
+ */
+class Install extends \ClicShopping\OM\ConfigureActionsAbstract
 {
 
+    /**
+   * Execute the installation process for Sites module
+   */
   public function execute()
   {
-
-    $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
-    $CLICSHOPPING_ServiceAPP = Registry::get('ServiceAPP');
-
-    $current_module = $this->page->data['current_module'];
-
-    $CLICSHOPPING_ServiceAPP->loadDefinitions('Sites/ClicShoppingAdmin/install');
-
-    $m = Registry::get('ServiceAPPAdminConfig' . $current_module);
+    $this->init();
+    
+    $current_module = $this->getCurrentModule();
+    
+    $this->app->loadDefinitions('Sites/ClicShoppingAdmin/install');
+    
+    $m = $this->getConfigModule($current_module);
     $m->install();
-
-    static::installDbMenuAdministration();
-
-    $CLICSHOPPING_MessageStack->add($CLICSHOPPING_ServiceAPP->getDef('alert_module_install_success'), 'success', 'ServiceAPP');
-
-    $CLICSHOPPING_ServiceAPP->redirect('Configure&module=' . $current_module);
+    
+    // Install database menu if method exists
+    if (method_exists($this, 'installDbMenuAdministration')) {
+      $this->installDbMenuAdministration();
+    }
+    
+    $this->addSuccessMessage($this->app->getDef('alert_module_install_success'));
+    $this->redirectToConfigure($current_module);
   }
 
   private static function installDbMenuAdministration(): void
@@ -82,5 +89,5 @@ class Install extends \ClicShopping\OM\PagesActionsAbstract
 
       Cache::clear('menu-administrator');
     }
-  }
+}
 }

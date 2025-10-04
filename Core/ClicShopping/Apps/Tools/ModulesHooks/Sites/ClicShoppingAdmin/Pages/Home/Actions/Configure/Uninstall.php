@@ -12,21 +12,26 @@ namespace ClicShopping\Apps\Tools\ModulesHooks\Sites\ClicShoppingAdmin\Pages\Hom
 
 use ClicShopping\OM\Registry;
 
-class Uninstall extends \ClicShopping\OM\PagesActionsAbstract
+/**
+ * Uninstall action for Sites module configuration.
+ * Handles the Uninstall process with centralized functionality.
+ */
+class Uninstall extends \ClicShopping\OM\ConfigureActionsAbstract
 {
 
+    /**
+   * Execute the uninstallation process for Sites module
+   */
   public function execute()
   {
-
-    $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
-    $CLICSHOPPING_ModulesHooks = Registry::get('ModulesHooks');
-
-    $current_module = $this->page->data['current_module'];
-    $m = Registry::get('ModulesHooksAdminConfig' . $current_module);
+    $this->init();
+    
+    $current_module = $this->getCurrentModule();
+    $m = $this->getConfigModule($current_module);
     $m->uninstall();
 
-    $CLICSHOPPING_MessageStack->add($CLICSHOPPING_ModulesHooks->getDef('alert_module_uninstall_success'), 'success', 'ModulesHooks');
-
-    $CLICSHOPPING_ModulesHooks->redirect('Configure&module=' . $current_module);
+    $this->clearMenuCache();
+    $this->addSuccessMessage($this->app->getDef('alert_module_uninstall_success'));
+    $this->redirectToConfigure($current_module);
   }
 }

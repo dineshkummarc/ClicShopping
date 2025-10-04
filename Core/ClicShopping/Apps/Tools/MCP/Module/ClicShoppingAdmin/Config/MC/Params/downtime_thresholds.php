@@ -30,7 +30,9 @@ class downtime_thresholds extends \ClicShopping\Apps\Tools\MCP\Module\ClicShoppi
 
     public function getInputField()
     {
-      $input = HTML::inputField($this->key, 300, null, 'id="' . $this->key . '" autocomplete="off" min="60" step="60"');
+      $value = $this->getInputValue();
+
+      $input = HTML::inputField($this->key, 300, $value, 'id="' . $this->key . '" autocomplete="off" min="60" step="60"');
 
        return $input;
     }

@@ -30,7 +30,9 @@ class latency_thresholds extends \ClicShopping\Apps\Tools\MCP\Module\ClicShoppin
 
     public function getInputField()
     {
-       $input = HTML::inputField($this->key, 1000, null, 'id="' . $this->key . '" autocomplete="off" min="100" step="100"');
+       $value = $this->getInputValue();
+
+       $input = HTML::inputField($this->key, 1000, $value, 'id="' . $this->key . '" autocomplete="off" min="100" step="100"');
 
        return $input;
     }
