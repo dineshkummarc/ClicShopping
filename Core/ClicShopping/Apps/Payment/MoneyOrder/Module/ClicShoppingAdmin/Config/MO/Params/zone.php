@@ -25,6 +25,8 @@ class zone extends \ClicShopping\Apps\Payment\MoneyOrder\Module\ClicShoppingAdmi
 
   public function getInputField()
   {
+    $value = $this->getInputValue();
+
     $zone_class_array = [
       [
         'id' => '0',
@@ -45,7 +47,7 @@ class zone extends \ClicShopping\Apps\Payment\MoneyOrder\Module\ClicShoppingAdmi
       ];
     }
 
-    $input = HTML::selectField($this->key, $zone_class_array, $this->getInputValue());
+    $input = HTML::selectField($this->key, $zone_class_array, $value);
 
     return $input;
   }

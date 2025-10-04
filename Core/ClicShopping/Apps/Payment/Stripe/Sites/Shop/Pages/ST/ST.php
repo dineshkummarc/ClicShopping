@@ -11,9 +11,21 @@
 namespace ClicShopping\Apps\Payment\Stripe\Sites\Shop\Pages\ST;
 
 use ClicShopping\OM\Registry;
-
 use ClicShopping\Apps\Payment\Stripe\Module\Payment\ST as PaymentStripeST;
 
+/**
+ * Stripe webhook handler for payment processing.
+ * 
+ * This class handles Stripe webhook events for payment processing,
+ * including charge succeeded, payment intent succeeded, and payment method
+ * attached events. It validates webhook signatures and processes events
+ * according to Stripe's webhook specifications.
+ * 
+ * @package ClicShopping\Apps\Payment\Stripe\Sites\Shop\Pages\ST
+ * @author ClicShopping Team
+ * @copyright 2008 - https://www.clicshopping.org
+ * @license GPL 2 & MIT
+ */
 class ST extends \ClicShopping\OM\PagesAbstract
 {
   protected ?string $file = null;
@@ -36,7 +48,7 @@ class ST extends \ClicShopping\OM\PagesAbstract
     $endpoint_secret = CLICSHOPPING_APP_STRIPE_ST_KEY_WEBHOOK_ENDPOINT;
     $payload = @file_get_contents('php://input');
 
-//Could be different in test mode
+    //Could be different in test mode
 // In my case I do not receive the HTTP_STRIPE_SIGNATURE in test mod
     if (CLICSHOPPING_APP_STRIPE_ST_SERVER_PROD == 'True') {
       $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
@@ -46,7 +58,9 @@ class ST extends \ClicShopping\OM\PagesAbstract
 
     try {
       $event = \Stripe\Webhook::constructEvent(
-        $payload, $sig_header, $endpoint_secret
+        $payload,
+        $sig_header,
+        $endpoint_secret
       );
     } catch (\UnexpectedValueException $e) {
       // Invalid payload
@@ -58,7 +72,7 @@ class ST extends \ClicShopping\OM\PagesAbstract
       exit();
     }
 
-// Handle the event
+    // Handle the event
     switch ($event->type) {
       case 'charge.succeeded':
         //$charge = $event->data->object;

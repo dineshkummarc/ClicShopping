@@ -13,8 +13,31 @@ namespace ClicShopping\Apps\Payment\MoneyOrder\Sites\ClicShoppingAdmin\Pages\Hom
 use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
+/**
+ * Configure action class for Money Order payment module administration.
+ * 
+ * This class handles the configuration page for the Money Order payment integration,
+ * managing module selection, access control, and configuration interface setup
+ * within the ClicShoppingAdmin environment.
+ * 
+ * @package ClicShopping\Apps\Payment\MoneyOrder\Sites\ClicShoppingAdmin\Pages\Home\Actions
+ * @author ClicShopping Team
+ * @copyright 2008 - https://www.clicshopping.org
+ * @license GPL 2 & MIT
+ */
 class Configure extends \ClicShopping\OM\PagesActionsAbstract
 {
+  /**
+   * Execute the configuration action.
+   * 
+   * Sets up the configuration page for the Money Order module, including:
+   * - Administrator access verification
+   * - Loading configuration definitions
+   * - Determining available and installed modules
+   * - Setting the current module (default: 'MO') for display
+   * 
+   * @return void
+   */
   public function execute()
   {
     $CLICSHOPPING_MoneyOrder = Registry::get('MoneyOrder');
@@ -35,7 +58,7 @@ class Configure extends \ClicShopping\OM\PagesActionsAbstract
         $default_module = $m;
         break;
       }
-    }
+}
 
     $this->page->data['current_module'] = (isset($_GET['module']) && \in_array($_GET['module'], $modules)) ? $_GET['module'] : $default_module;
   }

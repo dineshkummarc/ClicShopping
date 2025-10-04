@@ -25,6 +25,8 @@ class order_status_id extends \ClicShopping\Apps\Payment\Stripe\Module\ClicShopp
 
   public function getInputField()
   {
+    $value = $this->getInputValue();
+
     $statuses_array = [
       [
         'id' => '0',
@@ -48,7 +50,7 @@ class order_status_id extends \ClicShopping\Apps\Payment\Stripe\Module\ClicShopp
       ];
     }
 
-    $input = HTML::selectField($this->key, $statuses_array, $this->getInputValue());
+    $input = HTML::selectField($this->key, $statuses_array, $value);
 
     return $input;
   }

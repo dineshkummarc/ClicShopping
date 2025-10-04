@@ -13,8 +13,31 @@ namespace ClicShopping\Apps\Payment\COD\Sites\ClicShoppingAdmin\Pages\Home\Actio
 use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
+/**
+ * Configure action class for Cash on Delivery (COD) payment module administration.
+ * 
+ * This class handles the configuration page for the COD payment integration,
+ * managing module selection, access control, and configuration interface setup
+ * within the ClicShoppingAdmin environment.
+ * 
+ * @package ClicShopping\Apps\Payment\COD\Sites\ClicShoppingAdmin\Pages\Home\Actions
+ * @author ClicShopping Team
+ * @copyright 2008 - https://www.clicshopping.org
+ * @license GPL 2 & MIT
+ */
 class Configure extends \ClicShopping\OM\PagesActionsAbstract
 {
+  /**
+   * Execute the configuration action.
+   * 
+   * Sets up the configuration page for the COD module, including:
+   * - Administrator access verification
+   * - Loading configuration definitions
+   * - Determining available and installed modules
+   * - Setting the current module (default: 'CO') for display
+   * 
+   * @return void
+   */
   public function execute()
   {
     $CLICSHOPPING_COD = Registry::get('COD');

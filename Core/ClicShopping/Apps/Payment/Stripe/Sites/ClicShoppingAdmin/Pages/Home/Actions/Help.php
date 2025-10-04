@@ -12,9 +12,31 @@ namespace ClicShopping\Apps\Payment\Stripe\Sites\ClicShoppingAdmin\Pages\Home\Ac
 
 use ClicShopping\OM\Registry;
 
+/**
+ * Help action class for Stripe payment module administration.
+ * 
+ * This class handles the help page for the Stripe payment integration,
+ * providing documentation and assistance information within the
+ * ClicShoppingAdmin environment.
+ * 
+ * @package ClicShopping\Apps\Payment\Stripe\Sites\ClicShoppingAdmin\Pages\Home\Actions
+ * @author ClicShopping Team
+ * @copyright 2008 - https://www.clicshopping.org
+ * @license GPL 2 & MIT
+ */
 class Help extends \ClicShopping\OM\PagesActionsAbstract
 {
 
+  /**
+   * Execute the help action.
+   * 
+   * Sets up the help page for the Stripe module, including:
+   * - Loading help template file
+   * - Setting page action data
+   * - Loading help-specific language definitions
+   * 
+   * @return void
+   */
   public function execute()
   {
     $CLICSHOPPING_Stripe = Registry::get('Stripe');
