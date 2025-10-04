@@ -29,6 +29,7 @@ class tax_class extends \ClicShopping\Apps\Shipping\Item\Module\ClicShoppingAdmi
 
   public function getInputField()
   {
+    $value = $this->getInputValue();
 
     $tax_class_array = [
       [
@@ -50,7 +51,7 @@ class tax_class extends \ClicShopping\Apps\Shipping\Item\Module\ClicShoppingAdmi
       ];
     }
 
-    $input = HTML::selectField($this->key, $tax_class_array, $this->getInputValue());
+    $input = HTML::selectField($this->key, $tax_class_array, $value);
 
     return $input;
   }

@@ -104,7 +104,7 @@ if ($CLICSHOPPING_MessageStack->exists('main')) {
       </div>
       <?php
     }
-  } else {
+} else {
     ?>
     <div class="col-md-12 mainTitle">
       <strong><?php echo $CLICSHOPPING_MoneyOrder->getConfigModuleInfo($current_module, 'title'); ?></strong></div>

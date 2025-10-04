@@ -8,7 +8,6 @@
  *
  */
 
-
 namespace ClicShopping\Apps\Payment\MoneyOrder\Module\ClicShoppingAdmin\Config\MO\Params;
 
 use ClicShopping\OM\HTML;

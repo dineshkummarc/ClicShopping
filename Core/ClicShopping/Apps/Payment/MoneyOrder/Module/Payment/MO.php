@@ -71,7 +71,7 @@ class MO implements \ClicShopping\OM\Modules\PaymentInterface
           } else {
             $this->enabled = false;
           }
-        }
+}
       } else {
         if (CLICSHOPPING_APP_MONEYORDER_MO_NO_AUTHORIZE == 'True' && $CLICSHOPPING_Customer->getCustomersGroupID() == 0) {
           if ($CLICSHOPPING_Customer->getCustomersGroupID() == 0) {
@@ -80,9 +80,9 @@ class MO implements \ClicShopping\OM\Modules\PaymentInterface
             } else {
               $this->enabled = false;
             }
-          }
+}
         }
-      }
+}
 
       if ((int)CLICSHOPPING_APP_MONEYORDER_MO_PREPARE_ORDER_STATUS_ID > 0) {
         /**
@@ -95,12 +95,11 @@ class MO implements \ClicShopping\OM\Modules\PaymentInterface
         if (isset($CLICSHOPPING_Order) && \is_object($CLICSHOPPING_Order)) {
           $this->update_status();
         }
-      }
+}
 
       $this->sort_order = \defined('CLICSHOPPING_APP_MONEYORDER_MO_SORT_ORDER') ? CLICSHOPPING_APP_MONEYORDER_MO_SORT_ORDER : 0;
     }
-  }
-
+}
 
   /**
    * Updates the status of the payment module based on the geographical zone and order delivery details.
@@ -125,12 +124,12 @@ class MO implements \ClicShopping\OM\Modules\PaymentInterface
           $check_flag = true;
           break;
         }
-      }
+}
 
       if ($check_flag === false) {
         $this->enabled = false;
       }
-    }
+}
   }
 
   /**
@@ -158,7 +157,7 @@ class MO implements \ClicShopping\OM\Modules\PaymentInterface
       } else {
         $this->public_title = $this->public_title;
       }
-    }
+}
 
     return ['id' => $this->app->vendor . '\\' . $this->app->code . '\\' . $this->code,
       'module' => $this->public_title
@@ -233,7 +232,6 @@ class MO implements \ClicShopping\OM\Modules\PaymentInterface
   {
     return false;
   }
-
 
   /**
    * Checks if the constant 'CLICSHOPPING_APP_MONEYORDER_MO_STATUS' is defined and not an empty string after trimming.

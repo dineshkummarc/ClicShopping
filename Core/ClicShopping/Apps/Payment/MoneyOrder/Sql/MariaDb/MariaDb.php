@@ -81,5 +81,5 @@ class MariaDb
 
       Cache::clear('menu-administrator');
     }
-  }
+}
 }

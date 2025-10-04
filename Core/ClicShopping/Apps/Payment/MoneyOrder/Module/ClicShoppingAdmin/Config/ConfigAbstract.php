@@ -97,7 +97,7 @@ abstract class ConfigAbstract
 
       $this->app->saveCfgParam($key, $cfg->default, $cfg->title ?? null, $cfg->description ?? null, $cfg->set_func ?? null);
     }
-  }
+}
 
   /**
    *
@@ -140,9 +140,9 @@ abstract class ConfigAbstract
           } else {
             trigger_error('ClicShopping\Apps\Payment\MoneyOrder\Module\ClicShoppingAdmin\Config\\ConfigAbstract::getParameters(): ClicShopping\Apps\Payment\MoneyOrder\Module\ClicShoppingAdmin\Config\\' . $this->code . '\\Params\\' . $file->getBasename('.php') . ' is not a subclass of ClicShopping\Apps\Payment\MoneyOrder\Module\ClicShoppingAdmin\Config\ConfigParamAbstract and cannot be loaded.');
           }
-        }
+}
       }
-    }
+}
 
     return $result;
   }
@@ -171,7 +171,6 @@ abstract class ConfigAbstract
 
       $cfg = new $class($this->code);
 
-
       if (!\defined($key)) {
         $this->app->saveCfgParam($key, $cfg->default, $cfg->title ?? null, $cfg->description ?? null, $cfg->set_func ?? null);
       }
@@ -198,7 +197,7 @@ abstract class ConfigAbstract
 
           break;
         }
-      }
+}
     }
 
     ksort($result, SORT_NUMERIC);

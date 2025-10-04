@@ -69,5 +69,5 @@ class MO extends \ClicShopping\Apps\Payment\MoneyOrder\Module\ClicShoppingAdmin\
 
       $this->app->saveCfgParam('MODULE_PAYMENT_INSTALLED', implode(';', $installed));
     }
-  }
+}
 }
