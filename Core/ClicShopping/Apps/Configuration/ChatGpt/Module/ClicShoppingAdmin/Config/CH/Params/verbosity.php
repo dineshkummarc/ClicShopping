@@ -40,6 +40,8 @@ class verbosity extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShop
    */
   public function getInputField()
   {
+    $value = $this->getInputValue();
+
     $array = [
       ['id' => 'text', 'text' => $this->app->getDef('cfg_chatgpt_response_verbosity_select')],
       ['id' => 'low', 'text' => $this->app->getDef('cfg_chatgpt_response_verbosity_low')],
@@ -47,7 +49,7 @@ class verbosity extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShop
       ['id' => 'high', 'text' => $this->app->getDef('cfg_chatgpt_response_verbosity_high')],
     ];
 
-    $input = HTML::selectField($this->key, $array, $this->getInputValue(), 'id="model_verbosity"');
+    $input = HTML::selectField($this->key, $array, $value, 'id="model_verbosity"');
 
     return $input;
   }

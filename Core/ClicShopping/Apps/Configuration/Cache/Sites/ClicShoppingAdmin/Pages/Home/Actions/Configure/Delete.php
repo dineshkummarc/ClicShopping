@@ -13,27 +13,32 @@ namespace ClicShopping\Apps\Configuration\Cache\Sites\ClicShoppingAdmin\Pages\Ho
 use ClicShopping\OM\Cache;
 use ClicShopping\OM\Registry;
 
-class Delete extends \ClicShopping\OM\PagesActionsAbstract
+/**
+ * Delete action for Sites module configuration.
+ * Handles the Delete process with centralized functionality.
+ */
+class Delete extends \ClicShopping\OM\ConfigureActionsAbstract
 {
 
+    /**
+   * Execute the deletion process for Sites module
+   */
   public function execute()
   {
-
-    $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
-    $CLICSHOPPING_Cache = Registry::get('Cache');
-
-    $current_module = $this->page->data['current_module'];
-    $m = Registry::get('CacheAdminConfig' . $current_module);
+    $this->init();
+    
+    $current_module = $this->getCurrentModule();
+    $m = $this->getConfigModule($current_module);
     $m->uninstall();
-
-    static::removeMenu();
-    static::removeProductsCacheDb();
-
-    Cache::clear('menu-administrator');
-
-    $CLICSHOPPING_MessageStack->add($CLICSHOPPING_Cache->getDef('alert_module_uninstall_success'), 'success', 'Cache');
-
-    $CLICSHOPPING_Cache->redirect('Configure&module=' . $current_module);
+    
+    // Remove menu if method exists
+    if (method_exists($this, 'removeMenu')) {
+      $this->removeMenu();
+    }
+    
+    $this->clearMenuCache();
+    $this->addSuccessMessage($this->app->getDef('alert_module_uninstall_success'));
+    $this->redirectToConfigure($current_module);
   }
 
   private static function removeMenu(): void
@@ -62,7 +67,7 @@ class Delete extends \ClicShopping\OM\PagesActionsAbstract
 
       $CLICSHOPPING_Db->delete('administrator_menu', ['app_code' => 'app_configuration_cache']);
     }
-  }
+}
 
   private static function removeProductsCacheDb()
   {
@@ -74,5 +79,5 @@ class Delete extends \ClicShopping\OM\PagesActionsAbstract
       $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_cache');
       $Qdelete->execute();
     }
-  }
+}
 }

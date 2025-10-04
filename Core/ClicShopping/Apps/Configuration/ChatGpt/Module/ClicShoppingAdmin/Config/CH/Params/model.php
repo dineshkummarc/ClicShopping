@@ -26,9 +26,11 @@ class model extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShopping
 
   public function getInputField()
   {
+    $value = $this->getInputValue();
+
     $array = Gpt::getGptModel();
 
-    $input = HTML::selectField($this->key, $array, $this->getInputValue(), 'id="model_title"');
+    $input = HTML::selectField($this->key, $array, $value, 'id="model_title"');
 
     return $input;
   }

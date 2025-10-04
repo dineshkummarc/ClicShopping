@@ -14,27 +14,32 @@ use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\Countries\Sql\MariaDb\MariaDb;
 
-class Install extends \ClicShopping\OM\PagesActionsAbstract
+/**
+ * Install action for Sites module configuration.
+ * Handles the Install process with centralized functionality.
+ */
+class Install extends \ClicShopping\OM\ConfigureActionsAbstract
 {
+    /**
+   * Execute the installation process for Sites module
+   */
   public function execute()
   {
-    $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
-    $CLICSHOPPING_Currency = Registry::get('Currency');
-
-    $current_module = $this->page->data['current_module'];
-
-    $CLICSHOPPING_Currency->loadDefinitions('Sites/ClicShoppingAdmin/install');
-
-    $m = Registry::get('CurrencyAdminConfig' . $current_module);
+    $this->init();
+    
+    $current_module = $this->getCurrentModule();
+    
+    $this->app->loadDefinitions('Sites/ClicShoppingAdmin/install');
+    
+    $m = $this->getConfigModule($current_module);
     $m->install();
-
-    //add condition to select mariaDb ou postgres
+    
+    // Install database menu - add condition to select MariaDb or PostgreSQL
     Registry::set('MariaDb', new MariaDb());
     $CLICSHOPPING_MariaDb = Registry::get('MariaDb');
     $CLICSHOPPING_MariaDb->execute();
-
-    $CLICSHOPPING_MessageStack->add($CLICSHOPPING_Currency->getDef('alert_module_install_success'), 'success');
-
-    $CLICSHOPPING_Currency->redirect('Configure&module=' . $current_module);
+    
+    $this->addSuccessMessage($this->app->getDef('alert_module_install_success'));
+    $this->redirectToConfigure($current_module);
   }
 }

@@ -26,9 +26,11 @@ class embedding_model extends \ClicShopping\Apps\Configuration\ChatGpt\Module\Cl
 
   public function getInputField()
   {
+    $value = $this->getInputValue();
+
     $array = NewVector::getEmbeddingModel();
 
-    $input = HTML::selectField($this->key, $array, $this->getInputValue(), 'id="embedding_model_title"');
+    $input = HTML::selectField($this->key, $array, $value, 'id="embedding_model_title"');
 
     return $input;
   }
