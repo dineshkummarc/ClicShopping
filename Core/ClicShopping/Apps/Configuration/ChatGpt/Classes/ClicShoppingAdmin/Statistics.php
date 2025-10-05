@@ -29,7 +29,6 @@ class Statistics {
     return $result;
   }
 
-
   /**
    * Saves the token usage statistics to the database.
    *

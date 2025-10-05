@@ -39,7 +39,7 @@ class TranslationCache
       if (!mkdir($concurrentDirectory = $this->cacheDir, 0755, true) && !is_dir($concurrentDirectory)) {
         throw new \RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
       }
-    }
+}
   }
 
   /**
@@ -114,7 +114,7 @@ class TranslationCache
       if (!@unlink($file)) {
         $success = false;
       }
-    }
+}
 
     return $success;
   }

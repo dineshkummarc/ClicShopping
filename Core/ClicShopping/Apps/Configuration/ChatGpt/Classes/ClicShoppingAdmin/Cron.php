@@ -37,7 +37,6 @@ class Cron {
     $this->lang = Registry::get('Language');
   }
 
-
   /**
    * Updates the embedding categories for a specific language.
    *
@@ -112,7 +111,7 @@ class Cron {
           if (is_array($embeddedDocument->embedding)) {
             $embeddings[] = $embeddedDocument->embedding;
           }
-        }
+}
 
         if (!empty($embeddings)) {
           $flattened_embedding = $embeddings[0];
@@ -132,9 +131,9 @@ class Cron {
 
           $this->app->db->save('categories_embedding', $sql_data_array_embedding);
         }
-      }
+}
     }
-  }
+}
 
   /**
    * Updates the embedding manufacturers for a specific language.
@@ -203,7 +202,6 @@ class Cron {
           $embedding_data .= $this->app->getDef('text_manufacturer_suppliers_id') . ' : ' . $suppliers_id . "\n";
         }
 
-
         if (!empty($manufacturers_description)) {
           $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
           $embedding_data .= $this->app->getDef('text_manufacturer_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($manufacturers_description) . "\n";
@@ -217,7 +215,7 @@ class Cron {
           if (is_array($embeddedDocument->embedding)) {
             $embeddings[] = $embeddedDocument->embedding;
           }
-        }
+}
 
         if (!empty($embeddings)) {
           $flattened_embedding = $embeddings[0];
@@ -237,9 +235,9 @@ class Cron {
 
           $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding);
         }
-      }
+}
     }
-  }
+}
 
 /**
  * Updates the embedding page manager for a specific language.
@@ -316,7 +314,7 @@ class Cron {
           if (is_array($embeddedDocument->embedding)) {
             $embeddings[] = $embeddedDocument->embedding;
           }
-        }
+}
 
         if (!empty($embeddings)) {
           $flattened_embedding = $embeddings[0];
@@ -336,10 +334,9 @@ class Cron {
 
           $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding);
         }
-      }
+}
     }
-  }
-
+}
 
   /**
    * Updates the embedding products for a specific language.
@@ -513,7 +510,7 @@ class Cron {
           if (is_array($embeddedDocument->embedding)) {
             $embeddings[] = $embeddedDocument->embedding;
           }
-        }
+}
 
         if (!empty($embeddings)) {
           $flattened_embedding = $embeddings[0];
@@ -533,11 +530,9 @@ class Cron {
 
           $this->app->db->save('products_embedding', $sql_data_array_embedding);
         }
-      }
+}
     }
-  }
-
-
+}
 
   /**
    * Updates the embedding reviews for a specific language.
@@ -646,7 +641,7 @@ class Cron {
           if (is_array($embeddedDocument->embedding)) {
             $embeddings[] = $embeddedDocument->embedding;
           }
-        }
+}
 
         if (!empty($embeddings)) {
           $flattened_embedding = $embeddings[0];
@@ -666,10 +661,9 @@ class Cron {
 
           $this->app->db->save('reviews_embedding', $sql_data_array_embedding);
         }
-      }
+}
     }
-  }
-
+}
 
   /**
    * Updates the embedding suppliers .
@@ -771,7 +765,7 @@ class Cron {
           if (is_array($embeddedDocument->embedding)) {
             $embeddings[] = $embeddedDocument->embedding;
           }
-        }
+}
 
         if (!empty($embeddings)) {
           $flattened_embedding = $embeddings[0];
@@ -790,9 +784,9 @@ class Cron {
 
           $this->app->db->save('suppliers_embedding', $sql_data_array_embedding);
         }
-      }
+}
     }
-  }
+}
 
   /**
    * Updates the embedding categories for a specific language.
@@ -814,9 +808,6 @@ class Cron {
 
     $this->updateAllEmbeddingSuppliers();
   }
-
-
-
 
   /**
    * Handles the execution of a cron job related to category embedding updates.

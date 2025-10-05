@@ -241,7 +241,7 @@ class Gpt {
     } else {
       return false;
     }
-  }
+}
 
   /**
    *
@@ -296,7 +296,7 @@ class Gpt {
           new AnthropicConfig(AnthropicConfig::CLAUDE_3_HAIKU, $maxtoken, $modelOptions, $api_key)
         );
       }
-    }
+}
 
     return $result;
   }
@@ -343,7 +343,7 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
     if ($maxtoken > 0) {
       $config->maxTokens = $maxtoken;
     }
-  }
+}
 
   try {
     return new MistralAIChat($config);
@@ -439,11 +439,10 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
 
         statistics::saveStats($usage, $engine);
       }
-    }
+}
 
     return $result;
   }
-
 
   /**
    * Saves data to the database, including question details,audit trials.
@@ -530,7 +529,7 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
 
       $CLICSHOPPING_Db->save('gpt', $array_sql);
     }
-  }
+}
 
   /**
    *
@@ -592,7 +591,8 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
                           </li>
                         </ul>
       ';
-    if (defined('CLICSHOPPING_APP_CHATGPT_CH_STATUS') && CLICSHOPPING_APP_CHATGPT_CH_STATUS == 'True' && !empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY)) {
+
+    if (defined('CLICSHOPPING_APP_CHATGPT_CH_STATUS') && CLICSHOPPING_APP_CHATGPT_CH_STATUS == 'True') {
       $menu .= '
     <span class="col-md-2">
         <!-- Modal -->

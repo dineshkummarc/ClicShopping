@@ -32,8 +32,6 @@ class LlmGuardrails
   //possible to create a specific suspicious pattern
   private const SUSPICIOUS_PATTERNS = [];
 
-
-
   /**
    * Initializes the security logger if not already done.
    *
@@ -45,7 +43,7 @@ class LlmGuardrails
     if (self::$securityLogger === null) {
       self::$securityLogger = new SecurityLogger();
     }
-  }
+}
   
   /**
    * Checks guardrails on the LLM response.
@@ -88,7 +86,6 @@ class LlmGuardrails
 
     return $evaluationResults;
   }
-
 
 /**
  * Main guardrails method - Full validation of the LLM response.
@@ -155,7 +152,7 @@ class LlmGuardrails
         'action' => 'block'
       ];
     }
-  }
+}
 
 /**
  * Structural validation of the response.
@@ -207,7 +204,6 @@ class LlmGuardrails
     return $validation;
   }
 
-
 /**
  * Specific Hallucination Detection
  *
@@ -226,7 +222,7 @@ class LlmGuardrails
         $suspiciousCount++;
         $detectedPatterns[] = $matches[0];
       }
-    }
+}
 
     // Vérification des dates impossibles
     $futureDates = self::detectFutureDates($result);
@@ -295,7 +291,7 @@ class LlmGuardrails
       if (isset($validationResults[$category]['score'])) {
         $totalScore += $validationResults[$category]['score'] * $weight;
       }
-    }
+}
 
     return min(1.0, max(0.0, $totalScore));
   }
@@ -321,7 +317,7 @@ class LlmGuardrails
     } else {
       return 'block';
     }
-  }
+}
 
 /**
  * Evaluates the LLM response for quality and relevance.
@@ -392,7 +388,7 @@ class LlmGuardrails
         'message' => CLICSHOPPING::getDef('error_llm_guardrails_evaluation')
       ];
     }
-  }
+}
 
 /**
  * Evaluation using an LLM as a judge.
@@ -422,7 +418,7 @@ class LlmGuardrails
 
       return ['error' => 'LLM evaluation failed'];
     }
-  }
+}
 
  /**
   * Calls the internal LLM evaluation model with the provided prompt.
@@ -448,7 +444,7 @@ class LlmGuardrails
 
       return '';
     }
-  }
+}
 
  /**
   * Parses the LLM evaluation response.
@@ -478,7 +474,6 @@ class LlmGuardrails
     ];
   }
 
-
  /**
   * Default evaluation prompt generator.
   *
@@ -493,9 +488,8 @@ class LlmGuardrails
       {
         return CLICSHOPPING::getDef('llm_guardrails_prompt', ['result' => $result, 'question' => $question]);
       }
-    };
+};
   }
-
 
 /**
  * Validates if the e-commerce metrics in the AI-generated response are realistic.
@@ -556,7 +550,7 @@ class LlmGuardrails
         if ((float)$value > 1000) { // Pourcentage aberrant
           $impossibleValues[] = $value . '%';
         }
-      }
+}
     }
 
     return $impossibleValues;
@@ -589,7 +583,7 @@ class LlmGuardrails
     if (CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True') {
       self::$securityLogger->logSecurityEvent('Evaluation saved: '  .  json_encode($data), 'success');
     }
-  }
+}
 
  /**
   * Checks if the given text contains potentially malicious code.
@@ -770,7 +764,7 @@ class LlmGuardrails
 
         return $delta < 1.0;
       }
-    }
+}
 
     return true;
   }
@@ -839,7 +833,7 @@ class LlmGuardrails
       if (preg_match($pattern, $result)) {
         $penalties += 1;
       }
-    }
+}
 
     $score = 1.0 - min(1.0, $penalties * 0.25);
 
@@ -875,7 +869,7 @@ class LlmGuardrails
         $mean = array_sum($s) / count($s);
         $total += ($mean / 5) * $w;
       }
-    }
+}
 
     return min(1.0, $total);
   }
@@ -900,6 +894,4 @@ class LlmGuardrails
 
     return $reco;
   }
-
-
 }

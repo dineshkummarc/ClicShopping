@@ -141,7 +141,7 @@ class NewVector
       // Par défaut, utiliser Ollama pour les embeddings
       return new OllamaEmbeddingGenerator($model);
     }
-  }
+}
 
   /**
    * Generates embeddings for a set of documents or a text description. If a file path is provided, the content of the file
@@ -216,7 +216,7 @@ class NewVector
       error_log('Erreur lors de la génération d\'embeddings: ' . $e->getMessage());
       return null;
     }
- }
+}
 
   /**
    * Initializes and returns an OpenAIChat instance configured with specified parameters.
@@ -258,7 +258,6 @@ class NewVector
 
     return $documents;
   }
-
 
 //***********
 // Statistics
@@ -370,5 +369,5 @@ class NewVector
     } else {
       return 1536; // Ollama (valeur par défaut)
     }
-  }
+}
 }
