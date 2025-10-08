@@ -15,8 +15,7 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\Transport\TransportInterface;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\McpJsonRpcClient;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\Transport\SseTransport;
-use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\SimpleLogger;
-
+use ClicShopping\OM\SimpleLogger;
 
 /**
  * Class McpMonitor

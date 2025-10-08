@@ -11,7 +11,6 @@ namespace ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin;
 
 use ClicShopping\OM\Registry;
 
-
 /**
  * Class MpcPerformanceHistoryStorage
  *

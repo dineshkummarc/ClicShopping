@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin;
 use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\Exceptions\McpConnectionException;
 use Psr\Log\LoggerInterface;
-use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\SimpleLogger;
+use ClicShopping\OM\SimpleLogger;
 
 /**
  * Class McpService

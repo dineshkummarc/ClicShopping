@@ -81,7 +81,7 @@ class MariaDb
 
       Cache::clear('menu-administrator');
     }
-  }
+}
 
   /**
    * Installs the database table for customers if it does not already exist.
@@ -95,6 +95,121 @@ class MariaDb
   private static function installDb()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
+
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_mcp"');
+
+    if ($Qcheck->fetch() === false) {
+    $sql = <<<EOD
+CREATE TABLE :table_mcp (
+  `mcp_id` int(11) NOT NULL,
+  `username` varchar(64) NOT NULL,
+  `mcp_key` text NOT NULL,
+  `status` tinyint(1) NOT NULL,
+  `date_added` datetime NOT NULL,
+  `date_modified` datetime DEFAULT NULL,
+  `select_data` tinyint(1) NOT NULL,
+  `update_data` tinyint(1) NOT NULL,
+  `create_data` tinyint(1) NOT NULL,
+  `delete_data` tinyint(1) NOT NULL,
+  `create_db` tinyint(1) NOT NULL,
+  `server_host` varchar(255) NOT NULL DEFAULT 'localhost',
+  `server_port` int(6) NOT NULL DEFAULT 3001,
+  `ssl_enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `alert_threshold` int(6) DEFAULT 20,
+  `latency_threshold` int(6) DEFAULT 1000,
+  `downtime_threshold` int(6) DEFAULT 300,
+  `data_retention` int(3) DEFAULT 7,
+  `alert_notification` tinyint(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+INSERT INTO :table_mcp  VALUES (NULL, 'RagBI', 'd0a36b839700b60727fe13998e22aa0af197c61d8b371e26114c133ca51c4864bd0da73ad6d1e5090b02b55cff42b8a0cd23866e64e78fc8884eb6228d32f5e9d76bed468869dd89ee6bb8a3208c5077e88560d0bc238f67cfc732efcf5313a0cb361e297c29c8d82d050d770ed7dee972af6445e801fa9af12e3d478bf5346a', '1', '2025-10-05 13:02:04.000000', '1', '0', '0', '0', '0');
+ALTER TABLE :table_mcp  ADD PRIMARY KEY (`mcp_id`),
+ADD KEY `idx_mcp_id` (`mcp_id`);
+
+ALTER TABLE :table_mcp MODIFY `mcp_id` int(11) NOT NULL AUTO_INCREMENT;
+EOD;
+      $CLICSHOPPING_Db->exec($sql);
+    }
+
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_mcp_ip"');
+
+    if ($Qcheck->fetch() === false) {
+      $sql = <<<EOD
+CREATE TABLE :table_mcp_ip (
+  `mcp_ip_id` int(11) NOT NULL,
+  `mcp_id` int(11) NOT NULL,
+  `ip` varchar(40) NOT NULL,
+  `comment` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO :table_mcp_ip VALUES(1, 1, '127.0.0.1', 'localhost');
+
+ALTER TABLE :table_mcp_ip  ADD PRIMARY KEY (`mcp_ip_id`),  ADD KEY `idx_mcp_ip_id` (`mcp_ip_id`);
+
+ALTER TABLE :table_mcp_ip MODIFY `mcp_ip_id` int(11) NOT NULL AUTO_INCREMENT;
+
+EOD;
+      $CLICSHOPPING_Db->exec($sql);
+    }
+
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_mcp_session"');
+
+    if ($Qcheck->fetch() === false) {
+      $sql = <<<EOD
+CREATE TABLE :table_mcp_session (
+  `mcp_session_id` int(11) NOT NULL,
+  `mcp_id` int(11) NOT NULL,
+  `session_id` varchar(32) NOT NULL,
+  `ip` varchar(40) NOT NULL,
+  `date_added` datetime NOT NULL,
+  `date_modified` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE :table_mcp_session ADD PRIMARY KEY (`mcp_session_id`);
+ALTER TABLE :table_mcp_session  MODIFY `mcp_session_id` int(11) NOT NULL AUTO_INCREMENT;
+EOD;
+      $CLICSHOPPING_Db->exec($sql);
+    }
+
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_mcp_failed_attempts"');
+
+    if ($Qcheck->fetch() === false) {
+      $sql = <<<EOD
+CREATE TABLE :table_mcp_failed_attempts (
+  `id` int(11) NOT NULL,
+  `identifier` varchar(255) NOT NULL,
+  `attempts` int(11) DEFAULT NULL,
+  `last_attempt` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE :table_mcp_failed_attempts  ADD PRIMARY KEY (`id`),  ADD KEY `idx_identifier` (`identifier`);
+ALTER TABLE :table_mcp_failed_attempts  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+EOD;
+      $CLICSHOPPING_Db->exec($sql);
+    }
+
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_mcp_rate_limit"');
+
+    if ($Qcheck->fetch() === false) {
+      $sql = <<<EOD
+CREATE TABLE :table_mcp_rate_limit (
+  `id` int(11) NOT NULL,
+  `identifier` varchar(255) DEFAULT NULL,
+  `timestamp` int(11) DEFAULT NULL,
+  `ip` varchar(45) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE :table_mcp_rate_limit
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_identifier_timestamp` (`identifier`,`timestamp`),
+  ADD KEY `idx_timestamp` (`timestamp`);
+EOD;
+
+      $CLICSHOPPING_Db->exec($sql);
+    }
+
 
     $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_mcp_alerts"');
 

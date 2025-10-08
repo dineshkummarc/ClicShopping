@@ -31,7 +31,8 @@ class DynamicPricingRules extends \ClicShopping\OM\PagesActionsAbstract
     $CLICSHOPPING_Products = Registry::get('Products');
 
     $this->page->setFile('dynamic_pricing_rules.php');
-    $this->page->data['action'] = 'Products';
+    $this->page->data['action'] = 'DynamicPricingRules';
+
 
     $CLICSHOPPING_Products->loadDefinitions('Sites/ClicShoppingAdmin/dynamic_pricing_rules');
   }

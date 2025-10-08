@@ -11,19 +11,17 @@
 namespace ClicShopping\Apps\Tools\MCP\Sites\Shop\Pages\RagBI;
 
 use AllowDynamicProperties;
-use ClicShopping\OM\HTML;
-use ClicShopping\OM\Registry;
-
-use ClicShopping\Apps\Tools\MCP\MCP;
-use ClicShopping\Apps\Tools\MCP\Classes\Shop\Message;
-
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MultiDBRAGManager;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MultiDBRAGManager;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
+use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Message;
+use ClicShopping\Apps\Tools\MCP\MCP;
+use ClicShopping\OM\HTML;
+use ClicShopping\OM\Registry;
+use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
 
 #[AllowDynamicProperties]
 class RagBI extends \ClicShopping\OM\PagesAbstract
@@ -103,11 +101,9 @@ class RagBI extends \ClicShopping\OM\PagesAbstract
 
       $ragManager = new MultiDBRAGManager();
 
-      if (defined(
-          'CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER'
-        ) && CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
+      if (defined('CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
         $queryType = isset($_POST['queryType']) ? HTML::sanitize($_POST['queryType']) : 'semantic';
-//        $queryType = 'analytics'; // test
+        //$queryType = 'analytics'; // test
 
         if ($queryType === 'semantic') {
           $queryType = Semantics::classifyQuery($prompt);
@@ -136,9 +132,7 @@ class RagBI extends \ClicShopping\OM\PagesAbstract
                 $vectorStore = new MariaDBVectorStore($embeddingGenerator, $tableName);
                 $embeddingTables[$tableName] = $vectorStore;
               } catch (\Exception $e) {
-                if (\defined(
-                    'CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER'
-                  ) && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
+                if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
                   error_log("Erreur lors de l'initialisation de la table {$tableName} : " . $e->getMessage());
                   // Continuer avec les autres tables en cas d'erreur
                 }
@@ -155,9 +149,7 @@ class RagBI extends \ClicShopping\OM\PagesAbstract
                     $vectorStore = new MariaDBVectorStore($embeddingGenerator, $tableName);
                     $embeddingTables[$tableName] = $vectorStore;
                   } catch (\Exception $e) {
-                    if (\defined(
-                        'CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER'
-                      ) && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
+                    if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER' ) && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
                       error_log("Erreur lors de l'initialisation de la table {$tableName} : " . $e->getMessage());
                       // If error continue
                     }
@@ -165,9 +157,7 @@ class RagBI extends \ClicShopping\OM\PagesAbstract
                 }
               }
             } catch (\Exception $e) {
-              if (\defined(
-                  'CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER'
-                ) && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
+              if (\defined( 'CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER' ) && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
                 error_log("Erreur lors de la recherche des tables d'embedding : " . $e->getMessage());
                 // If error continue
               }

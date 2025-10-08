@@ -10,8 +10,12 @@
 
 namespace ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin;
 
+use ClicShopping\OM\HTML;
+use ClicShopping\OM\HTTP;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\Exceptions\McpException;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\Transport\SseTransport;
+use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpSecurity;
+
 use Psr\Log\LoggerInterface;
 
 /**
@@ -215,40 +219,103 @@ class MCPConnector
         error_log("Token validation failed: " . $e->getMessage());
         return false;
     }
-  }
+}
 
   /**
    * Checks if the app mcp status is enabled and if the MCP connection is valid.
+   * Uses the enhanced MCP security system.
    *
-   * @return bool
-   */
-  /**
    * @return bool True if checks pass, false otherwise.
    */
   public function checkSecurity(): bool
   {
-    // Check 1: STATUS activé
+    // Check 1: MCP Status enabled
     if (!\defined('CLICSHOPPING_APP_MCP_MC_STATUS') || CLICSHOPPING_APP_MCP_MC_STATUS === 'False') {
+        McpSecurity::logSecurityEvent('MCP status disabled', [
+            'status' => CLICSHOPPING_APP_MCP_MC_STATUS ?? 'undefined'
+        ]);
         return false;
     }
 
-    // Check 2: TOKEN configuré
-    if (!\defined('CLICSHOPPING_APP_MCP_MC_TOKEN') || empty(CLICSHOPPING_APP_MCP_MC_TOKEN)) {
+    // Check 2: Get authentication credentials
+    $username = HTML::sanitize($_GET['username'] ?? $_POST['username'] ?? '');
+    $key = HTML::sanitize($_GET['key'] ?? $_POST['key'] ?? '');
+    $token = HTML::sanitize($_GET['token'] ?? $_POST['token'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '');
+
+    // Check 3: Rate limiting
+    $clientIp = HTTP::getIpAddress();
+    if (!McpSecurity::checkRateLimit($clientIp, 'api_access')) {
+        McpSecurity::logSecurityEvent('Rate limit exceeded', [
+            'ip' => $clientIp,
+            'action' => 'api_access'
+        ]);
         return false;
     }
 
-    // Check 3: Validation du token (corrigée)
+    // Check 4: Authentication methods (in order of preference)
     try {
-        $token = $this->getSessionToken();
-        if (!$this->validateToken($token)) {
+        // Method 1: Username + Key authentication
+        if (!empty($username) && !empty($key)) {
+            if (McpSecurity::isAccountLocked($username)) {
+                McpSecurity::logSecurityEvent('Access attempt on locked account', [
+                    'username' => $username
+                ]);
+                return false;
+            }
+
+            $authResult = McpSecurity::authenticateCredentials($username, $key);
+            if ($authResult && is_array($authResult)) {
+                // Validate IP restrictions
+                if (!McpSecurity::validateIp($authResult['mcp_id'])) {
+                    McpSecurity::logSecurityEvent('IP validation failed', [
+                        'username' => $username,
+                        'mcp_id' => $authResult['mcp_id']
+                    ]);
+                    return false;
+                }
+                return true;
+            }
             return false;
         }
-    } catch (\RuntimeException $e) {
-        error_log('MCP Token error: ' . $e->getMessage());
+
+        // Method 2: Token-based authentication
+        if (!empty($token)) {
+            try {
+                $validToken = McpSecurity::checkToken($token);
+                if ($validToken) {
+                    return true;
+                }
+            } catch (\Exception $e) {
+                McpSecurity::logSecurityEvent('Token validation failed', [
+                    'error' => $e->getMessage()
+                ]);
+                return false;
+            }
+        }
+
+        // Method 3: Fallback to configured token (for backward compatibility)
+        if (\defined('CLICSHOPPING_APP_MCP_MC_TOKEN') && !empty(CLICSHOPPING_APP_MCP_MC_TOKEN)) {
+            $configuredToken = CLICSHOPPING_APP_MCP_MC_TOKEN;
+            if ($this->validateToken($configuredToken)) {
+                return true;
+            }
+        }
+
+        McpSecurity::logSecurityEvent('No valid authentication method found', [
+            'has_username' => !empty($username),
+            'has_key' => !empty($key),
+            'has_token' => !empty($token),
+            'has_configured_token' => \defined('CLICSHOPPING_APP_MCP_MC_TOKEN') && !empty(CLICSHOPPING_APP_MCP_MC_TOKEN)
+        ]);
+
+        return false;
+
+    } catch (\Exception $e) {
+        McpSecurity::logSecurityEvent('Security check exception', [
+            'error' => $e->getMessage()
+        ]);
         return false;
     }
-
-    return true;
   }
 
   /**

@@ -1,4 +1,4 @@
-id int(11) not_null
+id int(11) not_null auto_increment
 alert_type varchar(32) not_null
 message text not_null
 alert_timestamp datetime not_null

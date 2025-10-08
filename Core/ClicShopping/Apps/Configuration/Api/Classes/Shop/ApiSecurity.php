@@ -15,6 +15,7 @@ use ClicShopping\OM\DateTime;
 use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 use Exception;
+use PDOException;
 
 class ApiSecurity {
 

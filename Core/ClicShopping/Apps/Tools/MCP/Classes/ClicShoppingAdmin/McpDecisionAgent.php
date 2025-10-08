@@ -16,7 +16,7 @@ use ClicShopping\OM\Mail;
 
 use ClicShopping\Apps\Tools\MCP\MCP;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\Exceptions\McpConnectionException;
-use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\SimpleLogger;
+use ClicShopping\OM\SimpleLogger;
 
 /**
  * Acts as the brain of the MCP agentic system.

@@ -8,7 +8,6 @@
  *
  */
 
-
 namespace ClicShopping\Apps\Tools\MCP\Module\ClicShoppingAdmin\Config\MC\Params;
 
 use ClicShopping\OM\HTML;

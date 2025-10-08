@@ -90,8 +90,10 @@ class SaveDynamicPricingRules extends \ClicShopping\OM\PagesActionsAbstract
         'rules_priority' => HTML::sanitize($_POST['rules_priority']),
         'rules_status' => $rules_status,
         'date_added' => 'now()',
-        'rules_status_special' => $rules_status_special
+        'rules_status_special' => $rules_status_special,
+        'customers_group' => $customers_group
       ];
+
 
       $this->app->db->save('dynamic_pricing_rules', $insert_array);
 
