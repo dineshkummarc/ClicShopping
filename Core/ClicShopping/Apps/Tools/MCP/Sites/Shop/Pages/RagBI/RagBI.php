@@ -17,11 +17,18 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MultiDBRAGManager;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
+use ClicShopping\Apps\Tools\MCP\Classes\Shop\EndPoint\RagBIPermissions;
+use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Authentification;
+use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpPermissions;
+use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpSecurity;
+use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpShop;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Message;
+use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
+
 use ClicShopping\Apps\Tools\MCP\MCP;
+
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
-use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
 
 #[AllowDynamicProperties]
 class RagBI extends \ClicShopping\OM\PagesAbstract
@@ -42,7 +49,14 @@ class RagBI extends \ClicShopping\OM\PagesAbstract
    */
   public mixed $message;
 
-  private mixed $mcpConnector;
+ // private mixed $mcpConnector;
+  private mixed $ragBIPermissions;
+
+  /** @var McpPermissions The McpPermissions instance for access control. */
+  public McpPermissions $mcpPermissions;
+
+  /** @var string The username authenticated via session or key. */
+  private string $authenticatedUsername = '';
 
   /**
    * Determines if the site template should be used.
@@ -64,32 +78,173 @@ class RagBI extends \ClicShopping\OM\PagesAbstract
    */
   protected function init()
   {
+    $this->db = Registry::get('Db');
+    $this->lang = Registry::get('Language');
+
+    // Set JSON content type
+    header('Content-Type: application/json');
+
+    // Enable CORS for MCP server with security headers
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    // Ajout de HTTP_MCP_USER/KEY et HTTP_MCP_TOKEN
+    header(
+      'Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-API-Key, X-Session-Token, X-MCP-USER, X-MCP-KEY, X-MCP-TOKEN'
+    );
+    header('Access-Control-Allow-Credentials: true');
+
+    // Security headers
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: DENY');
+    header('X-XSS-Protection: 1; mode=block');
     if (!Registry::exists('MCP')) {
       Registry::set('MCP', new MCP());
     }
 
     $this->app = Registry::get('MCP');
 
+    if (!Registry::exists('Message')) {
+      Registry::set('Message', new Message());
+    }
+    $this->message = Registry::get('Message');
+
+    // Initialisation de McpPermissions
+    if (!Registry::exists('McpPermissions')) {
+      Registry::set('McpPermissions', new McpPermissions());
+    }
+    $this->mcpPermissions = Registry::get('McpPermissions');
+
     if (!Registry::exists('MCPConnector')) {
       Registry::set('MCPConnector', new MCPConnector());
     }
     $this->mcpConnector = Registry::get('MCPConnector');
 
-    $result = $this->mcpConnector->checkSecurity();
+    if (!Registry::exists('RagBIPermissions')) {
+      Registry::set('RagBIPermissions', new RagBIPermissions());
+    }
+    $this->ragBIPermissions = Registry::get('RagBIPermissions');
 
-    if (!Registry::exists('Message')) {
-      Registry::set('Message', new Message());
+    // Maintien de la vérification de statut de l'application
+    if (!\defined('CLICSHOPPING_APP_MCP_MC_STATUS') || CLICSHOPPING_APP_MCP_MC_STATUS == 'False') {
+      $this->sendErrorResponse('API is disabled');
+      return;
     }
 
-    $this->message = Registry::get('Message');
+    // Si c'est une requête OPTIONS (preflight), on autorise et on sort
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+      http_response_code(200);
+      exit;
+    }
 
-    // Set JSON content type
-    header('Content-Type: application/json');
+    // =========================================================================
+    // START: LOGIQUE D'AUTHENTIFICATION ET DE GESTION DE SESSION (Source unique)
+    // =========================================================================
 
-    // Enable CORS for MCP server
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+    // 1. Récupération des paramètres (vérification de l'URL et des Headers)
+    $username = $_GET['user_name'] ?? $_POST['user_name'] ?? $_SERVER['HTTP_X_MCP_USER'] ?? $_SERVER['HTTP_MCP_USER'] ?? null;
+    $key = $_GET['key'] ?? $_POST['key'] ?? $_SERVER['HTTP_X_MCP_KEY'] ?? $_SERVER['HTTP_MCP_KEY'] ?? null;
+    $mcpSessionId = $_GET['token'] ?? $_POST['token'] ?? $_SERVER['HTTP_X_MCP_TOKEN'] ?? $_SERVER['HTTP_MCP_TOKEN'] ?? null;
+
+    // DÉCODAGE DE L'EN-TÊTE AUTHORIZATION BASIC (pour le premier appel curl)
+    $authorizationHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+    if (empty($username) && empty($key) && !empty($authorizationHeader)) {
+      if (preg_match('/Basic\s+(.*)/i', $authorizationHeader, $matches)) {
+        $decodedCredentials = base64_decode($matches[1]);
+        if (str_contains($decodedCredentials, ':')) {
+          list($authUsername, $authKey) = explode(':', $decodedCredentials, 2);
+          // Utiliser ces valeurs pour l'authentification
+          $username = $authUsername;
+          $key = $authKey;
+        }
+      }
+    }
+
+    // 2. Vérification/Création de session
+    if (empty($mcpSessionId)) {
+      // Le token de session est manquant -> Tentative d'authentification par identifiants
+      if (empty($username) || empty($key)) {
+        $this->message->sendError(
+          'Unauthorized: Missing required session token OR credentials for authentication.',
+          401
+        );
+        return;
+      }
+
+      try {
+        // AUTHENTIFICATION ET CRÉATION DE SESSION
+        $authentification = new Authentification($username, $key);
+        $mcpSessionId = $authentification->authenticateAndCreateSession();
+        // L'utilisateur est maintenant authentifié, on utilise le $username fourni
+        $this->authenticatedUsername = $username;
+      } catch (\Exception $e) {
+        McpSecurity::logSecurityEvent(
+          'API Access Denied - Authentication Failed',
+          ['username' => $username, 'error' => $e->getMessage()]
+        );
+
+        $this->message->sendError('Unauthorized: Authentication failed. ' . $e->getMessage(), 401);
+        return;
+      }
+    } else {
+      // 3. Validation de la session (Token) existante
+      try {
+        // Valide le Session ID, vérifie l'IP, et renouvelle si nécessaire.
+        $validSessionId = McpSecurity::checkToken($mcpSessionId);
+
+        // IMPORTANT : Récupérer le nom d'utilisateur associé au token pour la vérification des permissions.
+        $this->authenticatedUsername = McpSecurity::getUsernameFromSession($validSessionId);
+
+        if (empty($this->authenticatedUsername)) {
+          throw new \Exception("Session token is valid but associated username could not be found.");
+        }
+      } catch (\Exception $e) {
+        McpSecurity::logSecurityEvent(
+          'API Access Denied - Invalid Session Token',
+          ['session_id' => $mcpSessionId, 'error' => $e->getMessage()]
+        );
+        $this->message->sendError('Unauthorized: Invalid or expired session token. ' . $e->getMessage(), 401);
+        return;
+      }
+    }
+
+    // =========================================================================
+    // END: LOGIQUE D'AUTHENTIFICATION ET DE GESTION DE SESSION
+    // =========================================================================
+
+    // 4. VÉRIFICATION DES PERMISSIONS MCP ET RAG-BI (Post-authentification)
+
+    // Toujours obtenir l'action même si l'URL est pourrie, pour la vérification de permission
+    $action = HTML::sanitize($_GET['action'] ?? $_POST['action'] ?? 'analyze_sales');
+
+    // Vérification de la permission RAG-BI générale (via RagBIPermissions)
+    if (!$this->ragBIPermissions->canAccessRagBI($this->authenticatedUsername)) {
+      McpSecurity::logSecurityEvent('RAG-BI Access Denied - General permission check failed', [
+        'username' => $this->authenticatedUsername,
+        'action' => $action
+      ]);
+      $this->message->sendError(
+        'Forbidden: User "' . $this->authenticatedUsername . '" does not have general RAG-BI access.',
+        403
+      );
+      return;
+    }
+
+    // Vérification de la permission MCP principale pour l'action demandée
+    if (!$this->mcpPermissions->hasPermissionForEndpoint($this->authenticatedUsername, 'RagBI', $action)) {
+      McpSecurity::logSecurityEvent('API Access Denied - Permission check failed', [
+        'username' => $this->authenticatedUsername,
+        'action' => $action
+      ]);
+
+      $this->message->sendError(
+        'Forbidden: User "' . $this->authenticatedUsername . '" does not have permission for action "' . $action . '".',
+        403
+      );
+      return;
+    }
+
+    // =========================================================================
+    // START: LOGIQUE RAG-BI (Le reste de votre code)
+    // =========================================================================
 
     try {
       Gpt::getEnvironment();
@@ -282,8 +437,156 @@ class RagBI extends \ClicShopping\OM\PagesAbstract
           ]
         ]
       ]);
-      
+
       exit;
     }
   }
+
+
+  /**
+   * Handle GET request
+   */
+  private function handleGetRequest(array $statusCheck)
+  {
+    if ($statusCheck['get'] == 0) {
+      return $this->sendErrorResponse('Category fetch not allowed');
+    }
+
+    return $this->sendSuccessResponse(static::getCategories());
+  }
+
+  /**
+   * Handle PUT request
+   */
+  private function handlePutRequest(array $statusCheck)
+  {
+    if (!$statusCheck['update'] == 0) {
+      return $this->sendErrorResponse('Update not allowed');
+    }
+
+    return $this->sendSuccessResponse('Category updated successfully');
+  }
+
+
+  /**
+   * Handle DELETE request
+   */
+  private function handleDeleteRequest(array $statusCheck)
+  {
+    if ($statusCheck['delete'] == 0) {
+      return $this->sendErrorResponse('Category deletion not allowed');
+    }
+
+    return $this->sendSuccessResponse(static::deleteCategories());
+  }
+
+  /**
+   * Handle POST request
+   */
+  private function handlePostRequest(array $statusCheck)
+  {
+    if (isset($_GET['update']) && $statusCheck['update'] == 0) {
+      return $this->sendErrorResponse('Category update not allowed');
+    }
+
+    if (isset($_GET['insert']) && $statusCheck['insert'] == 0) {
+      return $this->sendErrorResponse('Category insertion not allowed');
+    }
+
+    return $this->sendSuccessResponse(self::saveCategories());
+  }
+
+  /**
+   * Sends a success response with the provided data.
+   *
+   * @param mixed $data The data to be included in the success response.
+   * @return void
+   */
+  private function sendSuccessResponse(mixed $data): void
+  {
+    echo json_encode(['status' => 'success', 'data' => $data]);
+    exit;
+  }
+
+  /**
+   * Sends an error response with the provided message.
+   *
+   * @param string $message The error message to be included in the response.
+   * @return void
+   */
+  private function sendErrorResponse(string $message): void
+  {
+    // Utiliser la méthode sendError de l'objet message pour le format JSON standard de l'API
+    if (isset($this->message)) {
+      $this->message->sendError($message, 500); // Code HTTP 500 par défaut si non spécifié
+    } else {
+      // Fallback si l'objet message n'est pas initialisé
+      http_response_code(500);
+      echo json_encode(['status' => 'error', 'message' => $message]);
+      exit;
+    }
+  }
+
+
+  /**
+   * Checks the status based on the provided string and token.
+   *
+   * @param string $string The column name to be selected from the database.
+   * @param string $token The session token used for identifying the API session.
+   * @return int The integer value associated with the specified column.
+   */
+  private function statusCheck(string $string, string $token): int
+  {
+    $QstatusCheck = $this->db->prepare( // Correction: use $this->db instead of $this->Db
+      'select a.' . $string . '
+             from :table_mcp a,
+                  :table_mcp_session ase
+             where a.mcp_id = ase.mcp_id
+             and ase.session_id = :session_id
+           '
+    );
+    $QstatusCheck->bindValue('session_id', $token);
+    $QstatusCheck->execute();
+
+    return $QstatusCheck->valueInt($string);
+  }
+
+  /**
+   * Valide une requête SQL pour RAG-BI
+   * Utilise les contrôles stricts de RagBIPermissions
+   *
+   * @param string $sqlQuery Requête SQL à valider
+   * @return bool True si autorisée, false sinon
+   */
+  public function validateRagBIQuery(string $sqlQuery): bool
+  {
+    // Utiliser l'utilisateur authentifié si la requête vient de l'intérieur de l'application
+    $username = $this->authenticatedUsername;
+
+    if (empty($username)) {
+      // Si l'utilisateur n'est pas encore défini (appel hors du flux API standard), rejeter ou gérer différemment
+      return false;
+    }
+
+    return $this->ragBIPermissions->canExecuteRagBIQuery($username, $sqlQuery);
+  }
+
+  /**
+   * Obtient un rapport de sécurité pour l'utilisateur RAG-BI actuel
+   *
+   * @return array|null Rapport de sécurité ou null si non authentifié
+   */
+  public function getRagBISecurityReport(): ?array
+  {
+    // Utiliser l'utilisateur authentifié si la requête vient de l'intérieur de l'application
+    $username = $this->authenticatedUsername;
+
+    if (empty($username)) {
+      return null;
+    }
+
+    return $this->ragBIPermissions->generateSecurityReport($username);
+  }
+
+  // Les fonctions validateRagBIAccess() et getMcpAuthFromRequest() ont été supprimées.
 }

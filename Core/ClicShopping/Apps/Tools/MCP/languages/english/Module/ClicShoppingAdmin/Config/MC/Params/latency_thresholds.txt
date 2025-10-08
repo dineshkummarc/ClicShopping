@@ -1,3 +1,0 @@
-cfg_mcp_alert_latency_thresholds_title = Latency in the MCP interface
-cfg_mcp_alert_latency_thresholds_description = Latency thresholds, for example the latency value beyond which an alert will be triggered
-cfg_chatgpt_latency_threshold = Latency threshold at which an alert will be sent or considered critical

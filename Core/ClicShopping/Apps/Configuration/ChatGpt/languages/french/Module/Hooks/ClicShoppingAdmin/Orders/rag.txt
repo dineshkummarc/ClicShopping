@@ -31,7 +31,7 @@ text_products_order_history_status = [Statut de l'historique de la commande]
 text_products_order_history_admin = [Administrateur de l'historique de la commande]
 text_products_order_history_tracking = [Tracking de la commande]
 text_products_order_history_date = [Date historique de la commande]
-
+text_category_taxonomy = [Taxonomies de la commande]
 text_orders_total = [Total de la commande]
 text_orders_total_title = [Titre du total de la commande]
 text_orders_total_value = [Valeur du total de la commande]

@@ -10,13 +10,15 @@
 
 /*
 // Example CURL commands for testing the API endpoints
-# Toutes les actions autorisées
-curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=products&limit=5" -H "Authorization: Basic dGVzdF9tYW5hZ2VyOnRlc3RfbWFuYWdlcl9rZXlfMTIzNDU2Nzg5YWJjZGVm"
-curl -i -X GET "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=product&id=5" -H "Authorization: Basic dGVzdF9tYW5hZ2VyOnRlc3RfbWFuYWdlcl9rZXlfMTIzNDU2Nzg5YWJjZGVm"
-curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=search&query=lavette" -H "Authorization: Basic dGVzdF9tYW5hZ2VyOnRlc3RfbWFuYWdlcl9rZXlfMTIzNDU2Nzg5YWJjZGVm"
-curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=stats" -H "Authorization: Basic dGVzdF9tYW5hZ2VyOnRlc3RfbWFuYWdlcl9rZXlfMTIzNDU2Nzg5YWJjZGVm"
-curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=categories" -H "Authorization: Basic dGVzdF9tYW5hZ2VyOnRlc3RfbWFuYWdlcl9rZXlfMTIzNDU2Nzg5YWJjZGVm"
-curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=recommendations"
+# TAuthorized actions: products, product, search, stats, categories, recommendations
+# Example CURL commands:
+# Note: Replace 'MyTokenToInsertHere' with a valid Base64 encoded token
+curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=products&limit=5" -H "Authorization: Basic MyTokenToInsertHere"
+curl -i -X GET "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=product&id=5" -H "Authorization: Basic MyTokenToInsertHere"
+curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=search&query=lavette" -H "Authorization: Basic MyTokenToInsertHere"
+curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=stats" -H "Authorization: Basic MyTokenToInsertHere"
+curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=categories" -H "Authorization: Basic MyTokenToInsertHere"
+curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=recommendations" -H "Authorization: Basic MyTokenToInsertHere"
 */
 
 
@@ -272,7 +274,7 @@ class CustomersProducts extends \ClicShopping\OM\PagesAbstract
   }
 
 
-  // Suppression des anciennes méthodes de sécurité (validateApiKey, validateSessionToken, etc.)
+  // Suppression des anciennes méthodes de sécurité (validateMcpKey, validateSessionToken, etc.)
   // qui sont remplacées par le bloc de McpSecurity dans init().
   // Les méthodes de Chat et d'aide sont conservées.
 

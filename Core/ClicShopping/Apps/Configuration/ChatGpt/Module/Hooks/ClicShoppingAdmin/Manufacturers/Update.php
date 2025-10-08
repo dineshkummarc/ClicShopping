@@ -111,9 +111,9 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               $taxonomy = Semantics::createTaxonomy($manufacturers_description);
 
               if ($taxonomy != '') {
-                $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
+                $embedding_data .= $this->app->getDef('text_manufacturer_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
               }
-            }
+}
 
             if (!empty($seo_manufacturer_title)) {
               $embedding_data .= $this->app->getDef('text_manufacturer_seo_title') . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_title) . "\n";
@@ -135,7 +135,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               if (is_array($embeddedDocument->embedding)) {
                 $embeddings[] = $embeddedDocument->embedding;
               }
-            }
+}
 
             if (!empty($embeddings)) {
               $flattened_embedding = $embeddings[0];
@@ -164,10 +164,10 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding, $update_sql_data);
               }
-            }
+}
           }
-        }
+}
       }
-    }
+}
   }
 }

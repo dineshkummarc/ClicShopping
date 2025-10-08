@@ -1,2 +1,0 @@
-cfg_mcp_server_port_title = Port du serveur MCP
-cfg_mcp_server_port_description = Port utilisé pour se connecter au serveur MCP

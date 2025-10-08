@@ -125,9 +125,9 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
                   $taxonomy = Semantics::createTaxonomy($page_manager_description);
 
                   if ($taxonomy != '') {
-                    $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
+                    $embedding_data .= $this->app->getDef('text_page_manager_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
                   }
-                }
+}
 
                 $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
@@ -137,7 +137,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
                   if (is_array($embeddedDocument->embedding)) {
                     $embeddings[] = $embeddedDocument->embedding;
                   }
-                }
+}
 
                 if (!empty($embeddings)) {
                   $flattened_embedding = $embeddings[0];
@@ -166,12 +166,12 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
                     $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding, $update_sql_data);
                   }
-                }
+}
               }
-            }
+}
           }
-        }
+}
       }
-    }
+}
   }
 }

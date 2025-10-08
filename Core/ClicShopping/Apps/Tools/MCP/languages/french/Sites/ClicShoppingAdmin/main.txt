@@ -28,6 +28,58 @@ dialog_uninstall_body = Souhaitez-vous installer cette App ?
 dialog_uninstall_title = Désinstaller le module?
 dialog_uninstall_body = Etes vous sur de désinstaller ce module?
 
+text_server_configuration = Configuration Serveur
+text_heading_comment = Commentaire
+text_info_warning = Vous devez sauvegarder votre API avant de pouvoir ajouter d'autres information
+text_info_message = Vous pouvez créer ci-dessous une liste d'adresse IP permises. Votre adresse actuelle est {{ip_address}}
+
+table_heading_mcp_id = Id
+table_heading_mcp_username = Nom utilsateur
+table_heading_mcp_key_text = Clef
+table_heading_mcp_status = Statut
+table_heading_mcp_date_added = Date ajout
+table_heading_mcp_date_modified = Date modifée
+table_heading_action = Action
+
+tab_general = Général
+tab_ip_address = Adresse IP
+tab_session = Session
+
+text_mcp_username = Nom utilisateur
+text_mcp_key = Clef Api
+text_add_ip = Ajouter IP
+text_add = Ajouter IP
+text_ip = Adresse IP
+text_action = Action
+text_token = Token
+text_date_added = Date ajout
+text_date_modified = Date modifiée
+text_mcp_generate_key = Générer une clef
+text_comment = Commentaire
+text_server_host = Hôte serveur
+text_server_port = Port serveur
+text_ssl_enabled = Activé SSL
+text_data_permissions = Permissions données
+text_status = Statut
+text_description = Description
+text_select_data = Sélectionner les données
+text_select_data_desc = Sélectionner les données de la base de données
+text_update_data = Mettre à jour les données
+text_update_data_desc = Mettre à jour les données de la base de données
+text_create_data = Créer les données
+text_create_data_desc = Créer les données de la base de données
+text_delete_data = Supprimer les données
+text_delete_data_desc = Supprimer les données de la base de données
+text_create_db = Créer une table dans la base de données
+text_create_db_desc = Créer une table dans la base de données
+
+text_monitoring_alerts = Alertes de Surveillance
+text_alert_threshold = Seuil d'Alerte
+text_latency_threshold = Seuil de Latence
+text_downtime_threshold = Seuil de Temps d'Arrêt
+text_data_retention = Conservation des données (jours)
+text_alert_notification = Notification d'Alerte
+
 alert_module_install_success = Le module a été installé.
 alert_module_uninstall_success = Le module a été désinstallé.
 alert_cfg_saved_success = les paramètres de configuration ont été mises à jour.

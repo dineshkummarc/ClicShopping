@@ -1,3 +1,0 @@
-cfg_mcp_alert_thresholds_title = Alert thresholds in the MCP interface
-cfg_mcp_alert_thresholds_description = Purpose of the alert thresholds, the limit beyond which an alert will be triggered
-cfg_chatgpt_error_alert_threshold = Error threshold at which an alert will be sent or considered critical

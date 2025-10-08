@@ -23,6 +23,67 @@ button_mcp_data = MCP
 button_process =  Launch the migration
 button_continue = Continue
 
+ble_heading_mcp_id = Id
+table_heading_mcp_username = Username
+table_heading_mcp_key_text = Key
+table_heading_mcp_status = Status
+table_heading_mcp_date_added = Date Added
+table_heading_mcp_date_modified = Date Modified
+table_heading_action = Action
+
+tab_general = General
+tab_ip_address = IP Address
+tab_session = Session
+
+text_server_configuration = Configuration Serveur
+text_heading_comment = Commentaire
+text_info_message = Below you can create a list of IP's allowed to access the API. Your current IP is {{ip_address}}
+text_info_warning = You must save your Api before to add some others elements
+text_mcp_username = Username
+text_mcp_key = API Key
+text_add_ip = Add IP
+text_add = Add IP
+text_ip = IP Address
+text_action = Action
+text_token = Token
+text_date_added = Date Added
+text_date_modified = Date Modified
+text_mcp_generate_key = Generate Key
+text_comment = Comment
+text_server_host = Server Host
+text_server_port = Server Port
+text_ssl_enabled = SSL Enabled
+text_data_permissions = Data Permissions
+text_status = Status
+text_description = Description
+text_select_data = Select Data
+text_select_data_desc = Select data from the database
+text_update_data = Update Data
+text_update_data_desc = Update data in the database
+text_create_data = Create Data
+text_create_data_desc = Create data in the database
+text_delete_data = Delete Data
+text_delete_data_desc = Delete data from the database
+text_create_db = Create Table in Database
+text_create_db_desc = Create a table in the database
+
+text_monitoring_alerts = Monitoring Alerts
+text_alert_threshold = Alert Threshold
+text_latency_threshold = Latency Threshold
+text_downtime_threshold = Downtime Threshold
+text_data_retention = Data Retention (days)
+text_alert_notification = Alert Notification
+
+
+table_heading_mcp_id = Id
+table_heading_mcp_username = Username
+table_heading_mcp_key_text = Key
+table_heading_mcp_status = Status
+table_heading_mcp_date_added = Date Added
+table_heading_mcp_date_modified = Date Modified
+table_heading_action = Action
+
+
 dialog_uninstall_title = Uninstall
 dialog_uninstall_body = Do you want to install this App ?
 dialog_uninstall_title = Uninstall Module?

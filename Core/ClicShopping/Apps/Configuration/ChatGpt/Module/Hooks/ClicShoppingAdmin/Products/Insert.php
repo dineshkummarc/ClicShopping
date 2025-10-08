@@ -152,7 +152,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
-            }
+}
             //-------------------
             // Summary description
             //-------------------
@@ -170,7 +170,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
-            }
+}
             ////-------------------
             // Seo Title
             //-------------------
@@ -188,7 +188,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
-            }
+}
             //-------------------
             // Seo description
             //-------------------
@@ -204,7 +204,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
-            }
+}
             //-------------------
             // Seo keywords
             //-------------------
@@ -222,7 +222,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
-            }
+}
             //-------------------
             // Seo tag
             //-------------------
@@ -240,12 +240,11 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
-            }
+}
 
             //********************
             // add embedding
             //********************
-
 
               $embedding_data = $this->app->getDef('text_product_name') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_name) . "\n";
 
@@ -328,10 +327,9 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                 $taxonomy = Semantics::createTaxonomy($products_description);
 
                 if ($taxonomy != '') {
-                  $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
+                  $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
                 }
-              }
-
+}
 
               $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
               $embeddings = [];
@@ -340,7 +338,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                 if (is_array($embeddedDocument->embedding)) {
                   $embeddings[] = $embeddedDocument->embedding;
                 }
-              }
+}
 
               if (!empty($embeddings)) {
                 $flattened_embedding = $embeddings[0];
@@ -364,8 +362,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('products_embedding', $sql_data_array_embedding, $update_sql_data);
               }
-            
-          }
+}
         }
 //-------------------
 //image
@@ -435,9 +432,9 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
             $this->app->db->save('products_images', $sql_array);
           }
-        }
+}
 */	
       }
-    }
+}
   }
 }

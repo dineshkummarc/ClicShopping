@@ -32,6 +32,8 @@ text_products_order_history_status = [Order history status]
 text_products_order_history_admin = [Order history administrator]
 text_products_order_history_tracking = [Order tracking]
 text_products_order_history_date = [Order history date]
+text_category_taxonomy = [Taxonomy of the order]
+
 
 text_orders_total = [Order total]
 text_orders_total_title = [Order total title]

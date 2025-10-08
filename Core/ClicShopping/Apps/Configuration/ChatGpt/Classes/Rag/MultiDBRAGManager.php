@@ -84,6 +84,25 @@ class MultiDBRAGManager
       $parameters['model'] = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
     }
 
+
+
+
+
+
+
+
+
+
+
+ //   Gpt::getOpenAiGpt($parameters);
+    if (strpos($parameters['model'], 'gpt-5-') === 0) {
+      $question = $context . "\n\nQuestion : " . $prompt;
+      $maxtoken = defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN') ? (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN : 2048;
+      $temperature = defined('CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE') ? (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE : 0.7;
+      $engine = defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : 'gpt-4-turbo';
+      $max = defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_RESPONSE') ? (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_RESPONSE : 1;
+    }
+
     if (strpos($parameters['model'], 'gpt') === 0) {
       Gpt::getOpenAIChat($question, $maxtoken, $temperature, $engine, $max);
     } elseif (strpos($parameters['model'], 'anth') === 0) {
@@ -93,6 +112,17 @@ class MultiDBRAGManager
     } else {
       Gpt::getOllamaChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL);
     }
+
+
+
+
+
+
+
+
+
+
+
 
 
     // Initialize vector stores
@@ -383,6 +413,12 @@ class MultiDBRAGManager
         ];
 
 
+
+
+
+        $chat = Gpt::getOpenAiGpt($array_parameters);
+
+
         if (strpos($array_parameters['model'], 'gpt') === 0) {
           $chat = Gpt::getOpenAiGpt($array_parameters['model'], $array_parameters['max_tokens']);
         } elseif (strpos($array_parameters['model'], 'anth') === 0) {
@@ -392,6 +428,15 @@ class MultiDBRAGManager
         } else {
           $chat = Gpt::getOllamaChat($array_parameters['model']);
         }
+
+
+
+
+
+
+
+
+
 
         $reranker = new LLMReranker($chat, $limit);
 
@@ -574,7 +619,7 @@ class MultiDBRAGManager
           'type'    => 'error',
           'message' => $results['message']
         ];
-	
+
 	      return $result;
       }
 

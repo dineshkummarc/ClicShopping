@@ -50,7 +50,7 @@ if ($CLICSHOPPING_MessageStack->exists('main')) {
         if ($CLICSHOPPING_MCP->getConfigModuleInfo($m, 'is_installed') === true) {
           echo '<li class="nav-link active" data-module="' . $m . '"><a href="' . $CLICSHOPPING_MCP->link('Configure&module=' . $m) . '">' . $CLICSHOPPING_MCP->getConfigModuleInfo($m, 'short_title') . '</a></li>';
         }
-      }
+}
       ?>
     </li>
     <li class="nav-item dropdown">
@@ -62,7 +62,7 @@ if ($CLICSHOPPING_MessageStack->exists('main')) {
           if ($CLICSHOPPING_MCP->getConfigModuleInfo($m, 'is_installed') === false) {
             echo '<a class="dropdown-item" href="' . $CLICSHOPPING_MCP->link('Configure&module=' . $m) . '">' . $CLICSHOPPING_MCP->getConfigModuleInfo($m, 'title') . '</a>';
           }
-        }
+}
         ?>
       </div>
     </li>
@@ -126,7 +126,7 @@ if ($CLICSHOPPING_MessageStack->exists('main')) {
       </div>
       <?php
     }
-  } else {
+} else {
     ?>
     <div class="col-md-12 mainTitle">
       <strong><?php echo $CLICSHOPPING_MCP->getConfigModuleInfo($current_module, 'title'); ?></strong></div>

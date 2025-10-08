@@ -61,7 +61,6 @@ class SeoChatGpt implements \ClicShopping\OM\Modules\HooksInterface
       $question_summary_description = $this->app->getDef('text_seo_page_summary_description_question', ['brand_name' => $manufacturer_name]);
       $translate_language = $this->app->getDef('text_seo_page_translate_language', ['brand_name' => $manufacturer_name]);
 
-
       $url = Gpt::getAjaxUrl(false);
       $urlMultilanguage = Gpt::getAjaxSeoMultilanguageUrl();
 

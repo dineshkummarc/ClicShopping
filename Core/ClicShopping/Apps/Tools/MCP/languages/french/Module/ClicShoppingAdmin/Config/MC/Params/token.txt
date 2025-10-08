@@ -1,3 +1,0 @@
-cfg_mcp_token_title = Token du serveur
-cfg_mcp_token_description = Veuillez insérer le token d’accès pour se connecter au serveur MCP. <br>
-nous vous conseillons de mettre un token long, complexe, au minimum 15 lettres, chiffres et caractéres spéciaux

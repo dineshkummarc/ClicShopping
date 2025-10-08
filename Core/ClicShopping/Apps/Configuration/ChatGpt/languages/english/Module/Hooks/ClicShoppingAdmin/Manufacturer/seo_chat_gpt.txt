@@ -15,7 +15,7 @@ text_options_gpt_seo_title = Authorize the AI to generate the SEO title of this 
 text_options_gpt_seo_description = Authorize the AI to generate the SEO description of this brand ?
 text_options_gpt_seo_keywords = Authorize the AI to generate the SEO keywords of this brand ?
 text_options_gpt_image = Authorize the AI to generate an image of this brand ?
-
+text_category_taxonomy = [Taxonomy of the category]
 
 title_help_seo = Help
 text_help_seo = Please note that if you use AI to generate your content, information may take longer to save due to processing. Please wait.

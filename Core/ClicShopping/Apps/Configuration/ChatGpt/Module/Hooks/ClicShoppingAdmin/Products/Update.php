@@ -214,9 +214,9 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               $taxonomy = Semantics::createTaxonomy($products_description);
 
               if ($taxonomy != '') {
-                $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
+                $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
               }
-            }
+}
 	    
             $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
             $embeddings = [];
@@ -225,7 +225,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               if (is_array($embeddedDocument->embedding)) {
                 $embeddings[] = $embeddedDocument->embedding;
               }
-            }
+}
 
             if (!empty($embeddings)) {
               $flattened_embedding = $embeddings[0];
@@ -251,10 +251,10 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
                ];
                 $this->app->db->save('products_embedding', $sql_data_array_embedding, $update_sql_data);
               }
-            }
+}
           }
-        }
+}
       }
-    }
+}
   }
 }

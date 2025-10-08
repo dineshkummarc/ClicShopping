@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
@@ -18,7 +19,7 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\InputValidator;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Statistics;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\statistics;
 
 use DateTimeImmutable;
 use LLPhant\Chat\MistralAIChat;
@@ -32,6 +33,7 @@ use LLPhant\Chat\AnthropicChat;
 use function defined;
 use function is_null;
 
+#[AllowDynamicProperties]
 /**
 * Gpt
 *
@@ -700,7 +702,7 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
    if (modelGpt.startsWith("gpt-5-")) {
      payload.max_output_tokens = max_tokens_gpt;
      payload.reasoning_effort = reasoning_effort_gpt;
-     payload.verbosity = verbosity_gpt;
+     payload.verbosity = verbosity_gpt;     
    } else {
      payload.temperature = temperatureGpt;
      payload.top_p = top_p_gpt;

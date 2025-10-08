@@ -108,7 +108,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('manufacturers_info', $sql_data_array, $update_sql_data);
               }
-            }
+}
 
             ////-------------------
             // Seo Title
@@ -126,7 +126,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('manufacturers_info', $sql_data_array, $update_sql_data);
               }
-            }
+}
             //-------------------
             // Seo description
             //-------------------
@@ -143,7 +143,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('manufacturers_info', $sql_data_array, $update_sql_data);
               }
-            }
+}
             //-------------------
             // Seo keywords
             //-------------------
@@ -160,7 +160,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('manufacturers_info', $sql_data_array, $update_sql_data);
               }
-            }
+}
 
             //********************
             // add embedding
@@ -175,9 +175,9 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                 $taxonomy = Semantics::createTaxonomy($manufacturers_description);
 
                 if ($taxonomy != '') {
-                  $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
+                  $embedding_data .= $this->app->getDef('text_manufacturer_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
                 }
-              }
+}
 
               if (!empty($seo_manufacturer_title)) {
                 $embedding_data .= $this->app->getDef('text_manufacturer_seo_title') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_title) . "\n";
@@ -203,7 +203,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                 if (is_array($embeddedDocument->embedding)) {
                   $embeddings[] = $embeddedDocument->embedding;
                 }
-              }
+}
 
               if (!empty($embeddings)) {
                 $flattened_embedding = $embeddings[0];
@@ -230,9 +230,9 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('manufacturers_embedding', $sql_data_array);
               }
-            }
+}
           }
-        }
+}
       }
 //-------------------
 //image
@@ -252,8 +252,8 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
           $this->app->db->save('manufacturers', $sql_data_array, $update_sql_data);
         }
-      }
+}
 */
     }
-  }
+}
 }
