@@ -94,36 +94,7 @@ class MultiDBRAGManager
 
 
 
- //   Gpt::getOpenAiGpt($parameters);
-    if (strpos($parameters['model'], 'gpt-5-') === 0) {
-      $question = $context . "\n\nQuestion : " . $prompt;
-      $maxtoken = defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN') ? (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN : 2048;
-      $temperature = defined('CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE') ? (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE : 0.7;
-      $engine = defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : 'gpt-4-turbo';
-      $max = defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_RESPONSE') ? (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_RESPONSE : 1;
-    }
-
-    if (strpos($parameters['model'], 'gpt') === 0) {
-      Gpt::getOpenAIChat($question, $maxtoken, $temperature, $engine, $max);
-    } elseif (strpos($parameters['model'], 'anth') === 0) {
-      Gpt::getAnthropicChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL, $maxtoken);
-    } elseif (strpos($parameters['model'], 'mistral') === 0) {
-      Gpt::getMistralChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL, $maxtoken);
-    } else {
-      Gpt::getOllamaChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL);
-    }
-
-
-
-
-
-
-
-
-
-
-
-
+    Gpt::getOpenAiGpt($parameters);
 
     // Initialize vector stores
     $this->initializeVectorStores($tableNames);
@@ -412,32 +383,7 @@ class MultiDBRAGManager
           'max_tokens' => 128
         ];
 
-
-
-
-
         $chat = Gpt::getOpenAiGpt($array_parameters);
-
-
-        if (strpos($array_parameters['model'], 'gpt') === 0) {
-          $chat = Gpt::getOpenAiGpt($array_parameters['model'], $array_parameters['max_tokens']);
-        } elseif (strpos($array_parameters['model'], 'anth') === 0) {
-          $chat = Gpt::getAnthropicChat($array_parameters['model'], $array_parameters['max_tokens']);
-        } elseif (strpos($array_parameters['model'], 'mistral') === 0) {
-          $chat = Gpt::getMistralChat($array_parameters['model'], $array_parameters['max_tokens']);
-        } else {
-          $chat = Gpt::getOllamaChat($array_parameters['model']);
-        }
-
-
-
-
-
-
-
-
-
-
         $reranker = new LLMReranker($chat, $limit);
 
         $allResults = $reranker->transformDocuments([$query], $allResults);

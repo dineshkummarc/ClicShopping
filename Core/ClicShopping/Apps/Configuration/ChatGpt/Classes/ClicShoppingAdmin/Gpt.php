@@ -202,31 +202,44 @@ class Gpt {
         $max = (float)CLICSHOPPING_APP_CHATGPT_CH_MAX_RESPONSE;
       }
 
-      // Paramètres communs
-      $parameters = [
-        'user' => AdministratorAdmin::getUserAdmin(),
-        'messages' => [
-          'role' => 'system',
-          'content' => 'You are an e-commerce expert in marketing.'
-        ]
-      ];
+
 
 // Paramètres selon modèle
       if (strpos($engine, 'gpt-5-') === 0) {
         // Modèles GPT-5 : paramètres supportés uniquement
-        $parameters['max_completion_tokens'] = $maxtoken; // nouveau nom
-        $parameters['reasoning_effort'] = CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT;   //  minimal, low, medium, high
-        $parameters['verbosity'] = CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY; // low, medium (par défaut), high
-        // no temperature, top_p, frequency_penalty, presence_penalty, n
+        $parameters = [
+          'max_completion_tokens' => $maxtoken,
+          'reasoning_effort' => CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT,
+          'verbosity' => CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY,
+          'messages' => [
+            [
+              'role' => 'user',
+              'content' => $question
+            ]
+          ],
+          'user' => AdministratorAdmin::getUserAdmin()
+        ];
       } else {
-        // Autres modèles : paramètres classiques
-        $parameters['temperature'] = (float)$temperature;
-        $parameters['top_p'] = (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P;
-        $parameters['frequency_penalty'] = (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY;
-        $parameters['presence_penalty'] = (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY;
-        $parameters['max_tokens'] = $maxtoken; // ancien nom
-        $parameters['stop'] = $top;
-        $parameters['n'] = $max;
+        $parameters = [
+          'temperature' => $temperature,
+          'top_p' => (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P,
+          'frequency_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY,
+          'presence_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY,
+          'max_tokens' => $maxtoken,
+          'stop' => $top,
+          'n' => $max,
+          'user' => AdministratorAdmin::getUserAdmin(),
+          'messages' => [
+            [
+              'role' => 'system',
+              'content' => 'You are an e-commerce expert in marketing.'
+            ],
+            [
+              'role' => 'user',
+              'content' => $question
+            ]
+          ]
+        ];
       }
 
       if (!empty(CLICSHOPPING_APP_CHATGPT_CH_ORGANIZATION)) {
@@ -419,7 +432,7 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
     $prompt = HTMLOverrideCommon::removeInvisibleCharacters($prompt);
 
     // Get the chat instance
-    $chat = self::getChat($question, $maxtoken, $temperature, $engine, $max);
+    $chat = self::getChat($prompt, $maxtoken, $temperature, $engine, $max);
 
     // Generate text using the chat instance
     try {
