@@ -9,6 +9,7 @@
  */
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
@@ -42,6 +43,7 @@ use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
  *
  * @package ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag
  */
+#[AllowDynamicProperties]
 class MultiDBRAGManager
 {
   public mixed $app;
@@ -83,16 +85,6 @@ class MultiDBRAGManager
     } elseif (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL')) {
       $parameters['model'] = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
     }
-
-
-
-
-
-
-
-
-
-
 
     Gpt::getOpenAiGpt($parameters);
 
@@ -565,8 +557,6 @@ class MultiDBRAGManager
           'type'    => 'error',
           'message' => $results['message']
         ];
-
-	      return $result;
       }
 
         $matchedCategories = $analyticsAgent->getAnalyticsCategories($query);

@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
@@ -44,6 +45,7 @@ use function array_slice;
  * This class manages a cache system to store and retrieve prompts efficiently
  *
  */
+#[AllowDynamicProperties]
 class Cache
 {
   private array $promptCache = [];

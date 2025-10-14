@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
 use LLPhant\Chat\OpenAIChat;
 use LLPhant\Embeddings\DataReader\FileDataReader;
@@ -28,6 +29,7 @@ use LLPhant\VoyageAIConfig;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\InputValidator;
 
+#[AllowDynamicProperties]
 class NewVector
 {
   /**

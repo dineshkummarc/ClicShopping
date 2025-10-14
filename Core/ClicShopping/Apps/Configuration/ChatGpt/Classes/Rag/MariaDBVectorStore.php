@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
+use AllowDynamicProperties;
 use Doctrine\DBAL\ParameterType;
 use LLPhant\Embeddings\Document;
 use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
@@ -39,6 +40,8 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
  *
  * @package ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag
  */
+ 
+#[AllowDynamicProperties]
 class MariaDBVectorStore extends VectorStoreBase
 {
   private Connection $connection;

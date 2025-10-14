@@ -11,8 +11,13 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin;
 ;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
 
+/**
+ * Manages caching of translations to minimize redundant calls to the translation API.
+ */
+#[AllowDynamicProperties]
 class TranslationCache
 {
   /**

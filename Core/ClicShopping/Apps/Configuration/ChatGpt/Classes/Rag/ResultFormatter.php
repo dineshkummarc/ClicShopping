@@ -10,11 +10,12 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\LlmGuardrails;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\LlmGuardrails;
 
 /**
  * ResultFormatter Class
@@ -22,6 +23,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\LlmGuardra
  * This class handles the formatting of analysis results for display in the user interface.
  * It supports different types of results, such as analytics, semantic search, and unknown types.
  */
+#[AllowDynamicProperties]
 class ResultFormatter
 {
   /**
@@ -74,7 +76,7 @@ class ResultFormatter
       if (!is_numeric($key)) {
         $headers .= "<th>" . htmlspecialchars($key) . "</th>";
       }
-    }
+}
     $headers .= "</tr></thead>";
     return $headers;
   }
@@ -91,7 +93,7 @@ class ResultFormatter
           $value = HTMLOverrideCommon::removeInvisibleCharacters($value);
           $rows .= "<td>" . htmlspecialchars(Hash::displayDecryptedDataText($value)) . "</td>";
         }
-      }
+}
       $rows .= "</tr>";
     }
     $rows .= "</tbody>";

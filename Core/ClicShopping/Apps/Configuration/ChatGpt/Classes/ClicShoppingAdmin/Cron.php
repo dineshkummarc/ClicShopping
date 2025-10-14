@@ -9,6 +9,7 @@
  */
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
@@ -16,6 +17,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 
+#[AllowDynamicProperties]
 class Cron {
   private mixed $app;
   private mixed $lang;

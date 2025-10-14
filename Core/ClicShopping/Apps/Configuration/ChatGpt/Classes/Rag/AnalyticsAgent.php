@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
@@ -28,6 +29,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
  * Manages table relationships, schema validation, and query optimization
  * Implements comprehensive security measures
  */
+#[AllowDynamicProperties]
 class AnalyticsAgent
 {
   private mixed $chat;

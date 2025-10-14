@@ -10,10 +10,13 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
+use AllowDynamicProperties;
+
+use ClicShopping\OM\Registry;
+use ClicShopping\OM\CLICSHOPPING;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\DBAL\Types\Type;
-use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\VectorType;
 
 /**
@@ -34,6 +37,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\VectorType;
 *
  * @package ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag
 */
+#[AllowDynamicProperties]
 class DoctrineOrm
 {
   /**

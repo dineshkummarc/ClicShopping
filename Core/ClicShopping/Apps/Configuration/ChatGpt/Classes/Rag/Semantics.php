@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
@@ -21,6 +22,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Translatio
  * This class is responsible for semantic analysis and classification of queries.
  * It uses the OpenAI API to translate and classify queries, and also logs security events.
  */
+#[AllowDynamicProperties]
 class Semantics
 {
   private static ?SecurityLogger $logger = null;

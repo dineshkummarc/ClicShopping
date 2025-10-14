@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
+use AllowDynamicProperties;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
@@ -35,6 +36,7 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
  * @package ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag
  * @extends Type
  */
+#[AllowDynamicProperties]
 class VectorType extends Type
 {
   /**
