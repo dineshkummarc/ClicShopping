@@ -14,6 +14,7 @@ use ClicShopping\OM\ObjectInfo;
 use ClicShopping\OM\Registry;
 
 $CLICSHOPPING_Langues = Registry::get('Langues');
+$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 
 $id = HTML::sanitize($_GET['lID']);
 

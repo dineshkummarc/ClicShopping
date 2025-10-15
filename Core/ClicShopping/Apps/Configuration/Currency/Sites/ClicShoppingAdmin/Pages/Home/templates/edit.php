@@ -14,6 +14,7 @@ use ClicShopping\OM\Registry;
 
 $CLICSHOPPING_Currency = Registry::get('Currency');
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
+$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 
 $Qcurrency = $CLICSHOPPING_Currency->db->prepare('select currencies_id,
                                                           title,

@@ -11,6 +11,7 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag;
 
 use AllowDynamicProperties;
+use ClicShopping\OM\CLICSHOPPING;
 use Doctrine\DBAL\ParameterType;
 use LLPhant\Embeddings\Document;
 use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
