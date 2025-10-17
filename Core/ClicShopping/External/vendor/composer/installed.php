@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '23fbbb05f96817c81c6b8580eaeaa1deb7c510d0',
+        'reference' => '6f460bdaeafc8f340d125374ad3d47e5f7d9fe73',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '23fbbb05f96817c81c6b8580eaeaa1deb7c510d0',
+            'reference' => '6f460bdaeafc8f340d125374ad3d47e5f7d9fe73',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -119,9 +119,9 @@
             'dev_requirement' => false,
         ),
         'doctrine/persistence' => array(
-            'pretty_version' => '4.1.0',
-            'version' => '4.1.0.0',
-            'reference' => 'dcbdfe4b211ae09478e192289cae7ab0987b29a4',
+            'pretty_version' => '4.1.1',
+            'version' => '4.1.1.0',
+            'reference' => 'b9c49ad3558bb77ef973f4e173f2e9c2eca9be09',
             'type' => 'library',
             'install_path' => __DIR__ . '/../doctrine/persistence',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => 'f34f054015aff54acc108a8517308dc67b572841',
+            'reference' => 'b6e429a7bb297ab3b78ea05021ccd3fe4568dd5e',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
