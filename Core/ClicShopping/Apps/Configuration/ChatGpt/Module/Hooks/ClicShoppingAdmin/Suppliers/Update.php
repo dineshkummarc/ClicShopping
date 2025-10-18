@@ -102,6 +102,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         //********************
         if (\defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
           $embedding_data = $this->app->getDef('text_supplier_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($supplier_name) . "\n";
+          $embedding_data .= $this->app->getDef('text_supplier_id') . ' : ' . $suppliers_id . "\n";
 
           if (!empty($date_added)) {
             $embedding_data .= $this->app->getDef('text_supplier_date_added', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";
@@ -135,7 +136,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             if (is_array($embeddedDocument->embedding)) {
               $embeddings[] = $embeddedDocument->embedding;
             }
-          }
+}
 
           if (!empty($embeddings)) {
             $flattened_embedding = $embeddings[0];
@@ -156,8 +157,8 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
             $this->app->db->save('suppliers_embedding', $sql_data_array_embedding, $sql_data_array);
           }
-        }
+}
       }
-    }
+}
   }
 }

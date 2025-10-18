@@ -1,4 +1,5 @@
 text_reviews = [Avis client sur le {{products_name}}]
+text_reviews_id = [ID de l'avis {{reviews_id}}]
 text_reviews_rating = [Note de l'avis {{products_name}}]
 text_reviews_date_added = [Date de l'avis {{products_name}}]
 text_reviews_status = [Statut de l'avis {{products_name}}]

@@ -92,6 +92,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
         $QpageManager->execute();
 
         $page_manager_array = $QpageManager->fetchAll();
+        $page_manager_id = $QpageManager->valeuInt('pages_id');
 
         if (is_array($page_manager_array) ) {
           foreach ($page_manager_array as $item) {
@@ -105,23 +106,26 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
               //********************
               // add embedding
               //********************
+
               if (\defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True'  && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
                 $embedding_data = "\n" . $this->app->getDef('text_page_manager_name', ['page_title' => $page_manager_name]) . "\n";
 
+                $embedding_data .= "\n" . $this->app->getDef('text_page_manager_id', ['page_id' => $page_manager_id]) . "\n";
+
                 if (!empty($seo_page_manager_title)) {
-                  $embedding_data .= $this->app->getDef('text_page_manager_seo_title', ['page_title' => $page_manager_name]) . ' : ' . $seo_page_manager_title . "\n";
+                  $embedding_data .= $this->app->getDef('text_page_manager_seo_title', ['page_seo_title' => $page_manager_name]) . ' : ' . $seo_page_manager_title . "\n";
                 }
 
                 if (!empty($seo_page_manager_description)) {
-                  $embedding_data .= $this->app->getDef('text_page_manager_seo_description', ['page_title' => $page_manager_name]) . ' : ' . $seo_page_manager_description . "\n";
+                  $embedding_data .= $this->app->getDef('text_page_manager_seo_description', ['page_seo_description' => $page_manager_name]) . ' : ' . $seo_page_manager_description . "\n";
                 }
 
                 if (!empty($seo_page_manager_keywords)) {
-                  $embedding_data .= $this->app->getDef('text_page_manager_seo_keywords', ['page_title' => $page_manager_name]) . ' : ' . $seo_page_manager_keywords . "\n";
+                  $embedding_data .= $this->app->getDef('text_page_manager_seo_keywords', ['page_seo_keywords' => $page_manager_name]) . ' : ' . $seo_page_manager_keywords . "\n";
                 }
 
                 if (!empty($page_manager_description)) {
-                  $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_title' => $page_manager_name]) . ' : ' . $page_manager_description . "\n";
+                  $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_description' => $page_manager_name]) . ' : ' . $page_manager_description . "\n";
                   $taxonomy = Semantics::createTaxonomy($page_manager_description);
 
                   if ($taxonomy != '') {
@@ -166,12 +170,12 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
                     $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding, $update_sql_data);
                   }
-}
+                }
               }
-}
+            }
           }
-}
+        }
       }
-}
+    }
   }
 }

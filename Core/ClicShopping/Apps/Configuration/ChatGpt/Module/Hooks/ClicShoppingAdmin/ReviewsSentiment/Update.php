@@ -160,7 +160,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
         $this->app->db->save('reviews_sentiment_description ', $sql_data_array, $insert_sql_data);
       }
-    } else {
+} else {
 //insert
       $sql_data_array = [
         'reviews_id' => (int)$id,
@@ -190,7 +190,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
         $this->app->db->save('reviews_sentiment_description ', $sql_data_array);
       }
-    }
+}
     //
     // embedding
     //
@@ -236,8 +236,10 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       $QreviewSentiment->execute();
 
       $review_sentiment_array = $QreviewSentiment->fetchAll();
+      $review_sentiment_id = $QreviewSentiment->valueInt('id');
 
       if (is_array($review_sentiment_array)) {
+
         foreach ($review_sentiment_array as $item) {
           $products_id = $item['products_id'];
           $language_id = $item['language_id'];
@@ -252,6 +254,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
           $vote_sentiment = isset($item['vote_sentiment']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['vote_sentiment']) : '';
 
           $embedding_data = "\n" . $this->app->getDef('text_review_sentiment_semantic_title', ['products_name' => $products_name]) . "\n";
+          $embedding_data .= $this->app->getDef('text_sentiment_semantic_review_sentiment_id', ['review_sentiment_id' => $review_sentiment_id]) . "\n";
           $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_status', ['products_name' => $products_name]) . ' : ' . $sentiment_status . "\n";
           $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_approved', ['products_name' => $products_name]) . ' : ' . $sentiment_approved . "\n";
           $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_date_added', ['products_name' => $products_name]) . ' : ' . $date_added . "\n";
@@ -303,5 +306,4 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     }
   }
 }
-
 

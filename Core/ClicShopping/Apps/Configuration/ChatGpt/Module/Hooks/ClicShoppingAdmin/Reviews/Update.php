@@ -94,6 +94,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         $Qreviews->execute();
 
         $reviews_array = $Qreviews->fetchAll();
+        $reviews_id = $Qreviews->valueInt('reviews_id');
 
         foreach ($reviews_array as $item) {
           $products_id = $item['products_id'];
@@ -118,6 +119,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
           // add embedding
           //********************
           $embedding_data = $this->app->getDef('text_reviews', ['products_name' => $products_name]) . "\n";
+          $embedding_data .= $this->app->getDef('text_reviews_id', ['reviews_id' => $reviews_id]) . "\n";
 
           if (!empty($products_id)) {
             $embedding_data .= $this->app->getDef('text_reviews_product_name', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_name) . "\n";
@@ -158,7 +160,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             if (is_array($embeddedDocument->embedding)) {
               $embeddings[] = $embeddedDocument->embedding;
             }
-          }
+}
 
           if (!empty($embeddings)) {
             $flattened_embedding = $embeddings[0];
@@ -184,9 +186,9 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               ];
               $this->app->db->save('reviews_embedding', $sql_data_array_embedding, $update_sql_data);
             }
-          }
+}
         }
-      }
+}
     }
-  }
+}
 }

@@ -380,9 +380,11 @@ class Semantics
   }
 
   /**
-   * Check if the text matches any geographic patterns that should be treated as semantic queries
-   * @param string $text
-   * @return bool
+   * Check if the text matches any geographic patterns that should be treated as semantic queries.
+   * This method uses regex patterns to identify location-based queries and context indicators.
+   *
+   * @param string $text The text to analyze.
+   * @return bool True if the query is geographic, false otherwise.
    */
   private static function isGeographicQuery(string $text): bool
   {
@@ -459,9 +461,11 @@ class Semantics
   }
 
   /**
-   * Check if the text has an analytical context
-   * @param string $text
-   * @return bool
+   * Check if the text contains analytical context indicators.
+   * These indicators suggest that the query is likely analytical in nature.
+   *
+   * @param string $text The text to analyze.
+   * @return bool True if analytical context is found, false otherwise.
    */
   private static function hasAnalyticalContext(string $text): bool
   {

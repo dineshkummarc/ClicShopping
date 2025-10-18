@@ -47,7 +47,7 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
                                                     from :table_gpt
                                                     where gpt_id = :gpt_id
                                                   ');
-  $QchatGpt->bindInt('gpt_id', $gpt_id);
+  $QchatGpt->bindInt(':gpt_id', $gpt_id);
   $QchatGpt->execute();
   ?>
   <div id="categoriesTabs" style="overflow: auto;">
@@ -90,3 +90,5 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
         </div>
       </div>
     </div>
+  </div>
+</div>

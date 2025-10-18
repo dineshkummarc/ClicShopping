@@ -456,7 +456,7 @@
 
     <div id="loginModal" tabindex="-1" role="document" aria-hidden="true" style="padding-top:10rem;">
       <div class="modal-dialog">
-        <div class="modal-content" style="background-color: transparent; border: none; align-items: center;">
+        <div class="modal-content" style="border: none; align-items: center;">
           <div class="modal-header">
             <h4><?php echo CLICSHOPPING::getDef('heading_title_email_verification'); ?></h4>
           </div>
@@ -493,6 +493,7 @@
           </div>
         </div>
       </div>
+      <div class="py-3"></div>
     </div>
     </form>
     <?php
@@ -500,28 +501,28 @@
     echo HTML::form('login', CLICSHOPPING::link('login.php', 'action=' . $form_action), 'post', 'id="login"', ['tokenize' => true]);
     ?>
       <div id="loginModal" tabindex="-1" role="document" aria-hidden="true" style="padding-top:10rem;">
-        <div class="modal-dialog">
-          <div class="modal-content" style="background-color: transparent; border: none; align-items: center;">
-            <div class="modal-header">
-              <h1 style="color:#233C7A; text-align: center;"><?php echo CLICSHOPPING::getDef('heading_title'); ?></h1>
-            </div>
-            <div class="modal-body" style="width:20rem; padding-top:3rem;">
-              <div class="col-md-12 center-block">
-                <div class="input-group">
-                  <span class="input-group-addon" id="basic-addon1"></span>
-                  <?php echo HTML::inputField('username', '', 'placeholder="' . CLICSHOPPING::getDef('text_username') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
-                </div>
-                <div class="mt-1"></div>
-                <div class="input-group">
-                  <span class="input-group-addon" id="basic-addon1"></span>
-                  <?php echo HTML::passwordField('password', '', 'placeholder="' . CLICSHOPPING::getDef('text_password') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
-                </div>
-                <div class="mt-1"></div>
-                <div class="text-end">
-                  <label for="buttonText"><?php echo HTML::button($button_text, null, null, 'primary'); ?></label>
-                </div>
-                <div class="mt-1"></div>
+      <div class="modal-dialog">
+        <div class="modal-content" style="background-color: transparent; border: none; align-items: center;">
+          <div class="modal-header">
+            <h1 style="color:#233C7A; text-align: center;"><?php echo CLICSHOPPING::getDef('heading_title'); ?></h1>
+          </div>
+          <div class="modal-body" style="width:20rem; padding-top:3rem;">
+            <div class="col-md-12 center-block">
+              <div class="input-group">
+                <span class="input-group-addon" id="basic-addon1"></span>
+                <?php echo HTML::inputField('username', '', 'placeholder="' . CLICSHOPPING::getDef('text_username') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
               </div>
+              <div class="mt-1"></div>
+              <div class="input-group">
+                <span class="input-group-addon" id="basic-addon1"></span>
+                <?php echo HTML::passwordField('password', '', 'placeholder="' . CLICSHOPPING::getDef('text_password') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
+              </div>
+              <div class="mt-1"></div>
+              <div class="text-end">
+                <label for="buttonText"><?php echo HTML::button($button_text, null, null, 'primary'); ?></label>
+              </div>
+              <div class="mt-1"></div>
+            </div>
 
               <div class="modal-footer">
                 <div class="col-md-12">
@@ -538,6 +539,7 @@
             </div>
           </div>
         </div>
+        <div class="py-3"></div>
       </div>
       </form>
     <?php
@@ -547,7 +549,10 @@
       <div class="modal-dialog">
         <div class="modal-content" style="background-color: transparent; border: none; align-items: center;">
           <div class="modal-header">
-            <h1 style="color:#233C7A; text-align: center;"><?php echo CLICSHOPPING::getDef('heading_title'); ?></h1>
+            <h1 style="color:#233C7A; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px;">
+              <img src="../images/logo_clicshopping.png" alt="ClicShopping" style="height: 40px; vertical-align: middle;">
+              <?php echo CLICSHOPPING::getDef('heading_title'); ?>
+
           </div>
           <?php echo HTML::form('login', CLICSHOPPING::link('login.php', 'action=' . $form_action)); ?>
           <div class="modal-body" style="width:20rem; padding-top:3rem;">
@@ -583,20 +588,21 @@
               </div>
               <div class="mt-1"></div>
             </div>
-            </div>
-            </form>
-            <div class="modal-footer">
-              <div class="col-md-12">
-                <div class="row">
+          </div>
+          </form>
+          <div class="modal-footer">
+            <div class="col-md-12">
+              <div class="row">
                   <div class="col-md-6">
-                    <label for="buttononlineCatalog"><a href="../index.php"><button class="btn text-start" data-bs-dismiss="modal" aria-hidden="true"><?php echo CLICSHOPPING::getDef('header_title_online_catalog'); ?></button></a></label>
-                  </div>
-                  <div class="col-md-6">
-                    <label for="buttonNewPassword"><a href="<?php echo CLICSHOPPING::link('login.php', 'action=password'); ?>"> <button class="btn text-end" data-bs-dismiss="modal" aria-hidden="true"><?php echo CLICSHOPPING::getDef('text_new_text_password'); ?></button></a></label>
-                  </div>
+                  <label for="buttononlineCatalog"><a href="../index.php"><button class="btn text-start" data-bs-dismiss="modal" aria-hidden="true"><?php echo CLICSHOPPING::getDef('header_title_online_catalog'); ?></button></a></label>
+                </div>
+                <div class="col-md-6 text-end">
+                  <label for="buttonNewPassword"><a href="<?php echo CLICSHOPPING::link('login.php', 'action=password'); ?>"> <button class="btn text-end" data-bs-dismiss="modal" aria-hidden="true"><?php echo CLICSHOPPING::getDef('text_new_text_password'); ?></button></a></label>
+                </div>
               </div>
             </div>
           </div>
+          <div class="py-3"></div>
         </div>
       </div>
     </div>
@@ -604,23 +610,23 @@
   } else {
     ?>
     <?php echo HTML::form('send_password', CLICSHOPPING::link('login.php', 'action=send_password')); ?>
-    <div id="loginModal" tabindex="-1" role="document" aria-hidden="true" style="padding-top:10rem;">
+    <div id="loginModal" tabindex="-1" role="document" aria-hidden="true" style="padding-left:10px; padding-right:10px">
       <div class="modal-dialog">
         <div class="modal-content" style="background-color: transparent; border: none; align-items: center;">
           <div class="modal-header">
             <h2 style="color:#233C7A;"><?php echo CLICSHOPPING::getDef('heading_title_sent_password'); ?></h2>
           </div>
           <div class="modal-body" style="width:30rem; padding-top:3rem;">
-            <div class="col-md-12 center-block">
+            <div class="col-md-11 text-center">
               <div class="text-danger"
                    style="font-size:12px; padding-bottom:10px;"><?php echo CLICSHOPPING::getDef('text_sent_password'); ?></div>
               <div class="input-group">
-                <span class="input-group-addon" id="basic-addon1">@</span>
                 <?php echo HTML::inputField('username', '', 'size="150" placeholder="' . CLICSHOPPING::getDef('text_email_lost_password') . '" required aria-required="true" autocomplete="off" aria-describedby="basic-addon1"'); ?>
               </div>
               <div class="mt-1"></div>
             </div>
           </div>
+          <div class="mt-1"></div>
           <div class="row col-md-12">
             <div class="col-md-6">
               <label for="buttonHeaderAdministration"><a href="<?php echo CLICSHOPPING::link('login.php'); ?>"><button class="btn btn-secondary text-start" type="button"><?php echo CLICSHOPPING::getDef('header_title_administration'); ?></button></a></label>
@@ -629,8 +635,8 @@
               <label for="buttonSubmit"><?php echo HTML::button(CLICSHOPPING::getDef('button_submit'), null, null, 'primary'); ?></label>
             </div>
           </div>
+          <div class="py-3"></div>
         </div>
-        <div class="mt-1"></div>
       </div>
     </div>
     </form>

@@ -31,10 +31,10 @@ if (VERTICAL_MENU_CONFIGURATION == 'true') {
 
 <div class="mt-1"></div>
 <div class="mt-1"></div>
-<footer id="footer">
+<footer id="footer" class="footerCadre">
   <nav class="navbar fixed-bottom navbar-light bg-faded footerCadre" role="navigation">
-    <div class="navbar-collapse text-start" id="footer-body">
-      <div class="row">
+    <div class="navbar-collapse text-start footerCadre" id="footer-body">
+      <div class="row footerCadre">
         <?php
         if (isset($_SESSION['admin'])) {
           ?>

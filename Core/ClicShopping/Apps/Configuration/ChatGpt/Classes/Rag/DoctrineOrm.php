@@ -156,6 +156,33 @@ class DoctrineOrm
    }
 
   /**
+   * Logs an error message if debugging is enabled.
+   * This function is used to log errors related to database operations.
+   *
+   * @param string $message The error message to log
+   */
+  private static function logError($message)
+  {
+    if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
+      error_log($message);
+    }
+  }
+  
+  /**
+   * Creates the necessary database structure for RAG if it doesn't exist.
+   * Sets up tables with appropriate columns and vector indices for embedding storage.
+   *
+   * @param string $tableName Name of the table to create
+   * @return bool True if creation succeeds, false otherwise
+   * @throws \Exception If table creation fails
+   */
+  public static function createTableStructure(string $tableName): bool
+  {
+     return false;
+  }
+
+
+  /**
    * Returns a list of all available embedding tables in the database.
    * Queries the database to find tables that contain a VECTOR type embedding column.
    *
@@ -185,31 +212,5 @@ class DoctrineOrm
       }
       return [];
     }
-  }
-
-  /**
-   * Logs an error message if debugging is enabled.
-   * This function is used to log errors related to database operations.
-   *
-   * @param string $message The error message to log
-   */
-  private static function logError($message)
-  {
-    if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
-      error_log($message);
-    }
-  }
-  
-  /**
-   * Creates the necessary database structure for RAG if it doesn't exist.
-   * Sets up tables with appropriate columns and vector indices for embedding storage.
-   *
-   * @param string $tableName Name of the table to create
-   * @return bool True if creation succeeds, false otherwise
-   * @throws \Exception If table creation fails
-   */
-  public static function createTableStructure(string $tableName): bool
-  {
-     return false;
   }
 }

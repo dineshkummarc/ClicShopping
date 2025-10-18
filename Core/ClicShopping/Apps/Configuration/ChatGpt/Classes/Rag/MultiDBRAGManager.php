@@ -18,10 +18,10 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\AnalyticsAgent;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\SecurityLogger;
 
 use LLPhant\Query\SemanticSearch\LLMReranker;
 use LLPhant\Embeddings\Document;
@@ -300,7 +300,8 @@ class MultiDBRAGManager
    * @param string|null $entityType Entity type for filtering results
    * @return array Array of matching documents with similarity scores
    */
-  public function searchDocuments(string $query, int $limit = 5, float $minScore = 0.5, int|null $languageId = null, string|null $entityType = null): array {
+  public function searchDocuments(string $query, int $limit = 5, float $minScore = 0.5, int|null $languageId = null, string|null $entityType = null): array 
+  {
     try {
       $allResults = [];
 

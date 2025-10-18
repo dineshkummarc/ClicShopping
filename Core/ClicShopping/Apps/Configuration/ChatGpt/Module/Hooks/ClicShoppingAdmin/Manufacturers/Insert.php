@@ -169,6 +169,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
               $embedding_data =  "\n" . $this->app->getDef('text_manufacturer_embedded') . "\n";
 
               $embedding_data .= $this->app->getDef('text_manufacturer_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_name) . "\n";
+              $embedding_data .= $this->app->getDef('text_manufacturer_id') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_id) . "\n";
 
               if (!empty($manufacturers_description)) {
                 $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";

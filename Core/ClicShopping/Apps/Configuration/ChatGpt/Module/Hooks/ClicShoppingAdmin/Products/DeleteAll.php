@@ -56,7 +56,7 @@ class DeleteAll implements \ClicShopping\OM\Modules\HooksInterface
         if (isset($items)) {
           $this->app->delete('products_embedding', 'entity_id', $items);
         }
-      }
+}
     }
-  }
+}
 }

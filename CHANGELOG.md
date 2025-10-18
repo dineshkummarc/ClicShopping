@@ -3,6 +3,7 @@ Libraries updated
 small fix
 App refactoring to tob e more easy to use or to install a new App
 
+New admin design
 
 
 ----------------

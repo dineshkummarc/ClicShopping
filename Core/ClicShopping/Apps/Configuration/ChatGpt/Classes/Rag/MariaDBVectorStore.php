@@ -156,7 +156,7 @@ class MariaDBVectorStore extends VectorStoreBase
         $type,
         $sourcetype,
         $sourcename,
-        $embeddingText,  // Utilisez $embeddingText au lieu de $embeddingJson
+        $embeddingText,
         $chunknumber,
         $date_modified,
         $entity_id,
@@ -312,9 +312,13 @@ class MariaDBVectorStore extends VectorStoreBase
 
       $this->connection->executeStatement(
         "UPDATE {$this->tableName}
-        SET content = ?, type = ?, sourcetype = ?, sourcename = ?,
-        embedding = VEC_FromText(?), chunknumber = ?, date_modified = ?,
-        entity_id = ?, language_id = ?
+        SET content = ?, 
+            type = ?, 
+            sourcetype = ?, 
+            sourcename = ?,
+            embedding = VEC_FromText(?), chunknumber = ?, date_modified = ?,
+            entity_id = ?, 
+            language_id = ?
         WHERE id = ?",
         [
           $content,

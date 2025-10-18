@@ -1,4 +1,5 @@
 text_review_sentiment_semantic_semantic_title = Sentiment analysis for the product {{products_name}}
+text_sentiment_semantic_review_sentiment_id = Sentiment ID for {{review_sentiment_id}}
 text_review_sentiment_semantic_description = Review content for {{products_name}}
 text_review_sentiment_semantic_status = Sentiment status for {{products_name}}
 text_review_sentiment_semantic_approved = Sentiment approval for {{products_name}}

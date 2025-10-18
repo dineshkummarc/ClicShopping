@@ -101,6 +101,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
         //********************
         if (\defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
           $embedding_data = $this->app->getDef('text_supplier_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($supplier_name) . "\n";
+          $embedding_data .= $this->app->getDef('text_supplier_id') . ' : ' . $suppliers_id . "\n";
 
           if (!empty($date_added)) {
             $embedding_data .= $this->app->getDef('text_supplier_date_added', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";

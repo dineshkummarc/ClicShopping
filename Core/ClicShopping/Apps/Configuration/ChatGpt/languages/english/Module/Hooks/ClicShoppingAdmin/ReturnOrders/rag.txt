@@ -10,6 +10,8 @@ text_orders_products_comment = [Product Return Comment]
 text_orders_products_date_added = [Return Date Added]
 text_orders_products_date_ordered = [Order Date]
 text_orders_products_return_order_id = [Return Order ID]
+text_orders_products_return_product_id = [Return Product ID]
+text_orders_products_return_id = [Return Reference ID]
 
 text_orders_products_return_history = [Product Return History from the Order]
 text_orders_products_return_history_comment = [Return History Comment]

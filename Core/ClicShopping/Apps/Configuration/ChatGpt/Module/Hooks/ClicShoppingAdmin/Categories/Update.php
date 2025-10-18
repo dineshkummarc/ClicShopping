@@ -88,6 +88,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         $Qcategories->execute();
 
         $categories_array = $Qcategories->fetchAll();
+        $categories_id = $Qcategories->valueInt('categories_id');
 
         if (is_array($categories_array)) {
           foreach ($categories_array as $item) {
@@ -102,6 +103,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 //********************
             $embedding_data =  "\n" . $this->app->getDef('text_category_embedded') . "\n";
             $embedding_data .= $this->app->getDef('text_category_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_name) . "\n";
+            $embedding_data .= $this->app->getDef('text_category_id') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_id) . "\n";
 
             if (!empty($categories_description)) {
               $embedding_data .= $this->app->getDef('text_category_description', ['category_name' => $categories_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_description) . "\n";;
@@ -111,7 +113,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               if ($taxonomy != '') {
                 $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
               }
-            }
+}
 
             if (!empty($seo_categories_title)) {
               $embedding_data .= $this->app->getDef('text_category_seo_title', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_title) . "\n";;
@@ -125,7 +127,6 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               $embedding_data .= $this->app->getDef('text_seo_keywords', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_keywords) . "\n";;
             }
 
-
             $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
             $embeddings = [];
@@ -134,7 +135,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               if (is_array($embeddedDocument->embedding)) {
                 $embeddings[] = $embeddedDocument->embedding;
               }
-            }
+}
 
             if (!empty($embeddings)) {
               $flattened_embedding = $embeddings[0];

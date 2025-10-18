@@ -50,6 +50,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
     $QreturnOrders = $this->app->db->prepare('select r.return_id,
                                                      r.return_ref,
                                                      r.order_id,
+                                                     r.product_id,
                                                      r.product_model,
                                                      r.product_name,
                                                      r.quantity,
@@ -69,7 +70,9 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
     $item = $QreturnOrders->fetch();
     $embedding_data = $this->app->getDef('text_orders_products_return') . "\n";
+    $embedding_data .=   $this->app->getDef('text_orders_products_return_id') . ' : ' . $item['return_id'] . "\n";
     $embedding_data .= $this->app->getDef('text_orders_products_return_ref') . ' : ' . $item['return_ref'] . "\n";
+    $embedding_data .= $this->app->getDef('text_orders_products_return_product_id') . ' : ' . $item['products_id'] . "\n";
     $embedding_data .= $this->app->getDef('text_orders_products_return_order_id') . ' : ' . $item['order_id'] . "\n";
     $embedding_data .= $this->app->getDef('text_orders_products_return_model') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($item['product_model']) . "\n";
     $embedding_data .= $this->app->getDef('text_orders_products_return_name') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($item['product_name']) . "\n";

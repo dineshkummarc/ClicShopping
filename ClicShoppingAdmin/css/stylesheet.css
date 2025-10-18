@@ -1,9 +1,9 @@
 /*
  *
- *  @copyright 2008 - https://www.clicshopping.org
- *  @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
- *  @Licence GPL 2 & MIT
- *  @Info : https://www.clicshopping.org/forum/trademark/
+ * @copyright 2008 - https://www.clicshopping.org
+ * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
+ * @Licence GPL 2 & MIT
+ * @Info : https://www.clicshopping.org/forum/trademark/
  *
  */
 /*
@@ -60,15 +60,27 @@ a.headerLink:hover {
   padding-top: 0.3125rem;
 }
 
+body {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
 
 div.contentBody {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding-left: 10px;
   padding-right: 10px;
   padding-top: 10px;
 
 }
 
+.wrapper {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+#wrapper {
+}
+
 .contentContainer {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding-bottom: 0.625rem;
 }
 
@@ -96,15 +108,8 @@ div.contentBody {
 
 /* page */
 body {
-  background-color: #ffffff;
   margin: 0rem;
   padding: 0rem;
-}
-
-.wrapper {
-}
-
-#wrapper {
 }
 
 .content {
@@ -115,29 +120,29 @@ body {
 }
 
 .headerBar {
-  background-color: #B3BAC5;
+  background-color: #D9E2EC;
 }
 
 .headerBarContent {
-  color: #ffffff;
+  color: #1F2937;
   font-weight: bold;
   padding: 0.125rem;
 }
 
 .pageHeading {
-  color: #FF7F50;
+  color: #8b5cf6;
   padding-top: 0.3125rem;
 }
 
 /* data table */
 .dataTableHeadingRow {
-  background-color: #2969C3;
+  background-color: #8b5cf6;
   color: #ffffff;
   border: none !important;
 }
 
 .dataTableRow {
-  background-color: #F5F5F5;
+  background-color: #F8FAFC;
 }
 
 .dataTableContent {
@@ -153,7 +158,7 @@ body {
 }
 
 .messageStackSuccess {
-  background-color: Green;
+  background-color: #10B981;
   color: White;
 }
 
@@ -172,7 +177,7 @@ table.messageStackSuccess {
   text-align: left;
   height: 1.5625rem;
   background-repeat: repeat;
-  border: 0.0625rem solid Green;
+  border: 0.0625rem solid #10B981;
 }
 
 
@@ -193,7 +198,7 @@ FORM {
 
 /* miscellaneous */
 .specialPrice {
-  color: #ff0000;
+  color: #dc3545;
 }
 
 .oldPrice {
@@ -272,8 +277,7 @@ FORM {
 
 /* style facture */
 .mainFacture {
-
-  background-color: #DCDCDC;
+  background-color: #E5E7EB;
 }
 
 
@@ -283,7 +287,7 @@ FORM {
   height: 2rem;
   color: White;
   font-weight: bold;
-  background-color: #2969C3;
+  background-color: #8b5cf6;
 }
 
 .mainTitleTexteSeul {
@@ -292,7 +296,6 @@ FORM {
 }
 
 a.mainTitleTexteSeul {
-
   color: White;
   font-style: italic;
 }
@@ -305,35 +308,34 @@ a.mainTitleTexteSeul:Hover {
 }
 
 .mainTable {
-
-  border-bottom: 0.0625rem solid #CCCCCC;
+  border-bottom: 0.0625rem solid #D1D5DB;
 }
 
 
 table.adminform {
-  background-color: #f5f5f5;
+  background-color: #F9FAFB;
   color: #333333;
 
-  border-bottom: dashed 0.0625rem #CCCCCC;
-  border-top: dashed 0.0625rem #CCCCCC;
-  border-left: dashed 0.0625rem #CCCCCC;
-  border-right: dashed 0.0625rem #CCCCCC;
+  border-bottom: dashed 0.0625rem #D1D5DB;
+  border-top: dashed 0.0625rem #D1D5DB;
+  border-left: dashed 0.0625rem #D1D5DB;
+  border-right: dashed 0.0625rem #D1D5DB;
   text-align: left;
-  /*  height: 20.3125rem;*/
+  /* height: 20.3125rem;*/
   background-repeat: repeat;
 }
 
 
 div.adminformAide {
-  background-color: #FAFAD2;
+  background-color: #FFFBEB;
   color: #333333;
 
-  border-bottom: dashed 0.0625rem #CCCCCC;
-  border-top: dashed 0.0625rem #CCCCCC;
-  border-left: dashed 0.0625rem #CCCCCC;
-  border-right: dashed 0.0625rem #CCCCCC;
+  border-bottom: dashed 0.0625rem #D1D5DB;
+  border-top: dashed 0.0625rem #D1D5DB;
+  border-left: dashed 0.0625rem #D1D5DB;
+  border-right: dashed 0.0625rem #D1D5DB;
   text-align: left;
-  /*  height: 20.3125rem;*/
+  /* height: 20.3125rem;*/
   background-repeat: repeat;
 }
 
@@ -349,7 +351,7 @@ table.adminTitle {
   text-align: left;
   height: 100%;
   background-repeat: repeat;
-  border: 0.0625rem solid #CCCCCC;
+  border: 0.0625rem solid #D1D5DB;
   height: 50px;
   padding: 0.3125rem 0.3125rem 0.3125rem 0.3125rem;
   margin-left: 0.625rem;
@@ -375,11 +377,11 @@ span.infoHeader {
 }
 
 .headerFond {
-  background: #222;
+  background: #1F2937;
 }
 
 .headerLine {
-  background-color: #8a8a8a; /*FF0000*/
+  background-color: #9CA3AF;
   height: 0.02rem;
 }
 
@@ -388,19 +390,25 @@ span.infoHeader {
 ************************************/
 
 .footerCadre {
-  background-color: #F4F4F4;
+  background-color: #8b5cf6;
+  font-size: 0.8rem;
+  color: #fff;
 }
 
 #footer {
 }
 
 .bg-faded {
-  border-top: 0.0625rem solid #B3B3B3;
+  border-top: 0.0625rem solid #D1D5DB;
 }
 
+/*************************************
+// NavBar
+************************************/
+
 .navbar-inverse {
-  background-color: #E9E9E9;
-  border-top: 0.0625rem solid #B3B3B3;
+  background-color: #F3F4F6;
+  border-top: 0.0625rem solid #D1D5DB;
 }
 
 .navbar {
@@ -414,7 +422,7 @@ span.pageManager A {
 }
 
 /**********************/
-/*     Boostrap       */
+/* Boostrap       */
 /**********************/
 
 .form-control {
@@ -431,27 +439,27 @@ span.pageManager A {
 }
 
 .btn-default {
-  background: #f8f8f8;
-  color: #555;
+  background: #F9FAFB;
+  color: #374151;
   text-decoration: none;
-  border-color: #e5e5e5;
+  border-color: #E5E7EB;
 }
 
 a.btn-default {
-  background: #f8f8f8;
+  background: #F9FAFB;
 }
 
 .btn-secondary {
   color: #373a3c;
-  background-color: #F9F9F8;
+  background-color: #F3F4F6;
 }
 
 a.btn-secondary {
-  color: #373a3c !important;
+  color: #374151 !important;
 }
 
 .table-hover > tbody > tr:hover > td, .table-hover > tbody > tr:hover > th {
-  background-color: #f5f5f5;
+  background-color: #EFF6FF;
 }
 
 .table > thead > tr > th {
@@ -471,7 +479,7 @@ a.btn-secondary {
   padding: 0.5rem;
   line-height: 1.42857143;
   vertical-align: top;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid #E5E7EB;
 }
 
 td, th {
@@ -503,11 +511,6 @@ td, th {
   border-top: 0rem;
 }
 
-#loginModal {
-  top: 20%;
-  overflow-y: initial;
-}
-
 a.btn {
   color: #fff;
 }
@@ -516,14 +519,14 @@ div.backgroundMenu {
   bottom: 4px;
   height: 1.90rem;
   z-index: 3;
-  background: #222222;
+  background: #374151;
 
-  background: -moz-linear-gradient(top, #222222 0%, #2C2C2C 100%);
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #222222), color-stop(100%, #2C2C2C));
-  background: -webkit-linear-gradient(top, #222222 0%, #2C2C2C 100%);
-  background: -o-linear-gradient(top, #222222 0%, #2C2C2C 100%);
-  background: -ms-linear-gradient(top, #222222 0%, #2C2C2C 100%);
-  background: linear-gradient(to bottom, #222222 0%, #2C2C2C 100%);
+  background: -moz-linear-gradient(top, #374151 0%, #4B5563 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #374151), color-stop(100%, #4B5563));
+  background: -webkit-linear-gradient(top, #374151 0%, #4B5563 100%);
+  background: -o-linear-gradient(top, #374151 0%, #4B5563 100%);
+  background: -ms-linear-gradient(top, #374151 0%, #4B5563 100%);
+  background: linear-gradient(to bottom, #374151 0%, #4B5563 100%);
 }
 
 .imageheaderMenu {
@@ -537,9 +540,9 @@ blockquote {
 }
 
 div.tabsClicShopping {
-  border-left: 0.0625rem #eee solid;
-  border-right: 0.0625rem #eee solid;
-  border-bottom: 0.0625rem #eee solid;
+  border-left: 0.0625rem #E5E7EB solid;
+  border-right: 0.0625rem #E5E7EB solid;
+  border-bottom: 0.0625rem #E5E7EB solid;
   padding: 0.3125rem 0.3125rem 0.3125rem 0.3125rem;
 
 }
@@ -554,11 +557,11 @@ span.adminformAideContent {
 }
 
 .adminformTitle {
-  background-color: #f5f5f5;
+  background-color: #F9FAFB;
   color: #333333;
-  border-bottom: dashed 0.0625rem #CCCCCC;
-  border-left: dashed 0.0625rem #CCCCCC;
-  border-right: dashed 0.0625rem #CCCCCC;
+  border-bottom: dashed 0.0625rem #D1D5DB;
+  border-left: dashed 0.0625rem #D1D5DB;
+  border-right: dashed 0.0625rem #D1D5DB;
   text-align: left;
   height: 100%;
   background-repeat: repeat;
@@ -568,12 +571,13 @@ span.adminformAideContent {
 }
 
 .adminformAide {
-  background-color: #FAFAD2;
+  /* -> MODIFICATION POUR HARMONISATION : Arrière-plan plus clair/moderne pour l'aide */
+  background-color: #FFFBEB;
   color: #333333;
-  border-bottom: dashed 0.0625rem #CCCCCC;
-  border-top: dashed 0.0625rem #CCCCCC;
-  border-left: dashed 0.0625rem #CCCCCC;
-  border-right: dashed 0.0625rem #CCCCCC;
+  border-bottom: dashed 0.0625rem #D1D5DB;
+  border-top: dashed 0.0625rem #D1D5DB;
+  border-left: dashed 0.0625rem #D1D5DB;
+  border-right: dashed 0.0625rem #D1D5DB;
   text-align: left;
   height: 100%;
   background-repeat: repeat;
@@ -587,7 +591,7 @@ span.adminformAideContent {
 }
 
 .dashboard {
-  background-color: #F4F4F4;
+  background-color: #F9FAFB;
 }
 
 .centerInputFields {
@@ -613,11 +617,12 @@ div.separator {
 boostrap 4
 */
 .bg-white {
+  /* -> MODIFICATION POUR HARMONISATION : Fond blanc léger */
   background-color: #FDFDFD !important;
 }
 
 .card {
-  /*  padding: 10px 5px 5px 10px;*/
+  /* padding: 10px 5px 5px 10px;*/
   padding: 0px 0px 0px 0px;
 }
 
@@ -627,32 +632,36 @@ boostrap 4
 }
 
 .cardStatsSuccess {
-  background-color: #28a745;
+  background-color: #10B981;
   color: #fff
 }
 
 .cardStatsPrimary {
-  background-color: #2969C3;
+  background-color: #8b5cf6;
   color: #fff
 }
 
 .cardStatsInfo {
-  background-color: #5bc0de;
+  background-color: #3B82F6;
   color: #fff
 }
 
 .cardStatsWarning {
-  background-color: #f0ad4e;
+  background-color: #FBBF24;
   color: #fff
 }
 
 .cardStatsDanger {
-  background-color: #dc3545;
+  /* -> MODIFICATION POUR HARMONISATION : Couleur de danger moderne */
+  background-color: #EF4444;
   color: #fff
 }
 
 div.headerCard {
-  background-color: #FDFDFD;
+  /*background-color: #FDFDFD;*/
+  /* background: #8b5cf6;
+   color: white;
+   */
   padding: 0.3125rem 0.3125rem 0.3125rem 0.3125rem;
 }
 
@@ -712,7 +721,7 @@ div.headerCard {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #e96125;
+  background-color: #D1D5DB;
   -webkit-transition: .4s;
   transition: .4s;
 }
@@ -730,31 +739,31 @@ div.headerCard {
 }
 
 input.default:checked + .slider {
-  background-color: #444;
+  background-color: #4B5563;
 }
 
 input.primary:checked + .slider {
-  background-color: #2196F3;
+  background-color: #8b5cf6;
 }
 
 input.success:checked + .slider {
-  background-color: #8bc34a;
+  background-color: #10B981;
 }
 
 input.info:checked + .slider {
-  background-color: #3de0f5;
+  background-color: #3B82F6;
 }
 
 input.warning:checked + .slider {
-  background-color: #FFC107;
+  background-color: #FBBF24;
 }
 
 input.danger:checked + .slider {
-  background-color: #f44336;
+  background-color: #EF4444;
 }
 
 input:focus + .slider {
-  box-shadow: 0 0 1px #2196F3;
+  box-shadow: 0 0 1px #8b5cf6;
 }
 
 input:checked + .slider:before {
@@ -794,7 +803,7 @@ input:checked + .slider:before {
 }
 
 .progress {
-  background-color: limegreen;
+  background-color: #10B981;
 }
 
 .dashboard {
@@ -812,8 +821,8 @@ input:checked + .slider:before {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #e4e7ea;
-  color: #f19013 !important;
+  background-color: #f5f7fa;
+  color: #8b5cf6 !important;
   z-index: 10000;
 }
 
@@ -827,9 +836,9 @@ input:checked + .slider:before {
   font-size: 32px;
 }
 
- /*******************************
- /* Modal Chat header            */
- /*******************************/
+/*******************************
+/* Modal Chat header            */
+/*******************************/
 
 /* CSS pour la modale sur la droite */
 .modal-right .modal-dialog {

@@ -84,8 +84,10 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
    */
   private function getOrderProducts(int $order_id): array
   {
-    $Q = $this->app->db->prepare('
-    SELECT * FROM :table_orders_products WHERE orders_id = :orders_id');
+    $Q = $this->app->db->prepare('SELECT * 
+                                  FROM :table_orders_products 
+                                  WHERE orders_id = :orders_id
+                                  ');
     $Q->bindInt(':orders_id', $order_id);
     $Q->execute();
 
@@ -205,7 +207,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         $data .= $this->app->getDef('text_products_attributes_products_value')  . ' : ' . $attribute['products_options_values'] . "\n";
         $data .= $this->app->getDef('text_products_attributes_products_value')  . ' : ' . $attribute['options_values_price'] . "\n";
       }
-    }
+}
 
     if (!empty($statusHistory) && is_array($statusHistory)) {
       $data .= "\n" . $this->app->getDef('text_products_order_history') . "\n";
@@ -226,7 +228,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         if (!empty($status['orders_tracking_number'])) {
           $data .= $this->app->getDef('text_products_order_history_admin') . ' : ' . $status['admin_user_name'] . "\n";
         }
-      }
+}
     }
 
     if (!empty($totals) && is_array($totals)) {
@@ -235,7 +237,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         $data .= $this->app->getDef('text_orders_total_title') . ' : ' . $total['title'] . "\n";
         $data .= $this->app->getDef('text_orders_total_value') . ' : ' . $total['value'] . "\n";
       }
-    }
+}
 
     return $data;
   }
@@ -272,7 +274,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       $update_sql_data = ['entity_id' => (int)$order_id];
       $this->app->db->save('orders_embedding', $sql_data_array_embedding, $update_sql_data);
     }
-  }
+}
   
   /**
    * Executes the embedding process for order updates.
@@ -312,5 +314,5 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     if (!empty($embeddingVector)) {
       $this->saveEmbedding($orderData['orders_id'], $embeddingData, $embeddingVector, $insert_embedding);
     }
-  }
+}
 }

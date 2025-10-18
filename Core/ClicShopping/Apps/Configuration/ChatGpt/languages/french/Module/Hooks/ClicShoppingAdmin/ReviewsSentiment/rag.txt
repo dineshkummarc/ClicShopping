@@ -1,4 +1,5 @@
 text_review_sentiment_semantic_semantic_title = Analyse du sentiment pour le produit {{products_name}}
+text_sentiment_semantic_review_sentiment_id = ID ddu sentiment pour {{review_sentiment_id}}
 text_review_sentiment_semantic_description = Contenu de l'avis sur {{products_name}}
 text_review_sentiment_semantic_status = Statut du sentiment pour {{products_name}}
 text_review_sentiment_semantic_approved = Validation du sentiment pour {{products_name}}

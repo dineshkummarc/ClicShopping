@@ -111,6 +111,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
         if (is_array($products_array)) {
           foreach ($products_array as $item) {
+            $products_id = $item['products_id'];
             $products_name = $item['products_name'];
             $products_model = $item['products_model'];
             $products_ean = $item['products_ean'];
@@ -247,6 +248,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
             //********************
 
               $embedding_data = $this->app->getDef('text_product_name') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_name) . "\n";
+              $embedding_data .= $this->app->getDef('text_product_id') . ': ' . $products_id . "\n";
 
               if (!empty($products_model)) {
                 $embedding_data .= $this->app->getDef('text_product_model') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_model) . "\n";

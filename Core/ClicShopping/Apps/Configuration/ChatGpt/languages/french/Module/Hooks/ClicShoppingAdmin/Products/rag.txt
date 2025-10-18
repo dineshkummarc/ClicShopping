@@ -1,5 +1,6 @@
 text_product_name = [Nom du produit]
-text_product_model = [Modèle de produit]]
+text_product_id = [Nom du product ID]
+text_product_model = [Modèle de produit]
 text_categories_name = [Nom catégorie du produit]
 text_product_brand_name = [Nom de marque du produit]
 text_product_ean = [Produit ean du produit]

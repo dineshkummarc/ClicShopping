@@ -1,5 +1,6 @@
 text_category_embedded = [Categories]
 text_category_name = [Nom de la catégorie]
+text_category_id = [ID de la catégorie]
 text_category_description = [Description de la catégorie: {{category_name}}]
 text_category_seo_title = [Titre SEO de la catégorie: {{category_name}}]
 text_category_seo_description = [Description SEO de la catégorie: {{category_name}}]
