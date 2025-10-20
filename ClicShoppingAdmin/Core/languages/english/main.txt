@@ -20,7 +20,7 @@ title = Administration {{store_name}}
 
 header_title_top = Administration
 header_title_support_site = Support
-header_title_online_catalog = Online Catalog
+header_title_online_catalog = Catalog
 header_title_administration = Administration
 header_title_logoff = Log Off
 
@@ -480,7 +480,7 @@ text_warning_group = Please update our customers group to see this module inside
 no_access_warning = You do not have access at this fonctionnality.
 success_migration_done = The migration has been a success
 
-text_rag_system_message_template = ### RAG systeme instruction
+text_rag_system_message_template = ### RAG System Instructions
 Use the following information to answer the user's question.
 If the answer is not explicitly found in the provided information, state that clearly.
 In that case, provide an answer based on your general knowledge, while also indicating that the source was not found in the context.
@@ -510,6 +510,7 @@ Response format:
 ---
 
 Response:
+
 
 
 text_rag_answer_question_not_found = I couldn’t find any specific information to answer your question. Please rephrase or ask another question.
@@ -634,7 +635,7 @@ text_security_guidelines = IMPORTANT SECURITY GUIDELINES:
 6. Limit result sets to prevent excessive data exposure.
 7. Validate all table and column names against the schema.
 
-text_create_taxonomy = text_create_taxonomy = You are a document analysis system. Extract a structured conceptual taxonomy from the following text.
+text_create_taxonomy = You are a document analysis system. Extract a structured conceptual taxonomy from the following text.
 Translate in english.
 Expected format via an example:
 [domain]: Tableware
@@ -645,6 +646,7 @@ Expected format via an example:
 [objective_type]: Objective
 [objective_subject]: Refinement, experience
 \n\nText: {{document_text}}
+
 
 
 text_not_analytics = This query does not appear to be an analytical query.

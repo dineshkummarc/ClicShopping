@@ -135,10 +135,12 @@ class securityCheckExtended_admin_backup_file
         'timeout' => 10,
         'headers' => [],
       ];
+      
       if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
         $options['auth'] = $_SERVER['PHP_AUTH_USER'] . ':' . $_SERVER['PHP_AUTH_PW'];
         $this->type = 'warning';
       }
+      
       $responseData = HTTP::getResponse($options);
       $info = $responseData['info'] ?? 'error';
       return $info;

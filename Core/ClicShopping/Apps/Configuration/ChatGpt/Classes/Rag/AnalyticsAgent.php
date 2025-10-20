@@ -294,16 +294,9 @@ class AnalyticsAgent
         }
       }
 
-      $this->securityLogger->logSecurityEvent(
-        "Database schema built successfully: " . count($this->databaseSchema) . " tables indexed",
-        'info'
-      );
-
+      $this->securityLogger->logSecurityEvent("Database schema built successfully: " . count($this->databaseSchema) . " tables indexed", 'info');
     } catch (\Exception $e) {
-      $this->securityLogger->logSecurityEvent(
-        "Error building database schema: " . $e->getMessage(),
-        'error'
-      );
+      $this->securityLogger->logSecurityEvent("Error building database schema: " . $e->getMessage(), 'error');
 
       if ($this->debug) {
         $this->securityLogger->logSecurityEvent("Error while building the database schema: " . $e->getMessage(), 'error');
@@ -369,10 +362,8 @@ class AnalyticsAgent
 
     $safeResponse = InputValidator::validateParameter($response, 'string');
     if ($safeResponse !== $response) {
-      $this->securityLogger->logSecurityEvent(
-        "Response sanitized in extractSqlQueries",
-        'warning'
-      );
+      $this->securityLogger->logSecurityEvent("Response sanitized in extractSqlQueries", 'warning');
+
       $response = $safeResponse;
     }
 
@@ -463,10 +454,7 @@ class AnalyticsAgent
     $safeSqlQuery = InputValidator::validateParameter($sqlQuery, 'string');
 
     if ($safeSqlQuery !== $sqlQuery) {
-      $this->securityLogger->logSecurityEvent(
-        "SQL query sanitized in resolvePlaceholders",
-        'warning'
-      );
+      $this->securityLogger->logSecurityEvent("SQL query sanitized in resolvePlaceholders", 'warning');
 
       $sqlQuery = $safeSqlQuery;
     }

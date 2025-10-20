@@ -393,7 +393,6 @@
   }
 
   require_once($CLICSHOPPING_Template->getTemplateHeaderFooterAdmin('header.php'));
-
   require_once('background.php');
 
   $ip = HTTP::getIpAddress();

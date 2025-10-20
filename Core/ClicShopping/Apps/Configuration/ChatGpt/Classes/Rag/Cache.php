@@ -292,7 +292,7 @@ class Cache
    */
   public static function getLogFilePath(): string
   {
-    $logDir = CLICSHOPPING::BASE_DIR . 'Work/Cache/Rag';
+    $logDir = CLICSHOPPING::BASE_DIR . 'Work/Log';
     self::ensureDirectoryExists($logDir);
     return $logDir . '/rag_security.log';
   }

@@ -20,7 +20,7 @@ title = Administration {{store_name}}
 
 header_title_top = Administration
 header_title_support_site = Support
-header_title_online_catalog = Catalogue en ligne
+header_title_online_catalog = Catalogue
 header_title_administration = Administration
 header_title_logoff = Quitter
 

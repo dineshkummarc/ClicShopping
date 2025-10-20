@@ -123,14 +123,13 @@ class MariaDb
       $CLICSHOPPING_Db->exec($sql);
     }
 
-
     $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_categories_embedding"');
 
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
-      CREATE TABLE IF NOT EXISTS clic_categories_embedding (
+      CREATE TABLE IF NOT EXISTS :table_categories_embedding (
         id SERIAL PRIMARY KEY,
-          content text DEFAULT NULL,
+          content longtext DEFAULT NULL,
           type text DEFAULT NULL,
           sourcetype text default 'manual',
           sourcename text default 'manual',
@@ -140,12 +139,12 @@ class MariaDb
           entity_id INT,
           language_id INT
       );
-      -- Add vector index separately
-      CREATE VECTOR INDEX embedding_index ON clic_categories_embedding (embedding);
-      
-       CREATE TABLE IF NOT EXISTS clic_products_embedding (
+
+      CREATE VECTOR INDEX embedding_index ON :table_categories_embedding (embedding);
+
+       CREATE TABLE IF NOT EXISTS :table_products_embedding (
               id SERIAL PRIMARY KEY,
-                content text DEFAULT NULL,
+                content longtext DEFAULT NULL,
                 type text DEFAULT NULL,
                 sourcetype text default 'manual',
                 sourcename text default 'manual',
@@ -155,12 +154,12 @@ class MariaDb
                 entity_id INT,
                 language_id INT
               );
-      -- Add vector index separately
-      CREATE VECTOR INDEX embedding_index ON clic_products_embedding (embedding);
+
+      CREATE VECTOR INDEX embedding_index ON :table_products_embedding (embedding);
       
-      CREATE TABLE IF NOT EXISTS clic_page_manager_embedding (
+      CREATE TABLE IF NOT EXISTS :table_pages_manager_embedding (
               id SERIAL PRIMARY KEY,
-          content TEXT DEFAULT NULL,
+          content longtext DEFAULT NULL,
           type TEXT DEFAULT NULL,
           sourcetype TEXT DEFAULT 'manual',
           sourcename TEXT DEFAULT 'manual',
@@ -170,14 +169,12 @@ class MariaDb
           entity_id INT,
           language_id INT
       );
-      
-      -- Add vector index separately
-      CREATE VECTOR INDEX embedding_index ON clic_page_manager_embedding (embedding);
-      
-      
-      CREATE TABLE IF NOT EXISTS clic_manufacturers_embedding (
+
+      CREATE VECTOR INDEX embedding_index ON :table_pages_manager_embedding (embedding);
+
+      CREATE TABLE IF NOT EXISTS :table_manufacturers_embedding (
               id SERIAL PRIMARY KEY,
-          content TEXT DEFAULT NULL,
+          content longtext DEFAULT NULL,
           type TEXT DEFAULT NULL,
           sourcetype TEXT DEFAULT 'manual',
           sourcename TEXT DEFAULT 'manual',
@@ -187,14 +184,12 @@ class MariaDb
           entity_id INT,
           language_id INT
       );
-      
-      -- Add vector index separately
-      CREATE VECTOR INDEX embedding_index ON clic_manufacturers_embedding (embedding);
-      
-      
-      CREATE TABLE IF NOT EXISTS clic_suppliers_embedding (
+
+      CREATE VECTOR INDEX embedding_index ON :table_manufacturers_embedding (embedding);
+
+      CREATE TABLE IF NOT EXISTS :table_suppliers_embedding (
               id SERIAL PRIMARY KEY,
-          content TEXT DEFAULT NULL,
+          content longtext DEFAULT NULL,
           type TEXT DEFAULT NULL,
           sourcetype TEXT DEFAULT 'manual',
           sourcename TEXT DEFAULT 'manual',
@@ -203,15 +198,12 @@ class MariaDb
           date_modified DATETIME DEFAULT NULL,
           entity_id INT
       );
-      
-      -- Add vector index separately
-      CREATE VECTOR INDEX embedding_index ON clic_suppliers_embedding (embedding);
-      
-      
-      
-      CREATE TABLE IF NOT EXISTS clic_reviews_embedding (
+
+      CREATE VECTOR INDEX embedding_index ON :table_suppliers_embedding (embedding);
+
+      CREATE TABLE IF NOT EXISTS :table_reviews_embedding (
               id SERIAL PRIMARY KEY,
-          content TEXT DEFAULT NULL,
+          content longtext DEFAULT NULL,
           type TEXT DEFAULT NULL,
           sourcetype TEXT DEFAULT 'manual',
           sourcename TEXT DEFAULT 'manual',
@@ -221,14 +213,12 @@ class MariaDb
           entity_id INT,
           language_id INT
       );
-      
-      -- Add vector index separately
-      CREATE VECTOR INDEX embedding_index ON clic_reviews_embedding (embedding);
-      
-      
-      CREATE TABLE IF NOT EXISTS clic_reviews_sentiment_embedding (
+
+      CREATE VECTOR INDEX embedding_index ON :table_reviews_embedding (embedding);
+
+      CREATE TABLE IF NOT EXISTS :table_reviews_sentiment_embedding (
               id SERIAL PRIMARY KEY,
-          content TEXT DEFAULT NULL,
+          content longtext DEFAULT NULL,
           type TEXT DEFAULT NULL,
           sourcetype TEXT DEFAULT 'manual',
           sourcename TEXT DEFAULT 'manual',
@@ -238,15 +228,12 @@ class MariaDb
           entity_id INT,
           language_id INT
       );
-      
-      -- Add vector index separately
-      CREATE VECTOR INDEX embedding_index ON clic_reviews_sentiment_embedding (embedding);
-      
-      
-      
-      CREATE TABLE IF NOT EXISTS clic_return_orders_embedding (
+
+      CREATE VECTOR INDEX embedding_index ON :table_reviews_sentiment_embedding (embedding);
+
+      CREATE TABLE IF NOT EXISTS :table_return_orders_embedding (
               id SERIAL PRIMARY KEY,
-          content TEXT DEFAULT NULL,
+          content longtext DEFAULT NULL,
           type TEXT DEFAULT NULL,
           sourcetype TEXT DEFAULT 'manual',
           sourcename TEXT DEFAULT 'manual',
@@ -255,15 +242,12 @@ class MariaDb
           date_modified DATETIME DEFAULT NULL,
           entity_id INT
       );
-      
-      -- Add vector index separately
-      CREATE VECTOR INDEX embedding_index ON clic_return_orders_embedding (embedding);
-      
-      
-      
-      CREATE TABLE IF NOT EXISTS clic_orders_embedding (
+
+      CREATE VECTOR INDEX embedding_index ON :table_return_orders_embedding (embedding);
+
+      CREATE TABLE IF NOT EXISTS :table_orders_embedding (
           id SERIAL PRIMARY KEY,
-          content TEXT DEFAULT NULL,
+          content longtext DEFAULT NULL,
           type TEXT DEFAULT NULL,
           sourcetype TEXT DEFAULT 'manual',
           sourcename TEXT DEFAULT 'manual',
@@ -272,12 +256,12 @@ class MariaDb
           date_modified DATETIME DEFAULT NULL,
           entity_id INT
       );
-      
-      -- Add vector index separately
-      CREATE VECTOR INDEX embedding_index ON clic_orders_embedding (embedding);    
-             
+
+      CREATE VECTOR INDEX embedding_index ON :table_orders_embedding (embedding);    
     EOD;
       $CLICSHOPPING_Db->exec($sql);
     }
+             
+
   }
 }

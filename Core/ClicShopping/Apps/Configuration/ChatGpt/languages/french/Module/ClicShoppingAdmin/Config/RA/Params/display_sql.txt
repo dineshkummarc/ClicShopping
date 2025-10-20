@@ -1,6 +1,0 @@
-cfg_chatgpt_display_sql_title = Afficher dans le rapport la requete sql
-cfg_chatgpt_display_sql_description = Afficher la requête SQL du rapport dans la réponse de ChatGPT.
-
-cfg_chatgpt_display_sql_true = True
-cfg_chatgpt_display_sql_false = False
-

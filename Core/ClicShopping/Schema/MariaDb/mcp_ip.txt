@@ -1,0 +1,11 @@
+mcp_ip_id int(11) not_null auto_increment
+mcp_id int(11) not_null
+ip varchar(40) not_null
+comment varchar(255) default null
+--
+primary mcp_ip_id
+idx_mcp_ip_id mcp_ip_id
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci

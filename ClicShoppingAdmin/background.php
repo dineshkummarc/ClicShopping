@@ -1,7 +1,7 @@
 <style>
 
   body {
-    background: url("background.png") no-repeat center center / cover fixed,
+    background: url("../images/ClicShoppingAdmin/background_login_admin.png") no-repeat center center / cover fixed,
     linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     margin: 0rem;
     padding: 0rem;

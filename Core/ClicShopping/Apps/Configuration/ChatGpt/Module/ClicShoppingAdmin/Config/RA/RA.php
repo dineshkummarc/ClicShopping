@@ -71,5 +71,5 @@ class RA extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdm
 
       $this->app->saveCfgParam('MODULE_MODULES_CHATGPT_INSTALLED', implode(';', $installed));
     }
-  }
+}
 }
