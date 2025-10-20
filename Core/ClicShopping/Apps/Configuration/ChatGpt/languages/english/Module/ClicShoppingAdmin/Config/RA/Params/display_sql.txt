@@ -1,6 +1,0 @@
-cfg_chatgpt_display_sql_title = Sql Display inside the report
-cfg_chatgpt_display_sql_description = Set True to display the report SQL query in the ChatGPT response.
-
-cfg_chatgpt_display_sql_true = True
-cfg_chatgpt_display_sql_false = False
-
