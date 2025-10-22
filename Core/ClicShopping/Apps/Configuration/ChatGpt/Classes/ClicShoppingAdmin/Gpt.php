@@ -40,11 +40,13 @@ use function is_null;
 * Class to manage interactions with GPT models (OpenAI, Ollama, Anthropic, Mistral)
 * This class encapsulates the logic to check the status of GPT integration,
 * retrieve available models, generate responses, and manage configurations.
-*
-*/
-class Gpt {
+ *
+ */
+class Gpt
+{
 
-  public function __construct() {
+  public function __construct()
+  {
   }
 
   /**
@@ -71,6 +73,10 @@ class Gpt {
   public static function getEnvironment(): string|null
   {
     // Use for dev but in production, the API key should be set in the environment. @todo: update this
+    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY') || empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY)) {
+      error_log("WARNING: CLICSHOPPING_APP_CHATGPT_CH_API_KEY not defined or empty");
+      return null;
+    }
     $env = putenv('OPENAI_API_KEY=' . CLICSHOPPING_APP_CHATGPT_CH_API_KEY);
 
     return $env;
@@ -119,6 +125,7 @@ class Gpt {
       ['id' => 'gpt-5', 'text' => 'OpenAi gpt-5'],
       ['id' => 'gpt-4.1-mini', 'text' => 'OpenAi gpt 4.1-mini'],
       ['id' => 'gpt-4.1-nano', 'text' => 'OpenAi gpt-4.1-nano'],
+      ['id' => 'gpt-4', 'text' => 'OpenAi gpt-4'],
       ['id' => 'gpt-4o', 'text' => 'OpenAi gpt-4o'],
       ['id' => 'gpt-3.5-turbo', 'text' => 'OpenAi gpt-3.5-turbo'],
       ['id' => 'gemma3:latest', 'text' => 'Ollama Gemma3 Latest'],
@@ -334,13 +341,20 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
     throw new \Exception('You have to provide a MISTRAL_API_KEY to request Mistral AI.');
   }
 
-  // Valid model for MistralAIChat
-  $valid_models = [
-    'mistral-tiny', 'mistral-small-latest', 'mistral-medium-latest',
-    'mistral-large-latest', 'pixtral-large-latest', 'ministral-3b-latest',
-    'ministral-8b-latest', 'codestral-latest', 'open-mistral-nemo',
-    'open-codestral-mamba', 'mistral-moderation-latest'
-  ];
+    // Valid model for MistralAIChat
+    $valid_models = [
+      'mistral-tiny',
+      'mistral-small-latest',
+      'mistral-medium-latest',
+      'mistral-large-latest',
+      'pixtral-large-latest',
+      'ministral-3b-latest',
+      'ministral-8b-latest',
+      'codestral-latest',
+      'open-mistral-nemo',
+      'open-codestral-mamba',
+      'mistral-moderation-latest'
+    ];
 
   if (empty($model) || !in_array($model, $valid_models)) {
     $model = 'mistral-large-latest';
@@ -430,6 +444,11 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
 
     // Additional sanitization for extra security
     $prompt = HTMLOverrideCommon::removeInvisibleCharacters($prompt);
+
+    // 🔧 FIX: Vérification finale avant appel API
+    if (empty($prompt)) {
+      throw new \Exception("Prompt is empty after validation and sanitization");
+    }
 
     // Get the chat instance
     $chat = self::getChat($prompt, $maxtoken, $temperature, $engine, $max);
