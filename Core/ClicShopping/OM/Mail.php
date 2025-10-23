@@ -160,6 +160,17 @@ class Mail
    */
   private function convertLinefeeds(string $from, string $to, string $string = ''): string
   {
+    // Validate parameters to prevent TypeError
+    if (!is_string($from)) {
+      throw new \InvalidArgumentException('Parameter $from must be a string, ' . gettype($from) . ' given');
+    }
+    if (!is_string($to)) {
+      throw new \InvalidArgumentException('Parameter $to must be a string, ' . gettype($to) . ' given');
+    }
+    if (!is_string($string)) {
+      throw new \InvalidArgumentException('Parameter $string must be a string, ' . gettype($string) . ' given');
+    }
+    
     return str_replace($from, $to, $string);
   }
 
@@ -172,7 +183,16 @@ class Mail
   public function addText(string $text = '')
   {
     $this->phpMail->IsHTML(false);
-    $this->text = $this->convertLinefeeds(array("\r\n", "\n", "\r"), $this->lf, $text);
+    
+    // Sequential conversion of each line ending type to avoid TypeError
+    $processedText = $text;
+    $lineEndings = ["\r\n", "\n", "\r"];
+    
+    foreach ($lineEndings as $ending) {
+      $processedText = $this->convertLinefeeds($ending, $this->lf, $processedText);
+    }
+    
+    $this->text = $processedText;
   }
 
   /**
@@ -183,14 +203,23 @@ class Mail
    * @param mixed $images_dir Optional directory path for embedded images used within the HTML content.
    * @return void
    */
-  public function addHtml(string $html, string $text = '', $images_dir = NULL)
-  {
-    $this->phpMail->IsHTML(true);
-    $this->html = $this->convertLinefeeds(array("\r\n", "\n", "\r"), '<br />', $html);
-    $this->html_text = $this->convertLinefeeds(array("\r\n", "\n", "\r"), $this->lf, $text);
+public function addHtml(string $html, string $text = '', $images_dir = NULL)
+{
+  $this->phpMail->IsHTML(true);
+  // Correction : passage des caractères de saut de ligne individuellement
+  $this->html = $this->convertLinefeeds("\r\n", '<br />', $html);
+  $this->html = $this->convertLinefeeds("\n", '<br />', $this->html);
+  $this->html = $this->convertLinefeeds("\r", '<br />', $this->html);
 
-    if (isset($images_dir)) $this->html = $this->phpMail->msgHTML($this->html, $images_dir);
+  // Même chose pour le texte
+  $this->html_text = $this->convertLinefeeds("\r\n", $this->lf, $text);
+  $this->html_text = $this->convertLinefeeds("\n", $this->lf, $this->html_text);
+  $this->html_text = $this->convertLinefeeds("\r", $this->lf, $this->html_text);
+
+  if (isset($images_dir)) {
+    $this->html = $this->phpMail->msgHTML($this->html, $images_dir);
   }
+}
 
   /**
    * Adds HTML content to the email using CKEditor formatting.
@@ -201,14 +230,24 @@ class Mail
    * @return void
    */
 
-  public function addHtmlCkeditor(string $html, ?string $text = NULL, ?string $images_dir = NULL): void
+ public function addHtmlCkeditor(string $html, ?string $text = NULL, ?string $images_dir = NULL): void
   {
     $this->phpMail->IsHTML(true);
 
-    $this->html = $this->convertLinefeeds(array("\r\n", "\n", "\r"), '', $html);
-    $this->html_text = $this->convertLinefeeds(array("\r\n", "\n", "\r"), $this->lf, $text);
+    // Correction : traitement individuel des sauts de ligne
+    $this->html = $this->convertLinefeeds("\r\n", '', $html);
+    $this->html = $this->convertLinefeeds("\n", '', $this->html);
+    $this->html = $this->convertLinefeeds("\r", '', $this->html);
 
-    if (isset($images_dir)) $this->html = $this->phpMail->msgHTML($this->html, $images_dir);
+    if ($text !== null) {
+      $this->html_text = $this->convertLinefeeds("\r\n", $this->lf, $text);
+      $this->html_text = $this->convertLinefeeds("\n", $this->lf, $this->html_text);
+      $this->html_text = $this->convertLinefeeds("\r", $this->lf, $this->html_text);
+    }
+
+    if (isset($images_dir)) {
+      $this->html = $this->phpMail->msgHTML($this->html, $images_dir);
+    }
   }
 
   /**
