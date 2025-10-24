@@ -142,3 +142,4 @@ if ($CLICSHOPPING_MessageStack->exists('Favorites')) {
   }
   ?>
 </div>
+<div class="py-5"></div>

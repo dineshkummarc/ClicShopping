@@ -144,3 +144,4 @@ echo HTML::button($CLICSHOPPING_Members->getDef('button_members'), null, $CLICSH
   }
   ?>
 </div>
+<div class="py-5"></div>

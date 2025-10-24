@@ -119,5 +119,4 @@ if ($CLICSHOPPING_MessageStack->exists('Total')) {
   }
   ?>
 </div>
-</div>
-</div>
+<div class="py-5"></div>

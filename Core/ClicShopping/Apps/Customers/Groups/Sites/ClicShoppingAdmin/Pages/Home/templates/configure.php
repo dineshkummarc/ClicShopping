@@ -144,3 +144,4 @@ echo HTML::button($CLICSHOPPING_Groups->getDef('button_groups'), null, $CLICSHOP
   }
   ?>
 </div>
+<div class="py-5"></div>

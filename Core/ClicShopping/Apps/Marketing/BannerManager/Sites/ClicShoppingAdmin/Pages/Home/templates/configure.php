@@ -145,3 +145,4 @@ if ($CLICSHOPPING_MessageStack->exists('BannerManager')) {
   }
   ?>
 </div>
+<div class="py-5"></div>

@@ -145,3 +145,4 @@ echo HTML::button($CLICSHOPPING_Gdpr->getDef('button_gdpr'), null, $CLICSHOPPING
   }
   ?>
 </div>
+<div class="py-5"></div>

@@ -146,3 +146,4 @@ if ($CLICSHOPPING_MessageStack->exists('SecurityCheck')) {
   }
   ?>
 </div>
+<div class="py-5"></div>

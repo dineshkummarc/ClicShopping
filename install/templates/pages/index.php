@@ -124,169 +124,194 @@ if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
           <td width="35%"><b>PHP Settings</b></td>
           <td width="25%"><b>Current Settings</b></td>
           <td width="25%"><b>Required Settings</b></td>
-          <td width="15%" class="text-center"><b>Status</b></td>
-        </tr>
+            <td width="15%" class="text-center"><b>Status</b></td>
+          </tr>
         </thead>
         <tbody>
-        <tr>
-          <td><?php echo PHP_VERSION; ?></td>
-          <td class="text-center"><?php echo phpversion(); ?></td>
-          </td>
-          <td class="text-center">PHP 8.2</td>
-          <td
-            class="text-end"><?php echo((version_compare(phpversion(), '8.3', '>')) ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-danger"></i>'); ?></td>
-        </tr>
-        <tr>
-          <td>File Upload</td>
-          <td class="text-center"><?php echo(((int)ini_get('file_uploads') === 0) ? 'Off' : 'On'); ?></td>
-          </td>
-          <td class="text-center">On</td>
-          <td
-            class="text-end"><?php echo(((int)ini_get('file_uploads') === 1) ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-danger"></i>'); ?></td>
-        </tr>
+          <tr>
+            <td><?php echo PHP_VERSION; ?></td>
+            <td class="text-center"><?php echo phpversion(); ?></td>
+            <td class="text-center">PHP 8.3+</td>
+            <td class="text-end">
+              <?php echo version_compare(phpversion(), '8.3', '>=') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-danger"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td>File Upload</td>
+            <td class="text-center"><?php echo ((int) ini_get('file_uploads') === 0) ? 'Off' : 'On'; ?></td>
+            <td class="text-center">On</td>
+            <td class="text-end">
+              <?php echo ((int) ini_get('file_uploads') === 1) ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-danger"></i>'; ?>
+            </td>
+          </tr>
         </tbody>
       </table>
 
       <br>
-      <div><h5><?php echo TEXT_PHP_EXTENSION; ?></h5></div>
+      <div>
+        <h5><?php echo TEXT_PHP_EXTENSION; ?></h5>
+      </div>
       <table class="table table-bordered">
         <thead>
-        <tr>
-          <td width="35%"><b>Extension Settingss</b></td>
-          <td width="25%"><b>Current Settings</b></td>
-          <td width="25%"><b>Required Settings</b></td>
-          <td width="15%" class="text-center"><b>Status</b></td>
-        </tr>
+          <tr>
+            <td width="35%"><b>Extension Settingss</b></td>
+            <td width="25%"><b>Current Settings</b></td>
+            <td width="25%"><b>Required Settings</b></td>
+            <td width="15%" class="text-center"><b>Status</b></td>
+          </tr>
         </thead>
         <tbody>
-        <tr>
-          <td>Mysql / Maria-Db database</td>
-          <td
-            class="text-center"><?php echo extension_loaded('pdo') && extension_loaded('pdo_mysql') ? 'On' : 'Off'; ?></td>
-          <td class="text-center">On</td>
-          <td
-            class="text-end"><?php echo extension_loaded('pdo') && extension_loaded('pdo_mysql') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-danger"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td>cURL</td>
-          <td class="text-center"><?php echo extension_loaded('curl') ? 'On' : 'Off'; ?></td>
-          <td class="text-center">On</td>
-          <td
-            class="text-end"><?php echo extension_loaded('curl') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td>zip</td>
-          <td class="text-center"><?php echo extension_loaded('zip') ? 'On' : 'Off'; ?></td>
-          <td class="text-center">On</td>
-          <td
-            class="text-end"><?php echo extension_loaded('zip') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td>Gd</td>
-          <td class="text-center"><?php echo extension_loaded('gd') ? 'On' : 'Off'; ?></td>
-          <td class="text-center">On</td>
-          <td
-            class="text-end"><?php echo extension_loaded('gd') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td>OpenSSL</td>
-          <td class="text-center"><?php echo extension_loaded('openssl') ? 'On' : 'Off'; ?></td>
-          <td class="text-center">On</td>
-          <td
-            class="text-end"><?php echo extension_loaded('openssl') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td>Soap</td>
-          <td class="text-center"><?php echo extension_loaded('soap') ? 'On' : 'Off'; ?></td>
-          <td class="text-center">On</td>
-          <td
-            class="text-end"><?php echo extension_loaded('soap') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td>XML</td>
-          <td class="text-center"><?php echo extension_loaded('xml') ? 'On' : 'Off'; ?></td>
-          <td class="text-center">On</td>
-          <td
-            class="text-end"><?php echo extension_loaded('xml') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td>Json</td>
-          <td class="text-center"><?php echo extension_loaded('json') ? 'On' : 'Off'; ?></td>
-          <td class="text-center">On</td>
-          <td
-            class="text-end"><?php echo extension_loaded('json') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td>Memcached</td>
-          <td class="text-center"><?php echo extension_loaded('memcached') ? 'On' : 'Off'; ?></td>
-          <td class="text-center">Optionnal</td>
-          <td class="text-end"><?php echo extension_loaded('memcached') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td>OPcache</td>
-          <td class="text-center"><?php echo extension_loaded('opcache') ? 'On' : 'Off'; ?></td>
-          <td class="text-center">Optionnal</td>
-          <td class="text-end"><?php echo extension_loaded('opcache') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td>Pathinfo</td>
-          <td class="text-center"><?php echo function_exists('pathinfo') ? 'On' : 'Off'; ?></td>
-          <td class="text-center">On</td>
-          <td
-            class="text-end"><?php echo function_exists('pathinfo') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
+          <tr>
+            <td>Mysql / Maria-Db database</td>
+            <td class="text-center">
+              <?php echo extension_loaded('pdo') && extension_loaded('pdo_mysql') ? 'On' : 'Off'; ?>
+            </td>
+            <td class="text-center">On</td>
+            <td class="text-end">
+              <?php echo extension_loaded('pdo') && extension_loaded('pdo_mysql') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-danger"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td>cURL</td>
+            <td class="text-center"><?php echo extension_loaded('curl') ? 'On' : 'Off'; ?></td>
+            <td class="text-center">On</td>
+            <td class="text-end">
+              <?php echo extension_loaded('curl') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td>zip</td>
+            <td class="text-center"><?php echo extension_loaded('zip') ? 'On' : 'Off'; ?></td>
+            <td class="text-center">On</td>
+            <td class="text-end">
+              <?php echo extension_loaded('zip') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td>Gd</td>
+            <td class="text-center"><?php echo extension_loaded('gd') ? 'On' : 'Off'; ?></td>
+            <td class="text-center">On</td>
+            <td class="text-end">
+              <?php echo extension_loaded('gd') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td>OpenSSL</td>
+            <td class="text-center"><?php echo extension_loaded('openssl') ? 'On' : 'Off'; ?></td>
+            <td class="text-center">On</td>
+            <td class="text-end">
+              <?php echo extension_loaded('openssl') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td>Soap</td>
+            <td class="text-center"><?php echo extension_loaded('soap') ? 'On' : 'Off'; ?></td>
+            <td class="text-center">On</td>
+            <td class="text-end">
+              <?php echo extension_loaded('soap') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td>XML</td>
+            <td class="text-center"><?php echo extension_loaded('xml') ? 'On' : 'Off'; ?></td>
+            <td class="text-center">On</td>
+            <td class="text-end">
+              <?php echo extension_loaded('xml') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td>Json</td>
+            <td class="text-center"><?php echo extension_loaded('json') ? 'On' : 'Off'; ?></td>
+            <td class="text-center">On</td>
+            <td class="text-end">
+              <?php echo extension_loaded('json') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td>Memcached</td>
+            <td class="text-center"><?php echo extension_loaded('memcached') ? 'On' : 'Off'; ?></td>
+            <td class="text-center">Optionnal</td>
+            <td class="text-end">
+              <?php echo extension_loaded('memcached') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td>OPcache</td>
+            <td class="text-center"><?php echo extension_loaded('opcache') ? 'On' : 'Off'; ?></td>
+            <td class="text-center">Optionnal</td>
+            <td class="text-end">
+              <?php echo extension_loaded('opcache') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td>Pathinfo</td>
+            <td class="text-center"><?php echo function_exists('pathinfo') ? 'On' : 'Off'; ?></td>
+            <td class="text-center">On</td>
+            <td class="text-end">
+              <?php echo function_exists('pathinfo') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
 
-        <tr>
-          <td>exec</td>
-          <td class="text-center"><?php echo function_exists('exec') ? 'On' : 'Off'; ?></td>
-          <td class="text-center">Optionnal</td>
-          <td class="text-end"><?php echo function_exists('exec') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
+          <tr>
+            <td>exec</td>
+            <td class="text-center"><?php echo function_exists('exec') ? 'On' : 'Off'; ?></td>
+            <td class="text-center">Optionnal</td>
+            <td class="text-end">
+              <?php echo function_exists('exec') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
 
         </tbody>
       </table>
       <br>
-      <div><h5><?php echo TEXT_CHECK_RIGHT; ?></h5></div>
+      <div>
+        <h5><?php echo TEXT_CHECK_RIGHT; ?></h5>
+      </div>
       <table class="table table-bordered">
         <thead>
-        <tr>
-          <td width="70%"><b>Files</b></td>
-          <td width="25%"><b>Status</b></td>
-        </tr>
+          <tr>
+            <td width="70%"><b>Files</b></td>
+            <td width="25%"><b>Status</b></td>
+          </tr>
         </thead>
         <tbody>
-        <tr>
-          <td><?php echo CLICSHOPPING::BASE_DIR . 'Work'; ?></td>
-          <td
-            class="text-end"><?php echo is_writable(CLICSHOPPING::BASE_DIR . 'Work') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td><?php echo CLICSHOPPING::BASE_DIR . 'Conf/ElFinderConfig.php'; ?></td>
-          <td
-            class="text-end"><?php echo is_writable(CLICSHOPPING::BASE_DIR . 'Conf/ElFinderConfig.php') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td><?php echo CLICSHOPPING::BASE_DIR . 'Conf/global.php'; ?></td>
-          <td
-            class="text-end"><?php echo is_writable(CLICSHOPPING::BASE_DIR . 'Conf/global.php') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td><?php echo CLICSHOPPING::BASE_DIR . 'Sites/ClicShoppingAdmin/conf.php'; ?></td>
-          <td
-            class="text-end"><?php echo is_writable(CLICSHOPPING::BASE_DIR . 'Sites/ClicShoppingAdmin/site_conf.php') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
-        <tr>
-          <td><?php echo CLICSHOPPING::BASE_DIR . 'Sites/Shop/conf.php'; ?></td>
-          <td
-            class="text-end"><?php echo is_writable(CLICSHOPPING::BASE_DIR . 'Sites/Shop/site_conf.php') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?></td>
-        </tr>
+          <tr>
+            <td><?php echo CLICSHOPPING::BASE_DIR . 'Work'; ?></td>
+            <td class="text-end">
+              <?php echo is_writable(CLICSHOPPING::BASE_DIR . 'Work') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td><?php echo CLICSHOPPING::BASE_DIR . 'Conf/ElFinderConfig.php'; ?></td>
+            <td class="text-end">
+              <?php echo is_writable(CLICSHOPPING::BASE_DIR . 'Conf/ElFinderConfig.php') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td><?php echo CLICSHOPPING::BASE_DIR . 'Conf/global.php'; ?></td>
+            <td class="text-end">
+              <?php echo is_writable(CLICSHOPPING::BASE_DIR . 'Conf/global.php') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td><?php echo CLICSHOPPING::BASE_DIR . 'Sites/ClicShoppingAdmin/conf.php'; ?></td>
+            <td class="text-end">
+              <?php echo is_writable(CLICSHOPPING::BASE_DIR . 'Sites/ClicShoppingAdmin/site_conf.php') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
+          <tr>
+            <td><?php echo CLICSHOPPING::BASE_DIR . 'Sites/Shop/conf.php'; ?></td>
+            <td class="text-end">
+              <?php echo is_writable(CLICSHOPPING::BASE_DIR . 'Sites/Shop/site_conf.php') ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-warning"></i>'; ?>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
   </div>
 
 
-  <br/>
+  <br />
   <div class="mt-1"></div>
 
 
@@ -300,7 +325,7 @@ if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
           <ul style="margin-top: 20px; margin-bottom: 20px;">
             <?php
             foreach ($warning_array as $key => $value) {
-              echo '<li>' . $value . '</li>';
+              echo "<li>{$value}</li>";
             }
             ?>
           </ul>
@@ -324,7 +349,7 @@ if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
             }
 
             foreach ($directory_array as $dir) {
-              echo '<li>' . $dir . '</li>';
+              echo "<li>{$dir}</li>";
             }
             ?>
           </ul>
@@ -338,9 +363,9 @@ if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
 
         <p class="text-end"><a href="index.php" class="btn btn-danger" role="button">Retry Installation</a></p>
 
-      <?php
+        <?php
       } else {
-      ?>
+        ?>
 
         <div id="detectHttps" class="alert alert-info" role="alert">
           <p><i class="bi bi-arrow-repeat"></i> Please wait, detecting web server environment..</p>

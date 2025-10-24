@@ -10,6 +10,7 @@
 
 namespace ClicShopping\OM;
 
+use AllowDynamicProperties;
 use ArrayIterator;
 use CachingIterator;
 use function count;
@@ -22,6 +23,7 @@ use function strlen;
 /**
  * Namespace for organizing the HTML class logic.
  */
+#[AllowDynamicProperties]
 class HTML
 {
   /**
@@ -387,7 +389,7 @@ class HTML
       $field .= '<input type="' . static::output($type) . '" name="' . static::outputProtected($name) . '"';
 
 
-      if (!str_contains($parameters, 'id=')) {
+      if (!str_contains($parameters ?? '', 'id=')) {
         $field .= ' id="' . static::output($name) . (count($values) > 1 ? '_' . $counter : '') . '"';
       } elseif (count($values) > 1) {
         $offset = strpos($parameters, 'id="');
@@ -489,7 +491,7 @@ class HTML
 
     $field = '<textarea name="' . static::output($name) . '" cols="' . static::output($width) . '" rows="' . static::output($height) . '"';
 
-    if (!str_contains($parameters, 'id=')) {
+    if (!str_contains($parameters ?? '', 'id=')) {
       $field .= ' class="form-control" id="' . static::output($name) . '"';
     }
 

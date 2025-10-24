@@ -143,3 +143,4 @@ if ($CLICSHOPPING_MessageStack->exists('Customers')) {
   }
   ?>
 </div>
+<div class="py-5"></div>

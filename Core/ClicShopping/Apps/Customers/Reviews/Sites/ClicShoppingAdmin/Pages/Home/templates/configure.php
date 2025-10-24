@@ -144,3 +144,4 @@ echo HTML::button($CLICSHOPPING_Reviews->getDef('button_reviews'), null, $CLICSH
   }
   ?>
 </div>
+<div class="py-5"></div>

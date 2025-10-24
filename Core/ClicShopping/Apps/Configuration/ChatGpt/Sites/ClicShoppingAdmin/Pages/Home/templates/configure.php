@@ -166,4 +166,4 @@ if ($CLICSHOPPING_MessageStack->exists('ChatGpt')) {
   }
   ?>
 </div>
-<div class="py-4"></div>
+<div class="py-5"></div>

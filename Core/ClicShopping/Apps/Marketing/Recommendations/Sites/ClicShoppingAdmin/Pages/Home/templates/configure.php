@@ -151,3 +151,4 @@ if ($CLICSHOPPING_MessageStack->exists('Recommendations')) {
   }
   ?>
 </div>
+<div class="py-5"></div>

@@ -88,7 +88,6 @@ $QordersStatusInvoice->execute();
 
 $order_status_invoice_display = $QordersStatusInvoice->value('orders_status_invoice_name');
 
-
 $QstatusOrder = $CLICSHOPPING_Orders->db->prepare('select orders_status
                                                      from :table_orders
                                                      where orders_id = :orders_id
@@ -101,7 +100,6 @@ $status_order = $QstatusOrder->fetch();
 Registry::set('Order', new OrderAdminPackingSlip($oID));
 $order = Registry::get('Order');
 
-
 //Instanciation of inherited class
 // Classe pdf.php
 $pdf = new \FPDF();
@@ -113,7 +111,6 @@ $pdf->SetMargins(10, 2, 6);
 // Add the first page
 // Ajoute page
 $pdf->AddPage();
-
 
 if (DISPLAY_INVOICE_HEADER == 'false') {
 // Logo
@@ -128,7 +125,7 @@ if (DISPLAY_INVOICE_HEADER == 'false') {
   $pdf->SetTextColor((float)INVOICE_RGB);
   $pdf->Ln(0);
   $pdf->Cell(125);
-  $pdf->MultiCell(100, 3.5, utf8_decode(STORE_NAME), 0, 'L');
+  $pdf->MultiCell(100, 3.5, mb_convert_encoding(STORE_NAME, 'ISO-8859-1', 'UTF-8'), 0, 'L');
 
   // Adresse de la compagnie
   $pdf->SetX(0);
@@ -137,7 +134,7 @@ if (DISPLAY_INVOICE_HEADER == 'false') {
   $pdf->SetTextColor((float)INVOICE_RGB);
   $pdf->Ln(0);
   $pdf->Cell(125);
-  $pdf->MultiCell(100, 3.5, utf8_decode(STORE_NAME_ADDRESS), 0, 'L');
+  $pdf->MultiCell(100, 3.5, mb_convert_encoding(STORE_NAME_ADDRESS, 'ISO-8859-1', 'UTF-8'), 0, 'L');
 
   // Email
   $pdf->SetX(0);
@@ -146,7 +143,7 @@ if (DISPLAY_INVOICE_HEADER == 'false') {
   $pdf->SetTextColor((float)INVOICE_RGB);
   $pdf->Ln(0);
   $pdf->Cell(-3);
-  $pdf->MultiCell(100, 3.5, utf8_decode($CLICSHOPPING_Orders->getDef('entry_email')) . ' ' . STORE_OWNER_EMAIL_ADDRESS, 0, 'L');
+  $pdf->MultiCell(100, 3.5, mb_convert_encoding($CLICSHOPPING_Orders->getDef('entry_email'), 'ISO-8859-1', 'UTF-8') . ' ' . STORE_OWNER_EMAIL_ADDRESS, 0, 'L');
 
   // Website
   $pdf->SetX(0);
@@ -157,7 +154,6 @@ if (DISPLAY_INVOICE_HEADER == 'false') {
   $pdf->Cell(-3);
   $pdf->MultiCell(100, 3.5, $CLICSHOPPING_Orders->getDef('entry_http_site') . ' ' . HTTP::typeUrlDomain(), 0, 'L');
 }
-
 
 // Ligne de pliage pour mise en enveloppe
 $pdf->Cell(-5);
@@ -180,7 +176,7 @@ $pdf->Text(11, 44, $CLICSHOPPING_Orders->getDef('entry_sold_to'));
 $pdf->SetX(0);
 $pdf->SetY(47);
 $pdf->Cell(9);
-$pdf->MultiCell(70, 3.3, utf8_decode($CLICSHOPPING_Address->addressFormat($order->customer['format_id'], $order->customer, '', '', "\n")), 0, 'L');
+$pdf->MultiCell(70, 3.3, mb_convert_encoding($CLICSHOPPING_Address->addressFormat($order->customer['format_id'], $order->customer, '', '', "\n"), 'ISO-8859-1', 'UTF-8'), 0, 'L');
 
 //Draw Box for Delivery Address
 // Cadre pour l'adresse de livraison
@@ -193,11 +189,11 @@ $PDF->roundedRect(108, 40, 90, 35, 2, 'DF');
 // Adresse de livraison
 $pdf->SetFont('Arial', 'B', 8);
 $pdf->SetTextColor(0);
-$pdf->Text(113, 44, utf8_decode($CLICSHOPPING_Orders->getDef('entry_ship_to')));
+$pdf->Text(113, 44, mb_convert_encoding($CLICSHOPPING_Orders->getDef('entry_ship_to'), 'ISO-8859-1', 'UTF-8'));
 $pdf->SetX(0);
 $pdf->SetY(47);
 $pdf->Cell(111);
-$pdf->MultiCell(70, 3.3, utf8_decode($CLICSHOPPING_Address->addressFormat($order->delivery['format_id'], $order->delivery, '', '', "\n")), 0, 'L');
+$pdf->MultiCell(70, 3.3, mb_convert_encoding($CLICSHOPPING_Address->addressFormat($order->delivery['format_id'], $order->delivery, '', '', "\n"), 'ISO-8859-1', 'UTF-8'), 0, 'L');
 
 // Information client
 $pdf->SetFont('Arial', 'B', 8);
@@ -214,13 +210,13 @@ $pdf->Text(15, 90, $CLICSHOPPING_Orders->getDef('entry_email') . ' ' . $order->c
 // Numero de client
 $pdf->SetFont('Arial', '', 8);
 $pdf->SetTextColor(0);
-$pdf->Text(15, 95, utf8_decode($CLICSHOPPING_Orders->getDef('entry_customer_number')) . ' ' . $QordersInfo->valueInt('customers_id'));
+$pdf->Text(15, 95, mb_convert_encoding($CLICSHOPPING_Orders->getDef('entry_customer_number'), 'ISO-8859-1', 'UTF-8') . ' ' . $QordersInfo->valueInt('customers_id'));
 
 //  Customer phone
 // Telephone du client
 $pdf->SetFont('Arial', '', 8);
 $pdf->SetTextColor(0);
-$pdf->Text(15, 100, utf8_decode($CLICSHOPPING_Orders->getDef('entry_phone')) . ' ' . Hash::displayDecryptedDataText($order->customer['telephone']));
+$pdf->Text(15, 100, mb_convert_encoding($CLICSHOPPING_Orders->getDef('entry_phone'), 'ISO-8859-1', 'UTF-8') . ' ' . Hash::displayDecryptedDataText($order->customer['telephone']));
 
 //Draw Box for Order Number, Date & Payment method
 // Cadre du numero de commande, date de commande et methode de paiemenent
@@ -267,7 +263,6 @@ if (($QordersHistory->valueInt('orders_status_invoice_id') == 1)) {
   $pdf->Text(55, 113, $temp . DateTime::toShort($order->info['date_purchased']));
 }
 
-
 //Draw Payment Method Text
 $temp = substr(mb_convert_encoding($order->info['payment_method'], 'ISO-8859-1', 'UTF-8'), 0, 60);
 $pdf->Text(110, 113, mb_convert_encoding($CLICSHOPPING_Orders->getDef('text_payment_method'), 'ISO-8859-1', 'UTF-8') . ' ' . $temp);
@@ -313,7 +308,7 @@ for ($i = 0, $n = \count($order->products); $i < $n; $i++) {
     for ($j = 0, $n2 = \count($order->products[$i]['attributes']); $j < $n2; $j++) {
       $prod_attribs .= " - " . $order->products[$i]['attributes'][$j]['option'] . ': ' . $order->products[$i]['attributes'][$j]['value'];
     }
-  }
+}
 
   $product_name_attrib_contact = $order->products[$i]['name'] . $prod_attribs;
 
@@ -354,7 +349,6 @@ for ($i = 0, $n = \count($order->products); $i < $n; $i++) {
   }
 }
 
-
 //Draw the bottom line with invoice text
 // Ligne pour le pied de page
 if (DISPLAY_INVOICE_FOOTER == 'false') {
@@ -362,7 +356,6 @@ if (DISPLAY_INVOICE_FOOTER == 'false') {
   $pdf->SetY(-67);
   $pdf->SetDrawColor(153, 153, 153);
   $pdf->Cell(185, .1, '', 1, 1, 'L', 1);
-
 
   // Remerciement
   $pdf->SetY(-65);
@@ -415,7 +408,6 @@ if (DISPLAY_INVOICE_FOOTER == 'false') {
   $pdf->SetTextColor((float)INVOICE_RGB);
   $pdf->Cell(0, 10, mb_convert_encoding(SHOP_DIVERS, 'ISO-8859-1', 'UTF-8'), 0, 0, 'C');
 }
-
 
 // PDF's created now output the file
 $pdf->Output();

@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Catalog\Products\Classes\ClicShoppingAdmin;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Cache;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
@@ -28,6 +29,7 @@ use function is_null;
  * including retrieving product information, saving product descriptions,
  * and managing various product-specific details like model, SKU, EAN, and packaging.
  */
+#[AllowDynamicProperties]
 class ProductsAdmin
 {
   private mixed $db;
@@ -823,9 +825,10 @@ class ProductsAdmin
    */
   public function getManufacturerUrl(string|int|null $manufacturer_id, int $language_id): string|bool
   {
+    if ($language_id == 0) $language_id = $this->lang->getId();
+
     if (!is_null($manufacturer_id)) {
-      if ($language_id == 0) $language_id = $this->lang->getId();
-      $Qmanufacturer = Registry::get('Db')->get('manufacturers_info', 'manufacturers_url', ['manufacturers_id' => (int)$manufacturer_id, 'languages_id' => (int)$language_id]);
+        $Qmanufacturer = Registry::get('Db')->get('manufacturers_info', 'manufacturers_url', ['manufacturers_id' => (int)$manufacturer_id, 'languages_id' => (int)$language_id]);
 
       return $Qmanufacturer->value('manufacturers_url');
     } else {

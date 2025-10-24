@@ -11,7 +11,6 @@
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-
 $CLICSHOPPING_ModulesHooks = Registry::get('ModulesHooks');
 $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
@@ -160,3 +159,4 @@ if ($CLICSHOPPING_MessageStack->exists('main')) {
   }
   ?>
 </div>
+<div class="py-5"></div>

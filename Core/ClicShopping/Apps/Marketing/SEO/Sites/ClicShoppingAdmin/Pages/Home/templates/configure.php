@@ -142,3 +142,4 @@ if ($CLICSHOPPING_MessageStack->exists('SEO')) {
   }
   ?>
 </div>
+<div class="py-5"></div>

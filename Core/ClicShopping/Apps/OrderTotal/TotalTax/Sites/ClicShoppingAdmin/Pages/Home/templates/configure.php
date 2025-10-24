@@ -119,5 +119,4 @@ if ($CLICSHOPPING_MessageStack->exists('TotalTax')) {
   }
   ?>
 </div>
-</div>
-</div>
+<div class="py-5"></div>
