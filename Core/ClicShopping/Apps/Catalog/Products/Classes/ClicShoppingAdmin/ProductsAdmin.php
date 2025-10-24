@@ -369,6 +369,7 @@ class ProductsAdmin
   public function getProductsDescriptionSummary(string|int|null $product_id, int|null $language_id = null)
   {
     if (!$language_id) $language_id = $this->lang->getId();
+
     if (!is_null($product_id)) {
       if (!$language_id) $language_id = $this->lang->getId();
 
@@ -820,7 +821,7 @@ class ProductsAdmin
    * Retrieves the URL associated with a manufacturer based on the provided manufacturer ID and language ID.
    *
    * @param string|int|null $manufacturer_id The identifier of the manufacturer. Can be a string, integer, or null.
-   * @param int $language_id The language ID used to fetch the manufacturer URL. If set to 0, the default language ID is used.
+   * @param int|null $language_id The language ID used to fetch the manufacturer URL. If set to 0, the default language ID is used.
    * @return string|bool Returns the manufacturer's URL as a string if found, or false if the manufacturer ID is null or the URL does not exist.
    */
   public function getManufacturerUrl(string|int|null $manufacturer_id, int $language_id): string|bool

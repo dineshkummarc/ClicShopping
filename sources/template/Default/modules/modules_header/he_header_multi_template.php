@@ -260,7 +260,7 @@ class explodeCategoryTree extends categoryTree
         } else {
           $category_link = $category_id;
         }
-        if (($this->follow_cpath === true) && \in_array($category_id, $this->cpath_array)) {
+        if (($this->follow_cpath === true) && \in_array($category_id, $this->cpath_array, true)) {
           $link_title = $this->cpath_start_string . $category['name'] . $this->cpath_end_string;
 //            $link_image =  $this->cpath_start_string . HTML::image($CLICSHOPPING_Template->getDirectoryTemplateImages() . $category['image'], HTML::outputProtected($category['name']), 150, 150, null, true) . $this->cpath_end_string;
         } else {

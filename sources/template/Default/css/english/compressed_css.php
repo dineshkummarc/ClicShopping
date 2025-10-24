@@ -25,7 +25,7 @@ error_reporting(0);
 ini_set('display_errors', 0);
 
 // Logger les erreurs de sécurité
-function log_security_error($message, $file = null) {
+function log_security_error($message, ?string $file = null) {
     $log_message = "[" . date('Y-m-d H:i:s') . "] CSS Compressor Security: " . $message;
 
     if ($file) {
@@ -118,7 +118,7 @@ function get_files_secure($root_dir, $all_data = []) {
             $relative_path = str_replace(DIRECTORY_SEPARATOR, '/', $relative_path);
 
             // Vérifier si le fichier est dans la liste d'exclusion
-            if (in_array($relative_path, $ignore_files)) {
+            if (in_array($relative_path, $ignore_files, true)) {
                 continue;
             }
 
@@ -129,7 +129,7 @@ function get_files_secure($root_dir, $all_data = []) {
 
             // Valider l'extension
             $file_extension = strtolower(pathinfo($content, PATHINFO_EXTENSION));
-            if (!in_array($file_extension, $allowed_extensions)) {
+            if (!in_array($file_extension, $allowed_extensions, true)) {
                 continue;
             }
 
@@ -145,7 +145,7 @@ function get_files_secure($root_dir, $all_data = []) {
 
         } elseif (is_dir($real_path) && is_readable($real_path)) {
             // Vérifier si le répertoire n'est pas dans la liste d'exclusion
-            if (in_array($content, $ignore_dirs)) {
+            if (in_array($content, $ignore_dirs, true)) {
                 continue;
             }
 

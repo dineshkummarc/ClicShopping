@@ -81,7 +81,7 @@ if (!empty($thresholds)) {
 while (true) {
   try {
     // Simulate random failure before computing data
-    if ($sim_fail_rate > 0 && mt_rand() / mt_getrandmax() < $sim_fail_rate) {
+    if ($sim_fail_rate > 0 && mt_rand(0, mt_getrandmax()) / mt_getrandmax() < $sim_fail_rate) {
       throw new \Exception('Simulated failure');
     }
 

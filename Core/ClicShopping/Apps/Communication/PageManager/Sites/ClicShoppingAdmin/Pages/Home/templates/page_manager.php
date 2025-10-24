@@ -143,13 +143,18 @@ $languages = $CLICSHOPPING_Language->getLanguages();
           $QcustomersGroup->execute();
 
           $customers_group = $QcustomersGroup->fetch();
+          
+          // Initialize as array if fetch returned false
+          if ($customers_group === false) {
+            $customers_group = ['customers_group_name' => ''];
+          }
 
           if ($Qpages->valueInt('customers_group_id') == 99) {
             $customers_group['customers_group_name'] = $CLICSHOPPING_PageManager->getDef('text_all_groups');
           } elseif ($Qpages->valueInt('customers_group_id') == 0) {
             $customers_group['customers_group_name'] = $CLICSHOPPING_PageManager->getDef('normal_customer');
           }
-        }
+}
 
         if (!isset($_GET['bID']) || ((isset($_GET['bID'])) && (int)$_GET['bID'] === $Qpages->valueInt('pages_id') && !isset($bInfo))) {
           $bInfo = new ObjectInfo($Qpages->toArray());
@@ -246,7 +251,7 @@ $languages = $CLICSHOPPING_Language->getLanguages();
         </tr>
         <?php
       }
-    } // end $listingTotalRow
+} // end $listingTotalRow
     ?>
     </tbody>
   </table>

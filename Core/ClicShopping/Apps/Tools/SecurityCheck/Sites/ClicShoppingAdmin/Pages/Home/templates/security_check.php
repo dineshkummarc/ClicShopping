@@ -38,15 +38,15 @@ if ($secdir = @dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Se
         $class = 'securityCheck_' . substr($file, 0, strrpos($file, '.'));
 
         include(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/SecurityCheck/' . $file);
-        $$class = new $class();
+        $instance = new $class();
 
         $modules[] = [
-          'title' => isset($$class->title) ? $$class->title : substr($file, 0, strrpos($file, '.')),
+          'title' => isset($instance->title) ? $instance->title : substr($file, 0, strrpos($file, '.')),
           'class' => $class,
           'code' => substr($file, 0, strrpos($file, '.'))
         ];
       }
-    }
+}
   }
 
   $secdir->close();
@@ -61,15 +61,15 @@ if ($extdir = @dir(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Se
 
         include(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/SecurityCheck/extended/' . $file);
 
-        $$class = new $class();
+        $instance = new $class();
 
         $modules[] = [
-          'title' => isset($$class->title) ? $$class->title : substr($file, 0, strrpos($file, '.')),
+          'title' => isset($instance->title) ? $instance->title : substr($file, 0, strrpos($file, '.')),
           'class' => $class,
           'code' => substr($file, 0, strrpos($file, '.'))
         ];
       }
-    }
+}
   }
 
   $extdir->close();
