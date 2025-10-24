@@ -305,11 +305,13 @@ class ProductsAdmin
   /**
    * Retrieve the shipping delay for a specific product based on its ID and language.
    * @param string|int|null $id - The ID of the product. Can be null if no product ID is provided.
-   * @param int $language_id - The ID of the language for the product description.
+   * @param int|null $language_id - The ID of the language for the product description.
    * @return string|bool - Returns the shipping delay as a string if the product and language exist, or false if no product ID is provided.
    */
-  public function getProductsShippingDelay(string|int|null $id = null, int $language_id): string|bool
+  public function getProductsShippingDelay(string|int|null $id = null, int|null $language_id = null): string|bool
   {
+    if (!$language_id) $language_id = $this->lang->getId();
+
     if (!is_null($id)) {
       $Qproduct = $this->db->prepare('select products_shipping_delay
                                        from :table_products_description
@@ -325,17 +327,19 @@ class ProductsAdmin
     } else {
       return false;
     }
-  }
+}
 
   /**
    * Retrieve the shipping delay information for out-of-stock products.
    *
    * @param string|int|null $id - The ID of the product. If null, the method returns false.
-   * @param int $language_id - The ID of the language in which the information is retrieved.
+   * @param int|null $language_id - The ID of the language in which the information is retrieved.
    * @return string|bool - Returns the shipping delay information as a string if the product exists, otherwise returns false.
    */
-  public function getProductsShippingDelayOutOfStock(string|int|null $id = null, int $language_id): string|bool
+  public function getProductsShippingDelayOutOfStock(string|int|null $id = null, int|null $language_id = null): string|bool
   {
+    if (!$language_id) $language_id = $this->lang->getId();
+
     if (!is_null($id)) {
       $Qproduct = $this->db->prepare('select products_shipping_delay_out_of_stock
                                        from :table_products_description
@@ -351,17 +355,18 @@ class ProductsAdmin
     } else {
       return false;
     }
-  }
+}
 
   /**
    * Retrieves the summary of the product description for a specific product and language.
    *
    * @param string|int|null $product_id - The ID of the product whose description summary is being retrieved. Can be null if a product ID is not provided.
-   * @param int $language_id - The language ID for the description summary. If not provided, the default language ID will be used.
+   * @param int|null $language_id - The language ID for the description summary. If not provided, the default language ID will be used.
    * @return mixed - The product description summary if available, or null otherwise.
    */
-  public function getProductsDescriptionSummary(string|int|null $product_id, int $language_id)
+  public function getProductsDescriptionSummary(string|int|null $product_id, int|null $language_id = null)
   {
+    if (!$language_id) $language_id = $this->lang->getId();
     if (!is_null($product_id)) {
       if (!$language_id) $language_id = $this->lang->getId();
 
@@ -451,11 +456,13 @@ class ProductsAdmin
    * Retrieve the description of a product for a specific language.
    *
    * @param string|int|null $product_id - The ID of the product. Can be a string, integer, or null.
-   * @param int $language_id - The ID of the language in which the product description is needed.
+   * @param int|null $language_id - The ID of the language in which the product description is needed.
    * @return string|bool - Returns the product description as a string on success, or false if the product ID is null or the operation fails.
    */
-  public function getProductsDescription(string|int|null $product_id, int $language_id): string|bool
+  public function getProductsDescription(string|int|null $product_id, int|null $language_id = null): string|bool
   {
+    if (!$language_id) $language_id = $this->lang->getId();
+
     if (!is_null($product_id)) {
 
       if ($language_id == 0) $language_id = $this->lang->getId();
@@ -788,12 +795,14 @@ class ProductsAdmin
    * Retrieves the URL of a product based on the given product ID and language ID.
    *
    * @param int|string $product_id The ID of the product for which the URL is to be retrieved.
-   * @param int $language_id The language ID to fetch the product URL. If 0 or null, the default language ID will be used.
+   * @param int|null $language_id The language ID to fetch the product URL. If 0 or null, the default language ID will be used.
    *
    * @return string|bool Returns the product URL as a string if found, otherwise returns false.
    */
-  public function getProductsUrl(int|string $product_id, int $language_id): string|bool
+  public function getProductsUrl(int|string $product_id, int|null $language_id = null): string|bool
   {
+    if ($language_id === null) $language_id = $this->lang->getId();
+
     if (((is_null($language_id)) || $language_id == 0) && !is_null($product_id)) {
       $language_id = $this->lang->getId();
 
