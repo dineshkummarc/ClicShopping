@@ -16,16 +16,16 @@
         "phpxmlrpc/phpxmlrpc": "^4.11",
         "mattketmo/email-checker": "^2.4",
         "doctrine/migrations": "^3.9",
-        "amnuts/opcache-gui": "^3.5",
         "symfony/cache": "^7.3",
         "symfony/http-client": "^7.3",
         "php-http/discovery": "^1.20",
         "stymiee/email-validator": "^2.1",
         "doctrine/orm": "^3.5",
-        "theodo-group/llphant": "^0.11.0",
         "guzzlehttp/guzzle": "^7.10",
-        "stripe/stripe-php": "^18.0",
-        "phpmailer/phpmailer": "^6.11"
+        "phpmailer/phpmailer": "^7.0",
+        "stripe/stripe-php": "^18.1",
+        "theodo-group/llphant": "^0.11.8",
+        "amnuts/opcache-gui": "^3.6"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"

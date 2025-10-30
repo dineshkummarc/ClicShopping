@@ -74,10 +74,10 @@ class Upload
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 
     if (isset($_GET[$this->_file])) {
-      $temp_filename = 'temp_' . mt_rand();
+      $temp_filename = 'temp_' . mt_rand(100000, 999999);
 
       while (file_exists(CLICSHOPPING::BASE_DIR . 'Work/Temp/' . $temp_filename)) {
-        $temp_filename = 'temp_' . mt_rand();
+        $temp_filename = 'temp_' . mt_rand(100000, 999999);
       }
 
       $input = fopen('php://input', 'r');

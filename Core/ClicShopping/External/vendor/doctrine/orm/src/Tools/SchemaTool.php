@@ -14,6 +14,7 @@ use Doctrine\DBAL\Schema\Index;
 use Doctrine\DBAL\Schema\Index\IndexedColumn;
 use Doctrine\DBAL\Schema\Name\Identifier;
 use Doctrine\DBAL\Schema\Name\UnqualifiedName;
+use Doctrine\DBAL\Schema\NamedObject;
 use Doctrine\DBAL\Schema\PrimaryKeyConstraint;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
@@ -38,6 +39,7 @@ use function array_filter;
 use function array_flip;
 use function array_intersect_key;
 use function array_map;
+use function array_values;
 use function assert;
 use function class_exists;
 use function count;
@@ -46,6 +48,7 @@ use function implode;
 use function in_array;
 use function is_numeric;
 use function method_exists;
+use function preg_match;
 use function strtolower;
 
 /**
@@ -735,7 +738,7 @@ class SchemaTool
             $theJoinTable->addUniqueIndex($unique['columns'], is_numeric($indexName) ? null : $indexName);
         }
 
-        $compositeName = $theJoinTable->getName() . '.' . implode('', $localColumns);
+        $compositeName = $this->getAssetName($theJoinTable) . '.' . implode('', $localColumns);
         if (
             isset($addedFks[$compositeName])
             && ($foreignTableName !== $addedFks[$compositeName]['foreignTableName']
@@ -859,15 +862,15 @@ class SchemaTool
         $deployedSchema = $this->schemaManager->introspectSchema();
 
         foreach ($schema->getTables() as $table) {
-            if (! $deployedSchema->hasTable($table->getName())) {
-                $schema->dropTable($table->getName());
+            if (! $deployedSchema->hasTable($this->getAssetName($table))) {
+                $schema->dropTable($this->getAssetName($table));
             }
         }
 
         if ($this->platform->supportsSequences()) {
             foreach ($schema->getSequences() as $sequence) {
-                if (! $deployedSchema->hasSequence($sequence->getName())) {
-                    $schema->dropSequence($sequence->getName());
+                if (! $deployedSchema->hasSequence($this->getAssetName($sequence))) {
+                    $schema->dropSequence($this->getAssetName($sequence));
                 }
             }
 
@@ -889,7 +892,7 @@ class SchemaTool
                 }
 
                 if (count($columns) === 1) {
-                    $checkSequence = $table->getName() . '_' . $columns[0] . '_seq';
+                    $checkSequence = $this->getAssetName($table) . '_' . $columns[0] . '_seq';
                     if ($deployedSchema->hasSequence($checkSequence) && ! $schema->hasSequence($checkSequence)) {
                         $schema->createSequence($checkSequence);
                     }
@@ -955,8 +958,9 @@ class SchemaTool
         }
 
         // whitelist assets we already know about in $toSchema, use the existing filter otherwise
-        $config->setSchemaAssetsFilter(static function ($asset) use ($previousFilter, $toSchema): bool {
-            $assetName = $asset instanceof AbstractAsset ? $asset->getName() : $asset;
+        $getAssetName = $this->getAssetName(...);
+        $config->setSchemaAssetsFilter(static function ($asset) use ($previousFilter, $toSchema, $getAssetName): bool {
+            $assetName = $asset instanceof AbstractAsset ? $getAssetName($asset) : $asset;
 
             return $toSchema->hasTable($assetName) || $toSchema->hasSequence($assetName) || $previousFilter($asset);
         });
@@ -969,20 +973,26 @@ class SchemaTool
         }
     }
 
-    /** @param string[] $primaryKeyColumns */
+    /** @param non-empty-array<non-empty-string> $primaryKeyColumns */
     private function addPrimaryKeyConstraint(Table $table, array $primaryKeyColumns): void
     {
-        if (class_exists(PrimaryKeyConstraint::class)) {
-            $primaryKeyColumnNames = [];
+        if (! class_exists(PrimaryKeyConstraint::class)) {
+            $table->setPrimaryKey(array_values($primaryKeyColumns));
 
-            foreach ($primaryKeyColumns as $primaryKeyColumn) {
+            return;
+        }
+
+        $primaryKeyColumnNames = [];
+
+        foreach ($primaryKeyColumns as $primaryKeyColumn) {
+            if (preg_match('/^"(.+)"$/', $primaryKeyColumn, $matches) === 1) {
+                $primaryKeyColumnNames[] = new UnqualifiedName(Identifier::quoted($matches[1]));
+            } else {
                 $primaryKeyColumnNames[] = new UnqualifiedName(Identifier::unquoted($primaryKeyColumn));
             }
-
-            $table->addPrimaryKeyConstraint(new PrimaryKeyConstraint(null, $primaryKeyColumnNames, true));
-        } else {
-            $table->setPrimaryKey($primaryKeyColumns);
         }
+
+        $table->addPrimaryKeyConstraint(new PrimaryKeyConstraint(null, $primaryKeyColumnNames, true));
     }
 
     /** @return string[] */
@@ -993,5 +1003,13 @@ class SchemaTool
         }
 
         return $index->getColumns();
+    }
+
+    private function getAssetName(AbstractAsset $asset): string
+    {
+        return $asset instanceof NamedObject
+            ? $asset->getObjectName()->toString()
+            // DBAL < 4.4
+            : $asset->getName();
     }
 }

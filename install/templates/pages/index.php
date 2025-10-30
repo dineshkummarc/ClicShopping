@@ -137,20 +137,18 @@ if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
             </td>
           </tr>
           <tr>
-            <td>File Upload</td>
-            <td class="text-center"><?php echo ((int) ini_get('file_uploads') === 0) ? 'Off' : 'On'; ?></td>
-            <td class="text-center">On</td>
-            <td class="text-end">
-              <?php echo ((int) ini_get('file_uploads') === 1) ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-danger"></i>'; ?>
-            </td>
-          </tr>
+          <td>File Upload</td>
+          <td class="text-center"><?php echo(((int)ini_get('file_uploads') === 0) ? 'Off' : 'On'); ?></td>
+          </td>
+          <td class="text-center">On</td>
+          <td
+            class="text-end"><?php echo(((int)ini_get('file_uploads') === 1) ? '<i class="bi bi-hand-thumbs-up text-success"></i>' : '<i class="bi bi-exclamation-circle-fill text-danger"></i>'); ?></td>
+        </tr>
         </tbody>
       </table>
 
       <br>
-      <div>
-        <h5><?php echo TEXT_PHP_EXTENSION; ?></h5>
-      </div>
+      <div><h5><?php echo TEXT_PHP_EXTENSION; ?></h5></div>
       <table class="table table-bordered">
         <thead>
           <tr>
@@ -325,7 +323,7 @@ if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
           <ul style="margin-top: 20px; margin-bottom: 20px;">
             <?php
             foreach ($warning_array as $key => $value) {
-              echo "<li>{$value}</li>";
+              echo '<li>' . $value . '</li>';
             }
             ?>
           </ul>
@@ -349,7 +347,7 @@ if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
             }
 
             foreach ($directory_array as $dir) {
-              echo "<li>{$dir}</li>";
+              echo '<li>' . $dir . '</li>';
             }
             ?>
           </ul>
