@@ -194,18 +194,18 @@ EOD;
 
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
-CREATE TABLE :table_mcp_rate_limit (
-  `id` int(11) NOT NULL,
-  `identifier` varchar(255) DEFAULT NULL,
-  `timestamp` int(11) DEFAULT NULL,
-  `ip` varchar(45) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-ALTER TABLE :table_mcp_rate_limit
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_identifier_timestamp` (`identifier`,`timestamp`),
-  ADD KEY `idx_timestamp` (`timestamp`);
-EOD;
+        CREATE TABLE :table_mcp_rate_limit (
+          `id` int(11) NOT NULL,
+          `identifier` varchar(255) DEFAULT NULL,
+          `timestamp` int(11) DEFAULT NULL,
+          `ip` varchar(45) DEFAULT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        
+        ALTER TABLE :table_mcp_rate_limit
+          ADD PRIMARY KEY (`id`),
+          ADD KEY `idx_identifier_timestamp` (`identifier`,`timestamp`),
+          ADD KEY `idx_timestamp` (`timestamp`);
+        EOD;
 
       $CLICSHOPPING_Db->exec($sql);
     }

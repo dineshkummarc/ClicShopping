@@ -1,7 +1,7 @@
 version4.10
 Libraries updated
 small fix
-App refactoring to be more easy to use or to install a new App
+App refactoring to be more easy to use, create or to install a new App
 New admin design
 
 ----------------

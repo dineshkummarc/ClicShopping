@@ -1735,19 +1735,17 @@ INSERT INTO configuration VALUES(1773, 'Use Redis', 'USE_REDIS', 'False', 'Enabl
 INSERT INTO configuration VALUES(1774, 'Sales Weighting', 'CLICSHOPPING_APP_RECOMMENDATIONS_PR_WEIGHT_SALES', '0.4', 'Weight applied to the score derived from sales. Controls the influence of product sales (normalized by the maximum ordered) in the Multiple strategy.', 6, 0, NULL, '2025-09-15 17:07:51', NULL, NULL);
 INSERT INTO configuration VALUES(1775, 'External Sources Weighting', 'CLICSHOPPING_APP_RECOMMENDATIONS_PR_WEIGHT_EXTERNAL', '0.3', 'Weight applied to the score derived from external recommendations (average of recommendation scores normalized between min and max). Used in the Multiple strategy.', 6, 0, NULL, '2025-09-15 17:07:51', NULL, NULL);
 
-INSERT INTO configuration VALUES(1776, 'MCP Server Port', 'CLICSHOPPING_APP_MCP_MC_SERVER_PORT', '3001', 'Port used to connect to the MCP server', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1777, 'Downtime thresholds in the MCP interface', 'CLICSHOPPING_APP_MCP_MC_DOWNTIME_THRESHOLDS', '300', 'Downtime thresholds, for example the maximum outage duration before an alert is triggered', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1778, 'Latency in the MCP interface', 'CLICSHOPPING_APP_MCP_MC_LATENCY_THRESHOLDS', '1000', 'Latency thresholds, for example the latency value beyond which an alert will be triggered', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1779, 'Token', 'CLICSHOPPING_APP_MCP_MC_TOKEN', '', 'Please insert the access token to connect to the MCP server.<br>We recommend using a long, complex token with at least 15 letters, numbers, and special characters.', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1780, 'Alert thresholds in the MCP interface', 'CLICSHOPPING_APP_MCP_MC_ALERT_THRESHOLDS', '20', 'Purpose of the alert thresholds, the limit beyond which an alert will be triggered', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1781, 'Data Retention', 'CLICSHOPPING_APP_MCP_MC_DATA_RETENTION', '7', 'Data retention policy, indicating how long data will be stored before deletion or archiving', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1782, 'Do you want to enable secure SSL connection', 'CLICSHOPPING_APP_MCP_MC_SSL', 'False', 'In production mode, we recommend enabling this connection', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1783, 'Sort Order', 'CLICSHOPPING_APP_MCP_MC_SORT_ORDER', '500', 'The sort order location of the module shown in the available methods listing (lowest is displayed first).', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1784, 'MCP Server Host', 'CLICSHOPPING_APP_MCP_MC_SERVER_HOST', 'localhost', 'Insert the access token to connect to the MCP server', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1785, 'Alert Notification', 'CLICSHOPPING_APP_MCP_MC_ALERT_NOTIFICATION', 'False', 'Be notified in case of MCP server failure', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1786, 'Status', 'CLICSHOPPING_APP_MCP_MC_STATUS', 'True', 'Set True to enable or not the module', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1787, 'Parameter [MCP App]', 'MODULE_MODULES_MCP_INSTALLED', 'Tools\\MCP\\MC', 'Parameter [MCP App]', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1788, 'Display JSON in Browser', 'CLICSHOPPING_APP_MCP_MC_DISPLAY_BROWSER_JSON', 'True', 'In test mode, select False; in production mode, select True.<br>This setting allows displaying the API request result in JSON format in the browser.', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
+
+
+INSERT INTO configuration VALUES(1776, 'Sort Order', 'CLICSHOPPING_APP_MCP_MC_SORT_ORDER', '500', 'The sort order location of the module shown in the available methods listing (lowest is displayed first).', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
+INSERT INTO configuration VALUES(1777, 'Status', 'CLICSHOPPING_APP_MCP_MC_STATUS', 'True', 'Set True to enable or not the module', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
+INSERT INTO configuration VALUES(1778, 'Parameter [MCP App]', 'MODULE_MODULES_MCP_INSTALLED', 'Tools\\MCP\\MC', 'Parameter [MCP App]', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
+INSERT INTO configuration VALUES(1779, 'Display JSON in Browser', 'CLICSHOPPING_APP_MCP_MC_DISPLAY_BROWSER_JSON', 'True', 'In test mode, select False; in production mode, select True.<br>This setting allows displaying the API request result in JSON format in the browser.', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
+INSERT INTO configuration VALUES(1780, 'Intervalle de temps pendant lequel les limites de débit sont appliquées', 'CLICSHOPPING_APP_MCP_MC_RATE_LIMIT_WINDOW', '900', 'Durée fixe définissant la période sur laquelle les requêtes sont comptabilisées pour appliquer la limitation et éviter les usages excessifs.', 6, 0, NULL, '2025-10-30 15:21:25', NULL, NULL);
+INSERT INTO configuration VALUES(1781, 'Durée d’expiration de la session', 'CLICSHOPPING_APP_MCP_MC_SESSION_TIMEOUT_MINUTES', '30', 'Spécifie la durée d’expiration de la session en minutes.', 6, 0, NULL, '2025-10-30 15:21:25', NULL, NULL);
+INSERT INTO configuration VALUES(1782, 'Durée de verrouillage du compte', 'CLICSHOPPING_APP_MCP_MC_ACCOUNT_LOCK_DURATION', '1800', 'Durée pendant laquelle un compte reste verrouillé après dépassement des limites autorisées.', 6, 0, NULL, '2025-10-30 15:21:25', NULL, NULL);
+INSERT INTO configuration VALUES(1783, 'Nombre maximal de tentatives de connexion', 'CLICSHOPPING_APP_MCP_MC_MAX_LOGIN_ATTEMPTS', '5', 'Spécifie le nombre maximal de tentatives de connexion autorisées avant restriction.', 6, 0, NULL, '2025-10-30 15:21:25', NULL, NULL);
+INSERT INTO configuration VALUES(1784, 'Nombre maximal de requêtes par fenêtre', 'CLICSHOPPING_APP_MCP_MC_MAX_REQUEST_PER_WINDOW', '20', 'Limite le nombre de requêtes à 20 sur une période de 15 minutes.', 6, 0, NULL, '2025-10-30 15:21:25', NULL, NULL);
 
 
 
@@ -2078,6 +2076,10 @@ INSERT INTO manufacturers_info VALUES(4, 1, '', 0, NULL, NULL, NULL, NULL, NULL)
 INSERT INTO manufacturers_info VALUES(4, 2, '', 0, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO manufacturers_info VALUES(5, 1, '', 0, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO manufacturers_info VALUES(5, 2, '', 0, NULL, NULL, NULL, NULL, NULL);
+
+
+INSERT INTO mcp VALUES(1, 'RagBI', 'd0a36b839700b60727fe13998e22aa0af197c61d8b371e26114c133ca51c4864bd0da73ad6d1e5090b02b55cff42b8a0cd23866e64e78fc8884eb6228d32f5e9d76bed468869dd89ee6bb8a3208c5077e88560d0bc238f67cfc732efcf5313a0cb361e297c29c8d82d050d770ed7dee972af6445e801fa9af12e3d478bf5346a', 1, '2025-10-05 13:02:04', NULL, 1, 0, 0, 0, 0, 'localhost', 3001, 0, 20, 1000, 300, 7, 0);
+INSERT INTO mcp_ip VALUES(1, 1, '127.0.0.1', 'localhost');
 
 INSERT INTO orders_status VALUES(1, 1, 'Pending', 1, 0, 0, 1);
 INSERT INTO orders_status VALUES(1, 2, 'En instance', 1, 0, 0, 1);

@@ -30,6 +30,8 @@ class Delete extends \ClicShopping\OM\PagesActionsAbstract
       $mcp_id = HTML::sanitize($_GET['cID']);
 
       $this->app->db->delete('mcp', ['mcp_id' => (int)$mcp_id]);
+      $this->app->db->delete('mcp_ip', ['mcp_id' => (int)$mcp_id]);
+      $this->app->db->delete('mcp_session ', ['mcp_id' => (int)$mcp_id]);
     }
 
     $this->app->redirect('MCP&page=' . $page);

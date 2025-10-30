@@ -1,0 +1,14 @@
+mcp_session_id int(11) not_null auto_increment
+mcp_id int(11) not_null
+session_id varchar(32) not_null
+ip varchar(40) not_null
+date_added datetime not_null
+date_modified datetime not_null
+--
+primary mcp_session_id
+idx_mcp_session_id mcp_session_id
+idx_mcp_id mcp_id
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci

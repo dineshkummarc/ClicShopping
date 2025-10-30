@@ -240,14 +240,10 @@ class McpSecurity
       $CLICSHOPPING_Db->delete('mcp_rate_limit', ['timestamp < :timestamp'], [':timestamp' => $window_start]);
 
       // Compter les tentatives dans la fenêtre
-      $Qcount = $CLICSHOPPING_Db->prepare('
-          SELECT
-              count(id) AS count
-          FROM
-              :table_mcp_rate_limit
-          WHERE
-              identifier = :identifier AND timestamp >= :timestamp
-      ');
+      $Qcount = $CLICSHOPPING_Db->prepare('SELECT count(id) AS count
+                                           FROM :table_mcp_rate_limit
+                                           WHERE identifier = :identifier AND timestamp >= :timestamp
+                                        ');
       $Qcount->bindValue(':identifier', $key);
       $Qcount->bindValue(':timestamp', $window_start);
       $Qcount->execute();
