@@ -17,9 +17,6 @@
     "Hooks": {
       "AdminDashboard": {
       },
-      "ClicShoppingAdmin/TopDashboard": {
-        "TopDashboard": "Module\\Hooks\\ClicShoppingAdmin\\TopDashboard\\McpStatus"
-      },
       "Hooks": {
         "ClicShoppingAdmin/Cronjob": {
           "Process": "Module\\Hooks\\Shop\\Cronjob\\Process"
