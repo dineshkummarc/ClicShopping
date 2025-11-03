@@ -160,7 +160,7 @@ class Delete extends \ClicShopping\OM\ConfigureActionsAbstract
     Cache::clear('menu-administrator');
   }
 
-  private static function removeDb()
+  public static function removeDb()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 

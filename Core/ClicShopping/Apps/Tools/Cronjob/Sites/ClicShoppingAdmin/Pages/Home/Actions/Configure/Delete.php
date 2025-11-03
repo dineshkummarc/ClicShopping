@@ -68,23 +68,4 @@ class Delete extends \ClicShopping\OM\ConfigureActionsAbstract
       $CLICSHOPPING_Db->delete('cronjob', ['app_code' => 'app_tools_cronjob']);
     }
   }
-
-  private static function removeProductsCronjobDb()
-  {
-    $CLICSHOPPING_Db = Registry::get('Db');
-
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_cronjob"');
-
-    if ($Qcheck->fetch() !== false) {
-      $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_cronjob');
-      $Qdelete->execute();
-    }
-
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_cronjob_description"');
-
-    if ($Qcheck->fetch() !== false) {
-      $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_cronjob_description');
-      $Qdelete->execute();
-    }
-  }
 }

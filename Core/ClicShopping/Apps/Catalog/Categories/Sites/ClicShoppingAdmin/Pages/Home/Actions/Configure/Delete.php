@@ -68,7 +68,7 @@ class Delete extends \ClicShopping\OM\ConfigureActionsAbstract
     }
 }
 
-  private static function removeDb()
+  public static function removeDb()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 

@@ -68,23 +68,4 @@ class Delete extends \ClicShopping\OM\ConfigureActionsAbstract
       $CLICSHOPPING_Db->delete('administrator_menu', ['app_code' => 'app_configuration_administrator_menu']);
     }
   }
-
-  private static function removeProductsAdministratorMenuDb()
-  {
-    $CLICSHOPPING_Db = Registry::get('Db');
-
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_administrator_menu"');
-
-    if ($Qcheck->fetch() !== false) {
-      $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_administrator_menu');
-      $Qdelete->execute();
-    }
-
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_administrator_menu_description"');
-
-    if ($Qcheck->fetch() !== false) {
-      $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_administrator_menu_description');
-      $Qdelete->execute();
-    }
-  }
 }

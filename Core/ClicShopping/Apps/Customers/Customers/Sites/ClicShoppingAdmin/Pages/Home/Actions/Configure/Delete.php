@@ -90,23 +90,4 @@ class Delete extends \ClicShopping\OM\ConfigureActionsAbstract
       $CLICSHOPPING_Db->delete('administrator_menu', ['app_code' => 'app_report_stats_customers']);
     }
   }
-
-  private static function removeDataDb()
-  {
-    $CLICSHOPPING_Db = Registry::get('Db');
-
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_customers"');
-
-    if ($Qcheck->fetch() !== false) {
-      $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_customers');
-      $Qdelete->execute();
-    }
-
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_address_book"');
-
-    if ($Qcheck->fetch() !== false) {
-      $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_address_book');
-      $Qdelete->execute();
-    }
-  }
 }

@@ -68,16 +68,4 @@ class Delete extends \ClicShopping\OM\ConfigureActionsAbstract
       $CLICSHOPPING_Db->delete('administrator_menu', ['app_code' => 'app_marketing_favorites']);
     }
   }
-
-  private static function removeProductsFavoritesDb()
-  {
-    $CLICSHOPPING_Db = Registry::get('Db');
-
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_products_favorites"');
-
-    if ($Qcheck->fetch() !== false) {
-      $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_products_favorites');
-      $Qdelete->execute();
-    }
-  }
 }

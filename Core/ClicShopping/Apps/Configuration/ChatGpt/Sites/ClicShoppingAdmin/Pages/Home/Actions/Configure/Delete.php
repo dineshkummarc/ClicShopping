@@ -67,16 +67,4 @@ class Delete extends \ClicShopping\OM\ConfigureActionsAbstract
       $CLICSHOPPING_Db->delete('administrator_menu', ['app_code' => 'app_configuration_chatgpt']);
     }
   }
-
-  private static function removeProductsChatGptDb()
-  {
-    $CLICSHOPPING_Db = Registry::get('Db');
-
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_gpt"');
-
-    if ($Qcheck->fetch() !== false) {
-      $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_gpt');
-      $Qdelete->execute();
-    }
-  }
 }

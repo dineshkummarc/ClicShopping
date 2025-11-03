@@ -68,23 +68,4 @@ class Delete extends \ClicShopping\OM\ConfigureActionsAbstract
       $CLICSHOPPING_Db->delete('actions_recorder', ['app_code' => 'app_tools_actions_recorder']);
     }
   }
-
-  private static function removeProductsActionsRecorderDb()
-  {
-    $CLICSHOPPING_Db = Registry::get('Db');
-
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_actions_recorder"');
-
-    if ($Qcheck->fetch() !== false) {
-      $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_actions_recorder');
-      $Qdelete->execute();
-    }
-
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_actions_recorder_description"');
-
-    if ($Qcheck->fetch() !== false) {
-      $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_actions_recorder_description');
-      $Qdelete->execute();
-    }
-  }
 }

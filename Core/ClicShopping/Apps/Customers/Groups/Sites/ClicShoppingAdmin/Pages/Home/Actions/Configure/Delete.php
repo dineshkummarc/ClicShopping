@@ -68,32 +68,4 @@ class Delete extends \ClicShopping\OM\ConfigureActionsAbstract
       $CLICSHOPPING_Db->delete('administrator_menu', ['app_code' => 'app_customers_groups']);
     }
   }
-
-  private static function removeDataDb()
-  {
-    /*
-          $CLICSHOPPING_Db = Registry::get('Db');
-
-          $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_customers_groups"');
-
-          if ($Qcheck->fetch() !== false) {
-            $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_customers_groups');
-            $Qdelete->execute();
-          }
-
-          $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_groups_to_categories"');
-
-          if ($Qcheck->fetch() !== false) {
-            $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_groups_to_categories');
-            $Qdelete->execute();
-          }
-
-          $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_groups_to_categories"');
-
-          if ($Qcheck->fetch() !== false) {
-            $Qdelete = $CLICSHOPPING_Db->prepare('delete from :table_groups_to_categories');
-            $Qdelete->execute();
-          }
-    */
-  }
 }
