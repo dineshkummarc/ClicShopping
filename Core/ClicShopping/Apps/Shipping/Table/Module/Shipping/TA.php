@@ -62,7 +62,7 @@ class TA implements \ClicShopping\OM\Modules\ShippingInterface
         } else {
           $this->enabled = false;
         }
-}
+      }
     } else {
       if (\defined('CLICSHOPPING_APP_TABLE_TA_NO_AUTHORIZE') && CLICSHOPPING_APP_TABLE_TA_NO_AUTHORIZE == 'True' && $CLICSHOPPING_Customer->getCustomersGroupID() == 0) {
         if ($CLICSHOPPING_Customer->getCustomersGroupID() == 0) {
@@ -71,9 +71,9 @@ class TA implements \ClicShopping\OM\Modules\ShippingInterface
           } else {
             $this->enabled = false;
           }
-}
+        }
       }
-}
+    }
 
     if (\defined('CLICSHOPPING_APP_TABLE_TA_TAX_CLASS')) {
       if ($CLICSHOPPING_Customer->getCustomersGroupID() != 0) {
@@ -81,11 +81,11 @@ class TA implements \ClicShopping\OM\Modules\ShippingInterface
           $this->tax_class = \defined('CLICSHOPPING_APP_TABLE_TA_TAX_CLASS') ? CLICSHOPPING_APP_TABLE_TA_TAX_CLASS : 0;
 
         }
-} else {
+      } else {
         if (B2BCommon::getTaxUnallowed($this->code)) {
           $this->tax_class = \defined('CLICSHOPPING_APP_TABLE_TA_TAX_CLASS') ? CLICSHOPPING_APP_TABLE_TA_TAX_CLASS : 0;
         }
-}
+      }
     }
 
     if (($this->enabled === true) && ((int)CLICSHOPPING_APP_TABLE_TA_ZONE > 0)) {
@@ -102,12 +102,12 @@ class TA implements \ClicShopping\OM\Modules\ShippingInterface
           $check_flag = true;
           break;
         }
-}
+      }
 
       if ($check_flag === false) {
         $this->enabled = false;
       }
-}
+    }
   }
 
   public function quote($method = '')
@@ -187,7 +187,7 @@ class TA implements \ClicShopping\OM\Modules\ShippingInterface
     return array('CLICSHOPPING_APP_TABLE_TA_SORT_ORDER');
   }
 
-  function getShippableTotal()
+  public function getShippableTotal()
   {
     $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_Currencies = Registry::get('Currencies');
@@ -218,9 +218,9 @@ class TA implements \ClicShopping\OM\Modules\ShippingInterface
             if ($Qcheck->fetch() !== false) {
               $order_total -= $CLICSHOPPING_Currencies->calculatePrice($CLICSHOPPING_Order->products[$i]['final_price'], $CLICSHOPPING_Order->products[$i]['tax'], $CLICSHOPPING_Order->products[$i]['qty']);
             }
-}
+          }
         }
-}
+      }
     }
 
     return $order_total;
