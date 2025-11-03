@@ -4,7 +4,7 @@ timestamp int(11) DEFAULT NULL,
 ip varchar(45) DEFAULT NULL
 --
 primary id
-idx_identifier_timestamp identifier timestamp
+idx_identifier identifier
 idx_timestamp timestamp
 ##
 engine innodb

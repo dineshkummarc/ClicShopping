@@ -218,7 +218,7 @@ class Hooks
 
     $this->hooks[$this->site][$group][$hook][$action] = [];
 
-    $directory = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/' . $this->site . DIRECTORY_SEPARATOR . $group;
+    $directory = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/' . $this->site . '/' . $group;
 
     if (is_dir($directory)) {
       if ($dir = new DirectoryIterator($directory)) {

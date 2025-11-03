@@ -210,7 +210,7 @@ class AdministratorAdmin
    *
    * @return int|null Returns the administrator's ID if available, or `null` if no admin is logged in.
    */
-  public static function getUserAdminId(): int
+  public static function getUserAdminId(): ?int
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 

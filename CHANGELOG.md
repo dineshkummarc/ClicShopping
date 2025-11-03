@@ -1,8 +1,9 @@
 version4.10
-Libraries updated
-small fix
-App refactoring to be more easy to use, create or to install a new App
-New admin design
+- Libraries updated
+- small fix
+- App refactoring to be more easy to use, create or to install a new App
+- Mcp securtity increased
+- New admin design
 
 ----------------
 version4.09
