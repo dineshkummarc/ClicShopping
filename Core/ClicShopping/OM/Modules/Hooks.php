@@ -82,7 +82,7 @@ class Hooks extends \ClicShopping\OM\ModulesAbstract
     $result = [];
 
     foreach ($modules as $key => $data) {
-      if (($key === $filter['site'] . '/ . $filter['group']) && isset($data[$filter['hook']])) {
+      if (($key === $filter['site'] . '/' . $filter['group']) && isset($data[$filter['hook']])) {
         $result[$key] = $data;
       }
     }
