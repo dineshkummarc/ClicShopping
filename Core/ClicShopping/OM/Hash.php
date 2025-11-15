@@ -441,7 +441,7 @@ class Hash
   public static function displayDecryptedEmail(string $encryptedEmail): string {
     $data = base64_decode($encryptedEmail);
     $ivLength = openssl_cipher_iv_length(self::$cipher);
-    $iv = substr($data, 0, $ivLength);
+    $iv = str_pad(substr($data, 0, $ivLength), $ivLength, "\0");
     $encrypted = substr($data, $ivLength);
     return openssl_decrypt($encrypted, self::$cipher, self::$key, 0, $iv);
   }

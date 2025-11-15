@@ -13,12 +13,14 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MultiDBRAGManager;
-use \ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
+
+use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
+
+use ClicShopping\AI\Rag\MultiDBRAGManager;
+use ClicShopping\AI\Insfrastructure\Orm\DoctrineOrm;
+use ClicShopping\AI\Insfrastructure\Storage\MariaDBVectorStore;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
 
 define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/')  . DIRECTORY_SEPARATOR);
 
@@ -36,6 +38,11 @@ try {
   $languageId = Registry::get('Language')->getId();
 
   $ragManager = new MultiDBRAGManager();
+
+  if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+    error_log('=== CHATGPT.PHP START ===');
+    error_log('Language ID: ' . $languageId);
+  }
 
   if (defined('CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
     $queryType = isset($_POST['queryType']) ? HTML::sanitize($_POST['queryType']) : 'semantic';
@@ -117,7 +124,14 @@ try {
             }
 
             // USe similaritySearch signature
+            // $result ne donne aucun résultat
             $results = $vectorStore->similaritySearch($prompt, 2, 0.5, $filter);
+
+
+
+
+
+
 
             foreach ($results as $doc) {
               $entityInfo = '';
@@ -136,11 +150,13 @@ try {
 
         // 5️ Si des documents pertinents ont été trouvés, les envoyer à OpenAI pour une réponse enrichie
         if (!empty($context)) {
+          error_log('================ Recherche Contexte embedding ================');
           $result = Gpt::getGptResponse($context . "\n\nQuestion : " . $prompt);
         } else {
           //If no information found, use openAI directly
+          error_log('========== Recherche va le LLM ===================');
           $result = Gpt::getGptResponse($prompt);
-          Gpt::saveData($prompt, $result);
+          //Gpt::saveData($prompt, $result);
         }
 
         $pos = strstr($result, ':');
@@ -149,8 +165,6 @@ try {
         }
       }
     }
-
-    echo nl2br($result);
   } else {
     $result = Gpt::getGptResponse($prompt);
 
@@ -160,9 +174,9 @@ try {
       $result = substr($pos, 2); // Pour enlever les deux-points et l'espace
       echo nl2br($result);
     }
-
-    echo nl2br($result);
   }
+
+  echo nl2br($result);
 } catch
   (\Exception $e) {
     error_log('Erreur dans le traitement AJAX : ' . $e->getMessage());

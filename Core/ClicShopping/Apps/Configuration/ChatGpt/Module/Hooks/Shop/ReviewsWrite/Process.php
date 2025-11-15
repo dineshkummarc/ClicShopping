@@ -9,17 +9,21 @@
  */
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\Shop\ReviewsWrite;
 
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
 
 class Process implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
+  public mixed $semantics;
   public mixed $db;
+  public mixed $vector;
 
   /**
    * Class constructor.
@@ -36,8 +40,13 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+
+    $this->app = Registry::get('ChatGpt');
+
     $this->db = Registry::get('Db');
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Reviews/rag');
+    Registry::set('Semantics', new Semantics());
+    $this->semantics = Registry::get('Semantics');
   }
 
   /**
@@ -50,9 +59,13 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
+    $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
+
     if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
+
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
 
     $QreviewsCheck = $this->db->get('select r.reviews_id
                                       from :table_reviews r
@@ -111,12 +124,19 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
         $vote = isset($item['vote']) ? (int)$item['vote'] : 0;
         $sentiment = isset($item['sentiment']) ? (int)$item['sentiment'] : 0;
         $products_id = isset($item['products_id']) ? (int)$item['products_id'] : 0;
+        $products_name = $CLICSHOPPING_ProductsCommon->getProductsName($products_id);
 
 //********************
 // add embedding
 //********************
+
+      if ($embedding_enabled) {
         $embedding_data = $this->app->getDef('text_reviews') . ' : ' . '\n';
+        $embedding_data .= $this->app->getDef('text_products_name') . ' : ' . $products_name . '\n';
         $embedding_data .= $this->app->getDef('text_reviews_description') . ' : ' . $reviews_text . '\n';
+        if (!empty($reviews_text)) {
+           $embedding_data .= $this->app->getDef('text_reviews_description', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text) . "\n";
+        }
         $embedding_data .= $this->app->getDef('text_reviews_rating') . ' : ' . $reviews_rating . '\n';
         $embedding_data .= $this->app->getDef('text_reviews_read') . ' : ' . $reviews_read . '\n';
         $embedding_data .= $this->app->getDef('text_reviews_date_added') . ' : ' . $date_added . '\n';
@@ -127,7 +147,7 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
         $embedding_data .= $this->app->getDef('text_reviews_customer_sentiment') . ' : ' . $sentiment . '\n';
         $embedding_data .= $this->app->getDef('text_reviews_products_id') . ' : ' . $products_id . '\n';
 
-        $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+        $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
 
         $embeddings = [];
 
@@ -143,7 +163,7 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
 
           $sql_data_array_embedding = [
             'content' => $embedding_data,
-            'type' => 'page_manager',
+              'type' => 'reviews',
             'sourcetype' => 'manual',
             'sourcename' => 'manual',
             'date_modified' => 'now()'
@@ -152,14 +172,15 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
           $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
 
           if ($insert_embedding === true) {
-            $sql_data_array_embedding['entity_id'] = $item['reviews_id'];
-            $sql_data_array_embedding['language_id'] = $item['languages_id'];
-            $this->app->db->save('reviews_embedding', $sql_data_array_embedding);
-          } else {
-            $update_sql_data = [
-              'language_id' => $item['languages_id'],
-              'entity_id' => $item['reviews_id']
-            ];
+              $sql_data_array_embedding['entity_id'] = (int)$item['reviews_id'];
+              $sql_data_array_embedding['language_id'] = (int)$item['languages_id'];
+
+              $this->app->db->save('reviews_embedding', $sql_data_array_embedding);
+            } else {
+              $update_sql_data = [
+                'language_id' => (int)$item['languages_id'],
+                'entity_id' => (int)$item['reviews_id']
+              ];
             $this->app->db->save('reviews_embedding', $sql_data_array_embedding, $update_sql_data);
           }
         }

@@ -58,14 +58,23 @@ class CheckAPI extends \ClicShopping\OM\Modules\AdminDashboardAbstract
   {
     $output = '';
 
-    if(empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY)) {
-      $link = HTML::link( $this->app ->link('Configuration\ChatGpt&Configure'), $this->app->getDef('module_admin_dashboard_check_api_app_link'));
+    $apiKey = defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY') ? CLICSHOPPING_APP_CHATGPT_CH_API_KEY : '';
 
-      $output = '<div class="col-md-' . (int)MODULE_ADMIN_DASHBOARD_GPT_CHECK_API_APP_CONTENT_WIDTH . '">';
-      $output .= '<div class="alert alert-warning" role="alert">';
-      $output .= $this->app->getDef('module_admin_dashboard_check_api_app_alert', ['gpt_link' => $link]);
-      $output .= '</div>';
-      $output .= '</div>';
+    if (empty($apiKey)) {
+      try {
+        $link = HTML::link($this->app->link('Configuration\ChatGpt&Configure'), $this->app->getDef('module_admin_dashboard_check_api_app_link'));
+
+        $contentWidth = defined('MODULE_ADMIN_DASHBOARD_GPT_CHECK_API_APP_CONTENT_WIDTH') ? (int) MODULE_ADMIN_DASHBOARD_GPT_CHECK_API_APP_CONTENT_WIDTH : 12;
+
+        $output = '<div class="col-md-' . $contentWidth . '">';
+        $output .= '<div class="alert alert-warning" role="alert">';
+        $output .= $this->app->getDef('module_admin_dashboard_check_api_app_alert', ['gpt_link' => $link]);
+        $output .= '</div>';
+        $output .= '</div>';
+      } catch (Exception $e) {
+        error_log("Dashboard CheckAPI error: " . $e->getMessage());
+        $output = '<div class="col-md-12"><div class="alert alert-danger">Erreur de configuration ChatGPT</div></div>';
+      }
    }
 
     return $output;
@@ -78,7 +87,9 @@ class CheckAPI extends \ClicShopping\OM\Modules\AdminDashboardAbstract
    */
   public function Install()
   {
-    $this->app->db->save('configuration', [
+    $this->app->db->save(
+      'configuration',
+      [
         'configuration_title' => 'Do you want to enable this Module ?',
         'configuration_key' => 'MODULE_ADMIN_DASHBOARD_GPT_CHECK_API_APP_STATUS',
         'configuration_value' => 'True',
@@ -90,7 +101,9 @@ class CheckAPI extends \ClicShopping\OM\Modules\AdminDashboardAbstract
       ]
     );
 
-    $this->app->db->save('configuration', [
+    $this->app->db->save(
+      'configuration',
+      [
         'configuration_title' => 'Select the width to display',
         'configuration_key' => 'MODULE_ADMIN_DASHBOARD_GPT_CHECK_API_APP_CONTENT_WIDTH',
         'configuration_value' => '12',
@@ -102,7 +115,9 @@ class CheckAPI extends \ClicShopping\OM\Modules\AdminDashboardAbstract
       ]
     );
 
-    $this->app->db->save('configuration', [
+    $this->app->db->save(
+      'configuration',
+      [
         'configuration_title' => 'Sort Order',
         'configuration_key' => 'MODULE_ADMIN_DASHBOARD_GPT_CHECK_API_APP_SORT_ORDER',
         'configuration_value' => '2',

@@ -10,19 +10,22 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\Categories;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\HTML;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
 
+#[AllowDynamicProperties]
 class Update implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
-
+  public mixed $lang;
+  public mixed $semantics;
+  public mixed $vector;
   /**
    * Class constructor.
    *
@@ -41,6 +44,10 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Categories/seo_chat_gpt');
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Categories/rag');
+    $this->vector = Registry::get('Vector');
+	
+    Registry::set('Semantics', new Semantics());
+    $this->semantics = Registry::get('Semantics');
   }
 
   /**
@@ -57,8 +64,10 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
+
     if (isset($_GET['Update'], $_GET['Categories'])) {
-      if (isset($_GET['cID'])){
+      if (isset($_GET['cID'])) {
         $cID = HTML::sanitize($_GET['cID']);
 
         $Qcheck = $this->app->db->prepare('select id
@@ -88,10 +97,10 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         $Qcategories->execute();
 
         $categories_array = $Qcategories->fetchAll();
-        $categories_id = $Qcategories->valueInt('categories_id');
 
         if (is_array($categories_array)) {
           foreach ($categories_array as $item) {
+            $categories_id = $item['categories_id'];
             $categories_name = $item['categories_name'];
             $categories_description = $item['categories_description'];
             $seo_categories_title = $item['categories_head_title_tag'];
@@ -101,14 +110,16 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 //********************
 // add embedding
 //********************
+            if ($embedding_enabled) {
             $embedding_data =  "\n" . $this->app->getDef('text_category_embedded') . "\n";
             $embedding_data .= $this->app->getDef('text_category_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_name) . "\n";
-            $embedding_data .= $this->app->getDef('text_category_id') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_id) . "\n";
+            $embedding_data .= $this->app->getDef('text_category_id') . ' : ' . (int)$categories_id . "\n";
 
             if (!empty($categories_description)) {
-              $embedding_data .= $this->app->getDef('text_category_description', ['category_name' => $categories_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_description) . "\n";;
+              $categories_description = HtmlOverrideCommon::cleanHtmlForEmbedding($categories_description);
+              $embedding_data .= $this->app->getDef('text_category_description', ['category_name' => $categories_name]) . ' : ' . $categories_description . "\n";;
 
-              $taxonomy = Semantics::createTaxonomy($categories_description);
+              $taxonomy = $this->semantics->createTaxonomy($categories_description);
 
               if ($taxonomy != '') {
                 $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
@@ -116,18 +127,18 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 }
 
             if (!empty($seo_categories_title)) {
-              $embedding_data .= $this->app->getDef('text_category_seo_title', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_title) . "\n";;
+              $embedding_data .= $this->app->getDef('text_category_seo_title', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForSEO($seo_categories_title) . "\n";;
             }
 
             if (!empty($seo_categories_description)) {
-              $embedding_data .= $this->app->getDef('text_category_seo_description', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_description) . "\n";;
+              $embedding_data .= $this->app->getDef('text_category_seo_description', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForSEO($seo_categories_description) . "\n";;
             }
 
             if (!empty($seo_categories_keywords)) {
-              $embedding_data .= $this->app->getDef('text_seo_keywords', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_keywords) . "\n";;
+              $embedding_data .= $this->app->getDef('text_category_seo_keywords', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForSEO($seo_categories_keywords) . "\n";;
             }
 
-            $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+            $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
 
             $embeddings = [];
 
@@ -168,4 +179,5 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       }
     }
   }
+}
 }

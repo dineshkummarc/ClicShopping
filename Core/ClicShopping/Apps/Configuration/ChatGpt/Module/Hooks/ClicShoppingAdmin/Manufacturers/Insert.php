@@ -10,18 +10,22 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\Manufacturers;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
+
+#[AllowDynamicProperties]
 class Insert implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
-
+  public mixed $lang;
+  public mixed $semantics;
+  public mixed $vector;
   /**
    * Constructor method for initializing the ChatGpt application.
    * It ensures that the ChatGpt instance is registered in the Registry.
@@ -36,6 +40,11 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+
+    Registry::set('Semantics', new Semantics());
+    $this->semantics = Registry::get('Semantics');
+
+    $this->vector = Registry::get('Vector');
 
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturer/seo_chat_gpt');
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturer/rag');
@@ -55,6 +64,8 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
     if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
+
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
 
     if (isset($_GET['Insert'], $_GET['Manufacturers'])) {
       $translate_language = $this->app->getDef('text_seo_page_translate_language');
@@ -87,6 +98,8 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
           foreach ($manufacturers_array as $item) {
             $language_name = $CLICSHOPPING_Language->getLanguagesName($item['languages_id']);
 
+            $manufacturers_id = $item['manufacturers_id'];
+
             $update_sql_data = [
               'languages_id' => $item['languages_id'],
               'manufacturers_id' => $item['manufacturers_id']
@@ -95,6 +108,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
             //-------------------
             // Manufacturer description
             //-------------------
+
             if (isset($_POST['option_gpt_description'])) {
               $question_summary_description = $this->app->getDef('text_seo_page_summary_description_question', ['brand_name' => $manufacturers_name]);
 
@@ -108,7 +122,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('manufacturers_info', $sql_data_array, $update_sql_data);
               }
-}
+            }
 
             ////-------------------
             // Seo Title
@@ -126,7 +140,8 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('manufacturers_info', $sql_data_array, $update_sql_data);
               }
-}
+             }
+	     
             //-------------------
             // Seo description
             //-------------------
@@ -143,7 +158,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('manufacturers_info', $sql_data_array, $update_sql_data);
               }
-}
+            }
             //-------------------
             // Seo keywords
             //-------------------
@@ -160,20 +175,21 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('manufacturers_info', $sql_data_array, $update_sql_data);
               }
-}
+            }
 
             //********************
             // add embedding
             //********************
-            if (\defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
+
+            if ($embedding_enabled) {
               $embedding_data =  "\n" . $this->app->getDef('text_manufacturer_embedded') . "\n";
 
               $embedding_data .= $this->app->getDef('text_manufacturer_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_name) . "\n";
-              $embedding_data .= $this->app->getDef('text_manufacturer_id') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_id) . "\n";
+              $embedding_data .= $this->app->getDef('text_manufacturer_id') . ' : ' . (int)$manufacturers_id . "\n";
 
               if (!empty($manufacturers_description)) {
                 $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
-                $taxonomy = Semantics::createTaxonomy($manufacturers_description);
+                $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description));
 
                 if ($taxonomy != '') {
                   $embedding_data .= $this->app->getDef('text_manufacturer_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
@@ -196,7 +212,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                 $embedding_data .= $this->app->getDef('text_manufacturer_suppliers_id') . ' : ' . $suppliers_id . "\n";
               }
 
-              $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+              $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
 
               $embeddings = [];
 
@@ -231,13 +247,14 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('manufacturers_embedding', $sql_data_array);
               }
-}
+            }
           }
-}
+        }
       }
-//-------------------
-//image
-//-------------------
+      
+	//-------------------
+	//image
+	//-------------------
 /*
       if (isset($_POST['option_gpt_create_image'])) {
         $image = Gpt::createImageChatGpt($manufacturers_name, 'manufacturers');
@@ -256,5 +273,5 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 }
 */
     }
-}
+  }
 }

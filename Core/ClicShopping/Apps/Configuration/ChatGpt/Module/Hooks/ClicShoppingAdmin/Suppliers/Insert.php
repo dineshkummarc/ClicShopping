@@ -10,16 +10,21 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\Suppliers;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
+use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
 
+#[AllowDynamicProperties]
 class Insert implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
+  public mixed $semantics;
+  public mixed $vector;
+
   /**
    * Constructor method for initializing the ChatGpt application.
    * It ensures that the ChatGpt instance is registered in the Registry.
@@ -34,6 +39,8 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+
+    $this->vector = Registry::get('Vector');
 
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Supplier/rag');
   }
@@ -50,6 +57,8 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
     if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
+
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
 
     if (isset($_GET['Insert'], $_GET['Suppliers'])) {
       $Qcheck = $this->app->db->prepare('select suppliers_id,
@@ -99,7 +108,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
         //********************
         // add embedding
         //********************
-        if (\defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
+       if ($embedding_enabled) {
           $embedding_data = $this->app->getDef('text_supplier_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($supplier_name) . "\n";
           $embedding_data .= $this->app->getDef('text_supplier_id') . ' : ' . $suppliers_id . "\n";
 
@@ -108,7 +117,10 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
           }
 
           if (!empty($suppliers_status)) {
-            $embedding_data .= $this->app->getDef('text_supplier_status', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_status) . "\n";
+            $embedding_data .= $this->app->getDef('text_supplier_status', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($supplier_name) . "\n";
+            $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($supplier_name));
+            if (!empty($taxonomy)) {
+            }
           }
 
           if (!empty($suppliers_states)) {
@@ -127,7 +139,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
             $embedding_data .= $this->app->getDef('text_suppliers_notes', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_notes) . "\n";
           }
 
-          $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+          $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
 
           $embeddings = [];
 

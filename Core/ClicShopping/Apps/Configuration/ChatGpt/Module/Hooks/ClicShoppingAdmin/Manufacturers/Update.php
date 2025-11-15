@@ -10,19 +10,22 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\Manufacturers;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\HTML;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
+
+#[AllowDynamicProperties]
 class Update implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
-
+  public mixed $lang;
+  public mixed $semantics;
   /**
    * Class constructor.
    *
@@ -38,6 +41,10 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+
+    Registry::set('Semantics', new Semantics());
+    $this->semantics = Registry::get('Semantics');
+    $this->vector = Registry::get('Vector');
 
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturer/seo_chat_gpt');
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturer/rag');
@@ -57,14 +64,17 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING' ) && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
+
     if (isset($_GET['Update'], $_GET['Manufacturers'])) {
-      if (isset($_GET['mID'])){
+      if (isset($_GET['mID'])) {
         $mID = HTML::sanitize($_GET['mID']);
 
         $Qcheck = $this->app->db->prepare('select id
                                            from :table_manufacturers_embedding
                                            where entity_id = :entity_id
                                           ');
+
         $Qcheck->bindInt(':entity_id', $mID);
         $Qcheck->execute();
 
@@ -103,47 +113,48 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 //********************
 // add embedding
 //********************
-            $embedding_data =  "\n" . $this->app->getDef('text_manufacturer_embedded') . "\n";
+            if ($embedding_enabled) {
+              $embedding_data =  "\n" . $this->app->getDef('text_manufacturer_embedded') . "\n";
 
-            $embedding_data .= $this->app->getDef('text_manufacturer_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_name) . "\n";
-            $embedding_data .= $this->app->getDef('text_manufacturer_id') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_id) . "\n";
+              $embedding_data .= $this->app->getDef('text_manufacturer_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_name) . "\n";
+              $embedding_data .= $this->app->getDef('text_manufacturer_id') . ' : ' . (int)$manufacturers_id . "\n";
 
-            if (!empty($manufacturers_description)) {
-              $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
-              $taxonomy = Semantics::createTaxonomy($manufacturers_description);
+              if (!empty($manufacturers_description)) {
+                $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
+                $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description));
 
-              if ($taxonomy != '') {
-                $embedding_data .= $this->app->getDef('text_manufacturer_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
+                if (!empty($taxonomy)) {
+                $embedding_data .= "\n" . $this->app->getDef('text_manufacturer_taxonomy') . " :\n";
+                }
               }
-}
 
-            if (!empty($seo_manufacturer_title)) {
-              $embedding_data .= $this->app->getDef('text_manufacturer_seo_title') . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_title) . "\n";
-            }
+              if (!empty($seo_manufacturer_title)) {
+                $embedding_data .= $this->app->getDef('text_manufacturer_seo_title') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_title) . "\n";
+              }
 
-            if (!empty($seo_manufacturer_description)) {
-              $embedding_data .= $this->app->getDef('text_manufacturer_seo_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_description) . "\n";
-            }
+              if (!empty($seo_manufacturer_description)) {
+                $embedding_data .= $this->app->getDef('text_manufacturer_seo_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_description) . "\n";
+              }
 
-            if (!empty($seo_manufacturer_keywords)) {
-              $embedding_data .= $this->app->getDef('text_manufacturer_seo_keywords') . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_keywords) . "\n";
-            }
+              if (!empty($seo_manufacturer_keywords)) {
+                $embedding_data .= $this->app->getDef('text_manufacturer_seo_keywords') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_keywords) . "\n";
+              }
 
-            $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+            $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
 
             $embeddings = [];
 
             foreach ($embeddedDocuments as $embeddedDocument) {
               if (is_array($embeddedDocument->embedding)) {
-                $embeddings[] = $embeddedDocument->embedding;
+                  $embeddings[] = $embeddedDocument->embedding;
+                }
               }
-}
 
-            if (!empty($embeddings)) {
-              $flattened_embedding = $embeddings[0];
-              $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
+              if (!empty($embeddings)) {
+                $flattened_embedding = $embeddings[0];
+                $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
 
-              $sql_data_array_embedding= [
+                $sql_data_array_embedding = [
                 'content' => $embedding_data,
                 'type' => 'manufacturers',
                 'sourcetype' => 'manual',
@@ -153,23 +164,24 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
               $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
 
-              if ($insert_embedding === true) {
-                $sql_data_array_embedding['entity_id'] = $item['manufacturers_id'];
-                $sql_data_array_embedding['language_id'] =  $item['languages_id'];
-		
-                $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding);
-              } else {
-                $update_sql_data = [
-                  'language_id' => $item['language_id'],
-                  'entity_id' => $item['manufacturers_id']
-                ];
+                if ($insert_embedding === true) {
+                  $sql_data_array_embedding['entity_id'] = (int)$item['manufacturers_id'];
+                  $sql_data_array_embedding['language_id'] = (int)$item['languages_id'];
 
-                $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding, $update_sql_data);
+                  $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding);
+                } else {
+                  $update_sql_data = [
+                    'language_id' => $item['language_id'],
+                    'entity_id' => (int)$item['manufacturers_id']
+                  ];
+
+                  $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding, $update_sql_data);
+                }
               }
-}
+            }
           }
-}
+        }
       }
-}
+    }
   }
 }

@@ -12,10 +12,6 @@ namespace ClicShopping\Apps\Tools\MCP\Sites\Shop\Pages\RagBI;
 
 use AllowDynamicProperties;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\DoctrineOrm;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MariaDBVectorStore;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\MultiDBRAGManager;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\EndPoint\RagBIPermissions;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Authentification;
@@ -23,6 +19,12 @@ use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpPermissions;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpSecurity;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpShop;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Message;
+
+use ClicShopping\AI\Insfrastructure\Orm\DoctrineOrm;
+use ClicShopping\AI\Insfrastructure\Storage\MariaDBVectorStore;
+use ClicShopping\AI\Rag\MultiDBRAGManager;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
+
 use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
 
 use ClicShopping\Apps\Tools\MCP\MCP;
@@ -256,7 +258,7 @@ class RagBI extends \ClicShopping\OM\PagesAbstract
 
       $ragManager = new MultiDBRAGManager();
 
-      if (defined('CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
+      if (\defined('CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
         $queryType = isset($_POST['queryType']) ? HTML::sanitize($_POST['queryType']) : 'semantic';
         //$queryType = 'analytics'; // test
 

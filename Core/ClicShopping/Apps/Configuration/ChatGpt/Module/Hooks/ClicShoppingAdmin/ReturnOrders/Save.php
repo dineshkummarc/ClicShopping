@@ -10,17 +10,22 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\ReturnOrders;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\HTML;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
 
+#[AllowDynamicProperties]
 class Save implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
-
+  public mixed $lang;
+  public mixed $semantics;
+  
   /**
    * Class constructor.
    *
@@ -36,6 +41,11 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+
+    Registry::set('Semantics', new Semantics());
+    $this->semantics = Registry::get('Semantics');
+    $this->vector = Registry::get('Vector');
+    
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/ReturnOrders/rag');
   }
 
@@ -132,6 +142,8 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
+
     if (isset($_POST['rId'], $_GET['ReturnOrders'], $_GET['Save'])) {
       $return_id = HTML::sanitize($_POST['rId']);
 
@@ -142,6 +154,10 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
       $Qcheck->bindInt(':entity_id', $return_id);
       $Qcheck->execute();
 
+        //********************
+        // add embedding
+        //********************
+       if ($embedding_enabled) {
       $insert_embedding = false;
 
       if ($Qcheck->fetch() === false) {
@@ -151,7 +167,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
       $embedding_data = $this->returnOrders($return_id);
       $embedding_data .= $this->returnOrdersHistory($return_id);
 
-      $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+      $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
 
       $embeddings = [];
 
@@ -184,6 +200,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
           $this->app->db->save('return_orders_embedding', $sql_data_array_embedding, $update_sql_data);
         }
+       }
       }
     }
   }

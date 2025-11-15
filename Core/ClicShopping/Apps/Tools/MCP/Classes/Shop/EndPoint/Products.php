@@ -18,7 +18,7 @@ namespace ClicShopping\Apps\Tools\MCP\Classes\Shop\EndPoint;
 
 use AllowDynamicProperties;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\TranslationCache;
+use ClicShopping\AI\Tools\Cache\TranslationCache;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Message;
 use ClicShopping\Apps\Tools\MCP\MCP;

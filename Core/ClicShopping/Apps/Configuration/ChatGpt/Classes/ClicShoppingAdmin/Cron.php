@@ -14,8 +14,8 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
+use ClicShopping\AI\Domain\Embedding\NewVector;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
 
 #[AllowDynamicProperties]
 class Cron {
@@ -786,9 +786,9 @@ class Cron {
 
           $this->app->db->save('suppliers_embedding', $sql_data_array_embedding);
         }
-}
+       }
     }
-}
+  }
 
   /**
    * Updates the embedding categories for a specific language.
@@ -806,6 +806,8 @@ class Cron {
       $this->updateAllEmbeddingProducts($value['id']);
       $this->updateAllEmbeddingPageManager($value['id']);
       $this->updateAllEmbeddingReviews($value['id']);
+      //$this->updateAllEmbeddingSuppliers($value['id']);
+      //$this->updateAllEmbeddingReviews($value['id']);
     }
 
     $this->updateAllEmbeddingSuppliers();

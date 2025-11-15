@@ -10,19 +10,23 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\ReviewsSentiment;
 
-use ClicShopping\OM\HTML;
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
+
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
 use function count;
 
+#[AllowDynamicProperties]
 class Update implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
-
+  public mixed $semantics;
+  public mixed $vector;
+  
   /**
    * Constructor method for initializing the ChatGpt application.
    * Ensures that the ChatGpt instance is registered with the Registry and fetches it for use.
@@ -36,6 +40,11 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+
+    Registry::set('Semantics', new Semantics());
+    $this->semantics = Registry::get('Semantics');
+    $this->vector = Registry::get('Vector');
+
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/SEO/review_sentiment');
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/SEO/rag');
   }
@@ -124,9 +133,11 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     $CLICSHOPPING_Language = Registry::get('Language');
     $CLICSHOPPING_ProductsAdmin = Registry::get('ProductsAdmin');
 
-    if (Gpt::checkGptStatus() === false) {
+    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
+
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
 
     $id = HTML::sanitize($_GET['rID']);
     $user_admin = AdministratorAdmin::getUserAdmin();
@@ -190,16 +201,16 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
         $this->app->db->save('reviews_sentiment_description ', $sql_data_array);
       }
-}
+    }
+    
     //
     // embedding
     //
 
-    if (\defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
-      $Qcheck = $this->app->db->prepare('select id
-                                           from :table_pages_manager_embedding
-                                           where entity_id = :entity_id
-                                          ');
+    $Qcheck = $this->app->db->prepare('select id
+                                         from :reviews_sentiment_embedding
+                                         where entity_id = :entity_id
+                                        ');
       $Qcheck->bindInt(':entity_id', $id);
       $Qcheck->execute();
 
@@ -251,8 +262,13 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
           $description = isset($item['description']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['description']) : '';
           $vote = isset($item['vote']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['vote']) : '0';
           $customer_id = isset($item['customer_id']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['customer_id']) : '';
-          $vote_sentiment = isset($item['vote_sentiment']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['vote_sentiment']) : '';
+        $vote_sentiment = isset($item['vote_sentiment']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['vote_sentiment']) : '';
 
+        //********************
+        // add embedding
+        //********************
+
+        if ($embedding_enabled) {
           $embedding_data = "\n" . $this->app->getDef('text_review_sentiment_semantic_title', ['products_name' => $products_name]) . "\n";
           $embedding_data .= $this->app->getDef('text_sentiment_semantic_review_sentiment_id', ['review_sentiment_id' => $review_sentiment_id]) . "\n";
           $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_status', ['products_name' => $products_name]) . ' : ' . $sentiment_status . "\n";
@@ -261,9 +277,12 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
           $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_vote', ['products_name' => $products_name]) . ' : ' . $vote . "\n";
           $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_customer_id', ['products_name' => $products_name]) . ' : ' . $customer_id . "\n";
           $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_vote_sentiment', ['products_name' => $products_name]) . ' : ' . $vote_sentiment . "\n";
-          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_description', ['products_name' => $products_name]) . ' : ' . $description . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_description', ['products_name' => $products_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($description) . "\n";
 
-          $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+          $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($description));
+          if (!empty($taxonomy)) {
+        }
+          $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
 
           $embeddings = [];
 
@@ -283,16 +302,17 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               'sourcetype' => 'manual',
               'sourcename' => 'manual',
               'date_modified' => 'now()',
-              'language_id' => $language_id
-            ];
+              'language_id' => (int)$item['language_id'],
+              'entity_id' => (int)$item['id'],
+             ];
 
             $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
 
-            if ($insert_embedding === true) {
-              $sql_data_array_embedding['entity_id'] = $item['id'];
-              $sql_data_array_embedding['language_id'] = $language_id;
-              $this->app->db->save('reviews_sentiment_embedding', $sql_data_array_embedding);
-            } else {
+          if ($insert_embedding === true) {
+            $sql_data_array_embedding['entity_id'] = (int)$item['id'];
+            $sql_data_array_embedding['language_id'] = (int)$language_id;
+            $this->app->db->save('reviews_sentiment_embedding', $sql_data_array_embedding);
+          } else {
               $update_sql_data = [
                 'language_id' => $language_id,
                 'entity_id' => $item['id']

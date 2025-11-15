@@ -19,6 +19,12 @@ Touse this functionality, you need to check if your database is compatible. It r
 MySQL server is not compatible with this feature.<br>
 
 
+module_re_title = OpenAI Ecommerce 
+module_re_short_title =  OpenAI Ecommerce 
+module_re_introduction = OpenAi has developped a ecommerce protocol called Agentic Commerce Protocol.<br>
+It allows to display the product inside Gpt with a payment instant. This module implement this protocol, the payment and allow to follow the order accross ClicShopping.<br>
+You must be registred at OpenAI to use this ACP protocol.
+
 button_back = Back
 button_install_title = Install
 button_configure = Configure

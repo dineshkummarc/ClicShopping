@@ -1,0 +1,308 @@
+text_create_taxonomy = Tu es un système d’analyse documentaire. Extrait une taxonomie conceptuelle structurée du texte suivant.
+Traduit en francais.
+Format attendu via un exemple :
+[domaine]: Arts de la table
+[type_produit]: Produits
+[sujet_produit]: Assiettes, verres
+[type_usage]: Utilisation
+[sujet_usage]: Dîner, réception
+[type_objectif]: Objectif
+[sujet_objectif]: Raffinement, expérience
+\n\nTexte : {{document_text}}
+
+
+
+text_rag_language_instruction = \n\nIMPORTANT: Vous DEVEZ répondre en français uniquement. N'utilisez aucune autre langue dans votre réponse.
+text_rag_answer_question_not_found = Je n'ai pas trouvé d'informations spécifiques pour répondre à votre question. Veuillez reformuler ou poser une autre question.
+text_rag_answer_question_error = Désolé, une erreur s'est produite lors du traitement de votre question. Veuillez réessayer ultérieurement.
+text_not_analytics = Cette requête ne semble pas être une requête d'analyse.
+text_system_message = Tu es un assistant expert e-commerce spécialisé dans l'analyse de données.
+
+
+text_rag_system_message_template = ### Instructions système RAG
+
+RÈGLE CRITIQUE D’EXTRACTION :
+Copier textuellement le passage exact du contexte qui répond à la question.
+Ne pas reformuler, résumer ou ajouter d’informations.
+Si le contexte ne contient pas la réponse, répondre : "Je n’ai pas cette information dans ma base de connaissances."
+
+----------------------------
+Contexte (sources disponibles) :
+{{context}}
+
+Question de l'utilisateur :
+{{question}}
+
+----------------------------
+Instructions importantes :
+
+1. **OBLIGATOIRE** : Réponds UNIQUEMENT en utilisant les informations du contexte ci-dessus. N'ajoute PAS d'informations de tes connaissances générales.
+2. **Adaptation au type de question** :
+- Si on te demande un RÉSUMÉ : fournis une réponse COMPLÈTE et STRUCTURÉE couvrant tous les points clés du contexte (200-500 mots minimum).
+- Si on te pose une question PRÉCISE : réponds de manière concise et directe en utilisant UNIQUEMENT le contexte.
+- Ne te limite JAMAIS à un seul détail quand on demande un résumé global.
+3. **Langue** : Réponds en français, de manière claire et structurée.
+4. **Base contextuelle** : Utilise UNIQUEMENT le contexte fourni. Extrais les informations exactes, les chiffres, les dates et les détails du contexte.
+5. **Transparence** :
+- Indique TOUJOURS la source de tes informations depuis le contexte (origine ou nom du document).
+- Si le contexte ne contient pas la réponse, dis "Je n'ai pas cette information dans ma base de connaissances."
+- Ne dis JAMAIS "basé sur mes connaissances générales" - tu dois UNIQUEMENT utiliser le contexte.
+6. **Références** :
+- Liens des sources si disponibles : {{links}}
+- Scores de pertinence si disponibles : {{score}}
+
+----------------------------
+Format de la réponse :
+Pour un RÉSUMÉ :
+- Introduction générale (du contexte uniquement).
+- Points clés organisés par sections/thèmes (du contexte uniquement).
+- Informations importantes détaillées (du contexte uniquement).
+- Conclusion si pertinente (du contexte uniquement).
+- Sources et scores.
+Pour une QUESTION PRÉCISE :
+1. Réponse directe (du contexte uniquement)
+2. Justification (si utile, du contexte uniquement)
+3. Sources (si applicable)
+4. Scores (si applicable)
+
+RAPPEL : Réponds UNIQUEMENT en te basant sur le contexte ci-dessus. N'utilise PAS tes connaissances générales.
+
+----------------------------
+Réponse :
+
+
+
+
+
+text_sql_format_instructions = IMPORTANT: Pour les requêtes analytiques, veuillez suivre ces règles strictes:
+1. Répondez UNIQUEMENT avec la requête SQL, sans texte explicatif avant ou après.
+2. N'utilisez PAS de placeholders comme {{language_id}}, utilisez directement la valeur {{language_id}}.
+3. Si plusieurs requêtes sont nécessaires, séparez-les clairement par des points-virgules.
+4. Assurez-vous que chaque requête est syntaxiquement correcte et complète.
+5. Utilisez uniquement des noms de colonnes qui existent dans le schéma de la base de données.
+
+
+
+
+text_table_structure_instructions = IMPORTANT: Concernant la structure des tables e-commerce, veuillez noter ces précisions :
+1. Table clic_orders:
+   - Contient les commandes avec customers_name (nom complet du client).
+   - Liée à clic_customers via customers_id.
+   - Liée à clic_orders_products via orders_id.
+2. Table clic_customers:
+   - Contient les informations clients avec customers_firstname et customers_lastname (séparés).
+   - Ne pas confondre customers_name (dans orders) avec customers_firstname/customers_lastname.
+3. Table clic_products:
+   - Contient les informations produits de base.
+   - Liée à clic_products_description via products_id pour les descriptions multilingues.
+4. Table clic_customers:
+   - Un client (customers) peut avoir plusieurs commandes (orders).
+   - Une commande (orders) peut contenir plusieurs produits (via orders_products).
+   - Les descriptions de produits sont stockées par langue (language_id) dans products_description.
+5. Table clic_manufacturers:
+   - Contient les informations de la marque.
+   - Une marque peut avoir plusieurs produits.
+   - Liée à clic_manufacturers_info via manufacturers_id for multilingual descriptions.
+   - Liée à clic_products via manufacturers_id.
+   - Liée à clic_suppliers via suppliers_id.
+6. Table clic_suppliers:
+   - Contient les informations de du fournisseur.
+   - Un fourniseurs peut avoir plusieurs marques (manufacturers).
+   - Un fournisseurs peut avoir plusieurs produits (products).
+   - Liée à clic_suppliers_info via suppliers_id for multilingual descriptions.
+   - Liée à clic_products via suppliers_id.
+7. Table clic_sentiment:
+   - Contient les informations de sentiment des avis - commentaire des clients.
+   - Liée à clic_reviews via products_id et via reviews_id et id (qui est équivalent au sentiment id).
+   - Liée à products via products_id.
+   - Liée à clic_reviews_description via reviews_id (qui est équivalent au sentiment id).
+8. Table clic_reviews:
+   - Contient les avis des clients sur les produits.
+   - Liée à clic_products via products_id.
+   - Liée to clic_customer via customers_id.
+   - Liée à clic_reviews_description via reviews_id.
+   - liée à clic_sentiment via products_id et reviews_id.
+   - Liée à clic_reviews_votes via products_id et reviews_id et customers_id.
+9. Table clic_return_orders
+   - Contient les retours de produits.
+   - Liée à clic_orders via order_id.
+   - Liée à clic_products via products_id.
+   - Liée à clic_return_orders_history via return_id.
+   - Liée à clic_return_orders_reason via return_reason_id.
+   - Liée à clic_return_orders_status via return_status_id.
+10. Table clic_categories:
+   - Contient les informations des catégories.
+   - Liée à clic_categories_description via categories_id pour une description multilingue.
+   - IMPORTANT: Utilise la colonne 'status' (PAS 'categories_status') pour indiquer si la catégorie est active (1) ou inactive (0).
+   - Exemple: SELECT COUNT(*) FROM clic_categories WHERE status = 1
+
+Lors de la génération de requêtes SQL, respectez strictement ces structures de tables et n'inventez pas de colonnes.
+
+
+
+
+
+
+text_security_guidelines = LIGNES DIRECTRICES IMPORTANTES EN MATIÈRE DE SÉCURITÉ :
+1. Ne générez jamais de requêtes qui modifient la structure de la base de données (CREATE, ALTER, DROP).
+2. Ne générez jamais de requêtes qui suppriment des données sans clauses WHERE explicites.
+3. Utilisez toujours des requêtes paramétrées lorsque des entrées utilisateur sont impliquées.
+4. Évitez d'utiliser INFORMATION\_SCHEMA ou d'accéder aux tables système.
+5. N'incluez pas de données sensibles dans les commentaires des requêtes.
+6. Limitez les ensembles de résultats pour éviter une exposition excessive des données.
+7. Validez tous les noms de tables et de colonnes par rapport au schéma.
+
+
+
+
+
+text_parentheses_mismatch_error = Parenthèses non correspondantes : {{openParenCount}} ouvrantes contre {{closeParenCount}} fermantes.
+text_invalid_column_alias_error = Alias de colonne invalide (contient un point).
+text_select_without_from_error = Requête SELECT sans clause FROM.
+text_unresolved_placeholders_error = Espaces réservés non résolus détectés.
+text_no_correction_applied = Aucune correction appliquée.
+text_parentheses_mismatch = Parenthèses non correspondantes
+text_correction_invalid_column_aliases = Correction des alias de colonnes invalides
+text_resolution_placeholders = Résolution des espaces réservés
+text_syntax error corrected = Erreur de syntaxe corrigée
+text_problematic_part_removed = Partie problématique {{problematicPart}} supprimée
+text_problematic_part_everything_following_removed = Partie problématique {{$problematicPart}} et tout ce qui suit supprimé
+text_colum_reference_does_not_exist = Il semble qu’il y ait une référence à une colonne qui n’existe pas dans la base de données. Essayez de reformuler votre requête avec des termes plus généraux.
+text_sql_query_generated_error = Il y a une erreur de syntaxe dans la requête SQL générée. Essayez de reformuler votre question de manière plus claire et précise.
+text_table_referenced_does_not_exist = Une table référencée dans la requête n’existe pas. Essayez de reformuler votre question avec des termes plus généraux.
+text_error_executing_query = Une erreur est survenue lors de l’exécution de la requête. Essayez de reformuler votre question de manière plus claire et précise.
+text_no_valid_sql_query_could_extracted = Aucune requête SQL valide n’a pu être extraite de la réponse.
+text_correction_cancelled = Corrections annulées car elles n’ont pas résolu tous les problèmes
+text_no_applied_confidence = Non appliqué – confiance insuffisante
+text_error_context_sql_number_request = Trop d’informations sont envoyées au LLM. Le contexte est limité. Veuillez affiner votre demande ou ajuster les paramètres.<br />
+Nbr de ligne max : {{maxRows}}<br />
+Nbr de résultat : {{count}}<br />
+
+error_llm_guardrails_block = Je ne peux pas fournir cette réponse en raison de problèmes de fiabilité détectés. Pouvez-vous reformuler votre question ?
+error_llm_guardrails_manual_review = Note: Cette réponse nécessite une vérification manuelle concernant cette réponse : {{result}}
+success_llm_guardrails_manual_confidence_score = Niveau de confiance: {{confidenceScore}}. La réponse a été acceptée  : {{result}}
+error_llm_guardrails_validation = Erreur lors de la validation
+error_llm_guardrails_evaluation = Erreur lors de l'évaluation
+error_llm_guardrails_invalid_format = Réponse illisible ou format invalide
+
+llm_guardrails_prompt_relevance = Améliorer la pertinence.
+llm_guardrails_prompt_accuracy = Vérifier l’exactitude métier.
+llm_guardrails_prompt_completeness = Ajouter des détails.
+llm_guardrails_prompt_clarity = Clarifier la rédaction.
+
+llm_guardrails_prompt = En tant qu'expert en analyse BI e-commerce, évaluez la réponse suivante selon ces critères:
+QUESTION: {{question}}
+RÉPONSE: {{result}}
+
+Critères d'évaluation (notez de 1 à 5):
+1. EXACTITUDE: Les données et métriques sont-elles correctes?
+2. PERTINENCE: La réponse répond-elle à la question posée?
+3. COMPLETUDE: Toutes les informations nécessaires sont-elles présentes?
+4. CLARTÉ: La réponse est-elle claire et compréhensible?
+5. FIABILITÉ: Y a-t-il des signes d'hallucination ou d'erreur?
+
+Répondez au format JSON:
+{
+    'scores': {
+        'éxactitude': X,
+        'pertinence': X,
+        'complétude': X,
+        'clarté': X,
+        'fiabilité': X
+    },
+
+    'problèmes_détectés': ['liste des problèmes'],
+    'recommandations': ['liste des améliorations'],
+    'niveau_confiance': 'élevé/moyen/faible'
+}
+
+llm_guardrails_accuracy = Exactitude
+llm_guardrails_relevance = Pertinence
+llm_guardrails_completeness = Complétude
+llm_guardrails_clarity = Clarté
+llm_guardrails_reliability = Fiabilité
+llm_guardrails_overall_score = Score global
+
+
+
+
+
+text_interpret_results = Tu es un expert en analyse de données e-commerce.
+Interprète ces résultats de requête SQL et fournis une explication claire et concise en français.\n\n
+Question : {{question}}\n\n
+Résultats : {{results}} \n\n
+Interprétation :
+
+
+# Noms de colonnes pour l'affichage des tableaux
+column_entity_id = ID
+column_products_id = ID Produit
+column_manufacturers_id = ID Marque
+column_categories_id = ID Catégorie
+column_orders_id = ID Commande
+column_customers_id = ID Client
+column_suppliers_id = ID Fournisseur
+column_reviews_id = ID Avis
+
+column_manufacturers_name = Nom de la Marque
+column_products_name = Nom du Produit
+column_categories_name = Nom de la Catégorie
+column_customers_name = Nom du Client
+column_suppliers_name = Nom du Fournisseur
+
+column_products_quantity = Stock
+column_quantity = Quantité
+column_products_ordered = Quantité Vendue
+
+column_products_price = Prix
+column_price = Prix
+column_total_price = Montant Total
+column_final_price = Prix Final
+
+column_date_added = Date d'Ajout
+column_date_modified = Date de Modification
+column_orders_date = Date de Commande
+column_date_purchased = Date d'Achat
+
+column_products_model = Modèle
+column_products_status = Statut
+column_orders_status = Statut Commande
+column_status = Statut
+
+column_products_description = Description
+column_categories_description = Description
+column_customers_email_address = Email
+column_customers_telephone = Téléphone
+
+# Valeurs de statut
+status_inactive = ❌ Inactif
+status_active = ✅ Actif
+status_pending = ⏳ En attente
+status_completed = ✅ Terminé
+status_cancelled = ❌ Annulé
+status_processing = 🔄 En cours
+
+# Messages pour valeurs nulles ou vides
+value_null = -
+value_empty = -
+value_unknown = Inconnu
+
+
+# RÈGLE CRITIQUE AJOUTÉE POUR TASK 18.2
+# =======================================
+# IMPORTANT POUR L'AFFICHAGE DES TABLEAUX
+# Toujours sélectionner les colonnes pertinentes pour l'affichage utilisateur, pas seulement les IDs
+#
+# Exemples corrects :
+# - Pour les marques : SELECT manufacturers_id, manufacturers_name (pas seulement manufacturers_id)
+# - Pour les produits : SELECT products_id, products_name, products_price (pas seulement products_id)
+# - Pour les catégories : SELECT categories_id, categories_name (pas seulement categories_id)
+# - Pour les clients : SELECT customers_id, customers_name, customers_email_address (pas seulement customers_id)
+#
+# Règle générale : Toujours inclure au moins le nom ou la description de l'entité en plus de son ID
+# pour que l'utilisateur puisse comprendre les résultats affichés dans le tableau.
+
+
+
+
+

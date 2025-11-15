@@ -18,7 +18,7 @@ class bestoff extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppi
 
   protected function init()
   {
-    $this->title = $this->app->getDef('cfg_chatgpt_bestof_title');
-    $this->description = $this->app->getDef('cfg_chatgpt_bestof_description');
+    $this->title = $this->app->getDef('cfg_chatgpt_bestoff_title');
+    $this->description = $this->app->getDef('cfg_chatgpt_bestoff_description');
   }
 }

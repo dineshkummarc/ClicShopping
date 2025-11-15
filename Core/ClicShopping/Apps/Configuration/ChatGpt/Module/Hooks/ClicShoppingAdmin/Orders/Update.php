@@ -16,13 +16,18 @@ use ClicShopping\OM\HTML;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
-use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
+use ClicShopping\Sites\Common\HTMLOverrideCommon;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
+
+#[AllowDynamicProperties]
 class Update implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
-
+  public mixed $lang;
+  public mixed $semantics;
+  public mixed $vector;
+    
   /**
    * Class constructor.
    *
@@ -39,6 +44,10 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
     $this->app = Registry::get('ChatGpt');
 
+    Registry::set('Semantics', new Semantics());
+    $this->semantics = Registry::get('Semantics');
+    $this->vector = Registry::get('Vector');
+    
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Orders/rag');
   }
 
@@ -52,7 +61,10 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
  
  private function embeddingExists(int $order_id): bool
   {
-    $Qcheck = $this->app->db->prepare('SELECT id FROM :table_orders_embedding WHERE entity_id = :entity_id');
+    $Qcheck = $this->app->db->prepare('SELECT id 
+                                       FROM :table_orders_embedding
+                                      WHERE entity_id = :entity_id
+                                      ');
     $Qcheck->bindInt(':entity_id', $order_id);
     $Qcheck->execute();
 
@@ -189,6 +201,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     $data .= $this->app->getDef('text_order_customer_currency') . ' : ' . $order['currency'] . "\n";
 
     $data .= "\n" . $this->app->getDef('text_order_products_details') . "\n";
+    
     foreach ($products as $product) {
       $data .= $this->app->getDef('text_order_products_name') . ' : ' . $product['products_name'] . "\n";
       $data .= $this->app->getDef('text_order_products_model') . ' : ' . $product['products_model'] . "\n";
@@ -288,17 +301,20 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
-    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
+   if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
+
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
 
     if (!isset($_GET['Update'], $_GET['Orders'], $_GET['oID'])) {
       return false;
     }
 
-    $order_id = HTML::sanitize($_GET['oID']);
+    if ($embedding_enabled) {
+      $order_id = HTML::sanitize($_GET['oID']);
 
-    $insert_embedding = !$this->embeddingExists($order_id);
+      $insert_embedding = !$this->embeddingExists($order_id);
 
     $orderData = $this->getOrderDetails($order_id);
     $products = $this->getOrderProducts($order_id);
@@ -308,11 +324,12 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
     $embeddingData = $this->buildEmbeddingData($order_id, $orderData, $products, $attributes, $statusHistory, $totals);
 
-    $embeddedDocuments = NewVector::createEmbedding(null, $embeddingData);
+    $embeddedDocuments = $this->vector->createEmbedding(null, $embeddingData);
     $embeddingVector = $embeddedDocuments[0]->embedding ?? null;
 
     if (!empty($embeddingVector)) {
-      $this->saveEmbedding($orderData['orders_id'], $embeddingData, $embeddingVector, $insert_embedding);
+        $this->saveEmbedding($orderData['orders_id'], $embeddingData, $embeddingVector, $insert_embedding);
+      }
     }
-}
+  }
 }

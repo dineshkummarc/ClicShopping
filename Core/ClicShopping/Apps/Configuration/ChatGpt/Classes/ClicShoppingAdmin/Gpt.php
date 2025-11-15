@@ -18,8 +18,8 @@ use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Security\InputValidator;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\statistics;
+use ClicShopping\AI\Security\InputValidator;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Statistics;
 
 use DateTimeImmutable;
 use LLPhant\Chat\MistralAIChat;
@@ -44,7 +44,6 @@ use function is_null;
  */
 class Gpt
 {
-
   public function __construct()
   {
   }
@@ -212,7 +211,7 @@ class Gpt
 
 
 // Paramètres selon modèle
-      if (strpos($engine, 'gpt-5-') === 0) {
+      if ($engine !== null && strpos($engine, 'gpt-5-') === 0) {
         // Modèles GPT-5 : paramètres supportés uniquement
         $parameters = [
           'max_completion_tokens' => $maxtoken,
@@ -436,11 +435,17 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
       'string',
       '',
       [
-        'maxLength' => 4096, // Reasonable limit for prompt length
-        'pattern' => '/^[^<>]*$/', // Disallow HTML tags
+        'maxLength' => 8096, // Reasonable limit for prompt length
+        'pattern' => '/^(?:(?!<script|<iframe).)*$/is', // Bloquer seulement les balises les plus dangereuses
         'escape' => true // Apply HTML escaping
       ]
     );
+
+     // check the validation is not fail
+    if (empty($prompt)) {
+      error_log("WARNING: Prompt validation failed or returned empty string for: " . substr($question, 0, 100));
+      $prompt = $question;
+    }
 
     // Additional sanitization for extra security
     $prompt = HTMLOverrideCommon::removeInvisibleCharacters($prompt);
@@ -471,9 +476,9 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
           'total_tokens' => $lastResponse['usage']['total_tokens']
         ];
 
-        statistics::saveStats($usage, $engine);
+        Statistics::saveStats($usage, $engine);
       }
-}
+    }
 
     return $result;
   }
@@ -561,7 +566,11 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
         'audit_data' => json_encode($auditPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
       ];
 
-      $CLICSHOPPING_Db->save('gpt', $array_sql);
+      try {
+        $CLICSHOPPING_Db->save('gpt', $array_sql);
+      } catch (\Exception $e) {
+        error_log("Erreur lors de la sauvegarde du log GPT dans la base de données: " . $e->getMessage());
+      }
     }
 }
 
@@ -762,5 +771,38 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
     $script .= '<script src="' . CLICSHOPPING::link('Shop/ext/javascript/cKeditor/dialogs/chatgpt.js') . '"></script>';
 
     return $script;
+  }
+
+  /**
+   * Récupère la clé SerpApi depuis les différentes sources configurées
+   * Centralise la logique de récupération pour éviter la redondance
+   *
+   * @return string La clé API SerpApi ou chaîne vide si non configurée
+   */
+  public static function getSerpApiKey(): string
+  {
+    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI') || empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI)) {
+      error_log("WARNING: CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI not defined or empty");
+      return '';
+    }
+
+    $key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI;
+
+    if (!empty($key)) {
+      $eny = putenv('SERP_API_KEY=' . $key);
+      return $eny;
+    }
+
+    return '';
+  }
+
+  /**
+   * Vérifie si SerpApi est configuré et disponible
+   *
+   * @return bool True si une clé SerpApi valide est disponible
+   */
+  public static function isSerpApiAvailable(): bool
+  {
+    return !empty(self::getSerpApiKey());
   }
 }

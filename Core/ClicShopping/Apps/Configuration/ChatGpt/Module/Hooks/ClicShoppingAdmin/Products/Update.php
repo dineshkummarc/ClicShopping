@@ -10,19 +10,22 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\Products;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\HTML;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
+
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
 
 class Update implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
-
+  public mixed $semantics;
+  public mixed $vector;
+  
   /**
    * Class constructor.
    *
@@ -38,6 +41,11 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+
+    Registry::set('Semantics', new Semantics());
+    $this->semantics = Registry::get('Semantics');
+    $this->vector = Registry::get('Vector');
+
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Products/seo_chat_gpt');
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Products/rag');
   }
@@ -52,16 +60,14 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
-    if (Gpt::checkGptStatus() === false) {
+    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
 
-    if (CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
-      return false;
-    }
-
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
+    
     if (isset($_GET['Update'], $_GET['Products'])) {
-      if (isset($_GET['pID'])){
+      if (isset($_GET['pID'])) {
         $pID = HTML::sanitize($_GET['pID']);
 
         $Qcheck = $this->app->db->prepare('select id
@@ -120,7 +126,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             $products_quantity = $item['products_quantity']; //product stock
             $products_stock_reorder_level = (int)STOCK_REORDER_LEVEL; //alert stock  fixfor all  products
             $products_quantity_alert = $item['products_quantity_alert']; // alert stock fix
-            $manufacturer_name =  HTML::sanitize($_POST['manufacturers_name']);
+            $manufacturer_name = HTML::sanitize($_POST['manufacturers_name']);
             $products_description = $item['products_description'];
             $seo_product_title = $item['products_head_title_tag'];
             $seo_product_description = $item['products_head_desc_tag'];
@@ -134,6 +140,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
   //********************
   // add embedding
   //********************
+            if ($embedding_enabled) {
             $embedding_data = $this->app->getDef('text_product_name') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_name) . "\n";
             $embedding_data .= $this->app->getDef('text_product_id') . ': ' . $products_id . "\n";
 
@@ -213,50 +220,53 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
             if (!empty($products_description)) {
               $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
-              $taxonomy = Semantics::createTaxonomy($products_description);
+              $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($products_description),null, $language_code);
 
-              if ($taxonomy != '') {
+              if (!empty($taxonomy)) {
                 $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
               }
-}
+            }
 	    
-            $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+            $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
             $embeddings = [];
 
-            foreach ($embeddedDocuments as $embeddedDocument) {
-              if (is_array($embeddedDocument->embedding)) {
-                $embeddings[] = $embeddedDocument->embedding;
+              foreach ($embeddedDocuments as $embeddedDocument) {
+                if (is_array($embeddedDocument->embedding)) {
+                  $embeddings[] = $embeddedDocument->embedding;
+                }
               }
-}
 
-            if (!empty($embeddings)) {
-              $flattened_embedding = $embeddings[0];
-              $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
+              if (!empty($embeddings)) {
+                $flattened_embedding = $embeddings[0];
+                $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
 
-              $sql_data_array_embedding = [
-                'content' => $embedding_data,
-                'type' => 'products',
-                'sourcetype' => 'manual',
-                'sourcename' => 'manual',
-                'date_modified' => 'now()',
-              ];
+                $sql_data_array_embedding = [
+                  'content' => $embedding_data,
+                  'type' => 'products',
+                  'sourcetype' => 'manual',
+                  'sourcename' => 'manual',
+                  'date_modified' => 'now()',
+                ];
 
-              $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-             if ($insert_embedding === true) {
-                $sql_data_array_embedding['entity_id'] = $item['products_id'];
-                $sql_data_array_embedding['language_id'] =  $item['language_id'];
-                $this->app->db->save('products_embedding', $sql_data_array_embedding);
-              } else {
-               $update_sql_data = [
-                 'language_id' => $item['language_id'],
-                 'entity_id' => $item['products_id']
-               ];
-                $this->app->db->save('products_embedding', $sql_data_array_embedding, $update_sql_data);
+                $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+		
+               if ($insert_embedding === true) {
+                 $sql_data_array_embedding['entity_id'] = (int)$item['products_id'];
+                 $sql_data_array_embedding['language_id'] = (int)$item['language_id'];
+
+                 $this->app->db->save('products_embedding', $sql_data_array_embedding);
+                } else {
+                  $update_sql_data = [
+                    'language_id' => $item['language_id'],
+                    'entity_id' => (int)$item['products_id']
+                  ];
+                  $this->app->db->save('products_embedding', $sql_data_array_embedding, $update_sql_data);
+                }
               }
-}
+            }
           }
-}
+        }
       }
-}
+    }
   }
 }

@@ -10,17 +10,21 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\Shop\Orders;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
-use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
+use ClicShopping\Sites\Common\HTMLOverrideCommon;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
+
+#[AllowDynamicProperties]
 class Process implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
+  public mixed $semantics;
 
   /**
    * Class constructor.
@@ -37,6 +41,10 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+
+    Registry::set('Semantics', new Semantics());
+    $this->semantics = Registry::get('Semantics');
+    $this->vector = Registry::get('Vector');
 
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Orders/rag');
   }
@@ -288,12 +296,14 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
     if (!isset($_GET['Checkout'], $_GET['Process'])) {
       return false;
     }
 
-  //take id of the latest order
-    $Qorder = $this->app->db->prepare('select orders_id
+    if ($embedding_enabled) {
+      //take id of the latest order
+      $Qorder = $this->app->db->prepare('select orders_id
                                       from :table_orders
                                       order by orders_id desc
                                       limit 1
@@ -312,11 +322,12 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
 
     $embeddingData = $this->buildEmbeddingData($order_id, $orderData, $products, $attributes, $statusHistory, $totals);
 
-    $embeddedDocuments = NewVector::createEmbedding(null, $embeddingData);
+    $embeddedDocuments = $this->vector->createEmbedding(null, $embeddingData);
     $embeddingVector = $embeddedDocuments[0]->embedding ?? null;
 
-    if (!empty($embeddingVector)) {
-      $this->saveEmbedding($order_id, $embeddingData, $embeddingVector, $insert_embedding);
+      if (!empty($embeddingVector)) {
+        $this->saveEmbedding($order_id, $embeddingData, $embeddingVector, $insert_embedding);
+      }
     }
   }
 }

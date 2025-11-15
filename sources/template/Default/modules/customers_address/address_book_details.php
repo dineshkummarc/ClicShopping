@@ -124,7 +124,20 @@ if (($CLICSHOPPING_Customer->getCustomersGroupID() == 0 && ACCOUNT_COMPANY == 't
               if (empty($entry['firstname'])) {
                 echo HTML::inputField('firstname', ($CLICSHOPPING_Customer->hasDefaultAddress() ? $CLICSHOPPING_Customer->getFirstName() : null), 'required aria-required="true" id="InputFirstName" autocomplete="name" aria-describedby="' . CLICSHOPPING::getDef('entry_first_name') . '" placeholder="' . CLICSHOPPING::getDef('entry_first_name') . '" minlength="' . ENTRY_FIRST_NAME_PRO_MIN_LENGTH . '"');
               } else {
-                echo HTML::inputField('firstname', (Hash::displayDecryptedDataText($entry['firstname']) ?? null), 'required aria-required="true" id="InputFirstName" autocomplete="name" aria-describedby="' . CLICSHOPPING::getDef('entry_first_name') . '" placeholder="' . CLICSHOPPING::getDef('entry_first_name') . '" minlength="' . ENTRY_FIRST_NAME_PRO_MIN_LENGTH . '"');
+                $firstname = null;
+
+                if (isset($entry) && is_array($entry) && isset($entry['firstname'])) {
+                  $firstname = Hash::displayDecryptedDataText($entry['firstname']);
+                }
+
+                echo HTML::inputField(
+                  'firstname',
+                  $firstname,
+                  'required aria-required="true" id="InputFirstName" autocomplete="name" aria-describedby="' .
+                  CLICSHOPPING::getDef('entry_first_name') .
+                  '" placeholder="' . CLICSHOPPING::getDef('entry_first_name') .
+                  '" minlength="' . ENTRY_FIRST_NAME_PRO_MIN_LENGTH . '"'
+                );
               }
 
               if (($CLICSHOPPING_Customer->getCustomersGroupID() == 0 && ENTRY_FIRST_NAME_MIN_LENGTH > 0) || ($CLICSHOPPING_Customer->getCustomersGroupID() != 0 && ENTRY_FIRST_NAME_PRO_MIN_LENGTH > 0)) {
@@ -146,7 +159,20 @@ if (($CLICSHOPPING_Customer->getCustomersGroupID() == 0 && ACCOUNT_COMPANY == 't
               if (empty($entry['lastname'])) {
                 echo HTML::inputField('lastname', ($CLICSHOPPING_Customer->hasDefaultAddress() ? $CLICSHOPPING_Customer->getLastName() : null), 'required aria-required="true" id="InputLastName" autocomplete="name" aria-describedby="' . CLICSHOPPING::getDef('entry_last_name') . '" placeholder="' . CLICSHOPPING::getDef('entry_last_name') . '" minlength="' . ENTRY_LAST_NAME_PRO_MIN_LENGTH . '"');
               } else {
-                echo HTML::inputField('lastname', Hash::displayDecryptedDataText($entry['lastname']) ?? null, 'required aria-required="true" id="InputLastName" autocomplete="name" aria-describedby="' . CLICSHOPPING::getDef('entry_last_name') . '" placeholder="' . CLICSHOPPING::getDef('entry_last_name') . '" minlength="' . ENTRY_LAST_NAME_PRO_MIN_LENGTH . '"');
+                $lastname = null;
+
+                if (isset($entry) && is_array($entry) && isset($entry['lastname'])) {
+                  $lastname = Hash::displayDecryptedDataText($entry['lastname']);
+                }
+
+                echo HTML::inputField(
+                  'lastname',
+                  $lastname,
+                  'required aria-required="true" id="InputLastName" autocomplete="name" aria-describedby="' .
+                  CLICSHOPPING::getDef('entry_last_name') .
+                  '" placeholder="' . CLICSHOPPING::getDef('entry_last_name') .
+                  '" minlength="' . ENTRY_LAST_NAME_PRO_MIN_LENGTH . '"'
+                );
               }
 
               if (($CLICSHOPPING_Customer->getCustomersGroupID() == 0 && ENTRY_LAST_NAME_MIN_LENGTH > 0) || ($CLICSHOPPING_Customer->getCustomersGroupID() != 0 && ENTRY_LAST_NAME_PRO_MIN_LENGTH > 0)) {
@@ -166,7 +192,23 @@ if (($CLICSHOPPING_Customer->getCustomersGroupID() == 0 && ACCOUNT_COMPANY == 't
               <label for="InputTelephone"
                      class="col-sm-6 col-md-4 col-form-label"><?php echo CLICSHOPPING::getDef('entry_telephone_number'); ?></label>
               <div class="col-sm-6 col-md-4">
-                <?php echo HTML::inputField('customers_telephone', Hash::displayDecryptedDataText($entry['telephone']) ?? null, 'rel="txtTooltipPhone" title="' . CLICSHOPPING::getDef('entry_phone_dgrp') . '" data-bs-toggle="tooltip" data-placement="right" required aria-required="true" id="InputTelephone" autocomplete="tel" aria-describedby="' . CLICSHOPPING::getDef('entry_telephone_number') . '" placeholder="' . CLICSHOPPING::getDef('entry_telephone_number') . '"', 'phone'); ?>
+                <?php
+                $telephone = null;
+
+                if (isset($entry) && is_array($entry) && isset($entry['telephone'])) {
+                  $telephone = Hash::displayDecryptedDataText($entry['telephone']);
+                }
+
+                echo HTML::inputField(
+                  'customers_telephone',
+                  $telephone,
+                  'rel="txtTooltipPhone" title="' . CLICSHOPPING::getDef('entry_phone_dgrp') .
+                  '" data-bs-toggle="tooltip" data-placement="right" required aria-required="true" id="InputTelephone" autocomplete="tel" aria-describedby="' .
+                  CLICSHOPPING::getDef('entry_telephone_number') .
+                  '" placeholder="' . CLICSHOPPING::getDef('entry_telephone_number') . '"',
+                  'phone'
+                );
+                ?>
               </div>
             </div>
           </div>
@@ -208,7 +250,21 @@ if (($CLICSHOPPING_Customer->getCustomersGroupID() == 0 && ACCOUNT_COMPANY == 't
                    class="col-sm-6 col-md-4 col-form-label"><?php echo CLICSHOPPING::getDef('entry_street_address'); ?></label>
             <div class="col-sm-6 col-md-4">
               <?php
-              echo HTML::inputField('street_address', (Hash::displayDecryptedDataText($entry['street_address']) ?? null), 'required aria-required="true" id="InputStreetAddress" aria-describedby="' . CLICSHOPPING::getDef('entry_street_address') . '" placeholder="' . CLICSHOPPING::getDef('entry_street_address') . '" minlength="' . ENTRY_STREET_ADDRESS_PRO_MIN_LENGTH . '"');
+              $street_address = null;
+
+              if (isset($entry) && is_array($entry) && isset($entry['street_address'])) {
+                $street_address = Hash::displayDecryptedDataText($entry['street_address']);
+              }
+
+              echo HTML::inputField(
+                'street_address',
+                $street_address,
+                'required aria-required="true" id="InputStreetAddress" aria-describedby="' .
+                CLICSHOPPING::getDef('entry_street_address') .
+                '" placeholder="' . CLICSHOPPING::getDef('entry_street_address') .
+                '" minlength="' . ENTRY_STREET_ADDRESS_PRO_MIN_LENGTH . '"'
+              );
+
               if (($CLICSHOPPING_Customer->getCustomersGroupID() == 0 && ENTRY_STREET_ADDRESS_MIN_LENGTH > 0) || ($CLICSHOPPING_Customer->getCustomersGroupID() != 0 && ENTRY_STREET_ADDRESS_PRO_MIN_LENGTH > 0)) {
                 echo '&nbsp;' . (!\is_null(CLICSHOPPING::getDef('entry_street_address_text')) ? '<span class="text-warning">' . CLICSHOPPING::getDef('entry_street_address_text') . '</span>' : '');
               }
@@ -226,7 +282,21 @@ if (($CLICSHOPPING_Customer->getCustomersGroupID() == 0 && ACCOUNT_COMPANY == 't
               <label for="InputSuburb"
                      class="col-sm-6 col-md-4 col-form-label"><?php echo CLICSHOPPING::getDef('entry_suburb'); ?></label>
               <div class="col-sm-6 col-md-4">
-                <?php echo HTML::inputField('suburb', (Hash::displayDecryptedDataText($entry['suburb']) ?? null), 'id="InputSuburb" aria-describedby="' . CLICSHOPPING::getDef('entry_suburb') . '" placeholder="' . CLICSHOPPING::getDef('entry_suburb') . '"'); ?>
+                <?php
+                $suburb = null;
+
+                if (isset($entry) && is_array($entry) && isset($entry['suburb'])) {
+                  $suburb = Hash::displayDecryptedDataText($entry['suburb']);
+                }
+
+                echo HTML::inputField(
+                  'suburb',
+                  $suburb,
+                  'id="InputSuburb" aria-describedby="' .
+                  CLICSHOPPING::getDef('entry_suburb') .
+                  '" placeholder="' . CLICSHOPPING::getDef('entry_suburb') . '"'
+                );
+                ?>
               </div>
             </div>
           </div>
@@ -241,7 +311,20 @@ if (($CLICSHOPPING_Customer->getCustomersGroupID() == 0 && ACCOUNT_COMPANY == 't
                    class="col-sm-6 col-md-4 col-form-label"><?php echo CLICSHOPPING::getDef('entry_post_code'); ?></label>
             <div class="col-sm-6 col-md-4">
               <?php
-              echo HTML::inputField('postcode', (Hash::displayDecryptedDataText($entry['postcode']) ?? null), 'required aria-required="true" id="InputPostCode" aria-describedby="' . CLICSHOPPING::getDef('entry_post_code') . '" placeholder="' . CLICSHOPPING::getDef('entry_post_code') . '"');
+              $postcode = null;
+
+              if (isset($entry) && is_array($entry) && isset($entry['postcode'])) {
+                $postcode = Hash::displayDecryptedDataText($entry['postcode']);
+              }
+
+              echo HTML::inputField(
+                'postcode',
+                $postcode,
+                'required aria-required="true" id="InputPostCode" aria-describedby="' .
+                CLICSHOPPING::getDef('entry_post_code') .
+                '" placeholder="' . CLICSHOPPING::getDef('entry_post_code') . '"'
+              );
+
               if (($CLICSHOPPING_Customer->getCustomersGroupID() == 0 && ENTRY_POSTCODE_MIN_LENGTH > 0) || ($CLICSHOPPING_Customer->getCustomersGroupID() != 0 && ENTRY_POSTCODE_PRO_MIN_LENGTH > 0)) {
                 echo '&nbsp;' . (!\is_null(CLICSHOPPING::getDef('entry_post_code_text')) ? '<span class="text-warning">' . CLICSHOPPING::getDef('entry_post_code_text') . '</span>' : '');
               }
@@ -258,7 +341,19 @@ if (($CLICSHOPPING_Customer->getCustomersGroupID() == 0 && ACCOUNT_COMPANY == 't
                    class="col-sm-6 col-md-4 col-form-label"><?php echo CLICSHOPPING::getDef('entry_city'); ?></label>
             <div class="col-sm-6 col-md-4">
               <?php
-              echo HTML::inputField('city', (Hash::displayDecryptedDataText($entry['city']) ?? null), 'required aria-required="true" id="InputCity" aria-describedby="' . CLICSHOPPING::getDef('entry_city') . '" placeholder="' . CLICSHOPPING::getDef('entry_city') . '"');
+              $city = null;
+
+              if (isset($entry) && is_array($entry) && isset($entry['city'])) {
+                $city = Hash::displayDecryptedDataText($entry['city']);
+              }
+
+              echo HTML::inputField(
+                'city',
+                $city,
+                'required aria-required="true" id="InputCity" aria-describedby="' .
+                CLICSHOPPING::getDef('entry_city') .
+                '" placeholder="' . CLICSHOPPING::getDef('entry_city') . '"'
+              );
               if (($CLICSHOPPING_Customer->getCustomersGroupID() == 0 && ENTRY_CITY_MIN_LENGTH > 0) || ($CLICSHOPPING_Customer->getCustomersGroupID() != 0 && ENTRY_CITY_PRO_MIN_LENGTH > 0)) {
                 echo '&nbsp;' . (!\is_null(CLICSHOPPING::getDef('entry_city_text')) ? '<span class="text-warning">' . CLICSHOPPING::getDef('entry_city_text') . '</span>' : '');
               }

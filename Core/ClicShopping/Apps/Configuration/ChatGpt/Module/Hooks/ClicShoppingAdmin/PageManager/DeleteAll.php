@@ -11,14 +11,7 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\PageManager;
 
 use ClicShopping\OM\Registry;
-use ClicShopping\OM\HTML;
-
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-
-use ClicShopping\Apps\Catalog\Manufacturers\Classes\ClicShoppingAdmin\ManufacturerAdmin;
-use ClicShopping\Apps\Configuration\Api\Sites\Shop\Pages\Manufacturers\Manufacturers;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 
 class DeleteAll implements \ClicShopping\OM\Modules\HooksInterface
 {

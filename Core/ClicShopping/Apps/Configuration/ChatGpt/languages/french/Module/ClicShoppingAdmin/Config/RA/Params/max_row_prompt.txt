@@ -1,0 +1,2 @@
+cfg_chatgpt_max_row_prompt_title = Fenetre de contexte d'analyse maximum des donnnées analytiques
+cfg_chatgpt_max_row_prompt_description = Le nombre maximum de lignes qui seront envoyées à l'IA pour analyse. Si le nombre de lignes est supérieur, l'IA ne pourra pas analyser les données. Veuillez affiner votre requête ou ajuster les paramètres.

@@ -71,13 +71,13 @@ class pi_products_info_gallery_baguettebox
       $products_name = $CLICSHOPPING_ProductsCommon->getProductsName($id);
 
       $head = '<!--baguettebox start  -->' . "\n";
-      $head .= '<link rel="stylesheet" type="text/css" media="all" href="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.11.1/baguetteBox.min.css" rel="preload">' . "\n";
+      $head .= '<link rel="stylesheet" type="text/css" media="all" href="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.12.0/baguetteBox.min.css" rel="preload">' . "\n";
       $head .= '<!--magnificPopup  end  -->' . "\n";
 
       $CLICSHOPPING_Template->addBlock($head, 'header_tags');
 
       $footer_tag = '<!-- magnificPopup start  -->' . "\n";
-      $footer_tag .= '<script defer src="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.11.1/baguetteBox.min.js"></script>' . "\n";
+      $footer_tag .= '<script defer src="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.12.0/baguetteBox.min.js"></script>' . "\n";
       $footer_tag .= '<script> window.addEventListener(\'load\', function() { baguetteBox.run(\'.gallery\'); });</script>' . "\n";
 
       $footer_tag .= '<!--baguettebox  end  -->' . "\n";

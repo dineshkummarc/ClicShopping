@@ -759,8 +759,13 @@ class CLICSHOPPING
 
     if (is_array($_GET)) {
       foreach ($_GET as $key => $value) {
-        if (!\in_array($key, $exclude, true)) {
-          $params .= $key . (!empty($value) ? '=' . $value : '') . '&';
+        if (!in_array($key, $exclude, true)) {
+          if (is_array($value)) {
+            $value = http_build_query([$key => $value]);
+            $params .= $value . '&';
+          } else {
+            $params .= $key . (!empty($value) ? '=' . $value : '') . '&';
+          }
         }
       }
     }

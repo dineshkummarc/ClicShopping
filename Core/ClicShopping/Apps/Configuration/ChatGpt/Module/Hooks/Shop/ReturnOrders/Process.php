@@ -15,12 +15,14 @@ use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
-use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
+use ClicShopping\Sites\Common\HTMLOverrideCommon;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
+#[AllowDynamicProperties]
 class Process implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
+  public mixed $vector;
 
   /**
    * Class constructor.
@@ -37,6 +39,11 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+
+    Registry::set('Semantics', new Semantics());
+    $this->semantics = Registry::get('Semantics');
+    $this->vector = Registry::get('ChatGpt');
+
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/ReturnOrders/rag');
   }
 
@@ -52,6 +59,7 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
     $QreturnOrders = $this->app->db->prepare('select r.return_id,
                                                      r.return_ref,
                                                      r.order_id,
+                                                     r.product_id,
                                                      r.product_model,
                                                      r.product_name,
                                                      r.quantity,
@@ -149,6 +157,12 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
     if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
+
+      if (!isset($_GET['Checkout'], $_GET['Process'])) {
+        return false;
+      }
+      
       $return_id = HTML::sanitize($_POST['rId']);
 
       $Qcheck = $this->app->db->prepare('select id
@@ -158,15 +172,16 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
       $Qcheck->bindInt(':entity_id', $return_id);
       $Qcheck->execute();
 
-      if (!isset($_GET['Checkout'], $_GET['Process'])) {
-        return false;
-      }
+      //********************
+      // add embedding
+      //********************
+     if ($embedding_enabled) {
 
     $embedding_data = $this->returnOrders($return_id);
     $embedding_data .= $this->returnOrdersHistory($return_id);
     $insert_embedding = !$this->embeddingExists($return_id);
 
-    $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+    $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
 
     $embeddings = [];
 
@@ -197,8 +212,9 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
       } else {
         $update_sql_data = ['entity_id' => $return_id];
 
-        $this->app->db->save('return_orders_embedding', $sql_data_array_embedding, $update_sql_data);
-      }
+            $this->app->db->save('return_orders_embedding', $sql_data_array_embedding, $update_sql_data);
+          }
+        }
     }
   }
 }

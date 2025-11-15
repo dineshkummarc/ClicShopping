@@ -10,20 +10,22 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\PageManager;
 
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
-
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\HTML;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
 
+#[AllowDynamicProperties]
 class Save implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
-
+  public mixed $lang;
+  public mixed $semantics;
+  
   /**
    * Class constructor.
    *
@@ -40,6 +42,10 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
     $this->app = Registry::get('ChatGpt');
 
+    Registry::set('Semantics', new Semantics());
+    $this->semantics = Registry::get('Semantics');
+    $this->vector = Registry::get('Vector');
+    
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/PageManager/rag');
   }
 
@@ -56,6 +62,8 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
     if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
+
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
 
     if (isset($_GET['Update'], $_GET['PageManager'])) {
       if (isset($_POST['pages_id'])) {
@@ -92,10 +100,11 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
         $QpageManager->execute();
 
         $page_manager_array = $QpageManager->fetchAll();
-        $page_manager_id = $QpageManager->valeuInt('pages_id');
 
         if (is_array($page_manager_array) ) {
           foreach ($page_manager_array as $item) {
+            $page_manager_id = (int)$item['pages_id'];
+	    
             if ($item['page_type'] === 4) {
               $page_manager_name = isset($item['pages_title']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['pages_title']) : '';
               $page_manager_description = isset($item['pages_html_text']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['pages_html_text']) : '';
@@ -107,7 +116,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
               // add embedding
               //********************
 
-              if (\defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True'  && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
+              if ($embedding_enabled) {
                 $embedding_data = "\n" . $this->app->getDef('text_page_manager_name', ['page_title' => $page_manager_name]) . "\n";
 
                 $embedding_data .= "\n" . $this->app->getDef('text_page_manager_id', ['page_id' => $page_manager_id]) . "\n";
@@ -125,15 +134,15 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
                 }
 
                 if (!empty($page_manager_description)) {
-                  $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_description' => $page_manager_name]) . ' : ' . $page_manager_description . "\n";
-                  $taxonomy = Semantics::createTaxonomy($page_manager_description);
+                  $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_description' => $page_manager_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($page_manager_description) . "\n";
+                  $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($page_manager_description));
 
                   if ($taxonomy != '') {
                     $embedding_data .= $this->app->getDef('text_page_manager_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
                   }
-}
+                }
 
-                $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+                $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
 
                 $embeddings = [];
 
@@ -157,11 +166,12 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
                   $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
 
-                  if ($insert_embedding === true) {
-                    $sql_data_array_embedding['entity_id'] = $item['pages_id'];
-                    $sql_data_array_embedding['language_id'] = $item['language_id'];
 
-                    $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding);
+                if ($insert_embedding === true) {
+                  $sql_data_array_embedding['entity_id'] = (int)$item['pages_id'];
+                  $sql_data_array_embedding['language_id'] = (int)$item['language_id'];
+
+                  $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding);
                   } else {
                     $update_sql_data = [
                       'language_id' => $item['language_id'],

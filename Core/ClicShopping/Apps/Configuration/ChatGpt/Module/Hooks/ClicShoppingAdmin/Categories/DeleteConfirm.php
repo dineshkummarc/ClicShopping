@@ -10,11 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\Categories;
 
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\NewVector;
 use ClicShopping\OM\HTML;
-use ClicShopping\OM\Registry;
-
-use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 
 class DeleteConfirm implements \ClicShopping\OM\Modules\HooksInterface
@@ -40,5 +36,5 @@ class DeleteConfirm implements \ClicShopping\OM\Modules\HooksInterface
       $cID = HTML::sanitize($_GET['categories_id']);
       $this->app->db->delete('categories_embedding', ['entity_id' => $cID]);
     }
-}
+  }
 }

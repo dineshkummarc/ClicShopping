@@ -9,6 +9,7 @@
  */
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin;
+
 /**
  * Generates a JavaScript script snippet to dynamically append buttons and handle AJAX requests for SEO default H1 titles.
  *
