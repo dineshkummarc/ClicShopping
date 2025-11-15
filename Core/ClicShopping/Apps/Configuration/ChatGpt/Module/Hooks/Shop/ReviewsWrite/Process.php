@@ -61,24 +61,33 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
   {
     $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
 
-    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
+    if (Gpt::checkGptStatus(
+      ) === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
 
-    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
+    $embedding_enabled = \defined(
+        'CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING'
+      ) && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined(
+        'CLICSHOPPING_APP_CHATGPT_RA_STATUS'
+      ) && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
 
-    $QreviewsCheck = $this->db->get('select r.reviews_id
+    $QreviewsCheck = $this->db->get(
+      'select r.reviews_id
                                       from :table_reviews r
                                       order by r.reviews_id desc
                                       limit 1
-                                     ');
+                                     '
+    );
     $QreviewsCheck->execute();
     $review_id = $QreviewsCheck->valueInt('reviews_id');
 
-    $QcheckEntity = $this->app->db->prepare('select id
+    $QcheckEntity = $this->app->db->prepare(
+      'select id
                                        from :table_pages_manager_embedding
                                        where entity_id = :entity_id
-                                      ');
+                                      '
+    );
     $QcheckEntity->bindInt(':entity_id', $review_id);
     $QcheckEntity->execute();
 
@@ -88,7 +97,8 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
       $insert_embedding = true;
     }
 
-    $Qreviews = $this->db->prepare('select r.reviews_id,
+    $Qreviews = $this->db->prepare(
+      'select r.reviews_id,
                                            r.reviews_rating,
                                            r.date_added,
                                            r.status,
@@ -107,20 +117,25 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
                                     and r.reviews_id = rd.reviews_id
                                     order by r.reviews_id desc
                                     limit 1
-                                    ');
+                                    '
+    );
     $Qreviews->execute();
 
     $review_array = $Qreviews->fetchAll();
 
     if (is_array($review_array)) {
       foreach ($review_array as $item) {
-        $reviews_text = isset($item['reviews_text']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['reviews_text']) : '';
+        $reviews_text = isset($item['reviews_text']) ? HtmlOverrideCommon::cleanHtmlForEmbedding(
+          $item['reviews_text']
+        ) : '';
         $reviews_rating = isset($item['reviews_rating']) ? (int)$item['reviews_rating'] : 0;
         $reviews_read = isset($item['reviews_read']) ? (int)$item['reviews_read'] : 0;
         $date_added = isset($item['date_added']) ? $item['date_added'] : '';
         $status = isset($item['status']) ? (int)$item['status'] : 0;
         $customers_id = isset($item['customers_id']) ? (int)$item['customers_id'] : 0;
-        $customers_tag = isset($item['customers_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['customers_tag']) : '';
+        $customers_tag = isset($item['customers_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding(
+          $item['customers_tag']
+        ) : '';
         $vote = isset($item['vote']) ? (int)$item['vote'] : 0;
         $sentiment = isset($item['sentiment']) ? (int)$item['sentiment'] : 0;
         $products_id = isset($item['products_id']) ? (int)$item['products_id'] : 0;
@@ -130,48 +145,49 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
 // add embedding
 //********************
 
-      if ($embedding_enabled) {
-        $embedding_data = $this->app->getDef('text_reviews') . ' : ' . '\n';
-        $embedding_data .= $this->app->getDef('text_products_name') . ' : ' . $products_name . '\n';
-        $embedding_data .= $this->app->getDef('text_reviews_description') . ' : ' . $reviews_text . '\n';
-        if (!empty($reviews_text)) {
-           $embedding_data .= $this->app->getDef('text_reviews_description', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text) . "\n";
-        }
-        $embedding_data .= $this->app->getDef('text_reviews_rating') . ' : ' . $reviews_rating . '\n';
-        $embedding_data .= $this->app->getDef('text_reviews_read') . ' : ' . $reviews_read . '\n';
-        $embedding_data .= $this->app->getDef('text_reviews_date_added') . ' : ' . $date_added . '\n';
-        $embedding_data .= $this->app->getDef('text_reviews_status') . ' : ' . $status . '\n';
-        $embedding_data .= $this->app->getDef('text_reviews_customer_id') . ' : ' . $customers_id . '\n';
-        $embedding_data .= $this->app->getDef('text_reviews_customer_tag') . ' : ' . $customers_tag . '\n';
-        $embedding_data .= $this->app->getDef('text_reviews_customer_vote') . ' : ' . $vote . '\n';
-        $embedding_data .= $this->app->getDef('text_reviews_customer_sentiment') . ' : ' . $sentiment . '\n';
-        $embedding_data .= $this->app->getDef('text_reviews_products_id') . ' : ' . $products_id . '\n';
-
-        $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
-
-        $embeddings = [];
-
-        foreach ($embeddedDocuments as $embeddedDocument) {
-          if (is_array($embeddedDocument->embedding)) {
-            $embeddings[] = $embeddedDocument->embedding;
+        if ($embedding_enabled) {
+          $embedding_data = $this->app->getDef('text_reviews') . ' : ' . '\n';
+          $embedding_data .= $this->app->getDef('text_products_name') . ' : ' . $products_name . '\n';
+          $embedding_data .= $this->app->getDef('text_reviews_description') . ' : ' . $reviews_text . '\n';
+          if (!empty($reviews_text)) {
+            $embedding_data .= $this->app->getDef('text_reviews_description', ['products_name' => $products_name]
+              ) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text) . "\n";
           }
-        }
+          $embedding_data .= $this->app->getDef('text_reviews_rating') . ' : ' . $reviews_rating . '\n';
+          $embedding_data .= $this->app->getDef('text_reviews_read') . ' : ' . $reviews_read . '\n';
+          $embedding_data .= $this->app->getDef('text_reviews_date_added') . ' : ' . $date_added . '\n';
+          $embedding_data .= $this->app->getDef('text_reviews_status') . ' : ' . $status . '\n';
+          $embedding_data .= $this->app->getDef('text_reviews_customer_id') . ' : ' . $customers_id . '\n';
+          $embedding_data .= $this->app->getDef('text_reviews_customer_tag') . ' : ' . $customers_tag . '\n';
+          $embedding_data .= $this->app->getDef('text_reviews_customer_vote') . ' : ' . $vote . '\n';
+          $embedding_data .= $this->app->getDef('text_reviews_customer_sentiment') . ' : ' . $sentiment . '\n';
+          $embedding_data .= $this->app->getDef('text_reviews_products_id') . ' : ' . $products_id . '\n';
 
-        if (!empty($embeddings)) {
-          $flattened_embedding = $embeddings[0];
-          $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
+          $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
 
-          $sql_data_array_embedding = [
-            'content' => $embedding_data,
+          $embeddings = [];
+
+          foreach ($embeddedDocuments as $embeddedDocument) {
+            if (is_array($embeddedDocument->embedding)) {
+              $embeddings[] = $embeddedDocument->embedding;
+            }
+          }
+
+          if (!empty($embeddings)) {
+            $flattened_embedding = $embeddings[0];
+            $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
+
+            $sql_data_array_embedding = [
+              'content' => $embedding_data,
               'type' => 'reviews',
-            'sourcetype' => 'manual',
-            'sourcename' => 'manual',
-            'date_modified' => 'now()'
-          ];
+              'sourcetype' => 'manual',
+              'sourcename' => 'manual',
+              'date_modified' => 'now()'
+            ];
 
-          $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+            $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
 
-          if ($insert_embedding === true) {
+            if ($insert_embedding === true) {
               $sql_data_array_embedding['entity_id'] = (int)$item['reviews_id'];
               $sql_data_array_embedding['language_id'] = (int)$item['languages_id'];
 
@@ -181,7 +197,8 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
                 'language_id' => (int)$item['languages_id'],
                 'entity_id' => (int)$item['reviews_id']
               ];
-            $this->app->db->save('reviews_embedding', $sql_data_array_embedding, $update_sql_data);
+              $this->app->db->save('reviews_embedding', $sql_data_array_embedding, $update_sql_data);
+            }
           }
         }
       }
