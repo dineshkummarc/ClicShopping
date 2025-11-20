@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'bf1e9393e0dd49d3f2c042229ec733a1e674cf1e',
+        'reference' => 'e507fb917f9d5a397cd74900f99edb07fafb2c74',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'bf1e9393e0dd49d3f2c042229ec733a1e674cf1e',
+            'reference' => 'e507fb917f9d5a397cd74900f99edb07fafb2c74',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -101,9 +101,9 @@
             'dev_requirement' => false,
         ),
         'doctrine/migrations' => array(
-            'pretty_version' => '3.9.4',
-            'version' => '3.9.4.0',
-            'reference' => '1b88fcb812f2cd6e77c83d16db60e3cf1e35c66c',
+            'pretty_version' => '3.9.5',
+            'version' => '3.9.5.0',
+            'reference' => '1b823afbc40f932dae8272574faee53f2755eac5',
             'type' => 'library',
             'install_path' => __DIR__ . '/../doctrine/migrations',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => '6c7e6e7ebf679f9228c82ec3f7a432b4e8df538e',
+            'reference' => '3e3f82ed67bc5a5a3b880ad413e6c06c1c899322',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(

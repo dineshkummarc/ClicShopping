@@ -16,8 +16,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
-use ClicShopping\AI\Domain\SemanticSearch\Semantics;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\Semantics;
+use ClicShopping\AI\Tools\Semantics\Semantics;
 
 #[AllowDynamicProperties]
 class Save implements \ClicShopping\OM\Modules\HooksInterface
@@ -25,7 +24,8 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
   public mixed $app;
   public mixed $lang;
   public mixed $semantics;
-  
+  protected mixed $vector;
+
   /**
    * Class constructor.
    *

@@ -8,10 +8,15 @@
  *
  */
 
+
 namespace ClicShopping\Apps\Tools\MCP\Sites\Shop\Pages\RagBI;
 
 use AllowDynamicProperties;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\AI\Insfrastructure\Orm\DoctrineOrm;
+use ClicShopping\AI\Insfrastructure\Storage\MariaDBVectorStore;
+use ClicShopping\AI\Rag\MultiDBRAGManager;
+use ClicShopping\AI\Domain\SemanticSearch\Semantics;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\EndPoint\RagBIPermissions;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Authentification;
@@ -19,12 +24,6 @@ use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpPermissions;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpSecurity;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpShop;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Message;
-
-use ClicShopping\AI\Insfrastructure\Orm\DoctrineOrm;
-use ClicShopping\AI\Insfrastructure\Storage\MariaDBVectorStore;
-use ClicShopping\AI\Rag\MultiDBRAGManager;
-use ClicShopping\AI\Domain\SemanticSearch\Semantics;
-
 use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
 
 use ClicShopping\Apps\Tools\MCP\MCP;
