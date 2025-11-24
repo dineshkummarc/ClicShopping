@@ -15,7 +15,7 @@ use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Domain\Embedding\NewVector;
-use ClicShopping\AI\Domain\SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
 
 #[AllowDynamicProperties]
 class Cron {

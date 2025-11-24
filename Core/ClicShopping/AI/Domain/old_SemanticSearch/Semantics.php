@@ -8,7 +8,7 @@
  *
  */
 
-namespace ClicShopping\AI\Domain\SemanticSearch;
+namespace ClicShopping\AI\Domain\old_SemanticSearch;
 
 use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;

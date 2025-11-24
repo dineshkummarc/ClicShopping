@@ -19,7 +19,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 
 
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\AI\Domain\SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
 
 /**
  * Class Insert

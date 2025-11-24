@@ -17,7 +17,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\AI\Domain\SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
 
 #[AllowDynamicProperties]
 class Save implements \ClicShopping\OM\Modules\HooksInterface

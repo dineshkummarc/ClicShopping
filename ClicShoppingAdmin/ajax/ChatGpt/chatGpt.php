@@ -20,7 +20,7 @@ use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Insfrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Insfrastructure\Storage\MariaDBVectorStore;
-use ClicShopping\AI\Domain\SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
 
 define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/')  . DIRECTORY_SEPARATOR);
 

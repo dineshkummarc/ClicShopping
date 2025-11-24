@@ -21,7 +21,7 @@ use ClicShopping\AI\Security\DbSecurity;
 
 
 use ClicShopping\AI\Tools\Cache\Cache;
-use ClicShopping\AI\Domain\SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
 
 /**
  * Class AnalyticsAgent
