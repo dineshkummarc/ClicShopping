@@ -453,7 +453,7 @@ class ProductsCommon extends Prod
     } else {
       return $this->setProductsImage($id);
     }
-  }
+}
 
   /**
    * Sets the medium image of a product.
@@ -490,7 +490,7 @@ class ProductsCommon extends Prod
     } else {
       return $this->setProductsImageMedium($id);
     }
-  }
+}
 
   /**
    * Retrieve the availability date of a product
@@ -633,7 +633,6 @@ class ProductsCommon extends Prod
 
     return $products_upc;
   }
-
 
   /**
    * Retrieve the barcode of the product
@@ -863,7 +862,7 @@ class ProductsCommon extends Prod
     } else {
       return '';
     }
-  }
+}
 
   /**
    * Retrieves the information about whether the product is available only in the shop.
@@ -1206,7 +1205,7 @@ class ProductsCommon extends Prod
    * @param string|null $id The ID of the product. If null, the method will use the current product ID.
    * @return string The calculated product price per weight unit, formatted for display. Returns an empty string if the price should not be displayed based on the system's conditions.
    */
-  private function setProductsPriceByWeight(string $id = null)
+  private function setProductsPriceByWeight(?string $id = null): string
   {
     if (is_null($id)) {
       $id = $this->getID();
@@ -1240,7 +1239,6 @@ class ProductsCommon extends Prod
     if ((\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'true') && !$this->customer->isLoggedOn()) {
       $product_price_kilo_display = '';
     }
-
 
     if (\defined('NOT_DISPLAY_PRICE_ZERO') && NOT_DISPLAY_PRICE_ZERO == 'false' && $products_price == 0) {
       $product_price_kilo_display = '';
@@ -1292,7 +1290,6 @@ class ProductsCommon extends Prod
     return $QproductsQuantityUnit->value('products_quantity_unit_title');
   }
 
-
 // ---------------------------------------------------------------------------------------------------------------------------------------
 // B2B
 // ---------------------------------------------------------------------------------------------------------------------------------------
@@ -1342,7 +1339,7 @@ class ProductsCommon extends Prod
       if (is_null($Qproducts->value('products_model_group'))) {
         $products_model = HTML::outputProtected($Qproducts->value('products_model'));
       }
-    } else {
+} else {
       $products_model = HTML::outputProtected($Qproducts->value('products_model'));
     }
 
@@ -1444,11 +1441,9 @@ class ProductsCommon extends Prod
     return $this->setProductsFlashDiscount($id);
   }
 
-
 //----------------------------------------------------------------------------------------------------------------------------
 // Quantity
 //----------------------------------------------------------------------------------------------------------------------------
-
 
   /**
    * Sets and retrieves the product quantity unit type and title based on the customer's group.
@@ -1508,7 +1503,7 @@ class ProductsCommon extends Prod
       } else {
         $products_group_quantity_unit_title = HTML::outputProtected($products_quantity_fixed_group) . ' ' . $products_quantity_unit['products_quantity_unit_title'];
       }
-    } else {
+} else {
       $products_group_quantity_unit_title = '';
     }
 
@@ -1550,7 +1545,7 @@ class ProductsCommon extends Prod
         if (\defined('MAX_MIN_IN_CART') && (int)MAX_MIN_IN_CART > \defined('MAX_QTY_IN_CART') ? (int)MAX_QTY_IN_CART : 0) {
           $min_quantity_order = \defined('MAX_QTY_IN_CART') ? (int)MAX_QTY_IN_CART : 0;
         }
-      }
+}
     } else {
       $QcustomersGroupMinOrder = $this->db->get('customers_groups', ['customers_group_quantity_default'], ['customers_group_id' => (int)$customers_group_id]);
 
@@ -1563,7 +1558,7 @@ class ProductsCommon extends Prod
       } else {
         $min_quantity_order = 1;
       }
-    }
+}
 
     return $min_quantity_order;
   }
@@ -1604,7 +1599,7 @@ class ProductsCommon extends Prod
       } else {
         $min_order_quantity_products_display = '';
       }
-    } else {
+} else {
       $min_order_quantity_products_display = '';
     }
 
@@ -1614,7 +1609,6 @@ class ProductsCommon extends Prod
 
     return $min_order_quantity_products_display;
   }
-
 
   /*
     * display Minimum quantity take an order for the client
@@ -1661,7 +1655,7 @@ class ProductsCommon extends Prod
       } else {
         $input_quantity = '';
       }
-    }
+}
 
     if ($this->setProductsMinimumQuantityToTakeAnOrder($id) == 0 && \defined('MAX_MIN_IN_CART') && MAX_MIN_IN_CART == 0) {
       $input_quantity = '';
@@ -1743,13 +1737,13 @@ class ProductsCommon extends Prod
       } elseif ($this->getOrdersGroupView() == 0 && $this->customer->getCustomersGroupID() != 0) {
         $buy_button = '';
       }
-    } elseif (\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'false' && $this->customer->isLoggedOn()) {
+} elseif (\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'false' && $this->customer->isLoggedOn()) {
       if ($this->getProductsOrdersView() == 0 && $this->customer->getCustomersGroupID() == 0) {
         $buy_button = '';
       } elseif ($this->getOrdersGroupView() == 0 && $this->customer->getCustomersGroupID() != 0) {
         $buy_button = '';
       }
-    }
+}
 
     if ($this->getPriceGroupView() == 0 && $this->customer->getCustomersGroupID() != 0) {
       $buy_button = '';
@@ -1823,7 +1817,7 @@ class ProductsCommon extends Prod
       } elseif (\defined('PRICES_LOGGED_IN') && PRICES_LOGGED_IN == 'true' && $this->customer->getCustomersGroupID() == 0 && $this->customer->isLoggedOn() && \defined('STOCK_CHECK') && STOCK_CHECK == 'true' && \defined('STOCK_ALLOW_CHECKOUT') && STOCK_ALLOW_CHECKOUT == 'false') {
         $product_sold_out = $this->getProductButtonSoldOut($button_type);
       }
-    }
+}
 
     return $product_sold_out;
   }
@@ -1839,7 +1833,6 @@ class ProductsCommon extends Prod
   {
     return $this->setProductsSoldOut($id, $button_type);
   }
-
 
 // =======================================================================================================================================================
 // Price & tax
@@ -1969,10 +1962,10 @@ class ProductsCommon extends Prod
         } else {
           $products_price = $Qproduct->valueDecimal('products_price');
         }
-      } else {
+} else {
         $products_price = $Qproduct->valueDecimal('products_price');
       }
-    } else {
+} else {
       $products_price = $Qproduct->valueDecimal('products_price');
     }
 
@@ -2008,7 +2001,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
    * @return float The price of the product group without currency adjustments.
    */
-  public function getDisplayPriceGroupWithoutCurrencies($id = null): float
+  public function getDisplayPriceGroupWithoutCurrencies(?int $id = null): float
   {
     if (is_null($id)) {
       $id = $this->getID();
@@ -2025,7 +2018,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
    * @return string The formatted price for the product, including all pricing rules.
    */
-  private function setCalculPrice($id = null)
+  private function setCalculPrice(?int $id = null)
   {
     if (is_null($id)) {
       $id = $this->getID();
@@ -2060,10 +2053,10 @@ class ProductsCommon extends Prod
         } else {
           $products_price = $this->setDisplayPriceGroup($id);
         }
-      } else {
+} else {
         $products_price = $this->setDisplayPriceGroup($id);
       }
-    } else {
+} else {
       $normal_price = 1; // Arret du mode Grand public pour refus d'afficher le prix groupe B2B
     }
 
@@ -2074,7 +2067,7 @@ class ProductsCommon extends Prod
       } else {
         $products_price = $this->setDisplayPriceGroup($id);
       }
-    }
+}
 
     return $products_price;
   }
@@ -2085,7 +2078,7 @@ class ProductsCommon extends Prod
    * @param mixed|null $id The ID of the entity for which the calculated price is required. If null, a default value may be used.
    * @return mixed The calculated price value.
    */
-  public function getCalculPrice($id = null)
+  public function getCalculPrice(?int $id = null)
   {
     return $this->setCalculPrice($id);
   }
@@ -2097,7 +2090,7 @@ class ProductsCommon extends Prod
    * @return int The stock quantity of the product.
    */
 
-  public function getProductsStock($id = null): int
+  public function getProductsStock(?int $id = null): int
   {
     $CLICSHOPPING_Prod = Registry::get('Prod');
 
@@ -2133,7 +2126,7 @@ class ProductsCommon extends Prod
       } else {
         $out_of_stock = '<span class="markProductOutOfStock" id="markProductOutOfStock">' . CLICSHOPPING::getDef('text_out_of_stock') . '</span>';
       }
-    }
+}
 
     return $out_of_stock;
   }
@@ -2165,7 +2158,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will retrieve the current product ID.
    * @return int The total count of active attributes associated with the product.
    */
-  private function setCountProductsAttributes($id = null)
+  private function setCountProductsAttributes(?int $id = null)
   {
     if (is_null($id)) {
       $id = $this->getID();
@@ -2197,7 +2190,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will determine the ID using internal logic.
    * @return int The count of attributes associated with the product.
    */
-  public function getCountProductsAttributes($id = null)
+  public function getCountProductsAttributes(?int $id = null)
   {
     return $this->SetCountProductsAttributes($id);
   }
@@ -2208,7 +2201,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
    * @return bool True if the product has active attributes, false otherwise.
    */
-  public function getHasProductAttributes($id = null)
+  public function getHasProductAttributes(?int $id = null)
   {
     if (is_null($id)) {
       $id = $this->getID();
@@ -2233,7 +2226,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
    * @return float|null The "specials_new_products_price" value for the product if available, or null if no special price is set.
    */
-  private function setProductsSpecialPrice($id = null)
+  private function setProductsSpecialPrice(?int $id = null)
   {
     if (is_null($id)) {
       $id = $this->getID();
@@ -2256,7 +2249,7 @@ class ProductsCommon extends Prod
 
       return $result;
     }
-  }
+}
 
   /**
    * Retrieves the special price for a specific product by delegating to the setProductsSpecialPrice method.
@@ -2264,7 +2257,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method may use a default behavior to determine the ID.
    * @return mixed The retrieved special price value for the product.
    */
-  public function getProductsSpecialPrice($id = null)
+  public function getProductsSpecialPrice(?int $id = null)
   {
     return $this->setProductsSpecialPrice($id);
   }
@@ -2420,7 +2413,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product to evaluate. If null, the method will use the current ID.
    * @return bool True if the product is considered new; otherwise, false.
    */
-  private function setProductsTickerProductsNew($id = null): bool
+  private function setProductsTickerProductsNew(?int $id = null): bool
   {
     if (is_null($id)) {
       $id = $this->getID();
@@ -2458,7 +2451,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will use a default value.
    * @return bool The result of the operation to set the "products_ticker_products_new" status.
    */
-  public function getProductsTickerProductsNew($id = null): bool
+  public function getProductsTickerProductsNew(?int $id = null): bool
   {
     return $this->setProductsTickerProductsNew($id);
   }
@@ -2469,7 +2462,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
    * @return bool True if the product is considered a "ticker special," false otherwise.
    */
-  private function setProductsTickerSpecials($id = null): bool
+  private function setProductsTickerSpecials(?int $id = null): bool
   {
     if (is_null($id)) {
       $id = $this->getID();
@@ -2515,7 +2508,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, a default value may be used by the method logic.
    * @return mixed The result of setting the "ticker specials" for the product.
    */
-  public function getProductsTickerSpecials($id = null)
+  public function getProductsTickerSpecials(?int $id = null)
   {
     return $this->setProductsTickerSpecials($id);
   }
@@ -2538,7 +2531,7 @@ class ProductsCommon extends Prod
     } else {
       return '';
     }
-  }
+}
 
   /**
    * Determines if a product is marked as favorite within a specific time period.
@@ -2546,7 +2539,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
    * @return bool True if the product is marked as favorite within the defined time period, otherwise false.
    */
-  private function setProductsTickerFavorites($id = null): bool
+  private function setProductsTickerFavorites(?int $id = null): bool
   {
     if (is_null($id)) {
       $id = $this->getID();
@@ -2580,7 +2573,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
    * @return bool True if the product is eligible to be featured on the ticker, false otherwise.
    */
-  private function setProductsTickerFeatured($id = null): bool
+  private function setProductsTickerFeatured(?int $id = null): bool
   {
     if (is_null($id)) {
       $id = $this->getID();
@@ -2616,7 +2609,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
    * @return bool True if the product qualifies for the ticker recommendation, false otherwise.
    */
-  private function setProductsTickerRecommendations($id = null): bool
+  private function setProductsTickerRecommendations(?int $id = null): bool
   {
     if (is_null($id)) {
       $id = $this->getID();
@@ -2652,10 +2645,10 @@ class ProductsCommon extends Prod
   /**
    * Retrieves the ticker favorites for a specific product.
    *
-   * @param mixed $id The ID of the product. If null, a default behavior or ID will be used within the method.
+   * @param ?int $id The ID of the product. If null, a default behavior or ID will be used within the method.
    * @return mixed The result of setting the product's ticker favorites.
    */
-  public function getProductsTickerFavorites($id = null)
+  public function getProductsTickerFavorites(?int $id = null)
   {
     return $this->setProductsTickerFavorites($id);
   }
@@ -2663,10 +2656,10 @@ class ProductsCommon extends Prod
   /**
    * Retrieves the featured ticker information for a specific product.
    *
-   * @param mixed|null $id The ID of the product. If null, the method may use a default or current ID.
+   * @param ?int|null $id The ID of the product. If null, the method may use a default or current ID.
    * @return mixed The result of setting the featured ticker for the product.
    */
-  public function getProductsTickerFeatured($id = null)
+  public function getProductsTickerFeatured(?int $id = null)
   {
     return $this->setProductsTickerFeatured($id);
   }
@@ -2681,7 +2674,6 @@ class ProductsCommon extends Prod
   {
     return $this->setProductsTickerRecommendations($id);
   }
-
 
   /*
   * display Save Money by the customer
@@ -2763,14 +2755,14 @@ class ProductsCommon extends Prod
         $new_discount_price = ($products_price - ($products_price * ($discount_customer[$i] / 100)));
         $_SESSION['ProductsID'] = $id;
       }
-    }
+}
 
     if (!is_null($new_discount_price) || !empty($new_discount_price)) {
       return $new_discount_price;
     } else {
       return false;
     }
-  }
+}
 
   /**
    * Calculates the total discount for a product based on its quantity in the shopping cart.
@@ -2812,7 +2804,7 @@ class ProductsCommon extends Prod
 
         $discount = ($products_price - $new_discount_price) * $qty;
       }
-    }
+}
 
     return $discount;
   }
@@ -2847,7 +2839,7 @@ class ProductsCommon extends Prod
         $sort_prefix = '<a href="' . CLICSHOPPING::link(null, CLICSHOPPING::getAllGET(array('page', 'info', 'sort')) . '&page=1&sort=' . $column . ($sortby == $column . 'a' ? 'd' : 'a')) . '" title="' . HTML::output(CLICSHOPPING::getDef('text_sort_products') . ($sortby == $column . 'd' || substr($sortby, 0, 1) != $column ? CLICSHOPPING::getDef('text_ascendingly') : CLICSHOPPING::getDef('text_descendingly')) . CLICSHOPPING::getDef('text_by') . $heading) . '" class="productListing-heading">';
         $sort_suffix = ' ' . (substr($sortby, 0, 1) == $column ? (substr($sortby, 1, 1) == 'a' ? '+' : '-') : '') . '</a>';
       }
-    } else {
+} else {
       $sort_prefix = '<a href="' . CLICSHOPPING::link(null, CLICSHOPPING::getAllGET(array('page', 'info', 'sort')) . '&keywords=' . $keywords . '&page=1&sort=' . $column . ($sortby == $column . 'a' ? 'd' : 'a')) . '" title="' . HTML::output(CLICSHOPPING::getDef('text_sort_products') . ($sortby == $column . 'd' || substr($sortby, 0, 1) != $column ? CLICSHOPPING::getDef('text_ascendingly') : CLICSHOPPING::getDef('text_descendingly')) . CLICSHOPPING::getDef('text_by') . $heading) . '" class="productListing-heading">';
       $sort_suffix = ' ' . (substr($sortby, 0, 1) == $column ? (substr($sortby, 1, 1) == 'a' ? '+' : '-') : '') . '</a>';
     }

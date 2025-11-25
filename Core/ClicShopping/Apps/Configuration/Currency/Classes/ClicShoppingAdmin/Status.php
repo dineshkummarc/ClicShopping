@@ -36,5 +36,5 @@ class Status
     } else {
       return -1;
     }
-  }
+}
 }

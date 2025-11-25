@@ -27,7 +27,7 @@ class CurrenciesAdmin extends \ClicShopping\Apps\Configuration\Currency\Classes\
    * @param array|null $currencies Optional array of currencies to initialize.
    * @return void
    */
-  public function __construct(array $currencies = null)
+  public function __construct(?array $currencies = null)
   {
     $CLICSHOPPING_Db = Registry::get('Db');
     /**

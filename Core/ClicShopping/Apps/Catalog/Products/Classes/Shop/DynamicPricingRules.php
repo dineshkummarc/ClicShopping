@@ -142,7 +142,7 @@ class DynamicPricingRules {
 
         return $finalPrice;
       }
-    }
+}
 
     return $base_price;
   }
@@ -264,7 +264,7 @@ class DynamicPricingRules {
       if (stripos($condition, $keyword) !== false) {
         throw new InvalidArgumentException('Condition contains forbidden SQL keywords');
       }
-    }
+}
   }
 
   /**
@@ -283,7 +283,7 @@ class DynamicPricingRules {
       if (!is_numeric($value)) {
         throw new InvalidArgumentException("Variable '{$name}' must be numeric");
       }
-    }
+}
   }
 
   /**
@@ -298,7 +298,7 @@ class DynamicPricingRules {
       if (stripos($condition, " {$operator} ") !== false) {
         return true;
       }
-    }
+}
     return false;
   }
 
@@ -448,7 +448,7 @@ class DynamicPricingRules {
       if (strpos($clause, $operator) !== false) {
         return true;
       }
-    }
+}
     return false;
   }
 

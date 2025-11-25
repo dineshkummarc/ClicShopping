@@ -128,7 +128,7 @@ class ProductsFunctionTemplate
     } else {
       return '';
     }
-  }
+}
 
 // display a message in public function the customer group applied - before submit button
 
@@ -144,7 +144,7 @@ class ProductsFunctionTemplate
       $submit_button_view = $this->productsCommon->getProductsAllowingTakeAnOrderMessage();
       return $submit_button_view;
     }
-  }
+}
 
   /**
    * Retrieves the display input quantity for a product based on the given parameters.
@@ -165,7 +165,7 @@ class ProductsFunctionTemplate
         if ($this->productsCommon->getHasProductAttributes($products_id) === false) {
           $input_quantity = CLICSHOPPING::getDef('text_customer_quantity') . $tag . $this->productsCommon->getProductsAllowingToInsertQuantity($products_id);
         }
-      }
+}
     }
 
     return $input_quantity;
@@ -186,11 +186,11 @@ class ProductsFunctionTemplate
       if (!empty($this->productsCommon->getProductQuantityUnitType($products_id))) {
         $products_quantity_unit = CLICSHOPPING::getDef('text_products_quantity_type') . $tag . $this->productsCommon->getProductQuantityUnitType($products_id);
       }
-    } else {
+} else {
       if (!empty($this->productsCommon->getProductQuantityUnitTypeCustomersGroup($products_id))) {
         $products_quantity_unit = CLICSHOPPING::getDef('text_products_quantity_type') . $tag . $this->productsCommon->getProductQuantityUnitTypeCustomersGroup($products_id);
       }
-    }
+}
 
     return $products_quantity_unit;
   }
@@ -216,7 +216,7 @@ class ProductsFunctionTemplate
       } else {
         $button = HTML::button(null, $icon, $this->rewriteUrl->getProductNameUrl($products_id), $button_color, $params, $button_size);
       }
-    }
+}
 
     return $button;
   }
@@ -239,7 +239,7 @@ class ProductsFunctionTemplate
       } else {
         $products_image = HTML::link($this->rewriteUrl->getProductNameUrl($products_id), HTML::image($this->template->getDirectoryTemplateImages() . $this->productsCommon->getProductsImage($products_id), HTML::outputProtected($this->productsCommon->getProductsName($products_id)), \defined('SMALL_IMAGE_WIDTH') ? (int)SMALL_IMAGE_WIDTH : 0, \defined('SMALL_IMAGE_HEIGHT') ? (int)SMALL_IMAGE_HEIGHT : 0, $parameters, $responsive, $css));
       }
-    } else {
+} else {
       $products_image = HTML::link($this->rewriteUrl->getProductNameUrl($products_id), HTML::image($this->template->getDirectoryTemplateImages() . $this->productsCommon->getProductsImage($products_id), HTML::outputProtected($this->productsCommon->getProductsName($products_id)), \defined('SMALL_IMAGE_WIDTH') ? (int)SMALL_IMAGE_WIDTH : 0, \defined('SMALL_IMAGE_HEIGHT') ? (int)SMALL_IMAGE_HEIGHT : 0, $parameters, $responsive, $css));
     }
 
@@ -310,7 +310,7 @@ class ProductsFunctionTemplate
     } else {
       return '';
     }
-  }
+}
 
   /**
    * Retrieves the manufacturer name for a given product, optionally formatted with a custom tag.
@@ -328,7 +328,7 @@ class ProductsFunctionTemplate
     } else {
       return '';
     }
-  }
+}
 
   /**
    * Retrieves the price of a product per weight unit for a given product, optionally formatted with a custom tag.
@@ -346,7 +346,7 @@ class ProductsFunctionTemplate
     } else {
       return '';
     }
-  }
+}
 
   /**
    * Retrieves the availability date of a product in a formatted manner if it is set and in the future.
@@ -367,7 +367,7 @@ class ProductsFunctionTemplate
     } else {
       return '';
     }
-  }
+}
 
   /**
    * Retrieves the shop-only availability message for a given product.
@@ -384,7 +384,7 @@ class ProductsFunctionTemplate
     } else {
       return '';
     }
-  }
+}
 
   /**
    * Determines if a product is only available on the website and retrieves the corresponding label if applicable.
@@ -401,7 +401,7 @@ class ProductsFunctionTemplate
     } else {
       return '';
     }
-  }
+}
 
   /**
    * Retrieves the packaging type of a product for a given product ID, optionally formatted with a custom tag.
@@ -438,7 +438,7 @@ class ProductsFunctionTemplate
     } else {
       return '';
     }
-  }
+}
 
   /**
    * Retrieves the shipping delay message for out-of-stock products for a given product, optionally formatted with a custom tag.
@@ -456,8 +456,7 @@ class ProductsFunctionTemplate
     } else {
       return '';
     }
-  }
-
+}
 
   /**
    * Retrieves and processes the head tag(s) associated with a given product.
@@ -477,7 +476,7 @@ class ProductsFunctionTemplate
     } else {
       return '';
     }
-  }
+}
 
   /**
    * Retrieves the volume of a product for a given product ID, optionally formatted with a custom tag.
@@ -495,7 +494,7 @@ class ProductsFunctionTemplate
     } else {
       return '';
     }
-  }
+}
 
   /**
    * Retrieves the weight information of a product, formatted with a specified tag and weight symbol.
@@ -514,7 +513,7 @@ class ProductsFunctionTemplate
     } else {
       return '';
     }
-  }
+}
 
   /**
    * Retrieves the name of the manufacturer for a given product as a formatted link.
@@ -568,7 +567,7 @@ class ProductsFunctionTemplate
     } else {
       return '';
     }
-  }
+}
 
   /**
    * Generates a JSON-LD structured data script for a product, including details such as name, description, SKU, brand, price, stock status, and reviews.
@@ -651,7 +650,7 @@ class ProductsFunctionTemplate
       "@type": "Organization",
       "name": "' . HTML::output(STORE_NAME) . '"
     }
-  }
+}
 }
 </script>      
       ';
