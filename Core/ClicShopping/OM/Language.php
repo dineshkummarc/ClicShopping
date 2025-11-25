@@ -37,7 +37,7 @@ class Language
    *
    * @param string
    */
-  public function __construct($code = null)
+  public function __construct(?string $code = null)
   {
     $this->db = Registry::get('Db');
 
@@ -220,7 +220,7 @@ class Language
    * @param string|null $data The key for the data to be retrieved. Defaults to 'code' if not provided.
    * @param string|null $language_code
    */
-  public function get($data = null, $language_code = null)
+  public function get(string|null $data = null, string|null $language_code = null)
   {
     if (!isset($data)) {
       $data = 'code';
@@ -238,7 +238,7 @@ class Language
    *
    * @param string|null $language_code The language code to retrieve the ID for.
    */
-  public function getId($language_code = null)
+  public function getId(string|null $language_code = null)
   {
     return (int)$this->get('id', $language_code);
   }
@@ -295,7 +295,7 @@ class Language
    * @param array|null $values Optional values to replace placeholders in the definition.
    * @param string $scope
    */
-  public function getDef($key, $values = null, $scope = 'global')
+  public function getDef(string $key, mixed $values = null, string $scope = 'global')
   {
     if (isset($this->definitions[$scope][$key])) {
       $def = $this->definitions[$scope][$key];
@@ -326,7 +326,7 @@ class Language
   /**
    *
    */
-  public function definitionsExist($group, $language_code = null)
+  public function definitionsExist($group, ?string $language_code = null)
   {
     $language_code = isset($language_code) && $this->exists($language_code) ? $language_code : $this->get('code');
 
@@ -362,7 +362,7 @@ class Language
    * @param string $group The group name or identifier for which language definitions are to be loaded.
    * @param string|null $language_code Optional.
    */
-  public function loadDefinitions($group, $language_code = null, $scope = null, $force_directory_language = null)
+  public function loadDefinitions($group, string|null $language_code = null, $scope = null, $force_directory_language = null)
   {
     $language_code = isset($language_code) && $this->exists($language_code) ? $language_code : $this->get('code');
 

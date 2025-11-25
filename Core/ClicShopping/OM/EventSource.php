@@ -77,7 +77,7 @@ class EventSource
    * @param LoggerInterface|null $logger Optional PSR-3 logger for logging events and errors
    * @throws Exception if streaming is not supported
    */
-  public function __construct(string $url, LoggerInterface $logger = null)
+  public function __construct(string $url, LoggerInterface|null $logger = null)
   {
     $this->url = $url;
     $this->logger = $logger ?? new NullLogger();

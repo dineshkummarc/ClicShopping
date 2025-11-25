@@ -110,7 +110,7 @@ class DbStatement extends \PDOStatement
    * @param string $placeholder_offset The placeholder for the offset in the SQL query.
    * @param string $placeholder_max_results The placeholder for the maximum results in the SQL query.
    */
-  public function setPageSet($max_results, $page_set_keyword = null, string $placeholder_offset = 'page_set_offset', string $placeholder_max_results = 'page_set_max_results')
+  public function setPageSet(int $max_results, string|null $page_set_keyword = null, string $placeholder_offset = 'page_set_offset', string $placeholder_max_results = 'page_set_max_results')
   {
     if (!empty($page_set_keyword)) {
       $this->page_set_keyword = $page_set_keyword;
@@ -506,7 +506,7 @@ class DbStatement extends \PDOStatement
    * @param string|null $site The site context (default: null).
    * @return string The generated pagination links.
    */
-  public function getPageSetLinks($parameters = null, $site = null): string
+  public function getPageSetLinks(mixed $parameters = null, string|null $site = null): string
   {
     $number_of_pages = ceil($this->page_set_total_rows / $this->page_set_results_per_page);
 

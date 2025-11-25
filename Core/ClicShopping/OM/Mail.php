@@ -203,7 +203,7 @@ class Mail
    * @param mixed $images_dir Optional directory path for embedded images used within the HTML content.
    * @return void
    */
-public function addHtml(string $html, string $text = '', $images_dir = NULL)
+  public function addHtml(string $html, string $text = '', mixed $images_dir = NULL)
 {
   $this->phpMail->IsHTML(true);
   // Correction : passage des caractères de saut de ligne individuellement

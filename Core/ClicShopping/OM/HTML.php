@@ -34,7 +34,7 @@ class HTML
    * @return string The processed string after applying trim and character translations.
    */
 
-  public static function output(?string $string, array $translate = null): string
+  public static function output(?string $string, ?array $translate = null): string
   {
     if (is_null($string) || empty($string)) {
       return '';
@@ -106,7 +106,7 @@ class HTML
    * @return string The complete anchor tag as an HTML string.
    */
 
-  public static function link($url, $element, $parameters = null)
+  public static function link(string $url, string $element, ?string $parameters = null)
   {
     return '<a href="' . $url . '" ' . (!empty($parameters) ? ' ' . $parameters : '') . '>' . $element . '</a>';
   }
@@ -345,7 +345,7 @@ class HTML
    * @return string The generated HTML string for the input selection field.
    */
 
-  protected static function selectionField($name, $type, $values = null, $default = null, $parameters = null, $separator = '&nbsp;&nbsp;')
+  protected static function selectionField(string $name, string $type, mixed $values = null, mixed $default = null,  string|null $parameters = null, string $separator = '&nbsp;&nbsp;')
   {
     if (!is_array($values)) {
       $values = array($values);
@@ -434,7 +434,7 @@ class HTML
    * @return string The rendered HTML string of the checkbox field.
    */
 
-  public static function checkboxField(string $name, $values = null, $default = null, $parameters = null, string $separator = '&nbsp;&nbsp;')
+  public static function checkboxField(string $name, mixed $values = null, mixed $default = null, mixed $parameters = null, string $separator = '&nbsp;&nbsp;')
   {
     return static::selectionField($name, 'checkbox', $values, $default, $parameters, $separator);
   }
@@ -450,7 +450,7 @@ class HTML
    * @return string The HTML string for the radio input fields group.
    */
 
-  public static function radioField($name, $values, $default = null, $parameters = null, $separator = '&nbsp;&nbsp;')
+  public static function radioField(string $name, mixed $values, mixed $default = null, mixed $parameters = null, string $separator = '&nbsp;&nbsp;')
   {
     return static::selectionField($name, 'radio', $values, $default, $parameters, $separator);
   }
@@ -467,7 +467,7 @@ class HTML
    * @return string The generated HTML for the text area element.
    */
 
-  public static function textAreaField($name, $value = null, $width = 60, $height = 5, $parameters = null, $override = true)
+  public static function textAreaField(string $name, mixed $value = null, int|string $width = 60, int|string $height = 5, mixed $parameters = null, bool $override = true)
   {
     if (!is_bool($override)) {
       $override = true;

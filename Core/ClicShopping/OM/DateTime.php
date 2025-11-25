@@ -341,7 +341,7 @@ class DateTime
    * @param mixed $format Optional. The format in which the date should be returned. If not provided, a default format will be used.
    * @return string The formatted date string.
    */
-  public static function fromUnixTimestamp(string $timestamp, $format = null): string
+  public static function fromUnixTimestamp(string $timestamp, mixed $format = null): string
   {
     if (!isset($format)) {
       $format = CLICSHOPPING::getDef('date_format_long');

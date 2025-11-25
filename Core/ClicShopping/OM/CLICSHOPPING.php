@@ -735,7 +735,7 @@ class CLICSHOPPING
    * @return string A query string containing all GET parameters except the excluded ones.
    *                The string does not include the trailing ampersand (&) if present.
    */
-  public static function getAllGET($exclude = null)
+  public static function getAllGET(mixed $exclude = null)
   {
     if (!is_array($exclude)) {
       if (!empty($exclude)) {

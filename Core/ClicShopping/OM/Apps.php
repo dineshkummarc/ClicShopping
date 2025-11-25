@@ -240,7 +240,7 @@ class Apps
    * @param string|null $filter_vendor_app Optional filter to narrow down the specific vendor and app (using "vendor\app" format).
    * @return array The resolved route destination after processing and applying filters.
    */
-  public static function getRouteDestination($route = null, $filter_vendor_app = null)
+  public static function getRouteDestination(mixed $route = null, string|null $filter_vendor_app = null)
   {
     if (empty($route)) {
 

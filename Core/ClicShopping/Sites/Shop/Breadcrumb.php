@@ -95,7 +95,7 @@ class Breadcrumb implements \Iterator
    * @param string|null $separator The string to use as a separator between path elements. If null, the default separator is used.
    * @return string The concatenated string of path elements separated by the specified or default separator.
    */
-  public function get(string $separator = null): string
+  public function get(?string $separator = null): string
   {
     if (is_null($separator)) {
       $separator = $this->_separator;

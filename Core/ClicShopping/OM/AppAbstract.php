@@ -281,7 +281,7 @@ abstract class AppAbstract
    *
    * @return void
    */
-  final public function saveCfgParam($key, $value, $title = null, $description = null, $set_func = null): void
+  final public function saveCfgParam(string $key, mixed $value, ?string $title = null, ?string $description = null, ?string $set_func = null): void
   {
     if (is_null($value)) {
       $value = '';
