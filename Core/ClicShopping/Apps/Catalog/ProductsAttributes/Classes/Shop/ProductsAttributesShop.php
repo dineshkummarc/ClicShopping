@@ -22,7 +22,14 @@ class ProductsAttributesShop
   public mixed $app;
   private mixed $productsCommon;
   private mixed $customer;
+  private mixed $db;
 
+  /**
+   * Constructor method for initializing the ProductsAttributesShop class.
+   *
+   * This method retrieves necessary components from the Registry, including Language, Database,
+   * ProductsCommon, and Customer instances, and assigns them to class properties for later use.
+   */
   public function __construct()
   {
     $this->lang = Registry::get('Language');
@@ -37,7 +44,7 @@ class ProductsAttributesShop
    * @param int|null $id The product ID for which attributes are counted. If null, defaults to the current product ID.
    * @return float The total count of product attributes.
    */
-  private function setCountProductsAttributes($id = null)
+  private function setCountProductsAttributes(mixed $id = null)
   {
     if (is_null($id)) {
       $id = $this->productsCommon->getID();
@@ -86,7 +93,7 @@ class ProductsAttributesShop
    * @param int|null $id The ID of the product to count attributes for, or null to count for all products
    * @return mixed
    */
-  public function getCountProductsAttributes($id = null)
+  public function getCountProductsAttributes(mixed $id = null)
   {
     return $this->setCountProductsAttributes($id);
   }
@@ -96,7 +103,7 @@ class ProductsAttributesShop
    * @param int|null $id Product ID. If null, the ID is retrieved automatically.
    * @return bool True if the product has attributes, false otherwise.
    */
-  public function getHasProductAttributes($id = null)
+  public function getHasProductAttributes(mixed $id = null)
   {
     if (is_null($id)) {
       $id = $this->productsCommon->getID();
@@ -123,7 +130,7 @@ class ProductsAttributesShop
    * @param int|null $language_id The ID of the language for localized attribute information.
    * @return object The prepared query object containing the fetched product attributes information.
    */
-  public function getProductsAttributesInfo($products_id, $option_id,  int|null $options_values_id = null,  int|null $language_id)
+  public function getProductsAttributesInfo(mixed $products_id, int $option_id,  int|null $options_values_id = null,  int|null $language_id)
   {
     if (!is_null($options_values_id)) {
       if ($this->customer->getCustomersGroupID() != 0) {
@@ -180,7 +187,7 @@ class ProductsAttributesShop
 
         $Qattributes->execute();
       }
-    } else {
+} else {
       if ($this->customer->getCustomersGroupID() != 0) {
         $Qattributes = $this->db->prepare('select distinct pov.products_options_values_id,
                                                               pov.products_options_values_name,
@@ -228,7 +235,7 @@ class ProductsAttributesShop
         $Qattributes->bindInt(':language_id', $language_id);
         $Qattributes->execute();
       }
-    }
+}
 
     return $Qattributes;
   }
@@ -431,7 +438,7 @@ class ProductsAttributesShop
 
         $Qattributes->execute();
       }
-    } else {
+} else {
       if ($this->customer->getCustomersGroupID() != 0) {
         $Qattributes = $this->db->prepare('select popt.products_options_name,
                                                    poval.products_options_values_name,
@@ -487,7 +494,7 @@ class ProductsAttributesShop
 
         $Qattributes->execute();
       }
-    }
+}
 
     return $Qattributes;
   }

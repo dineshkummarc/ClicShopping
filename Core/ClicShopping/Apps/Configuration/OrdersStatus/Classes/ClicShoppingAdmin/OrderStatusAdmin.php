@@ -44,7 +44,7 @@ class OrderStatusAdmin
    * @return string The generated HTML string for the dropdown menu.
    */
 
-  public static function getDropDownOrderStatus(string $name = 'dropdown_status', $id = null, string $displays_all_orders_status = 'yes'): string
+  public static function getDropDownOrderStatus(string $name = 'dropdown_status', mixed  $id = null, string $displays_all_orders_status = 'yes'): string
   {
     $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_Language = Registry::get('Language');

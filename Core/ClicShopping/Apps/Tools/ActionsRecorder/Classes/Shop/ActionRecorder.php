@@ -31,7 +31,7 @@ class ActionRecorder
    * @param string|null $user_name The name of the user associated with the action, optional.
    * @return void|false Returns void on successful initialization, or false if the module cannot be loaded.
    */
-  public function __construct($module, $user_id = null, $user_name = null)
+  public function __construct(string $module, ?int $user_id = null, ?string $user_name = null)
   {
     $CLICSHOPPING_Template = Registry::get('Template');
     $CLICSHOPPING_Language = Registry::get('Language');

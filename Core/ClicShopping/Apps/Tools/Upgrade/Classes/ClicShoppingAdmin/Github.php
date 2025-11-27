@@ -420,7 +420,7 @@ class Github
    * @param string|null $name The specific repository URL to search. If null, the search will default to the organization and module defined in the instance.
    * @return mixed The decoded JSON response from the GitHub search API.
    */
-  public function getSearchInsideRepo($name = null)
+  public function getSearchInsideRepo(string|null $name = null)
   {
     if (is_null($name)) {
       $search = $this->githubApi . '/search/repositories?q=org%3A' . $this->githubRepoName . '+' . $this->getSearchModule();

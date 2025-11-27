@@ -85,7 +85,7 @@ class Currencies
    * @param mixed $currency_value
    * @return string|null
    */
-  public function format(float|null $number, bool $calculate_currency_value = true, string|null $currency_type = null, $currency_value = null): ?string
+  public function format(float|null $number, bool $calculate_currency_value = true, string|null $currency_type = null, mixed $currency_value = null): ?string
   {
     if (empty($currency_type) && CLICSHOPPING::getSite() === 'Shop') {
       $currency_type = $_SESSION['currency'];

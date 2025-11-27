@@ -43,7 +43,7 @@ class ReturnOrderStatus
    * @param string $displays_all_orders_status Whether to display all order statuses. Default is 'yes'.
    * @return string The HTML string for the dropdown menu.
    */
-  public static function getDropDownReturnOrderStatus(string $name = 'dropdown_status', $id = null, string $displays_all_orders_status = 'yes'): string
+  public static function getDropDownReturnOrderStatus(string $name = 'dropdown_status', ?int $id = null, string $displays_all_orders_status = 'yes'): string
   {
     $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_Language = Registry::get('Language');

@@ -187,7 +187,7 @@ class Manufacturers
    * @param int|null $id The ID of the manufacturer to retrieve data for. If null, retrieves data for all manufacturers.
    * @return array An array of manufacturer data.
    */
-  public function getAll($id = null)
+  public function getAll(?int $id = null)
   {
     if (!is_null($id)) {
       $Qmanufacturer = $this->db->prepare('select m.manufacturers_id as id,
@@ -264,7 +264,6 @@ class Manufacturers
 
     return $manufacturer_name_array;
   }
-
 
   /**
    *

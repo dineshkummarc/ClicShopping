@@ -119,7 +119,6 @@ class CategoryTree
         ];
       }
 
-
       if ($this->_show_total_products === true) {
         $this->_calculateProductTotals();
       }
@@ -242,14 +241,14 @@ class CategoryTree
             if (in_array($category_id, $this->cpath_array)) {
               $result .= $this->_buildBranch($category_id, $level + 1);
             }
-          } else {
+} else {
             $result .= $this->_buildBranch($category_id, $level + 1);
           }
-        }
+}
 
         $result .= $this->child_end_string;
       }
-    }
+}
 
     $result .= ((($level === 0) && ($this->parent_group_apply_to_root === true)) || ($level > 0)) ? $this->parent_group_end_string : null;
 
@@ -289,12 +288,12 @@ class CategoryTree
             if (in_array($category_id, $this->cpath_array, true)) {
               $result = $this->buildBranchArray($category_id, $level + 1, $result);
             }
-          } else {
+} else {
             $result = $this->buildBranchArray($category_id, $level + 1, $result);
           }
-        }
+}
       }
-    }
+}
 
     return $result;
   }
@@ -323,9 +322,9 @@ class CategoryTree
           if ($parent != $this->root_category_id) {
             $breadcrumb = $this->buildBreadcrumb($parent, $level + 1) . $breadcrumb;
           }
-        }
+}
       }
-    }
+}
 
     return $breadcrumb;
   }
@@ -380,7 +379,7 @@ class CategoryTree
         if ($id == $category_id) {
           return true;
         }
-      }
+}
     }
 
     return false;
@@ -403,7 +402,7 @@ class CategoryTree
           $array[] = $id;
           $this->getChildren($id, $array);
         }
-      }
+}
     }
 
     return $array;
@@ -419,7 +418,7 @@ class CategoryTree
    * @return array|bool Returns an associative array of category data or a specific value if a key is provided. Returns false if the category is not found.
    */
 
-  public function getData(string $id, $key = null): array|bool
+  public function getData(string $id, string $key = null): array|bool
   {
     foreach ($this->_data as $parent => $categories) {
       foreach ($categories as $category_id => $info) {
@@ -435,7 +434,7 @@ class CategoryTree
 
           return (isset($key) ? $data[$key] : $data);
         }
-      }
+}
     }
 
     return false;
@@ -511,13 +510,13 @@ class CategoryTree
 
                   break 2;
                 }
-              }
+}
             }
-          }
+}
         }
-      }
+}
     }
-  }
+}
 
   /**
    * Retrieves the number of products associated with a given category ID.
@@ -535,7 +534,7 @@ class CategoryTree
         if ($id == $category_id) {
           return $info['count'];
         }
-      }
+}
     }
 
     return false;
@@ -648,7 +647,7 @@ class CategoryTree
     } else {
       $this->breadcrumb_usage = false;
     }
-  }
+}
 
   /**
    * Sets the spacer string and its multiplier for rendering hierarchical elements.
@@ -697,7 +696,7 @@ class CategoryTree
     } else {
       $this->follow_cpath = false;
     }
-  }
+}
 
   /**
    * Sets the start and end string markers for the category path. These markers are used
@@ -728,7 +727,7 @@ class CategoryTree
     } else {
       $this->_show_total_products = false;
     }
-  }
+}
 
   /**
    * Sets the start and end strings for displaying the product count associated with a category.
@@ -845,8 +844,7 @@ class CategoryTree
             'text' => $spacing . $Qcategories->value('categories_name')
           ];
         }
-
-      }
+}
 
       $category_tree_array = $this->getShopCategoryTree($Qcategories->valueInt('categories_id'), $spacing . '&nbsp;&nbsp;&nbsp;', $exclude, $category_tree_array);
     }

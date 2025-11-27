@@ -491,7 +491,6 @@ class ST implements \ClicShopping\OM\Modules\PaymentInterface
     return array('CLICSHOPPING_APP_STRIPE_ST_SORT_ORDER');
   }
 
-
   /**
    * Generates the JavaScript necessary for handling Stripe payment processing,
    * including creating and managing card elements, submitting the payment form,
@@ -501,7 +500,7 @@ class ST implements \ClicShopping\OM\Modules\PaymentInterface
    *                      Defaults to null if not provided.
    * @return string The JavaScript code as a string to be included on the payment processing page.
    */
-  public function getSubmitCardDetailsJavascript($intent = null)
+  public function getSubmitCardDetailsJavascript(mixed $intent = null)
   {
     $stripe_publishable_key = $this->public_key;
 

@@ -40,7 +40,7 @@ class PageTabContent implements \ClicShopping\OM\Modules\HooksInterface
    * @param string|null $groups The customer group to filter by. Use 'B2C' for individual customers (group ID = 0)
    *                            or any other value for non-individual customers (group ID > 0). If null, count all customers.
    */
-  private function statsCountCustomers($groups = null)
+  private function statsCountCustomers(string|null $groups = null)
   {
     $condition = '';
 

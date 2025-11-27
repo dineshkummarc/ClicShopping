@@ -14,7 +14,6 @@ use ClicShopping\OM\Registry;
 use function count;
 use function is_null;
 
-
 /**
  * Class representing a category with associated properties,
  * behaviors, and data management methods.
@@ -51,7 +50,7 @@ class Category
       if (!empty($cPath_array)) {
         $id = end($cPath_array);
       }
-    }
+}
 
     if (isset($id) && $this->categoryTree->exists($id)) {
       $this->_data = $this->categoryTree->getData($id);
@@ -67,7 +66,7 @@ class Category
       } else {
         $this->_category_depth = 0;
       }
-    }
+}
 
     if (!Registry::exists('RewriteUrl')) {
       Registry::set('RewriteUrl', new RewriteUrl());
@@ -97,7 +96,6 @@ class Category
   {
     return $this->_description;
   }
-
 
   /**
    * Retrieves the title.
@@ -197,23 +195,22 @@ class Category
           for ($i = 0, $n = count($cPath_array) - 1; $i < $n; $i++) {
             $cPath_new .= '_' . $cPath_array[$i];
           }
-        } else {
+} else {
           for ($i = 0, $n = count($cPath_array); $i < $n; $i++) {
             $cPath_new .= $cPath_array[$i];
           }
-        }
+}
 
         $cPath_new .= '_' . $current_category_id;
 
         if (substr($cPath_new, 0, 1) == '_') {
           $cPath_new = substr($cPath_new, 1);
         }
-      }
+}
     }
 
     return 'cPath=' . $cPath_new;
   }
-
 
   /**
    * Retrieves an array of path components or a specific component by index.
@@ -242,7 +239,6 @@ class Category
   {
     return $this->_data[$keyword];
   }
-
 
   /**
    * Determines the depth of a category.
@@ -283,7 +279,7 @@ class Category
         } else {
           $this->_category_depth = 'products'; // category has no products, but display the 'no products' message
         }
-      }
+}
     }
 
     return $this->_category_depth;
@@ -338,7 +334,6 @@ class Category
     return ($Qcheck->fetch() !== false);
   }
 
-
   /**
    * Retrieves subcategories recursively for a given parent category ID.
    *
@@ -362,7 +357,7 @@ class Category
       if ($Qsub->valueInt('categories_id') != $parent_id) {
         $this->getSubcategories($subcategories_array, $Qsub->valueInt('categories_id'));
       }
-    }
+}
   }
 
   /**
@@ -401,11 +396,10 @@ class Category
       if ($Qcategories->valueInt('categories_id') !== $parent_id) {
         $categories_array[] = $this->getCategories($array, $Qcategories->valueInt('categories_id'), $indent . '&nbsp;&nbsp;');
       }
-    }
+}
 
     return $categories_array;
   }
-
 
   /**
    * Retrieves the parent categories of a specified category ID and stores them in the provided categories array.
@@ -436,7 +430,7 @@ class Category
       if ($Qparent->valueInt('parent_id') != $categories_id) {
         $this->getParentCategories($categories, $Qparent->valueInt('parent_id'));
       }
-    }
+}
   }
 
   /**
@@ -494,7 +488,6 @@ class Category
 
     return $categories_url;
   }
-
 
   /**
    * Retrieves the title of a category based on its name.

@@ -151,13 +151,7 @@ class CurrenciesAdmin extends \ClicShopping\Apps\Configuration\Currency\Classes\
     foreach ($currencies as $code => $value) {
       if (!is_null($value)) {
         try {
-          $CLICSHOPPING_Currency->db->save('currencies',
-            [
-              'value' => $value,
-              'last_updated' => 'now()'
-            ], [
-              'code' => $code
-            ]);
+          $CLICSHOPPING_Currency->db->save('currencies', ['value' => $value, 'last_updated' => 'now()'], ['code' => $code]);
         } catch (PDOException $e) {
           trigger_error($e->getMessage());
         }

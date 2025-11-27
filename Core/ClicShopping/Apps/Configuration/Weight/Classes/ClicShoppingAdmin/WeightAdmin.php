@@ -24,7 +24,7 @@ class WeightAdmin extends \ClicShopping\Apps\Configuration\Weight\Classes\Shop\W
    * @param int|null $precision The precision value to set, or null for default behavior.
    * @return void
    */
-  public function __construct($precision = null)
+  public function __construct(mixed $precision = null)
   {
   }
 

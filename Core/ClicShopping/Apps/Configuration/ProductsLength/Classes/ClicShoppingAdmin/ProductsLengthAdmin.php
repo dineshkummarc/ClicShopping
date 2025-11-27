@@ -8,7 +8,6 @@
  *
  */
 
-
 namespace ClicShopping\Apps\Configuration\ProductsLength\Classes\ClicShoppingAdmin;
 
 use ClicShopping\OM\Registry;
@@ -25,7 +24,7 @@ class ProductsLengthAdmin extends \ClicShopping\Apps\Configuration\ProductsLengt
    * @param mixed|null $precision The optional precision value to configure the instance. Can be null.
    * @return void
    */
-  public function __construct($precision = null)
+  public function __construct(mixed $precision = null)
   {
   }
 
@@ -36,7 +35,7 @@ class ProductsLengthAdmin extends \ClicShopping\Apps\Configuration\ProductsLengt
    * @param int|null $language_id Optional language ID to specify the language context.
    * @return string The title associated with the given ID and language context.
    */
-  public static function getTitle($id, $language_id = null)
+  public static function getTitle(mixed  $id, ?int $language_id = null)
   {
     return parent::getTitle($id, $language_id);
   }

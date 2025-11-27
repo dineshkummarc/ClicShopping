@@ -1156,7 +1156,7 @@ class ProductsAdmin
    * @param int $current_category_id The ID of the current category to filter products if no
    */
 
-  public function getSearch($keywords = null, $current_category_id = 0)
+  public function getSearch(?string $keywords = null, int $current_category_id = 0)
   {
     if (isset($keywords) && !empty($keywords)) {
       $keywords = HTML::sanitize($keywords);

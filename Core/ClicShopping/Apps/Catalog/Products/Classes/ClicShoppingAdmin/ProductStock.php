@@ -88,7 +88,7 @@ class ProductStock
    *
    * @return float|false Returns the calculated safety stock as a float, or false if the product ID is not set or if there is an error during calculation.
    */
-  public static function getHistoricalCustomerDemandByProducts(int|string $products_id = null, int $leadTime = null): float|false
+  public static function getHistoricalCustomerDemandByProducts(int|string|null $products_id = null, ?int $leadTime = null): float|false
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 

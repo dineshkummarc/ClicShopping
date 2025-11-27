@@ -8,7 +8,6 @@
  *
  */
 
-
 namespace ClicShopping\Apps\Configuration\ProductsLength\Classes\Shop;
 
 use ClicShopping\OM\Registry;
@@ -25,7 +24,7 @@ class ProductsLength
    * @param int|null $precision Optional precision value. If provided and is an integer, it sets the precision.
    * @return void
    */
-  public function __construct($precision = null)
+  public function __construct(mixed $precision = null)
   {
     if (is_int($precision)) {
       $this->precision = $precision;
@@ -53,7 +52,6 @@ class ProductsLength
     return ' ';
   }
 
-
   /**
    * Retrieves the title of a product length class based on the given length class ID and optional language ID.
    *
@@ -61,7 +59,7 @@ class ProductsLength
    * @param int|null $language_id Optional. The ID of the language. If null, the default language ID will be used.
    * @return string The title of the product length class.
    */
-  public static function getTitle($id, $language_id = null)
+  public static function getTitle(mixed $id, ?int $language_id = null)
   {
     $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_Language = Registry::get('Language');
@@ -98,7 +96,7 @@ class ProductsLength
    *
    * @return string|null The product length class key for the given ID and language, or null if not found.
    */
-  public static function getUnit($id, $language_id = null)
+  public static function getUnit(mixed $id, ?int $language_id = null)
   {
     $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_Language = Registry::get('Language');

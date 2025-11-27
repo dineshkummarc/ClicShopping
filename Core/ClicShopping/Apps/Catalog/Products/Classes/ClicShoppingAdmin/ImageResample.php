@@ -97,7 +97,7 @@ class ImageResample
    * @param int|null $permissions Optional file permissions to set for the saved file. Defaults to null (no permissions change).
    * @return void
    */
-  public function save(string $filename, string $ext = IMAGETYPE_WEBP, int $compression = 80, $permissions = null)
+  public function save(string $filename, string $ext = IMAGETYPE_WEBP, int $compression = 80, mixed $permissions = null)
   {
     if (\defined('CONFIGURATION_CONVERT_IMAGE') && CONFIGURATION_CONVERT_IMAGE == 'true') {
       imagewebp($this->image, $filename, $compression);

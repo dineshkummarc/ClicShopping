@@ -106,7 +106,7 @@ class HTML
    * @return string The complete anchor tag as an HTML string.
    */
 
-  public static function link(string $url, string $element, ?string $parameters = null)
+  public static function link(string $url, string $element, mixed $parameters = null)
   {
     return '<a href="' . $url . '" ' . (!empty($parameters) ? ' ' . $parameters : '') . '>' . $element . '</a>';
   }

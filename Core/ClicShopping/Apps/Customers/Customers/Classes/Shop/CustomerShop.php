@@ -8,7 +8,6 @@
  *
  */
 
-
 namespace ClicShopping\Apps\Customers\Customers\Classes\Shop;
 
 use ClicShopping\OM\CLICSHOPPING;
@@ -91,7 +90,7 @@ class CustomerShop
    * @param string|null $key The key to retrieve the value for, or null to retrieve the entire data array.
    * @return mixed Returns the value associated with the specified key, or the entire data array if no key is provided.
    */
-  public function get(string $key = null)
+  public function get(?string $key = null)
   {
     if (isset($key)) {
       return $this->_data[$key];

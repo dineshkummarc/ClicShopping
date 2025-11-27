@@ -171,7 +171,7 @@ class ProductsCommon extends Prod
    * @param mixed|null $obj The key to fetch specific data from the array, or null to fetch all data.
    * @return mixed Returns the specific object data if the key exists, otherwise returns the full data array.
    */
-  public function get($obj = null)
+  public function get(mixed $obj = null)
   {
     $array_data = $this->getData();
 

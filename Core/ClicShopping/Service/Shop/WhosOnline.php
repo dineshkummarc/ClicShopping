@@ -149,7 +149,7 @@ class WhosOnline implements \ClicShopping\OM\ServiceInterface
    *
    * @return bool The spider flag state. True if a spider or bot was detected; false otherwise.
    */
-  public static function getResultSpiderFlag()
+  public static function getResultSpiderFlag(): ?bool
   {
     return self::$spider_flag;
   }
