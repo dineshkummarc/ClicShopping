@@ -97,7 +97,7 @@ class Save extends \ClicShopping\OM\PagesActionsAbstract
         $CLICSHOPPING_MessageStack->add($CLICSHOPPING_PageManager->getDef('error_page_title_required'), 'error');
         $page_error = true;
       }
-    }
+}
 
     if ($page_error === false) {
       $sql_data_array_pages = [
@@ -214,7 +214,7 @@ class Save extends \ClicShopping\OM\PagesActionsAbstract
 
           $CLICSHOPPING_PageManager->db->save('pages_manager_description', $sql_data_array, $insert_sql_data);
         }
-      }
+}
 
       $CLICSHOPPING_Hooks->call('PageManager', 'Save');
 
@@ -234,5 +234,5 @@ class Save extends \ClicShopping\OM\PagesActionsAbstract
 
       $CLICSHOPPING_PageManager->redirect('Edit');
     }
-  }
+}
 }

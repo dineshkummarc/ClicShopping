@@ -8,7 +8,6 @@
  *
  */
 
-
 namespace ClicShopping\Apps\Communication\PageManager\Sites\ClicShoppingAdmin\Pages\Home\Actions\PageManager;
 
 use ClicShopping\OM\Cache;
