@@ -101,12 +101,12 @@ class HTML
    * Generates an HTML anchor tag based on the provided URL, element content, and optional parameters.
    *
    * @param string $url The URL for the anchor tag's href attribute.
-   * @param string $element The content to be displayed between the opening and closing anchor tags.
+   * @param ?string $element The content to be displayed between the opening and closing anchor tags.
    * @param string|null $parameters Optional. Additional attributes to include in the anchor tag.
    * @return string The complete anchor tag as an HTML string.
    */
 
-  public static function link(string $url, string $element, mixed $parameters = null)
+  public static function link(string $url, ?string $element, mixed $parameters = null)
   {
     return '<a href="' . $url . '" ' . (!empty($parameters) ? ' ' . $parameters : '') . '>' . $element . '</a>';
   }
