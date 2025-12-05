@@ -13,6 +13,8 @@ use ClicShopping\OM\Registry;
 
 $CLICSHOPPING_Address = Registry::get('Address');
 $CLICSHOPPING_Countries = Registry::get('Countries');
+$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
+
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
 
 $address_formats_array = $CLICSHOPPING_Countries->db->get('address_format', 'address_format_id, address_format');

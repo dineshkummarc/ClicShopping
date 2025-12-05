@@ -306,9 +306,26 @@ class CategoryTree
    * @param int $level The depth level in the category tree hierarchy; defaults to 0 for the root level.
    * @return string The generated breadcrumb string representing the category's hierarchical trail.
    */
-  public function buildBreadcrumb(?string $category_id, int $level = 0): string
+  public function buildBreadcrumb(?string $category_id, int $level = 0, array $visited = []): string
   {
     $breadcrumb = '';
+    
+    // ✅ FIX 2025-12-05: Protection ag> $categoriete recursion
+    // Protection 1: Maximum depth limit (prevent stack overflow)
+    $maxDepth = 50;
+    if ($level > $maxDepth) {
+        error_log("CategoryTree: Maximum breadcrumb depth ($maxDepth) exceeded for category $category_id");
+        return $breadcrumb;
+    }
+    
+    // Protection 2: Circular reference detection
+    if (in_array($category_id, $visited, true)) {
+        error_log("CategoryTree: Circular reference detected for category $category_id at level $level");
+        return $breadcrumb;
+    }
+    
+    // Mark this category as visited
+    $visited[] = $category_id;
 
     foreach ($this->_data as $parent => $categories) {
       foreach ($categories as $id => $info) {
@@ -320,11 +337,15 @@ class CategoryTree
           }
 
           if ($parent != $this->root_category_id) {
-            $breadcrumb = $this->buildBreadcrumb($parent, $level + 1) . $breadcrumb;
+            // Pass visited array to prevent circular references
+            $breadcrumb = $this->buildBreadcrumb($parent, $level + 1, $visited) . $breadcrumb;
           }
-}
+          
+          // Protection 3: Early return once category found
+          return $breadcrumb;
+        }
       }
-}
+    }
 
     return $breadcrumb;
   }
