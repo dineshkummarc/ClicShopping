@@ -170,7 +170,7 @@ class Mail
     if (!is_string($string)) {
       throw new \InvalidArgumentException('Parameter $string must be a string, ' . gettype($string) . ' given');
     }
-    
+
     return str_replace($from, $to, $string);
   }
 
@@ -183,15 +183,15 @@ class Mail
   public function addText(string $text = '')
   {
     $this->phpMail->IsHTML(false);
-    
+
     // Sequential conversion of each line ending type to avoid TypeError
     $processedText = $text;
     $lineEndings = ["\r\n", "\n", "\r"];
-    
+
     foreach ($lineEndings as $ending) {
       $processedText = $this->convertLinefeeds($ending, $this->lf, $processedText);
     }
-    
+
     $this->text = $processedText;
   }
 
@@ -204,22 +204,22 @@ class Mail
    * @return void
    */
   public function addHtml(string $html, string $text = '', mixed $images_dir = NULL)
-{
-  $this->phpMail->IsHTML(true);
-  // Correction : passage des caractères de saut de ligne individuellement
-  $this->html = $this->convertLinefeeds("\r\n", '<br />', $html);
-  $this->html = $this->convertLinefeeds("\n", '<br />', $this->html);
-  $this->html = $this->convertLinefeeds("\r", '<br />', $this->html);
+  {
+    $this->phpMail->IsHTML(true);
+    // Correction : passage des caractères de saut de ligne individuellement
+    $this->html = $this->convertLinefeeds("\r\n", '<br />', $html);
+    $this->html = $this->convertLinefeeds("\n", '<br />', $this->html);
+    $this->html = $this->convertLinefeeds("\r", '<br />', $this->html);
 
-  // Même chose pour le texte
-  $this->html_text = $this->convertLinefeeds("\r\n", $this->lf, $text);
-  $this->html_text = $this->convertLinefeeds("\n", $this->lf, $this->html_text);
-  $this->html_text = $this->convertLinefeeds("\r", $this->lf, $this->html_text);
+    // Même chose pour le texte
+    $this->html_text = $this->convertLinefeeds("\r\n", $this->lf, $text);
+    $this->html_text = $this->convertLinefeeds("\n", $this->lf, $this->html_text);
+    $this->html_text = $this->convertLinefeeds("\r", $this->lf, $this->html_text);
 
-  if (isset($images_dir)) {
-    $this->html = $this->phpMail->msgHTML($this->html, $images_dir);
+    if (isset($images_dir)) {
+      $this->html = $this->phpMail->msgHTML($this->html, $images_dir);
+    }
   }
-}
 
   /**
    * Adds HTML content to the email using CKEditor formatting.
@@ -230,7 +230,7 @@ class Mail
    * @return void
    */
 
- public function addHtmlCkeditor(string $html, ?string $text = NULL, ?string $images_dir = NULL): void
+  public function addHtmlCkeditor(string $html, ?string $text = NULL, ?string $images_dir = NULL): void
   {
     $this->phpMail->IsHTML(true);
 
@@ -385,14 +385,14 @@ class Mail
       return false;
     }
 
-//Set who the message is to be sent from
+    //Set who the message is to be sent from
 
     $this->phpMail->setFrom($from_addr, STORE_NAME);
 
-//Set who the message is to be sent to
+    //Set who the message is to be sent to
     $this->phpMail->AddAddress($to_addr, $to_name ?? '');
 
-// check if the email is correct or not
+    // check if the email is correct or not
 // If not the email is not sent
     $error_email = false;
 
@@ -400,7 +400,7 @@ class Mail
       $error_email = true;
     }
 
-//Set an alternative reply-to address
+    //Set an alternative reply-to address
     if ($reply_to) {
       $this->phpMail->AddReplyTo(EMAIL_SMTP_REPLYTO, STORE_NAME);
     } else {
@@ -458,7 +458,7 @@ class Mail
       return false;
     }
 
-// Build the text version
+    // Build the text version
     $text = strip_tags($email_text);
 
     if (EMAIL_USE_HTML == 'true') {
@@ -526,13 +526,13 @@ class Mail
     return false;
   }
 
-/**
+  /**
    * Checks if the provided email address belongs to a temporary or disposable email domain.
    *
    * @param string|null $email The email address to check.
    * @return bool Returns true if the email domain is excluded; otherwise, false.
    */
-  private function temporaryEmailExcluded(string|null $email = '') : bool
+  private function temporaryEmailExcluded(string|null $email = ''): bool
   {
     if (SEND_EMAILS == 'true') {
       $temp_domains = [

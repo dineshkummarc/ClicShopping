@@ -104,7 +104,6 @@ class ActionsRecorder
     Cache::clear('menu-administrator');
   }
 
-
   /**
    * Builds and retrieves a hierarchical label tree structure from the database.
    *
@@ -296,7 +295,6 @@ class ActionsRecorder
                                           ');
     $Qdelete->bindInt(':id', $id);
     $Qdelete->execute();
-
 
     $Qdelete = $CLICSHOPPING_Db->prepare('delete
                                             from :table_actions_recorder_description

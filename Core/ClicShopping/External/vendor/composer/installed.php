@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '4478705c663c27624db2e2c57af0e544dbca07ad',
+        'reference' => '3b20492bf9831bf3eb0ef623f30a4d6aa082f4a9',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '4478705c663c27624db2e2c57af0e544dbca07ad',
+            'reference' => '3b20492bf9831bf3eb0ef623f30a4d6aa082f4a9',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -155,9 +155,9 @@
             'dev_requirement' => false,
         ),
         'mattketmo/email-checker' => array(
-            'pretty_version' => 'v2.4.0',
-            'version' => '2.4.0.0',
-            'reference' => '230084a96537380704fb379da1cf42e19797a3f0',
+            'pretty_version' => 'v2.5.0',
+            'version' => '2.5.0.0',
+            'reference' => 'd21efd330e9ca78936c526959d5c34b5d8a8c06a',
             'type' => 'library',
             'install_path' => __DIR__ . '/../mattketmo/email-checker',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => '75d4ccd9c135c4ac904cd4211a43e51d12feb1ef',
+            'reference' => 'df7a11b7df806e493d3047bf9cf9736645bbdf84',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
@@ -385,9 +385,9 @@
             'dev_requirement' => false,
         ),
         'stripe/stripe-php' => array(
-            'pretty_version' => 'v18.2.0',
-            'version' => '18.2.0.0',
-            'reference' => '0acd7bdac84ad0f940d5da30c417170ce59b4fbc',
+            'pretty_version' => 'v19.0.0',
+            'version' => '19.0.0.0',
+            'reference' => '8f868a7825d2680e917f89839e4b67851dad96e2',
             'type' => 'library',
             'install_path' => __DIR__ . '/../stripe/stripe-php',
             'aliases' => array(),

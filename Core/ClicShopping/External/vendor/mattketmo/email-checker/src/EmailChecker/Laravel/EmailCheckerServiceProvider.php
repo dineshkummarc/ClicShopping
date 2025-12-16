@@ -12,8 +12,8 @@
 namespace EmailChecker\Laravel;
 
 use EmailChecker\EmailChecker;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\ServiceProvider;
 
 /**
  * Laravel service provider.
@@ -22,10 +22,10 @@ use Illuminate\Support\Facades\Validator;
  */
 class EmailCheckerServiceProvider extends ServiceProvider
 {
-    protected $app;
-
     /**
      * Register the factory in the application container.
+     *
+     * @return void
      */
     public function register()
     {
@@ -44,6 +44,8 @@ class EmailCheckerServiceProvider extends ServiceProvider
 
     /**
      * Bootstrap any application services.
+     *
+     * @return void
      */
     public function boot(EmailChecker $checker)
     {
@@ -62,7 +64,7 @@ class EmailCheckerServiceProvider extends ServiceProvider
     /**
      * Get the services provided by the provider.
      *
-     * @return array
+     * @return array<string>
      */
     public function provides()
     {

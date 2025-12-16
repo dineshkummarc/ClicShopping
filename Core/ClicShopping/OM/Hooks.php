@@ -50,15 +50,15 @@ class Hooks
    * @param string|null $context Optional context identifier (ex: tab, position, etc.) to filter hooks.
    * @return array The results returned by the executed hook actions.
    */
-    public function call(string $group, string $hook, ?array $parameters = null, ?string $action = null, ?string $context = null): array
-    {
-      if (!isset($action)) {
-        $action = 'execute';
-      }
+  public function call(string $group, string $hook, ?array $parameters = null, ?string $action = null, ?string $context = null): array
+  {
+    if (!isset($action)) {
+      $action = 'execute';
+    }
 
-      if (!isset($this->hooks[$this->site][$group][$hook][$action])) {
-        $this->register($group, $hook, $action);
-      }
+    if (!isset($this->hooks[$this->site][$group][$hook][$action])) {
+      $this->register($group, $hook, $action);
+    }
 
       $calls = [];
 

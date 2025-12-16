@@ -1,4 +1,4 @@
-id INT AUTO_INCREMENT
+id INT auto_increment
 rules_id INT NOT NULL
 products_id INT not_null
 base_price DECIMAL(10,2) not_null

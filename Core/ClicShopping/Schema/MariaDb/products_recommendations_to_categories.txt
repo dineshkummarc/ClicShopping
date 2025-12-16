@@ -1,4 +1,4 @@
-id INT(11) not_null AUTO_INCREMENT
+id INT(11) not_null auto_increment
 products_id INT(11) not_null
 categories_id INT(11) not_null
 

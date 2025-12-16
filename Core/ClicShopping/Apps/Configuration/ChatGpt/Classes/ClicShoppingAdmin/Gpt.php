@@ -160,13 +160,13 @@ class Gpt
    */
   public static function getOpenAiGpt(array|null $parameters, string|null $api_key = null): mixed
   {
-     $config = new OpenAIConfig();
+    $config = new OpenAIConfig();
 
-     if (is_null($api_key)) {
-        $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY;
-     }
+    if (is_null($api_key)) {
+      $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY ?? null;
+    }
 
-     $config->apiKey = $api_key;
+    $config->apiKey = $api_key;
 
     if (!is_null($parameters) && array_key_exists('model', $parameters)) {
       $config->model = $parameters['model'];
@@ -176,10 +176,10 @@ class Gpt
       $config->modelOptions = $parameters;
     }
 
-      $chat = new OpenAIChat($config);
+    $chat = new OpenAIChat($config);
 
-      return $chat;
-    }
+    return $chat;
+  }
 
   /**
    * Generates a response from the OpenAI chat model based on input parameters.
@@ -191,9 +191,9 @@ class Gpt
    * @param int|null $max Optional. Number of responses to generate. Defaults to the configured application value if null.
    * @return mixed Returns the generated chat response from OpenAI if successful, or false if the application API key is unavailable.
    */
-   public static function getOpenAIChat(string|null $question, int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null, int|null $max = 1): mixed
+  public static function getOpenAIChat(string|null $question, int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null, int|null $max = 1): mixed
   {
-    if (!empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY)) {
+    if (defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY') && !empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY)) {
       $top = ['\n'];
 
       if (is_null($maxtoken)) {
@@ -262,7 +262,7 @@ class Gpt
     } else {
       return false;
     }
-}
+  }
 
   /**
    *
@@ -271,11 +271,11 @@ class Gpt
    */
   public static function getOllamaChat(string $model = 'mistral:7b'): mixed
   {
-      $config = new OllamaConfig();
-      $config->model = $model;
-      $chat = new OllamaChat($config);
+    $config = new OllamaConfig();
+    $config->model = $model;
+    $chat = new OllamaChat($config);
 
-      return $chat;
+    return $chat;
   }
 
   /**
@@ -290,20 +290,20 @@ class Gpt
    */
   public static function getAnthropicChat(string $model, int|null $maxtoken = null, array|null $modelOptions = null): mixed
   {
-    $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_ANTHROPIC;
-
-    if (is_null($modelOptions)){
-      $modelOptions = [
-        'temperature' => (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE,
-        'top_p' => (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P,
-        'max_tokens_to_sample' => (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN,
-        'stop_sequences' => ['\n']
-      ];
-    }
-
     $result = false;
 
-    if (!empty($api_key)) {
+    if (defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_ANTHROPIC') &&!empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_ANTHROPIC)) {
+      $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_ANTHROPIC ?? null;
+
+      if (is_null($modelOptions)) {
+        $modelOptions = [
+          'temperature' => (float) CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE,
+          'top_p' => (float) CLICSHOPPING_APP_CHATGPT_CH_TOP_P,
+          'max_tokens_to_sample' => (int) CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN,
+          'stop_sequences' => ['\n']
+        ];
+      }
+
       if ($model === 'anth-sonnet') {
         $result = new AnthropicChat(
           new AnthropicConfig(AnthropicConfig::CLAUDE_3_5_SONNET, $maxtoken, $modelOptions, $api_key)
@@ -317,68 +317,75 @@ class Gpt
           new AnthropicConfig(AnthropicConfig::CLAUDE_3_HAIKU, $maxtoken, $modelOptions, $api_key)
         );
       }
-}
+    }
 
     return $result;
   }
 
-/**
-* Creates an instance of the MistralAIChat class based on the specified model and configuration options.
-*
-* @param string $model The specific model identifier to use for the MistralAIChat instance.
- *                      Should be one of the values defined in MistralAIChatModel.
- * @param int|null $maxtoken The maximum number of tokens the model can output.
- *                           Defaults to the configured max token if not provided.
- * @return MistralAIChat An instance of MistralAIChat initialized with the provided parameters.
- * @throws Exception|\Exception If the API key is not provided or if there's an error creating the instance.
- */
-public static function getMistralChat(string $model, ?int $maxtoken = null): MistralAIChat
-{
-  $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL ?? null;
+  /**
+   * Creates an instance of the MistralAIChat class based on the specified model and configuration options.
+   *
+   * @param string $model The specific model identifier to use for the MistralAIChat instance.
+   *                      Should be one of the values defined in MistralAIChatModel.
+   * @param int|null $maxtoken The maximum number of tokens the model can output.
+   *                           Defaults to the configured max token if not provided.
+   * @return MistralAIChat An instance of MistralAIChat initialized with the provided parameters.
+   * @throws Exception|\Exception If the API key is not provided or if there's an error creating the instance.
+   */
+  public static function getMistralChat(string $model, ?int $maxtoken = null): MistralAIChat
+  {
+    $result = false;
 
-  if (empty($api_key)) {
-    throw new \Exception('You have to provide a MISTRAL_API_KEY to request Mistral AI.');
-  }
+    if (defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL') &&!empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL)) {
+      $api_key = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL ?? null;
 
-    // Valid model for MistralAIChat
-    $valid_models = [
-      'mistral-tiny',
-      'mistral-small-latest',
-      'mistral-medium-latest',
-      'mistral-large-latest',
-      'pixtral-large-latest',
-      'ministral-3b-latest',
-      'ministral-8b-latest',
-      'codestral-latest',
-      'open-mistral-nemo',
-      'open-codestral-mamba',
-      'mistral-moderation-latest'
-    ];
+      if (empty($api_key)) {
+        throw new \Exception('You have to provide a MISTRAL_API_KEY to request Mistral AI.');
+      }
 
-  if (empty($model) || !in_array($model, $valid_models)) {
-    $model = 'mistral-large-latest';
-  }
+      // Valid model for MistralAIChat
+      $valid_models = [
+        'mistral-tiny',
+        'mistral-small-latest',
+        'mistral-medium-latest',
+        'mistral-large-latest',
+        'pixtral-large-latest',
+        'ministral-3b-latest',
+        'ministral-8b-latest',
+        'codestral-latest',
+        'open-mistral-nemo',
+        'open-codestral-mamba',
+        'mistral-moderation-latest'
+      ];
 
-  $config = new MistralAIChat();
-  $config->apiKey = $api_key;
-  $config->model = $model;
+      if (empty($model) || !in_array($model, $valid_models)) {
+        $model = 'mistral-large-latest';
+      }
 
-// Appliquer la limite de tokens si spécifiée
-  if (!is_null($maxtoken) && $maxtoken > 0) {
-    $config->maxTokens = $maxtoken;
-  } else {
-    $maxtoken = (int)(CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN ?? 0);
-    if ($maxtoken > 0) {
-      $config->maxTokens = $maxtoken;
+      $config = new MistralAIChat();
+      $config->apiKey = $api_key;
+      $config->model = $model;
+
+      // Appliquer la limite de tokens si spécifiée
+      if (!is_null($maxtoken) && $maxtoken > 0) {
+        $config->maxTokens = $maxtoken;
+      } else {
+        $maxtoken = (int)(CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN ?? 0);
+        if ($maxtoken > 0) {
+          $config->maxTokens = $maxtoken;
+        }
+      }
+
+      try {
+        $result = new MistralAIChat($config);;
+        return $result;
+      } catch (\Exception $e) {
+        throw new \Exception('Error creating MistralAIChat instance: ' . $e->getMessage());
+      }
     }
-}
 
-  try {
-    return new MistralAIChat($config);
-  } catch (\Exception $e) {
-    throw new \Exception('Error creating MistralAIChat instance: ' . $e->getMessage());
+    return $result;
   }
-}
 
   /**
    * Retrieves a chat response based on the provided parameters and model configuration.
@@ -415,7 +422,7 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
    * @param int|null $max Optional maximum number of responses to generate. Defaults to 1.
    * @return bool|string Returns the generated response as a string. Returns false if GPT is unavailable or fails to generate a response.
    */
-  public static function getGptResponse(string $question,  int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null,  int|null $max = 1): bool|string
+  public static function getGptResponse(string $question, int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null, int|null $max = 1): bool|string
   {
     if (self::checkGptStatus() === false) {
       return false;
@@ -544,13 +551,13 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
       // Audit trail
       $auditPayload = [
         'session' => [
-          'id'         => session_id(),
-          'ip'         => HTTP::getIpAddress() ?? null,
+          'id' => session_id(),
+          'ip' => HTTP::getIpAddress() ?? null,
           'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null
         ],
         'embeddings_context' => $auditExtra['embeddings_context'] ?? [],
-        'similarity_scores'  => $auditExtra['similarity_scores'] ?? [],
-        'processing_chain'   => $auditExtra['processing_chain'] ?? []
+        'similarity_scores' => $auditExtra['similarity_scores'] ?? [],
+        'processing_chain' => $auditExtra['processing_chain'] ?? []
       ];
 
       $timestamp = (new DateTimeImmutable())->format('Y-m-d H:i:s');
@@ -559,8 +566,8 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
       $auditPayload['hash'] = Hash::encryptDatatext($validatedUserAdmin . session_id() . $timestamp);
 
       $array_sql = [
-        'question'   => $validatedQuestion,
-        'response'   => $validatedResult,
+        'question' => $validatedQuestion,
+        'response' => $validatedResult,
         'date_added' => 'now()',
         'user_admin' => $validatedUserAdmin,
         'audit_data' => json_encode($auditPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
@@ -572,7 +579,7 @@ public static function getMistralChat(string $model, ?int $maxtoken = null): Mis
         error_log("Erreur lors de la sauvegarde du log GPT dans la base de données: " . $e->getMessage());
       }
     }
-}
+  }
 
   /**
    *

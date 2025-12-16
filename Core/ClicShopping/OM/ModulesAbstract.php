@@ -71,7 +71,7 @@ abstract class ModulesAbstract
    *
    * @return array The filtered array of modules.
    */
-  public function filter(array $modules, string$filter)
+  public function filter(array $modules, string $filter)
   {
     return $modules;
   }

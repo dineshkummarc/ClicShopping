@@ -859,4 +859,3 @@ input:checked + .slider:before {
   max-height: calc(100% - 56px); /* Ajustez la hauteur maximale en fonction de la hauteur de l'en-tête et du pied de page */
   overflow-y: auto;
 }
-
