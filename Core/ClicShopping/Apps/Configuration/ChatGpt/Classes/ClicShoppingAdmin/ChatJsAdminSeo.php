@@ -67,13 +67,13 @@ class ChatJsAdminSeo
                     error: function(xhr, status, error) {
                     console.log(xhr.responseText);
                   }
-});
+                  });
                 });
           
                 if (newButton) {
                   $(self).append(newButton);
                 }
-}
+              }
             });
           });
         </script>";
@@ -126,13 +126,13 @@ class ChatJsAdminSeo
               error: function(xhr, status, error) {
                 console.log(xhr.responseText);
               }
-});
+            });
           });
     
           if (newButton) {
             $(self).append(newButton);
           }
-}
+        }
       });
     });            
 </script>";
@@ -188,16 +188,16 @@ class ChatJsAdminSeo
                   error: function(xhr, status, error) {
                     console.log(xhr.responseText);
                   }
-});
+                });
               });
         
               if (newButton) {
                 $(self).append(newButton);
               }
-}
+            }
           });
         }
-});
+      });
       </script>";
 
     return $script;
@@ -248,13 +248,13 @@ class ChatJsAdminSeo
                   error: function(xhr, status, error) {
                     console.log(xhr.responseText);
                   }
-});
+                });
               });
         
               if (newButton) {
                 $(self).append(newButton);
               }
-}
+            } 
           });
         });      
        </script>";
@@ -307,13 +307,13 @@ class ChatJsAdminSeo
                   error: function(xhr, status, error) {
                     console.log(xhr.responseText);
                   }
-});
+                });
               });
         
               if (newButton) {
                 $(self).append(newButton);
               }
-}
+            }
           });
         });     
      </script>";
@@ -368,13 +368,13 @@ class ChatJsAdminSeo
                   error: function(xhr, status, error) {
                     console.log(xhr.responseText);
                   }
-});
+                });
               });
         
               if (newButton) {
                 $(self).append(newButton);
               }
-}
+            }
           });
         });
 
@@ -431,7 +431,7 @@ class ChatJsAdminSeo
                     error: function(xhr, status, error) {
                       console.log(xhr.responseText);
                     }
-});
+                    });
                 });
           
                 if (newButton) {
@@ -491,13 +491,13 @@ class ChatJsAdminSeo
                   error: function(xhr, status, error) {
                     console.log(xhr.responseText);
                   }
-});
+                 });
               });
         
               if (newButton) {
                 $(self).append(newButton);
               }
-}
+            }
           });
         });
      </script>";
@@ -554,13 +554,13 @@ class ChatJsAdminSeo
                   error: function(xhr, status, error) {
                     console.log(xhr.responseText);
                   }
-});
+                });
               });
         
               if (newButton) {
                 $(self).append(newButton);
               }
-}
+            }
           });
         });
       </script>";
@@ -617,16 +617,16 @@ class ChatJsAdminSeo
                     error: function(xhr, status, error) {
                       console.log(xhr.responseText);
                     }
-});
+                  });
                 });
           
                 if (newButton) {
                   $(self).append(newButton);
                 }
-}
+              }
             });
           }
-});
+        });
       </script>";
 
     return $script;
@@ -678,13 +678,13 @@ class ChatJsAdminSeo
                 error: function(xhr, status, error) {
                   console.log(xhr.responseText);
                 }
-});
+              });
             });
       
             if (newButton) {
               $(self).append(newButton);
             }
-}
+          }
         });
       });      
       </script>";
@@ -807,13 +807,13 @@ $('[id^=\"seo_special_description\"]').each(function(index) {
             error: function(xhr, status, error) {
               console.log(xhr.responseText);
             }
-});
+          });
         });
   
         if (newButton) {
           $(self).append(newButton);
         }
-}
+      }
     });
   }
 });
@@ -1113,13 +1113,13 @@ $('[id^=\"seo_special_description\"]').each(function(index) {
                 error: function(xhr, status, error) {
                   console.log(xhr.responseText);
                 }
-});
+              });
             });
       
             if (newButton) {
               $(self).append(newButton);
             }
-}
+          }
         });
       });
      </script>";
@@ -1375,16 +1375,16 @@ $('[id^=\"seo_special_description\"]').each(function(index) {
                     error: function(xhr, status, error) {
                       console.log(xhr.responseText);
                     }
-});
+                  });
                 });
           
                 if (newButton) {
                   $(self).append(newButton);
                 }
-}
+              }
             });
           }
-});
+        });
       </script>";
 
     return $script;
@@ -1439,13 +1439,13 @@ $('[id^=\"seo_special_description\"]').each(function(index) {
                   error: function(xhr, status, error) {
                     console.log(xhr.responseText);
                   }
-});
+                });
               });
         
               if (newButton) {
                 $(self).append(newButton);
               }
-}
+            }
           });
         });
       </script>";
@@ -1503,13 +1503,13 @@ $('[id^=\"seo_special_description\"]').each(function(index) {
                 error: function(xhr, status, error) {
                   console.log(xhr.responseText);
                 }
-});
+              });
             });
       
             if (newButton) {
               $(self).append(newButton);
             }
-}
+          }
         });
       });
        </script>";
@@ -1567,16 +1567,16 @@ $('[id^=\"seo_special_description\"]').each(function(index) {
                   error: function(xhr, status, error) {
                     console.log(xhr.responseText);
                   }
-});
+                });
               });
         
               if (newButton) {
                 $(self).append(newButton);
               }
-}
+            }
           });
         }
-});
+      });
       </script>";
 
     return $script;

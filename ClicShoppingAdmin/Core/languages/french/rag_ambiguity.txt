@@ -1,0 +1,67 @@
+
+text_rag_ambiguity = Vous êtes un expert dans l'analyse de requêtes de base de données pour détecter l'ambiguïté. Votre tâche est d'analyser la requête utilisateur pour identifier tout manque de clarté avant la génération SQL.
+Analysez cette requête et déterminez si elle est ambiguë (susceptible d'avoir plusieurs interprétations valides).
+
+Requête : {{QUERY}}
+
+Considérez ces types d'ambiguïté :
+    1. Quantification : COUNT (nombre d'éléments distincts) vs SUM (quantité totale/valeur).
+    2. Portée (Scope) : Tous les éléments vs Éléments récents vs Éléments actifs/visibles.
+    3. Métrique : Moyenne vs Minimum vs Maximum vs Liste simple.
+    4. Période temporelle : Plage de temps non spécifiée.
+    5. Lors de la génération d'indices SQL impliquant des noms de produits (par exemple, dans une clause WHERE), si le nom se compose de plusieurs mots (par exemple, "iPhone 17 Pro"), vous DEVEZ décomposer le terme de recherche en utilisant des opérateurs LIKE '%mot%' AND comme opérateur pour chaque terme, au lieu d'utiliser un seul motif LIKE '%multi-mots%'."
+
+Répondez UNIQUEMENT avec du JSON valide dans ce format exact :
+{
+  "is_ambiguous": true/false,
+  "ambiguity_type": "quantification|scope|metric|time|null",
+  "confidence": 0.0-1.0,
+  "interpretations": [
+    {
+      "type": "count|sum|all|recent|active|average|min|max|list",
+      "label": "Short label",
+      "description": "Clear description",
+      "sql_hint": "SQL operation hint (COUNT, SUM, AVG, etc.)"
+      "sql_field_reference": "SQL field concerned (Ex: p.products_status = 1, a.products_quantity)"
+    }
+  ],
+  "recommendation": "generate_both|use_default|clarify",
+  "default_interpretation": "type from interpretations",
+  "reasoning": "Brief explanation"
+}
+
+Règles :
+    - Si la requête mentionne explicitement COUNT, DISTINCT, SUM, TOTAL, AVG, etc. -> NON ambiguë.
+    - Si la requête spécifie la période temporelle, la portée ou la métrique -> NON ambiguë.
+    - Si la requête est vague sur ce qu'il faut compter/sommer/moyenne -> EST ambiguë.
+    - Fournir 2 à 4 interprétations si ambiguë.
+    - Recommander "generer_les_deux" pour l'ambiguïté de quantification (COUNT vs SUM).
+    - Recommander "utiliser_defaut" pour l'ambiguïté de portée/métrique, en privilégiant l'interprétation la plus courante.
+    - Recommander "clarifier" pour l'ambiguïté temporelle ou si la requête est trop vague pour une interprétation par défaut.
+
+Exemples :
+    - "Combien de produits en stock ?" -> AMBIGUË (compter les modèles vs sommer la quantité).
+    - "Compter les produits distincts" -> NON ambiguë.
+    - "Afficher les commandes" -> AMBIGUË (toutes vs récentes vs actives).
+    - "Afficher toutes les commandes" -> NON ambiguë.
+
+
+
+
+
+
+text_rag_clarify_query_for_interpretation = Rewrite this ambiguous query to be explicit about the intent.
+    Original query: {{original_query}}
+    Interpretation: {{interpretation}}
+    SQL hint: {{sql_hint}}
+Rewrite the query to clearly indicate this specific interpretation.
+If the query contains multiple words, rewrite the query for each word like that %word%.
+Use explicit keywords like COUNT, SUM, AVG, DISTINCT, ALL, RECENT, etc.
+Respond with ONLY the rewritten query, nothing else.
+
+Examples:
+    - "How many products?" + COUNT -> "Count the number of distinct products"
+    - "How many products?" + SUM -> "Sum the total quantity of all products"
+    - "Show orders" + RECENT -> "Show orders from the last 30 days"
+
+

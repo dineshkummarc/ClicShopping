@@ -1,0 +1,76 @@
+# Unified Query Analyzer - Language Definitions
+# This file contains prompts and messages for the UnifiedQueryAnalyzer component
+# Date: 2025-12-14
+# Phase: 14 - Unified Language and Intent Detection
+
+# Main analysis prompt
+unified_analyzer_prompt = Analyze this user query, translate it, and break down complex analytic questions. Return a JSON object with the following fields:\n\n1. "language": ISO 639-1 language code (2 letters: en, fr, ja, zh, es, de, ar, it, pt, ru, ko, nl, pl, tr, sv, da, fi, no, cs, hu, ro, el, he, th, vi, id, ms, hi, bn, ta, te, mr, ur, fa, uk, bg, sr, hr, sk, sl, lt, lv, et, is, ga, mt, cy, eu, ca, gl, sq, mk, bs, ka, hy, az, kk, uz, ky, tg, tk, mn, ne, si, km, lo, my, am, ti, sw, zu, xh, af, so, ha, yo, ig, rw, sn, st, tn, ts, ss, ve, nr, etc.)\n\n2. "translated_query": Query translated to English (or original if already English)\n\n3. "intent_type": One of:\n   - "analytics": Queries about data, metrics, counts, statistics, numbers, reports\n     Examples: "How many products?", "Sales today", "Total revenue", "Stock levels", "Top 10 customers"\n   - "semantic": Queries about knowledge, explanations, policies, procedures, how-to\n     Examples: "What is the return policy?", "How does delivery work?", "Explain checkout process"\n   - "hybrid": Queries combining both analytics and semantic aspects\n     Examples: "Show me sales data and explain why it's low", "How many orders and what's the refund policy?"\n\n4. "entity_type": A list of one or more primary entities involved (e.g., ["product", "order", "customer", "general"]). Use "general" for global metrics without specific entities.\n\n5. "time_constraint": One of: "comparison", "relative_period", "specific_date", "none"\n\n6. "status_keywords": A list of status keywords detected (e.g., ["active", "pending"]). Use empty array [] if no status is relevant.\n\n7. "sub_queries": A list of individual, separated sub-queries if a multi-query detection is warranted. Use empty array [] for single queries.\n\n8. "confidence": Confidence score between 0.0 and 1.0 (how certain you are about the intent classification)\n\nQuery: "%s"\n\nReturn ONLY valid JSON, no additional text or explanation.
+
+# Entity types
+entity_type_product = product
+entity_type_order = order
+entity_type_customer = customer
+entity_type_category = category
+entity_type_manufacturer = manufacturer
+entity_type_supplier = supplier
+entity_type_general = general
+
+# Time constraints
+time_constraint_comparison = comparison
+time_constraint_relative_period = relative_period
+time_constraint_specific_date = specific_date
+time_constraint_none = none
+
+# Intent types
+intent_type_analytics = analytics
+intent_type_semantic = semantic
+intent_type_hybrid = hybrid
+
+# Status keywords (common)
+status_active = active
+status_inactive = inactive
+status_pending = pending
+status_completed = completed
+status_cancelled = cancelled
+status_processing = processing
+status_shipped = shipped
+status_delivered = delivered
+
+# Error messages
+error_invalid_language = Invalid language code detected
+error_invalid_intent = Invalid intent type detected
+error_invalid_entity = Invalid entity type detected
+error_invalid_time_constraint = Invalid time constraint detected
+error_json_parse = Failed to parse JSON response from GPT
+error_analysis_exception = Exception occurred during query analysis
+
+# Debug messages
+debug_analysis_start = UnifiedQueryAnalyzer::analyzeQuery() - START
+debug_input_query = Input query: %s
+debug_gpt_response = GPT Response: %s
+debug_analysis_result = Unified Analysis Result
+debug_language_detected = Language: %s
+debug_intent_detected = Intent: %s (confidence: %s)
+debug_translated_query = Translated: %s
+debug_analysis_time = Time: %sms
+debug_entity_types = Entity types: %s
+debug_time_constraint = Time constraint: %s
+debug_status_keywords = Status keywords: %s
+debug_sub_queries = Sub-queries: %s
+
+# Success messages
+success_analysis_completed = Query analysis completed successfully
+success_language_detected = Language detected: %s
+success_translation_completed = Translation completed
+success_intent_classified = Intent classified: %s
+
+# Validation messages
+validation_using_default = Using default values due to invalid analysis
+validation_invalid_language_code = Invalid language code, defaulting to 'en'
+validation_invalid_translated_query = Invalid translated_query, using original
+validation_invalid_intent_type = Invalid intent_type, defaulting to 'semantic'
+validation_invalid_entity_type = Invalid entity_type, defaulting to ['general']
+validation_invalid_time_constraint = Invalid time_constraint, defaulting to 'none'
+validation_invalid_status_keywords = Invalid status_keywords, defaulting to []
+validation_invalid_sub_queries = Invalid sub_queries, defaulting to []
+validation_invalid_confidence = Invalid confidence, defaulting to 0.5

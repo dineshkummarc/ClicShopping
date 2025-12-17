@@ -76,6 +76,7 @@ class Cron {
       $Qcheck->execute();
 
       if ($Qcheck->fetch() === false) {
+        $language_code = $this->lang->getLanguageCodeById((int)$item['language_id']);
         $categories_name = $item['categories_name'];
         $categories_description = $item['categories_description'];
         $seo_categories_title = $item['categories_head_title_tag'];

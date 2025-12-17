@@ -266,7 +266,7 @@ $languages = $CLICSHOPPING_Language->getLanguages();
                   <label for="<?php echo $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_comment'); ?>"
                          class="col-5 col-form-label"><?php echo $CLICSHOPPING_ReturnOrders->getDef('text_ref_return_orders_comment'); ?></label>
                   <div class="col-md-7">
-                    <?php echo HTML::textAreaField('comment', $Qreturn->value('comment'), null, 'id="ref_return_orders_comment"'); ?>
+                    <?php echo HTML::textAreaField('comment', $Qreturn->value('comment'), null, null, 'id="ref_return_orders_comment"'); ?>
                   </div>
                 </div>
               </div>

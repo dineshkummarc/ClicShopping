@@ -95,6 +95,11 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
         }
 
         $group_customer_price = @$_POST['price' . $QcustomersGroup->valueInt('customers_group_id')];
+        
+        // Sanitize and validate the price input - convert empty strings to null
+        if ($group_customer_price === '' || $group_customer_price === null) {
+          $group_customer_price = null;
+        }
 
         if (MODE_B2B_B2C == 'False' && !isset($_POST['products_percentage'])) {
           $group_customer_price = $products_price;
@@ -134,7 +139,8 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
           $products_quantity_unit_id_group = 0;
         }
 
-        if (empty($group_customer_price)) {
+        // Final validation: ensure we never have empty string for decimal field
+        if (empty($group_customer_price) || $group_customer_price === '') {
           $group_customer_price = $products_price;
         }
 
@@ -217,6 +223,11 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
         }
 
         $group_customer_price = @$_POST['price' . $QcustomersGroup->valueInt('customers_group_id')];
+        
+        // Sanitize and validate the price input - convert empty strings to null
+        if ($group_customer_price === '' || $group_customer_price === null) {
+          $group_customer_price = null;
+        }
 
         if (MODE_B2B_B2C == 'False' && !isset($_POST['products_percentage'])) {
           $group_customer_price = $products_price;
@@ -250,6 +261,11 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
           }
         } else {
           $group_customer_price = $Qattributes->valueDecimal('customers_group_price');
+        }
+        
+        // Final validation: ensure we never have empty string for decimal field
+        if (empty($group_customer_price) || $group_customer_price === '') {
+          $group_customer_price = $products_price;
         }
 
 // Gets all of the customers groups
@@ -350,9 +366,13 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
           // Prix TTC B2B ----------
           if (($group_customer_price != $Qattributes->valueDecimal('customers_group_price')) && ($Qattributes->valueInt('customers_group_id') == $QcustomersGroup->valueInt('customers_group_id'))) {
-            if (empty($group_customer_price)) {
+            // Ensure group_customer_price is a valid decimal value
+            if (empty($group_customer_price) || $group_customer_price === '') {
               $group_customer_price = $products_price;
             }
+            
+            // Convert to float to ensure valid decimal format
+            $group_customer_price = (float)$group_customer_price;
 
             $this->app->db->save('products_groups', [
               'customers_group_price' => $group_customer_price,

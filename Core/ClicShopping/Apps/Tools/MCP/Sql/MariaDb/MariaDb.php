@@ -146,7 +146,6 @@ CREATE TABLE :table_mcp_ip (
 INSERT INTO :table_mcp_ip VALUES(1, 1, '127.0.0.1', 'localhost');
 
 ALTER TABLE :table_mcp_ip  ADD PRIMARY KEY (`mcp_ip_id`),  ADD KEY `idx_mcp_ip_id` (`mcp_ip_id`);
-
 ALTER TABLE :table_mcp_ip MODIFY `mcp_ip_id` int(11) NOT NULL AUTO_INCREMENT;
 
 EOD;
@@ -205,6 +204,9 @@ EOD;
           ADD PRIMARY KEY (`id`),
           ADD KEY `idx_identifier_timestamp` (`identifier`,`timestamp`),
           ADD KEY `idx_timestamp` (`timestamp`);
+        
+        ALTER TABLE :table_mcp_rate_limit
+          MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
         EOD;
 
       $CLICSHOPPING_Db->exec($sql);
@@ -229,6 +231,8 @@ ALTER TABLE :table_mcp_alerts
   ADD KEY `idx_alert_timestamp` (`alert_timestamp`),
   ADD KEY `idx_severity` (`severity_level`);
 
+ALTER TABLE :table_mcp_alerts MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
 EOD;
       $CLICSHOPPING_Db->exec($sql);
     }
@@ -245,13 +249,15 @@ EOD;
           `error_frequency` decimal(5,2) NOT NULL DEFAULT 0.00,
           `uptime_percentage` decimal(5,2) NOT NULL DEFAULT 0.00,
           `total_requests` int(11) NOT NULL DEFAULT 0,
-          `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+          `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         
-        ALTER TABLE `clic_mcp_performance_history`
+        ALTER TABLE :table_mcp_performance_history
         ADD PRIMARY KEY (`id`),
         ADD KEY `idx_timestamp` (`timestamp`),
         ADD KEY `idx_created_at` (`created_at`);
+        
+        ALTER TABLE :table_mcp_performance_history MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 EOD;
       $CLICSHOPPING_Db->exec($sql);
     }

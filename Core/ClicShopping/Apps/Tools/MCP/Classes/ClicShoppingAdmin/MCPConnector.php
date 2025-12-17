@@ -12,6 +12,7 @@ namespace ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin;
 
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\HTTP;
+use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\Exceptions\McpException;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\Transport\SseTransport;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpSecurity;
@@ -64,24 +65,83 @@ class MCPConnector
   /**
    * Retrieves the MCP configuration from the database.
    *
-   * This method fetches configuration values defined as constants and returns them in an associative array.
-   * It performs basic validation and throws an exception if a required setting, such as `server_host`, is missing.
+   * This method fetches configuration values from the MCP database table.
+   * Connection-specific settings (server_host, server_port, ssl_enabled) come from the database.
+   * App-level settings (status, token) come from constants.
+   * 
+   * Note: Since multiple MCP connections can exist, this method gets the first active connection.
+   * For specific connection selection, pass mcp_id parameter.
    *
+   * @param int|null $mcpId Optional specific MCP connection ID
    * @return array The associative array of configuration settings.
-   * @throws McpException if `server_host` is not defined.
+   * @throws McpException if no active MCP configuration is found.
    */
-  public static function getConfigDb(): array
+  public static function getConfigDb(?int $mcpId = null): array
   {
+    $db = Registry::get('Db');
     $config = [];
 
-    $config['server_host'] = \defined('CLICSHOPPING_APP_MCP_MC_SERVER_HOST') ? CLICSHOPPING_APP_MCP_MC_SERVER_HOST : null;
-    $config['server_port'] = \defined('CLICSHOPPING_APP_MCP_MC_SERVER_PORT') ? (int)CLICSHOPPING_APP_MCP_MC_SERVER_PORT : 3001;
-    $config['ssl'] = \defined('CLICSHOPPING_APP_MCP_MC_SSL') ? filter_var(CLICSHOPPING_APP_MCP_MC_SSL, FILTER_VALIDATE_BOOLEAN) : false;
-    $config['token'] = \defined('CLICSHOPPING_APP_MCP_MC_TOKEN') ? CLICSHOPPING_APP_MCP_MC_TOKEN : '';
-    $config['status'] = \defined('CLICSHOPPING_APP_MCP_MC_STATUS') ? CLICSHOPPING_APP_MCP_MC_STATUS : '';
+    // Fetch MCP configuration from database
+    if ($mcpId !== null) {
+      // Get specific MCP connection
+      $Qmcp = $db->prepare('SELECT * 
+                            FROM :table_mcp 
+                            WHERE mcp_id = :mcp_id
+                          ');
+      $Qmcp->bindInt(':mcp_id', $mcpId);
+      $Qmcp->execute();
+    } else {
+      // Get first active MCP connection
+      $Qmcp = $db->prepare('SELECT * 
+                            FROM :table_mcp 
+                            WHERE status = 1 
+                            ORDER BY mcp_id 
+                            LIMIT 1
+                          ');
+      $Qmcp->execute();
+    }
 
-    //$config['mcp_endpoint'] = defined('CLICSHOPPING_APP_MCP_MC_ENDPOINT') ? CLICSHOPPING_APP_MCP_MC_ENDPOINT : '/api/ai/chat/process';
+    if ($Qmcp->fetch()) {
+      // Connection-specific settings from database
+      $config['mcp_id'] = (int)$Qmcp->valueInt('mcp_id');
+      $config['username'] = $Qmcp->value('username');
+      $config['mcp_key'] = $Qmcp->value('mcp_key'); // Token from database
+      $config['server_host'] = $Qmcp->value('server_host') ?: 'localhost';
+      $config['server_port'] = (int)$Qmcp->valueInt('server_port') ?: 3001;
+      $config['ssl'] = (bool)$Qmcp->valueInt('ssl_enabled');
+      $config['status'] = (int)$Qmcp->valueInt('status'); // Status from database
+      
+      // Alert and monitoring settings from database
+      $config['alert_threshold'] = (int)$Qmcp->valueInt('alert_threshold') ?: 20;
+      $config['latency_threshold'] = (int)$Qmcp->valueInt('latency_threshold') ?: 1000;
+      $config['downtime_threshold'] = (int)$Qmcp->valueInt('downtime_threshold') ?: 300;
+      $config['data_retention'] = (int)$Qmcp->valueInt('data_retention') ?: 7;
+      $config['alert_notification'] = (bool)$Qmcp->valueInt('alert_notification');
+      
+      // Permissions from database
+      $config['select_data'] = (bool)$Qmcp->valueInt('select_data');
+      $config['update_data'] = (bool)$Qmcp->valueInt('update_data');
+      $config['create_data'] = (bool)$Qmcp->valueInt('create_data');
+      $config['delete_data'] = (bool)$Qmcp->valueInt('delete_data');
+      $config['create_db'] = (bool)$Qmcp->valueInt('create_db');
+    } else {
+      error_log('[MCPConnector] No active MCP configuration found in database');
+      throw new McpException('No active MCP configuration found');
+    }
 
+    // App-level settings from constants (backward compatibility)
+    // These can override database settings if defined
+    if (\defined('CLICSHOPPING_APP_MCP_MC_TOKEN') && !empty(CLICSHOPPING_APP_MCP_MC_TOKEN)) {
+      $config['token'] = CLICSHOPPING_APP_MCP_MC_TOKEN;
+    } else {
+      $config['token'] = $config['mcp_key'] ?? '';
+    }
+    
+    if (\defined('CLICSHOPPING_APP_MCP_MC_STATUS')) {
+      $config['app_status'] = CLICSHOPPING_APP_MCP_MC_STATUS;
+    }
+
+    // Default endpoint
     if (!isset($config['mcp_endpoint'])) {
       $config['mcp_endpoint'] = '/api/ai/chat/process';
     }
@@ -174,13 +234,25 @@ class MCPConnector
   /**
    * Retrieves the current MCP session token.
    *
-   * This method reads the token from the `CLICSHOPPING_APP_MCP_MC_TOKEN` constant.
+   * This method reads the token from the configuration (database mcp_key or constant).
+   * Priority: 1) Database mcp_key, 2) Constant CLICSHOPPING_APP_MCP_MC_TOKEN
    *
    * @return string The MCP session token.
-   * @throws \RuntimeException if the token constant is not defined.
+   * @throws \RuntimeException if the token is not configured.
    */
   public function getSessionToken(): string
   {
+    // Priority 1: Token from configuration (database mcp_key)
+    if (!empty($this->config['mcp_key'])) {
+      return $this->config['mcp_key'];
+    }
+    
+    // Priority 2: Token from configuration (merged from constant)
+    if (!empty($this->config['token'])) {
+      return $this->config['token'];
+    }
+    
+    // Priority 3: Fallback to constant
     if (defined('CLICSHOPPING_APP_MCP_MC_TOKEN')) {
       return CLICSHOPPING_APP_MCP_MC_TOKEN;
     }

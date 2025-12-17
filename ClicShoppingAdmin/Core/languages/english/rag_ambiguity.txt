@@ -1,0 +1,79 @@
+
+text_rag_detect_ambiguity = You are an expert at analyzing database queries for ambiguity. Your task is to analyze the user's query to identify any lack of clarity before SQL generation.
+Analyze this query and determine if it is ambiguous (could have multiple valid interpretations).
+
+Query: {{QUERY}}
+
+Consider these types of ambiguity:
+    1. Quantification: COUNT (distinct items) vs SUM (total quantity/value)
+    2. Scope: All items vs Recent items vs Active/Visible items
+    3. Metric: Average vs Minimum vs Maximum vs Simple List
+    4. Time period: Unspecified time range
+    5. When generating SQL hints involving product names (e.g., in a WHERE clause), if the name consists of multiple words (e.g., "iPhone 17 Pro"), you MUST decompose the search term using separate LIKE '%word%' AND operators for each term, instead of using a single LIKE '%multi word%' pattern.
+
+Respond ONLY with valid JSON in this exact format:
+{
+"is_ambiguous": true/false,
+"ambiguity_type": "quantification|scope|metric|time|null",
+"confidence": 0.0-1.0,
+"interpretations": [
+ {
+   "type": "count|sum|all|recent|active|average|min|max|list",
+   "label": "Short label for interpretation",
+   "description": "Clear description of the SQL interpretation.",
+   "sql_hint": "SQL operation hint (COUNT, SUM, AVG, etc.)",
+   "sql_field_reference": "Hint for the specific SQL field (e.g., p.products_status = 1, a.products_quantity)"
+ }
+],
+"recommendation": "generate_both|use_default|clarify",
+"default_interpretation": "type from interpretations",
+"reasoning": "Brief explanation of the ambiguity level and recommendation."
+}
+
+Rules:
+    - If query explicitly mentions COUNT, DISTINCT, SUM, TOTAL, AVG, etc. -> NOT ambiguous.
+    - If query specifies time period, scope, or metric -> NOT ambiguous.
+    - If query is vague about what to count/sum/average -> IS ambiguous.
+    - Provide 2-4 interpretations if ambiguous.
+    - Recommend "generate_both" for quantification ambiguity (COUNT vs SUM).
+    - Recommend "use_default" for scope/metric ambiguity, prioritizing the most common interpretation.
+    - Recommend "clarify" for time period ambiguity or if the query is too vague for a default interpretation.
+    - IMPORTANT: The query may be in any language (English, French, German, Portuguese, etc.). Look for explicit aggregation keywords in ANY language that indicate COUNT, SUM, TOTAL, AVERAGE, LIST, etc.
+
+Examples:
+    - "How many products in stock?" -> AMBIGUOUS (count distinct models vs sum total quantity).
+    - "Count distinct products" -> NOT ambiguous.
+    - "Show orders" -> AMBIGUOUS (all vs recent vs active).
+    - "Show all orders" -> NOT ambiguous.
+
+
+text_rag_clarify_query_for_interpretation = Rewrite this ambiguous query to be explicit about the intent.
+    Original query: {{original_query}}
+    Interpretation: {{interpretation}}
+    SQL hint: {{sql_hint}}
+Rewrite the query to clearly indicate this specific interpretation.
+If the query contains multiple words, rewrite the query for each word like that %word%.
+Use explicit keywords like COUNT, SUM, AVG, DISTINCT, ALL, RECENT, etc.
+Respond with ONLY the rewritten query, nothing else.
+
+Examples:
+    - "How many products?" + COUNT -> "Count the number of distinct products"
+    - "How many products?" + SUM -> "Sum the total quantity of all products"
+    - "Show orders" + RECENT -> "Show orders from the last 30 days"
+
+
+
+text_rag_clarify_query_for_interpretation = Rewrite this ambiguous query to be explicit about the intent.
+    Original query: {{original_query}}
+    Interpretation: {{interpretation}}
+    SQL hint: {{sql_hint}}
+Rewrite the query to clearly indicate this specific interpretation.
+Use explicit keywords like COUNT, SUM, AVG, DISTINCT, ALL, RECENT, etc.
+Respond with ONLY the rewritten query, nothing else.
+
+Examples:
+    - "How many products?" + COUNT -> "Count the number of distinct products"
+    - "How many products?" + SUM -> "Sum the total quantity of all products"
+    - "Show orders" + RECENT -> "Show orders from the last 30 days"
+
+

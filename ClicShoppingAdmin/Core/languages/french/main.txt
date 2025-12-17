@@ -25,6 +25,7 @@ header_title_administration = Administration
 header_title_logoff = Quitter
 
 text_chat_send = Demander
+text_chat_reset_context = Nouveau contexte
 text_chat_save = Sauver la requête
 text_chat_message = Ecrire un message (Veuillez être patient pour la réponse)
 text_chat_close = Fermer
@@ -473,3 +474,165 @@ Message could not be sent. Mailer Error:  {{phpmailer_error}}
 text_warning_group = Veuillez mettre à jour vos groupes clients pour voir ce module dans le catalogue ou le supprimer
 no_access_warning = Vous n'avez pas accés à cette fonctionnalité.
 success_migration_done = La migration a été un succés
+
+
+
+
+text_create_taxonomy = Tu es un système d’analyse documentaire. Extrait une taxonomie conceptuelle structurée du texte suivant.
+Traduit en francais.
+Format attendu via un exemple :
+[domaine]: Arts de la table
+[type_produit]: Produits
+[sujet_produit]: Assiettes, verres
+[type_usage]: Utilisation
+[sujet_usage]: Dîner, réception
+[type_objectif]: Objectif
+[sujet_objectif]: Raffinement, expérience
+\n\nTexte : {{document_text}}
+
+
+
+text_rag_language_instruction = \n\nIMPORTANT: Vous DEVEZ répondre en français uniquement. N'utilisez aucune autre langue dans votre réponse.
+text_rag_answer_question_not_found = Je n'ai pas trouvé d'informations spécifiques pour répondre à votre question. Veuillez reformuler ou poser une autre question.
+text_rag_answer_question_error = Désolé, une erreur s'est produite lors du traitement de votre question. Veuillez réessayer ultérieurement.
+text_not_analytics = Cette requête ne semble pas être une requête d'analyse.
+
+text_parentheses_mismatch_error = Parenthèses non correspondantes : {{openParenCount}} ouvrantes contre {{closeParenCount}} fermantes.
+text_invalid_column_alias_error = Alias de colonne invalide (contient un point).
+text_select_without_from_error = Requête SELECT sans clause FROM.
+text_unresolved_placeholders_error = Espaces réservés non résolus détectés.
+text_no_correction_applied = Aucune correction appliquée.
+text_parentheses_mismatch = Parenthèses non correspondantes
+text_correction_invalid_column_aliases = Correction des alias de colonnes invalides
+text_resolution_placeholders = Résolution des espaces réservés
+text_syntax error corrected = Erreur de syntaxe corrigée
+text_problematic_part_removed = Partie problématique {{problematicPart}} supprimée
+text_problematic_part_everything_following_removed = Partie problématique {{$problematicPart}} et tout ce qui suit supprimé
+text_colum_reference_does_not_exist = Il semble qu’il y ait une référence à une colonne qui n’existe pas dans la base de données. Essayez de reformuler votre requête avec des termes plus généraux.
+text_sql_query_generated_error = Il y a une erreur de syntaxe dans la requête SQL générée. Essayez de reformuler votre question de manière plus claire et précise.
+text_table_referenced_does_not_exist = Une table référencée dans la requête n’existe pas. Essayez de reformuler votre question avec des termes plus généraux.
+text_error_executing_query = Une erreur est survenue lors de l’exécution de la requête. Essayez de reformuler votre question de manière plus claire et précise.
+text_no_valid_sql_query_could_extracted = Aucune requête SQL valide n’a pu être extraite de la réponse.
+text_correction_cancelled = Corrections annulées car elles n’ont pas résolu tous les problèmes
+text_no_applied_confidence = Non appliqué – confiance insuffisante
+text_error_context_sql_number_request = Trop d’informations sont envoyées au LLM. Le contexte est limité. Veuillez affiner votre demande ou ajuster les paramètres.<br />
+Nbr de ligne max : {{maxRows}}<br />
+Nbr de résultat : {{count}}<br />
+
+error_llm_guardrails_block = Je ne peux pas fournir cette réponse en raison de problèmes de fiabilité détectés. Pouvez-vous reformuler votre question ?
+error_llm_guardrails_manual_review = Note: Cette réponse nécessite une vérification manuelle concernant cette réponse : {{result}}
+success_llm_guardrails_manual_confidence_score = Niveau de confiance: {{confidenceScore}}. La réponse a été acceptée  : {{result}}
+error_llm_guardrails_validation = Erreur lors de la validation
+error_llm_guardrails_evaluation = Erreur lors de l'évaluation
+error_llm_guardrails_invalid_format = Réponse illisible ou format invalide
+
+llm_guardrails_prompt_relevance = Améliorer la pertinence.
+llm_guardrails_prompt_accuracy = Vérifier l’exactitude métier.
+llm_guardrails_prompt_completeness = Ajouter des détails.
+llm_guardrails_prompt_clarity = Clarifier la rédaction.
+
+llm_guardrails_prompt = En tant qu'expert en analyse BI e-commerce, évaluez la réponse suivante selon ces critères:
+QUESTION: {{question}}
+RÉPONSE: {{result}}
+
+Critères d'évaluation (notez de 1 à 5):
+1. EXACTITUDE: Les données et métriques sont-elles correctes?
+2. PERTINENCE: La réponse répond-elle à la question posée?
+3. COMPLETUDE: Toutes les informations nécessaires sont-elles présentes?
+4. CLARTÉ: La réponse est-elle claire et compréhensible?
+5. FIABILITÉ: Y a-t-il des signes d'hallucination ou d'erreur?
+
+Répondez au format JSON:
+{
+    'scores': {
+        'éxactitude': X,
+        'pertinence': X,
+        'complétude': X,
+        'clarté': X,
+        'fiabilité': X
+    },
+
+    'problèmes_détectés': ['liste des problèmes'],
+    'recommandations': ['liste des améliorations'],
+    'niveau_confiance': 'élevé/moyen/faible'
+}
+
+llm_guardrails_accuracy = Exactitude
+llm_guardrails_relevance = Pertinence
+llm_guardrails_completeness = Complétude
+llm_guardrails_clarity = Clarté
+llm_guardrails_reliability = Fiabilité
+llm_guardrails_overall_score = Score global
+
+
+
+
+
+text_interpret_results = Tu es un expert en analyse de données e-commerce.
+Interprète ces résultats de requête SQL et fournis une explication claire et concise en français.\n\n
+Question : {{question}}\n\n
+Résultats : {{results}} \n\n
+Interprétation :
+
+
+# Noms de colonnes pour l'affichage des tableaux
+column_entity_id = ID
+column_products_id = ID Produit
+column_manufacturers_id = ID Marque
+column_categories_id = ID Catégorie
+column_orders_id = ID Commande
+column_customers_id = ID Client
+column_suppliers_id = ID Fournisseur
+column_reviews_id = ID Avis
+
+column_manufacturers_name = Nom de la Marque
+column_products_name = Nom du Produit
+column_categories_name = Nom de la Catégorie
+column_customers_name = Nom du Client
+column_suppliers_name = Nom du Fournisseur
+
+column_products_quantity = Stock
+column_quantity = Quantité
+column_products_ordered = Quantité Vendue
+
+column_products_price = Prix
+column_price = Prix
+column_total_price = Montant Total
+column_final_price = Prix Final
+
+column_date_added = Date d'Ajout
+column_date_modified = Date de Modification
+column_orders_date = Date de Commande
+column_date_purchased = Date d'Achat
+
+column_products_model = Modèle
+column_products_status = Statut
+column_orders_status = Statut Commande
+column_status = Statut
+
+column_products_description = Description
+column_categories_description = Description
+column_customers_email_address = Email
+column_customers_telephone = Téléphone
+
+status_inactive = ❌ Inactif
+status_active = ✅ Actif
+status_pending = ⏳ En attente
+status_completed = ✅ Terminé
+status_cancelled = ❌ Annulé
+status_processing = 🔄 En cours
+
+value_null = -
+value_empty = -
+value_unknown = Inconnu
+
+
+
+
+# Messages pour requêtes ambiguës
+text_query_too_ambiguous = Votre requête est trop ambiguë. Veuillez être plus précis sur ce que vous voulez savoir.
+text_multiple_interpretations_review = Plusieurs interprétations fournies. Veuillez examiner tous les résultats.
+text_ambiguous_query_detected = Plusieurs interprétations détectées
+text_clarification_needed = Clarification nécessaire
+
+text_query_too_ambiguous = Votre requête est trop ambiguë. Veuillez être plus précis sur ce que vous voulez savoir.

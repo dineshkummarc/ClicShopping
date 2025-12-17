@@ -68,27 +68,28 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 ... and Lot of common ecommerce functionalities
 
 ##Generative AI functionalities :
-- GPT API integration
-- Generative artificial Intelligence included with Gpt, Ollama, and Anthropic.
-- RAG-powered Business Intelligence Agent for data analysis and insights
-  - Vector embeddings for products, categories, orders, and other entities
-  - Multi-model AI support (OpenAI, Anthropic, Mistral, Ollama)
+- Generative artificial Intelligence included with Gpt, Ollama, and Anthropic. Multi model approach
+- Agentic RAG-powered Business Intelligence Agent for data analysis and insights
+  - Vector embeddings for products, categories, orders, and other entities ...
   - Semantic search across multiple database tables
   - Analytics query processing with natural language to SQL conversion
   - Intelligent content generation with context-aware responses
   - Admin chatbot interface with RAG capabilities
+  - Web Search impleted for semantic search
   - Web Search impleted for semantic search (with embedding - see documentation)
-- Generative artificial products customers recommendations
-- Generative artificial intelligence for All content (product,categories...)
-- Generative artificial intelligence for SEO
-- Generative artificial intelligence for tag sentiment analysis for review
-- Generative artificial Intelligence review summary
-- Generative artificial Intelligence Automated product tagging
-- Generative artificial Intelligence Automated review tagging
-- Generative artificial Intelligence product automation
-- Generative artificial Intelligence Web Search
+- Generative Artificial Intelligence :
+  - Generative artificial products customers recommendations
+  - Generative artificial intelligence for All content (product,categories...)
+  - Generative artificial intelligence for SEO
+  - Generative artificial intelligence for tag sentiment analysis for review
+  - Generative artificial Intelligence review summary
+  - Generative artificial Intelligence Automated product tagging
+  - Generative artificial Intelligence Automated review tagging
+  - Generative artificial Intelligence product automation
+  - Generative artificial Intelligence Web Search
 - Real time safety stock predictive (AI)
 - Server MCP (model context Protocol) for ecommerce agentic approach
+- Agentic Commerce Protocol (ACP) from OpenAI.
 
 ##Security & Compliance
 - GDPR Ready: Built-in compliance tools and data protection

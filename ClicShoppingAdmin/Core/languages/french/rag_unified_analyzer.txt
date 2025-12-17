@@ -1,0 +1,76 @@
+# Unified Query Analyzer - Définitions de langue
+# Ce fichier contient les prompts et messages pour le composant UnifiedQueryAnalyzer
+# Date: 2025-12-14
+# Phase: 14 - Détection unifiée de langue et d'intention
+
+# Prompt d'analyse principal
+unified_analyzer_prompt = Analysez cette requête utilisateur, traduisez-la et décomposez les questions analytiques complexes. Retournez un objet JSON avec les champs suivants :\n\n1. "language": Code de langue ISO 639-1 (2 lettres : en, fr, ja, zh, es, de, ar, it, pt, ru, ko, nl, pl, tr, sv, da, fi, no, cs, hu, ro, el, he, th, vi, id, ms, hi, bn, ta, te, mr, ur, fa, uk, bg, sr, hr, sk, sl, lt, lv, et, is, ga, mt, cy, eu, ca, gl, sq, mk, bs, ka, hy, az, kk, uz, ky, tg, tk, mn, ne, si, km, lo, my, am, ti, sw, zu, xh, af, so, ha, yo, ig, rw, sn, st, tn, ts, ss, ve, nr, etc.)\n\n2. "translated_query": Requête traduite en anglais (ou originale si déjà en anglais)\n\n3. "intent_type": Un parmi :\n   - "analytics": Requêtes sur les données, métriques, comptages, statistiques, nombres, rapports\n     Exemples : "Combien de produits ?", "Ventes aujourd'hui", "Revenu total", "Niveaux de stock", "Top 10 clients"\n   - "semantic": Requêtes sur les connaissances, explications, politiques, procédures, comment faire\n     Exemples : "Quelle est la politique de retour ?", "Comment fonctionne la livraison ?", "Expliquer le processus de paiement"\n   - "hybrid": Requêtes combinant aspects analytiques et sémantiques\n     Exemples : "Montrez-moi les données de ventes et expliquez pourquoi elles sont basses", "Combien de commandes et quelle est la politique de remboursement ?"\n\n4. "entity_type": Une liste d'une ou plusieurs entités principales impliquées (ex : ["product", "order", "customer", "general"]). Utilisez "general" pour les métriques globales sans entités spécifiques.\n\n5. "time_constraint": Un parmi : "comparison", "relative_period", "specific_date", "none"\n\n6. "status_keywords": Une liste de mots-clés de statut détectés (ex : ["active", "pending"]). Utilisez un tableau vide [] si aucun statut n'est pertinent.\n\n7. "sub_queries": Une liste de sous-requêtes individuelles séparées si une détection multi-requête est justifiée. Utilisez un tableau vide [] pour les requêtes simples.\n\n8. "confidence": Score de confiance entre 0.0 et 1.0 (à quel point vous êtes certain de la classification d'intention)\n\nRequête : "%s"\n\nRetournez UNIQUEMENT du JSON valide, sans texte ou explication supplémentaire.
+
+# Types d'entités
+entity_type_product = produit
+entity_type_order = commande
+entity_type_customer = client
+entity_type_category = catégorie
+entity_type_manufacturer = fabricant
+entity_type_supplier = fournisseur
+entity_type_general = général
+
+# Contraintes temporelles
+time_constraint_comparison = comparaison
+time_constraint_relative_period = période_relative
+time_constraint_specific_date = date_spécifique
+time_constraint_none = aucune
+
+# Types d'intention
+intent_type_analytics = analytique
+intent_type_semantic = sémantique
+intent_type_hybrid = hybride
+
+# Mots-clés de statut (courants)
+status_active = actif
+status_inactive = inactif
+status_pending = en_attente
+status_completed = terminé
+status_cancelled = annulé
+status_processing = en_traitement
+status_shipped = expédié
+status_delivered = livré
+
+# Messages d'erreur
+error_invalid_language = Code de langue invalide détecté
+error_invalid_intent = Type d'intention invalide détecté
+error_invalid_entity = Type d'entité invalide détecté
+error_invalid_time_constraint = Contrainte temporelle invalide détectée
+error_json_parse = Échec de l'analyse de la réponse JSON de GPT
+error_analysis_exception = Exception survenue lors de l'analyse de la requête
+
+# Messages de débogage
+debug_analysis_start = UnifiedQueryAnalyzer::analyzeQuery() - DÉBUT
+debug_input_query = Requête d'entrée : %s
+debug_gpt_response = Réponse GPT : %s
+debug_analysis_result = Résultat de l'analyse unifiée
+debug_language_detected = Langue : %s
+debug_intent_detected = Intention : %s (confiance : %s)
+debug_translated_query = Traduit : %s
+debug_analysis_time = Temps : %sms
+debug_entity_types = Types d'entités : %s
+debug_time_constraint = Contrainte temporelle : %s
+debug_status_keywords = Mots-clés de statut : %s
+debug_sub_queries = Sous-requêtes : %s
+
+# Messages de succès
+success_analysis_completed = Analyse de requête terminée avec succès
+success_language_detected = Langue détectée : %s
+success_translation_completed = Traduction terminée
+success_intent_classified = Intention classifiée : %s
+
+# Messages de validation
+validation_using_default = Utilisation des valeurs par défaut en raison d'une analyse invalide
+validation_invalid_language_code = Code de langue invalide, utilisation de 'en' par défaut
+validation_invalid_translated_query = translated_query invalide, utilisation de l'original
+validation_invalid_intent_type = intent_type invalide, utilisation de 'semantic' par défaut
+validation_invalid_entity_type = entity_type invalide, utilisation de ['general'] par défaut
+validation_invalid_time_constraint = time_constraint invalide, utilisation de 'none' par défaut
+validation_invalid_status_keywords = status_keywords invalides, utilisation de [] par défaut
+validation_invalid_sub_queries = sub_queries invalides, utilisation de [] par défaut
+validation_invalid_confidence = Confiance invalide, utilisation de 0.5 par défaut

@@ -1,0 +1,17 @@
+text_fix_translation = Task: strict translation.
+Input: user text.
+Output: only the translated text in English.
+
+Absolute constraints:
+- Produce only a single string of characters.
+- Total prohibition of explanation, justification or comment.
+- No visible reasoning.
+- No text outside translation.
+
+Translation rules:
+1. Strictly preserve technical terms as they are.
+2. Never modify acronyms, codes or identifiers (e.g. EAN).
+3. If the text is already in English, reproduce it identically.
+4. Do not add, remove or rephrase anything beyond translation.
+
+Any non-compliant output is invalid.

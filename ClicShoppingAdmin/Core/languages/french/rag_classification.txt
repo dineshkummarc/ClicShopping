@@ -1,0 +1,140 @@
+text_rag_classification = Vous êtes un expert en classification de requêtes utilisateur pour un système RAG BI e-commerce. Votre tâche est de déterminer le type d'intention de la requête utilisateur.
+
+Requête: {{QUERY}}
+
+Catégories de Classification:
+1. **analytics**: Requêtes demandant des données quantitatives, calculs, comparaisons ou opérations de base de données
+   - Exemples: niveaux de stock, chiffres de ventes, revenus, comptages, totaux, moyennes, fourchettes de prix
+   - Indicateurs: nombres, dates, périodes temporelles, agrégations, filtrage, tri
+   
+2. **semantic**: Requêtes demandant des informations, explications, résumés ou contenu de documents
+   - Exemples: explications de politiques, guides pratiques, descriptions de produits, résumés de documents
+   - Indicateurs: "expliquer", "qu'est-ce que", "comment", "résumer", "décrire", "comparer" (documents)
+   
+3. **hybrid**: Requêtes combinant plusieurs types d'intentions (analytics + semantic, analytics + web_search)
+   - Exemples: "niveaux de stock et politique de retour", "rapport de ventes avec résumé"
+   - Indicateurs: plusieurs intentions distinctes dans une seule requête
+   
+4. **web_search**: Requêtes nécessitant une recherche web externe pour analyse concurrentielle ou informations actuelles
+   - Exemples: comparaisons avec concurrents, recherche de marché, "meilleures offres en ligne"
+   - Indicateurs: "concurrents", "comparer avec", "meilleur en ligne", "tendances du marché"
+
+Règles de Classification:
+1. Concentrez-vous sur l'INTENTION de l'utilisateur, pas seulement les mots-clés
+2. Considérez le CONTEXTE et les NUANCES de la requête
+3. Si la requête a plusieurs intentions, classez comme 'hybrid' et identifiez les sous-types
+4. Si ambigu ou peu clair, par défaut 'semantic' (repli le plus sûr)
+5. Confiance élevée (0.9): Intention unique claire avec indicateurs forts
+6. Confiance moyenne (0.7): Intention claire mais avec ambiguïté
+7. Confiance faible (0.5): Intention ambiguë ou peu claire
+
+Exemples de Classifications:
+
+**Exemples Analytics (Requêtes Base de Données):**
+- "Quel est le stock de iPhone 17 Pro?" → analytics (confiance: 0.9)
+  Raison: Demande claire de données quantitatives d'inventaire
+- "Montre-moi les ventes totales par mois" → analytics (confiance: 0.9)
+  Raison: Requête d'agrégation avec regroupement temporel
+- "Liste tous les produits en stock" → analytics (confiance: 0.9)
+  Raison: Liste de base de données avec condition de filtrage
+- "Combien de commandes cette semaine?" → analytics (confiance: 0.9)
+  Raison: Agrégation de comptage avec filtre temporel
+- "Quel est le chiffre d'affaires pour Q4 2024?" → analytics (confiance: 0.9)
+  Raison: Calcul financier avec période spécifique
+- "Montre les produits entre 500€ et 1000€" → analytics (confiance: 0.9)
+  Raison: Filtrage par plage sur champ numérique
+- "Quelles catégories ont le plus de produits?" → analytics (confiance: 0.9)
+  Raison: Agrégation avec regroupement et tri
+- "Valeur moyenne des commandes le mois dernier" → analytics (confiance: 0.9)
+  Raison: Calcul statistique avec filtre temporel
+- "Top 10 des produits les plus vendus" → analytics (confiance: 0.9)
+  Raison: Requête de classement avec limite
+- "Nombre de clients par région" → analytics (confiance: 0.9)
+  Raison: Agrégation avec regroupement géographique
+
+**Exemples Semantic (Requêtes Documents/Connaissances):**
+- "Explique la politique de retour" → semantic (confiance: 0.9)
+  Raison: Demande d'explication depuis documents de politique
+- "Résume les conditions générales de vente" → semantic (confiance: 0.9)
+  Raison: Demande de résumé de document
+- "Comment fonctionne la garantie?" → semantic (confiance: 0.9)
+  Raison: Explication de processus depuis documentation
+- "Quelles sont les options d'expédition?" → semantic (confiance: 0.9)
+  Raison: Récupération d'information depuis base de connaissances
+- "Quel est le processus de remboursement?" → semantic (confiance: 0.9)
+  Raison: Explication de processus depuis documents de politique
+- "Compare la politique de confidentialité et les CGV" → semantic (confiance: 0.9)
+  Raison: Comparaison et analyse de documents
+- "Quels sont les points clés de la politique de retour?" → semantic (confiance: 0.9)
+  Raison: Résumé de document avec focus
+- "Combien de temps prend la livraison?" → semantic (confiance: 0.9)
+  Raison: Information depuis documentation d'expédition
+- "Quels moyens de paiement sont acceptés?" → semantic (confiance: 0.9)
+  Raison: Récupération d'information depuis base de connaissances
+- "Explique les avantages du programme de fidélité" → semantic (confiance: 0.9)
+  Raison: Explication depuis documentation du programme
+
+**Exemples Hybrid (Intentions Multiples):**
+- "Stock de iPhone 17 Pro et politique de retour" → hybrid (confiance: 0.8, sub_types: ['analytics', 'semantic'])
+  Raison: Combine requête d'inventaire avec information de politique
+- "Rapport de ventes avec résumé exécutif" → hybrid (confiance: 0.8, sub_types: ['analytics', 'semantic'])
+  Raison: Requête de données plus résumé/interprétation
+- "Montre le chiffre d'affaires par trimestre et explique les tendances" → hybrid (confiance: 0.8, sub_types: ['analytics', 'semantic'])
+  Raison: Données numériques plus explication analytique
+- "Liste les produits sous 100€ et leurs conditions de garantie" → hybrid (confiance: 0.8, sub_types: ['analytics', 'semantic'])
+  Raison: Filtrage base de données plus information documentaire
+- "Produits les plus vendus et comparaison concurrents" → hybrid (confiance: 0.8, sub_types: ['analytics', 'web_search'])
+  Raison: Données internes plus recherche de marché externe
+- "Niveaux de stock et délais d'expédition" → hybrid (confiance: 0.7, sub_types: ['analytics', 'semantic'])
+  Raison: Données d'inventaire plus information opérationnelle
+- "Commandes clients ce mois avec politique de remboursement" → hybrid (confiance: 0.8, sub_types: ['analytics', 'semantic'])
+  Raison: Données transactionnelles plus information de politique
+
+**Exemples Web Search (Requêtes Externes/Concurrentielles):**
+- "Compare le prix de iPhone 17 Pro avec les concurrents" → web_search (confiance: 0.9)
+  Raison: Nécessite données de prix concurrentiels externes
+- "Liste les meilleurs concurrents pour iPhone 17 Pro" → web_search (confiance: 0.9)
+  Raison: Recherche de marché nécessitant sources externes
+- "Quelles sont les meilleures offres en ligne pour ordinateurs portables?" → web_search (confiance: 0.9)
+  Raison: Requête de comparaison de marché externe
+- "Montre-moi les prix concurrents pour Samsung Galaxy" → web_search (confiance: 0.9)
+  Raison: Intelligence concurrentielle depuis sources externes
+- "Quelles sont les tendances actuelles du marché pour smartphones?" → web_search (confiance: 0.8)
+  Raison: Recherche de marché nécessitant données externes actuelles
+- "Trouve les meilleurs détaillants en ligne pour électronique" → web_search (confiance: 0.9)
+  Raison: Requête de découverte de marché externe
+- "Compare notre garantie avec les standards de l'industrie" → web_search (confiance: 0.8)
+  Raison: Nécessite données de référence industrielle externes
+- "Qu'offrent les concurrents pour le Black Friday?" → web_search (confiance: 0.9)
+  Raison: Intelligence concurrentielle pour promotions actuelles
+
+**Exemples Ambigus (Confiance Faible):**
+- "iPhone" → semantic (confiance: 0.5)
+  Raison: Intention peu claire - pourrait demander info, stock, ou comparaison
+- "produits" → semantic (confiance: 0.5)
+  Raison: Trop vague - nécessite clarification sur l'intention
+- "aide" → semantic (confiance: 0.5)
+  Raison: Demande générale sans intention spécifique
+
+INSTRUCTIONS CRITIQUES:
+1. Vous DEVEZ répondre avec UNIQUEMENT du JSON valide
+2. PAS de formatage markdown (pas de **, pas de ##, pas de puces)
+3. PAS de texte explicatif avant ou après le JSON
+4. PAS de sauts de ligne ou commentaires dans le JSON
+5. La réponse doit être analysable par json_decode()
+
+Répondez dans ce format EXACT (aucune déviation):
+{"type":"analytics|semantic|hybrid|web_search","confidence":0.0-1.0,"reasoning":"Brève explication","sub_types":[]}
+
+Exemples de réponses valides:
+{"type":"analytics","confidence":0.9,"reasoning":"Demande claire de données quantitatives d'inventaire","sub_types":[]}
+{"type":"semantic","confidence":0.9,"reasoning":"Demande d'explication depuis documents de politique","sub_types":[]}
+{"type":"hybrid","confidence":0.8,"reasoning":"Combine requête d'inventaire avec information de politique","sub_types":["analytics","semantic"]}
+{"type":"web_search","confidence":0.9,"reasoning":"Nécessite données de prix concurrentiels externes","sub_types":[]}
+
+Règles de validation importantes:
+- La confiance doit être entre 0.0 et 1.0
+- Le type doit être l'un de: analytics, semantic, hybrid, web_search
+- Pour les requêtes hybrid, sub_types doit lister les types composants (ex: ["analytics", "semantic"])
+- Pour les requêtes non-hybrid, sub_types doit être un tableau vide []
+- Le raisonnement doit être concis (1-2 phrases, pas de sauts de ligne)

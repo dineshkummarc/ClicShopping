@@ -1,0 +1,17 @@
+text_fix_translation = Tâche : traduction stricte.
+Entrée : texte utilisateur.
+Sortie : uniquement le texte traduit en anglais.
+
+Contraintes absolues :
+- Ne produire qu'une seule chaîne de caractères.
+- Interdiction totale d'explication, justification ou commentaire.
+- Aucun raisonnement visible.
+- Aucun texte hors traduction.
+
+Règles de traduction :
+1. Conserver strictement les termes techniques tels quels.
+2. Ne jamais modifier les acronymes, codes ou identifiants (ex. EAN).
+3. Si le texte est déjà en anglais, le reproduire à l'identique.
+4. Ne rien ajouter, ne rien supprimer, ne rien reformuler au-delà de la traduction.
+
+Toute sortie non conforme est invalide.

@@ -214,8 +214,11 @@ class Hooks
    */
   protected function register(string $group, string $hook, string $action): void
   {
-    $group = basename($group);
-
+    // Conserver le groupe original et créer aussi la version courte pour compatibilité
+    $originalGroup = $group;
+    $shortGroup = basename($group);
+    
+    // Enregistrer sous le groupe demandé (court ou long)
     $this->hooks[$this->site][$group][$hook][$action] = [];
 
     $directory = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/Module/Hooks/' . $this->site . '/' . $group;
@@ -224,7 +227,7 @@ class Hooks
       if ($dir = new DirectoryIterator($directory)) {
         foreach ($dir as $file) {
           if (!$file->isDot() && !$file->isDir() && ($file->getExtension() == 'php') && ($file->getBasename('.php') == $hook)) {
-            $class = 'ClicShopping\OM\Module\Hooks\\' . $this->site . '\\' . $group . '\\' . $hook;
+            $class = 'ClicShopping\OM\Module\Hooks\\' . $this->site . '\\' . $shortGroup . '\\' . $hook;
 
             if (method_exists($class, $action)) {
               $this->hooks[$this->site][$group][$hook][$action][] = $class;
@@ -234,13 +237,29 @@ class Hooks
       }
     }
 
+    // Chercher avec le groupe tel quel
     $filter = [
       'site' => $this->site,
       'group' => $group,
       'hook' => $hook
     ];
 
-    foreach (Apps::getModules('Hooks', null, $filter) as $k => $class) {
+    $modules = Apps::getModules('Hooks', null, $filter);
+
+    if (!str_contains($group, '/')) {
+      $filterLong = [
+        'site' => $this->site,
+        'group' => $this->site . '/' . $group,
+        'hook' => $hook
+      ];
+
+      $modulesLong = Apps::getModules('Hooks', null, $filterLong);
+      
+      // Fusionner les deux résultats
+      $modules = array_merge($modules, $modulesLong);
+    }
+
+    foreach ($modules as $k => $class) {
       if (method_exists($class, $action)) {
         $this->hooks[$this->site][$group][$hook][$action][] = $k;
       }

@@ -460,14 +460,14 @@ class HTML
    *
    * @param string $name The name attribute of the text area.
    * @param string|null $value The default value of the text area. If override is enabled, can be replaced by GET or POST data.
-   * @param int $width The number of columns (width) of the text area. Defaults to 60.
-   * @param int $height The number of rows (height) of the text area. Defaults to 5.
+   * @param int|string|null $width The number of columns (width) of the text area. Defaults to 60 if null.
+   * @param int|string|null $height The number of rows (height) of the text area. Defaults to 5 if null.
    * @param string|null $parameters Additional attributes to include in the text area tag.
    * @param bool $override Whether to override the default value with GET or POST data if available. Defaults to true.
    * @return string The generated HTML for the text area element.
    */
 
-  public static function textAreaField(string $name, mixed $value = null, int|string $width = 60, int|string $height = 5, mixed $parameters = null, bool $override = true)
+  public static function textAreaField(string $name, mixed $value = null, int|string|null $width = 60, int|string|null $height = 5, mixed $parameters = null, bool $override = true)
   {
     if (!is_bool($override)) {
       $override = true;
@@ -481,12 +481,14 @@ class HTML
       }
     }
 
-    if (!is_numeric($width)) {
+    // Handle null or non-numeric width values
+    if ($width === null || !is_numeric($width)) {
       $width = 60;
     }
 
-    if (!is_numeric($height)) {
-      $width = 5;
+    // Handle null or non-numeric height values  
+    if ($height === null || !is_numeric($height)) {
+      $height = 5;
     }
 
     $field = '<textarea name="' . static::output($name) . '" cols="' . static::output($width) . '" rows="' . static::output($height) . '"';
