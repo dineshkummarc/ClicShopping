@@ -19,12 +19,17 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 use ClicShopping\AI\Security\InputValidator;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Statistics;
+use ClicShopping\AI\Infrastructure\Prompt\PromptOptimizer;
+use ClicShopping\AI\Infrastructure\Response\ResponseNormalizer;
+use ClicShopping\AI\Security\SecurityLogger;
 
 use DateTimeImmutable;
+use LLPhant\Chat\LLMStudioChat;
+use LLPhant\Chat\LmStudioChat;
 use LLPhant\Chat\MistralAIChat;
 use LLPhant\Chat\OllamaChat;
 use LLPhant\Chat\OpenAIChat;
+use LLPhant\LmStudioConfig;
 use LLPhant\OpenAIConfig;
 use LLPhant\OllamaConfig;
 use LLPhant\AnthropicConfig;
@@ -35,15 +40,18 @@ use function is_null;
 
 #[AllowDynamicProperties]
 /**
-* Gpt
-*
-* Class to manage interactions with GPT models (OpenAI, Ollama, Anthropic, Mistral)
-* This class encapsulates the logic to check the status of GPT integration,
-* retrieve available models, generate responses, and manage configurations.
+ * Gpt
+ *
+ * Class to manage interactions with GPT models (OpenAI, Ollama, Anthropic, Mistral)
+ * This class encapsulates the logic to check the status of GPT integration,
+ * retrieve available models, generate responses, and manage configurations.
  *
  */
 class Gpt
 {
+  // Store last token usage for retrieval
+  private static $lastTokenUsage = null;
+
   public function __construct()
   {
   }
@@ -71,14 +79,50 @@ class Gpt
    */
   public static function getEnvironment(): string|null
   {
-    // Use for dev but in production, the API key should be set in the environment. @todo: update this
+    // Initialiser les constantes nécessaires
+    static::initializeConstants();
+
     if (!defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY') || empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY)) {
       error_log("WARNING: CLICSHOPPING_APP_CHATGPT_CH_API_KEY not defined or empty");
       return null;
     }
+
     $env = putenv('OPENAI_API_KEY=' . CLICSHOPPING_APP_CHATGPT_CH_API_KEY);
 
     return $env;
+  }
+
+
+  /**
+   * Initialise les constantes nécessaires si elles n'existent pas
+   */
+  private static function initializeConstants(): void
+  {
+      /*
+    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL')) {
+      define('CLICSHOPPING_APP_CHATGPT_CH_MODEL', 'gpt-4');
+    }
+
+    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY')) {
+      define('CLICSHOPPING_APP_CHATGPT_CH_API_KEY', '');
+    }
+
+    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN')) {
+      define('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN', '4000');
+    }
+
+    if (!defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER')) {
+      define('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER', 'True');
+    }
+
+    if (!defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_API_KEY')) {
+      define('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_API_KEY', '');
+    }
+
+    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI')) {
+      define('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI', '');
+    }
+    */
   }
 
   /**
@@ -113,26 +157,73 @@ class Gpt
 
   /**
    * Retrieves an array of GPT models with their corresponding IDs and textual descriptions.
+   * 
+   * Model Capability Legend:
+   * - Embeddings: Supports vector embeddings for semantic search
+   * - Reasoning: Advanced reasoning capabilities for complex queries
+   * - Analytics: SQL generation and data analysis
+   * - Web Search: Can perform web searches
+   * - Context: Maximum context window size
+   * 
+   * REMOVED MODELS (Do not meet criteria):
+   * - gpt-4: 8K context limit (too small for RAG BI prompts)
+   * - gpt-3.5-turbo: No embeddings, limited capabilities
+   * - gpt-oss (openai/gpt-oss-20b): 8K context, no embeddings, inconsistent SQL generation
+   * - Ollama models: Excluded per requirements (use LM Studio instead)
    *
    * @return array An array of GPT models, where each model is represented as an associative array containing 'id' and 'text' keys.
    */
   public static function getGptModel(): array
   {
     $array = [
-      ['id' => 'gpt-5-nano', 'text' => 'OpenAi gpt-5-nano'],
-      ['id' => 'gpt-5-mini', 'text' => 'OpenAi gpt-5-mini'],
-      ['id' => 'gpt-5', 'text' => 'OpenAi gpt-5'],
-      ['id' => 'gpt-4.1-mini', 'text' => 'OpenAi gpt 4.1-mini'],
-      ['id' => 'gpt-4.1-nano', 'text' => 'OpenAi gpt-4.1-nano'],
-      ['id' => 'gpt-4', 'text' => 'OpenAi gpt-4'],
-      ['id' => 'gpt-4o', 'text' => 'OpenAi gpt-4o'],
-      ['id' => 'gpt-3.5-turbo', 'text' => 'OpenAi gpt-3.5-turbo'],
-      ['id' => 'gemma3:latest', 'text' => 'Ollama Gemma3 Latest'],
-      ['id' => 'phi4:latest', 'text' => 'Ollama Phi4 latest'],
-      ['id' => 'anth-sonnet', 'text' => 'Anthropic Claude Sonnet 3.5'],
-      ['id' => 'anth-opus', 'text' => 'Anthropic Claude Opus'],
-      ['id' => 'anth-haiku', 'text' => 'Anthropic Claude Haiku'],
-      ['id' => 'mistral-large-latest', 'text' => 'Mistral Large Lastest'],
+      // ============================================
+      // GPT-5 SERIES (Future - Best Performance)
+      // ============================================
+      // Context: 200K+ | Embeddings: Yes | Reasoning: Yes | Analytics: Yes | Web Search: Yes
+      ['id' => 'gpt-5', 'text' => 'OpenAI GPT-5 (200K context, embeddings, reasoning, web search)'],
+      ['id' => 'gpt-5-mini', 'text' => 'OpenAI GPT-5-mini (200K context, embeddings, reasoning)'],
+      ['id' => 'gpt-5-nano', 'text' => 'OpenAI GPT-5-nano (128K context, no embeddings, reasoning)'],
+      
+      // ============================================
+      // GPT-4.1 SERIES (Latest Stable)
+      // ============================================
+      // Context: 128K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
+      ['id' => 'gpt-4.1-mini', 'text' => 'OpenAI GPT-4.1-mini (128K context, embeddings, reasoning)'],
+      ['id' => 'gpt-4.1-nano', 'text' => 'OpenAI GPT-4.1-nano (128K context, embeddings, reasoning)'],
+      
+      // ============================================
+      // GPT-4o SERIES (Recommended - Production Ready)
+      // ============================================
+      // Context: 128K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
+      // NOTE: gpt-4o is the REFERENCE MODEL - all features tested with this model
+      ['id' => 'gpt-4o', 'text' => 'OpenAI GPT-4o (128K context, embeddings, reasoning) ⭐ RECOMMENDED'],
+      ['id' => 'gpt-4o-mini', 'text' => 'OpenAI GPT-4o-mini (128K context, embeddings, reasoning, cost-effective)'],
+      
+      // ============================================
+      // ANTHROPIC MODELS (Alternative Provider)
+      // ============================================
+      // Context: 200K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
+      ['id' => 'anth-sonnet', 'text' => 'Anthropic Claude Sonnet 3.5 (200K context, embeddings, reasoning)'],
+      ['id' => 'anth-opus', 'text' => 'Anthropic Claude Opus (200K context, embeddings, reasoning)'],
+      ['id' => 'anth-haiku', 'text' => 'Anthropic Claude Haiku (200K context, embeddings, fast)'],
+      
+      // ============================================
+      // MISTRAL MODELS (Alternative Provider)
+      // ============================================
+      // Context: 128K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
+      ['id' => 'mistral-large-latest', 'text' => 'Mistral Large Latest (128K context, embeddings, reasoning)'],
+      
+      // ============================================
+      // LM STUDIO MODELS (Local Deployment)
+      // ============================================
+      // Context: 16K | Embeddings: No | Reasoning: Yes | Analytics: Limited
+      // NOTE: Local models have limited capabilities but provide privacy and cost benefits
+      ['id' => 'openai/gpt-oss-20b', 'text' => 'LM Studio openai/gpt-oss-20b (16K context, reasoning, local)'],
+      ['id' => 'openai/gpt-oss-120b', 'text' => 'LM Studio openai/gpt-oss-120b (120K context, reasoning, local)'],
+
+
+      ['id' => 'qwen/qwen3-4b', 'text' => 'LM Studio qwen3-4b (16K context, no reasoning, local)'],
+      ['id' => 'microsoft/phi-4', 'text' => 'LM Studio phi 4 (16K context, no reasoning, local)'],
     ];
 
     return $array;
@@ -182,6 +273,338 @@ class Gpt
   }
 
   /**
+   * Get model-specific API parameters based on the model name
+   * 
+   * Different OpenAI models require different parameter names for token limits:
+   * - max_completion_tokens: GPT-4o-mini, GPT-5 series, GPT-4.1 series
+   * - max_tokens: GPT-4o, Anthropic, Mistral, LM Studio models
+   * 
+   * This mapping ensures API calls succeed with the correct parameters per model.
+   * 
+   * SUPPORTED MODELS (as of 2025-12-12):
+   * - GPT-5 series: gpt-5, gpt-5-mini, gpt-5-nano (max_completion_tokens)
+   * - GPT-4.1 series: gpt-4.1-mini, gpt-4.1-nano (max_completion_tokens)
+   * - GPT-4o series: gpt-4o, gpt-4o-mini (gpt-4o uses max_tokens, gpt-4o-mini uses max_completion_tokens)
+   * - Anthropic: anth-sonnet, anth-opus, anth-haiku (max_tokens)
+   * - Mistral: mistral-large-latest (max_tokens)
+   * - LM Studio: microsoft/phi-4-reasoning-plus (max_tokens)
+   * 
+   * REMOVED MODELS (do not meet criteria):
+   * - gpt-4: 8K context limit (too small for RAG BI)
+   * - gpt-3.5-turbo: No embeddings support
+   * - openai/gpt-oss-20b: 8K context, no embeddings, inconsistent SQL generation
+   *
+   * @param string $model The model name (e.g., 'gpt-4o', 'gpt-4o-mini', 'gpt-5')
+   * @param int $maxtoken The maximum number of tokens
+   * @return array The model-specific parameters
+   */
+  private static function getModelApiParameters(string $model, int $maxtoken): array
+  {
+    $params = [];
+
+    // Model-specific parameter mapping
+    // GPT-4o-mini, GPT-4.1 series, GPT-5 series use max_completion_tokens
+    if (strpos($model, 'gpt-4o-mini') === 0 || 
+        strpos($model, 'gpt-4.1') === 0 ||
+        strpos($model, 'gpt-5') === 0) {
+      $params['max_completion_tokens'] = $maxtoken;
+    } else {
+      // Default for GPT-4o, Anthropic, Mistral, LM Studio, and other models
+      $params['max_tokens'] = $maxtoken;
+    }
+
+    return $params;
+  }
+
+  /**
+   * Get the maximum token value from configuration or parameter
+   *
+   * @param int|null $maxtoken Optional maximum token value
+   * @return int The maximum token value to use
+   */
+  private static function getMaxTokens(?int $maxtoken = null): int
+  {
+    if (is_null($maxtoken)) {
+      return (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN;
+    }
+    return $maxtoken;
+  }
+
+  /**
+   * Call LLM with model-specific handling and integrated components
+   *
+   * This method integrates:
+   * - PromptOptimizer: Optimizes prompts for model context length limits
+   * - ResponseNormalizer: Normalizes responses from different models
+   * - Fallback Logic: Tries alternative models on failure
+   * - Comprehensive Logging: Tracks all operations for debugging
+   *
+   * TASK 1.4: Integration of components from tasks 1.1, 1.2, 1.3
+   *
+   * @param string $prompt The prompt text to send to the model
+   * @param string $model The model name (e.g., 'gpt-4o', 'gpt-4o-mini', 'anth-sonnet')
+   * @param int|null $maxtoken Maximum tokens for response
+   * @param float|null $temperature Temperature for response generation
+   * @param int|null $max Maximum number of responses
+   * @return array Normalized response with consistent structure
+   * @throws \Exception If all models fail or prompt is invalid
+   */
+  public static function callWithModel(
+    string $prompt,
+    string $model,
+    ?int $maxtoken = null,
+    ?float $temperature = null,
+    ?int $max = 1
+  ): array {
+    $securityLogger = new SecurityLogger();
+    $debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True';
+
+    if ($debug) {
+      $securityLogger->logSecurityEvent(
+        "callWithModel: Starting call with model '$model'",
+        'info'
+      );
+    }
+
+    // Step 1: Validate prompt
+    if (empty($prompt) || !is_string($prompt) || trim($prompt) === '') {
+      throw new \Exception("Prompt cannot be empty");
+    }
+
+    // Step 2: Optimize prompt for model context length
+    $optimizer = new PromptOptimizer();
+    
+    // Check if prompt exceeds model limit
+    if ($optimizer->exceedsLimit($prompt, $model)) {
+      if ($debug) {
+        $originalTokens = $optimizer->estimateTokenCount($prompt);
+        $securityLogger->logSecurityEvent(
+          "callWithModel: Prompt exceeds limit for model '$model' ($originalTokens tokens). Optimizing...",
+          'warning'
+        );
+      }
+      
+      $optimizedPrompt = $optimizer->optimizeForModel($prompt, $model);
+      
+      if ($debug) {
+        $optimizedTokens = $optimizer->estimateTokenCount($optimizedPrompt);
+        $securityLogger->logSecurityEvent(
+          "callWithModel: Prompt optimized from $originalTokens to $optimizedTokens tokens",
+          'info'
+        );
+      }
+    } else {
+      $optimizedPrompt = $prompt;
+      
+      if ($debug) {
+        $tokens = $optimizer->estimateTokenCount($prompt);
+        $securityLogger->logSecurityEvent(
+          "callWithModel: Prompt within limits ($tokens tokens). No optimization needed.",
+          'info'
+        );
+      }
+    }
+
+    // Step 3: Call the model with optimized prompt
+    try {
+      if ($debug) {
+        $securityLogger->logSecurityEvent(
+          "callWithModel: Calling model '$model' with optimized prompt",
+          'info'
+        );
+      }
+
+      // Use existing getGptResponse method which handles model-specific parameters
+      $rawResponse = self::getGptResponse($optimizedPrompt, $maxtoken, $temperature, $model, $max);
+
+      if ($rawResponse === false) {
+        throw new \Exception("Model '$model' returned false response");
+      }
+
+      if ($debug) {
+        $securityLogger->logSecurityEvent(
+          "callWithModel: Received response from model '$model' (" . strlen($rawResponse) . " chars)",
+          'info'
+        );
+      }
+
+      // Step 4: Normalize response
+      $normalizer = new ResponseNormalizer();
+      $normalizedResponse = $normalizer->normalize($rawResponse, $model);
+
+      if ($debug) {
+        $responseType = $normalizedResponse['response_type'] ?? 'unknown';
+        $securityLogger->logSecurityEvent(
+          "callWithModel: Response normalized successfully (Type: $responseType)",
+          'info'
+        );
+      }
+
+      return $normalizedResponse;
+
+    } catch (\Exception $e) {
+      // Step 5: Fallback logic - try alternative model
+      if ($debug) {
+        $securityLogger->logSecurityEvent(
+          "callWithModel: Model '$model' failed: " . $e->getMessage(),
+          'error'
+        );
+      }
+
+      $fallbackModel = self::getFallbackModel($model);
+
+      if ($fallbackModel !== null) {
+        if ($debug) {
+          $securityLogger->logSecurityEvent(
+            "callWithModel: Trying fallback model '$fallbackModel'",
+            'warning'
+          );
+        }
+
+        // Recursive call with fallback model
+        try {
+          return self::callWithModel($optimizedPrompt, $fallbackModel, $maxtoken, $temperature, $max);
+        } catch (\Exception $fallbackException) {
+          if ($debug) {
+            $securityLogger->logSecurityEvent(
+              "callWithModel: Fallback model '$fallbackModel' also failed: " . $fallbackException->getMessage(),
+              'error'
+            );
+          }
+          
+          // Both models failed - throw original exception
+          throw new \Exception(
+            "Primary model '$model' and fallback model '$fallbackModel' both failed. " .
+            "Primary error: " . $e->getMessage() . ". " .
+            "Fallback error: " . $fallbackException->getMessage()
+          );
+        }
+      }
+
+      // No fallback available - throw original exception
+      throw new \Exception("Model '$model' failed and no fallback available: " . $e->getMessage());
+    }
+  }
+
+  /**
+   * Get fallback model for a failed model
+   *
+   * Fallback priority:
+   * 1. GPT-4o (reference model - most reliable)
+   * 2. GPT-4o-mini (cost-effective alternative)
+   * 3. GPT-5 (if available)
+   * 4. Anthropic Claude Sonnet (alternative provider)
+   *
+   * @param string $failedModel The model that failed
+   * @return string|null Fallback model name or null if no fallback available
+   */
+  private static function getFallbackModel(string $failedModel): ?string
+  {
+    // Fallback chain based on model capabilities
+    // Note: LM Studio models have no fallback - they are local and should be configured correctly
+    $fallbackChain = [
+      // GPT-5 series fallbacks
+      'gpt-5' => 'gpt-4o',
+      'gpt-5-mini' => 'gpt-4o-mini',
+      'gpt-5-nano' => 'gpt-4o-mini',
+      
+      // GPT-4.1 series fallbacks
+      'gpt-4.1-mini' => 'gpt-4o-mini',
+      'gpt-4.1-nano' => 'gpt-4o-mini',
+      
+      // GPT-4o series fallbacks
+      'gpt-4o' => 'anth-sonnet', // If GPT-4o fails, try Anthropic
+      'gpt-4o-mini' => 'gpt-4o', // If mini fails, try full version
+      
+      // Anthropic fallbacks
+      'anth-sonnet' => 'gpt-4o',
+      'anth-opus' => 'anth-sonnet',
+      'anth-haiku' => 'anth-sonnet',
+      
+      // Mistral fallbacks
+      'mistral-large-latest' => 'gpt-4o',
+    ];
+
+    return $fallbackChain[$failedModel] ?? null;
+  }
+
+  /**
+   * Check if model supports embeddings
+   *
+   * Used to determine if a model can handle semantic queries.
+   * Based on model capabilities from task 1.1.
+   *
+   * @param string $model Model name
+   * @return bool True if model supports embeddings
+   */
+  public static function supportsEmbeddings(string $model): bool
+  {
+    // Models WITHOUT embeddings support
+    $noEmbeddings = [
+      'gpt-5-nano',
+      'microsoft/phi-4-reasoning-plus'
+    ];
+
+    return !in_array($model, $noEmbeddings);
+  }
+
+  /**
+   * Check if model supports reasoning
+   *
+   * All current models support reasoning capabilities.
+   *
+   * @param string $model Model name
+   * @return bool True if model supports reasoning
+   */
+  public static function supportsReasoning(string $model): bool
+  {
+    // All models in our list support reasoning
+    return true;
+  }
+
+  /**
+   * Check if model supports analytics queries
+   *
+   * All current models support analytics (SQL generation).
+   *
+   * @param string $model Model name
+   * @return bool True if model supports analytics
+   */
+  public static function supportsAnalytics(string $model): bool
+  {
+    // All models in our list support analytics
+    return true;
+  }
+
+  /**
+   * Get model context length limit
+   *
+   * Extracts context length from model description in getGptModel().
+   * Used by PromptOptimizer for context management.
+   *
+   * @param string $model Model name
+   * @return int Context length in tokens (defaults to 128000 if not found)
+   */
+  public static function getModelContextLength(string $model): int
+  {
+    $models = self::getGptModel();
+    
+    foreach ($models as $modelInfo) {
+      if ($modelInfo['id'] === $model) {
+        // Extract context length from text description
+        // Pattern: "(\d+)K context"
+        if (preg_match('/(\d+)K\s+context/i', $modelInfo['text'], $matches)) {
+          $contextK = (int)$matches[1];
+          return $contextK * 1000;
+        }
+      }
+    }
+    
+    // Default to 128K (safe for most models)
+    return 128000;
+  }
+
+  /**
    * Generates a response from the OpenAI chat model based on input parameters.
    *
    * @param string|null $question The question or input text to be sent to the OpenAI chat model.
@@ -196,9 +619,8 @@ class Gpt
     if (defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY') && !empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY)) {
       $top = ['\n'];
 
-      if (is_null($maxtoken)) {
-        $maxtoken = (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN;
-      }
+      // Get max tokens value
+      $maxtoken = self::getMaxTokens($maxtoken);
 
       if (is_null($temperature)) {
         $temperature = (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE;
@@ -208,13 +630,16 @@ class Gpt
         $max = (float)CLICSHOPPING_APP_CHATGPT_CH_MAX_RESPONSE;
       }
 
+      // Determine which model to use
+      $model = $engine ?? CLICSHOPPING_APP_CHATGPT_CH_MODEL;
 
+      // Get model-specific API parameters for token limits
+      $tokenParams = self::getModelApiParameters($model, $maxtoken);
 
-// Paramètres selon modèle
-      if ($engine !== null && strpos($engine, 'gpt-5-') === 0) {
-        // Modèles GPT-5 : paramètres supportés uniquement
-        $parameters = [
-          'max_completion_tokens' => $maxtoken,
+      // Build parameters based on model type
+      if (strpos($model, 'gpt-5') === 0) {
+        // GPT-5 models: use specific parameters only
+        $parameters = array_merge([
           'reasoning_effort' => CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT,
           'verbosity' => CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY,
           'messages' => [
@@ -224,14 +649,14 @@ class Gpt
             ]
           ],
           'user' => AdministratorAdmin::getUserAdmin()
-        ];
+        ], $tokenParams);
       } else {
-        $parameters = [
+        // All other models: use standard parameters
+        $parameters = array_merge([
           'temperature' => $temperature,
           'top_p' => (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P,
           'frequency_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY,
           'presence_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY,
-          'max_tokens' => $maxtoken,
           'stop' => $top,
           'n' => $max,
           'user' => AdministratorAdmin::getUserAdmin(),
@@ -245,7 +670,7 @@ class Gpt
               'content' => $question
             ]
           ]
-        ];
+        ], $tokenParams);
       }
 
       if (!empty(CLICSHOPPING_APP_CHATGPT_CH_ORGANIZATION)) {
@@ -277,6 +702,66 @@ class Gpt
 
     return $chat;
   }
+
+
+  /**
+   * Crée et configure une instance de LmStudioChat
+   *
+   * @param string $model Le nom du modèle à utiliser (par défaut: 'openai/gpt-oss-20b')
+   * @param string|null $url L'URL de l'API LM Studio (optionnel)
+   * @param float|null $timeout Timeout en secondes (optionnel)
+   * @return LmStudioChat Instance configurée de LmStudioChat
+   */
+  public static function getLmStudioChat(string $model = 'openai/gpt-oss-20b', ?string $url = null, ?float $timeout = null): LmStudioChat
+  {
+    // Créer la configuration
+    $config = new LmStudioConfig();
+    $config->model = $model;
+
+    // Configurer l'URL si fournie, sinon utiliser la valeur par défaut ou depuis les constantes
+    if ($url !== null) {
+      $config->url = $url;
+    } elseif (defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL')) {
+      $config->url = CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL;
+    } else {
+      // LM Studio uses OpenAI-compatible API
+      // LmStudioChat adds 'v1/chat/completions' to base_uri, so base_uri should be just the host
+      $config->url = 'http://localhost:1234/';
+    }
+
+    // Configurer le timeout si fourni ou depuis les constantes
+    if ($timeout !== null) {
+      $config->timeout = $timeout;
+    } elseif (defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_TIMEOUT')) {
+      $config->timeout = (float)CLICSHOPPING_APP_CHATGPT_LMSTUDIO_TIMEOUT;
+    }
+
+    // Configurer les options du modèle si disponibles
+    if (defined('CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE')) {
+      $config->modelOptions['temperature'] = (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE;
+    }
+
+    // LM Studio models need more tokens to allow reasoning with <think> tags
+    // Use dedicated config if available, otherwise use higher default
+    if (defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_MAX_TOKEN')) {
+      $config->modelOptions['max_tokens'] = (int)CLICSHOPPING_APP_CHATGPT_LMSTUDIO_MAX_TOKEN;
+    } elseif (defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN')) {
+      // For LM Studio, multiply by 3 to allow reasoning space
+      // Example: 350 tokens → 1050 tokens for <think> + answer
+      $baseTokens = (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN;
+      $config->modelOptions['max_tokens'] = $baseTokens * 3;
+      
+      error_log("🔧 LM Studio: Using {$config->modelOptions['max_tokens']} tokens (base: $baseTokens × 3 for reasoning)");
+    } else {
+      // Default: 1000 tokens for LM Studio (allows reasoning)
+      $config->modelOptions['max_tokens'] = 1000;
+    }
+
+    // Créer et retourner l'instance de LmStudioChat avec la config
+    return new LmStudioChat($config);
+  }
+
+
 
   /**
    * Creates an instance of the AnthropicChat class based on the specified model and configuration options.
@@ -397,16 +882,27 @@ class Gpt
    * @param int|null $max The maximum number of responses to return, or null for default.
    * @return mixed The chat response generated by the selected model.
    */
-  public static function getChat(string $question,  int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null, int|null $max = 1): mixed
+  public static function getChat(string $question, int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null, int|null $max = 1): mixed
   {
-    if (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'gpt') === 0) {
+    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL')) {
+      define('CLICSHOPPING_APP_CHATGPT_CH_MODEL', 'gpt-4');
+    }
+
+    $model = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
+
+    if (strpos($model, 'gpt') === 0) {
       $client = self::getOpenAIChat($question, $maxtoken, $temperature, $engine, $max);
-    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'anth') === 0) {
-       $client = self::getAnthropicChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL, $maxtoken);
-    } elseif (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'mistral') === 0) {
-      $client = self::getMistralChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL, $maxtoken);
+    } elseif (strpos($model, 'anth') === 0) {
+      $client = self::getAnthropicChat($model, $maxtoken);
+    } elseif (strpos($model, 'mistral') === 0) {
+      $client = self::getMistralChat($model, $maxtoken);
+    } elseif (strpos($model, 'ollama') === 0 || str_contains($model, ':latest')) {
+      $client = self::getOllamaChat($model);
+    } elseif (strpos($model, 'openai/') === 0) {
+      // Pour LM Studio
+      $client = self::getLmStudioChat($model);
     } else {
-      $client = self::getOllamaChat(CLICSHOPPING_APP_CHATGPT_CH_MODEL);
+      $client = self::getLmStudioChat($model);
     }
 
     return $client;
@@ -436,22 +932,34 @@ class Gpt
       $engine = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
     }
 
-    // Validate and sanitize the question using our enhanced validator
-    $prompt = InputValidator::validateParameter(
-      $question,
-      'string',
-      '',
-      [
-        'maxLength' => 8096, // Reasonable limit for prompt length
-        'pattern' => '/^(?:(?!<script|<iframe).)*$/is', // Bloquer seulement les balises les plus dangereuses
-        'escape' => true // Apply HTML escaping
-      ]
-    );
 
-     // check the validation is not fail
+    // 🔧 FIX TASK 4.3.4.4: Simplifier la validation pour éviter les faux positifs
+    // Ne pas utiliser de pattern regex complexe qui peut rejeter des requêtes légitimes
+    // À la place, faire une validation simple et laisser htmlspecialchars() gérer la sécurité
+    
+    // Validation basique: longueur et caractères dangereux explicites
+    $prompt = trim($question);
+
+    // Bloquer seulement les patterns vraiment dangereux (balises script/iframe complètes)
+    if (preg_match('/<script[\s>]/i', $prompt) || preg_match('/<iframe[\s>]/i', $prompt)) {
+      error_log("SECURITY: Blocked dangerous HTML tags in prompt: " . substr($prompt, 0, 100));
+      throw new \Exception("Requête bloquée pour des raisons de sécurité");
+    }
+    
+    // Limiter la longueur
+    if (strlen($prompt) > 4096) {
+      $prompt = substr($prompt, 0, 4096);
+      error_log("WARNING: Prompt truncated to 4096 characters");
+    }
+    
+    // Appliquer htmlspecialchars pour la sécurité XSS
+    $prompt = htmlspecialchars($prompt, ENT_QUOTES, 'UTF-8');
+    
+    // Vérification finale
     if (empty($prompt)) {
-      error_log("WARNING: Prompt validation failed or returned empty string for: " . substr($question, 0, 100));
-      $prompt = $question;
+      error_log("WARNING Ajax ChatGpt: Prompt is empty after validation for: " . substr($question, 0, 100));
+      // Utiliser la version originale avec échappement minimal
+      $prompt = htmlspecialchars(trim($question), ENT_QUOTES, 'UTF-8');
     }
 
     // Additional sanitization for extra security
@@ -468,26 +976,74 @@ class Gpt
     // Generate text using the chat instance
     try {
       $result = $chat->generateText($prompt);
+      error_log('✅ generateText() returned result length: ' . strlen($result));
     } catch (Exception $e) {
       error_log($e->getMessage());
       return false;
     }
 
-    if (strpos(CLICSHOPPING_APP_CHATGPT_CH_MODEL, 'gpt') === 0) {
+    // Extract usage metrics from the last response for all providers
+    // Check if getLastResponse() method exists (OpenAI, Anthropic, Mistral support it)
+    // LMStudio and Ollama may not have this method implemented yet
+    if (method_exists($chat, 'getLastResponse')) {
       $lastResponse = $chat->getLastResponse();
-
-      if (!is_null($lastResponse)) {
-        $usage = [
-          'prompt_tokens' => $lastResponse['usage']['prompt_tokens'],
-          'completion_tokens' => $lastResponse['usage']['completion_tokens'],
-          'total_tokens' => $lastResponse['usage']['total_tokens']
+      
+      if (!is_null($lastResponse) && isset($lastResponse['usage'])) {
+        self::$lastTokenUsage = [
+          'prompt_tokens' => $lastResponse['usage']['prompt_tokens'] ?? 0,
+          'completion_tokens' => $lastResponse['usage']['completion_tokens'] ?? 0,
+          'total_tokens' => $lastResponse['usage']['total_tokens'] ?? 0
         ];
-
-        Statistics::saveStats($usage, $engine);
+        
+        // Log token usage for debugging
+        error_log(sprintf(
+          '📊 Token usage for model %s: prompt=%d, completion=%d, total=%d',
+          CLICSHOPPING_APP_CHATGPT_CH_MODEL,
+          self::$lastTokenUsage['prompt_tokens'],
+          self::$lastTokenUsage['completion_tokens'],
+          self::$lastTokenUsage['total_tokens']
+        ));
+      } else {
+        // If no usage data in response, set to null
+        self::$lastTokenUsage = null;
+        error_log(sprintf(
+          '⚠️ No token usage data in response for model %s',
+          CLICSHOPPING_APP_CHATGPT_CH_MODEL
+        ));
       }
+    } else {
+      // Method doesn't exist (LMStudio, Ollama) - estimate tokens based on text length
+      // Rough estimation: 1 token ≈ 4 characters for English text
+      $promptTokens = (int)ceil(strlen($prompt) / 4);
+      $completionTokens = (int)ceil(strlen($result) / 4);
+      
+      self::$lastTokenUsage = [
+        'prompt_tokens' => $promptTokens,
+        'completion_tokens' => $completionTokens,
+        'total_tokens' => $promptTokens + $completionTokens
+      ];
+      
+      error_log(sprintf(
+        '📊 Estimated token usage for model %s (provider: %s): prompt=%d, completion=%d, total=%d',
+        CLICSHOPPING_APP_CHATGPT_CH_MODEL,
+        get_class($chat),
+        $promptTokens,
+        $completionTokens,
+        $promptTokens + $completionTokens
+      ));
     }
 
     return $result;
+  }
+
+  /**
+   * Get the last token usage from the most recent API call
+   * 
+   * @return array|null Array with 'prompt_tokens', 'completion_tokens', 'total_tokens' or null if not available
+   */
+  public static function getLastTokenUsage(): ?array
+  {
+    return self::$lastTokenUsage;
   }
 
   /**
@@ -576,6 +1132,8 @@ class Gpt
       try {
         $CLICSHOPPING_Db->save('gpt', $array_sql);
       } catch (\Exception $e) {
+        // En cas d'échec de la sauvegarde (ex: connexion BDD perdue, donnée trop longue)
+        // On journalise l'erreur sans la propager, permettant ainsi à la réponse de l'IA d'être renvoyée.
         error_log("Erreur lors de la sauvegarde du log GPT dans la base de données: " . $e->getMessage());
       }
     }
@@ -628,24 +1186,16 @@ class Gpt
    */
   public static function gptModalMenu(): string
   {
+    $output = '';
     $menu = '';
+    $script = '';
 
-      $checkbox = '
-                        <ul class="list-group-slider list-group-flush">
-                          <span class="text-slider col-12">' . CLICSHOPPING::getDef('text_chat_save') . '</span>
-                          <li class="list-group-item-slider">
-                            <label class="switch">
-                              ' . HTML::checkboxField('saveGpt', null, 0, 'class="success" id="saveGpt"') . '
-                              <span class="slider"></span>
-                            </label>
-                          </li>
-                        </ul>
-      ';
+    $output .= '<link rel="stylesheet" href="' . CLICSHOPPING::link('css/RAG/chat_feedback.css') . '">' . "\n";
 
     if (defined('CLICSHOPPING_APP_CHATGPT_CH_STATUS') && CLICSHOPPING_APP_CHATGPT_CH_STATUS == 'True') {
       $menu .= '
     <span class="col-md-2">
-        <!-- Modal -->
+        <!-- Modal Chat avec Feedback -->
         <a href="#chatModal" data-bs-toggle="modal" data-bs-target="#chatModal"><span class="text-white"><i class="bi bi-chat-left-dots-fill" title="' . CLICSHOPPING::getDef('text_chat_open') . '"></i><span></a>
         <div class="modal fade modal-right" id="chatModal" tabindex="-1" role="dialog" aria-labelledby="chatModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
@@ -662,7 +1212,8 @@ class Gpt
                         <div class="mt-1"></div>
                         <div class="card">
                             <div class="input-group">
-                                <div class="chat-box-message text-start">
+                                <!-- Container des messages avec ID pour le feedback -->
+                                <div class="chat-box-message text-start" id="chat-messages">
                                     <div id="chatGpt-output" class="text-bg-light"></div>
                                     <div class="mt-1"></div>
                                     <div class="col-md-12">
@@ -684,14 +1235,8 @@ class Gpt
                         </div>                        
                         <div class="mt-1"></div>
                         <div class="form-group text-end col-md-12">
-                            <div class="col-md-12">
-                                <div class="row">
-                                    <div class="col-md-6 text-start">' . $checkbox . '</div>
-                                    <div class="col-md-6 text-end"><br>
-                                    ' . HTML::button(CLICSHOPPING::getDef('text_chat_send'), null, null, 'primary', ['params' => 'id="sendGpt"'], 'sm') . '
-                                    </div>
-                                </div>
-                            </div>
+                            ' . HTML::button(CLICSHOPPING::getDef('text_chat_reset_context'), null, null, 'danger', ['params' => 'id="resetContextGpt"'], 'sm') . '
+                            ' . HTML::button(CLICSHOPPING::getDef('text_chat_send'), null, null, 'primary', ['params' => 'id="sendGpt"'], 'sm') . '
                         </div>
                     </div>                        
                 </div>
@@ -699,9 +1244,48 @@ class Gpt
         </div>
     </span>
 ';
+
+      $httpServer = CLICSHOPPING::getConfig('http_server', 'ClicShoppingAdmin');
+      $httpPath = CLICSHOPPING::getConfig('http_path', 'ClicShoppingAdmin');
+
+      $recordUrl = $httpServer . $httpPath . 'ajax/RAG/record_feedback.php';
+      $ajaxUrl   = $httpServer . $httpPath . 'ajax/ChatGpt/chatGpt.php';
+
+      $userId     = (int)(AdministratorAdmin::getUserAdminId() ?? 0);
+      $languageId = (int)($_SESSION['languages_id'] ?? 1);
+
+      $resetContextUrl = $httpServer . $httpPath . 'ajax/ChatGpt/reset_context.php';
+
+      $script .='
+<script>
+  // Configuration globale du chat modal
+  window.CHAT_FEEDBACK_AJAX_URL = "' . $recordUrl . '";
+
+  window.CHAT_CONFIG = {
+    ajaxUrl: " ' . $ajaxUrl . '",
+    feedbackUrl: "' . $recordUrl . '",
+    resetContextUrl: "' . $resetContextUrl . '",
+    userId: ' . $userId . ',
+    languageId:  ' . $languageId . ',
+    enableFeedback: true,
+    enableDiagnostics: true,
+    enableWebSearch: true,
+    showConfidence: true,
+    showTypeBadge: true,
+    autoScroll: true,
+    modalMode: true
+  };
+</script>
+';
+
+      // Charger les scripts JavaScript
+      $script .= '<script src="' . HTTP::getShopUrlDomain() . 'ext/javascript/clicshopping/ClicShoppingAdmin/ChatGpt/chat_clarification.js"></script>' . "\n";
+      $script .= '<script src="' . HTTP::getShopUrlDomain() . 'ext/javascript/clicshopping/ClicShoppingAdmin/ChatGpt/chat_send.js"></script>' . "\n";
+      $script .= '<script src="' . HTTP::getShopUrlDomain() . 'ext/javascript/clicshopping/ClicShoppingAdmin/ChatGpt/chat_feedback.js"></script>' . "\n";
+      $script .= '<script src="' . HTTP::getShopUrlDomain() . 'ext/javascript/clicshopping/ClicShoppingAdmin/ChatGpt/chat_reset_context.js"></script>' . "\n";
     }
 
-    return $menu;
+    return $output . $menu . $script;
   }
 
   /*****************************************

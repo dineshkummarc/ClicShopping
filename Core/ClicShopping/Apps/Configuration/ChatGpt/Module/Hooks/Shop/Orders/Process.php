@@ -16,16 +16,17 @@ use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-
+use ClicShopping\AI\Domain\Embedding\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\Semantics\Semantics;
 
 #[AllowDynamicProperties]
 class Process implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
+  public mixed $lang;
   public mixed $semantics;
-
+  
   /**
    * Class constructor.
    *
@@ -41,12 +42,13 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+    $this->lang = Registry::get('Language');
 
-    Registry::set('Semantics', new Semantics());
+    if (!Registry::exists('Semantics')) {
+      Registry::set('Semantics', new Semantics());
+    }
     $this->semantics = Registry::get('Semantics');
-    $this->vector = Registry::get('Vector');
-
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Orders/rag');
+    $this->app->loadDefinitions('Module/Hooks/Shop/Orders/process');
   }
 
   /**
@@ -260,7 +262,7 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
    * @return void
    * @throws \JsonException
    */
-  private function saveEmbedding(int $order_id, string $embeddingData, array $embeddingVector, bool $isNew): void
+  private function saveEmbedding(int $order_id, string $embeddingData, array $embeddingVector, bool $isNew, array $metadata = []): void
   {
     $sql_data_array_embedding = [
       'content' => $embeddingData,
@@ -270,6 +272,10 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
       'date_modified' => 'now()',
       'vec_embedding' => json_encode($embeddingVector, JSON_THROW_ON_ERROR)
     ];
+
+    if (!empty($metadata)) {
+      $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
+    }
 
     if ($isNew) {
       $sql_data_array_embedding['entity_id'] = (int)$order_id;
@@ -304,29 +310,66 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
     if ($embedding_enabled) {
       //take id of the latest order
       $Qorder = $this->app->db->prepare('select orders_id
-                                      from :table_orders
-                                      order by orders_id desc
-                                      limit 1
-                                      ');
-    $Qorder->execute();
+                                        from :table_orders
+                                        order by orders_id desc
+                                        limit 1
+                                        ');
+      $Qorder->execute();
 
-    $order_id = $Qorder->valueInt('orders_id');
+      $order_id = $Qorder->valueInt('orders_id');
 
-    $insert_embedding = !$this->embeddingExists($order_id);
+      $insert_embedding = !$this->embeddingExists($order_id);
 
-    $orderData = $this->getOrderDetails($order_id);
-    $products = $this->getOrderProducts($order_id);
-    $attributes = $this->getOrderProductAttributes($order_id);
-    $statusHistory = $this->getOrderStatusHistory($order_id);
-    $totals = $this->getOrderTotals($order_id);
+      $orderData = $this->getOrderDetails($order_id);
+      $products = $this->getOrderProducts($order_id);
+      $attributes = $this->getOrderProductAttributes($order_id);
+      $statusHistory = $this->getOrderStatusHistory($order_id);
+      $totals = $this->getOrderTotals($order_id);
 
-    $embeddingData = $this->buildEmbeddingData($order_id, $orderData, $products, $attributes, $statusHistory, $totals);
+      $embeddingData = $this->buildEmbeddingData($order_id, $orderData, $products, $attributes, $statusHistory, $totals);
 
-    $embeddedDocuments = $this->vector->createEmbedding(null, $embeddingData);
-    $embeddingVector = $embeddedDocuments[0]->embedding ?? null;
+        $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($embeddingData), null);
+
+        if (!empty($taxonomy)) {
+          $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
+          $tags = [];
+
+          foreach ($lines as $line) {
+            if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
+              $tags[$matches[1]] = trim($matches[2]);
+            }
+          }
+        } else {
+          $tags = [];
+        }
+
+         $embeddingData .= "\n" . $this->app->getDef('text_orders_taxonomy') . " :\n";
+
+        foreach ($tags as $key => $value) {
+          $embeddingData .= "[$key]: $value\n";
+        }
+
+   // MetaData  creation
+        $metadata = [
+          'order_name' => $this->app->getDef('text_order_information'),
+          'content' => $embeddingData,
+          'order_id' => (int)$order_id,
+          'type' => 'orders',
+          'source' => [
+            'type' => 'manual',
+            'name' => 'manual'
+          ],
+          'entity_id' => (int)$order_id,
+          'chunk_number' => 1,
+          'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
+          'last_modified' => date('c')
+        ];
+
+      $embeddedDocuments = NewVector::createEmbedding(null, $embeddingData);
+      $embeddingVector = $embeddedDocuments[0]->embedding ?? null;
 
       if (!empty($embeddingVector)) {
-        $this->saveEmbedding($order_id, $embeddingData, $embeddingVector, $insert_embedding);
+        $this->saveEmbedding($order_id, $embeddingData, $embeddingVector, $insert_embedding, $metadata);
       }
     }
   }

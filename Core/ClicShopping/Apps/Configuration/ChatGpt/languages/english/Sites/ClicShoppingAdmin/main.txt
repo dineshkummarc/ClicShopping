@@ -39,6 +39,9 @@ button_insert = Insert
 button_reset = Reset
 button_update = Update Status
 button_edit = Edit
+button_rag_dashboard = Dashboard
+button_rag_websearch = Competitors
+
 
 dialog_uninstall_title = Uninstall
 dialog_uninstall_body = Do you want to install this App ?
@@ -75,3 +78,10 @@ Result count : {{count}}<br />
 
 text_error_composer = Composer is not installed, please make this command on your server in your terminal : apt-get install composer
 text_error_exec = exec function is not enabled. You can not update or install any composer library, please this setting in your php.ini or contact your hoster
+
+button_reset_cache = 🗑️ Reset Cache
+button_reset_all_stats = Reset Stats
+
+text_query_too_ambiguous = Your query is too ambiguous. Please be more specific about what you want to know.
+
+text_alert_dashboard = To benefit from all the results provided by the indicators, please activate RAG-BI.

@@ -62,7 +62,7 @@ class DeleteConfirm implements \ClicShopping\OM\Modules\HooksInterface
       $this->app->db->delete('reviews_embedding ', ['language_id' => $id]);
       $this->app->db->delete('reviews_sentiment_embedding  ', ['language_id' => $id]);
     }
-  }
+}
 
   /**
    * Executes the main logic for handling the deletion of reviews based on the status and confirmation conditions.
@@ -79,5 +79,5 @@ class DeleteConfirm implements \ClicShopping\OM\Modules\HooksInterface
       $id = HTML::sanitize($_GET['lID']);
       $this->delete($id);
     }
-  }
+}
 }

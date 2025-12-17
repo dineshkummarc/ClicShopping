@@ -11,7 +11,6 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Dashboard;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
-use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 class SumTotalTokenByMonth extends \ClicShopping\OM\Modules\AdminDashboardAbstract
@@ -58,31 +57,13 @@ class SumTotalTokenByMonth extends \ClicShopping\OM\Modules\AdminDashboardAbstra
    */
   public function getOutput(): string
   {
-    $months = [];
-    for ($i = 0; $i < 12; $i++) {
-      $months[date('Y-m', strtotime("-$i months"))] = 0;
-    }
+    $charts = TokenChartDataProvider::getChartsData();
 
-    $Qorders = $this->app->db->query('select date_format(date_added, "%Y-%m") as datemonth,
-                                        sum(totalTokens) as total
-                                        from :table_gpt_usage
-                                        where date_sub(curdate(), interval 12 month) <= date_added
-                                        group by datemonth
-                                      ');
-
-    while ($Qorders->fetch()) {
-      $months[$Qorders->value('datemonth')] = $Qorders->value('total');
-    }
-
-    $months = array_reverse($months, true);
-
-    $data_labels = json_encode(array_keys($months));
-    $data = json_encode(array_values($months));
-
-//    $chart_label_link = HTML::link('index.php?A&Configuration\ChatGpt&ChatGpt', $this->app->getDef('module_admin_dashboard_sum_total_gpt_token_app_chart_link'));
-    $chart_label_link = $this->app->getDef('module_admin_dashboard_sum_total_gpt_token_app_chart_link');
+    $chart_label_link = $charts['monthly_total_tokens']['title'];
 
     $content_width = 'col-md-' . (int)MODULE_ADMIN_DASHBOARD_SUM_TOTAL_GPT_TOKEN_APP_CONTENT_WIDTH;
+
+    $chartConfig = htmlspecialchars(json_encode($charts['monthly_total_tokens']['chart'], JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8');
 
     $output = <<<EOD
 <div class="col-12 {$content_width} d-flex" style="padding-right:0.5rem; padding-top:0.5rem">
@@ -92,65 +73,20 @@ class SumTotalTokenByMonth extends \ClicShopping\OM\Modules\AdminDashboardAbstra
         <h6 class="card-title"><i class="bi bi-graph-up"></i> {$chart_label_link}</h6>
         <p class="card-text">
           <div class="col-md-12">
-            <canvas id="d_total_gpt_sum_token_app" class="col-md-12" style="display: block; width:100%; height: 215px;"></canvas>
+            <canvas id="d_total_gpt_sum_token_app" class="col-md-12 chatgpt-token-chart" data-chart-config="{$chartConfig}" style="display: block; width:100%; height: 215px;"></canvas>
           </div>
         </p>
       </div>
     </div>
   </div>
 </div>
-
-<script>
-var ctx = document.getElementById('d_total_gpt_sum_token_app');
-var myChart = new Chart(ctx, {
-    type: 'line', // Change 'bar' to 'line'
-    data: {
-        labels: $data_labels,
-        datasets: [{
-            label: 'Gpt Token',
-            data: $data,
-            backgroundColor: 'rgba(255, 0, 255, 0.2)',
-            borderColor: 'rgba(54, 162, 235, 1)', // Change alpha value to 1 for solid line
-            borderWidth: 1 // Increase border width for better visibility
-        }]
-    },
-    options: {
-        maintainAspectRatio: true,
-        legend: {
-          display: false
-        },        
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        },
-        x: { // Change xAxes to x
-          reverse: true,
-          gridLines: {
-            color: "rgba(0,0,0,0.05)"
-          }
-        },
-        y: { // Change yAxes to y
-          ticks: {
-            stepSize: 1
-          },
-          display: true,
-          borderDash: [5, 5],
-          gridLines: {
-            color: "rgba(0,0,0,0.050)",
-            fontColor: "#fff"
-          }
-        }
-    }
-});
-
-function beforePrintHandler() {
-    for (var id in Chart.instances) {
-        Chart.instances[id].resize();
-    }
-}
-</script>
 EOD;
+
+    if (!defined('CHATGPT_TOKEN_CHARTS_JS')) {
+      define('CHATGPT_TOKEN_CHARTS_JS', true);
+      $output .= '<script defer src="' . htmlspecialchars($charts['assets']['script'], ENT_QUOTES, 'UTF-8') . '"></script>';
+    }
+
     return $output;
   }
 

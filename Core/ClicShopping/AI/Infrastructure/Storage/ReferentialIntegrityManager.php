@@ -1,0 +1,222 @@
+<?php
+/**
+ * ReferentialIntegrityManager
+ * 
+ * Gère l'intégrité référentielle entre les tables sans utiliser CASCADE
+ * Conformément à la politique de gestion manuelle des contraintes
+ */
+
+namespace ClicShopping\AI\Infrastructure\Storage;
+
+use ClicShopping\OM\Registry;
+use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
+
+/**
+ * ReferentialIntegrityManager Class
+ * 
+ * 🔧 MIGRATED TO DOCTRINEORM: December 6, 2025
+ * All database queries now use DoctrineOrm instead of PDO
+ */
+class ReferentialIntegrityManager
+{
+  private $db; // Kept for backward compatibility but not used
+  private string $prefix;
+  
+  public function __construct()
+  {
+    $this->db = Registry::get('Db'); // Kept for backward compatibility
+    $this->prefix = CLICSHOPPING::getConfig('db_table_prefix');
+  }
+  
+  /**
+   * Supprime une interaction et toutes ses statistiques associées
+   * Gère manuellement la suppression en cascade
+   * 🔧 MIGRATED TO DOCTRINEORM
+   * 
+   * @param int $interactionId ID de l'interaction à supprimer
+   * @return bool True si succès, false sinon
+   */
+  public function deleteInteractionWithStats(int $interactionId): bool
+  {
+    try {
+      // 1. Supprimer les statistiques associées
+      DoctrineOrm::execute("
+        DELETE FROM {$this->prefix}rag_statistics 
+        WHERE interaction_id = ?
+      ", [$interactionId]);
+      
+      // 2. Supprimer l'interaction
+      DoctrineOrm::execute("
+        DELETE FROM {$this->prefix}chatgpt_interactions 
+        WHERE interaction_id = ?
+      ", [$interactionId]);
+      
+      return true;
+      
+    } catch (\Exception $e) {
+      error_log("ReferentialIntegrityManager: Error deleting interaction {$interactionId}: " . $e->getMessage());
+      return false;
+    }
+  }
+  
+  /**
+   * Met à jour une interaction et ses statistiques associées
+   * 🔧 MIGRATED TO DOCTRINEORM
+   * 
+   * @param int $interactionId ID de l'interaction
+   * @param int $newInteractionId Nouvel ID (si changement)
+   * @return bool True si succès, false sinon
+   */
+  public function updateInteractionId(int $interactionId, int $newInteractionId): bool
+  {
+    try {
+      // Mettre à jour les statistiques
+      DoctrineOrm::execute("
+        UPDATE {$this->prefix}rag_statistics 
+        SET interaction_id = ? 
+        WHERE interaction_id = ?
+      ", [$newInteractionId, $interactionId]);
+      
+      return true;
+      
+    } catch (\Exception $e) {
+      error_log("ReferentialIntegrityManager: Error updating interaction ID: " . $e->getMessage());
+      return false;
+    }
+  }
+  
+  /**
+   * Nettoie les statistiques orphelines (sans interaction associée)
+   * Utile pour maintenir la cohérence des données
+   * 🔧 MIGRATED TO DOCTRINEORM
+   * 
+   * @return int Nombre de statistiques supprimées
+   */
+  public function cleanOrphanedStats(): int
+  {
+    try {
+      $deleted = DoctrineOrm::execute("
+        DELETE s FROM {$this->prefix}rag_statistics s
+        LEFT JOIN {$this->prefix}chatgpt_interactions i ON s.interaction_id = i.interaction_id
+        WHERE i.interaction_id IS NULL
+          AND s.interaction_id IS NOT NULL
+      ");
+      
+      if ($deleted > 0) {
+        error_log("ReferentialIntegrityManager: Cleaned {$deleted} orphaned statistics");
+      }
+      
+      return $deleted;
+      
+    } catch (\Exception $e) {
+      error_log("ReferentialIntegrityManager: Error cleaning orphaned stats: " . $e->getMessage());
+      return 0;
+    }
+  }
+  
+  /**
+   * Vérifie l'intégrité référentielle
+   * Retourne le nombre de statistiques orphelines
+   * 🔧 MIGRATED TO DOCTRINEORM
+   * 
+   * @return int Nombre de statistiques orphelines
+   */
+  public function checkIntegrity(): int
+  {
+    try {
+      $results = DoctrineOrm::select("
+        SELECT COUNT(*) as orphaned_count
+        FROM {$this->prefix}rag_statistics s
+        LEFT JOIN {$this->prefix}chatgpt_interactions i ON s.interaction_id = i.interaction_id
+        WHERE i.interaction_id IS NULL
+          AND s.interaction_id IS NOT NULL
+      ");
+      
+      return $results[0]['orphaned_count'] ?? 0;
+      
+    } catch (\Exception $e) {
+      error_log("ReferentialIntegrityManager: Error checking integrity: " . $e->getMessage());
+      return -1;
+    }
+  }
+  
+  /**
+   * Supprime les anciennes statistiques (plus de X jours)
+   * 🔧 MIGRATED TO DOCTRINEORM
+   * 
+   * @param int $days Nombre de jours à conserver
+   * @return int Nombre de statistiques supprimées
+   */
+  public function deleteOldStats(int $days = 90): int
+  {
+    try {
+      $deleted = DoctrineOrm::execute("
+        DELETE FROM {$this->prefix}rag_statistics 
+        WHERE date_added < DATE_SUB(NOW(), INTERVAL ? DAY)
+      ", [$days]);
+      
+      if ($deleted > 0) {
+        error_log("ReferentialIntegrityManager: Deleted {$deleted} old statistics (>{$days} days)");
+      }
+      
+      return $deleted;
+      
+    } catch (\Exception $e) {
+      error_log("ReferentialIntegrityManager: Error deleting old stats: " . $e->getMessage());
+      return 0;
+    }
+  }
+  
+  /**
+   * Supprime les anciennes interactions et leurs statistiques
+   * 🔧 MIGRATED TO DOCTRINEORM
+   * 
+   * @param int $days Nombre de jours à conserver
+   * @return array ['interactions' => count, 'statistics' => count]
+   */
+  public function deleteOldInteractions(int $days = 90): array
+  {
+    try {
+      // 1. Récupérer les IDs des interactions à supprimer
+      $results = DoctrineOrm::select("
+        SELECT interaction_id 
+        FROM {$this->prefix}chatgpt_interactions 
+        WHERE date_added < DATE_SUB(NOW(), INTERVAL ? DAY)
+      ", [$days]);
+      
+      $ids = [];
+      foreach ($results as $row) {
+        $ids[] = $row['interaction_id'];
+      }
+      
+      if (empty($ids)) {
+        return ['interactions' => 0, 'statistics' => 0];
+      }
+      
+      // 2. Supprimer les statistiques associées
+      $placeholders = implode(',', array_fill(0, \count($ids), '?'));
+      $statsDeleted = DoctrineOrm::execute("
+        DELETE FROM {$this->prefix}rag_statistics 
+        WHERE interaction_id IN ({$placeholders})
+      ", $ids);
+      
+      // 3. Supprimer les interactions
+      $interactionsDeleted = DoctrineOrm::execute("
+        DELETE FROM {$this->prefix}chatgpt_interactions 
+        WHERE date_added < DATE_SUB(NOW(), INTERVAL ? DAY)
+      ", [$days]);
+      
+      error_log("ReferentialIntegrityManager: Deleted {$interactionsDeleted} old interactions and {$statsDeleted} statistics (>{$days} days)");
+      
+      return [
+        'interactions' => $interactionsDeleted,
+        'statistics' => $statsDeleted
+      ];
+      
+    } catch (\Exception $e) {
+      error_log("ReferentialIntegrityManager: Error deleting old interactions: " . $e->getMessage());
+      return ['interactions' => 0, 'statistics' => 0];
+    }
+  }
+}

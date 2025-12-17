@@ -1,6 +1,19 @@
 version4.11
 - Libraries updated
 - small fix
+- Include LmStudio, Ollama, private llm updated
+- New RAG BI (Monolitic to Agentic) refactoring allowing Agentiec & reasonning & planification approach
+   -  **LmStudio, Ollama, private llm** framework
+   -  **Architecture Agentique** (Multi-Agent System)
+   -  **Reasoning** (Chain-of-Thought, Tree-of-Thought & Self Consitency)
+   -  **Planning** (Task decomposition, Sub-task planning)
+   -  **Hybridation** (Analytics + Semantic + Web Search)
+   -  **Multi-LLM** (5+ providers, dynamic selection)
+   -  **Memory System** (Working + Conversation + Entity tracking)
+   -  **Self-Correction** (Error detection, SQL fixing, retry)
+   -  **Tool Execution** (Calculator, Web Search, Custom tools)
+   -  **No micro service**
+   -  **Simple installation one click**
 
 
 ----------------

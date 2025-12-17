@@ -1,0 +1,347 @@
+<?php
+/**
+ *
+ * @copyright 2008 - https://www.clicshopping.org
+ * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
+ * @Licence GPL 2 & MIT
+ * @Info : https://www.clicshopping.org/forum/trademark/
+ *
+ */
+
+namespace ClicShopping\AI\Agents\Memory\SubConversationMemory;
+
+use AllowDynamicProperties;
+use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
+use ClicShopping\AI\Security\SecurityLogger;
+
+/**
+ * EntityTracker Class
+ *
+ * Responsible for tracking entities mentioned in conversations.
+ * Separated from ConversationMemory to follow Single Responsibility Principle.
+ *
+ * Responsibilities:
+ * - Track lastEntityId and lastEntityType
+ * - Maintain entity history (stack of N last entities)
+ * - Resolve entities by position ("the previous product")
+ * - Clear entity tracking when needed
+ */
+#[AllowDynamicProperties]
+class EntityTracker
+{
+  private SecurityLogger $logger;
+  private bool $debug;
+  private ?int $lastEntityId = null;
+  private ?string $lastEntityType = null;
+  private array $entityHistory = []; // Stack of recent entities
+  private int $maxHistorySize = 10; // Max entities to keep in history
+
+  /**
+   * Constructor
+   *
+   * @param bool $debug Enable debug logging
+   */
+  public function __construct(bool $debug = false)
+  {
+    $this->debug = $debug;
+    $this->logger = new SecurityLogger();
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "EntityTracker initialized",
+        'info'
+      );
+    }
+  }
+
+  /**
+   * Set the last entity
+   *
+   * @param int $entityId Entity ID
+   * @param string $entityType Entity type (product, category, order, etc.)
+   * @return void
+   */
+  public function setLastEntity(int $entityId, string $entityType): void
+  {
+    $this->lastEntityId = $entityId;
+    $this->lastEntityType = $entityType;
+
+    // Add to history
+    $this->addToHistory($entityId, $entityType);
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "Last entity set: {$entityType} #{$entityId}",
+        'info'
+      );
+    }
+  }
+
+  /**
+   * Get the last entity
+   * 
+   * TASK 2.8 FIX: Added database fallback to support cross-request entity retrieval.
+   * TASK 2.18 FIX: Check for explicit clear (-1) to prevent database fallback after context switch.
+   * First checks in-memory (fast path), then queries database if needed.
+   *
+   * @return array|null Array with 'id' and 'type', or null if no entity
+   */
+  public function getLastEntity(): ?array
+  {
+    // TASK 2.18: Check if entity was explicitly cleared (context switch)
+    // -1 is sentinel value meaning "cleared, don't use database fallback"
+    if ($this->lastEntityId === -1) {
+      return null;
+    }
+    
+    // Fast path: Check in-memory first
+    if ($this->lastEntityId !== null && $this->lastEntityId > 0) {
+      return [
+        'id' => $this->lastEntityId,
+        'type' => $this->lastEntityType,
+      ];
+    }
+
+    // TASK 2.8 FIX: Fallback to database query for cross-request persistence
+    // This enables contextual queries to work across HTTP requests
+    // 🔧 TASK 4.4.1 PHASE 2: Use DoctrineOrm instead of direct DB access
+    try {
+      // Get table prefix from configuration
+      $prefix = \ClicShopping\OM\CLICSHOPPING::getConfig('db_table_prefix', 'DB');
+      
+      // TASK 2.8 FIX: Use rag_conversation_memory_embedding table which stores entity_id
+      // This table is used by LongTermMemoryManager to store interactions with embeddings
+      $tableName = $prefix . 'rag_conversation_memory_embedding';
+      
+      // Query the most recent interaction with a valid entity
+      // Order by date_modified (most recent first)
+      $sql = "
+        SELECT entity_id, metadata
+        FROM {$tableName}
+        WHERE entity_id IS NOT NULL
+        AND entity_id != 0
+        ORDER BY date_modified DESC
+        LIMIT 1
+      ";
+      
+      $result = DoctrineOrm::selectOne($sql);
+      
+      if ($result) {
+        $entityId = (int)$result['entity_id'];
+        $metadataJson = $result['metadata'];
+        
+        // Extract entity_type from metadata JSON
+        $entityType = 'unknown';
+        if (!empty($metadataJson)) {
+          $metadata = json_decode($metadataJson, true);
+          if (isset($metadata['entity_type'])) {
+            $entityType = $metadata['entity_type'];
+          }
+        }
+        
+        // Cache in memory for subsequent calls in this request
+        $this->lastEntityId = $entityId;
+        $this->lastEntityType = $entityType;
+        
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "Last entity retrieved from database: {$entityType} #{$entityId}",
+            'info'
+          );
+        }
+        
+        return [
+          'id' => $entityId,
+          'type' => $entityType,
+        ];
+      }
+    } catch (\Exception $e) {
+      // Log error but don't fail - graceful degradation
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "Error retrieving last entity from database: " . $e->getMessage(),
+          'warning'
+        );
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Get the last tracked entity for contextual reference resolution.
+   * TASK 4.4.2.7: Single source of truth for entity references.
+   * 
+   * This method provides the last entity in a format suitable for ContextResolver,
+   * eliminating the need for ContextResolver to determine "last entity" itself.
+   *
+   * @return array Array with 'id', 'type', and 'reference' keys
+   */
+  public function getLastTrackedEntity(): array
+  {
+    $lastEntity = $this->getLastEntity();
+    
+    if ($lastEntity === null) {
+      return [
+        'id' => null,
+        'type' => null,
+        'reference' => null,
+      ];
+    }
+    
+    // Format reference as "type id" (e.g., "product 123")
+    $reference = $lastEntity['type'] . ' ' . $lastEntity['id'];
+    
+    return [
+      'id' => $lastEntity['id'],
+      'type' => $lastEntity['type'],
+      'reference' => $reference,
+    ];
+  }
+  /**
+   * Add entity to history (FIFO)
+   *
+   * @param int $entityId Entity ID
+   * @param string $entityType Entity type
+   * @return void
+   */
+  private function addToHistory(int $entityId, string $entityType): void
+  {
+    // Add to beginning of array (most recent first)
+    array_unshift($this->entityHistory, [
+      'id' => $entityId,
+      'type' => $entityType,
+      'timestamp' => time(),
+    ]);
+
+    // Trim to max size (FIFO)
+    if (count($this->entityHistory) > $this->maxHistorySize) {
+      array_pop($this->entityHistory);
+    }
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "Entity added to history: {$entityType} #{$entityId} (history size: " . count($this->entityHistory) . ")",
+        'info'
+      );
+    }
+  }
+
+
+  /**
+   * Clear the last entity
+   * TASK 2.18: Set to explicit null to prevent database fallback
+   *
+   * @return void
+   */
+  public function clearLastEntity(): void
+  {
+    // Set to explicit null (not just unset)
+    // This prevents getLastEntity() from falling back to database
+    $this->lastEntityId = -1; // Use -1 as sentinel value for "explicitly cleared"
+    $this->lastEntityType = null;
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "Last entity cleared (context switch)",
+        'info'
+      );
+    }
+  }
+
+
+  //*************************
+  //not used
+  //*************************
+
+  /**
+   * Set max history size
+   *
+   * @param int $maxHistorySize Maximum entities to keep
+   * @return void
+   */
+  public function setMaxHistorySize(int $maxHistorySize): void
+  {
+    $this->maxHistorySize = $maxHistorySize;
+
+    // Trim current history if needed
+    if (count($this->entityHistory) > $maxHistorySize) {
+      $this->entityHistory = array_slice($this->entityHistory, 0, $maxHistorySize);
+    }
+  }
+
+  /**
+   * Get entity history
+   *
+   * @param int $limit Maximum number of entities to return
+   * @return array Array of entities (most recent first)
+   */
+  public function getEntityHistory(int $limit = 5): array
+  {
+    return array_slice($this->entityHistory, 0, $limit);
+  }
+
+  /**
+   * Get entity by position in history
+   *
+   * @param int $position Position (0 = most recent, 1 = previous, etc.)
+   * @return array|null Entity or null if not found
+   */
+  public function getEntityByPosition(int $position): ?array
+  {
+    if ($position < 0 || $position >= count($this->entityHistory)) {
+      return null;
+    }
+
+    return $this->entityHistory[$position];
+  }
+
+  /**
+   * Clear all entity history
+   *
+   * @return void
+   */
+  public function clearHistory(): void
+  {
+    $this->entityHistory = [];
+    $this->lastEntityId = null;
+    $this->lastEntityType = null;
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "Entity history cleared",
+        'info'
+      );
+    }
+  }
+
+  /**
+   * Get the number of entities in history
+   *
+   * @return int Number of entities
+   */
+  public function getHistorySize(): int
+  {
+    return count($this->entityHistory);
+  }
+
+  /**
+   * Check if an entity exists in history
+   *
+   * @param int $entityId Entity ID
+   * @param string|null $entityType Optional entity type filter
+   * @return bool True if entity exists in history
+   */
+  public function hasEntity(int $entityId, ?string $entityType = null): bool
+  {
+    foreach ($this->entityHistory as $entity) {
+      if ($entity['id'] === $entityId) {
+        if ($entityType === null || $entity['type'] === $entityType) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+}

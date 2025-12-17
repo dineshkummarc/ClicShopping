@@ -18,18 +18,20 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
-use ClicShopping\AI\Tools\Formatter\ResultFormatter;
-use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Insfrastructure\Orm\DoctrineOrm;
-use ClicShopping\AI\Insfrastructure\Storage\MariaDBVectorStore;
-use ClicShopping\AI\Rag\AnalyticsAgent;
 use ClicShopping\AI\Domain\Embedding\NewVector;
-
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
+use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
+use ClicShopping\AI\Helper\Formatter\ResultFormatter;
 
-use LLPhant\Query\SemanticSearch\LLMReranker;
+use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
+
 use LLPhant\Embeddings\Document;
 use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
+use LLPhant\Query\SemanticSearch\LLMReranker;
+use LLPhant\Chat\OpenAIChat;
+use LLPhant\OpenAIConfig;
 
 /**
  * MultiDBRAGManager Class
@@ -57,9 +59,15 @@ class MultiDBRAGManager
   private array $vectorStores = [];
   private mixed $securityLogger;
   private bool $debug = false;
+  private static array $tableStatsCache = [];
+
   private mixed $resultFormatter;
-  private mixed $vector;
-  private mixed $doctrineOrm;
+  private int $userId;
+  private mixed $metadata;
+  
+  // Reranking properties (Task 2.14.3 - LLPhant reranking integration)
+  private ?LLMReranker $reranker = null;
+  private bool $useReranking = false;
 
   /**
    * Constructor for MultiDBRAGManager
@@ -78,10 +86,23 @@ class MultiDBRAGManager
     }
 
     $this->app = Registry::get('ChatGpt');
-    $this->db = Registry::get('Db');
-
+    // 🔧 TASK 4.4.1 PHASE 7: Removed - no longer needed (using DoctrineOrm)
+    // $this->db = Registry::get('Db');
     $this->language = Registry::get('Language');
+    $this->userId = AdministratorAdmin::getUserAdminId() ?? 0; // Default to 0 if no admin logged in
+
+    // Load language definitions for ChatGpt app
+    // Language definitions are now loaded from main.txt via CLICSHOPPING::getDef()
+    // $this->app->loadDefinitions('Sites/ClicShoppingAdmin/rag_analytics_agent');
+
+    if (!Registry::exists('ResultFormatter')) {
+      registry::set('ResultFormatter', new ResultFormatter());
+    }
+
+    $this->resultFormatter = Registry::get('ResultFormatter');
+
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
+
     $this->securityLogger = new SecurityLogger();
 
     // 🔥 DEBUG CRITIQUE
@@ -92,10 +113,9 @@ class MultiDBRAGManager
       error_log("TableNames provided: " . print_r($tableNames, true));
       error_log("Debug enabled: " . ($this->debug ? 'YES' : 'NO'));
     }
-    
-    
+
     $parameters = null;
-    $model = $model ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL  : 'default_model');
+    $model = $model ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : 'default_model');
 
     if (!is_null($model)) {
       $parameters['model'] = $model;
@@ -127,6 +147,44 @@ class MultiDBRAGManager
 
     $this->embeddingGenerator = $this->createEmbeddingGenerator();
 
+    // Initialize LLMReranker for better document relevance (Task 2.14.3)
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_USE_RERANKING') 
+        && CLICSHOPPING_APP_CHATGPT_RA_USE_RERANKING === 'True') {
+      
+      $this->useReranking = true;
+      
+      try {
+        // Set OpenAI API key as environment variable (required by LLPhant)
+        Gpt::getEnvironment();
+        
+        // Create OpenAI chat instance for reranking
+        $config = new OpenAIConfig();
+        $config->model = defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') 
+                         ? CLICSHOPPING_APP_CHATGPT_CH_MODEL 
+                         : 'gpt-4o-mini';
+        
+        $chat = new OpenAIChat($config);
+        
+        // Number of documents to return after reranking
+        $nrOfOutputDocuments = defined('CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT')  ? (int)CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT  : 5;
+        
+        $this->reranker = new LLMReranker($chat, $nrOfOutputDocuments);
+        
+        if ($this->debug) {
+          error_log("✅ LLMReranker initialized with {$nrOfOutputDocuments} output documents");
+        }
+      } catch (\Exception $e) {
+        error_log("❌ Failed to initialize LLMReranker: " . $e->getMessage());
+        $this->useReranking = false;
+        $this->reranker = null;
+      }
+    } else {
+      $this->useReranking = false;
+      if ($this->debug) {
+        error_log("ℹ️ Reranking disabled in configuration");
+      }
+    }
+
     if ($this->debug) {
       error_log("🚀 MultiDBRAGManager::__construct() END");
       error_log("═══════════════════════════════════════════════════════");
@@ -138,10 +196,69 @@ class MultiDBRAGManager
    *
    * @return array
    */
-  public function knownEmbeddingTable(): array
+  /**
+   * Returns all known embedding tables
+   * 
+   * This method dynamically detects all embedding tables in the database
+   * by querying INFORMATION_SCHEMA. It also includes a static fallback list
+   * for known tables in case the database query fails.
+   * 
+   * The method will find ANY table ending with '_embedding', making it
+   * fully dynamic and extensible.
+   * 
+   * @param bool $useCache Whether to use cached results (default: true)
+   * @return array List of all embedding table names
+   */
+  public function knownEmbeddingTable(bool $useCache = true): array
   {
+    // Static cache to avoid repeated database queries
+    static $cachedTables = null;
+    
+    if ($useCache && $cachedTables !== null) {
+      return $cachedTables;
+    }
+    
     $prefix = CLICSHOPPING::getConfig('db_table_prefix');
-
+    $dbName = CLICSHOPPING::getConfig('db_database');
+    
+    try {
+      // Try to dynamically detect all *_embedding tables from database
+      $sql = "SELECT TABLE_NAME 
+              FROM INFORMATION_SCHEMA.TABLES 
+              WHERE TABLE_SCHEMA = :dbName 
+              AND TABLE_NAME LIKE :pattern 
+              ORDER BY TABLE_NAME";
+      
+      // 🔧 TASK 4.4.1 PHASE 7: Migrated to DoctrineOrm
+      $detectedTables = DoctrineOrm::select($sql, [
+        'dbName' => $dbName,
+        'pattern' => $prefix . '%_embedding'
+      ]);
+      
+      $detectedTables = array_column($detectedTables, 'TABLE_NAME');
+      
+      if (!empty($detectedTables)) {
+        if ($this->debug) {
+          $this->securityLogger->logSecurityEvent(
+            "Dynamically detected " . count($detectedTables) . " embedding tables from database",
+            'info',
+            ['tables' => $detectedTables]
+          );
+        }
+        
+        $cachedTables = $detectedTables;
+        return $detectedTables;
+      }
+      
+    } catch (\Exception $e) {
+      // Log error but continue with fallback
+      $this->securityLogger->logSecurityEvent(
+        "Failed to dynamically detect embedding tables: " . $e->getMessage(),
+        'warning'
+      );
+    }
+    
+    // Fallback: Static list of known tables
     $knownTables = [
       $prefix . 'products_embedding',
       $prefix . 'categories_embedding',
@@ -152,9 +269,19 @@ class MultiDBRAGManager
       $prefix . 'reviews_embedding',
       $prefix . 'reviews_sentiment_embedding',
       $prefix . 'return_orders_embedding',
-      $prefix . 'suppliers_embedding',
+      $prefix . 'rag_conversation_memory_embedding',
+      $prefix . 'rag_correction_patterns_embedding',
+      $prefix . 'rag_web_cache_embedding'
     ];
-
+    
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "Using fallback static list of " . count($knownTables) . " embedding tables",
+        'info'
+      );
+    }
+    
+    $cachedTables = $knownTables;
     return $knownTables;
   }
 
@@ -201,7 +328,7 @@ class MultiDBRAGManager
       public function embedText(string $text): array
       {
         $generator = NewVector::gptEmbeddingsModel();
-	
+
         if (!$generator) {
           throw new \RuntimeException('Embedding generator non initialisé');
         }
@@ -263,6 +390,7 @@ class MultiDBRAGManager
       error_log("Input tableNames: " . (empty($tableNames) ? 'EMPTY' : implode(', ', $tableNames)));
     }
 
+    // 🔥 DÉCISION : Utiliser les tables fournies OU auto-détection
     if (empty($tableNames)) {
       if ($this->debug) {
         error_log("📋 No tables provided, using auto-detection...");
@@ -270,14 +398,20 @@ class MultiDBRAGManager
 
       try {
         $tableNames = DoctrineOrm::getEmbeddingTables();
-        $this->securityLogger->logSecurityEvent("Embedding tables found: " . implode(", ", $tableNames), 'info');
+
+        if ($this->debug) {
+          error_log(" Auto-detected tables: " . implode(", ", $tableNames));
+        }
       } catch (\Exception $e) {
         if ($this->debug) {
           error_log(" Auto-detection failed: " . $e->getMessage());
         }
-	
-        $this->securityLogger->logSecurityEvent("Error while retrieving the embedding tables: " . $e->getMessage(), 'error');
-        $tableNames = [];
+
+        $this->securityLogger->logSecurityEvent( "Error auto-detecting embedding tables: " . $e->getMessage(), 'error');
+
+        // Fallback ultime
+        $prefix = CLICSHOPPING::getConfig('db_table_prefix');
+        $tableNames = [$prefix . 'pages_manager_embedding'];
       }
     }
 
@@ -287,12 +421,13 @@ class MultiDBRAGManager
     }
 
     if (empty($tableNames)) {
-      error_log("CRITICAL: No tables to initialize! ❌❌❌");
+      error_log("❌❌❌ CRITICAL: No tables to initialize! ❌❌❌");
       return;
     }
 
-
-
+    // Initialiser chaque VectorStore
+    $successCount = 0;
+    $failCount = 0;
 
     foreach ($tableNames as $tableName) {
       try {
@@ -301,28 +436,50 @@ class MultiDBRAGManager
           error_log("🔧 Creating VectorStore for: {$tableName}");
         }
 
-
-
-
+        // Vérifier que la table existe avant de créer le VectorStore
+        if (!DoctrineOrm::checkTableStructure($tableName)) {
+          if ($this->debug) {
+            error_log("Table {$tableName} does not exist, skipping");
+          }
+	  
+          $failCount++;
+          continue;
+        }
 
         
-        // Check if table exists before creating VectorStore
-        $this->vectorStores[$tableName] = new MariaDBVectorStore($this->getEmbeddingGenerator(), $tableName);
-        $this->securityLogger->logSecurityEvent("Vector store initialized for the table: " . $tableName, 'info');
+        // Création du VectorStore
+        $vectorStore = new MariaDBVectorStore($this->getEmbeddingGenerator(), $tableName);
+
+        // Stocker dans $this->vectorStores
+        $this->vectorStores[$tableName] = $vectorStore;
+
+        $successCount++;
+
+        if ($this->debug) {
+          error_log(" VectorStore created successfully");
+          error_log("Current vectorStores count: " . count($this->vectorStores));
+        }
+
       } catch (\Exception $e) {
+        $failCount++;
+
         if ($this->debug) {
           error_log(" FAILED to create VectorStore for {$tableName}");
           error_log("Error: " . $e->getMessage());
           error_log("Trace: " . $e->getTraceAsString());
         }
 
-        $this->securityLogger->logSecurityEvent("Error while initializing the vector store for the table {$tableName}: " . $e->getMessage(), 'error');
+       $this->securityLogger->logSecurityEvent("Error while initializing the vector store for the table {$tableName}: " . $e->getMessage(), 'error');
+
       }
+    }
 
     if ($this->debug) {
       error_log("═══════════════════════════════════════════════════════");
       error_log("📊 INITIALIZATION COMPLETE");
       error_log("Tables attempted: " . count($tableNames));
+      error_log("Success: {$successCount}");
+      error_log("Failed: {$failCount}");
       error_log("Final vectorStores count: " . count($this->vectorStores));
       error_log("VectorStores keys: " . (empty($this->vectorStores) ? 'NONE' : implode(', ', array_keys($this->vectorStores))));
 
@@ -332,7 +489,6 @@ class MultiDBRAGManager
         error_log("SUCCESS: vectorStores initialized with " . count($this->vectorStores) . " stores ✅✅✅");
       }
       error_log("═══════════════════════════════════════════════════════");
-      }
     }
   }
 
@@ -360,7 +516,7 @@ class MultiDBRAGManager
           if (!DoctrineOrm::createTableStructure($tableName)) {
             throw new \Exception("Unable to create the table {$tableName}");
           }
-        }
+}
 
         // Ajouter la table aux vector stores
         $this->vectorStores[$tableName] = new MariaDBVectorStore($this->embeddingGenerator, $tableName);
@@ -401,258 +557,196 @@ class MultiDBRAGManager
    * @param string|null $entityType Entity type for filtering results
    * @return array Array of matching documents with similarity scores
    */
-  public function searchDocuments(string $query, int $limit = 5, float $minScore = 0.5, int|null $languageId = null, string|null $entityType = null): array 
+
+  /**
+   * MODIFIED searchDocuments - Ajouter les logs
+   * Remplacer le début de la méthode searchDocuments
+   */
+  public function searchDocuments(string $query, int $limit = 5, float $minScore = 0.5, int|null $languageId = null, string|null $entityType = null): array
   {
     try {
+      // LOG COMPLET
+      $array_log = [
+        'limit' => $limit,
+        'minScore' => $minScore,
+        'languageId' => $languageId,
+        'entityType' => $entityType
+      ];
+
+      $this->logSearchQuery($query, $array_log);
+
       $allResults = [];
 
-      if ($this->debug == 'True') {
+      if ($this->debug) {
         error_log("=== searchDocuments START ===");
         error_log("Query: {$query}");
         error_log("Limit: {$limit}, MinScore: {$minScore}");
         error_log("VectorStores count: " . count($this->vectorStores));
-	
-        $this->securityLogger->logSecurityEvent("Starting document search for query: " . $query, 'info');
       }
-      // Vérifier si des vector stores sont disponibles
 
+      // VÉRIFICATION CRITIQUE
       if (empty($this->vectorStores)) {
-        if ($this->debug == 'True') {
-          $this->securityLogger->logSecurityEvent("No vector store available", 'error');
+        error_log("CRITICAL: No vector stores! Attempting to reinitialize...");
+
+        // Tenter la réinitialisation
+        $this->initializeVectorStores([]);
+
+        if (empty($this->vectorStores)) {
+          error_log("FAILED: Still no vector stores after reinitialization");
+          return [
+            'documents' => [],
+            'audit_metadata' => [
+              'error' => 'No vector stores initialized',
+              'attempted_reinitialization' => true
+            ]
+          ];
         }
-
-        return [];
       }
 
-      if ($this->debug == 'True') {
-        $this->securityLogger->logSecurityEvent("Found embedding tables: " . implode(", ", array_keys($this->vectorStores)), 'info');
-      }
-
-      // Génération de l'embedding pour la requête
-      if ($this->debug == 'True') {
-         error_log("Generating embedding for query...");
-      }
-      
+      // Générer l'embedding
+      error_log("Generating embedding for query...");
       $queryEmbedding = $this->embeddingGenerator->embedText($query);
+      error_log("Embedding generated, length: " . count($queryEmbedding));
 
-      if ($this->debug == 'True') {
-        $this->securityLogger->logSecurityEvent("Generated embedding for query, length: " . count($queryEmbedding), 'info');
+
+      // Créer le filtre
+      $filter = null;
+
+      if ($languageId !== null || $entityType !== null) {
+        $filter = function($metadata) use ($languageId, $entityType) {
+          $match = true;
+          if ($languageId !== null && isset($metadata['language_id'])) {
+            $match = $match && ($metadata['language_id'] == $languageId);
+          }
+          if ($entityType !== null && isset($metadata['entity_type'])) {
+            $match = $match && ($metadata['entity_type'] == $entityType);
+          }
+          return $match;
+        };
       }
 
-      // Rechercher dans chaque vector store
-      foreach ($this->vectorStores as $tableName => $vectorStore) {
-        try {
-          if ($this->debug == 'True') {
-            $this->securityLogger->logSecurityEvent("Table search: " . $tableName, 'info');
-          }
+      // RECHERCHE PRIORITAIRE
+      foreach ($this->knownEmbeddingTable() as $priorityTable) {
+        if (isset($this->vectorStores[$priorityTable])) {
+          error_log("Searching in priority table: {$priorityTable}");
 
-          // Création d'une fonction de filtrage basée sur les critères
-          $filter = function($metadata) use ($languageId, $entityType) {
-            $match = true;
+          try {
+// Check here  $results = 0;
+            $results = $this->vectorStores[$priorityTable]->similaritySearch($queryEmbedding, $limit * 2, max(0.01, $minScore - 0.15), $filter);
+            $resultsArray = is_array($results) ? $results : iterator_to_array($results);
 
-            // Filtrage par langue si spécifié
-            if ($languageId !== null && isset($metadata['language_id'])) {
-                $match = $match && ($metadata['language_id'] == $languageId);
+            foreach ($resultsArray as $document) {
+              if (isset($document->metadata['score'])) {
+                $document->metadata['score'] = min(1.0, $document->metadata['score'] * 1.15);
+                $document->metadata['priority_boost'] = true;
+              }
+              $allResults[] = $document;
             }
-
-            // Filtrage par type d'entité si spécifié
-            if ($entityType !== null && isset($metadata['entity_type'])) {
-              $match = $match && ($metadata['entity_type'] == $entityType);
-            }
-
-            return $match;
-          };
-
-          $results = $vectorStore->similaritySearch($queryEmbedding, $limit, $minScore, $filter);
-
-          if ($this->debug == 'True') {
-            $this->securityLogger->logSecurityEvent("Results found in table {$tableName}: " . count($results), 'info');
-          }
-          // Ajouter les résultats à la liste complète
-          foreach ($results as $document) {
-            $allResults[] = $document;
-          }
-        } catch (\Exception $e) {
-          if ($this->debug == 'True') {
-            $this->securityLogger->logSecurityEvent("Error while searching in table {$tableName}: " . $e->getMessage(), 'error');
-            //Continue with other table is if error
+          } catch (\Exception $e) {
+            error_log("Priority search error in {$priorityTable}: " . $e->getMessage());
           }
         }
       }
 
-      if (!empty($allResults)) {
-        $array_parameters = [
-          'model' => CLICSHOPPING_APP_CHATGPT_CH_MODEL,
-          'max_tokens' => 128
-        ];
-
-        $chat = Gpt::getOpenAiGpt($array_parameters);
-        $reranker = new LLMReranker($chat, $limit);
-
-        $allResults = $reranker->transformDocuments([$query], $allResults);
-      }
-
-      // limit the total result
-      $finalResults = array_slice($allResults, 0, $limit);
-
-      if ($this->debug == 'True') {
-        $this->securityLogger->logSecurityEvent("Total number of results found: " . count($finalResults), 'info');
-      }
-
-      //with metadata audit
+      // Prepare audit metadata
       $auditMetadata = [
-        'embeddings_context' => array_keys($this->vectorStores),
-        'similarity_scores' => $allResults,
-        'processing_chain' => ['tables_searched' => count($this->vectorStores), 'query' => $query]
+        'priority_table' => $priorityTable ?? 'none',
+        'tables_searched' => count($this->vectorStores),
+        'initial_results_count' => count($allResults)
       ];
 
-      $finalResults = [
-        'documents' => $finalResults,
+      // Apply LLMReranker if enabled (Task 2.14.3)
+      if ($this->debug) {
+        error_log("🔍 Reranking check:");
+        error_log("  - useReranking: " . ($this->useReranking ? 'true' : 'false'));
+        error_log("  - reranker is null: " . ($this->reranker === null ? 'true' : 'false'));
+        error_log("  - allResults count: " . count($allResults));
+      }
+      
+      if ($this->useReranking && $this->reranker !== null && count($allResults) > 0) {
+        try {
+          if ($this->debug) {
+            error_log("🔄 Applying LLMReranker to improve relevance...");
+            error_log("Query for reranking: {$query}");
+            error_log("Documents before reranking: " . count($allResults));
+          }
+          
+          // Get the configured number of output documents for reranking
+          // We send 2-3x more documents than we want back to give the LLM options
+          $rerankingOutputCount = defined('CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT') 
+                                   ? (int)CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT 
+                                   : 5;
+          
+          // Send 2x the output count to the reranker (but not more than available)
+          $initialLimit = min(count($allResults), $rerankingOutputCount * 2);
+          $documentsForReranking = array_slice($allResults, 0, $initialLimit);
+          
+          if ($this->debug) {
+            error_log("Reranking {$initialLimit} documents to get top {$rerankingOutputCount}");
+          }
+          
+          // Apply LLMReranker - this will reorder documents by relevance
+          // transformDocuments expects: array of questions, array of documents
+          $rerankedDocuments = $this->reranker->transformDocuments([$query], $documentsForReranking);
+          
+          if ($this->debug) {
+            error_log("✅ Reranking complete: " . count($rerankedDocuments) . " documents");
+            
+            // Log reranked order for debugging
+            foreach ($rerankedDocuments as $i => $doc) {
+              $preview = substr($doc->content, 0, 100);
+              $score = $doc->metadata['score'] ?? 0;
+              error_log("Reranked #{$i} (score: {$score}): {$preview}...");
+            }
+          }
+          
+          // Use reranked documents
+          $allResults = $rerankedDocuments;
+          
+          // Add reranking metadata
+          $auditMetadata['reranking_applied'] = true;
+          $auditMetadata['reranking_input_count'] = $initialLimit;
+          $auditMetadata['reranking_output_count'] = count($rerankedDocuments);
+          $auditMetadata['final_results_count'] = count($allResults);
+          
+        } catch (\Exception $e) {
+          error_log("❌ Reranking failed: " . $e->getMessage());
+          error_log("Falling back to original order");
+          
+          // Fallback: use original order, just take top N
+          $allResults = array_slice($allResults, 0, $limit);
+          $auditMetadata['reranking_failed'] = true;
+          $auditMetadata['reranking_error'] = $e->getMessage();
+          $auditMetadata['final_results_count'] = count($allResults);
+        }
+      } else {
+        // No reranking, just take top N by similarity score
+        $allResults = array_slice($allResults, 0, $limit);
+        $auditMetadata['reranking_applied'] = false;
+        $auditMetadata['final_results_count'] = count($allResults);
+        
+        if ($this->debug) {
+          error_log("ℹ️ Reranking disabled or not available, using top {$limit} by similarity");
+        }
+      }
+
+      $result = [
+        'documents' => $allResults,
         'audit_metadata' => $auditMetadata
       ];
 
-      return $finalResults;
+      return $result;
     } catch (\Exception $e) {
-      if ($this->debug == 'True') {
-        $this->securityLogger->logSecurityEvent('Error while searching documents: ' . $e->getMessage(), 'error');
-      }
+      error_log("EXCEPTION in searchDocuments: " . $e->getMessage());
+      error_log("Trace: " . $e->getTraceAsString());
 
-      return [];
-    }
-  }
-
-  /**
-   * Generates an answer to a question using RAG methodology
-   *
-   * This method:
-   * 1. Searches for relevant documents
-   * 2. Creates a context from found documents
-   * 3. Generates a response using the OpenAI model
-   * 4. Includes relevant links and sources in the response
-   *
-   * @param string $question User's question
-   * @param int $limit Maximum number of documents to retrieve
-   * @param float $minScore Minimum similarity score (0-1)
-   * @param int|null $languageId Language ID for filtering results
-   * @param string|null $entityType Entity type for filtering results
-   * @param array $modelOptions Additional options for the model
-   * @return string|array Generated answer
-   */
-  public function answerQuestion(string $question, int $limit = 5, float $minScore = 0.2, int|null $languageId = null, string|null $entityType = null, array $modelOptions = []): string|array
-  {
-    try {
-      if ($this->debug) {
-        error_log("═══════════════════════════════════════════════════════");
-        error_log("🤖 answerQuestion() START");
-        error_log("Question: {$question}");
-      }
-
-      // Research document
-      $searchResult = $this->searchDocuments($question, $limit, $minScore, $languageId, $entityType);
-      
-      // Ensure searchResult is an array
-      if (!is_array($searchResult)) {
-        $searchResult = [];
-      }
-      
-      $documents = $searchResult['documents'] ?? [];
-      $auditMetadata = $searchResult['audit_metadata'] ?? [];
-
-      if (empty($documents) || !is_array($documents)) {
-        return CLICSHOPPING::getDef('text_rag_answer_question_not_found');
-      }
-
-      // contact preparation and links
-      $context = '';
-      $score = '';
-      $link = '';
-
-      foreach ($documents as $doc) {
-        //$tableName = $doc->metadata['table_name'] ?? 'inconnu';
-        $score = round(($doc->metadata['score'] ?? 0) * 100, 2);
-
-        $link = '';
-
-        if (!empty($doc->metadata['entity_id']) && !empty($doc->metadata['type'])) {
-          $routes = [
-            'products' => 'A&Catalog\Products&Products',
-            'category' => 'A&Catalog\Categories&Categories',
-            'page_manager' => 'A&Communication\PageManager',
-            'orders' => 'A&Orders\Orders',
-            'suppliers' => 'A&Catalog\Suppliers&Suppliers',
-            'manufacturers' => 'A&Catalog\Manufacturers&Manufacturers',
-          ];
-
-          if (isset($routes[$doc->metadata['type']])) {
-            $link = "/n" . HTML::link(CLICSHOPPING::link(null, $routes[$doc->metadata['type']]), $doc->metadata['type']);
-
-            $link = str_replace('%5C', '\\', $link);
-          }
-        }
-
-        $context .= $doc->content . "\n\n";
-
-        if (!empty($link)) {
-          $link .= "- {{$doc->metadata['entity_id']}: {$link} \n";
-        }
-
-         $score .= "- (accuracy: {$score} %)  \n";
-      }
-
-      $array = [
-        'context' => $context,
-        'question' => $question,
-        'links' => $link,
-        'score' => $score
+      return [
+        'documents' => [],
+        'audit_metadata' => ['error' => $e->getMessage()]
       ];
-
-      $prompt = CLICSHOPPING::getDef('text_rag_system_message_template' , $array);
-
-      if (!empty($modelOptions)) {
-        $response = Gpt::getGptResponse($prompt);
-        
-        // Ensure response is never null or empty
-        if (empty($response)) {
-          $response = 'I apologize, but I was unable to generate a response. Please try rephrasing your question.';
-        }
-
-        $response = [
-          'response' => $response,
-          'audit_metadata' => $auditMetadata
-        ];
-
-        return $response;
-      } else {
-        // Use the standard without specific options
-        $response = Gpt::getGptResponse($prompt);
-        
-        // Ensure response is never null or empty
-        if (empty($response)) {
-          $response = 'I apologize, but I was unable to generate a response. Please try rephrasing your question.';
-        }
-        
-        return $response;
-      }
-    } catch (\Exception $e) {
-      if ($this->debug) {
-        error_log("❌ EXCEPTION in answerQuestion()");
-        error_log("Error: " . $e->getMessage());
-        error_log("Trace: " . $e->getTraceAsString());
-        error_log("═══════════════════════════════════════════════════════");
-      }
-
-      $this->securityLogger->logSecurityEvent('Error during response generation: ' . $e->getMessage(), 'error');
-
-      $errorMessage = CLICSHOPPING::getDef('text_rag_answer_question_error');
-      
-      // Ensure error message is never null or empty
-      if (empty($errorMessage)) {
-        $errorMessage = 'An error occurred while processing your question. Please try again later.';
-      }
-      
-      return $errorMessage;
     }
   }
+
 
   /**
    * Formats the analysis results for display
@@ -662,16 +756,49 @@ class MultiDBRAGManager
    */
   public function formatResults(array $results): string|null
   {
-    $formatter = new ResultFormatter();
-    $result = $formatter->format($results);
+    try {
+      // Validate input
+      if (empty($results)) {
+        return 'No results to display';
+      }
 
-    if (is_array($result) && array_key_exists('content', $result)) {
-      $result = $result['content'];
-    } else {
-      $result = '<span class="alert alert-warning">Error : please change or adapt your question</span>';
+      // If results don't have a 'type' key, try to infer it or set a default
+      if (!isset($results['type'])) {
+        // Check if it looks like analytics results
+        if (isset($results['results']) && is_array($results['results'])) {
+          $results['type'] = 'analytics_results';
+        }
+        // Check if it looks like a semantic response
+        else if (isset($results['response']) || isset($results['query'])) {
+          $results['type'] = 'semantic_results';
+        }
+        // Default to unknown
+        else {
+          $results['type'] = 'unknown';
+        }
+      }
+
+      $result = $this->resultFormatter->format($results);
+
+      if (is_array($result) && array_key_exists('content', $result)) {
+        $result = $result['content'];
+      } else {
+        $result = '<span class="alert alert-warning">Error : please change or adapt your question</span>';
+      }
+
+      return $result;
+    } catch (\Exception $e) {
+      // Log the error for debugging
+      if ($this->debug) {
+        $this->securityLogger->logSecurityEvent(
+          'Error in formatResults: ' . $e->getMessage(),
+          'error',
+          ['results' => $results]
+        );
+      }
+
+      return 'An error occurred while formatting the results. Please try again.';
     }
-
-    return $result;
   }
 
   /**
@@ -745,4 +872,478 @@ class MultiDBRAGManager
       ];
     }
   }
+
+  /**
+   * LOGGING METHOD - Ajouter cette méthode dans MultiDBRAGManager
+   * Log les détails complets d'une requête de recherche
+   */
+  private function logSearchQuery(string $query, array $params): void
+  {
+    $logMessage = "=== SEARCH QUERY LOG ===\n";
+    $logMessage .= "Query: {$query}\n";
+    $logMessage .= "Params:\n";
+    $logMessage .= "  - limit: " . ($params['limit'] ?? 'N/A') . "\n";
+    $logMessage .= "  - minScore: " . ($params['minScore'] ?? 'N/A') . "\n";
+    $logMessage .= "  - languageId: " . ($params['languageId'] ?? 'N/A') . "\n";
+    $logMessage .= "  - entityType: " . ($params['entityType'] ?? 'N/A') . "\n";
+    $logMessage .= "Vector stores available: " . count($this->vectorStores) . "\n";
+    $logMessage .= "Vector stores keys: " . implode(', ', array_keys($this->vectorStores)) . "\n";
+
+    error_log($logMessage);
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent($logMessage, 'info');
+    }
+  }
+
+
+  /**
+   * Answer a question using RAG (Retrieval-Augmented Generation)
+   *
+   * TASK 4.4.2 RESTORATION: This method was accidentally removed by autofix
+   * Restored to fix semantic RAG regression
+   *
+   * This method:
+   * 1. Searches for relevant documents using embeddings
+   * 2. Builds context from retrieved documents
+   * 3. Uses LLM to generate answer based on context
+   *
+   * @param string $question Question to answer
+   * @param int $limit Maximum number of documents to retrieve
+   * @param float $minScore Minimum similarity score
+   * @param int|null $languageId Language ID for filtering
+   * @param string|null $entityType Entity type for filtering
+   * @param array $options Additional options (return_metadata, etc.)
+   * @return array|string Answer with metadata or just answer string
+   */
+  public function answerQuestion(
+    string $question,
+    int $limit = 5,
+    float $minScore = 0.5,
+    ?int $languageId = null,
+    ?string $entityType = null,
+    array $options = []
+  ): array|string
+  {
+    try {
+      if ($this->debug) {
+        error_log("=== answerQuestion() START ===");
+        error_log("Question: {$question}");
+        error_log("Limit: {$limit}, MinScore: {$minScore}");
+      }
+
+      // Search for relevant documents
+      $searchResult = $this->searchDocuments(
+        $question,
+        $limit,
+        $minScore,
+        $languageId,
+        $entityType
+      );
+
+      $documents = $searchResult['documents'] ?? [];
+      $auditMetadata = $searchResult['audit_metadata'] ?? [];
+
+      if ($this->debug) {
+        error_log("Found " . count($documents) . " documents");
+      }
+
+      // If no documents found, return "no information" message
+      if (empty($documents)) {
+        $noInfoMessage = "I don't have that information in my knowledge base.";
+
+        if ($options['return_metadata'] ?? false) {
+          return [
+            'response' => $noInfoMessage,
+            'audit_metadata' => $auditMetadata,
+            'documents_found' => 0
+          ];
+        }
+
+        return $noInfoMessage;
+      }
+
+      // Build context from documents (with priority handling)
+      $context = $this->optimizeContext($documents, 3000);
+
+      // Generate answer using LLM with context
+      $synthesisPrompt = "Based on the following information, answer this question: {$question}\n\nInformation:\n{$context}\n\nProvide a clear, concise answer based ONLY on the information provided above. If the information doesn't fully answer the question, say what you can based on the available information.";
+
+      // 🔥 CRITICAL FIX: Add language instruction to ensure response in correct language
+      // This forces the LLM to respond in the user's language (French/English)
+      $languageInstruction = CLICSHOPPING::getDef('text_rag_language_instruction');
+      $synthesisPrompt .= $languageInstruction;
+
+      if ($this->debug) {
+        error_log("📤 Prompt with language instruction: " . strlen($synthesisPrompt) . " chars");
+      }
+
+      try {
+        $answer = Gpt::getGptResponse($synthesisPrompt, 300);
+
+        if ($this->debug) {
+          error_log("Generated answer length: " . strlen($answer) . " chars");
+        }
+      } catch (\Exception $e) {
+        if ($this->debug) {
+          error_log("Error generating answer: " . $e->getMessage());
+        }
+
+        // Fallback: return first document content
+        $answer = $documents[0]->content ?? "Error generating answer.";
+      }
+
+      // Return with metadata if requested
+      if ($options['return_metadata'] ?? false) {
+        return [
+          'response' => $answer,
+          'audit_metadata' => $auditMetadata,
+          'documents_found' => count($documents),
+          'context_length' => strlen($context)
+        ];
+      }
+
+      return $answer;
+
+    } catch (\Exception $e) {
+      if ($this->debug) {
+        error_log("answerQuestion() exception: " . $e->getMessage());
+      }
+
+      $errorMessage = "Error answering question: " . $e->getMessage();
+
+      if ($options['return_metadata'] ?? false) {
+        return [
+          'response' => $errorMessage,
+          'audit_metadata' => [],
+          'error' => $e->getMessage()
+        ];
+      }
+
+      return $errorMessage;
+    }
+  }
+
+  /**
+   * Build context with priority document handling
+   * 
+   * Priority documents (with priority_boost metadata) get full content
+   * Other documents are truncated to maxCharsPerDoc
+   * 
+   * This ensures critical information from priority sources is not lost,
+   * which is essential for accurate answers (e.g., "14 days" vs "7 days")
+   * 
+   * @param array $documents Array of Document objects
+   * @param int $maxCharsPerDoc Maximum chars per non-priority document
+   * @return string Formatted context string
+   */
+  private function optimizeContext(array $documents, int $maxCharsPerDoc = 3000): string
+  {
+    $context = '';
+    $totalChars = 0;
+    $maxTotalChars = 60000; // Global limit: ~15,000 tokens
+
+    // Function to detect priority documents
+    $isPriorityDoc = function($doc) {
+      return isset($doc->metadata['priority_boost']) && $doc->metadata['priority_boost'] === true;
+    };
+
+    foreach ($documents as $i => $doc) {
+      // Priority documents get FULL content (no truncation)
+      if ($isPriorityDoc($doc)) {
+        $docContent = $doc->content; // ✅ FULL CONTENT
+        $label = "Document " . ($i + 1) . " (Priority Source)";
+        
+        if ($this->debug) {
+          error_log("📄 Doc #{$i} PRIORITY: " . strlen($docContent) . " chars (full content)");
+        }
+      } else {
+        // Other documents are truncated
+        $docContent = $doc->content;
+        if (strlen($docContent) > $maxCharsPerDoc) {
+          $docContent = mb_substr($docContent, 0, $maxCharsPerDoc) . "\n[...content truncated...]";
+        }
+        $label = "Document " . ($i + 1);
+        
+        if ($this->debug) {
+          error_log("📄 Doc #{$i} secondary: " . strlen($docContent) . " chars (truncated)");
+        }
+      }
+
+      // Check global limit
+      if ($totalChars + strlen($docContent) > $maxTotalChars) {
+        if ($this->debug) {
+          error_log("⚠️ Context limit reached after " . ($i + 1) . " documents");
+        }
+        break;
+      }
+
+      $context .= "--- {$label} ---\n";
+      $context .= $docContent . "\n\n";
+      $totalChars += strlen($docContent);
+    }
+
+    if ($this->debug) {
+      error_log("📊 Context built: {$totalChars} chars (~" . round($totalChars/4) . " tokens)");
+    }
+
+    return $context;
+  }
+
+  /**
+   * Convertit le tableau de contexte structuré en une chaîne de caractères lisible par le LLM.
+   * (C'est la logique que j'avais placée dans MemoryRetentionService, mais que vous déplacez ici.)
+   */
+  private function formatContextArrayToLlmString(array $context): string
+  {
+    $formatted = "";
+
+    // Working Memory
+    if (!empty($context['working_memory']) && !empty($context['working_memory']['last_message'])) {
+      $formatted .= "## IMMEDIATE WORKING MEMORY\n";
+      $formatted .= "Last Question: " . substr($context['working_memory']['last_message'], 0, 200) . "\n";
+      $formatted .= "Last Answer: " . substr($context['working_memory']['last_response'], 0, 200) . "\n";
+      $formatted .= "---\n\n";
+    }
+
+    // Short-term (Current Session)
+    if (!empty($context['short_term']) && is_array($context['short_term'])) {
+      $formatted .= "## CURRENT SESSION HISTORY\n";
+      foreach ($context['short_term'] as $message) {
+        if (is_array($message)) {
+          $role = isset($message['role']) ? ucfirst($message['role']) : 'System';
+          $content = isset($message['content']) ? trim($message['content']) : '';
+          if (!empty($content)) {
+            $formatted .= "{$role}: " . substr($content, 0, 150) . "\n";
+          }
+        }
+      }
+      $formatted .= "---\n\n";
+    }
+
+    // Long-term (RAG Semantic)
+    if (!empty($context['long_term']) && is_array($context['long_term'])) {
+      $formatted .= "## RELEVANT PREVIOUS CONTEXT (SEMANTIC RAG)\n";
+      foreach ($context['long_term'] as $interaction) {
+        if (is_array($interaction)) {
+          $userMsg = $interaction['user_message'] ?? '';
+          $sysResp = $interaction['system_response'] ?? '';
+          if (!empty($userMsg) && !empty($sysResp)) {
+            $formatted .= "Q: " . substr($userMsg, 0, 100) . "\n";
+            $formatted .= "A: " . substr($sysResp, 0, 100) . "\n";
+            $formatted .= "---\n";
+          }
+        }
+      }
+      $formatted .= "\n";
+    }
+
+    return trim($formatted);
+  }
+
+
+//***********************
+// not used
+//***********************
+
+  /**
+   * Analyse le contenu réel d'une table pour comprendre ce qu'elle contient
+   *
+   * @param string $tableName Nom de la table à analyser
+   * @return array Statistiques et échantillons de contenu
+   */
+  private function analyzeTableContent(string $tableName): array
+  {
+    // Utiliser le cache si disponible
+    if (isset(self::$tableStatsCache[$tableName])) {
+      return self::$tableStatsCache[$tableName];
+    }
+
+    try {
+      // 🔧 TASK 4.4.1 PHASE 7: Migrated to DoctrineOrm
+      
+      // Compter les documents
+      $count = DoctrineOrm::selectOne("SELECT COUNT(*) as total FROM {$tableName}");
+
+      if ($count['total'] == 0) {
+        self::$tableStatsCache[$tableName] = [
+          'total_documents' => 0,
+          'has_content' => false,
+          'types' => [],
+          'sample_content' => ''
+        ];
+        return self::$tableStatsCache[$tableName];
+      }
+
+      // Récupérer les types de documents présents
+      $typesRows = DoctrineOrm::select("
+        SELECT DISTINCT type, COUNT(*) as count 
+        FROM {$tableName} 
+        GROUP BY type
+      ");
+      
+      $types = [];
+      foreach ($typesRows as $row) {
+        $types[$row['type']] = $row['count'];
+      }
+
+      // Récupérer un échantillon de contenu pour analyse sémantique
+      $sample = DoctrineOrm::selectOne("
+        SELECT GROUP_CONCAT(LEFT(content, 200) SEPARATOR ' ') as sample
+        FROM (
+          SELECT content FROM {$tableName} 
+          ORDER BY RAND() 
+          LIMIT 5
+        ) as samples
+      ");
+
+      $stats = [
+        'total_documents' => $count['total'],
+        'has_content' => true,
+        'types' => $types,
+        'sample_content' => $sample['sample'] ?? ''
+      ];
+
+      self::$tableStatsCache[$tableName] = $stats;
+
+      if ($this->debug) {
+        error_log("📊 Table {$tableName} stats: " . json_encode($stats));
+      }
+
+      return $stats;
+
+    } catch (\Exception $e) {
+      if ($this->debug) {
+        error_log("️ Error analyzing table {$tableName}: " . $e->getMessage());
+      }
+
+      return [
+        'total_documents' => 0,
+        'has_content' => false,
+        'types' => [],
+        'sample_content' => ''
+      ];
+    }
+  }
+
+/**
+* Construit le prompt avec le contexte récupéré par le MemoryService.
+*
+* @param string $prompt La requête utilisateur originale.
+* @param array $context Le contexte structuré (array) retourné par MemoryRetentionService.
+* @return string Le prompt final formaté pour le LLM.
+   */
+  private function buildPromptWithContext(string $userQuery, array $context): string
+  {
+    if (empty(array_filter($context, fn($v) => !empty($v)))) {
+      return $userQuery;
+    }
+
+    $contextString = $this->formatContextArrayToLlmString($context);
+
+    if (empty(trim($contextString))) {
+      return $userQuery;
+    }
+
+    return "RAG Context (Previous Interactions):\n---\n{$contextString}\n---\n\nCurrent Request: {$userQuery}";
+  }
+
+
+
+  /**
+   * DIAGNOSTIC METHOD - Ajouter cette méthode dans MultiDBRAGManager
+   * Vérifie l'état de toutes les tables d'embedding et le contenu
+   */
+  public function performDiagnostics(): array
+  {
+    error_log("=== DIAGNOSTIC START ===");
+    $diagnostics = [
+      'timestamp' => date('Y-m-d H:i:s'),
+      'vector_stores' => [],
+      'tables_status' => [],
+      'content_samples' => []
+    ];
+
+    // 1. Vérifier chaque VectorStore initialisé
+    error_log("Step 1: Checking initialized VectorStores");
+    foreach ($this->vectorStores as $tableName => $vectorStore) {
+      error_log("  - VectorStore found: {$tableName}");
+      $diagnostics['vector_stores'][] = $tableName;
+    }
+
+    if (empty($this->vectorStores)) {
+      error_log("  WARNING: No VectorStores initialized!");
+      $diagnostics['vector_stores'] = ['ERROR' => 'No VectorStores'];
+    }
+
+    // 2. Vérifier les tables d'embedding dans la base
+    error_log("Step 2: Checking embedding tables in database");
+    // 🔧 TASK 4.4.1 PHASE 7: Migrated to DoctrineOrm
+
+    foreach ($this->knownEmbeddingTable() as $tableName) {
+      try {
+        $result = DoctrineOrm::selectOne("SELECT COUNT(*) as cnt FROM {$tableName}");
+        $count = $result['cnt'] ?? 0;
+
+        error_log("  - Table {$tableName}: {$count} documents");
+        $diagnostics['tables_status'][$tableName] = [
+          'exists' => true,
+          'document_count' => $count
+        ];
+
+        // Si la table a du contenu, prendre un échantillon
+        if ($count > 0) {
+          $sample = DoctrineOrm::selectOne(
+            "SELECT content FROM {$tableName} LIMIT 1"
+          );
+
+          if ($sample) {
+            $preview = substr($sample['content'], 0, 200);
+            error_log("    Sample preview: {$preview}...");
+            $diagnostics['content_samples'][$tableName] = $preview;
+          }
+        }
+
+      } catch (\Exception $e) {
+        error_log("  - Table {$tableName}: NOT FOUND - {$e->getMessage()}");
+        $diagnostics['tables_status'][$tableName] = [
+          'exists' => false,
+          'error' => $e->getMessage()
+        ];
+      }
+    }
+
+    // 3. Tenter une recherche test
+    error_log("Step 3: Testing search with simple query");
+    try {
+      // Recherche très permissive
+      $testResults = $this->searchDocuments(
+        "Strauss produit prix",
+        limit: 10,
+        minScore: 0.01  // Très bas pour voir tous les résultats
+      );
+
+      $docCount = count($testResults['documents'] ?? []);
+      error_log("  - Search returned: {$docCount} documents");
+      $diagnostics['search_test'] = [
+        'query' => 'Strauss produit prix',
+        'results_count' => $docCount,
+        'audit_metadata' => $testResults['audit_metadata'] ?? []
+      ];
+
+    } catch (\Exception $e) {
+      error_log("  - Search failed: {$e->getMessage()}");
+      $diagnostics['search_test'] = [
+        'error' => $e->getMessage()
+      ];
+    }
+
+    error_log("=== DIAGNOSTIC END ===");
+    return $diagnostics;
+  }
+
+
+
+
+
+
 }

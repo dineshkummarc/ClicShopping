@@ -11,7 +11,7 @@
 
 namespace ClicShopping\AI\Security;
 
-use ClicShopping\AI\Tools\Cache\Cache;
+use ClicShopping\AI\Infrastructure\Cache\Cache;
 
 /**
  * Class SecurityLogger
@@ -24,6 +24,21 @@ class SecurityLogger
     private $maxLogSize;
     private $logRotations;
     private $logLevel;
+    
+    // Performance optimization: Cache log level numeric values
+    private static $levelCache = [
+        'debug' => 0,
+        'info' => 1,
+        'warning' => 2,
+        'error' => 3
+    ];
+    
+    private $minimumLevelNumeric;
+    
+    // Performance optimization: Buffer log entries for batch writing
+    private $logBuffer = [];
+    private $bufferSize = 10; // Write after 10 entries
+    private $bufferEnabled = false;
 
     /**
      * Constructor for SecurityLogger
@@ -32,13 +47,23 @@ class SecurityLogger
      * @param string $logLevel Minimum log level to record (debug, info, warning, error)
      * @param int $maxLogSize Maximum log file size in bytes before rotation
      * @param int $logRotations Number of log rotations to maintain
+     * @param bool $bufferEnabled Enable log buffering for better performance
      */
-    public function __construct(string $logLevel = 'info', int $maxLogSize = 10485760, int $logRotations = 5)
+    public function __construct(string $logLevel = 'info', int $maxLogSize = 10485760, int $logRotations = 5, bool $bufferEnabled = false)
     {
         $this->logFile = Cache::getLogFilePath();
         $this->maxLogSize = $maxLogSize;
         $this->logRotations = $logRotations;
         $this->logLevel = $logLevel;
+        $this->bufferEnabled = $bufferEnabled;
+        
+        // Cache numeric level for performance
+        $this->minimumLevelNumeric = self::$levelCache[$logLevel] ?? self::$levelCache['info'];
+        
+        // Register shutdown function to flush buffer
+        if ($bufferEnabled) {
+            register_shutdown_function([$this, 'flushBuffer']);
+        }
     }
 
     /**
@@ -52,25 +77,55 @@ class SecurityLogger
      */
     public function logSecurityEvent(string $message, string $level = 'info', array $context = []): bool
     {
-        // Check if this level should be logged
-        if (!$this->shouldLog($level)) {
+        // Performance optimization: Fast level check using cached numeric values
+        $levelNumeric = self::$levelCache[$level] ?? self::$levelCache['info'];
+        
+        if ($levelNumeric < $this->minimumLevelNumeric) {
             return false;
         }
         
-        // Check if log rotation is needed
-        $this->rotateLogIfNeeded();
+        // Format log entry
+        $logEntry = $this->formatLogEntry($level, $message, $context);
         
-        // Format timestamp
-        $timestamp = date('Y-m-d H:i:s');
-        
-        // Format context data if provided
-        $contextStr = '';
-        if (!empty($context)) {
-            $contextStr = ' ' . json_encode($context);
+        // Use buffering if enabled
+        if ($this->bufferEnabled) {
+            return $this->addToBuffer($logEntry);
         }
         
-        // Format log entry
-        $logEntry = "[{$timestamp}] [{$level}] {$message}{$contextStr}" . PHP_EOL;
+        // Direct write if buffering disabled
+        return $this->writeLogEntry($logEntry);
+    }
+    
+    /**
+     * Format log entry (extracted for reusability)
+     *
+     * @param string $level Log level
+     * @param string $message Log message
+     * @param array $context Context data
+     * @return string Formatted log entry
+     */
+    private function formatLogEntry(string $level, string $message, array $context = []): string
+    {
+        // Performance optimization: Use static timestamp format
+        static $timestampFormat = 'Y-m-d H:i:s';
+        $timestamp = date($timestampFormat);
+        
+        // Performance optimization: Only encode context if not empty
+        $contextStr = empty($context) ? '' : (' ' . json_encode($context));
+        
+        return "[{$timestamp}] [{$level}] {$message}{$contextStr}" . PHP_EOL;
+    }
+    
+    /**
+     * Write log entry to file
+     *
+     * @param string $logEntry Formatted log entry
+     * @return bool True if written successfully
+     */
+    private function writeLogEntry(string $logEntry): bool
+    {
+        // Check if log rotation is needed (only when actually writing)
+        $this->rotateLogIfNeeded();
         
         // Write to log file
         return (bool)file_put_contents(
@@ -79,28 +134,89 @@ class SecurityLogger
             FILE_APPEND | LOCK_EX
         );
     }
+    
+    /**
+     * Add log entry to buffer
+     *
+     * @param string $logEntry Formatted log entry
+     * @return bool True if added successfully
+     */
+    private function addToBuffer(string $logEntry): bool
+    {
+        $this->logBuffer[] = $logEntry;
+        
+        // Flush buffer if size limit reached
+        if (count($this->logBuffer) >= $this->bufferSize) {
+            return $this->flushBuffer();
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Flush log buffer to file
+     *
+     * @return bool True if flushed successfully
+     */
+    public function flushBuffer(): bool
+    {
+        if (empty($this->logBuffer)) {
+            return true;
+        }
+        
+        // Check if log rotation is needed
+        $this->rotateLogIfNeeded();
+        
+        // Write all buffered entries at once
+        $success = (bool)file_put_contents(
+            $this->logFile,
+            implode('', $this->logBuffer),
+            FILE_APPEND | LOCK_EX
+        );
+        
+        // Clear buffer
+        $this->logBuffer = [];
+        
+        return $success;
+    }
 
     /**
-     * Determines if a log entry with the given level should be recorded
-     * Based on configured minimum log level
-     *
-     * @param string $level Log level to check
-     * @return bool True if the level should be logged
+     * Logs a structured event in JSON format
+     * Provides consistent logging format across all components
+     * 
+     * @param string $level Log level (info, warning, error)
+     * @param string $component Component name (e.g., 'Semantics', 'OrchestratorAgent')
+     * @param string $operation Operation being performed (e.g., 'classification', 'validation')
+     * @param array $data Additional data to log
+     * @return bool True if log entry was written successfully
      */
-    private function shouldLog(string $level): bool
+    public function logStructured(string $level, string $component, string $operation, array $data = []): bool
     {
-        $levels = [
-            'debug' => 0,
-            'info' => 1,
-            'warning' => 2,
-            'error' => 3
+        // Performance optimization: Fast level check using cached numeric values
+        $levelNumeric = self::$levelCache[$level] ?? self::$levelCache['info'];
+        if ($levelNumeric < $this->minimumLevelNumeric) {
+            return false;
+        }
+        
+        // Create structured log entry
+        $logEntry = [
+            'timestamp' => gmdate('Y-m-d\TH:i:s\Z'), // UTC timestamp in ISO 8601 format
+            'level' => $level,
+            'component' => $component,
+            'operation' => $operation,
+            'data' => $data
         ];
         
-        // Default to info level if unknown level provided
-        $currentLevel = $levels[$level] ?? $levels['info'];
-        $minimumLevel = $levels[$this->logLevel] ?? $levels['info'];
+        // Format as JSON with newline
+        $jsonEntry = json_encode($logEntry, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . PHP_EOL;
         
-        return $currentLevel >= $minimumLevel;
+        // Use buffering if enabled
+        if ($this->bufferEnabled) {
+            return $this->addToBuffer($jsonEntry);
+        }
+        
+        // Direct write if buffering disabled
+        return $this->writeLogEntry($jsonEntry);
     }
 
     /**
@@ -148,6 +264,9 @@ class SecurityLogger
         $count = 0;
         $skip = $offset;
         
+        // Performance optimization: Calculate minimum level once
+        $minimumLevelNumeric = self::$levelCache[$level] ?? self::$levelCache['info'];
+        
         // Process all log files in reverse order (newest first)
         for ($i = $this->logRotations; $i >= 0; $i--) {
             $currentFile = $i === 0 ? $this->logFile : $this->logFile . '.' . $i;
@@ -163,8 +282,9 @@ class SecurityLogger
                     if (preg_match('/\[(debug|info|warning|error)\]/', $line, $matches)) {
                         $entryLevel = $matches[1];
                         
-                        // Skip if below minimum level
-                        if (!$this->shouldLog($entryLevel)) {
+                        // Performance optimization: Direct numeric comparison instead of shouldLog()
+                        $entryLevelNumeric = self::$levelCache[$entryLevel] ?? self::$levelCache['info'];
+                        if ($entryLevelNumeric < $minimumLevelNumeric) {
                             continue;
                         }
                         

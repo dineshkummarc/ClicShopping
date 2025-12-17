@@ -1,0 +1,357 @@
+<?php
+/**
+ * 
+ * @copyright 2008 - https://www.clicshopping.org
+ * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
+ * @Licence GPL 2 & MIT
+ * @Info : https://www.clicshopping.org/forum/trademark/
+ */
+
+namespace ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent;
+
+use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\AI\Domain\Patterns\AmbiguityPattern;
+use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Registry;
+
+/**
+ * Class AmbiguousQueryDetector
+ * 
+ * Uses LLM to dynamically detect ambiguous queries
+ * No hardcoded patterns - fully dynamic and extensible
+ * 
+ * Examples of ambiguous queries:
+ * - "How many products do we have in stock?" -> COUNT vs SUM
+ * - "Show me customer orders" -> All vs Recent vs Active
+ * - "What is the price?" -> Average vs Min vs Max vs List
+ */
+class AmbiguousQueryDetector
+{
+  private SecurityLogger $securityLogger;
+  private bool $debug;
+  private mixed $chat;
+  private mixed $language;
+  
+  /**
+   * LLM prompt for ambiguity detection
+   * Dynamic detection without hardcoded patterns
+   */
+
+  /**
+   * Constructor
+   * 
+   * @param mixed $chat LLM chat instance for dynamic detection
+   * @param SecurityLogger $securityLogger Security logger instance
+   * @param bool $debug Enable debug mode
+   */
+  public function __construct($chat, SecurityLogger $securityLogger, bool $debug = false)
+  {
+    $this->chat = $chat;
+    $this->securityLogger = $securityLogger;
+    $this->debug = $debug;
+    $this->language = Registry::get('Language');
+    $this->language->loadDefinitions('rag_ambiguity', 'en', null, 'ClicShoppingAdmin');
+  }
+  
+  /**
+   * Detect if a query is ambiguous using LLM analysis
+   * Dynamic detection without hardcoded patterns
+   * 
+   * OPTIMIZATION: Uses AmbiguityOptimizer for:
+   * - Pattern-based pre-filtering (fast)
+   * - Cache lookup (very fast)
+   * - Reduced interpretations (2 max instead of 3)
+   * 
+   * @param string $query The user query to analyze
+   * @return array Analysis result containing:
+   *               - is_ambiguous: bool
+   *               - ambiguity_type: string|null
+   *               - interpretations: array
+   *               - default_interpretation: string|null
+   *               - confidence: float
+   *               - recommendation: string
+   */
+  public function detectAmbiguity(string $query): array
+  {
+    if ($this->debug) {
+      error_log("AmbiguousQueryDetector: Analyzing query with LLM: {$query}");
+    }
+    
+    try {
+      // OPTIMIZATION 1: Initialize optimizer
+      $optimizer = new AmbiguityOptimizer($this->debug);
+      
+      // OPTIMIZATION 2: Check cache first (Memcached/Redis/Traditional)
+      $cached = $optimizer->getCachedAmbiguityAnalysis($query);
+      if ($cached !== null) {
+        if ($this->debug) {
+          error_log("AmbiguousQueryDetector: Cache HIT! Returning cached analysis");
+        }
+        return $cached;
+      }
+      
+      // OPTIMIZATION 3: Check clear patterns before LLM call
+      $clearCheck = $optimizer->isClearlyNonAmbiguous($query);
+      if ($clearCheck['is_clear']) {
+        if ($this->debug) {
+          error_log("AmbiguousQueryDetector: Clear pattern detected ({$clearCheck['pattern_type']}), skipping LLM");
+        }
+        
+        $result = [
+          'is_ambiguous' => false,
+          'ambiguity_type' => null,
+          'interpretations' => [],
+          'default_interpretation' => $clearCheck['pattern_type'],
+          'confidence' => 0.95,
+          'recommendation' => 'proceed',
+          'reasoning' => 'Matched clear pattern: ' . $clearCheck['pattern_type'],
+          'optimization' => 'pattern_match'
+        ];
+        
+        // Cache the result
+        $optimizer->cacheAmbiguityAnalysis($query, $result);
+        
+        return $result;
+      }
+      
+      // OPTIMIZATION 4: Use LLM for ambiguity detection
+      if ($this->debug) {
+        error_log("AmbiguousQueryDetector: No clear pattern, using LLM detection");
+      }
+      
+      $prompt = $this->language->getDef('text_rag_detect_ambiguity', ['QUERY' => $query]);
+
+      // Get LLM analysis
+      $response = $this->chat->generateText($prompt);
+      
+      if ($this->debug) {
+        error_log("AmbiguousQueryDetector: LLM response: " . substr($response, 0, 500));
+      }
+      
+      // Parse JSON response
+      $analysis = $this->parseAmbiguityResponse($response);
+      
+      // OPTIMIZATION 5: Reduce interpretations to 2 max (instead of 3)
+      if ($analysis['is_ambiguous'] && !empty($analysis['interpretations'])) {
+        $optimalCount = $optimizer->getOptimalInterpretationCount($query, $analysis);
+        
+        if (count($analysis['interpretations']) > $optimalCount) {
+          $selectedTypes = $optimizer->selectInterpretations($analysis, $optimalCount);
+          
+          // Filter interpretations to keep only selected types
+          $analysis['interpretations'] = array_filter(
+            $analysis['interpretations'],
+            function($interp) use ($selectedTypes) {
+              return in_array($interp['type'] ?? '', $selectedTypes);
+            }
+          );
+          
+          // Re-index array
+          $analysis['interpretations'] = array_values($analysis['interpretations']);
+          
+          if ($this->debug) {
+            error_log("AmbiguousQueryDetector: Reduced interpretations from " . count($analysis['interpretations']) . " to {$optimalCount}");
+          }
+        }
+      }
+      
+      if ($analysis['is_ambiguous']) {
+        // Log ambiguous query for future improvements
+        $this->logAmbiguousQuery(
+          $query, 
+          $analysis['ambiguity_type'], 
+          $analysis['interpretations']
+        );
+        
+        if ($this->debug) {
+          error_log("AmbiguousQueryDetector: Detected ambiguity type '{$analysis['ambiguity_type']}'");
+          error_log("AmbiguousQueryDetector: Interpretations: " . count($analysis['interpretations']));
+          error_log("AmbiguousQueryDetector: Recommendation: {$analysis['recommendation']}");
+        }
+      } else {
+        if ($this->debug) {
+          error_log("AmbiguousQueryDetector: No ambiguity detected");
+        }
+      }
+      
+      // OPTIMIZATION 6: Cache the result
+      $optimizer->cacheAmbiguityAnalysis($query, $analysis);
+      
+      return $analysis;
+      
+    } catch (\Exception $e) {
+      // Fallback to non-ambiguous if LLM fails
+      if ($this->debug) {
+        error_log("AmbiguousQueryDetector: LLM detection failed: " . $e->getMessage());
+      }
+      
+      return [
+        'is_ambiguous' => false,
+        'ambiguity_type' => null,
+        'interpretations' => [],
+        'default_interpretation' => null,
+        'confidence' => 0.0,
+        'recommendation' => 'proceed'
+      ];
+    }
+  }
+  
+  /**
+   * Parse LLM response for ambiguity analysis
+   * 
+   * @param string $response LLM JSON response
+   * @return array Parsed analysis
+   */
+  private function parseAmbiguityResponse(string $response): array
+  {
+    // Extract JSON from response (may have markdown code blocks)
+    $json = $response;
+    if (preg_match('/```json\s*(.*?)\s*```/s', $response, $matches)) {
+      $json = $matches[1];
+    } else if (preg_match('/```\s*(.*?)\s*```/s', $response, $matches)) {
+      $json = $matches[1];
+    }
+    
+    // Clean up response
+    $json = trim($json);
+    
+    // Parse JSON
+    $data = json_decode($json, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+      throw new \Exception("Failed to parse LLM response as JSON: " . json_last_error_msg());
+    }
+    
+    // Validate required fields
+    if (!isset($data['is_ambiguous'])) {
+      throw new \Exception("Missing required field: is_ambiguous");
+    }
+    
+    // Build result with defaults
+    return [
+      'is_ambiguous' => (bool)$data['is_ambiguous'],
+      'ambiguity_type' => $data['ambiguity_type'] ?? null,
+      'interpretations' => $data['interpretations'] ?? [],
+      'default_interpretation' => $data['default_interpretation'] ?? null,
+      'confidence' => (float)($data['confidence'] ?? 0.0),
+      'recommendation' => $data['recommendation'] ?? 'proceed',
+      'reasoning' => $data['reasoning'] ?? ''
+    ];
+  }
+
+  /**
+   * Log ambiguous query for future prompt improvements
+   * 
+   * @param string $query The ambiguous query
+   * @param string $type The ambiguity type
+   * @param array $interpretations Possible interpretations
+   * @return void
+   */
+  private function logAmbiguousQuery(string $query, string $type, array $interpretations): void
+  {
+    // Extract interpretation types
+    $interpretationTypes = array_map(function($interp) {
+      return $interp['type'] ?? 'unknown';
+    }, $interpretations);
+    
+    $this->securityLogger->logSecurityEvent(
+      "Ambiguous query detected",
+      'info',
+      [
+        'query' => $query,
+        'ambiguity_type' => $type,
+        'interpretations' => $interpretationTypes,
+        'timestamp' => date('Y-m-d H:i:s')
+      ]
+    );
+  }
+  
+  /**
+   * Generate SQL queries for all interpretations of an ambiguous query
+   * Uses LLM to generate clarified queries for each interpretation
+   * 
+   * @param string $query The original query
+   * @param array $ambiguityAnalysis The ambiguity analysis result
+   * @param callable $sqlGenerator Function to generate SQL from a modified query
+   * @return array Array of SQL queries with their interpretations
+   */
+  public function generateMultipleInterpretations(
+    string $query, 
+    array $ambiguityAnalysis, 
+    callable $sqlGenerator
+  ): array {
+    if (!$ambiguityAnalysis['is_ambiguous']) {
+      return [];
+    }
+    
+    $results = [];
+    $interpretations = $ambiguityAnalysis['interpretations'];
+    
+    if ($this->debug) {
+      error_log("AmbiguousQueryDetector: Generating " . count($interpretations) . " interpretations");
+    }
+    
+    // Generate SQL for each interpretation
+    foreach ($interpretations as $interpretation) {
+      try {
+        // Create clarified query based on interpretation
+        $clarifiedQuery = $this->clarifyQueryForInterpretation($query, $interpretation);
+        
+        if ($this->debug) {
+          error_log("AmbiguousQueryDetector: Clarified query for '{$interpretation['type']}': {$clarifiedQuery}");
+        }
+        
+        // Generate SQL using the provided generator
+        $sql = $sqlGenerator($clarifiedQuery);
+        
+        if (!empty($sql)) {
+          $results[] = [
+            'type' => $interpretation['type'],
+            'label' => $interpretation['label'],
+            'description' => $interpretation['description'],
+            'query' => $clarifiedQuery,
+            'sql' => $sql
+          ];
+        }
+        
+      } catch (\Exception $e) {
+        if ($this->debug) {
+          error_log("AmbiguousQueryDetector: Failed to generate interpretation '{$interpretation['type']}': " . $e->getMessage());
+        }
+        continue;
+      }
+    }
+    
+    if ($this->debug) {
+      error_log("AmbiguousQueryDetector: Successfully generated " . count($results) . " interpretations");
+    }
+    
+    return $results;
+  }
+  
+  /**
+   * Clarify query for a specific interpretation
+   * Uses LLM to rewrite query with explicit intent
+   * 
+   * @param string $originalQuery Original ambiguous query
+   * @param array $interpretation Interpretation details
+   * @return string Clarified query
+   */
+  private function clarifyQueryForInterpretation(string $originalQuery, array $interpretation): string
+  {
+    $array = [
+      'original_query' => $originalQuery,
+      'interpretation' => $interpretation['description'],
+      'sql_hint' => $interpretation['sql_hint']
+    ];
+
+    $prompt = $this->language->getDef('text_rag_clarify_query_for_interpretation', $array);
+
+    $clarified = $this->chat->generateText($prompt);
+    
+    $clarified = trim($clarified);
+    $clarified = trim($clarified, '"\'');
+    
+    return $clarified;
+  }
+}

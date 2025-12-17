@@ -16,7 +16,9 @@ use ClicShopping\OM\HTML;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
-use ClicShopping\AI\Tools\Semantics\Semantics;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\AI\Domain\Embedding\NewVector;
+use ClicShopping\AI\Domain\Semantics\Semantics;
 
 #[AllowDynamicProperties]
 class Save implements \ClicShopping\OM\Modules\HooksInterface
@@ -24,8 +26,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
   public mixed $app;
   public mixed $lang;
   public mixed $semantics;
-  protected mixed $vector;
-
+  
   /**
    * Class constructor.
    *
@@ -41,11 +42,12 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+    $this->lang = Registry::get('Language');
 
-    Registry::set('Semantics', new Semantics());
+    if (!Registry::exists('Semantics')) {
+      Registry::set('Semantics', new Semantics());
+    }
     $this->semantics = Registry::get('Semantics');
-    $this->vector = Registry::get('Vector');
-    
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/ReturnOrders/rag');
   }
 
@@ -138,7 +140,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
-    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
+   if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
 
@@ -158,50 +160,92 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
         // add embedding
         //********************
        if ($embedding_enabled) {
-      $insert_embedding = false;
+          $insert_embedding = false;
 
-      if ($Qcheck->fetch() === false) {
-        $insert_embedding = true;
-      }
+          if ($Qcheck->fetch() === false) {
+            $insert_embedding = true;
+          }
 
-      $embedding_data = $this->returnOrders($return_id);
-      $embedding_data .= $this->returnOrdersHistory($return_id);
+          $embedding_data = $this->returnOrders($return_id);
+          $embedding_data .= $this->returnOrdersHistory($return_id);
 
-      $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
+          if (!empty($this->returnOrdersHistory($return_id))) {
+            $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($embedding_data), null);
 
-      $embeddings = [];
+            if (!empty($taxonomy)) {
+              $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
+              $tags = [];
 
-      foreach ($embeddedDocuments as $embeddedDocument) {
-        if (is_array($embeddedDocument->embedding)) {
-          $embeddings[] = $embeddedDocument->embedding;
-        }
-      }
+              foreach ($lines as $line) {
+                if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
+                  $tags[$matches[1]] = trim($matches[2]);
+                }
+              }
+            } else {
+              $tags = [];
+            }
 
-      if (!empty($embeddings)) {
-        $flattened_embedding = $embeddings[0];
-        $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
+            $embedding_data .= "\n" . $this->app->getDef('text_return_order_taxonomy') . " :\n";
 
-        $sql_data_array_embedding = [
-          'content' => $embedding_data,
-          'type' => 'return_orders',
-          'sourcetype' => 'manual',
-          'sourcename' => 'manual',
-          'date_modified' => 'now()'
-        ];
+            foreach ($tags as $key => $value) {
+              $embedding_data .= "[$key]: $value\n";
+            }
+          }
 
-        $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+          $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+          $embeddings = [];
 
-        if ($insert_embedding === true) {
-          $sql_data_array_embedding['entity_id'] = $return_id;
+          foreach ($embeddedDocuments as $embeddedDocument) {
+            if (is_array($embeddedDocument->embedding)) {
+              $embeddings[] = $embeddedDocument->embedding;
+            }
+          }
 
-          $this->app->db->save('return_orders_embedding', $sql_data_array_embedding);
-        } else {
-          $update_sql_data = ['entity_id' => $return_id];
+          if (!empty($embeddings)) {
+            $flattened_embedding = $embeddings[0];
+            $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
 
-          $this->app->db->save('return_orders_embedding', $sql_data_array_embedding, $update_sql_data);
-        }
+            $sql_data_array_embedding = [
+              'content' => $embedding_data,
+              'type' => 'return_orders',
+              'sourcetype' => 'manual',
+              'sourcename' => 'manual',
+              'date_modified' => 'now()'
+            ];
+
+            $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+
+              // MetaData  creation
+              $metadata = [
+                'return_order_name' => $this->app->getDef('text_orders_products_return'),
+                'content' => HtmlOverrideCommon::cleanHtmlForEmbedding($this->returnOrdersHistory($return_id)),
+                'return_id' => (int)$return_id,
+                'type' => 'return_orders',
+                'source' => [
+                  'type' => 'manual',
+                  'name' => 'manual'
+                ],
+                'entity_id' => (int)$return_id,
+                'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
+                'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
+                'last_modified' => date('c')
+              ];
+
+              // Ajouter le JSON au tableau d'insertion
+              $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
+
+
+              if ($insert_embedding === true) {
+                $sql_data_array_embedding['entity_id'] = $return_id;
+
+                $this->app->db->save('return_orders_embedding', $sql_data_array_embedding);
+      } else {
+        $update_sql_data = ['entity_id' => $return_id];
+
+        $this->app->db->save('return_orders_embedding', $sql_data_array_embedding, $update_sql_data);
+              }
+          }
        }
-      }
     }
   }
 }

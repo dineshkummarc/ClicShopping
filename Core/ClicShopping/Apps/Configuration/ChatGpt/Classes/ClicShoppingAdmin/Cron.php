@@ -15,7 +15,7 @@ use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Domain\Embedding\NewVector;
-use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\Semantics\Semantics;
 
 #[AllowDynamicProperties]
 class Cron {
@@ -103,7 +103,7 @@ class Cron {
 
         if (!empty($categories_description)) {
           $embedding_data .= $this->app->getDef('text_category_description', ['category_name' => $categories_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_description) . "\n";;
-          $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($categories_description) . "\n";
+          $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($categories_description, $language_code) . "\n";
         }
 
        $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
@@ -114,7 +114,7 @@ class Cron {
           if (is_array($embeddedDocument->embedding)) {
             $embeddings[] = $embeddedDocument->embedding;
           }
-}
+        }
 
         if (!empty($embeddings)) {
           $flattened_embedding = $embeddings[0];
@@ -127,6 +127,7 @@ class Cron {
             'sourcename' => 'manual',
             'date_modified' => 'now()',
             'language_id' => $item['language_id'],
+            'metadata' => $item['metadata'],
           ];
 
           $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
@@ -134,9 +135,9 @@ class Cron {
 
           $this->app->db->save('categories_embedding', $sql_data_array_embedding);
         }
-}
+      }
     }
-}
+  }
 
   /**
    * Updates the embedding manufacturers for a specific language.
@@ -176,6 +177,7 @@ class Cron {
       $Qcheck->execute();
 
       if ($Qcheck->fetch() === false) {
+        $language_code = $this->lang->getLanguageCodeById((int)$item['languages_id']);
         $manufacturers_name = $item['manufacturers_name'];
         $manufacturers_description = $item['manufacturer_description'];
         $seo_manufacturer_title = $item['manufacturer_seo_title'];
@@ -207,7 +209,7 @@ class Cron {
 
         if (!empty($manufacturers_description)) {
           $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
-          $embedding_data .= $this->app->getDef('text_manufacturer_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($manufacturers_description) . "\n";
+          $embedding_data .= $this->app->getDef('text_manufacturer_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($manufacturers_description, $language_code) . "\n";
         }
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
@@ -218,7 +220,7 @@ class Cron {
           if (is_array($embeddedDocument->embedding)) {
             $embeddings[] = $embeddedDocument->embedding;
           }
-}
+        }
 
         if (!empty($embeddings)) {
           $flattened_embedding = $embeddings[0];
@@ -231,6 +233,7 @@ class Cron {
             'sourcename' => 'manual',
             'date_modified' => 'now()',
             'language_id' => $item['languages_id'],
+            'metadata' => $item['metadata'],
           ];
 
           $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
@@ -238,9 +241,9 @@ class Cron {
 
           $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding);
         }
-}
+      }
     }
-}
+  }
 
 /**
  * Updates the embedding page manager for a specific language.
@@ -282,6 +285,7 @@ class Cron {
       $Qcheck->execute();
 
       if ($Qcheck->fetch() === false) {
+        $language_code = $this->lang->getLanguageCodeById((int)$item['language_id']);
         $page_manager_name = isset($item['pages_title']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['pages_title']) : '';
         $page_manager_description = isset($item['pages_html_text']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['pages_html_text']) : '';
         $seo_page_manager_title = isset($item['page_manager_head_title_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_title_tag']) : '';
@@ -306,7 +310,7 @@ class Cron {
 
         if (!empty($page_manager_description)) {
           $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_title' => $page_manager_name]) . ' : ' . $page_manager_description . "\n";
-          $embedding_data .= $this->app->getDef('text_page_manager_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($page_manager_description) . "\n";
+          $embedding_data .= $this->app->getDef('text_page_manager_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($page_manager_description, $language_code) . "\n";
         }
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
@@ -317,7 +321,7 @@ class Cron {
           if (is_array($embeddedDocument->embedding)) {
             $embeddings[] = $embeddedDocument->embedding;
           }
-}
+        }
 
         if (!empty($embeddings)) {
           $flattened_embedding = $embeddings[0];
@@ -330,6 +334,7 @@ class Cron {
             'sourcename' => 'manual',
             'date_modified' => 'now()',
             'language_id' => $item['language_id'],
+            'metadata' => $item['metadata'],
           ];
 
           $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
@@ -337,9 +342,9 @@ class Cron {
 
           $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding);
         }
-}
+      }
     }
-}
+  }
 
   /**
    * Updates the embedding products for a specific language.
@@ -359,7 +364,7 @@ class Cron {
                                                        p.products_date_added,
                                                        p.products_status,
                                                        p.products_ordered,
-                                                       p.products_quantity,                                                    
+                                                       p.products_quantity,
                                                        p.products_quantity_alert,
                                                        pd.products_name,
                                                        pd.products_description,
@@ -401,6 +406,7 @@ class Cron {
       $manufacturer_name = $Qmanufacturers->value('manufacturers_name');
 
       if ($Qcheck->fetch() === false) {
+        $language_code = $this->lang->getLanguageCodeById((int)$item['language_id']);
         $products_name = $item['products_name'];
         $products_model = $item['products_model'];
         $products_ean = $item['products_ean'];
@@ -502,7 +508,7 @@ class Cron {
 
         if (!empty($products_description)) {
           $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
-          $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($products_description) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($products_description, $language_code) . "\n";
         }
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
@@ -513,7 +519,7 @@ class Cron {
           if (is_array($embeddedDocument->embedding)) {
             $embeddings[] = $embeddedDocument->embedding;
           }
-}
+        }
 
         if (!empty($embeddings)) {
           $flattened_embedding = $embeddings[0];
@@ -525,7 +531,8 @@ class Cron {
             'sourcetype' => 'manual',
             'sourcename' => 'manual',
             'date_modified' => 'now()',
-            'language_id' => $item['language_id']
+            'language_id' => $item['language_id'],
+             'metadata' => $item['metadata'],
           ];
 
           $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
@@ -533,9 +540,9 @@ class Cron {
 
           $this->app->db->save('products_embedding', $sql_data_array_embedding);
         }
-}
+      }
     }
-}
+  }
 
   /**
    * Updates the embedding reviews for a specific language.
@@ -644,7 +651,7 @@ class Cron {
           if (is_array($embeddedDocument->embedding)) {
             $embeddings[] = $embeddedDocument->embedding;
           }
-}
+        }
 
         if (!empty($embeddings)) {
           $flattened_embedding = $embeddings[0];
@@ -657,6 +664,7 @@ class Cron {
             'sourcename' => 'manual',
             'date_modified' => 'now()',
             'language_id' => $item['languages_id'],
+            'metadata' => $item['metadata'],
           ];
 
           $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
@@ -768,7 +776,7 @@ class Cron {
           if (is_array($embeddedDocument->embedding)) {
             $embeddings[] = $embeddedDocument->embedding;
           }
-}
+        }
 
         if (!empty($embeddings)) {
           $flattened_embedding = $embeddings[0];
@@ -779,7 +787,8 @@ class Cron {
             'type' => 'suppliers',
             'sourcetype' => 'manual',
             'sourcename' => 'manual',
-            'date_modified' => 'now()'
+            'date_modified' => 'now()',
+            'metadata' => $item['metadata'],
           ];
 
           $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
@@ -787,7 +796,7 @@ class Cron {
 
           $this->app->db->save('suppliers_embedding', $sql_data_array_embedding);
         }
-       }
+      }
     }
   }
 
@@ -807,8 +816,10 @@ class Cron {
       $this->updateAllEmbeddingProducts($value['id']);
       $this->updateAllEmbeddingPageManager($value['id']);
       $this->updateAllEmbeddingReviews($value['id']);
-      //$this->updateAllEmbeddingSuppliers($value['id']);
-      //$this->updateAllEmbeddingReviews($value['id']);
+      $this->updateAllEmbeddingSuppliers($value['id']);
+      $this->updateAllEmbeddingReviews($value['id']);
+      
+      //add more
     }
 
     $this->updateAllEmbeddingSuppliers();

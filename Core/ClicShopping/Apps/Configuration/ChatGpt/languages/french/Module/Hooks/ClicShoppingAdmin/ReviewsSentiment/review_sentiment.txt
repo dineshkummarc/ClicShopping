@@ -17,3 +17,4 @@ text_review_sentiment_vote = Vote
 text_review_sentiment_customer_id = ID du client (vote)
 text_review_sentiment_vote_sentiment = Sentiment du vote
 text_review_sentiment_description = Description du sentiment
+

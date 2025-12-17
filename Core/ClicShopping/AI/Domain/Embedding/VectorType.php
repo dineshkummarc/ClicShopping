@@ -11,11 +11,9 @@
 namespace ClicShopping\AI\Domain\Embedding;
 
 use AllowDynamicProperties;
-
-use ClicShopping\OM\Registry;
+use ClicShopping\AI\Domain\Embedding\NewVector;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use ClicShopping\AI\Domain\Embedding\NewVector;
 
 /**
  * VectorType Class
@@ -45,11 +43,6 @@ class VectorType extends Type
    * The name of the type
    */
   const VECTOR = 'vector';
-
-  public function __construct()
-  {
-  }
-
 
   /**
    * Returns the SQL declaration for the vector type

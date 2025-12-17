@@ -1,0 +1,793 @@
+<?php
+/**
+ * SemanticSearchOrchestrator
+ * 
+ * Orchestrates the semantic search fallback chain:
+ * 1. Cache (optional, if enabled)
+ * 2. Document Stores / RAG Knowledge Base (12+ vector stores) - PRIMARY SOURCE
+ * 3. ConversationMemory (fallback for repeated queries)
+ * 4. LLM Fallback (for general knowledge queries)
+ * 5. Web Search Fallback (if enabled)
+ *
+ * FIXED: Task 4.4 - Search RAG Knowledge Base FIRST, not conversation memory
+ *
+ * @copyright 2008 - https://www.clicshopping.org
+ * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
+ * @Licence GPL 2 & MIT
+ * @Info : https://www.clicshopping.org/forum/trademark/
+ */
+
+namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor\SubSemanticExecutor;
+
+use AllowDynamicProperties;
+use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\AI\Rag\MultiDBRAGManager;
+use ClicShopping\AI\Domain\Semantics\Semantics;
+use ClicShopping\AI\Infrastructure\Cache\Cache;
+use ClicShopping\OM\CLICSHOPPING;
+
+/**
+ * SemanticSearchOrchestrator Class
+ *
+ * Orchestrates semantic search with fallback chain to ensure users always get answers.
+ * Implements the strategy pattern for different search sources.
+ */
+#[AllowDynamicProperties]
+class SemanticSearchOrchestrator
+{
+  private SecurityLogger $logger;
+  private bool $debug;
+  private ?MultiDBRAGManager $ragManager = null;
+  private ?LLMFallbackHandler $llmHandler = null;
+  private ?WebSearchHandler $webSearchHandler = null;
+  private ?Cache $cache = null;
+  private string $userId;
+  private int $languageId;
+
+  /**
+   * Constructor
+   *
+   * @param string $userId User ID
+   * @param int $languageId Language ID
+   * @param bool $debug Enable debug logging
+   */
+  public function __construct(string $userId = 'system', int $languageId = 1, bool $debug = false)
+  {
+    $this->logger = new SecurityLogger();
+    $this->userId = $userId;
+    $this->languageId = $languageId;
+    $this->debug = $debug;
+
+    // Initialize cache if enabled (Task 4.3.2)
+    if ($this->shouldInitializeCache()) {
+      $this->cache = new Cache(true);
+      if ($this->debug) {
+        $this->logger->logSecurityEvent("Cache initialized for semantic queries", 'info');
+      }
+    }
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent("SemanticSearchOrchestrator initialized for user: {$userId}", 'info');
+    }
+  }
+
+  /**
+   * Execute semantic search with full fallback chain
+   *
+   * @param string $query User query
+   * @param array $context Context information
+   * @param array $options Search options (limit, minScore, etc.)
+   * @return array Search result with metadata
+   */
+  public function search(string $query, array $context = [], array $options = []): array
+  {
+    $startTime = microtime(true);
+    $fallbackChain = [];
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent("SemanticSearchOrchestrator: Starting search for query: \"{$query}\"", 'info');
+    }
+
+    try {
+      // Step 1: Check cache (optional, configurable) - TASK 4.3.2
+      $cacheStatus = 'disabled';
+      if ($this->shouldUseCache($query, $context)) {
+        $cacheStatus = 'checking';
+        if ($this->debug) {
+          $this->logger->logSecurityEvent("Step 1: Checking cache for query", 'info');
+        }
+
+        // Try to get cached response
+        $cachedResponse = $this->cache->getCachedResponse($query);
+        if ($cachedResponse !== null) {
+          $executionTime = microtime(true) - $startTime;
+          $cacheStatus = 'hit';
+          
+          if ($this->debug) {
+            $this->logger->logSecurityEvent(
+              "✓ Cache HIT - Returning cached response (time: {$executionTime}s)",
+              'info'
+            );
+          }
+
+          // Decode cached response (it's stored as JSON string)
+          $cachedData = json_decode($cachedResponse, true);
+          if ($cachedData !== null && is_array($cachedData)) {
+            // Add cache metadata
+            $cachedData['metadata']['cache_status'] = 'hit';
+            $cachedData['metadata']['execution_time'] = $executionTime;
+            $cachedData['metadata']['from_cache'] = true;
+            return $cachedData;
+          }
+        }
+
+        $cacheStatus = 'miss';
+        if ($this->debug) {
+          $this->logger->logSecurityEvent("Cache MISS - Proceeding with search", 'info');
+        }
+      }
+
+      // Step 2: Search Document Stores FIRST (RAG Knowledge Base)
+      $fallbackChain[] = 'documents';
+      if ($this->debug) {
+        $this->logger->logSecurityEvent("Step 2: Searching Document Stores (RAG Knowledge Base)", 'info');
+      }
+
+      $documentResult = $this->searchDocumentStores($query, $options);
+      if ($documentResult !== null && !empty($documentResult['documents'])) {
+        $executionTime = microtime(true) - $startTime;
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "Search completed - Source: documents, Results: " . count($documentResult['documents']) . ", Time: {$executionTime}s",
+            'info'
+          );
+        }
+
+        return $this->formatResult($documentResult, 'documents', $fallbackChain, $cacheStatus, $executionTime, $query);
+      }
+
+      // Step 3: Search ConversationMemory (FALLBACK if RAG has no results)
+      $fallbackChain[] = 'conversation_memory';
+      if ($this->debug) {
+        $this->logger->logSecurityEvent("Step 3: Searching ConversationMemory (fallback)", 'info');
+      }
+
+      $conversationResult = $this->searchConversationMemory($query, $options);
+      
+      // 🔧 TASK 2.17.2 & 4.4: Only use conversation memory if documents have actual content
+      // Check if the documents have meaningful content (not just empty "Response: \n")
+      $hasContent = false;
+      if ($conversationResult !== null && !empty($conversationResult['documents'])) {
+        // First, check if any document has actual content in the "Response:" section
+        foreach ($conversationResult['documents'] as $doc) {
+          $content = '';
+          if (is_object($doc) && isset($doc->content)) {
+            $content = $doc->content;
+          } elseif (is_array($doc) && isset($doc['content'])) {
+            $content = $doc['content'];
+          }
+          
+          // Extract the response part after "Response: "
+          if (preg_match('/Response:\s*(.+)/s', $content, $matches)) {
+            $responseContent = trim($matches[1]);
+            
+            // 🔧 TASK 2.17.2: Ignore generic LLM responses that don't have actual information
+            // These are responses like "I don't have that information" or generic advice
+            $isGenericResponse = (
+              stripos($responseContent, "I don't have that information") !== false ||
+              stripos($responseContent, "I would need more specific information") !== false ||
+              stripos($responseContent, "consult the company's official website") !== false ||
+              stripos($responseContent, "contact their customer service") !== false ||
+              stripos($responseContent, "Je n'ai pas cette information") !== false ||
+              stripos($responseContent, "J'aurais besoin de plus d'informations") !== false
+            );
+            
+            // Check if response has actual content (not empty, not generic)
+            if (!empty($responseContent) && strlen($responseContent) > 10 && !$isGenericResponse) {
+              $hasContent = true;
+              
+              if ($this->debug) {
+                $this->logger->logSecurityEvent(
+                  "Conversation memory document has useful content (length: " . strlen($responseContent) . ")",
+                  'info'
+                );
+              }
+              break;
+            } elseif ($isGenericResponse) {
+              if ($this->debug) {
+                $this->logger->logSecurityEvent(
+                  "Conversation memory document has generic LLM response - skipping",
+                  'info'
+                );
+              }
+            }
+          }
+        }
+        
+        // If we found useful content, extract and use it directly
+        if ($hasContent) {
+          // Extract the response from the first document with useful content
+          $extractedResponse = '';
+          foreach ($conversationResult['documents'] as $doc) {
+            $content = '';
+            if (is_object($doc) && isset($doc->content)) {
+              $content = $doc->content;
+            } elseif (is_array($doc) && isset($doc['content'])) {
+              $content = $doc['content'];
+            }
+            
+            // Extract the response part after "Response: "
+            if (preg_match('/Response:\s*(.+)/s', $content, $matches)) {
+              $responseContent = trim($matches[1]);
+              
+              // Check if this is the useful response (not generic)
+              $isGenericResponse = (
+                stripos($responseContent, "I don't have that information") !== false ||
+                stripos($responseContent, "I would need more specific information") !== false ||
+                stripos($responseContent, "consult the company's official website") !== false ||
+                stripos($responseContent, "contact their customer service") !== false ||
+                stripos($responseContent, "Je n'ai pas cette information") !== false ||
+                stripos($responseContent, "J'aurais besoin de plus d'informations") !== false
+              );
+              
+              if (!empty($responseContent) && strlen($responseContent) > 10 && !$isGenericResponse) {
+                $extractedResponse = $responseContent;
+                
+                if ($this->debug) {
+                  $this->logger->logSecurityEvent(
+                    "Extracted useful response from conversation memory (length: " . strlen($extractedResponse) . ")",
+                    'info'
+                  );
+                }
+                break;
+              }
+            }
+          }
+          
+          // Use the extracted response directly (don't regenerate)
+          if (!empty($extractedResponse)) {
+            $conversationResult['answer'] = $extractedResponse;
+            $conversationResult['response'] = $extractedResponse;
+            $conversationResult['text_response'] = $extractedResponse;
+            
+            if ($this->debug) {
+              $this->logger->logSecurityEvent(
+                "Using extracted response from conversation memory directly",
+                'info'
+              );
+            }
+          } else {
+            // No useful response found, don't use conversation memory
+            $hasContent = false;
+            
+            if ($this->debug) {
+              $this->logger->logSecurityEvent(
+                "Could not extract useful response from conversation memory",
+                'warning'
+              );
+            }
+          }
+        } else {
+          if ($this->debug) {
+            $this->logger->logSecurityEvent(
+              "Conversation memory documents have no actual content (empty or generic responses)",
+              'info'
+            );
+          }
+        }
+      }
+      
+      if ($hasContent) {
+        $executionTime = microtime(true) - $startTime;
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "Search completed - Source: conversation_memory, Results: " . count($conversationResult['documents']) . ", Time: {$executionTime}s",
+            'info'
+          );
+        }
+
+        return $this->formatResult($conversationResult, 'conversation_memory', $fallbackChain, $cacheStatus, $executionTime, $query);
+      } else {
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "Conversation memory returned empty or no-content results - continuing to next fallback",
+            'info'
+          );
+        }
+      }
+
+      // Step 4: LLM Fallback
+      if ($this->isLLMFallbackEnabled()) {
+        $fallbackChain[] = 'llm';
+        if ($this->debug) {
+          $this->logger->logSecurityEvent("Step 4: Falling back to LLM", 'info');
+        }
+
+        $llmResult = $this->fallbackToLLM($query, $context);
+        if ($llmResult !== null) {
+          $executionTime = microtime(true) - $startTime;
+          if ($this->debug) {
+            $this->logger->logSecurityEvent(
+              "Search completed - Source: llm, Time: {$executionTime}s",
+              'info'
+            );
+          }
+
+          return $this->formatResult($llmResult, 'llm', $fallbackChain, $cacheStatus, $executionTime, $query);
+        }
+      }
+
+      // Step 5: Web Search Fallback (if enabled)
+      if ($this->isWebSearchEnabled()) {
+        $fallbackChain[] = 'web_search';
+        if ($this->debug) {
+          $this->logger->logSecurityEvent("Step 5: Falling back to Web Search", 'info');
+        }
+
+        $webResult = $this->fallbackToWebSearch($query);
+        if ($webResult !== null) {
+          $executionTime = microtime(true) - $startTime;
+          if ($this->debug) {
+            $this->logger->logSecurityEvent(
+              "Search completed - Source: web_search, Time: {$executionTime}s",
+              'info'
+            );
+          }
+
+          return $this->formatResult($webResult, 'web_search', $fallbackChain, $cacheStatus, $executionTime, $query);
+        }
+      }
+
+      // All fallbacks failed
+      $executionTime = microtime(true) - $startTime;
+      $this->logger->logSecurityEvent(
+        "All fallback sources failed for query: \"{$query}\"",
+        'error'
+      );
+
+      return $this->formatErrorResult($query, $fallbackChain, $executionTime);
+
+    } catch (\Exception $e) {
+      $executionTime = microtime(true) - $startTime;
+      $this->logger->logSecurityEvent(
+        "SemanticSearchOrchestrator error: " . $e->getMessage(),
+        'error'
+      );
+
+      return $this->formatErrorResult($query, $fallbackChain, $executionTime, $e->getMessage());
+    }
+  }
+
+  /**
+   * Search conversation memory
+   *
+   * @param string $query Search query
+   * @param array $options Search options
+   * @return array|null Results or null if no matches
+   */
+  private function searchConversationMemory(string $query, array $options): ?array
+  {
+    try {
+      // Initialize RAG manager if needed
+      if ($this->ragManager === null) {
+        $this->prefix = CLICSHOPPING::getConfig('db_table_prefix');
+        $this->ragManager = new MultiDBRAGManager(null, [$this->prefix . 'rag_conversation_memory_embedding']);
+      }
+
+      $limit = $options['limit'] ?? 5;
+      // 🔧 TASK 4.4: Use HIGHER threshold for conversation memory to avoid false matches
+      // Conversation memory should only match VERY similar queries (0.85+), not loosely related ones
+      // This prevents "où est Paris" from matching "refund policy" (similarity 0.63)
+      // Conversation memory is a FALLBACK, not primary source - it should only match near-exact repeats
+      $configuredMinScore = defined('CLICSHOPPING_APP_CHATGPT_RA_MEMORY_MIN_SCORE') ? (float) CLICSHOPPING_APP_CHATGPT_RA_MEMORY_MIN_SCORE : 0.85;
+      $minScore = isset($options['minScore']) ? (float)$options['minScore'] : $configuredMinScore;
+
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "Searching ConversationMemory - limit: {$limit}, minScore: {$minScore}",
+          'info'
+        );
+      }
+
+      // Search only conversation memory
+      $results = $this->ragManager->searchDocuments(
+        $query,
+        $limit,
+        $minScore,
+        $this->languageId,
+        null
+      );
+
+      if (!empty($results['documents'])) {
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "ConversationMemory search found " . count($results['documents']) . " results",
+            'info'
+          );
+        }
+
+        return $results;
+      }
+
+      if ($this->debug) {
+        $this->logger->logSecurityEvent("ConversationMemory search: no results", 'info');
+      }
+
+      return null;
+    } catch (\Exception $e) {
+      $this->logger->logSecurityEvent(
+        "ConversationMemory search error: " . $e->getMessage(),
+        'error'
+      );
+
+      return null;
+    }
+  }
+
+  /**
+   * Search all document vector stores
+   *
+   * @param string $query Search query
+   * @param array $options Search options
+   * @return array|null Results or null if no matches
+   */
+  private function searchDocumentStores(string $query, array $options): ?array
+  {
+    try {
+      // Initialize RAG manager with all document stores (excluding conversation_memory)
+      if ($this->ragManager === null) {
+        // Let MultiDBRAGManager auto-detect all embedding tables
+        $this->ragManager = new MultiDBRAGManager();
+      }
+
+      $limit = $options['limit'] ?? 5;
+      // 🔧 TASK 4.4: Use configured RAG similarity threshold (0.25 for multilingual support)
+      $configuredMinScore = defined('CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE') ? (float) CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE : 0.25;
+      $minScore = $options['minScore'] ?? $configuredMinScore;
+
+      // Get document store names (all except conversation_memory)
+      $documentStores = $this->ragManager->knownEmbeddingTable();
+
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "Searching DocumentStores - stores: " . count($documentStores) . ", limit: {$limit}, minScore: {$minScore}",
+          'info'
+        );
+      }
+
+      // Translate query to English before embedding/search to ensure consistent processing
+      try {
+        $normalizedQuery = Semantics::translateToEnglish($query, 120);
+      } catch (\Throwable $e) {
+        $normalizedQuery = $query;
+      }
+
+      // Search all document stores with normalized query
+      $results = $this->ragManager->searchDocuments($normalizedQuery, $limit, $minScore, $this->languageId);
+
+      if (!empty($results['documents'])) {
+        if ($this->debug) {
+          $storesSearched = $results['audit_metadata']['tables_searched'] ?? 0;
+          $resultsCount = count($results['documents']);
+          $this->logger->logSecurityEvent(
+            "DocumentStores search - stores searched: {$storesSearched}, results found: {$resultsCount}",
+            'info'
+          );
+        }
+
+        // Generate an answer using the found documents (RAG synthesis)
+        try {
+          $answer = $this->ragManager->answerQuestion($normalizedQuery, $limit, $minScore, $this->languageId, null, ['structured' => true]);
+
+          // Ensure consistent array structure
+          if (is_string($answer)) {
+            $answer = ['response' => $answer, 'audit_metadata' => $results['audit_metadata'] ?? []];
+          } elseif (is_array($answer)) {
+            // merge audit metadata from search phase if missing
+            if (!isset($answer['audit_metadata']) && isset($results['audit_metadata'])) {
+              $answer['audit_metadata'] = $results['audit_metadata'];
+            }
+            
+            // 🔧 TASK 2.17.2: Ensure 'answer' field is set for backward compatibility
+            if (!isset($answer['answer']) && isset($answer['response'])) {
+              $answer['answer'] = $answer['response'];
+            } elseif (!isset($answer['response']) && isset($answer['answer'])) {
+              $answer['response'] = $answer['answer'];
+            }
+          }
+          
+          // Add documents to answer for source attribution
+          if (!isset($answer['documents'])) {
+            $answer['documents'] = $results['documents'];
+          }
+          
+          // 🔧 TASK 4.4: Check if answer is generic "no information" message
+          // If RAG found documents but they're not relevant to the query, return null to trigger LLM fallback
+          $responseText = $answer['response'] ?? $answer['answer'] ?? '';
+          $isGenericNoInfo = (
+            stripos($responseText, "don't have that information") !== false ||
+            stripos($responseText, "no information found") !== false ||
+            stripos($responseText, "I don't have") !== false ||
+            stripos($responseText, "Je n'ai pas cette information") !== false ||
+            stripos($responseText, "aucune information") !== false ||
+            empty($responseText) ||
+            strlen(trim($responseText)) < 20  // Very short responses are likely generic
+          );
+          
+          if ($isGenericNoInfo) {
+            if ($this->debug) {
+              $this->logger->logSecurityEvent(
+                "RAG returned generic 'no information' response - documents found but not relevant - triggering LLM fallback",
+                'info'
+              );
+            }
+            // Return null to trigger LLM fallback
+            return null;
+          }
+          
+          return $answer;
+        } catch (\Throwable $e) {
+          if ($this->debug) {
+            $this->logger->logSecurityEvent(
+              "RAG synthesis failed: " . $e->getMessage() . " - returning raw results",
+              'warning'
+            );
+          }
+          // If synthesis fails, return raw results to be formatted upstream
+          return $results;
+        }
+      }
+
+      if ($this->debug) {
+        $this->logger->logSecurityEvent("DocumentStores search: no results", 'info');
+      }
+
+      return null;
+
+    } catch (\Exception $e) {
+      $this->logger->logSecurityEvent(
+        "DocumentStores search error: " . $e->getMessage(),
+        'error'
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Fallback to LLM
+   *
+   * @param string $query User query
+   * @param array $context Context information
+   * @return array|null LLM response or null if failed
+   */
+  private function fallbackToLLM(string $query, array $context): ?array
+  {
+    try {
+      // Initialize LLM handler if needed
+      if ($this->llmHandler === null) {
+        $this->llmHandler = new LLMFallbackHandler($this->userId, $this->languageId, $this->debug);
+      }
+
+      // Query LLM
+      $result = $this->llmHandler->queryLLM($query, $context);
+
+      if ($result['success'] ?? false) {
+        return $result;
+      }
+
+      return null;
+
+    } catch (\Exception $e) {
+      $this->logger->logSecurityEvent(
+        "LLM fallback error: " . $e->getMessage(),
+        'error'
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Fallback to web search
+   *
+   * @param string $query Search query
+   * @return array|null Web search results or null if not available
+   */
+  private function fallbackToWebSearch(string $query): ?array
+  {
+    try {
+      // Initialize web search handler if needed
+      if ($this->webSearchHandler === null) {
+        $this->webSearchHandler = new WebSearchHandler($this->userId, $this->languageId, $this->debug);
+      }
+
+      // Perform web search with product database integration
+      $result = $this->webSearchHandler->search($query, []);
+
+      if ($result['success'] ?? false) {
+        return $result;
+      }
+
+      return null;
+
+    } catch (\Exception $e) {
+      $this->logger->logSecurityEvent(
+        "Web search fallback error: " . $e->getMessage(),
+        'error'
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Determine if cache should be initialized
+   * TASK 4.3.2: Check if cache should be initialized at construction time
+   *
+   * @return bool True if cache should be initialized
+   */
+  private function shouldInitializeCache(): bool
+  {
+    // Check if cache is globally enabled
+    if (!defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') || CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER !== 'True') {
+      return false;
+    }
+
+    // Check if semantic caching is enabled
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_SEMANTIC_QUERIES') && CLICSHOPPING_APP_CHATGPT_RA_CACHE_SEMANTIC_QUERIES === 'True') {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Determine if cache should be used
+   *
+   * @param string $query User query
+   * @param array $context Context information
+   * @return bool True if cache should be used
+   */
+  private function shouldUseCache(string $query, array $context): bool
+  {
+    // Check if cache is globally enabled
+    if (!defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER')  || CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER !== 'True') {
+      return false;
+    }
+
+    // Check if semantic caching is enabled (default: False)
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_SEMANTIC_QUERIES') && CLICSHOPPING_APP_CHATGPT_RA_CACHE_SEMANTIC_QUERIES === 'True') {
+      if ($this->debug) {
+        $this->logger->logSecurityEvent("Cache enabled for semantic queries", 'info');
+      }
+      return true;
+    }
+
+    // By default, don't cache semantic queries (they need fresh information)
+    if ($this->debug) {
+      $this->logger->logSecurityEvent("Cache bypassed for semantic query (default behavior)", 'info');
+    }
+    
+    return false;
+  }
+
+  /**
+   * Check if LLM fallback is enabled
+   *
+   * @return bool True if enabled
+   */
+  private function isLLMFallbackEnabled(): bool
+  {
+    return defined('CLICSHOPPING_APP_CHATGPT_RA_ENABLE_LLM_FALLBACK') && CLICSHOPPING_APP_CHATGPT_RA_ENABLE_LLM_FALLBACK === 'True';
+  }
+
+  /**
+   * Check if web search is enabled
+   *
+   * @return bool True if enabled
+   */
+  private function isWebSearchEnabled(): bool
+  {
+    return defined('CLICSHOPPING_APP_CHATGPT_RA_ENABLE_WEB_FALLBACK') && CLICSHOPPING_APP_CHATGPT_RA_ENABLE_WEB_FALLBACK === 'True';
+  }
+
+  /**
+   * Format successful result
+   *
+   * @param array $result Raw result
+   * @param string $source Result source
+   * @param array $fallbackChain Fallback chain attempted
+   * @param string $cacheStatus Cache status
+   * @param float $executionTime Execution time
+   * @param string $query Original query (for caching)
+   * @return array Formatted result
+   */
+  private function formatResult(array $result, string $source, array $fallbackChain, string $cacheStatus, float $executionTime, string $query = ''): array
+  {
+    // Preserve audit_metadata and add priority_table if present
+    $auditMetadata = $result['audit_metadata'] ?? [];
+    
+    // Ensure priority_table is set (use from result or default to source-based value)
+    if (!isset($auditMetadata['priority_table'])) {
+      if ($source === 'conversation_memory') {
+        $auditMetadata['priority_table'] = CLICSHOPPING::getConfig('db_prefix') . '_rag_conversation_memory_embedding';
+      } elseif ($source === 'documents' && isset($result['audit_metadata']['priority_table'])) {
+        $auditMetadata['priority_table'] = $result['audit_metadata']['priority_table'];
+      }
+    }
+
+    // 🔧 TASK 2.17.2: Extract answer from multiple possible fields
+    $answer = $result['answer'] ?? $result['response'] ?? $result['text_response'] ?? '';
+
+    $formattedResult = [
+      'success' => true,
+      'type' => 'semantic',
+      'source' => $source,
+      'answer' => $answer,  // 🔧 TASK 2.17.2: Keep 'answer' for backward compatibility
+      'response' => $answer,  // 🔧 TASK 2.17.2: Add 'response' for consistency
+      'text_response' => $answer,  // 🔧 TASK 2.17.2: Keep 'text_response' for backward compatibility
+      'results' => $result['documents'] ?? [],
+      'sources' => $result['documents'] ?? [],  // 🔧 TASK 2.17.2: Add 'sources' alias
+      'metadata' => [
+        'fallback_chain' => $fallbackChain,
+        'cache_status' => $cacheStatus,
+        'execution_time' => $executionTime,
+        'vector_stores_searched' => $auditMetadata['tables_searched'] ?? 0,
+        'vector_stores_with_results' => $auditMetadata['vector_stores_with_results'] ?? [],
+      ],
+      'audit_metadata' => $auditMetadata
+    ];
+
+    // TASK 4.3.2: Cache the result if caching is enabled and this is not a cache hit
+    if ($this->cache !== null && $cacheStatus !== 'hit' && $cacheStatus !== 'disabled' && !empty($query)) {
+      try {
+        // Cache the formatted result as JSON
+        $cacheTTL = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_TTL') 
+                    ? (int)CLICSHOPPING_APP_CHATGPT_RA_CACHE_TTL 
+                    : 2592000; // 30 days default
+        
+        $this->cache->cacheResponse($query, json_encode($formattedResult), $cacheTTL);
+        
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "✓ Cached semantic query result (query: \"{$query}\", TTL: {$cacheTTL}s)",
+            'info'
+          );
+        }
+      } catch (\Exception $e) {
+        // Don't fail if caching fails, just log it
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "Failed to cache result: " . $e->getMessage(),
+            'warning'
+          );
+        }
+      }
+    }
+
+    return $formattedResult;
+  }
+
+  /**
+   * Format error result
+   *
+   * @param string $query Original query
+   * @param array $fallbackChain Fallback chain attempted
+   * @param float $executionTime Execution time
+   * @param string|null $errorMessage Error message
+   * @return array Formatted error result
+   */
+  private function formatErrorResult(string $query, array $fallbackChain, float $executionTime, ?string $errorMessage = null): array
+  {
+    return [
+      'success' => false,
+      'type' => 'semantic',
+      'error' => $errorMessage ?? 'All search sources failed',
+      'text_response' => 'I apologize, but I could not find an answer to your question.',
+      'metadata' => [
+        'query' => $query,
+        'fallback_chain_attempted' => $fallbackChain,
+        'execution_time' => $executionTime,
+        'error' => $errorMessage
+      ]
+    ];
+  }
+}

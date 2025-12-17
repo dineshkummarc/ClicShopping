@@ -141,6 +141,7 @@ class SaveEntry implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
+
     if (CLICSHOPPING_APP_REVIEWS_RV_SENTIMENT_TAG == 'False') {
       return false;
     }

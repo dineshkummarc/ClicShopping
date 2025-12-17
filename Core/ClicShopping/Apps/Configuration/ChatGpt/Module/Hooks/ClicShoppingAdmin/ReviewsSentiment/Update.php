@@ -15,18 +15,18 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-
+use ClicShopping\AI\Domain\Embedding\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\Semantics\Semantics;
 use function count;
 
 #[AllowDynamicProperties]
 class Update implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
+  public mixed $lang;
   public mixed $semantics;
-  public mixed $vector;
-  
+
   /**
    * Constructor method for initializing the ChatGpt application.
    * Ensures that the ChatGpt instance is registered with the Registry and fetches it for use.
@@ -40,13 +40,12 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
-
-    Registry::set('Semantics', new Semantics());
+    $this->lang = Registry::get('Language');
+    
+    if (!Registry::exists('Semantics')) {
+      Registry::set('Semantics', new Semantics());
+    }
     $this->semantics = Registry::get('Semantics');
-    $this->vector = Registry::get('Vector');
-
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/SEO/review_sentiment');
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/SEO/rag');
   }
 
   /**
@@ -146,7 +145,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     $Qchek = $this->app->db->get('reviews_sentiment', 'id', ['reviews_id' => (int)$id]);
     $Qproduct = $this->app->db->get('reviews', 'products_id', ['reviews_id' => (int)$id]);
     $products_id = $Qproduct->valueInt('products_id');
-//update
+    //update
     if (!empty($Qchek->valueInt('id'))) {
       $sql_data_array = [
         'reviews_id' => (int)$id,
@@ -171,8 +170,8 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
         $this->app->db->save('reviews_sentiment_description ', $sql_data_array, $insert_sql_data);
       }
-} else {
-//insert
+    } else {
+      //insert
       $sql_data_array = [
         'reviews_id' => (int)$id,
         'date_added' => 'now()',
@@ -202,66 +201,63 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         $this->app->db->save('reviews_sentiment_description ', $sql_data_array);
       }
     }
-    
-    //
-    // embedding
-    //
 
     $Qcheck = $this->app->db->prepare('select id
                                          from :reviews_sentiment_embedding
                                          where entity_id = :entity_id
                                         ');
-      $Qcheck->bindInt(':entity_id', $id);
-      $Qcheck->execute();
+    $Qcheck->bindInt(':entity_id', $id);
+    $Qcheck->execute();
 
-      $insert_embedding = false;
+    $insert_embedding = false;
 
-      if ($Qcheck->fetch() === false) {
-        $insert_embedding = true;
-      }
+    if ($Qcheck->fetch() === false) {
+      $insert_embedding = true;
+    }
 
-      $QreviewSentiment = $this->app->db->prepare('SELECT distinct rs.id,
-                                                                    rs.sentiment_status,
-                                                                    rs.sentiment_approved,
-                                                                    rs.date_added,
-                                                                    rs.products_id,
-                                                                    rs.reviews_id,
-                                                                    rsd.language_id,
-                                                                    rsd.description,
-                                                                    rv.vote,
-                                                                    rv.customer_id,
-                                                                    rv.sentiment AS vote_sentiment
-                                                      FROM 
-                                                          :table_reviews_sentiment rs
-                                                      INNER JOIN 
-                                                          :table_reviews_sentiment_description rsd 
-                                                          ON rs.id = rsd.sentiment_id
-                                                      LEFT JOIN
-                                                          :table_reviews_vote rv
-                                                          ON rs.reviews_id = rv.reviews_id
-                                                          AND rs.products_id = rv.products_id
-                                                      WHERE 
-                                                          rs.id = :id
-                                                  ');
-      $QreviewSentiment->bindInt(':id', $id);
-      $QreviewSentiment->execute();
+    $QreviewSentiment = $this->app->db->prepare('SELECT distinct rs.id,
+                                                                  rs.sentiment_status,
+                                                                  rs.sentiment_approved,
+                                                                  rs.date_added,
+                                                                  rs.products_id,
+                                                                  rs.reviews_id,
+                                                                  rsd.language_id,
+                                                                  rsd.description,
+                                                                  rv.vote,
+                                                                  rv.customer_id,
+                                                                  rv.sentiment AS vote_sentiment
+                                                    FROM 
+                                                        :table_reviews_sentiment rs
+                                                    INNER JOIN 
+                                                        :table_reviews_sentiment_description rsd 
+                                                        ON rs.id = rsd.sentiment_id
+                                                    LEFT JOIN
+                                                        :table_reviews_vote rv
+                                                        ON rs.reviews_id = rv.reviews_id
+                                                        AND rs.products_id = rv.products_id
+                                                    WHERE 
+                                                        rs.id = :id
+                                                ');
+    $QreviewSentiment->bindInt(':id', $id);
+    $QreviewSentiment->execute();
 
-      $review_sentiment_array = $QreviewSentiment->fetchAll();
-      $review_sentiment_id = $QreviewSentiment->valueInt('id');
+    $review_sentiment_array = $QreviewSentiment->fetchAll();
+    $review_sentiment_id = $QreviewSentiment->valueInt('id');
 
-      if (is_array($review_sentiment_array)) {
+    if (is_array($review_sentiment_array)) {
+      foreach ($review_sentiment_array as $item) {
+        $language_code = $this->lang->getLanguageCodeById((int)$item['language_id']);
+        $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/PageManager/rag', $language_code);
+        $products_id = $item['products_id'];
+        $language_id = $item['language_id'];
 
-        foreach ($review_sentiment_array as $item) {
-          $products_id = $item['products_id'];
-          $language_id = $item['language_id'];
-
-          $products_name = $CLICSHOPPING_ProductsAdmin->getProductsName($products_id, $item['language_id']);
-          $sentiment_status = isset($item['sentiment_status']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['sentiment_status']) : '';
-          $sentiment_approved = isset($item['sentiment_approved']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['sentiment_approved']) : '';
-          $date_added = isset($item['date_added']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['date_added']) : '';
-          $description = isset($item['description']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['description']) : '';
-          $vote = isset($item['vote']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['vote']) : '0';
-          $customer_id = isset($item['customer_id']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['customer_id']) : '';
+        $products_name = $CLICSHOPPING_ProductsAdmin->getProductsName($products_id, $item['language_id']);
+        $sentiment_status = isset($item['sentiment_status']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['sentiment_status']) : '';
+        $sentiment_approved = isset($item['sentiment_approved']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['sentiment_approved']) : '';
+        $date_added = isset($item['date_added']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['date_added']) : '';
+        $description = isset($item['description']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['description']) : '';
+        $vote = isset($item['vote']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['vote']) : '0';
+        $customer_id = isset($item['customer_id']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['customer_id']) : '';
         $vote_sentiment = isset($item['vote_sentiment']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['vote_sentiment']) : '';
 
         //********************
@@ -279,18 +275,37 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
           $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_vote_sentiment', ['products_name' => $products_name]) . ' : ' . $vote_sentiment . "\n";
           $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_description', ['products_name' => $products_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($description) . "\n";
 
-          $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($description));
+          $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($description), $language_code, null);
+
           if (!empty($taxonomy)) {
-        }
-          $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
+            $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
+            $tags = [];
 
-          $embeddings = [];
-
-          foreach ($embeddedDocuments as $embeddedDocument) {
-            if (is_array($embeddedDocument->embedding)) {
-              $embeddings[] = $embeddedDocument->embedding;
+            foreach ($lines as $line) {
+              if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
+                $tags[$matches[1]] = trim($matches[2]);
+              }
             }
+          } else {
+            $tags = [];
           }
+
+          $embedding_data .= "\n" . $this->app->getDef('text_review_sentiment_taxonomy') . " :\n";
+
+          foreach ($tags as $key => $value) {
+            $embedding_data .= "[$key]: $value\n";
+          }
+        }
+
+        $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+
+        $embeddings = [];
+
+        foreach ($embeddedDocuments as $embeddedDocument) {
+          if (is_array($embeddedDocument->embedding)) {
+            $embeddings[] = $embeddedDocument->embedding;
+          }
+        }
 
           if (!empty($embeddings)) {
             $flattened_embedding = $embeddings[0];
@@ -306,24 +321,42 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               'entity_id' => (int)$item['id'],
              ];
 
-            $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+          $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+
+            // MetaData  creation 
+            $metadata = [
+            'review_sentiment_name' => HtmlOverrideCommon::cleanHtmlForEmbedding($products_name),
+            'content' => HtmlOverrideCommon::cleanHtmlForEmbedding($description) ,
+            'language_id' => (int)$item['language_id'],
+            'id' => (int)$item['id'],
+            'type' => 'review_sentiment',
+            'source' => [
+              'type' => 'manual',
+              'name' => 'manual'
+            ],
+            'entity_id' => (int)$item['id'],
+            'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
+            'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
+            'last_modified' => date('c')
+          ];
+
+         // Ajouter le JSON au tableau d'insertion
+          $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
 
           if ($insert_embedding === true) {
             $sql_data_array_embedding['entity_id'] = (int)$item['id'];
             $sql_data_array_embedding['language_id'] = (int)$language_id;
             $this->app->db->save('reviews_sentiment_embedding', $sql_data_array_embedding);
           } else {
-              $update_sql_data = [
-                'language_id' => $language_id,
-                'entity_id' => $item['id']
-              ];
+            $update_sql_data = [
+              'language_id' => $language_id,
+              'entity_id' => $item['id']
+            ];
 
-              $this->app->db->save('reviews_sentiment_embedding', $sql_data_array_embedding, $update_sql_data);
-            }
+            $this->app->db->save('reviews_sentiment_embedding', $sql_data_array_embedding, $update_sql_data);
           }
         }
       }
     }
   }
 }
-

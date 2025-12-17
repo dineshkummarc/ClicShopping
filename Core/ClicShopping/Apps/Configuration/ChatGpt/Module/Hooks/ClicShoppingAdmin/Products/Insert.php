@@ -17,9 +17,9 @@ use ClicShopping\OM\HTML;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 
-
+use ClicShopping\AI\Domain\Embedding\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\Semantics\Semantics;
 
 /**
  * Class Insert
@@ -32,12 +32,11 @@ use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
 class Insert implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
+  public mixed $lang;
   public mixed $semantics;
-  public mixed $vector;
-
+  
   /**
    * Class constructor.
-   *
    * Initializes the ChatGptApp instance in the Registry if it doesn't already exist,
    * and loads the necessary definitions for the application.
    *
@@ -50,12 +49,12 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
-    Registry::set('Semantics', new Semantics());
-    $this->semantics = Registry::get('Semantics');
-        $this->vector = Registry::get('Vector');
+    $this->lang = Registry::get('Language');
 
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Products/seo_chat_gpt');
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Products/rag');
+    if (!Registry::exists('Semantics')) {
+      Registry::set('Semantics', new Semantics());
+    }
+    $this->semantics = Registry::get('Semantics');
   }
 
   /**
@@ -68,8 +67,6 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
-    $CLICSHOPPING_Language = Registry::get('Language');
-
     if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
@@ -80,10 +77,10 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
       $translate_language = $this->app->getDef('text_seo_page_translate_language');
 
       $Qcheck = $this->app->db->prepare('select products_id
-                                            from :table_products
-                                            order by products_id desc
-                                            limit 1
-                                          ');
+                                         from :table_products
+                                         order by products_id desc
+                                         limit 1
+                                        ');
       $Qcheck->execute();
 
       if ($Qcheck->valueInt('products_id') !== null) {
@@ -95,7 +92,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                                                      p.products_date_added,
                                                      p.products_status,
                                                      p.products_ordered,
-                                                     p.products_quantity,                                                    
+                                                     p.products_quantity,
                                                      p.products_quantity_alert,
                                                      pd.products_name,
                                                      pd.products_description,
@@ -130,11 +127,15 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
             $products_quantity = $item['products_quantity']; //product stock
             $products_stock_reorder_level = (int)STOCK_REORDER_LEVEL; //alert stock  fixfor all  products
             $products_quantity_alert = $item['products_quantity_alert']; // alert stock fix
-            $manufacturer_name =  HTML::sanitize($_POST['manufacturers_name']);
+            $manufacturer_name = HTML::sanitize($_POST['manufacturers_name']);
             $products_description = $item['products_description'];
             $products_description_summary = $item['products_head_tag'];
-            $language_name = $CLICSHOPPING_Language->getLanguagesName($item['language_id']);
+            $language_name = $this->lang->getLanguagesName($item['language_id']);
+            $language_code = $this->lang->getLanguageCodeById((int)$item['language_id']);
 
+            $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Products/seo_chat_gpt', $language_code);
+            $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Products/rag', $language_code);
+	    
             $update_sql_data = [
               'language_id' => $item['language_id'],
               'products_id' => $item['products_id']
@@ -159,7 +160,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
-}
+            }
             //-------------------
             // Summary description
             //-------------------
@@ -177,7 +178,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
-}
+            }
             ////-------------------
             // Seo Title
             //-------------------
@@ -195,7 +196,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
-}
+            }
             //-------------------
             // Seo description
             //-------------------
@@ -211,7 +212,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
-}
+            }
             //-------------------
             // Seo keywords
             //-------------------
@@ -229,7 +230,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
-}
+            }
             //-------------------
             // Seo tag
             //-------------------
@@ -332,16 +333,32 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
               }
 
               if (!empty($products_description)) {
-                $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
-                $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($products_description));
+	              $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
+                $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($products_description), $language_code, null);
 
-                if ($taxonomy != '') {
-                  $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
+                if (!empty($taxonomy)) {
+                  $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
+                  $tags = [];
+
+                  foreach ($lines as $line) {
+                    if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
+                      $tags[$matches[1]] = trim($matches[2]);
+                    }
+                  }
+                } else {
+                  $tags = [];
+                }
+
+                $embedding_data .= "\n" . $this->app->getDef('text_product_taxonomy') . " :\n";
+
+                foreach ($tags as $key => $value) {
+                  $embedding_data .= "[$key]: $value\n";
                 }
               }
+            }
 
-              $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
-              $embeddings = [];
+            $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+            $embeddings = [];
 
             foreach ($embeddedDocuments as $embeddedDocument) {
               if (is_array($embeddedDocument->embedding)) {
@@ -351,7 +368,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
             if (!empty($embeddings)) {
               $flattened_embedding = $embeddings[0];
-                $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
+              $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
 
               $sql_data_array_embedding = [
                 'content' => $embedding_data,
@@ -363,89 +380,108 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                 'language_id' => (int)$item['language_id']
               ];
 
-                $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+              $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+
+              // MetaData  creation 
+              $metadata = [
+                'product_name' => $products_name,
+                'content' => $products_description,
+                'language_id' => (int)$item['language_id'],
+                'product_id' => (int)$item['products_id'],
+                'type' => 'products',
+                'source' => [
+                  'type' => 'manual',
+                  'name' => 'manual'
+                ],
+                'entity_id' => (int)$item['products_id'],
+                'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
+                'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
+                'last_modified' => date('c')
+              ];
+
+              // Ajouter le JSON au tableau d'insertion
+              $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
 
               $update_sql_data = [
-                'language_id' => (int)$item['language_id'],
+                'language_id' => $item['language_id'],
                 'entity_id' => (int)$item['products_id']
               ];
 
-                $this->app->db->save('products_embedding', $sql_data_array_embedding, $update_sql_data);
+              $this->app->db->save('products_embedding', $sql_data_array_embedding, $update_sql_data);
             }
           }
         }
       }
-//-------------------
-//image
-//-------------------
-/*
-        if (isset($_POST['option_gpt_create_image'])) {
-          $Qproducts = $this->app->db->prepare('select products_name,
-                                                         language_id
-                                                  from :table_products_description
-                                                  where products_id = :products_id
-                                                  and language_id = 1
-                                                ');
-          $Qproducts->bindInt(':products_id', $Qcheck->valueInt('products_id'));
-          $Qproducts->execute();
+                  //-------------------
+                  //image
+                  //-------------------
+      /*
+              if (isset($_POST['option_gpt_create_image'])) {
+                $Qproducts = $this->app->db->prepare('select products_name,
+                                                               language_id
+                                                        from :table_products_description
+                                                        where products_id = :products_id
+                                                        and language_id = 1
+                                                      ');
+                $Qproducts->bindInt(':products_id', $Qcheck->valueInt('products_id'));
+                $Qproducts->execute();
 
-          $update_sql_data = [
-            'products_id' => $Qcheck->valueInt('products_id')
-          ];
+                $update_sql_data = [
+                  'products_id' => $Qcheck->valueInt('products_id')
+                ];
 
-          $products_image = Gpt::createImageChatGpt($Qproducts->value('products_name'), 'products', '256x256', true, true);
+                $products_image = Gpt::createImageChatGpt($Qproducts->value('products_name'), 'products', '256x256', true, true);
 
-          if (!empty($products_image) || $products_image !== false) {
-            $sql_data_products_image = [
-              'products_image' => $products_image ?? '',
-              'products_image_small' => $products_image ?? ''
-            ];
+                if (!empty($products_image) || $products_image !== false) {
+                  $sql_data_products_image = [
+                    'products_image' => $products_image ?? '',
+                    'products_image_small' => $products_image ?? ''
+                  ];
 
-            $this->app->db->save('products', $sql_data_products_image, $update_sql_data);
-          }
+                  $this->app->db->save('products', $sql_data_products_image, $update_sql_data);
+                }
 
-//zoom
-          $products_image_zoom = Gpt::createImageChatGpt($Qproducts->value('products_name'), 'products', '512x512', true);
+               //zoom
+                $products_image_zoom = Gpt::createImageChatGpt($Qproducts->value('products_name'), 'products', '512x512', true);
 
-          if (!empty($products_image_zoom) || $products_image_zoom !== false) {
-            $sql_data_array_products_image_zoom = [
-              'products_image_zoom' => $products_image_zoom ?? '',
-            ];
+                if (!empty($products_image_zoom) || $products_image_zoom !== false) {
+                  $sql_data_array_products_image_zoom = [
+                    'products_image_zoom' => $products_image_zoom ?? '',
+                  ];
 
-            $this->app->db->save('products', $sql_data_array_products_image_zoom, $update_sql_data);
+                  $this->app->db->save('products', $sql_data_array_products_image_zoom, $update_sql_data);
 
-            $sql_array = [
-              'products_id' => $Qcheck->valueInt('products_id'),
-              'image' => $products_image_zoom ?? '',
-              'htmlcontent' => '',
-              'sort_order' => 2
-            ];
+                  $sql_array = [
+                    'products_id' => $Qcheck->valueInt('products_id'),
+                    'image' => $products_image_zoom ?? '',
+                    'htmlcontent' => '',
+                    'sort_order' => 2
+                  ];
 
-            $this->app->db->save('products_images', $sql_array);
-          }
+                  $this->app->db->save('products_images', $sql_array);
+                }
 
-// medium
-          $products_image_medium = Gpt::createImageChatGpt($Qproducts->value('products_name'), 'products', '512x512', true);
+                // medium
+                $products_image_medium = Gpt::createImageChatGpt($Qproducts->value('products_name'), 'products', '512x512', true);
 
-          if (!empty($products_image_medium) || $products_image_medium !== false) {
-            $sql_data_array_products_image_medium = [
-              'products_image_medium' => $products_image_medium ?? '',
-            ];
+                if (!empty($products_image_medium) || $products_image_medium !== false) {
+                  $sql_data_array_products_image_medium = [
+                    'products_image_medium' => $products_image_medium ?? '',
+                  ];
 
-            $this->app->db->save('products', $sql_data_array_products_image_medium, $update_sql_data);
+                  $this->app->db->save('products', $sql_data_array_products_image_medium, $update_sql_data);
 
-            $sql_array = [
-              'products_id' => $Qcheck->valueInt('products_id'),
-              'image' => $products_image_medium ?? '',
-              'htmlcontent' => '',
-              'sort_order' => 2
-            ];
+                  $sql_array = [
+                    'products_id' => $Qcheck->valueInt('products_id'),
+                    'image' => $products_image_medium ?? '',
+                    'htmlcontent' => '',
+                    'sort_order' => 2
+                  ];
 
-            $this->app->db->save('products_images', $sql_array);
-          }
-}
-*/	
+                  $this->app->db->save('products_images', $sql_array);
+                }
+              }
+      */
       }
     }
-  }    
 }

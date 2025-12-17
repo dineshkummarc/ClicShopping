@@ -12,7 +12,11 @@ namespace ClicShopping\AI\Security;
 
 use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Registry;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use DateTime;
 use ClicShopping\AI\Security\SecurityLogger;
+
 
 /**
  * LlmGuardrails
@@ -29,6 +33,8 @@ class LlmGuardrails
   private const MIN_CONFIDENCE_SCORE = 0.6; // a implementer
 
   protected static ?SecurityLogger $securityLogger = null;
+  private static mixed $language = null;
+  private static bool $debug = false;
 
   // Pondérations configurables pour le calcul du score global
   private const WEIGHTS = [
@@ -38,7 +44,6 @@ class LlmGuardrails
     'numerical' => 0.15,
     'sources' => 0.05
   ];
-
 
   // Patterns de détection d'hallucinations e-commerce
   private const SUSPICIOUS_PATTERNS = [
@@ -100,8 +105,10 @@ class LlmGuardrails
       self::$securityLogger = new SecurityLogger();
       self::$debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True';
     }
-}
-  
+    
+      self::$language = Registry::get('Language');
+  }
+
   /**
    * Checks guardrails on the LLM response.
    *
@@ -134,8 +141,8 @@ class LlmGuardrails
         break;
 
       case 'allow_with_warning':
-        $confidenceScore = round($guardrailsValidation['confidence_score'] * 100)  . '%*';
-        $result = CLICSHOPPING::getDef('success_llm_guardrails_manual_confidence_score', ['result' => $result, 'confidence' => $confidenceScore]);
+        // Ne pas écraser $result - la réponse est déjà validée
+        // Le warning est géré par les métriques de guardrails affichées séparément
         break;
     }
 
@@ -144,21 +151,21 @@ class LlmGuardrails
     return $evaluationResults;
   }
 
-/**
- * Main guardrails method - Full validation of the LLM response.
- *
- * Performs a comprehensive validation of the AI-generated answer, including:
- * - Structural checks (length, encoding, malicious code, JSON structure)
- * - E-commerce business content validation (realistic metrics, percentages)
- * - Hallucination detection (suspicious patterns, future dates, impossible values)
- * - Numerical data validation (sales figures, percentages, currency amounts, math consistency)
- * - (Optional) Source and citation validation
- * - Global confidence score calculation
- * - Final decision (allow, block, manual review, warning) based on validation results
- *
- * @param string $result The AI-generated response to validate
- * @return array Validation results including scores and recommended action
- */
+  /**
+   * Main guardrails method - Full validation of the LLM response.
+   *
+   * Performs a comprehensive validation of the AI-generated answer, including:
+   * - Structural checks (length, encoding, malicious code, JSON structure)
+   * - E-commerce business content validation (realistic metrics, percentages)
+   * - Hallucination detection (suspicious patterns, future dates, impossible values)
+   * - Numerical data validation (sales figures, percentages, currency amounts, math consistency)
+   * - (Optional) Source and citation validation
+   * - Global confidence score calculation
+   * - Final decision (allow, block, manual review, warning) based on validation results
+   *
+   * @param string $result The AI-generated response to validate
+   * @return array Validation results including scores and recommended action
+   */
   public static function GuardrailsResult(string $result): array
   {
     self::initLogger();
@@ -181,8 +188,8 @@ class LlmGuardrails
       $validationResults['numerical'] = $numericalValidation;
 
       // 5. Validation des sources et citations
-     // $sourceValidation = self::validateSources($result);
-    //  $validationResults['sources'] = $sourceValidation;
+      $sourceValidation = self::validateSources($result);
+      $validationResults['sources'] = $sourceValidation;
 
       // 6. Score de confiance global
       $confidenceScore = self::calculateConfidenceScore($validationResults);
@@ -204,26 +211,26 @@ class LlmGuardrails
 
       return [
         'error' => true,
-        'message' =>  CLICSHOPPING::getDef('error_llm_guardrails_validation'),
+        'message' => CLICSHOPPING::getDef('error_llm_guardrails_validation'),
         'is_valid' => false,
         'action' => 'block'
       ];
     }
-}
+  }
 
-/**
- * Structural validation of the response.
- *
- * Checks the structure of the AI-generated response, including:
- * - Length constraints
- * - UTF-8 encoding validity
- * - Presence of content
- * - Absence of malicious code (e\.g\. scripts)
- * - Valid JSON structure if applicable
- *
- * @param string $result The AI-generated response to validate
- * @return array Validation results with individual checks and a global score
- */
+  /**
+   * Structural validation of the response.
+   *
+   * Checks the structure of the AI-generated response, including:
+   * - Length constraints
+   * - UTF-8 encoding validity
+   * - Presence of content
+   * - Absence of malicious code (e\.g\. scripts)
+   * - Valid JSON structure if applicable
+   *
+   * @param string $result The AI-generated response to validate
+   * @return array Validation results with individual checks and a global score
+   */
   private static function validateStructure(string $result): array
   {
     $validation = [
@@ -239,16 +246,16 @@ class LlmGuardrails
     return $validation;
   }
 
- /**
-  * Business Content Validation (e-commerce)
-  *
-  * Validates the business logic and domain-specific content of the AI-generated response.
-  * Checks for realistic e-commerce metrics, valid percentages, and optionally product references,
-  * currency formats, and temporal consistency.
-  *
-  * @param string $result The AI-generated response to validate
-  * @return array Validation results with individual checks and a global score
-  */
+  /**
+   * Business Content Validation (e-commerce)
+   *
+   * Validates the business logic and domain-specific content of the AI-generated response.
+   * Checks for realistic e-commerce metrics, valid percentages, and optionally product references,
+   * currency formats, and temporal consistency.
+   *
+   * @param string $result The AI-generated response to validate
+   * @return array Validation results with individual checks and a global score
+   */
   private static function validateBusinessContent(string $result): array
   {
     $validation = [
@@ -261,14 +268,14 @@ class LlmGuardrails
     return $validation;
   }
 
-/**
- * Specific Hallucination Detection
- *
- * Detects suspicious patterns in the LLM response that may indicate hallucinations,
- * such as unrealistic sales figures, future dates, or impossible values.
- * Returns details about detected patterns, future dates, impossible values,
- * a reversed score, and a suspect flag.
- */
+  /**
+   * Specific Hallucination Detection
+   *
+   * Detects suspicious patterns in the LLM response that may indicate hallucinations,
+   * such as unrealistic sales figures, future dates, or impossible values.
+   * Returns details about detected patterns, future dates, impossible values,
+   * a reversed score, and a suspect flag.
+   */
   private static function detectHallucinations(string $result): array
   {
     $suspiciousCount = 0;
@@ -281,42 +288,33 @@ class LlmGuardrails
       }
     }
 
+    // Vérification des dates impossibles
     $futureDates = self::detectFutureDates($result);
     $impossibleValues = self::detectImpossibleValues($result);
-
-    $hallucinationScore = 1 - min(1, $suspiciousCount / 3);
-
-    $isSuspect = (
-      $hallucinationScore < self::HALLUCINATION_THRESHOLD ||
-      $suspiciousCount > 2 ||
-      !empty($futureDates) ||
-      !empty($impossibleValues)
-    );
 
     return [
       'suspicious_patterns_count' => $suspiciousCount,
       'detected_patterns' => $detectedPatterns,
       'future_dates' => $futureDates,
       'impossible_values' => $impossibleValues,
-      'score' => $hallucinationScore,
-      'is_suspect' => $isSuspect
+      'score' => 1 - min(1, $suspiciousCount / 3), // Score inversé
+      'is_suspect' => $suspiciousCount > 2 || !empty($futureDates) || !empty($impossibleValues)
     ];
   }
 
-
   /**
-  * Numeric Data Validation
-  *
-  * Validates numerical data in the AI-generated response.
-  * Extracts numbers from the text and checks for:
-  * - Realistic sales figures
-  * - Valid percentage ranges
-  * - Mathematical consistency (e\.g\. totals vs subtotals)
-  * - Plausible currency amounts
-  *
-  * @param string $result The AI-generated response to validate
-  * @return array Validation results with individual checks and a global score
-  */
+   * Numeric Data Validation
+   *
+   * Validates numerical data in the AI-generated response.
+   * Extracts numbers from the text and checks for:
+   * - Realistic sales figures
+   * - Valid percentage ranges
+   * - Mathematical consistency (e\.g\. totals vs subtotals)
+   * - Plausible currency amounts
+   *
+   * @param string $result The AI-generated response to validate
+   * @return array Validation results with individual checks and a global score
+   */
   private static function validateNumericalData(string $result): array
   {
     // Extraction des nombres du texte
@@ -333,15 +331,15 @@ class LlmGuardrails
     return $validation;
   }
 
-/**
- * Calculates the overall confidence score for the LLM response validation.
- *
- * Aggregates the scores from different validation categories (structural, content, hallucination, numerical, sources)
- * using predefined weights. Returns a float between 0.0 and 1.0 representing the global confidence in the response.
- *
- * @param array $validationResults Array of validation results for each category.
- * @return float Global confidence score (0.0 to 1.0).
- */
+  /**
+   * Calculates the overall confidence score for the LLM response validation.
+   *
+   * Aggregates the scores from different validation categories (structural, content, hallucination, numerical, sources)
+   * using predefined weights. Returns a float between 0.0 and 1.0 representing the global confidence in the response.
+   *
+   * @param array $validationResults Array of validation results for each category.
+   * @return float Global confidence score (0.0 to 1.0).
+   */
   private static function calculateConfidenceScore(array $validationResults): float
   {
     $totalScore = 0;
@@ -367,10 +365,6 @@ class LlmGuardrails
    */
   private static function determineAction(float $confidenceScore, array $validationResults): string
   {
-    if ($confidenceScore < self::MIN_CONFIDENCE_SCORE) {
-      return 'block';
-    }
-
     if ($confidenceScore >= 0.9) {
       return 'allow';
     } elseif ($confidenceScore >= 0.7) {
@@ -382,17 +376,17 @@ class LlmGuardrails
     }
   }
 
-/**
- * Evaluates the LLM response for quality and relevance.
- *
- * Assesses the generated answer based on relevance to the question, business accuracy,
- * completeness, clarity, and optionally uses an LLM model for further evaluation.
- * Returns an array with individual scores, overall score, and improvement recommendations.
- *
- * @param string $question The question asked to the LLM.
- * @param string $result The response generated by the LLM.
- * @return array Evaluation results including scores and recommendations.
- */
+  /**
+   * Evaluates the LLM response for quality and relevance.
+   *
+   * Assesses the generated answer based on relevance to the question, business accuracy,
+   * completeness, clarity, and optionally uses an LLM model for further evaluation.
+   * Returns an array with individual scores, overall score, and improvement recommendations.
+   *
+   * @param string $question The question asked to the LLM.
+   * @param string $result The response generated by the LLM.
+   * @return array Evaluation results including scores and recommendations.
+   */
   public static function evaluateLlmResponse(string $question, string $result): array
   {
     self::initLogger();
@@ -430,7 +424,12 @@ class LlmGuardrails
       $overallScore = self::calculateOverallEvaluationScore($evaluationResults);
       $evaluationResults['overall_score'] = $overallScore;
 
-      // 7. Recommandations d'amélioration
+      // 7. Calcul des métriques de sécurité pour l'affichage
+      $evaluationResults['security_analysis'] = self::calculateSecurityMetrics($evaluationResults);
+      $evaluationResults['hallucination_risk'] = self::calculateHallucinationRisk($evaluationResults);
+      $evaluationResults['source_quality'] = self::calculateSourceQuality($evaluationResults);
+
+      // 8. Recommandations d'amélioration
       $recommendations = self::generateRecommendations($evaluationResults);
       $evaluationResults['recommendations'] = $recommendations;
 
@@ -438,29 +437,29 @@ class LlmGuardrails
       self::saveEvaluationResults($question, $result, $evaluationResults);
 
       if (self::$debug) {
-        self::$securityLogger->logSecurityEvent('LLM Evaluation Results: '  . json_encode($evaluationResults), 'error');
+        self::$securityLogger->logSecurityEvent('LLM Evaluation Results: ' . json_encode($evaluationResults), 'error');
       }
 
       return $evaluationResults;
 
     } catch (Exception $e) {
-      self::$securityLogger->logSecurityEvent('Evaluation Error: '  . $e->getMessage(), 'error');
+      self::$securityLogger->logSecurityEvent('Evaluation Error: ' . $e->getMessage(), 'error');
 
       return [
         'error' => true,
         'message' => CLICSHOPPING::getDef('error_llm_guardrails_evaluation')
       ];
     }
-}
+  }
 
-/**
- * Evaluation using an LLM as a judge.
- *
- * This method uses a language model to assess the quality of the AI-generated response.
- * It builds an evaluation prompt based on predefined criteria, sends it to the LLM,
- * and parses the returned evaluation. The result typically includes scores and comments
- * about accuracy, reliability, relevance, and clarity.
- */
+  /**
+   * Evaluation using an LLM as a judge.
+   *
+   * This method uses a language model to assess the quality of the AI-generated response.
+   * It builds an evaluation prompt based on predefined criteria, sends it to the LLM,
+   * and parses the returned evaluation. The result typically includes scores and comments
+   * about accuracy, reliability, relevance, and clarity.
+   */
   private static function performLlmEvaluation(string $question, string $result): array
   {
     self::initLogger();
@@ -468,7 +467,7 @@ class LlmGuardrails
     $evaluationPrompt = $criteriaPrompt->getEvaluationPromptForQuestion($question, $result);
 
     if (self::$debug) {
-      self::$securityLogger->logSecurityEvent('LLM Evaluation Prompt: '  . $evaluationPrompt, 'error');
+      self::$securityLogger->logSecurityEvent('LLM Evaluation Prompt: ' . $evaluationPrompt, 'error');
     }
 
     // Appel au modèle d'évaluation (implémentation selon votre architecture)
@@ -477,21 +476,21 @@ class LlmGuardrails
 
       return self::parseLlmEvaluationResponse($evaluationResponse);
     } catch (Exception $e) {
-      self::$securityLogger->logSecurityEvent('LLM Evaluation failed: '  . $e->getMessage(), 'error');
+      self::$securityLogger->logSecurityEvent('LLM Evaluation failed: ' . $e->getMessage(), 'error');
 
       return ['error' => 'LLM evaluation failed'];
     }
-}
+  }
 
- /**
-  * Calls the internal LLM evaluation model with the provided prompt.
-  *
-  * This method sends the evaluation prompt to the LLM wrapper and returns the generated response as a string.
-  * Used for automated assessment of AI-generated answers based on custom criteria.
-  *
-  * @param string $prompt The evaluation prompt to send to the LLM.
-  * @return string The raw response from the LLM evaluation model.
-  */
+  /**
+   * Calls the internal LLM evaluation model with the provided prompt.
+   *
+   * This method sends the evaluation prompt to the LLM wrapper and returns the generated response as a string.
+   * Used for automated assessment of AI-generated answers based on custom criteria.
+   *
+   * @param string $prompt The evaluation prompt to send to the LLM.
+   * @return string The raw response from the LLM evaluation model.
+   */
   private static function callEvaluationModel(string $prompt): string
   {
     self::initLogger();
@@ -503,21 +502,21 @@ class LlmGuardrails
 
       return trim($response);
     } catch (\Throwable $e) {
-      self::$securityLogger->logSecurityEvent('LLM evaluation call failed: '  . $e->getMessage(), 'error');
+      self::$securityLogger->logSecurityEvent('LLM evaluation call failed: ' . $e->getMessage(), 'error');
 
       return '';
     }
-}
+  }
 
- /**
-  * Parses the LLM evaluation response.
-  *
-  * Extracts and decodes a JSON block from the raw LLM response string.
-  * Returns an associative array with evaluation scores and comments.
-  *
-  * @param string $response The raw response from the LLM evaluation model.
-  * @return array Parsed evaluation data or default values if parsing fails.
-  */
+  /**
+   * Parses the LLM evaluation response.
+   *
+   * Extracts and decodes a JSON block from the raw LLM response string.
+   * Returns an associative array with evaluation scores and comments.
+   *
+   * @param string $response The raw response from the LLM evaluation model.
+   * @return array Parsed evaluation data or default values if parsing fails.
+   */
   private static function parseLlmEvaluationResponse(string $response): array
   {
     // Extraction brute du bloc JSON dans la réponse textuelle
@@ -540,38 +539,50 @@ class LlmGuardrails
     ];
   }
 
- /**
-  * Default evaluation prompt generator.
-  *
-  * Returns an anonymous class that builds an evaluation prompt for LLM assessment,
-  * using the provided question and result. The prompt is used to instruct the LLM
-  * to evaluate the quality and relevance of the AI-generated response.
-  */
+  /**
+   * Default evaluation prompt generator.
+   *
+   * Returns an anonymous class that builds an evaluation prompt for LLM assessment,
+   * using the provided question and result. The prompt is used to instruct the LLM
+   * to evaluate the quality and relevance of the AI-generated response.
+   */
   private static function getDefaultCriteriaEvaluatorPromptBuilder(): object
   {
     return new class {
+      private mixed $language;
+      
+      public function __construct() {
+        $this->language = \ClicShopping\OM\Registry::get('Language');
+      }
+      
       public function getEvaluationPromptForQuestion(string $question, string $result): string
       {
-         return CLICSHOPPING::getDef('llm_guardrails_prompt', ['result' => $result, 'question' => $question]);
+        // Load SYSTEM prompt in English for better LLM evaluation (internal process)
+        // Note: This evaluates the response quality, not user-facing
+        $this->language->loadDefinitions('main', 'en', null, 'ClicShoppingAdmin');
+        return $this->language->getDef('llm_guardrails_prompt', [
+          'result' => $result, 
+          'question' => $question
+        ]);
       }
-     };
+    };
   }
 
-/**
- * Validates if the e-commerce metrics in the AI-generated response are realistic.
- *
- * Checks for suspicious growth percentages (e\.g\. excessive growth rates).
- * Returns true if metrics are within realistic bounds, false otherwise.
- *
- * @param string $result The AI-generated response to validate.
- * @return bool True if metrics are realistic, false otherwise.
- */
+  /**
+   * Validates if the e-commerce metrics in the AI-generated response are realistic.
+   *
+   * Checks for suspicious growth percentages (e\.g\. excessive growth rates).
+   * Returns true if metrics are within realistic bounds, false otherwise.
+   *
+   * @param string $result The AI-generated response to validate.
+   * @return bool True if metrics are realistic, false otherwise.
+   */
   private static function validateRealisticMetrics(string $result): bool
   {
     // Validation des métriques e-commerce réalistes
     // Ex: croissance > 1000% suspecte
     if (preg_match('/(\d+)%/', $result, $matches)) {
-      $percentage = (int)$matches[1];
+      $percentage = (int) $matches[1];
 
       return $percentage <= 500; // Croissance max réaliste
     }
@@ -597,14 +608,14 @@ class LlmGuardrails
   }
 
   /**
-   * Detects impossible or unrealistic numerical values within the text.
+   * Detects impossible values in the AI-generated response.
    *
-   * This method scans the input string for percentages or numeric values that exceed
-   * reasonable limits (e.g., percentages above 1000%), which may indicate
-   * hallucinations or errors in the AI-generated response.
+   * Scans the response for any values that are unrealistic or impossible
+   * in the context of e-commerce, such as percentages over 1000% or
+   * other nonsensical numerical values.
    *
-   * @param string $result The text to scan for impossible values.
-   * @return array An array of detected impossible values as strings (e.g., "1200%"); empty if none are found.
+   * @param string $result The AI-generated response to scan for impossible values.
+   * @return array List of detected impossible values.
    */
   private static function detectImpossibleValues(string $result): array
   {
@@ -613,7 +624,7 @@ class LlmGuardrails
     // Détection de valeurs impossibles (ex: pourcentages > 100% pour certains contextes)
     if (preg_match_all('/(\d+(?:\.\d+)?)%/', $result, $matches)) {
       foreach ($matches[1] as $value) {
-        if ((float)$value > 1000) { // Pourcentage aberrant
+        if ((float) $value > 1000) { // Pourcentage aberrant
           $impossibleValues[] = $value . '%';
         }
       }
@@ -647,18 +658,18 @@ class LlmGuardrails
 
     // Implémentation selon votre système de stockage
     if (self::$debug) {
-      self::$securityLogger->logSecurityEvent('Evaluation saved: '  .  json_encode($data), 'success');
+      self::$securityLogger->logSecurityEvent('Evaluation saved: ' . json_encode($data), 'success');
     }
-}
+  }
 
- /**
-  * Checks if the given text contains potentially malicious code.
-  *
-  * Scans for common attack vectors such as \<script\>, \<iframe\>, javascript: URLs, or onclick attributes.
-  *
-  * @param string $text The text to scan for malicious code.
-  * @return bool True if malicious code is detected, false otherwise.
-  */
+  /**
+   * Checks if the given text contains potentially malicious code.
+   *
+   * Scans for common attack vectors such as \<script\>, \<iframe\>, javascript: URLs, or onclick attributes.
+   *
+   * @param string $text The text to scan for malicious code.
+   * @return bool True if malicious code is detected, false otherwise.
+   */
   private static function containsMaliciousCode(string $text): bool
   {
     $patterns = ['/<script/', '/<iframe/', '/javascript:/', '/onclick=/'];
@@ -671,12 +682,12 @@ class LlmGuardrails
     return false;
   }
 
-/**
- * Checks if the provided text is a valid JSON structure.
- *
- * @param string $text The text to validate as JSON.
- * @return bool True if the text contains valid JSON, false otherwise.
- */
+  /**
+   * Checks if the provided text is a valid JSON structure.
+   *
+   * @param string $text The text to validate as JSON.
+   * @return bool True if the text contains valid JSON, false otherwise.
+   */
   private static function validateJsonStructure(string $text): bool
   {
     // Si le texte contient du JSON, vérifier sa validité
@@ -766,7 +777,6 @@ class LlmGuardrails
 
     foreach ($matches[1] as $value) {
       $val = (float) str_replace(',', '.', $value);
-      
       if ($val < 0 || $val > 500) {
         return false;
       }
@@ -788,7 +798,6 @@ class LlmGuardrails
   {
     foreach ($numbers as $n) {
       $val = (float) str_replace([',', ' '], '', $n);
-      
       if ($val > 10000000) {
         return false;
       }	
@@ -811,7 +820,6 @@ class LlmGuardrails
     preg_match_all('/(\d+(?:[.,]\d+)?)%/', $result, $matches);
     foreach ($matches[1] as $value) {
       $val = (float) str_replace(',', '.', $value);
-      
       if ($val < 0 || $val > 1000) {
         return false;
       }	
@@ -834,7 +842,7 @@ class LlmGuardrails
     // Heuristique simple : égalité entre sous-totaux et totaux
     // Exemple : "Total: 100€, Produit A: 60€, Produit B: 40€"
     if (preg_match_all('/(\d+(?:[.,]\d+)?)\s*(€|\$)?/', $result, $matches)) {
-      $values = array_map(fn($v) => (float)str_replace(',', '.', $v), $matches[1]);
+      $values = array_map(fn($v) => (float) str_replace(',', '.', $v), $matches[1]);
 
       if (count($values) >= 3) {
         $sum = array_sum(array_slice($values, 1));
@@ -842,7 +850,7 @@ class LlmGuardrails
 
         return $delta < 1.0;
       }
-}
+    }
 
     return true;
   }
@@ -862,13 +870,81 @@ class LlmGuardrails
 
     foreach ($matches[1] as $value) {
       $amount = (float) str_replace(',', '.', $value);
-      
       if ($amount < 0 || $amount > 1000000) {
         return false;
       }
     }
 
     return true;
+  }
+
+  /**
+   * Validates sources and citations in the AI-generated response.
+   *
+   * Checks for the presence, quality and authenticity of sources.
+   * Returns detailed validation results with score.
+   *
+   * @param string $result The AI-generated response to validate.
+   * @return array Validation results with source analysis.
+   */
+  private static function validateSources(string $result): array
+  {
+    $validation = [
+      'has_sources' => false,
+      'source_count' => 0,
+      'valid_citations' => 0,
+      'suspicious_sources' => 0,
+      'score' => 0.0
+    ];
+
+    // Patterns de détection des sources (anglais - traitement LLM en anglais)
+    $sourcePatterns = [
+      '/source\s*:\s*([^\n]+)/i',
+      '/\(see\s+([^)]+)\)/i',
+      '/\[([^\]]+)\]/',
+      '/according\s+to\s+([^,\.]+)/i',
+      '/based\s+on\s+([^,\.]+)/i',
+      '/documents?\s+([0-9]+)/i',
+      '/reference\s+([0-9]+)/i',
+      '/cited\s+in\s+([^,\.]+)/i'
+    ];
+
+    $totalSources = 0;
+    $validSources = 0;
+
+    foreach ($sourcePatterns as $pattern) {
+      if (preg_match_all($pattern, $result, $matches)) {
+        $totalSources += count($matches[1]);
+
+        foreach ($matches[1] as $source) {
+          $source = trim($source);
+          // Vérifier si la source semble valide
+          if (
+            strlen($source) > 3 &&
+            !preg_match('/^(test|exemple|fictif|imaginaire)/i', $source) &&
+            !preg_match('/^(lorem|ipsum|placeholder)/i', $source)
+          ) {
+            $validSources++;
+          } else {
+            $validation['suspicious_sources']++;
+          }
+        }
+      }
+    }
+
+    $validation['has_sources'] = $totalSources > 0;
+    $validation['source_count'] = $totalSources;
+    $validation['valid_citations'] = $validSources;
+
+    // Calculer le score
+    if ($totalSources == 0) {
+      $validation['score'] = 0.3; // Pas de sources = score faible mais pas critique
+    } else {
+      $validRatio = $validSources / $totalSources;
+      $validation['score'] = min(1.0, $validRatio * 0.8 + 0.2);
+    }
+
+    return $validation;
   }
 
   /**
@@ -916,14 +992,14 @@ class LlmGuardrails
       if (preg_match($pattern, $result)) {
         $penalties += 1;
       }
-}
+    }
 
     $score = 1.0 - min(1.0, $penalties * 0.25);
 
     return max(0.0, $score);
   }
 
-/**
+  /**
    * Calculates the overall evaluation score based on individual scores.
    *
    * Aggregates the scores from relevance, accuracy, completeness, clarity,
@@ -958,6 +1034,141 @@ class LlmGuardrails
   }
 
   /**
+   * Calculate security metrics from validation results
+   * 
+   * Aggregates security-related data from guardrails validation
+   * to provide a comprehensive security analysis score.
+   * 
+   * @param array $evaluationResults The evaluation results containing validation data
+   * @return array Security analysis data with aggregated scores
+   */
+  private static function calculateSecurityMetrics(array $evaluationResults): array
+  {
+    // Get guardrails validation results if available
+    $guardrailsData = $evaluationResults['guardrails'] ?? [];
+    
+    $securityMetrics = [
+      'structural_score' => 0.0,
+      'content_score' => 0.0,
+      'hallucination_score' => 0.0,
+      'numerical_score' => 0.0,
+      'sources_score' => 0.0,
+      'overall_security_score' => 0.0
+    ];
+
+    // Extract scores from guardrails validation
+    if (isset($guardrailsData['structural']['score'])) {
+      $securityMetrics['structural_score'] = $guardrailsData['structural']['score'];
+    }
+    
+    if (isset($guardrailsData['content']['score'])) {
+      $securityMetrics['content_score'] = $guardrailsData['content']['score'];
+    }
+    
+    if (isset($guardrailsData['hallucination']['score'])) {
+      $securityMetrics['hallucination_score'] = $guardrailsData['hallucination']['score'];
+    }
+    
+    if (isset($guardrailsData['numerical']['score'])) {
+      $securityMetrics['numerical_score'] = $guardrailsData['numerical']['score'];
+    }
+    
+    if (isset($guardrailsData['sources']['score'])) {
+      $securityMetrics['sources_score'] = $guardrailsData['sources']['score'];
+    }
+    
+    // Calculate overall security score (weighted average)
+    $weights = [
+      'structural_score' => 0.2,
+      'content_score' => 0.25,
+      'hallucination_score' => 0.3,
+      'numerical_score' => 0.15,
+      'sources_score' => 0.1
+    ];
+    
+    $totalScore = 0.0;
+    $totalWeight = 0.0;
+    
+    foreach ($weights as $key => $weight) {
+      if ($securityMetrics[$key] > 0) {
+        $totalScore += $securityMetrics[$key] * $weight;
+        $totalWeight += $weight;
+      }
+    }
+    
+    // Calculate weighted average, or use default if no data
+    $securityMetrics['overall_security_score'] = $totalWeight > 0 
+      ? $totalScore / $totalWeight 
+      : 0.5; // Default fallback
+    
+    return $securityMetrics;
+  }
+
+  /**
+   * Calculate hallucination risk score
+   */
+  private static function calculateHallucinationRisk(array $evaluationResults): float
+  {
+    $hallucinationData = $evaluationResults['hallucination'] ?? [];
+
+    $riskFactors = 0;
+    $totalFactors = 4;
+
+    // Suspicious patterns
+    if (isset($hallucinationData['suspicious_patterns_count']) && $hallucinationData['suspicious_patterns_count'] > 0) {
+      $riskFactors += min(1.0, $hallucinationData['suspicious_patterns_count'] / 3);
+    }
+
+    // Future dates
+    if (isset($hallucinationData['future_dates']) && !empty($hallucinationData['future_dates'])) {
+      $riskFactors += 1;
+    }
+
+    // Impossible values
+    if (isset($hallucinationData['impossible_values']) && !empty($hallucinationData['impossible_values'])) {
+      $riskFactors += 1;
+    }
+
+    // Overall suspicion
+    if (isset($hallucinationData['is_suspect']) && $hallucinationData['is_suspect']) {
+      $riskFactors += 1;
+    }
+
+    return min(1.0, $riskFactors / $totalFactors);
+  }
+
+  /**
+   * Calculate source quality score
+   */
+  private static function calculateSourceQuality(array $evaluationResults): float
+  {
+    $sourceData = $evaluationResults['sources'] ?? [];
+
+    if (!isset($sourceData['source_count']) || $sourceData['source_count'] == 0) {
+      return 0.3; // No sources = low quality but not critical
+    }
+
+    $qualityScore = 0.0;
+
+    // Base score from valid citations ratio
+    if (isset($sourceData['valid_citations']) && $sourceData['source_count'] > 0) {
+      $validRatio = $sourceData['valid_citations'] / $sourceData['source_count'];
+      $qualityScore += $validRatio * 0.6;
+    }
+
+    // Penalty for suspicious sources
+    if (isset($sourceData['suspicious_sources']) && $sourceData['suspicious_sources'] > 0) {
+      $suspiciousRatio = $sourceData['suspicious_sources'] / $sourceData['source_count'];
+      $qualityScore -= $suspiciousRatio * 0.3;
+    }
+
+    // Bonus for having sources
+    $qualityScore += 0.4;
+
+    return max(0.0, min(1.0, $qualityScore));
+  }
+
+  /**
    * Generates improvement recommendations based on evaluation results.
    *
    * Analyzes the evaluation results and returns an array of recommendations
@@ -986,6 +1197,17 @@ class LlmGuardrails
     if (($evaluationResults['clarity'] ?? 1) < 0.7) {
       $reco[] = CLICSHOPPING::getDef('llm_guardrails_prompt_clarity');
    }   
+
+    // Nouvelles recommandations de sécurité
+    $hallucinationRisk = self::calculateHallucinationRisk($evaluationResults);
+    if ($hallucinationRisk > 0.5) {
+      $reco[] = "Attention: risque élevé d'hallucination détecté";
+    }
+
+    $sourceQuality = self::calculateSourceQuality($evaluationResults);
+    if ($sourceQuality < 0.5) {
+      $reco[] = "Améliorer la qualité et la fiabilité des sources";
+    }
 
     return $reco;
   }

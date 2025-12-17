@@ -57,84 +57,12 @@ class CostEstimation extends \ClicShopping\OM\Modules\AdminDashboardAbstract
    */
   public function getOutput(): string
   {
-    $modelPrices = [
-      'gpt-5-nano'    => 0.0005,
-      'gpt-5-mini'    => 0.0025,
-      'gpt-5'         => 0.0125,
-      'gpt-4.1-mini'  => 0.0012,
-      'gpt-4.1-nano'  => 0.0008,
-      'gpt-4o'        => 0.0025,
-      'gpt-3.5-turbo' => 0.0005,
-    ];
-
-    $colors = [
-      'gpt-5-nano'    => 'rgba(255, 99, 132, 0.5)',    // Red-ish
-      'gpt-5-mini'    => 'rgba(54, 162, 235, 0.5)',    // Blue
-      'gpt-5'         => 'rgba(255, 206, 86, 0.5)',    // Yellow
-      'gpt-4.1-mini'  => 'rgba(75, 192, 192, 0.5)',    // Teal
-      'gpt-4.1-nano'  => 'rgba(153, 102, 255, 0.5)',   // Purple
-      'gpt-4o'        => 'rgba(255, 159, 64, 0.5)',    // Orange
-      'gpt-3.5-turbo' => 'rgba(100, 255, 218, 0.5)',   // Aqua Green
-    ];
-
-    // Query by month *and* model
-    $Qorders = $this->app->db->query("
-        SELECT DATE_FORMAT(date_added, '%Y-%m') as month, 
-               model,
-               SUM(totalTokens) as total
-        FROM :table_gpt_usage
-        WHERE date_added >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-        GROUP BY month, model
-        ORDER BY month ASC
-    ");
-
-    $rawData = [];
-
-    while ($Qorders->fetch()) {
-      $month = $Qorders->value('month');
-      $model = $Qorders->value('model');
-      $totalTokens = $Qorders->valueInt('total');
-
-      if (!isset($rawData[$model])) {
-        $rawData[$model] = [];
-      }
-
-      $rawData[$model][$month] = ($totalTokens) * (($modelPrices[$model] ?? 0.0005) / 10);
-    }
-
-    // Collect all months (even missing for some models)
-    $allMonths = [];
-
-    foreach ($rawData as $modelData) {
-      foreach ($modelData as $month => $value) {
-        $allMonths[$month] = true;
-      }
-    }
-
-    ksort($allMonths); // sort months ascending
-    $labels = array_keys($allMonths);
-
-    $datasets = [];
-
-    foreach ($rawData as $model => $data) {
-      $modelData = [];
-
-      foreach ($labels as $month) {
-        $modelData[] = $data[$month] ?? 0; // fill missing months with 0
-      }
-
-      $datasets[] = [
-        'label' => $model,
-        'data' => $modelData,
-        'backgroundColor' => $colors[$model] ?? 'rgba(0,0,0,0.3)',
-      ];
-    }
-
-    $data_labels = json_encode($labels);
-    $data_datasets = json_encode($datasets);
+    $charts = TokenChartDataProvider::getChartsData();
 
     $chart_label_link = $this->app->getDef('module_admin_dashboard_total_cost_estimation_app_chart_link');
     $content_width = 'col-md-' . (int)MODULE_ADMIN_DASHBOARD_TOTAL_COST_ESTIMATION_APP_CONTENT_WIDTH;
+
+    $chartConfig = htmlspecialchars(json_encode($charts['cost_estimation']['chart'], JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8');
 
     $output = <<<EOD
 <div class="col-12 {$content_width} d-flex" style="padding-right:0.5rem; padding-top:0.5rem">
@@ -144,7 +72,7 @@ class CostEstimation extends \ClicShopping\OM\Modules\AdminDashboardAbstract
         <h6 class="card-title"><i class="bi bi-graph-up"></i> {$chart_label_link}</h6>
         <p class="card-text">
           <div class="col-md-12">
-            <canvas id="d_total_cost_estimation_app" class="col-md-12" style="display: block; width:100%; height: 215px;"></canvas>
+            <canvas id="d_total_cost_estimation_app" class="col-md-12 chatgpt-token-chart" data-chart-config="{$chartConfig}" style="display: block; width:100%; height: 215px;"></canvas>
           </div>
         </p>
       </div>
@@ -152,37 +80,13 @@ class CostEstimation extends \ClicShopping\OM\Modules\AdminDashboardAbstract
   </div>
 </div>
 
-<script>
-var ctx = document.getElementById('d_total_cost_estimation_app').getContext('2d');
-var myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: $data_labels,
-        datasets: $data_datasets
-    },
-    options: {
-        maintainAspectRatio: true,
-        responsive: true,
-        scales: {
-            y: {
-                beginAtZero: true
-            },
-            x: {
-                stacked: true
-            },
-            y: {
-                stacked: true
-            }
-        },
-        plugins: {
-          legend: {
-            display: true
-          }
-        }
-    }
-});
-</script>
 EOD;
+
+    if (!defined('CHATGPT_TOKEN_CHARTS_JS')) {
+      define('CHATGPT_TOKEN_CHARTS_JS', true);
+      $output .= '<script defer src="' . htmlspecialchars($charts['assets']['script'], ENT_QUOTES, 'UTF-8') . '"></script>';
+    }
+
     return $output;
   }
 

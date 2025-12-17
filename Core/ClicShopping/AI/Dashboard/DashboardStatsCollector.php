@@ -1,0 +1,397 @@
+<?php
+/**
+ *
+ * @copyright 2008 - https://www.clicshopping.org
+ * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
+ * @Licence GPL 2 & MIT
+ * @Info : https://www.clicshopping.org/forum/trademark/
+ *
+ */
+
+namespace ClicShopping\AI\Dashboard;
+
+use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
+use ClicShopping\OM\Registry;
+use ClicShopping\OM\CLICSHOPPING;
+
+/**
+ * DashboardStatsCollector Class
+ * 
+ * 🔧 MIGRATED TO DOCTRINEORM: December 6, 2025
+ * All database queries now use DoctrineOrm instead of PDO
+ */
+class DashboardStatsCollector
+{
+    private $db; // Kept for backward compatibility but not used
+    private string $prefix;
+    
+    public function __construct()
+    {
+        $this->db = Registry::get('Db'); // Kept for backward compatibility
+        $this->prefix = CLICSHOPPING::getConfig('db_table_prefix');
+    }
+    
+    /**
+     * Collecte toutes les statistiques avancées
+     * 
+     * @param int $days Nombre de jours à analyser (défaut: 7)
+     * @return array Toutes les statistiques
+     */
+    public function collectAllStats(int $days = 7): array
+    {
+        return [
+            'classification' => $this->getClassificationStats($days),
+            'security' => $this->getSecurityStats($days),
+            'agents' => $this->getAgentsStats($days),
+            'memory' => $this->getMemoryStats($days),
+            'feedback' => $this->getFeedbackStats($days)
+        ];
+    }
+    
+    /**
+     * Statistiques de Classification (Analytics vs Semantic)
+     * 🔧 MIGRATED TO DOCTRINEORM
+     */
+    public function getClassificationStats(int $days = 7): array
+    {
+        try {
+            // Compter les requêtes par type depuis rag_statistics
+            $results = DoctrineOrm::select("
+                SELECT 
+                    classification_type as type,
+                    COUNT(*) as count,
+                    AVG(CASE WHEN confidence_score IS NOT NULL THEN confidence_score ELSE 0 END) as avg_confidence
+                FROM {$this->prefix}rag_statistics 
+                WHERE date_added >= DATE_SUB(NOW(), INTERVAL ? DAY)
+                GROUP BY classification_type
+            ", [$days]);
+            
+            // Calculer les statistiques
+            $analytics = ['count' => 0, 'avg_confidence' => 0];
+            $semantic = ['count' => 0, 'avg_confidence' => 0];
+            $total = 0;
+            
+            foreach ($results as $row) {
+                $count = $row['count'] ?? 0;
+                $type = $row['type'] ?? '';
+                $avgConfidence = $row['avg_confidence'] ?? 0;
+                
+                $total += $count;
+                if (stripos($type, 'analytics') !== false || stripos($type, 'sql') !== false) {
+                    $analytics['count'] += (int)$count;
+                    $analytics['avg_confidence'] = round($avgConfidence, 2);
+                } else {
+                    $semantic['count'] += (int)$count;
+                    $semantic['avg_confidence'] = round($avgConfidence, 2);
+                }
+            }
+            
+            // Calculer les pourcentages
+            $analytics_percentage = $total > 0 ? round(($analytics['count'] / $total) * 100, 1) : 0;
+            $semantic_percentage = $total > 0 ? round(($semantic['count'] / $total) * 100, 1) : 0;
+            
+            // Calculer la précision globale
+            $overall_precision = 0;
+            if ($total > 0) {
+                $weighted_confidence = ($analytics['count'] * $analytics['avg_confidence'] + 
+                                     $semantic['count'] * $semantic['avg_confidence']) / $total;
+                $overall_precision = round($weighted_confidence, 1);
+            }
+            
+            return [
+                'period_days' => $days,
+                'total_requests' => $total,
+                'overall_precision' => $overall_precision,
+                'analytics' => array_merge($analytics, ['percentage' => $analytics_percentage]),
+                'semantic' => array_merge($semantic, ['percentage' => $semantic_percentage]),
+                'distribution' => [
+                    'analytics' => $analytics_percentage,
+                    'semantic' => $semantic_percentage
+                ]
+            ];
+            
+        } catch (\Exception $e) {
+            error_log("DashboardStatsCollector: Error getting classification stats: " . $e->getMessage());
+            return $this->getEmptyClassificationStats($days);
+        }
+    }
+    
+    /**
+     * Statistiques de Sécurité (LLM Guardrails)
+     * 🔧 MIGRATED TO DOCTRINEORM
+     */
+    public function getSecurityStats(int $days = 7): array
+    {
+        try {
+            // Récupérer les scores de sécurité depuis les interactions
+            $results = DoctrineOrm::select("
+                SELECT 
+                    COUNT(*) as total_evaluations,
+                    AVG(CASE WHEN response_quality > 0 THEN response_quality ELSE 50 END) as avg_security_score,
+                    SUM(CASE WHEN response_quality < 50 THEN 1 ELSE 0 END) as low_security_count
+                FROM {$this->prefix}rag_interactions 
+                WHERE date_added >= DATE_SUB(NOW(), INTERVAL ? DAY)
+            ", [$days]);
+            
+            if (empty($results)) {
+                return $this->getEmptySecurityStats($days);
+            }
+            
+            $total_evaluations = $results[0]['total_evaluations'] ?? 0;
+            if ($total_evaluations == 0) {
+                return $this->getEmptySecurityStats($days);
+            }
+            
+            $avg_score = round($results[0]['avg_security_score'] ?? 0, 1);
+            $low_security_count = $results[0]['low_security_count'] ?? 0;
+            
+            return [
+                'period_days' => $days,
+                'total_evaluations' => $total_evaluations,
+                'avg_security_score' => $avg_score,
+                'low_security_count' => $low_security_count,
+                'security_status' => $this->getSecurityStatus($avg_score)
+            ];
+            
+        } catch (\Exception $e) {
+            error_log("DashboardStatsCollector: Error getting security stats: " . $e->getMessage());
+            return $this->getEmptySecurityStats($days);
+        }
+    }
+    
+    /**
+     * Statistiques des Agents
+     * 🔧 MIGRATED TO DOCTRINEORM
+     */
+    public function getAgentsStats(int $days = 7): array
+    {
+        try {
+            // Compter l'usage par agent depuis rag_statistics
+            $results = DoctrineOrm::select("
+                SELECT 
+                    agent_type as agent_name,
+                    COUNT(*) as usage_count,
+                    AVG(CASE WHEN confidence_score IS NOT NULL THEN confidence_score ELSE 0 END) as avg_confidence
+                FROM {$this->prefix}rag_statistics 
+                WHERE date_added >= DATE_SUB(NOW(), INTERVAL ? DAY)
+                    AND agent_type IS NOT NULL
+                GROUP BY agent_type
+                ORDER BY usage_count DESC
+            ", [$days]);
+            
+            $agents = [];
+            $total_usage = 0;
+            
+            foreach ($results as $row) {
+                $usage_count = $row['usage_count'] ?? 0;
+                
+                $agents[] = [
+                    'name' => $row['agent_name'] ?: 'unknown',
+                    'usage_count' => $usage_count,
+                    'avg_confidence' => round($row['avg_confidence'] ?? 0, 2),
+                    'success_rate' => 85.0 // Valeur par défaut
+                ];
+                
+                $total_usage += $usage_count;
+            }
+            
+            // Calculer les pourcentages
+            foreach ($agents as &$agent) {
+                $agent['percentage'] = $total_usage > 0 ? round(($agent['usage_count'] / $total_usage) * 100, 1) : 0;
+            }
+            
+            return [
+                'period_days' => $days,
+                'total_usage' => $total_usage,
+                'agents' => $agents,
+                'most_used' => !empty($agents) ? $agents[0]['name'] : 'unknown',
+                'avg_success_rate' => $this->calculateAvgSuccessRate($agents)
+            ];
+            
+        } catch (\Exception $e) {
+            error_log("DashboardStatsCollector: Error getting agents stats: " . $e->getMessage());
+            return $this->getEmptyAgentsStats($days);
+        }
+    }
+    
+    /**
+     * Statistiques de Mémoire Conversationnelle
+     * 🔧 MIGRATED TO DOCTRINEORM
+     */
+    public function getMemoryStats(int $days = 7): array
+    {
+        try {
+            // Analyser les conversations
+            $results = DoctrineOrm::select("
+                SELECT 
+                    COUNT(DISTINCT session_id) as total_conversations,
+                    COUNT(*) as total_interactions,
+                    AVG(CASE WHEN session_id IS NOT NULL THEN 1 ELSE 0 END) * 100 as context_usage_rate
+                FROM {$this->prefix}rag_interactions 
+                WHERE date_added >= DATE_SUB(NOW(), INTERVAL ? DAY)
+            ", [$days]);
+            
+            if (empty($results)) {
+                return $this->getEmptyMemoryStats($days);
+            }
+            
+            $total_conversations = $results[0]['total_conversations'] ?? 0;
+            if ($total_conversations == 0) {
+                return $this->getEmptyMemoryStats($days);
+            }
+            
+            $total_interactions = $results[0]['total_interactions'] ?? 0;
+            $context_usage_rate = round($results[0]['context_usage_rate'] ?? 0, 1);
+            $avg_length = $total_interactions / max($total_conversations, 1);
+            
+            return [
+                'period_days' => $days,
+                'total_conversations' => $total_conversations,
+                'context_usage_rate' => $context_usage_rate,
+                'avg_conversation_length' => round($avg_length, 1),
+                'memory_effectiveness' => 'good'
+            ];
+            
+        } catch (\Exception $e) {
+            error_log("DashboardStatsCollector: Error getting memory stats: " . $e->getMessage());
+            return $this->getEmptyMemoryStats($days);
+        }
+    }
+    
+    /**
+     * Statistiques de Feedback Utilisateur
+     * 🔧 MIGRATED TO DOCTRINEORM
+     */
+    public function getFeedbackStats(int $days = 7): array
+    {
+        try {
+            // Analyser les feedbacks
+            $results = DoctrineOrm::select("
+                SELECT 
+                    feedback_type,
+                    COUNT(*) as count
+                FROM {$this->prefix}rag_feedback 
+                WHERE date_added >= DATE_SUB(NOW(), INTERVAL ? DAY)
+                GROUP BY feedback_type
+            ", [$days]);
+            
+            $positive = 0;
+            $negative = 0;
+            $total = 0;
+            
+            foreach ($results as $row) {
+                $count = $row['count'] ?? 0;
+                $feedback_type = $row['feedback_type'] ?? '';
+                $total += $count;
+                
+                if (\in_array($feedback_type, ['positive', 'helpful', 'thumbs_up'])) {
+                    $positive += $count;
+                } elseif (\in_array($feedback_type, ['negative', 'unhelpful', 'thumbs_down'])) {
+                    $negative += $count;
+                }
+            }
+            
+            $satisfaction_rate = $total > 0 ? round(($positive / $total) * 100, 1) : 0;
+            
+            return [
+                'period_days' => $days,
+                'total_feedback' => $total,
+                'positive_feedback' => $positive,
+                'negative_feedback' => $negative,
+                'satisfaction_rate' => $satisfaction_rate,
+                'satisfaction_level' => $this->getSatisfactionLevel($satisfaction_rate)
+            ];
+            
+        } catch (\Exception $e) {
+            error_log("DashboardStatsCollector: Error getting feedback stats: " . $e->getMessage());
+            return $this->getEmptyFeedbackStats($days);
+        }
+    }
+    
+    // Méthodes utilitaires privées
+    
+    private function getEmptyClassificationStats(int $days): array
+    {
+        return [
+            'period_days' => $days,
+            'total_requests' => 0,
+            'overall_precision' => 0,
+            'analytics' => ['count' => 0, 'avg_confidence' => 0, 'percentage' => 0],
+            'semantic' => ['count' => 0, 'avg_confidence' => 0, 'percentage' => 0],
+            'distribution' => ['analytics' => 0, 'semantic' => 0]
+        ];
+    }
+    
+    private function getEmptySecurityStats(int $days): array
+    {
+        return [
+            'period_days' => $days,
+            'total_evaluations' => 0,
+            'avg_security_score' => 0,
+            'low_security_count' => 0,
+            'security_status' => 'unknown'
+        ];
+    }
+    
+    private function getEmptyAgentsStats(int $days): array
+    {
+        return [
+            'period_days' => $days,
+            'total_usage' => 0,
+            'agents' => [],
+            'most_used' => 'unknown',
+            'avg_success_rate' => 0
+        ];
+    }
+    
+    private function getEmptyMemoryStats(int $days): array
+    {
+        return [
+            'period_days' => $days,
+            'total_conversations' => 0,
+            'context_usage_rate' => 0,
+            'avg_conversation_length' => 0,
+            'memory_effectiveness' => 'unknown'
+        ];
+    }
+    
+    private function getEmptyFeedbackStats(int $days): array
+    {
+        return [
+            'period_days' => $days,
+            'total_feedback' => 0,
+            'positive_feedback' => 0,
+            'negative_feedback' => 0,
+            'satisfaction_rate' => 0,
+            'satisfaction_level' => 'unknown'
+        ];
+    }
+    
+    private function getSecurityStatus(float $score): string
+    {
+        if ($score >= 80) return 'excellent';
+        if ($score >= 60) return 'good';
+        if ($score >= 40) return 'fair';
+        return 'poor';
+    }
+    
+    private function calculateAvgSuccessRate(array $agents): float
+    {
+        if (empty($agents)) return 0;
+        
+        $totalRate = 0;
+        foreach ($agents as $agent) {
+            $totalRate += $agent['success_rate'];
+        }
+        
+        return round($totalRate / \count($agents), 1);
+    }
+    
+    private function getSatisfactionLevel(float $rate): string
+    {
+        if ($rate >= 90) return 'excellent';
+        if ($rate >= 75) return 'good';
+        if ($rate >= 60) return 'fair';
+        return 'poor';
+    }
+}

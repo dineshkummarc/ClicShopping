@@ -104,7 +104,7 @@ if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
         <?php echo HTML::selectMenu('language', $languages_array, $language, 'onChange="this.form.submit();"'); ?>
       </form>
     </div>
-    <br/><br/>
+    <br /><br />
     <h2><?php echo TEXT_TITLE_WELCOME; ?> <small>v<?php echo CLICSHOPPING::getVersion(); ?></small></h2>
     <p><?php echo TEXT_INTRO_WELCOME; ?></p>
   </div>
@@ -120,10 +120,10 @@ if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
       <h5><?php echo TEXT_PHP_SETTINGS; ?></h5>
       <table class="table table-bordered">
         <thead>
-        <tr>
-          <td width="35%"><b>PHP Settings</b></td>
-          <td width="25%"><b>Current Settings</b></td>
-          <td width="25%"><b>Required Settings</b></td>
+          <tr>
+            <td width="35%"><b>PHP Settings</b></td>
+            <td width="25%"><b>Current Settings</b></td>
+            <td width="25%"><b>Required Settings</b></td>
             <td width="15%" class="text-center"><b>Status</b></td>
           </tr>
         </thead>

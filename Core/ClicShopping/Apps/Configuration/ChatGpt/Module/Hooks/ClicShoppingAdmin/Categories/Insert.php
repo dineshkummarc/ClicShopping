@@ -10,22 +10,24 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\Categories;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-
+use ClicShopping\AI\Domain\Embedding\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\Semantics\Semantics;
 
+#[AllowDynamicProperties]
 class Insert implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
-  public mixed $vector;
-
+  public mixed $lang;
+  public mixed $semantics;
+  
   /**
    * Class constructor.
-   *
    * Initializes the ChatGptApp instance in the Registry if it doesn't already exist,
    * and loads the necessary definitions for the application.
    *
@@ -38,11 +40,12 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+    $this->lang = Registry::get('Language');
 
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Categories/seo_chat_gpt');
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Categories/rag');
-
-    $this->vector = Registry::get('Vector');
+    if (!Registry::exists('Semantics')) {
+      Registry::set('Semantics', new Semantics());
+    }
+    $this->semantics = Registry::get('Semantics');
   }
 
   /**
@@ -55,9 +58,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
-    $CLICSHOPPING_Language = Registry::get('Language');
-
-    if (Gpt::checkGptStatus() === false) {
+    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
 
@@ -90,17 +91,22 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
         if (is_array($categories_array)) {
           foreach ($categories_array as $item) {
             $categories_name = $CLICSHOPPING_CategoriesAdmin->getCategoryName($item['categories_id'], $item['language_id']);
-            $language_name = $CLICSHOPPING_Language->getLanguagesName($item['language_id']);
-            $categories_id = $item['categories_id'];
+            $language_name = $this->lang->getLanguagesName($item['language_id']);
+            $language_code = $this->lang->getLanguageCodeById((int)$item['language_id']);
 
+            $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Categories/seo_chat_gpt', $language_code);
+            $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Categories/rag', $language_code);
+
+            $categories_id = $item['categories_id'];
+	    
             $update_sql_data = [
               'language_id' => $item['language_id'],
-              'categories_id' => $item['categories_id']
+              'categories_id' => $categories_id
             ];
 
-  //-------------------
-  // categories description
-  //-------------------
+            //-------------------
+            // categories description
+            //-------------------
             $categories_description = '';
 
             if (isset($_POST['option_gpt_description'])) {
@@ -173,7 +179,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('categories_description', $sql_data_array, $update_sql_data);
               }
-}
+            }
 
               //********************
               // add embedding
@@ -183,16 +189,31 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
               $embedding_data =  "\n" . $this->app->getDef('text_category_embedded') . "\n";
 
               $embedding_data .= $this->app->getDef('text_category_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_name) . "\n";
-              $embedding_data .= $this->app->getDef('text_category_id') . ' : ' . (int)$item['categories_id'] . "\n";
+              $embedding_data .= $this->app->getDef('text_category_id') . ' : ' . (int)$categories_id . "\n";
 
               if (!empty($categories_description)) {
                 $categories_description = HtmlOverrideCommon::cleanHtmlForEmbedding($categories_description);
                 $embedding_data .= $this->app->getDef('text_category_description', ['category_name' => $categories_name]) . ' : ' . $categories_description . "\n";;
 
-                $taxonomy = $this->semantics->createTaxonomy($categories_description);
+                $taxonomy = $this->semantics->createTaxonomy($categories_description, $language_code, null);
 
                 if (!empty($taxonomy)) {
-                  $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
+                  $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
+                  $tags = [];
+
+                  foreach ($lines as $line) {
+                    if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
+                      $tags[$matches[1]] = trim($matches[2]);
+                    }
+                  }
+                } else {
+                  $tags = [];
+                }
+
+                $embedding_data .= "\n" . $this->app->getDef('text_category_taxonomy') . " :\n";
+
+                foreach ($tags as $key => $value) {
+                  $embedding_data .= "[$key]: $value\n";
                 }
               }
 
@@ -208,7 +229,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                 $embedding_data .= $this->app->getDef('text_category_seo_keywords', ['category_name' => $categories_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForSEO($seo_categories_keywords) . "\n";
               }
 
-              $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
+              $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
               $embeddings = [];
 
@@ -224,7 +245,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $sql_data_array_embedding = [
                   'content' => $embedding_data,
-                  'type' => 'category',
+                  'type' => 'categories',
                   'sourcetype' => 'manual',
                   'sourcename' => 'manual',
                   'date_modified' => 'now()',
@@ -232,14 +253,32 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                   'language_id' => (int)$item['language_id']
                 ];
 
-                $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+              $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
 
-                $update_sql_data = [
-                  'language_id' => (int)$item['language_id'],
-                  'entity_id' => (int)$item['categories_id']
-                ];
+              // MetaData  creation 
+              $metadata = [
+                'category_name' => $categories_name,
+                'content' => $categories_description,
+                'language_id' => (int)$item['language_id'],
+                'category_id' => (int)$categories_id,
+                'type' => 'categories',
+                'source' => [
+                  'type' => 'manual',
+                  'name' => 'manual'
+                ],
+                'entity_id' => (int)$categories_id,
+                'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
+                'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
+                'last_modified' => date('c')
+              ];
 
-                $this->app->db->save('categories_embedding', $sql_data_array_embedding, $update_sql_data);
+              // Ajouter le JSON au tableau d'insertion
+                $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
+
+                $sql_data_array_embedding['entity_id'] = $categories_id;
+                $sql_data_array_embedding['language_id'] =  $item['language_id'];
+
+                $this->app->db->save('categories_embedding', $sql_data_array_embedding);
               }
             }
           }

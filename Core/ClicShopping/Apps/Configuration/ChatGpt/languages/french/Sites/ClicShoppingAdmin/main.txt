@@ -41,6 +41,8 @@ button_back = Retour
 button_reset = Réinitialiser
 button_update = Mettre à jour Statut
 button_edit = Editer
+button_rag_dashboard = Tableau de bord
+button_rag_websearch = Compétiteurs
 
 dialog_uninstall_title = Désinstaller
 dialog_uninstall_body = Souhaitez-vous installer cette App ?
@@ -77,3 +79,9 @@ text_error_exec = La fonction exec n'est pas initialisé. Vous ne pouvez pas ré
 text_result_page = Page {{listing_from}}  sur{{listing_total}}
 text_display_number_of_link = Affiche <strong>{{listing_from}}</strong> à <strong>{{listing_to}}</strong> (sur <strong>{{listing_total}}</strong>)
 
+
+button_reset_cache = 🗑️ Réinitialiser Cache
+button_reset_all_stats = Réinitialiser Stats
+
+text_query_too_ambiguous = Votre requête est trop ambiguë. Veuillez être plus précis sur ce que vous voulez savoir.
+text_alert_dashboard = Pour avoir bénéficier de l'ensemble des résultats données par les inficateurs, veuillez activer le RAG-BI

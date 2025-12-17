@@ -16,14 +16,15 @@ use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\Embedding\NewVector;
+use ClicShopping\AI\Domain\Semantics\Semantics;
 
 #[AllowDynamicProperties]
 class Insert implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
+  public mixed $lang;
   public mixed $semantics;
-  public mixed $vector;
 
   /**
    * Constructor method for initializing the ChatGpt application.
@@ -39,8 +40,12 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+    $this->lang = Registry::get('Language');
 
-    $this->vector = Registry::get('Vector');
+    if (!Registry::exists('Semantics')) {
+      Registry::set('Semantics', new Semantics());
+    }
+    $this->semantics = Registry::get('Semantics');
 
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Supplier/rag');
   }
@@ -118,8 +123,26 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
           if (!empty($suppliers_status)) {
             $embedding_data .= $this->app->getDef('text_supplier_status', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($supplier_name) . "\n";
-            $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($supplier_name));
+
+            $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($supplier_name), null);
+
             if (!empty($taxonomy)) {
+              $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
+              $tags = [];
+
+              foreach ($lines as $line) {
+                if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
+                  $tags[$matches[1]] = trim($matches[2]);
+                }
+              }
+            } else {
+              $tags = [];
+            }
+
+            $embedding_data .= "\n" . $this->app->getDef('text_supplier_taxonomy') . " :\n";
+
+            foreach ($tags as $key => $value) {
+              $embedding_data .= "[$key]: $value\n";
             }
           }
 
@@ -139,7 +162,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
             $embedding_data .= $this->app->getDef('text_suppliers_notes', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_notes) . "\n";
           }
 
-          $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
+          $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
           $embeddings = [];
 
@@ -164,11 +187,33 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
             $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
 
-            $sql_data_array = array_merge($sql_data_array_embedding);
+             // MetaData  creation 
+              $metadata = [
+                'supplier_name' => HtmlOverrideCommon::cleanHtmlForEmbedding($supplier_name),
+                'content' => HtmlOverrideCommon::cleanHtmlForEmbedding($supplier_name),
+                'manufacturer_id' => (int)$suppliers_id,
+                'type' => 'suppliers',
+                'source' => [
+                  'type' => 'manual',
+                  'name' => 'manual'
+                ],
+                'entity_id' => (int)$suppliers_id,
+                'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
+                'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
+                'last_modified' => date('c')
+              ];
 
-            $this->app->db->save('suppliers_embedding', $sql_data_array);
-          }
-        }
+              // Ajouter le JSON au tableau d'insertion
+                $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
+		
+		
+		
+		
+              $sql_data_array = array_merge($sql_data_array_embedding);
+
+              $this->app->db->save('suppliers_embedding', $sql_data_array);
+           }
+         }
       }
     }
   }

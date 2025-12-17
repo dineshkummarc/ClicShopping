@@ -88,7 +88,6 @@ class GptShop
       $response = Gpt::getGptResponse($question, $maxtoken, $temperature);
     }
 
-	    
     return $response;
   }
 

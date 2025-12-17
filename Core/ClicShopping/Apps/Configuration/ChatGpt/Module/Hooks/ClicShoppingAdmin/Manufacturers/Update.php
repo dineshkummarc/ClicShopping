@@ -16,9 +16,9 @@ use ClicShopping\OM\HTML;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\AI\Domain\Embedding\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-
-use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\Semantics\Semantics;
 
 #[AllowDynamicProperties]
 class Update implements \ClicShopping\OM\Modules\HooksInterface
@@ -41,13 +41,12 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+    $this->lang = Registry::get('Language');
 
-    Registry::set('Semantics', new Semantics());
+    if (!Registry::exists('Semantics')) {
+      Registry::set('Semantics', new Semantics());
+    }
     $this->semantics = Registry::get('Semantics');
-    $this->vector = Registry::get('Vector');
-
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturer/seo_chat_gpt');
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturer/rag');
   }
 
   /**
@@ -104,6 +103,10 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
         if (is_array($manufacturers_array)) {
           foreach ($manufacturers_array as $item) {
+            $language_code = $this->lang->getLanguageCodeById((int)$item['languages_id']);
+
+            $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturers/seo_chat_gpt', $language_code);
+            $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturers/rag', $language_code);
             $manufacturers_name = $item['manufacturers_name'];
             $manufacturers_description = $item['manufacturer_description'];
             $seo_manufacturer_title = $item['manufacturer_seo_title'];
@@ -113,6 +116,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 //********************
 // add embedding
 //********************
+
             if ($embedding_enabled) {
               $embedding_data =  "\n" . $this->app->getDef('text_manufacturer_embedded') . "\n";
 
@@ -121,10 +125,25 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
               if (!empty($manufacturers_description)) {
                 $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
-                $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description));
+                $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description), $language_code, null);
 
                 if (!empty($taxonomy)) {
+                  $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
+                  $tags = [];
+
+                  foreach ($lines as $line) {
+                    if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
+                      $tags[$matches[1]] = trim($matches[2]);
+                    }
+                  }
+                } else {
+                  $tags = [];
+                }
+
                 $embedding_data .= "\n" . $this->app->getDef('text_manufacturer_taxonomy') . " :\n";
+
+                foreach ($tags as $key => $value) {
+                  $embedding_data .= "[$key]: $value\n";
                 }
               }
 
@@ -139,13 +158,14 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               if (!empty($seo_manufacturer_keywords)) {
                 $embedding_data .= $this->app->getDef('text_manufacturer_seo_keywords') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_keywords) . "\n";
               }
+              
 
-            $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
+              $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-            $embeddings = [];
+              $embeddings = [];
 
-            foreach ($embeddedDocuments as $embeddedDocument) {
-              if (is_array($embeddedDocument->embedding)) {
+              foreach ($embeddedDocuments as $embeddedDocument) {
+                if (is_array($embeddedDocument->embedding)) {
                   $embeddings[] = $embeddedDocument->embedding;
                 }
               }
@@ -155,14 +175,34 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
                 $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
 
                 $sql_data_array_embedding = [
-                'content' => $embedding_data,
-                'type' => 'manufacturers',
-                'sourcetype' => 'manual',
-                'sourcename' => 'manual',
-                'date_modified' => 'now()'
+                  'content' => $embedding_data,
+                  'type' => 'manufacturers',
+                  'sourcetype' => 'manual',
+                  'sourcename' => 'manual',
+                  'date_modified' => 'now()'
+                ];
+
+                $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+
+                // MetaData  creation 
+                $metadata = [
+                  'brand_name' => $manufacturers_name,
+                  'content' => $manufacturers_description,
+                  'language_id' => (int)$item['language_id'],
+                  'manufacturer_id' => (int)$manufacturers_id,
+                  'type' => 'manufacturers',
+                  'source' => [
+                    'type' => 'manual',
+                    'name' => 'manual'
+                  ],
+                'entity_id' => (int)$manufacturers_id,
+                'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
+                'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
+                'last_modified' => date('c')
               ];
 
-              $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+                // Ajouter le JSON au tableau d'insertion
+                $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
 
                 if ($insert_embedding === true) {
                   $sql_data_array_embedding['entity_id'] = (int)$item['manufacturers_id'];

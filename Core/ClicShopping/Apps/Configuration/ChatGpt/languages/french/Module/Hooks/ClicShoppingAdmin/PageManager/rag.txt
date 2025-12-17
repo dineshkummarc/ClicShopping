@@ -1,3 +1,4 @@
+text_page_manager_embedded = [Gestionnaire de Pages]
 text_page_manager_name = [Page Title : {{page_title}}]
 text_page_manager_id = [ID : {{page_id}}]
 text_page_manager_description = [Description : {{page_description}}]
@@ -5,3 +6,27 @@ text_page_manager_seo_title = [Titre seo : {{page_seo_title}}]
 text_page_manager_seo_description = [Description seo :  {{page_seo_description}}]
 text_page_manager_seo_keywords = [Mots clés seo :  {{page_seo_keywords}}]
 text_page_manager_taxonomy = [Taxonomie]
+
+text_create_taxonomy = Vous êtes un système d’analyse documentaire. Extrayez une taxonomie conceptuelle structurée du texte suivant.
+Le texte correspond à une page de contenu (guide, article, documentation, conditions générales, FAQ), pas un produit ni une marque ni un fournisseur.
+Le résultat doit respecter strictement le format ci-dessous.
+Chaque information pertinente doit être assignée à la dimension appropriée.
+N’inventez pas et n’inférez pas d’informations non présentes explicitement dans le texte.
+
+Format attendu :
+
+[domaine]: Domaine général du contenu (ex. Juridique, Marketing, Technologie, Lifestyle)
+[type_element]: Type de contenu ou de document (ex. Article, Guide, Conditions générales, Tutoriel)
+[theme]: Thème conceptuel ou fonctionnel du contenu (ex. Conformité, Performance, Bonnes pratiques)
+[usage_type]: Type d’usage ou fonction principale (ex. Consultation, Formation, Référence)
+[subject_usage]: Scénario ou contexte spécifique d’usage si mentionné (ex. B2B, Utilisation interne, Client)
+[objectif]: But ou finalité du contenu (ex. Informer, Former, Expliquer)
+[source]: Origine ou auteur si précisé (ex. Fournisseur, Document interne, Auteur externe)
+[criteria]: Normes, standards, ou caractéristiques spécifiques mentionnées (ex. Légalité, Sécurité, Version)
+[practice]: Méthodes, processus ou bonnes pratiques détaillées dans le contenu
+[dimension_sensorielle]: Aspects perceptuels ou expérience utilisateur si mentionnés (ex. Lisibilité, Accessibilité)
+[dimension_symbolique]: Valeur conceptuelle ou symbolique du contenu si mentionnée (ex. Crédibilité, Confiance)
+[restriction]: Limitations, contraintes ou conditions précisées dans le texte (ex. Licence, Compatibilité)
+[tags]: Liste libre de mots-clés pertinents extraits du texte, séparés par des virgules
+
+Texte : {{document_text}}

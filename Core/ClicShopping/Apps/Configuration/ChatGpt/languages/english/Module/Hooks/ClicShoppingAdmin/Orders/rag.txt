@@ -32,9 +32,39 @@ text_products_order_history_status = [Order history status]
 text_products_order_history_admin = [Order history administrator]
 text_products_order_history_tracking = [Order tracking]
 text_products_order_history_date = [Order history date]
-text_category_taxonomy = [Taxonomy of the order]
 
 
 text_orders_total = [Order total]
 text_orders_total_title = [Order total title]
 text_orders_total_value = [Order total value]
+text_orders_taxonomy = [Taxonomy]
+
+You are a document analysis system. Extract a structured conceptual taxonomy from the following text.
+The text corresponds to an e-commerce policy related to orders (not a product, not a supplier, not a general category).
+The output must strictly follow the format below.
+Every relevant piece of information must be assigned to the appropriate dimension.
+Do not invent or infer information not explicitly present in the text.
+
+Expected format:
+
+[domain]: General domain of the document (e.g. E-commerce, Customer Service, Legal)
+[subdomain]: Specialization within the domain (e.g. Orders, Payment, Shipping)
+[policy_type]: Type of document (e.g. Order Policy, Order Terms, Purchase Procedure)
+[scope]: Geographic or legal scope (e.g. France, European Union, International)
+[process]: Description of the order workflow (e.g. Product selection, Validation, Payment, Confirmation)
+[payment_methods]: Accepted payment methods (e.g. Credit Card, PayPal, Bank Transfer)
+[order_validation]: Conditions for order validation or confirmation (e.g. Payment verified, Confirmation email)
+[eligibility_conditions]: Conditions to access the service or place an order (e.g. Legal age, Residency in delivery area)
+[processing_time]: Processing time or steps (e.g. Processed within 24 hours, Delivery in 3 business days)
+[pricing]: Information on prices and taxes (e.g. VAT, Currency, Price changes)
+[shipping]: Delivery details and zones (e.g. Timeframe, Carrier, Tracking)
+[responsibility]: Parties involved and their obligations (e.g. Customer, Seller, Carrier)
+[legal_reference]: References to legal frameworks (e.g. Consumer Code, E-commerce Directive)
+[objective]: Purpose of the policy (e.g. Clarify order steps, Ensure transparency, Ensure legal compliance)
+[criteria]: Quality standards or service requirements (e.g. Speed, Security, Reliability)
+[symbolic_dimension]: Associated values or principles (e.g. Trust, Professionalism, Transparency)
+[source]: Origin or type of author of the document (e.g. Internal Policy, Regulation)
+[keywords]: Free list of relevant keywords extracted from the text, separated by commas
+
+Text: {{document_text}}
+

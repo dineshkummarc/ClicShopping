@@ -1,7 +1,32 @@
-text_page_manager_name = [{{pages_title}}]
+text_page_manager_embedded = [Page Manager]
+text_page_manager_name = [Page title : {{page_title}}]
 text_page_manager_id = [ID : {{page_id}}]
-text_page_manager_description = [Description {{page_description}}]
-text_page_manager_seo_title = [Seo title {{page_seo_title}}]
-text_page_manager_seo_description = [Seo description {{page_seo_description}}]
-text_page_manager_seo_keywords = [Seo keywords {{page_seo_keywords}}]
+text_page_manager_description = [Description : {{page_description}}]
+text_page_manager_seo_title = [Seo title : {{page_seo_title}}]
+text_page_manager_seo_description = [Seo description : {{page_seo_description}}]
+text_page_manager_seo_keywords = [Seo keywords:  {{page_seo_keywords}}]
 text_page_manager_taxonomy = [Taxonomy]
+
+text_create_taxonomy = You are a document analysis system. Extract a structured conceptual taxonomy from the following text.
+The text corresponds to a content page (guide, article, documentation, terms & conditions, FAQ), not a product, brand, or supplier.
+The output must strictly follow the format below.
+Every relevant piece of information must be assigned to the appropriate dimension.
+Do not invent or infer information not explicitly present in the text.
+
+Expected format:
+
+[domain]: General domain of the content (e.g. Legal, Marketing, Technology, Lifestyle)
+[type_item]: Type of content or document (e.g. Article, Guide, Terms & Conditions, Tutorial)
+[theme]: Conceptual or functional theme of the content (e.g. Compliance, Performance, Best Practices)
+[usage_type]: Main type of usage or function (e.g. Reference, Training, Consultation)
+[subject_usage]: Specific usage scenario or context if mentioned (e.g. B2B, Internal Use, Customer-facing)
+[objective]: Purpose or goal of the content (e.g. Inform, Train, Explain)
+[source]: Origin or author if specified (e.g. Supplier, Internal Document, External Author)
+[criteria]: Standards, norms, or specific characteristics mentioned (e.g. Legal, Safety, Version)
+[practice]: Methods, processes, or best practices detailed in the content
+[sensory_dimension]: Perceptual or user experience aspects if mentioned (e.g. Readability, Accessibility)
+[symbolic_dimension]: Conceptual or symbolic value if mentioned (e.g. Credibility, Trust)
+[restriction]: Limitations, constraints, or conditions specified in the text (e.g. License, Compatibility)
+[tags]: Free list of relevant keywords extracted from the text, separated by commas
+
+Text: {{document_text}}

@@ -8,7 +8,6 @@
  *
  */
 
-
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Config\CH\Params;
 
 use ClicShopping\OM\HTML;
@@ -34,8 +33,6 @@ class response_format extends \ClicShopping\Apps\Configuration\ChatGpt\Module\Cl
     ];
 
     $input = HTML::selectField($this->key, $array, $this->getInputValue(), 'id="model_json"');
-
-
 
 //    $input = HTML::radioField($this->key, 'text', $value, 'id="' . $this->key . '1" autocomplete="off"') . $this->app->getDef('cfg_chatgpt_response_format_text') . ' ';
 //    $input .= HTML::radioField($this->key, 'json_object', $value, 'id="' . $this->key . '2" autocomplete="off"') . $this->app->getDef('cfg_chatgpt_response_format_json');

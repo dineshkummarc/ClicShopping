@@ -15,9 +15,9 @@ use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\AI\Domain\Embedding\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-
-use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\Semantics\Semantics;
 
 #[AllowDynamicProperties]
 class Insert implements \ClicShopping\OM\Modules\HooksInterface
@@ -25,7 +25,6 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
   public mixed $app;
   public mixed $lang;
   public mixed $semantics;
-  public mixed $vector;
   /**
    * Constructor method for initializing the ChatGpt application.
    * It ensures that the ChatGpt instance is registered in the Registry.
@@ -40,14 +39,12 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
+    $this->lang = Registry::get('Language');
 
-    Registry::set('Semantics', new Semantics());
+    if (!Registry::exists('Semantics')) {
+      Registry::set('Semantics', new Semantics());
+    }
     $this->semantics = Registry::get('Semantics');
-
-    $this->vector = Registry::get('Vector');
-
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturer/seo_chat_gpt');
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturer/rag');
   }
 
   /**
@@ -59,8 +56,6 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
-    $CLICSHOPPING_Language = Registry::get('Language');
-
     if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
@@ -96,7 +91,11 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
         if (is_array($manufacturers_array)) {
           foreach ($manufacturers_array as $item) {
-            $language_name = $CLICSHOPPING_Language->getLanguagesName($item['languages_id']);
+           $language_name = $this->lang->getLanguagesName($item['languages_id']);
+           $language_code = $this->lang->getLanguageCodeById((int)$item['languages_id']);
+
+            $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturers/seo_chat_gpt', $language_code);
+            $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturers/rag', $language_code);
 
             $manufacturers_id = $item['manufacturers_id'];
 
@@ -141,7 +140,6 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                 $this->app->db->save('manufacturers_info', $sql_data_array, $update_sql_data);
               }
              }
-	     
             //-------------------
             // Seo description
             //-------------------
@@ -189,12 +187,27 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               if (!empty($manufacturers_description)) {
                 $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
-                $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description));
+                $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description), $language_code, null);
 
-                if ($taxonomy != '') {
-                  $embedding_data .= $this->app->getDef('text_manufacturer_taxonomy') . ' : ' . "\n" . $taxonomy . "\n";
+                if (!empty($taxonomy)) {
+                  $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
+                  $tags = [];
+
+                  foreach ($lines as $line) {
+                    if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
+                      $tags[$matches[1]] = trim($matches[2]);
+                    }
+                  }
+                } else {
+                  $tags = [];
                 }
-}
+
+                $embedding_data .= "\n" . $this->app->getDef('text_manufacturer_taxonomy') . " :\n";
+
+                foreach ($tags as $key => $value) {
+                  $embedding_data .= "[$key]: $value\n";
+                }
+              }
 
               if (!empty($seo_manufacturer_title)) {
                 $embedding_data .= $this->app->getDef('text_manufacturer_seo_title') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_title) . "\n";
@@ -212,7 +225,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                 $embedding_data .= $this->app->getDef('text_manufacturer_suppliers_id') . ' : ' . $suppliers_id . "\n";
               }
 
-              $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
+              $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
               $embeddings = [];
 
@@ -220,7 +233,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                 if (is_array($embeddedDocument->embedding)) {
                   $embeddings[] = $embeddedDocument->embedding;
                 }
-}
+              }
 
               if (!empty($embeddings)) {
                 $flattened_embedding = $embeddings[0];
@@ -238,40 +251,52 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
                 $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
 
-                $update_sql_data = [
-                  'language_id' => $item['languages_id'],
-                  'entity_id' => $item['manufacturers_id']
-                ];
+              // MetaData  creation 
+              $metadata = [
+                'brand_name' => $manufacturers_name,
+                'content' => $manufacturers_description,
+                'language_id' => (int)$item['language_id'],
+                'manufacturer_id' => (int)$manufacturers_id,
+                'type' => 'manufacturers',
+                'source' => [
+                  'type' => 'manual',
+                  'name' => 'manual'
+                ],
+                'entity_id' => (int)$manufacturers_id,
+                'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
+                'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
+                'last_modified' => date('c')
+              ];
 
-                $sql_data_array = array_merge($sql_data_array_embedding, $update_sql_data);
+              // Ajouter le JSON au tableau d'insertion
+                $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
 
-                $this->app->db->save('manufacturers_embedding', $sql_data_array);
+                $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding);
               }
             }
           }
         }
       }
-      
 	//-------------------
 	//image
 	//-------------------
-/*
-      if (isset($_POST['option_gpt_create_image'])) {
-        $image = Gpt::createImageChatGpt($manufacturers_name, 'manufacturers');
+	/*
+	      if (isset($_POST['option_gpt_create_image'])) {
+	        $image = Gpt::createImageChatGpt($manufacturers_name, 'manufacturers');
 
-        if (!empty($image) || $image !== false) {
-          $sql_data_array = [
-            'manufacturers_image' => $image ?? '',
-          ];
+	        if (!empty($image) || $image !== false) {
+	          $sql_data_array = [
+	            'manufacturers_image' => $image ?? '',
+	          ];
 
-          $update_sql_data = [
-            'manufacturers_id' => $Qcheck->valueInt('manufacturers_id')
-          ];
+	          $update_sql_data = [
+	            'manufacturers_id' => $Qcheck->valueInt('manufacturers_id')
+	          ];
 
-          $this->app->db->save('manufacturers', $sql_data_array, $update_sql_data);
-        }
-}
-*/
+	          $this->app->db->save('manufacturers', $sql_data_array, $update_sql_data);
+	        }
+	}
+	*/
     }
   }
 }

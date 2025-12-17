@@ -8,7 +8,6 @@
  *
  */
 
-
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Config\CH\Params;
 
 use ClicShopping\OM\HTML;

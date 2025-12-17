@@ -17,3 +17,32 @@ text_supplier_status = [Current account status of {{supplier_name}}]
 text_suppliers_payment_terms = [Payment terms for {{supplier_name}}]
 text_status_active = [Active for {{supplier_name}}]
 text_status_inactive = [Inactive for {{supplier_name}}]
+
+You are a document analysis system. Extract a structured conceptual taxonomy from the following text.
+The text corresponds to a supplier or manufacturer profile in an e-commerce context.
+The output must strictly follow the format below.
+Each relevant piece of information must be assigned to the appropriate dimension.
+Do not invent or infer any information not explicitly stated in the text.
+
+Expected format:
+
+[domain]: General domain of the supplier’s activity (e.g. Home, Fashion, Electronics)
+[subdomain]: Segment or specialization within the domain (e.g. Tableware, Computing, Furniture)
+[company_type]: Type of company (e.g. Manufacturer, Distributor, Wholesaler, Brand)
+[company_name]: Official name of the supplier or brand
+[brand_portfolio]: Main brands or product lines managed by the supplier, if mentioned
+[product_scope]: Range of products or categories supplied (e.g. Kitchenware, Lighting, Textiles)
+[market_scope]: Geographic or market coverage (e.g. National, European, Global)
+[client_type]: Type of clients targeted (e.g. B2B, B2C, Retailers, Professionals)
+[values]: Declared or implied company values (e.g. Sustainability, Innovation, Quality)
+[certifications]: Standards or certifications obtained (e.g. ISO 9001, Fair Trade)
+[criteria]: Distinctive attributes or strengths (e.g. Reliability, Responsiveness, Expertise)
+[practice]: Operational practices or business methods (e.g. Production, Distribution, Logistics)
+[objective]: Main business objective (e.g. Expand distribution, Strengthen partnerships)
+[symbolic_dimension]: Symbolic or brand dimension (e.g. Prestige, Trust, Heritage)
+[sensory_dimension]: Aesthetic or experiential aspects, if mentioned (e.g. Design, Packaging)
+[source]: Origin or legal identification, if mentioned (e.g. Country, Registration number)
+[keywords]: Free list of relevant keywords extracted from the text
+
+Text: {{document_text}}
+s

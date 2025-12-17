@@ -36,3 +36,32 @@ text_orders_total = [Total de la commande]
 text_orders_total_title = [Titre du total de la commande]
 text_orders_total_value = [Valeur du total de la commande]
 text_orders_taxonomy = [Taxonomie]
+
+Tu es un système d’analyse documentaire. Extrait une taxonomie conceptuelle structurée du texte suivant.
+Le texte correspond à une politique e-commerce relative aux commandes (ni un produit, ni un fournisseur, ni une catégorie générale).
+Le résultat doit suivre strictement le format ci-dessous.
+Chaque information pertinente doit être rangée dans la dimension appropriée.
+Aucune information inventée ne doit être ajoutée.
+
+Format attendu :
+
+[domaine] : Domaine général du document (ex. E-commerce, Service client, Juridique)
+[sous_domaine] : Spécialisation au sein du domaine (ex. Commande, Paiement, Livraison)
+[type_politique] : Type de document (ex. Politique de commande, Conditions de commande, Procédure d’achat)
+[portée] : Portée géographique ou juridique (ex. France, Union européenne, International)
+[processus] : Description du déroulement de la commande (ex. Sélection des produits, Validation, Paiement, Confirmation)
+[modes_paiement] : Moyens de paiement acceptés (ex. Carte bancaire, PayPal, Virement)
+[validation_commande] : Conditions de validation ou de confirmation de commande (ex. Paiement validé, Email de confirmation)
+[conditions_éligibilité] : Conditions d’accès au service ou de commande (ex. Être majeur, Résider dans la zone de livraison)
+[délai_traitement] : Délais ou étapes de traitement (ex. Traitement sous 24h, Livraison en 3 jours ouvrés)
+[tarification] : Mentions relatives aux prix et taxes (ex. TVA, Devise, Variation de prix)
+[livraison] : Informations sur les modalités et zones de livraison (ex. Délai, Transporteur, Suivi)
+[responsabilité] : Acteurs impliqués et leurs obligations (ex. Client, Vendeur, Transporteur)
+[référence_légale] : Références à des cadres juridiques (ex. Code de la consommation, Directive e-commerce)
+[objectif] : Finalité de la politique (ex. Clarifier les étapes de commande, Garantir la transparence, Assurer la conformité légale)
+[critères] : Normes de qualité ou exigences de service (ex. Rapidité, Sécurité, Fiabilité)
+[dimension_symbolique] : Valeurs ou principes associés (ex. Confiance, Professionnalisme, Transparence)
+[source] : Origine ou type d’auteur du document (ex. Politique interne, Réglementation)
+[mots_cles] : Liste libre de mots-clés pertinents extraits du texte, séparés par des virgules
+
+Texte : {{document_text}}

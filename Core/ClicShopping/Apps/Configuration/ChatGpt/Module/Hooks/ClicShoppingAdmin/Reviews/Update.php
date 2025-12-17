@@ -10,21 +10,22 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\Reviews;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\HTML;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-
+use ClicShopping\AI\Domain\Embedding\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
+use ClicShopping\AI\Domain\Semantics\Semantics;
 
 #[AllowDynamicProperties]
 class Update implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
+  public mixed $lang;
   public mixed $semantics;
-  public mixed $vector;
 
   /**
    * Class constructor.
@@ -41,11 +42,12 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     }
 
     $this->app = Registry::get('ChatGpt');
-    Registry::set('Semantics', new Semantics());
+    $this->lang = Registry::get('Language');
+
+    if (!Registry::exists('Semantics')) {
+      Registry::set('Semantics', new Semantics());
+    }
     $this->semantics = Registry::get('Semantics');
-    $this->vector = Registry::get('Vector');
-    
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Reviews/rag');
   }
 
   /**
@@ -107,6 +109,9 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         $reviews_id = $Qreviews->valueInt('reviews_id');
 
         foreach ($reviews_array as $item) {
+      	  $language_code = $this->lang->getLanguageCodeById((int)$item['language_id']);
+          $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/PageManager/rag', $language_code);		    
+		    
           $products_id = $item['products_id'];
           $reviews_text = $item['reviews_text'];
           $reviews_rating = $item['reviews_rating'];
@@ -130,25 +135,46 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
           //********************
 
           if ($embedding_enabled) {
-          $embedding_data = $this->app->getDef('text_reviews', ['products_name' => $products_name]) . "\n";
-          $embedding_data .= $this->app->getDef('text_reviews_id', ['reviews_id' => $reviews_id]) . "\n";
+            $embedding_data = $this->app->getDef('text_reviews', ['products_name' => $products_name]) . "\n";
+            $embedding_data .= $this->app->getDef('text_reviews_id', ['reviews_id' => $reviews_id]) . "\n";
 
-          if (!empty($products_id)) {
-            $embedding_data .= $this->app->getDef('text_reviews_product_name', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_name) . "\n";
-          }
-
-          if (!empty($reviews_text)) {
-            $embedding_data .= $this->app->getDef('text_reviews_description', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text) . "\n";
-          }
-
-          if (!empty($reviews_rating)) {
-            $embedding_data .= $this->app->getDef('text_reviews_rating', ['products_name' => $products_name]) . ': ' . (float)$reviews_rating . "\n";
-          }
-
-          if (!empty($date_added)) {
-            $embedding_data .= $this->app->getDef('text_reviews_date_added', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";
+            if (!empty($products_id)) {
+              $embedding_data .= $this->app->getDef('text_reviews_product_name', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_name) . "\n";
             }
-          }
+
+
+            if (!empty($reviews_rating)) {
+              $embedding_data .= $this->app->getDef('text_reviews_rating', ['products_name' => $products_name]) . ': ' . (float)$reviews_rating . "\n";
+            }
+
+            if (!empty($date_added)) {
+              $embedding_data .= $this->app->getDef('text_reviews_date_added', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";
+            }
+
+            if (!empty($reviews_text)) {
+              $embedding_data .= $this->app->getDef('text_reviews_description', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text) . "\n";
+
+              $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text), $language_code, null);
+
+              if (!empty($taxonomy)) {
+                $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
+                $tags = [];
+
+                foreach ($lines as $line) {
+                  if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
+                    $tags[$matches[1]] = trim($matches[2]);
+                  }
+                }
+              } else {
+                $tags = [];
+              }
+
+              $embedding_data .= "\n" . $this->app->getDef('text_reviews_taxonomy') . " :\n";
+
+              foreach ($tags as $key => $value) {
+                $embedding_data .= "[$key]: $value\n";
+              }
+            }
 
           if (!empty($status)) {
             $embedding_data .= $this->app->getDef('text_reviews_status', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($status) . "\n";
@@ -166,7 +192,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             $embedding_data .= $this->app->getDef('text_reviews_customer_sentiment', ['products_name' => $products_name]) . ': ' . (float)$sentiment . "\n";
           }
 
-          $embeddedDocuments = $this->vector->createEmbedding(null, $embedding_data);
+          $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
           $embeddings = [];
 
@@ -174,7 +200,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             if (is_array($embeddedDocument->embedding)) {
               $embeddings[] = $embeddedDocument->embedding;
             }
-}
+          }
 
           if (!empty($embeddings)) {
             $flattened_embedding = $embeddings[0];
@@ -189,6 +215,27 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             ];
 
             $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
+
+            // MetaData  creation 
+            $metadata = [
+              'review_name' => HtmlOverrideCommon::cleanHtmlForEmbedding($products_name),
+              'content' => HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text) ,
+              'language_id' => (int)$item['languages_id'],
+              'reviews_id' => (int)$item['reviews_id'],
+              'type' => 'reviews',
+              'source' => [
+                'type' => 'manual',
+                'name' => 'manual'
+              ],
+              'entity_id' => (int)$item['reviews_id'],
+              'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
+              'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
+              'last_modified' => date('c')
+            ];
+
+           // Ajouter le JSON au tableau d'insertion
+            $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
+
             if ($insert_embedding === true) {
               $sql_data_array_embedding['entity_id'] = (int)$item['reviews_id'];
               $sql_data_array_embedding['language_id'] = (int)$item['languages_id'];
@@ -201,7 +248,8 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               ];
 
               $this->app->db->save('reviews_embedding', $sql_data_array_embedding, $update_sql_data);
-	          }
+	      }
+            }
           }
         }
       }

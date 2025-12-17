@@ -11,9 +11,9 @@
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\SimpleLogger;
 
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
-use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\SimpleLogger;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\McpMockMonitor;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 

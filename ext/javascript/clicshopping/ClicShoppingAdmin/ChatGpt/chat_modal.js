@@ -29,19 +29,8 @@ $(document).ready(function() {
         e.clearSelection();
     });
 
-    $("#sendGpt").click(function() {
-        let message = $("#messageGpt").val();
-        let engine = $("#engine").val();
-        let saveGptElement = document.querySelector("#saveGpt");
-        let saveGpt = saveGptElement ? (saveGptElement.checked ? 1 : 0) : 0;
-
-        // Use the declared variables here
-        let data = {
-            message: message,
-            engine: engine,
-            saveGpt: saveGpt,
-        };
-    });
+    // Note: Le handler pour #sendGpt est maintenant dans FooterOutputGpt.php
+    // pour gérer l'envoi AJAX avec le nouveau format JSON
 
 
     // Clear button functionality with debugging
