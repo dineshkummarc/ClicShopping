@@ -1,4 +1,5 @@
 heading_title = MCP Health Status - Real Time
+text_all_servers = All Servers
 text_disconnected = Disconnected
 text_unknown = Unknown
 text_configuration = Configuration

@@ -9,7 +9,7 @@ function loadAlerts(page = 1, filter = 'all') {
       alertsList.innerHTML = '';
 
       if (data.alerts.length === 0) {
-        alertsList.innerHTML = `<tr><td colspan="3" class="text-center">${text_no_alert}</td></tr>`;
+        alertsList.innerHTML = `<tr><td colspan="4" class="text-center">${text_no_alert}</td></tr>`;
         return;
       }
 
@@ -38,9 +38,16 @@ function loadAlerts(page = 1, filter = 'all') {
             badgeClass = 'text-bg-secondary';
         }
 
+        // Build server info display
+        let serverDisplay = '<span class="badge bg-secondary">N/A</span>';
+        if (alert.server) {
+          serverDisplay = `<span class="badge bg-info">${alert.server.server_url}</span>`;
+        }
+
         row.className = rowClass;
         row.innerHTML = `
           <td>${alert.alert_timestamp}</td>
+          <td>${serverDisplay}</td>
           <td><span class="badge ${badgeClass}">${alert.type}</span></td>
           <td>${alert.message}</td>
         `;
@@ -52,7 +59,7 @@ function loadAlerts(page = 1, filter = 'all') {
     .catch(error => {
       console.error('Failed to load alerts:', error);
       document.getElementById('mcpAlertsList').innerHTML =
-        '<tr><td colspan="3" class="text-center text-danger">Failed to load alerts</td></tr>';
+        '<tr><td colspan="4" class="text-center text-danger">Failed to load alerts</td></tr>';
     });
 }
 

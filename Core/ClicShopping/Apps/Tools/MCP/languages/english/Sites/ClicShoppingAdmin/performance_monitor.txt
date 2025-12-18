@@ -1,4 +1,5 @@
 heading_title = Performance monitor
+text_all_servers = All Servers
 text_last_hour = Last Hour
 text_last_24 = Last 24 Hours
 text_last_week = Last Week

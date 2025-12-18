@@ -81,6 +81,8 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
       <th data-field="id" data-sortable="true"><?php echo $CLICSHOPPING_MCP->getDef('table_heading_mcp_id'); ?></th>
       <th data-field="username"
           data-sortable="true"><?php echo $CLICSHOPPING_MCP->getDef('table_heading_mcp_username'); ?></th>
+      <th data-field="server"
+          data-sortable="true"><?php echo $CLICSHOPPING_MCP->getDef('table_heading_mcp_server'); ?></th>
       <th data-field="key"
           class="text-center"><?php echo $CLICSHOPPING_MCP->getDef('table_heading_mcp_key_text'); ?></th>
       <th data-field="status" data-sortable="true"
@@ -99,6 +101,9 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
     $Qmcp = $CLICSHOPPING_MCP->db->prepare('select SQL_CALC_FOUND_ROWS mcp_id,
                                                                         username,
                                                                         mcp_key,
+                                                                        server_host,
+                                                                        server_port,
+                                                                        ssl_enabled,
                                                                         status,
                                                                         date_added,
                                                                         date_modified
@@ -117,6 +122,13 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
         ?>
         <td><?php echo $Qmcp->valueInt('mcp_id'); ?></td>
         <td><?php echo $Qmcp->valueProtected('username'); ?></td>
+        <td>
+          <?php
+          $protocol = $Qmcp->valueInt('ssl_enabled') ? 'https' : 'http';
+          $serverInfo = $protocol . '://' . $Qmcp->valueProtected('server_host') . ':' . $Qmcp->valueInt('server_port');
+          echo '<span class="badge bg-info">' . HTML::outputProtected($serverInfo) . '</span>';
+          ?>
+        </td>
         <td><?php echo substr($Qmcp->valueProtected('mcp_key'), -40, 40) . '...'; ?></td>
         <td class="text-center">
           <?php

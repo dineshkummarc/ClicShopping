@@ -13,7 +13,6 @@ use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
-//use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\McpMockMonitor;
 
 $CLICSHOPPING_MCP = Registry::get('MCP');
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
@@ -53,6 +52,31 @@ $CLICSHOPPING_Hooks = Registry::get('Hooks');
     <div class="card-header">
       <i class="bi bi-graph-up-arrow"></i> MCP Performance Metrics
       <div class="float-right">
+        <select id="mcpServer" class="form-select form-select-sm d-inline-block w-auto me-2">
+          <option value="all"><?php echo $CLICSHOPPING_MCP->getDef('text_all_servers'); ?></option>
+          <?php
+            // Load all active MCP servers
+            $db = Registry::get('Db');
+            $Qservers = $db->prepare('SELECT mcp_id, 
+                                             username, 
+                                             server_host, 
+                                             server_port 
+                                       FROM :table_mcp 
+                                       WHERE status = 1 
+                                       ORDER BY mcp_id
+                                       ');
+            $Qservers->execute();
+            
+            while ($Qservers->fetch()) {
+              $mcpId = $Qservers->valueInt('mcp_id');
+              $username = $Qservers->value('username');
+              $serverHost = $Qservers->value('server_host');
+              $serverPort = $Qservers->valueInt('server_port');
+              $serverLabel = $username . ' (' . $serverHost . ':' . $serverPort . ')';
+              echo '<option value="' . $mcpId . '">' . HTML::outputProtected($serverLabel) . '</option>';
+            }
+          ?>
+        </select>
         <select id="timeRange" class="form-select form-select-sm d-inline-block w-auto">
           <option value="hour"><?php echo $CLICSHOPPING_MCP->getDef('text_last_hour'); ?></option>
           <option value="day" selected><?php echo $CLICSHOPPING_MCP->getDef('text_last_24:hour'); ?></option>

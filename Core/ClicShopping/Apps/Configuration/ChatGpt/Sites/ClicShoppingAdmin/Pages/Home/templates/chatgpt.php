@@ -39,6 +39,11 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
             echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_configure'), null, $CLICSHOPPING_ChatGpt->link('Configure'), 'primary') . ' ';
           }
 
+          if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+            echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_rag_dashboard'), null, $CLICSHOPPING_ChatGpt->link('DashBoard'), 'danger') . ' ';
+            echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_rag_websearch'), null, $CLICSHOPPING_ChatGpt->link('RagWebSearch'), 'success') . ' ';
+          }
+
           echo HTML::form('delete_everything', $CLICSHOPPING_ChatGpt->link('ChatGpt&DeleteEverything'));
           echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_delete'), null, null, 'danger');
           echo '</form>'

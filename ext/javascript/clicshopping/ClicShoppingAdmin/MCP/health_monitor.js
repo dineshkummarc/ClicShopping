@@ -22,14 +22,92 @@ class HealthMonitor {
       startBtn: document.getElementById('startMonitoring'),
       stopBtn: document.getElementById('stopMonitoring'),
       eventLog: document.getElementById('eventLog'),
-      clearLogBtn: document.getElementById('clearLog')
+      clearLogBtn: document.getElementById('clearLog'),
+      mcpServer: document.getElementById('mcpServer'),
+      serverInfo: document.getElementById('serverInfo'),
+      serverInfoCard: document.getElementById('serverInfoCard'),
+      serverName: document.getElementById('serverName'),
+      serverHost: document.getElementById('serverHost'),
+      serverPort: document.getElementById('serverPort'),
+      serverSSL: document.getElementById('serverSSL')
     };
+    
+    // Debug logging
+    console.log('Health Monitor initialized');
+    console.log('MCP Server dropdown found:', this.elements.mcpServer !== null);
+    console.log('Server info badge found:', this.elements.serverInfo !== null);
+    console.log('Server info card found:', this.elements.serverInfoCard !== null);
+    
+    // Log dropdown options
+    if (this.elements.mcpServer) {
+      console.log('Dropdown options:', this.elements.mcpServer.options.length);
+      for (let i = 0; i < this.elements.mcpServer.options.length; i++) {
+        console.log(`  Option ${i}:`, this.elements.mcpServer.options[i].value, '-', this.elements.mcpServer.options[i].text);
+      }
+    }
   }
 
   bindEvents() {
     this.elements.startBtn.addEventListener('click', () => this.startMonitoring());
     this.elements.stopBtn.addEventListener('click', () => this.stopMonitoring());
     this.elements.clearLogBtn.addEventListener('click', () => this.clearLog());
+    
+    // Add server selection change event
+    if (this.elements.mcpServer) {
+      this.elements.mcpServer.addEventListener('change', () => {
+        console.log('Server selection changed to:', this.elements.mcpServer.value);
+        this.updateServerInfo();
+        if (this.isMonitoring) {
+          console.log('Restarting monitoring for new server...');
+          this.stopMonitoring();
+          setTimeout(() => this.startMonitoring(), 500);
+        }
+      });
+    } else {
+      console.error('MCP Server dropdown not found!');
+    }
+  }
+  
+  updateServerInfo() {
+    if (!this.elements.mcpServer) return;
+    
+    const selectedOption = this.elements.mcpServer.options[this.elements.mcpServer.selectedIndex];
+    if (selectedOption) {
+      const serverText = selectedOption.text;
+      
+      // Update badge
+      if (this.elements.serverInfo) {
+        this.elements.serverInfo.textContent = 'Monitoring: ' + serverText;
+        this.elements.serverInfo.style.display = 'inline-block';
+      }
+      
+      // Update server info card
+      if (this.elements.serverInfoCard) {
+        // Parse server text: "Username (host:port)"
+        const match = serverText.match(/^(.+?)\s*\((.+?):(\d+)\)$/);
+        if (match) {
+          const [, username, host, port] = match;
+          if (this.elements.serverName) this.elements.serverName.textContent = username;
+          if (this.elements.serverHost) this.elements.serverHost.textContent = host;
+          if (this.elements.serverPort) this.elements.serverPort.textContent = port;
+          if (this.elements.serverSSL) this.elements.serverSSL.textContent = host.includes('https') || port === '443' ? 'Yes' : 'No';
+          this.elements.serverInfoCard.style.display = 'block';
+        } else if (selectedOption.value === 'all') {
+          if (this.elements.serverName) this.elements.serverName.textContent = 'All Servers';
+          if (this.elements.serverHost) this.elements.serverHost.textContent = 'Multiple';
+          if (this.elements.serverPort) this.elements.serverPort.textContent = 'Multiple';
+          if (this.elements.serverSSL) this.elements.serverSSL.textContent = 'Mixed';
+          this.elements.serverInfoCard.style.display = 'block';
+        }
+      }
+      
+      console.log('Server info updated:', serverText);
+    }
+  }
+  
+  getMonitoringUrl() {
+    const mcpId = this.elements.mcpServer ? this.elements.mcpServer.value : 'all';
+    return this.url + (this.url.includes('?') ? '&' : '?') + 'mcp_id=' + mcpId;
   }
 
   startMonitoring() {
@@ -38,9 +116,12 @@ class HealthMonitor {
     this.log('Starting health monitoring...', 'info');
     this.isMonitoring = true;
     this.updateUI();
+    this.updateServerInfo(); // Show which server is being monitored
 
     try {
-      this.eventSource = new EventSource(this.url);
+      const monitoringUrl = this.getMonitoringUrl();
+      console.log('Connecting to:', monitoringUrl);
+      this.eventSource = new EventSource(monitoringUrl);
 
       this.eventSource.onopen = (event) => {
         this.reconnectAttempts = 0;
@@ -152,6 +233,13 @@ class HealthMonitor {
     this.elements.healthStatus.textContent = status.toUpperCase();
     this.elements.lastUpdate.textContent = data.timestamp || new Date().toLocaleString();
 
+    // Update server info if available in data
+    if (data.server_info && this.elements.serverInfo) {
+      const serverText = `${data.server_info.host}:${data.server_info.port}`;
+      this.elements.serverInfo.textContent = 'Server: ' + serverText;
+      this.elements.serverInfo.style.display = 'inline-block';
+    }
+
     // Update detailed status if available
     if (data.details) {
       this.updateDetailedStatus(data.details);
@@ -242,12 +330,28 @@ class HealthMonitor {
       'error': 'text-danger'
     };
 
+    // Get current server info
+    let serverInfo = 'Unknown';
+    if (this.elements.mcpServer) {
+      const selectedOption = this.elements.mcpServer.options[this.elements.mcpServer.selectedIndex];
+      if (selectedOption) {
+        serverInfo = selectedOption.value === 'all' ? 'All Servers' : selectedOption.text;
+      }
+    }
+
     const colorClass = colors[type] || 'text-muted';
     const logEntry = document.createElement('div');
-    logEntry.innerHTML = `<span class="text-muted">[${timestamp}]</span> <span class="${colorClass}">${message}</span>`;
+    logEntry.className = 'log-entry mb-1';
+    logEntry.innerHTML = `
+      <span class="text-muted">[${timestamp}]</span> 
+      <span class="badge bg-secondary" style="font-size:0.7em;">${serverInfo}</span>
+      <span class="${colorClass}">[${type.toUpperCase()}]</span> 
+      <span>${message}</span>
+    `;
 
     // If this is the first entry, replace the placeholder
-    if (this.elements.eventLog.innerHTML.includes('No events yet...')) {
+    if (this.elements.eventLog.innerHTML.includes('No events yet...') || 
+        this.elements.eventLog.innerHTML.includes('text_no_event')) {
       this.elements.eventLog.innerHTML = '';
     }
 

@@ -16,13 +16,8 @@ use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Message;
 class MCPAuth {
     private $validMcpKeys;
     private $accessLevels;
-    private $mcpConfigs;
-    private $allowedOrigins;
     
     public function __construct() {
-        // Load MCP configurations from database
-        $this->loadMcpConfigurations();
-        
         // Clés d'API valides (en production, stocker en base de données chiffrée)
         $this->validMcpKeys = [
             'customer_products' => [
@@ -40,83 +35,6 @@ class MCPAuth {
         ];
         
         $this->accessLevels = ['customer_products', 'ragbi', 'admin'];
-    }
-    
-    /**
-     * Load MCP configurations from database
-     * Supports multiple MCP instances with different server configurations
-     */
-    private function loadMcpConfigurations(): void {
-        $this->mcpConfigs = [];
-        $this->allowedOrigins = [];
-        
-        try {
-            $db = Registry::get('Db');
-            
-            // Fetch all active MCP configurations
-            $Qmcp = $db->prepare('SELECT mcp_id, username, mcp_key, server_host, server_port, ssl_enabled, status
-                                  FROM :table_mcp 
-                                  WHERE status = 1
-                                  ORDER BY mcp_id
-                                ');
-            $Qmcp->execute();
-            
-            while ($Qmcp->fetch()) {
-                $mcpId = (int)$Qmcp->valueInt('mcp_id');
-                $serverHost = $Qmcp->value('server_host') ?: 'localhost';
-                $serverPort = (int)$Qmcp->valueInt('server_port') ?: 3001;
-                $sslEnabled = (bool)$Qmcp->valueInt('ssl_enabled');
-                
-                // Build the origin URL based on SSL and port configuration
-                $protocol = $sslEnabled ? 'https' : 'http';
-                $origin = $protocol . '://' . $serverHost;
-                
-                // Add port if it's not the default for the protocol
-                if ((!$sslEnabled && $serverPort != 80) || ($sslEnabled && $serverPort != 443)) {
-                    $origin .= ':' . $serverPort;
-                }
-                
-                $this->mcpConfigs[$mcpId] = [
-                    'mcp_id' => $mcpId,
-                    'username' => $Qmcp->value('username'),
-                    'mcp_key' => $Qmcp->value('mcp_key'),
-                    'server_host' => $serverHost,
-                    'server_port' => $serverPort,
-                    'ssl_enabled' => $sslEnabled,
-                    'origin' => $origin
-                ];
-                
-                // Add to allowed origins list
-                if (!in_array($origin, $this->allowedOrigins)) {
-                    $this->allowedOrigins[] = $origin;
-                }
-            }
-            
-            // Fallback to localhost if no configurations found
-            if (empty($this->allowedOrigins)) {
-                $this->allowedOrigins[] = 'http://localhost:3001';
-                error_log('MCP Auth: No active MCP configurations found, using default localhost:3001');
-            }
-            
-        } catch (\Exception $e) {
-            error_log('MCP Auth: Failed to load configurations - ' . $e->getMessage());
-            // Fallback to default
-            $this->allowedOrigins[] = 'http://localhost:3001';
-        }
-    }
-    
-    /**
-     * Get allowed CORS origins
-     */
-    public function getAllowedOrigins(): array {
-        return $this->allowedOrigins;
-    }
-    
-    /**
-     * Check if an origin is allowed
-     */
-    public function isOriginAllowed(string $origin): bool {
-        return in_array($origin, $this->allowedOrigins);
     }
     
     /**
@@ -297,26 +215,10 @@ class MCPAuth {
 }
 
 // Traitement de la requête
-$authAPI = new MCPAuth();
-
-// Set CORS headers dynamically based on database configuration
 header('Content-Type: application/json');
-
-// Handle CORS origin validation
-$requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (!empty($requestOrigin) && $authAPI->isOriginAllowed($requestOrigin)) {
-    header('Access-Control-Allow-Origin: ' . $requestOrigin);
-} else {
-    // Use first allowed origin as default
-    $allowedOrigins = $authAPI->getAllowedOrigins();
-    if (!empty($allowedOrigins)) {
-        header('Access-Control-Allow-Origin: ' . $allowedOrigins[0]);
-    }
-}
-
+header('Access-Control-Allow-Origin: http://localhost:3001');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-API-Key, X-MCP-Source, X-MCP-Version');
-header('Access-Control-Allow-Credentials: true');
 
 // Gérer les requêtes OPTIONS (preflight)
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -324,6 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+$authAPI = new MCPAuth();
 $response = $authAPI->handleRequest();
 
 http_response_code($response['status'] === 'success' ? 200 : 401);

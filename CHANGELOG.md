@@ -14,7 +14,10 @@ version4.11
    -  **Tool Execution** (Calculator, Web Search, Custom tools)
    -  **No micro service**
    -  **Simple installation one click**
-
+- Mcp server connector improvment
+  - remove data simulation
+  - add multi server capability
+  - 
 
 ----------------
 version4.10

@@ -1,6 +1,8 @@
 heading_title = Alert History
+button_back = Back
 text_alert_history = Alert History
 text_date_time = Date / Time
+text_server = Server
 text_type = Types
 text_message = Messages
 text_loading_alert = Loading alerts...

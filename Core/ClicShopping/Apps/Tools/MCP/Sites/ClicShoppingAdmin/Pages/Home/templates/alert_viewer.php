@@ -55,13 +55,14 @@ $CLICSHOPPING_Hooks = Registry::get('Hooks');
           <thead>
           <tr>
             <th><?php echo $CLICSHOPPING_Mcp->getDef('text_date_time'); ?></th>
+            <th><?php echo $CLICSHOPPING_Mcp->getDef('text_server'); ?></th>
             <th><?php echo $CLICSHOPPING_Mcp->getDef('text_type'); ?></th>
             <th><?php echo $CLICSHOPPING_Mcp->getDef('text_message'); ?></th>
           </tr>
           </thead>
           <tbody id="mcpAlertsList">
           <tr>
-            <td colspan="3" class="text-center"><?php echo $CLICSHOPPING_Mcp->getDef('text_loading_alert'); ?></td>
+            <td colspan="4" class="text-center"><?php echo $CLICSHOPPING_Mcp->getDef('text_loading_alert'); ?></td>
           </tr>
           </tbody>
         </table>

@@ -1,15 +1,26 @@
 document.addEventListener('DOMContentLoaded', function() {
   let performanceChart;
   const timeRangeElement = document.getElementById('timeRange');
+  const mcpServerElement = document.getElementById('mcpServer');
   let eventSource;
   const thrErrorEl = document.getElementById('thrError');
   const thrLatencyEl = document.getElementById('thrLatency');
   const thrDowntimeEl = document.getElementById('thrDowntime');
   const applyBtn = document.getElementById('applyThresholds');
+  
+  // Debug: Log button elements
+  console.log('Performance Monitor initialized');
+  console.log('Apply button found:', applyBtn !== null);
+  console.log('Threshold inputs found:', {
+    error: thrErrorEl !== null,
+    latency: thrLatencyEl !== null,
+    downtime: thrDowntimeEl !== null
+  });
 
   function buildParams() {
     const range = timeRangeElement ? timeRangeElement.value : '24h';
-    const params = new URLSearchParams({ range, token: mcpToken });
+    const mcpId = mcpServerElement ? mcpServerElement.value : 'all';
+    const params = new URLSearchParams({ range, token: mcpToken, mcp_id: mcpId });
     if (thrErrorEl && thrErrorEl.value) params.set('threshold_error', thrErrorEl.value);
     if (thrLatencyEl && thrLatencyEl.value) params.set('threshold_latency', thrLatencyEl.value);
     if (thrDowntimeEl && thrDowntimeEl.value) params.set('threshold_downtime', thrDowntimeEl.value);
@@ -20,15 +31,81 @@ document.addEventListener('DOMContentLoaded', function() {
     if (eventSource) eventSource.close();
     //const baseUrl = GetPerformanceData;
     eventSource = new EventSource(GetPerformanceData + '?' + buildParams());
+    
     eventSource.onmessage = function(event) {
       const data = JSON.parse(event.data);
       updateUI(data);
     };
+    
+    eventSource.addEventListener('server_not_running', function(event) {
+      const data = JSON.parse(event.data);
+      showServerNotRunningWarning(data);
+      eventSource.close();
+    });
+    
+    eventSource.addEventListener('error', function(event) {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.error) {
+          showServerNotRunningWarning(data);
+          eventSource.close();
+        }
+      } catch (e) {
+        // Generic error handling
+        console.error('EventSource error:', event);
+      }
+    });
+    
     eventSource.onerror = function(error) {
       console.error('EventSource failed:', error);
       eventSource.close();
-      setTimeout(initEventSource, 5000);
+      // Don't auto-retry if server is not running
+      // User needs to start the server first
     };
+  }
+  
+  function showServerNotRunningWarning(data) {
+    // Clear existing content
+    const container = document.getElementById('performanceMetrics');
+    if (!container) return;
+    
+    // Create warning message
+    const warningHTML = `
+      <div class="alert alert-warning" role="alert">
+        <h4 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> ${data.error || 'MCP Server Not Running'}</h4>
+        <p>${data.message || 'The MCP server is not running.'}</p>
+        ${data.instructions ? `
+          <hr>
+          <p class="mb-0"><strong>To start monitoring:</strong></p>
+          <ol class="mb-0">
+            ${data.instructions.map(instruction => `<li>${instruction}</li>`).join('')}
+          </ol>
+        ` : ''}
+        ${data.config ? `
+          <hr>
+          <p class="mb-0"><small><strong>Configuration:</strong> ${data.config.host}:${data.config.port}</small></p>
+        ` : ''}
+      </div>
+    `;
+    
+    // Show warning in all metric areas
+    if (container) container.innerHTML = warningHTML;
+    
+    const recommendations = document.getElementById('recommendations');
+    if (recommendations) {
+      recommendations.innerHTML = `
+        <div class="alert alert-info">
+          <strong>Note:</strong> Once you start the MCP server, refresh this page to begin monitoring.
+        </div>
+      `;
+    }
+    
+    // Update stats to show N/A
+    const stats = ['avgLatencyStat', 'maxLatencyStat', 'totalRequestsStat', 'dataPointsStat'];
+    stats.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = 'N/A';
+    });
   }
 
   function updateUI(data) {
@@ -159,10 +236,23 @@ document.addEventListener('DOMContentLoaded', function() {
     initEventSource();
   });
 
-  if (applyBtn) {
-    applyBtn.addEventListener('click', function() {
+  if (mcpServerElement) {
+    mcpServerElement.addEventListener('change', function() {
       initEventSource();
     });
+  }
+
+  if (applyBtn) {
+    applyBtn.addEventListener('click', function(e) {
+      e.preventDefault(); // Prevent any default action
+      console.log('Apply Thresholds clicked');
+      console.log('Error threshold:', thrErrorEl ? thrErrorEl.value : 'N/A');
+      console.log('Latency threshold:', thrLatencyEl ? thrLatencyEl.value : 'N/A');
+      console.log('Downtime threshold:', thrDowntimeEl ? thrDowntimeEl.value : 'N/A');
+      initEventSource();
+    });
+  } else {
+    console.error('applyThresholds button not found!');
   }
 
   // Export data functionality

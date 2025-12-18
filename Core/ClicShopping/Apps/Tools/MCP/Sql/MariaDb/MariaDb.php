@@ -219,6 +219,7 @@ EOD;
       $sql = <<<EOD
 CREATE TABLE :table_mcp_alerts (
   `id` int(11) NOT NULL,
+  `mcp_id` int(11) NOT NULL,
   `alert_type` varchar(32) NOT NULL,
   `message` text NOT NULL,
   `alert_timestamp` datetime NOT NULL,
@@ -229,7 +230,8 @@ CREATE TABLE :table_mcp_alerts (
 ALTER TABLE :table_mcp_alerts
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_alert_timestamp` (`alert_timestamp`),
-  ADD KEY `idx_severity` (`severity_level`);
+  ADD KEY `idx_severity` (`severity_level`),
+  ADD KEY `idx_mcp_id` (`mcp_id`);
 
 ALTER TABLE :table_mcp_alerts MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 

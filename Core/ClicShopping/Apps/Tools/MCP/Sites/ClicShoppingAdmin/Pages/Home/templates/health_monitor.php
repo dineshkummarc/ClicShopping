@@ -42,9 +42,55 @@ $CLICSHOPPING_Page = Registry::get('Site')->getPage();
       <div>
         <span id="connectionStatus" class="badge bg-secondary"><?php echo $CLICSHOPPING_MCP->getDef('text_disconnected'); ?></span>
         <span id="healthStatus" class="badge bg-info"><?php echo $CLICSHOPPING_MCP->getDef('text_unknown'); ?></span>
+        <span id="serverInfo" class="badge bg-light text-dark ms-2" style="display:none;"></span>
+      </div>
+      <div>
+        <select id="mcpServer" class="form-select form-select-sm d-inline-block w-auto">
+          <option value="all"><?php echo $CLICSHOPPING_MCP->getDef('text_all_servers'); ?></option>
+          <?php
+            // Load all active MCP servers
+            $db = Registry::get('Db');
+            $Qservers = $db->prepare('SELECT mcp_id, username, server_host, server_port 
+                                       FROM :table_mcp 
+                                       WHERE status = 1 
+                                       ORDER BY mcp_id');
+            $Qservers->execute();
+            
+            while ($Qservers->fetch()) {
+              $mcpId = $Qservers->valueInt('mcp_id');
+              $username = $Qservers->value('username');
+              $serverHost = $Qservers->value('server_host');
+              $serverPort = $Qservers->valueInt('server_port');
+              $serverLabel = $username . ' (' . $serverHost . ':' . $serverPort . ')';
+              echo '<option value="' . $mcpId . '">' . HTML::outputProtected($serverLabel) . '</option>';
+            }
+          ?>
+        </select>
       </div>
     </div>
     <div class="card-body">
+      <!-- Server Information Row -->
+      <div class="row mb-3">
+        <div class="col-12">
+          <div class="alert alert-info mb-0" id="serverInfoCard" style="display:none;">
+            <div class="row">
+              <div class="col-md-3">
+                <strong>Server:</strong> <span id="serverName">-</span>
+              </div>
+              <div class="col-md-3">
+                <strong>Host:</strong> <span id="serverHost">-</span>
+              </div>
+              <div class="col-md-3">
+                <strong>Port:</strong> <span id="serverPort">-</span>
+              </div>
+              <div class="col-md-3">
+                <strong>SSL:</strong> <span id="serverSSL">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <div class="row">
         <div class="col-md-4">
           <div class="card border-primary">
