@@ -101,7 +101,8 @@ class MariaDb
             gpt_id int(11) NOT NULL,
             question text NOT NULL,
             response text NOT NULL,
-            date_added date DEFAULT NULL
+            date_added date DEFAULT NULL,
+            KEY idx_date_added (date_added)
           ) CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
           ALTER TABLE :table_gpt  ADD PRIMARY KEY (gpt_id);
@@ -115,7 +116,11 @@ class MariaDb
             totalTokens int(11) DEFAULT NULL,
             ia_type varchar(255) DEFAULT NULL,
             model varchar(255) DEFAULT NULL,
-            date_added date DEFAULT NULL
+            date_added date DEFAULT NULL,
+            KEY idx_gpt_id (gpt_id),
+            KEY idx_date_added (date_added),
+            KEY idx_model (model),
+            KEY idx_ia_type (ia_type)
           ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
           ALTER TABLE :table_gpt_usage  ADD PRIMARY KEY (usage_id);
           ALTER TABLE :table_gpt_usage  MODIFY usage_id int(11) NOT NULL AUTO_INCREMENT;
@@ -137,7 +142,11 @@ class MariaDb
           chunknumber int default 128,
           date_modified datetime DEFAULT NULL,
           entity_id INT,
-          language_id INT
+          language_id INT,
+          KEY idx_entity_id (entity_id),
+          KEY idx_language_id (language_id),
+          KEY idx_entity_lang (entity_id, language_id),
+          KEY idx_date_modified (date_modified)
       );
 
       CREATE VECTOR INDEX embedding_index ON :table_categories_embedding (embedding);
@@ -152,7 +161,11 @@ class MariaDb
                 chunknumber int default 128,
                 date_modified datetime DEFAULT NULL,
                 entity_id INT,
-                language_id INT
+                language_id INT,
+                KEY idx_entity_id (entity_id),
+                KEY idx_language_id (language_id),
+                KEY idx_entity_lang (entity_id, language_id),
+                KEY idx_date_modified (date_modified)
               );
 
       CREATE VECTOR INDEX embedding_index ON :table_products_embedding (embedding);
@@ -167,7 +180,11 @@ class MariaDb
           chunknumber INT DEFAULT 128,
           date_modified DATETIME DEFAULT NULL,
           entity_id INT,
-          language_id INT
+          language_id INT,
+          KEY idx_entity_id (entity_id),
+          KEY idx_language_id (language_id),
+          KEY idx_entity_lang (entity_id, language_id),
+          KEY idx_date_modified (date_modified)
       );
 
       CREATE VECTOR INDEX embedding_index ON :table_pages_manager_embedding (embedding);
@@ -182,7 +199,11 @@ class MariaDb
           chunknumber INT DEFAULT 128,
           date_modified DATETIME DEFAULT NULL,
           entity_id INT,
-          language_id INT
+          language_id INT,
+          KEY idx_entity_id (entity_id),
+          KEY idx_language_id (language_id),
+          KEY idx_entity_lang (entity_id, language_id),
+          KEY idx_date_modified (date_modified)
       );
 
       CREATE VECTOR INDEX embedding_index ON :table_manufacturers_embedding (embedding);
@@ -196,7 +217,9 @@ class MariaDb
           embedding VECTOR(3072) NOT NULL,
           chunknumber INT DEFAULT 128,
           date_modified DATETIME DEFAULT NULL,
-          entity_id INT
+          entity_id INT,
+          KEY idx_entity_id (entity_id),
+          KEY idx_date_modified (date_modified)
       );
 
       CREATE VECTOR INDEX embedding_index ON :table_suppliers_embedding (embedding);
@@ -211,7 +234,11 @@ class MariaDb
           chunknumber INT DEFAULT 128,
           date_modified DATETIME DEFAULT NULL,
           entity_id INT,
-          language_id INT
+          language_id INT,
+          KEY idx_entity_id (entity_id),
+          KEY idx_language_id (language_id),
+          KEY idx_entity_lang (entity_id, language_id),
+          KEY idx_date_modified (date_modified)
       );
 
       CREATE VECTOR INDEX embedding_index ON :table_reviews_embedding (embedding);
@@ -226,7 +253,11 @@ class MariaDb
           chunknumber INT DEFAULT 128,
           date_modified DATETIME DEFAULT NULL,
           entity_id INT,
-          language_id INT
+          language_id INT,
+          KEY idx_entity_id (entity_id),
+          KEY idx_language_id (language_id),
+          KEY idx_entity_lang (entity_id, language_id),
+          KEY idx_date_modified (date_modified)
       );
 
       CREATE VECTOR INDEX embedding_index ON :table_reviews_sentiment_embedding (embedding);
@@ -240,7 +271,9 @@ class MariaDb
           embedding VECTOR(3072) NOT NULL,
           chunknumber INT DEFAULT 128,
           date_modified DATETIME DEFAULT NULL,
-          entity_id INT
+          entity_id INT,
+          KEY idx_entity_id (entity_id),
+          KEY idx_date_modified (date_modified)
       );
 
       CREATE VECTOR INDEX embedding_index ON :table_return_orders_embedding (embedding);
@@ -254,7 +287,9 @@ class MariaDb
           embedding VECTOR(3072) NOT NULL,
           chunknumber INT DEFAULT 128,
           date_modified DATETIME DEFAULT NULL,
-          entity_id INT
+          entity_id INT,
+          KEY idx_entity_id (entity_id),
+          KEY idx_date_modified (date_modified)
       );
 
       CREATE VECTOR INDEX embedding_index ON :table_orders_embedding (embedding);    
@@ -289,13 +324,17 @@ class MariaDb
         KEY idx_entity_id (entity_id),
         KEY idx_language_id (language_id),
         KEY idx_entity (entity_id, entity_type),
-        KEY idx_entity_language (entity_id, language_id)
+        KEY idx_entity_language (entity_id, language_id),
+        KEY idx_entity_type_language (entity_type, language_id, entity_id),
+        KEY idx_date_modified (date_modified)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
       ALTER TABLE :table_rag_correction_patterns_embedding ADD COLUMN IF NOT EXISTS metadata JSON NOT NULL DEFAULT '{}' AFTER embedding;
       ALTER TABLE :table_rag_correction_patterns_embedding ADD COLUMN IF NOT EXISTS entity_type VARCHAR(50) NULL COMMENT 'Type of entity (product, category, page, etc.)' AFTER entity_id;
       ALTER TABLE :table_rag_correction_patterns_embedding ADD KEY IF NOT EXISTS idx_user_id (metadata(100));
       ALTER TABLE :table_rag_correction_patterns_embedding ADD KEY IF NOT EXISTS idx_entity (entity_id, entity_type);
+      ALTER TABLE :table_rag_correction_patterns_embedding ADD KEY IF NOT EXISTS idx_entity_type_language (entity_type, language_id, entity_id);
+      ALTER TABLE :table_rag_correction_patterns_embedding ADD KEY IF NOT EXISTS idx_date_modified (date_modified);
      EOD;
 
       $CLICSHOPPING_Db->exec($sql);
@@ -315,7 +354,10 @@ class MariaDb
           level ENUM('working', 'short_term', 'long_term') DEFAULT 'short_term',
           status ENUM('pending', 'short_term_stored', 'long_term_stored', 'archived') DEFAULT 'pending',
           KEY idx_user_id (user_id),
-          KEY idx_status (status)
+          KEY idx_status (status),
+          KEY idx_status_level (status, level),
+          KEY idx_user_status (user_id, status),
+          KEY idx_timestamp_recorded (timestamp_recorded)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
         EOD;
@@ -348,9 +390,10 @@ class MariaDb
           KEY idx_user_id (user_id),
           KEY idx_interaction_id (interaction_id),
           KEY idx_language_id (language_id),
-          KEY idx_user_lang (user_id, language_id),
+          KEY idx_user_lang_date (user_id, language_id, date_modified),
           KEY idx_date_modified (date_modified),
-          KEY idx_entity (entity_id, entity_type)
+          KEY idx_entity (entity_id, entity_type),
+          KEY idx_interaction_user (interaction_id, user_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
        
       ALTER TABLE :table_rag_conversation_memory_embedding ADD COLUMN IF NOT EXISTS metadata JSON NOT NULL DEFAULT '{}' AFTER embedding;
@@ -360,8 +403,9 @@ class MariaDb
       ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_user_id (user_id);
       ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_interaction_id (interaction_id);
       ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_language_id (language_id);
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_user_lang (user_id, language_id);
+      ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_user_lang_date (user_id, language_id, date_modified);
       ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_entity (entity_id, entity_type);
+      ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_interaction_user (interaction_id, user_id);
       
       -- Task 0.1 (2025-12-12): Add user_message and assistant_response columns
       ALTER TABLE :table_rag_conversation_memory_embedding ADD COLUMN IF NOT EXISTS user_message TEXT COMMENT 'User message from conversation' AFTER embedding;
@@ -399,7 +443,10 @@ class MariaDb
           level ENUM('working', 'short_term', 'long_term') DEFAULT 'short_term',
           status ENUM('pending', 'short_term_stored', 'long_term_stored', 'archived') DEFAULT 'pending',
           KEY idx_user_id (user_id),
-          KEY idx_status (status)
+          KEY idx_status (status),
+          KEY idx_status_level (status, level),
+          KEY idx_user_status (user_id, status),
+          KEY idx_timestamp_recorded (timestamp_recorded)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     EOD;
@@ -447,7 +494,9 @@ class MariaDb
           KEY idx_user_id (user_id),
           KEY idx_created_at (created_at),
           KEY idx_success (success),
-          KEY idx_plan_id (plan_id)
+          KEY idx_plan_id (plan_id),
+          KEY idx_user_success_date (user_id, success, created_at),
+          KEY idx_plan_step (plan_id, step_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     EOD;
       $CLICSHOPPING_Db->exec($sql);
@@ -484,6 +533,9 @@ class MariaDb
           INDEX `idx_date_added` (`date_added`),
           INDEX `idx_user_admin` (`user_admin`),
           INDEX `idx_quality_score` (`quality_score`),
+          INDEX `idx_intent_confidence` (`intent`, `intent_confidence`),
+          INDEX `idx_cached_quality` (`cached_in_rag`, `quality_score`),
+          INDEX `idx_date_user` (`date_added`, `user_admin`),
           FULLTEXT INDEX `ft_query` (`query`)       
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     EOD;
@@ -508,7 +560,9 @@ class MariaDb
         PRIMARY KEY (`id`),
         INDEX `idx_search_request_id` (`search_request_id`),
         INDEX `idx_relevance_score` (`relevance_score`),
-        INDEX `idx_source_domain` (`source_domain`)
+        INDEX `idx_source_domain` (`source_domain`),
+        INDEX `idx_request_relevance` (`search_request_id`, `relevance_score`),
+        INDEX `idx_domain_relevance` (`source_domain`, `relevance_score`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     EOD;
@@ -542,7 +596,10 @@ class MariaDb
           INDEX `idx_quality_score` (`quality_score`),
           INDEX `idx_usage_count` (`usage_count`),
           INDEX `idx_last_used` (`last_used`),
-          INDEX `idx_quality_usage` (`quality_score`, `usage_count`)
+          INDEX `idx_quality_usage` (`quality_score`, `usage_count`),
+          INDEX `idx_quality_usage_last` (`quality_score`, `usage_count`, `last_used`),
+          INDEX `idx_search_engine_quality` (`search_engine`, `quality_score`),
+          INDEX `idx_language_quality` (`language_id`, `quality_score`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     EOD;
@@ -568,7 +625,9 @@ class MariaDb
       PRIMARY KEY (`id`),
       INDEX `idx_search_request_id` (`search_request_id`),
       INDEX `idx_relevance_score` (`relevance_score`),
-      INDEX `idx_source_domain` (`source_domain`)
+      INDEX `idx_source_domain` (`source_domain`),
+      INDEX `idx_request_relevance` (`search_request_id`, `relevance_score`),
+      INDEX `idx_domain_relevance` (`source_domain`, `relevance_score`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     EOD;
@@ -603,7 +662,10 @@ class MariaDb
       INDEX `idx_quality_score` (`quality_score`),
       INDEX `idx_usage_count` (`usage_count`),
       INDEX `idx_last_used` (`last_used`),
-      INDEX `idx_quality_usage` (`quality_score`, `usage_count`)
+      INDEX `idx_quality_usage` (`quality_score`, `usage_count`),
+      INDEX `idx_quality_usage_last` (`quality_score`, `usage_count`, `last_used`),
+      INDEX `idx_search_engine_quality` (`search_engine`, `quality_score`),
+      INDEX `idx_language_quality` (`language_id`, `quality_score`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 
     EOD;
@@ -622,7 +684,8 @@ class MariaDb
       `description` text NOT NULL,
       `search_pattern` varchar(255),
       PRIMARY KEY (`id`),
-      INDEX `idx_site_domain` (`site_domain`)
+      INDEX `idx_site_domain` (`site_domain`),
+      INDEX `idx_status_authority` (`status`, `authority_score`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     EOD;
       $CLICSHOPPING_Db->exec($sql);
@@ -646,7 +709,9 @@ class MariaDb
         INDEX `idx_interaction` (`interaction_id`),
         INDEX `idx_feedback_type` (`feedback_type`),
         INDEX `idx_timestamp` (`timestamp`),
-        INDEX `idx_user_id` (`user_id`)
+        INDEX `idx_user_id` (`user_id`),
+        INDEX `idx_user_type_date` (`user_id`, `feedback_type`, `date_added`),
+        INDEX `idx_interaction_type` (`interaction_id`, `feedback_type`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     EOD;
       $CLICSHOPPING_Db->exec($sql);
@@ -912,7 +977,10 @@ class MariaDb
         ADD KEY `idx_quality_score` (`quality_score`),
         ADD KEY `idx_usage_count` (`usage_count`),
         ADD KEY `idx_last_used` (`last_used`),
-        ADD KEY `idx_quality_usage` (`quality_score`,`usage_count`);
+        ADD KEY `idx_quality_usage` (`quality_score`,`usage_count`),
+        ADD KEY `idx_quality_usage_last` (`quality_score`, `usage_count`, `last_used`),
+        ADD KEY `idx_search_engine_quality` (`search_engine`, `quality_score`),
+        ADD KEY `idx_language_quality` (`language_id`, `quality_score`);
 
       ALTER TABLE :table_rag_web_cache_embedding MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
       EOD;

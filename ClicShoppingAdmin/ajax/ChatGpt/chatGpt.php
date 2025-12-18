@@ -29,7 +29,7 @@ spl_autoload_register('ClicShopping\OM\CLICSHOPPING::autoload');
 
 CLICSHOPPING::initialize();
 CLICSHOPPING::loadSite('ClicShoppingAdmin');
-//AdministratorAdmin::hasUserAccess();
+AdministratorAdmin::hasUserAccess();
 
 header('Content-Type: application/json; charset=UTF-8');
 try {

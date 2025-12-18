@@ -47,8 +47,12 @@ class WebSearchTool
   private array $stats = [
     'total_requests' => 0,
     'cache_hits' => 0,
+    'cache_hits_short_term' => 0,
+    'cache_hits_rag_learning' => 0,
     'api_calls' => 0,
     'errors' => 0,
+    'api_cost_saved' => 0.0,
+    'api_cost_spent' => 0.0,
   ];
 
   /**
@@ -150,10 +154,15 @@ class WebSearchTool
 
       if ($cached !== null) {
         $this->stats['cache_hits']++;
+        $this->stats['cache_hits_short_term']++;
+        
+        // Calculate API cost saved
+        $apiCostSaved = $this->estimateApiCost([]);
+        $this->stats['api_cost_saved'] += $apiCostSaved;
 
         if ($this->debug) {
           $this->logger->logSecurityEvent(
-            "Cache hit (short-term): {$query}",
+            "✅ Cache hit (short-term): {$query} - API cost saved: \${$apiCostSaved}",
             'info'
           );
         }
@@ -162,6 +171,7 @@ class WebSearchTool
         $result['cached'] = true;
         $result['cache_source'] = 'short_term';
         $result['execution_time'] = microtime(true) - $startTime;
+        $result['api_cost_saved'] = $apiCostSaved;
 
         return $result;
       }
@@ -177,10 +187,15 @@ class WebSearchTool
         // Empty cache results should trigger a fresh API call
         if (!empty($result['items'])) {
           $this->stats['cache_hits']++;
+          $this->stats['cache_hits_rag_learning']++;
+          
+          // Calculate API cost saved
+          $apiCostSaved = $this->estimateApiCost([]);
+          $this->stats['api_cost_saved'] += $apiCostSaved;
 
           if ($this->debug) {
             $this->logger->logSecurityEvent(
-              "Cache hit (RAG learning): {$query} with " . count($result['items']) . " items",
+              "✅ Cache hit (RAG learning): {$query} with " . count($result['items']) . " items - API cost saved: \${$apiCostSaved}",
               'info'
             );
           }
@@ -188,6 +203,7 @@ class WebSearchTool
           $result['cached'] = true;
           $result['cache_source'] = 'rag_learning';
           $result['execution_time'] = microtime(true) - $startTime;
+          $result['api_cost_saved'] = $apiCostSaved;
 
           return $result;
         } else {
@@ -203,7 +219,7 @@ class WebSearchTool
       // 🔹 ÉTAPE 3 : Cache miss → Appel API
       if ($this->debug) {
         $this->logger->logSecurityEvent(
-          "Cache miss, calling SerpApi for: {$query}",
+          "⚠️ Cache miss, calling SerpApi for: {$query}",
           'info'
         );
       }
@@ -214,6 +230,17 @@ class WebSearchTool
       // Appeler SerpApi
       $rawResults = $this->callSerpApi($query, $options);
       $this->stats['api_calls']++;
+      
+      // Track API cost spent
+      $apiCost = $this->estimateApiCost($rawResults);
+      $this->stats['api_cost_spent'] += $apiCost;
+
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "💰 SerpAPI call completed - Cost: \${$apiCost}",
+          'info'
+        );
+      }
 
       // 🔹 ÉTAPE 4 : Traiter et formater les résultats
       $processed = $this->processor->process($rawResults, $query);
@@ -222,7 +249,7 @@ class WebSearchTool
       $processed['cached'] = false;
       $processed['cache_source'] = 'none';
       $processed['execution_time'] = microtime(true) - $startTime;
-      $processed['api_cost'] = $this->estimateApiCost($rawResults);
+      $processed['api_cost'] = $apiCost;
 
       // 🔹 ÉTAPE 5 : Cacher les résultats
       $ttl = $options['cache_ttl'] ?? $this->cacheExpiration;
@@ -233,17 +260,31 @@ class WebSearchTool
       $processed['quality_score'] = $qualityScore;
 
       if ($qualityScore >= 0.7) {
-        $this->cacheManager->storeInLearningRAG($query, $processed);
-        $processed['stored_in_rag'] = true;
+        $stored = $this->cacheManager->storeInLearningRAG($query, $processed);
+        $processed['stored_in_rag'] = $stored;
 
         if ($this->debug) {
-          $this->logger->logSecurityEvent(
-            "High quality result stored in RAG learning (score: {$qualityScore})",
-            'info'
-          );
+          if ($stored) {
+            $this->logger->logSecurityEvent(
+              "✅ High quality result stored in RAG learning DB (table: {$this->cacheManager->getTableName()}, score: {$qualityScore})",
+              'info'
+            );
+          } else {
+            $this->logger->logSecurityEvent(
+              "⚠️ Failed to store result in RAG learning DB (score: {$qualityScore})",
+              'warning'
+            );
+          }
         }
       } else {
         $processed['stored_in_rag'] = false;
+        
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "Quality score too low ({$qualityScore}), not storing in RAG learning DB",
+            'info'
+          );
+        }
       }
 
       // 🔹 ÉTAPE 7 : Logger la requête complète
@@ -549,11 +590,19 @@ class WebSearchTool
   public function getStats(): array
   {
     $cacheHitRate = $this->stats['total_requests'] > 0 ? ($this->stats['cache_hits'] / $this->stats['total_requests']) * 100 : 0;
+    $totalApiCost = $this->stats['api_cost_saved'] + $this->stats['api_cost_spent'];
+    $costSavingsRate = $totalApiCost > 0 ? ($this->stats['api_cost_saved'] / $totalApiCost) * 100 : 0;
 
     return array_merge($this->stats, [
       'cache_hit_rate' => round($cacheHitRate, 2) . '%',
       'api_call_rate' => ($this->stats['total_requests'] - $this->stats['cache_hits']),
       'error_rate' => $this->stats['total_requests'] > 0 ? round(($this->stats['errors'] / $this->stats['total_requests']) * 100, 2) . '%' : '0%',
+      'total_api_cost' => round($totalApiCost, 4),
+      'cost_savings_rate' => round($costSavingsRate, 2) . '%',
+      'cache_breakdown' => [
+        'short_term' => $this->stats['cache_hits_short_term'],
+        'rag_learning' => $this->stats['cache_hits_rag_learning'],
+      ],
     ]);
   }
 
@@ -565,8 +614,47 @@ class WebSearchTool
     $this->stats = [
       'total_requests' => 0,
       'cache_hits' => 0,
+      'cache_hits_short_term' => 0,
+      'cache_hits_rag_learning' => 0,
       'api_calls' => 0,
       'errors' => 0,
+      'api_cost_saved' => 0.0,
+      'api_cost_spent' => 0.0,
+    ];
+  }
+
+  /**
+   * Get comprehensive cache statistics including both memory and DB cache
+   *
+   * @return array Combined statistics from memory cache and RAG learning cache
+   */
+  public function getComprehensiveCacheStats(): array
+  {
+    $stats = $this->getStats();
+    
+    // Add RAG learning cache stats
+    $ragStats = $this->cacheManager->getCacheStats();
+    
+    return [
+      'memory_cache' => [
+        'total_requests' => $stats['total_requests'],
+        'cache_hits' => $stats['cache_hits'],
+        'cache_hit_rate' => $stats['cache_hit_rate'],
+        'short_term_hits' => $stats['cache_hits_short_term'],
+        'rag_learning_hits' => $stats['cache_hits_rag_learning'],
+      ],
+      'rag_learning_cache' => $ragStats,
+      'api_costs' => [
+        'total_spent' => $stats['api_cost_spent'],
+        'total_saved' => $stats['api_cost_saved'],
+        'total_cost' => $stats['total_api_cost'],
+        'savings_rate' => $stats['cost_savings_rate'],
+      ],
+      'performance' => [
+        'api_calls' => $stats['api_calls'],
+        'errors' => $stats['errors'],
+        'error_rate' => $stats['error_rate'],
+      ],
     ];
   }
 

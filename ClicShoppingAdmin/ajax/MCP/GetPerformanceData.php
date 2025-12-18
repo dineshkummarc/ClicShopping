@@ -14,7 +14,7 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\SimpleLogger;
 
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
-use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\McpMockMonitor;
+use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\McpMonitor;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
 define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/') . '/');
@@ -45,7 +45,10 @@ header('Connection: keep-alive');
 header('X-Accel-Buffering: no');
 
 // Récupérer la plage de temps demandée
-$range = HTML::sanitize($_GET['range']) ?? '24h';
+$range = isset($_GET['range']) ? HTML::sanitize($_GET['range']) : '24h';
+
+// Récupérer l'ID du serveur MCP (all = tous les serveurs, ou un ID spécifique)
+$mcpId = isset($_GET['mcp_id']) ? HTML::sanitize($_GET['mcp_id']) : 'all';
 
 // Simulation controls (for testing alerts/UI)
 $sim_latency_ms = isset($_GET['sim_latency']) ? (int)$_GET['sim_latency'] : 0;               // e.g. 1200
@@ -64,17 +67,51 @@ if (!Registry::exists('SimpleLogger')) {
   Registry::set('Logger', $logger);
 }
 
-// Use real config but create mock monitor to avoid connection issues
-$config = MCPConnector::getConfigDb();
-$monitor = new McpMockMonitor($config);
+// Use real MCP monitor with real connection
+// If specific MCP ID is requested, get that config, otherwise get first active
+try {
+  if ($mcpId !== 'all' && is_numeric($mcpId)) {
+    $config = MCPConnector::getConfigDb((int)$mcpId);
+    $monitor = McpMonitor::getInstance($config);
+  } else {
+    // For "all" servers, we'll aggregate data from all active servers
+    $config = MCPConnector::getConfigDb();
+    $monitor = McpMonitor::getInstance($config);
+  }
 
-// Apply runtime thresholds if provided
-$thresholds = [];
-if ($threshold_error !== null) { $thresholds['error_rate'] = $threshold_error; }
-if ($threshold_latency !== null) { $thresholds['latency'] = $threshold_latency; }
-if ($threshold_downtime !== null) { $thresholds['downtime'] = $threshold_downtime; }
-if (!empty($thresholds)) {
-  $monitor->setAlertThresholds($thresholds);
+  // Apply runtime thresholds if provided
+  $thresholds = [];
+  if ($threshold_error !== null) { $thresholds['error_rate'] = $threshold_error; }
+  if ($threshold_latency !== null) { $thresholds['latency'] = $threshold_latency; }
+  if ($threshold_downtime !== null) { $thresholds['downtime'] = $threshold_downtime; }
+  if (!empty($thresholds)) {
+    $monitor->setAlertThresholds($thresholds);
+  }
+} catch (\Exception $e) {
+  // If MCP server is not running or connection fails, send ONE error message and stop
+  // No error_log - just send message to client
+  
+  // Send a single, clear error message
+  echo "event: server_not_running\n";
+  echo "data: " . json_encode([
+    'error' => 'MCP Server Not Running',
+    'message' => 'The MCP server is not running. If you want to see statistics, please start an MCP server instance or create a connection.',
+    'instructions' => [
+      'Start the MCP server: cd mcp && node src/server.js',
+      'Or check your MCP configuration in the database',
+      'Verify server_host and server_port settings'
+    ],
+    'config' => [
+      'host' => $config['server_host'] ?? 'unknown',
+      'port' => $config['server_port'] ?? 'unknown'
+    ]
+  ]) . "\n\n";
+  
+  ob_flush();
+  flush();
+  
+  // Exit immediately - do not loop
+  exit();
 }
 
 // Boucle infinie pour l'envoi des événements
@@ -124,10 +161,7 @@ while (true) {
     $sleepSeconds = $sim_sleep_override !== null ? max(0, $sim_sleep_override) : 5;
     sleep($sleepSeconds);
   } catch (\Exception $e) {
-    // Log l'erreur
-    error_log('MCP Performance Monitor Error: ' . $e->getMessage());
-
-    // Envoyer un message d'erreur au client
+    // Send error to client only (no log)
     echo "event: error\n";
     echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
 

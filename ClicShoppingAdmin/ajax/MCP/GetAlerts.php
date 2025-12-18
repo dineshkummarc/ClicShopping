@@ -46,11 +46,16 @@ $CLICSHOPPING_Db = Registry::get('Db');
   $Qcount->execute();
   $total = $Qcount->valueInt('total');
 
-  // Get paginated alerts
-  $Qalerts = $CLICSHOPPING_Db->prepare('select * 
-                                       from :table_mcp_alerts' .
+  // Get paginated alerts with server information
+  $Qalerts = $CLICSHOPPING_Db->prepare('select a.*, 
+                                               m.username,
+                                               m.server_host,
+                                               m.server_port,
+                                               m.ssl_enabled
+                                       from :table_mcp_alerts a
+                                       left join :table_mcp m on a.mcp_id = m.mcp_id' .
                                        $whereClause .
-                                       ' order by alert_timestamp desc
+                                       ' order by a.alert_timestamp desc
                                         limit :offset, :limit
                                       ');
 
@@ -64,11 +69,22 @@ $CLICSHOPPING_Db = Registry::get('Db');
 
   $alerts = [];
   while ($alert = $Qalerts->fetch()) {
+      $serverInfo = null;
+      if ($alert['mcp_id']) {
+          $protocol = $alert['ssl_enabled'] ? 'https' : 'http';
+          $serverInfo = [
+              'mcp_id' => (int)$alert['mcp_id'],
+              'username' => $alert['username'],
+              'server_url' => $protocol . '://' . $alert['server_host'] . ':' . $alert['server_port']
+          ];
+      }
+      
       $alerts[] = [
           'id' => (int)$alert['id'],
           'type' => $alert['alert_type'],
           'message' => $alert['message'],
-          'alert_timestamp' => $alert['alert_timestamp']
+          'alert_timestamp' => $alert['alert_timestamp'],
+          'server' => $serverInfo
       ];
   }
 
