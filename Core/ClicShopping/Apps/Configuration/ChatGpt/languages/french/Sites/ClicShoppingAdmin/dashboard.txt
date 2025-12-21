@@ -512,3 +512,37 @@ success_rate = Taux de Succès
 avg_time = Temps Moyen
 total = Total
 no_source_data = Aucune donnée de source disponible pour la période sélectionnée
+
+# Messages informatifs pour les fonctionnalités désactivées
+chatgpt_not_installed_title = Module ChatGPT Non Installé
+chatgpt_not_installed_message = Le module IA ChatGPT n'est actuellement pas installé sur votre système. Ce module fournit des fonctionnalités avancées alimentées par l'IA pour votre plateforme e-commerce.
+chatgpt_not_installed_action = Pour installer et activer le module ChatGPT :
+chatgpt_not_installed_step1 = 1. Cliquez sur le bouton Configurer ci-dessus
+chatgpt_not_installed_step2 = 2. Suivez les instructions d'installation
+chatgpt_not_installed_step3 = 3. Activez le module ChatGPT dans la configuration
+chatgpt_not_installed_step4 = 4. Revenez à ce tableau de bord pour accéder à toutes les fonctionnalités
+
+chatgpt_disabled_title = Module ChatGPT Désactivé
+chatgpt_disabled_message = Le module IA ChatGPT est installé mais actuellement désactivé. Activez-le pour accéder aux fonctionnalités alimentées par l'IA.
+chatgpt_disabled_action = Pour activer le module ChatGPT :
+chatgpt_disabled_step1 = 1. Cliquez sur le bouton Configurer ci-dessus
+chatgpt_disabled_step2 = 2. Définissez le statut du module ChatGPT sur "True"
+chatgpt_disabled_step3 = 3. Enregistrez votre configuration
+chatgpt_disabled_step4 = 4. Revenez à ce tableau de bord
+
+rag_not_installed_title = RAG Business Intelligence Non Installé
+rag_not_installed_message = Le système RAG BI (Retrieval-Augmented Generation Business Intelligence) n'est actuellement pas installé. RAG BI fournit des analyses avancées, une recherche sémantique et des informations intelligentes sur les données.
+rag_not_installed_action = Pour installer et activer RAG BI :
+rag_not_installed_step1 = 1. Cliquez sur le bouton Configurer ci-dessus
+rag_not_installed_step2 = 2. Accédez à la section de configuration RAG BI
+rag_not_installed_step3 = 3. Suivez les instructions d'installation
+rag_not_installed_step4 = 4. Activez RAG BI dans la configuration
+rag_not_installed_step5 = 5. Revenez à ce tableau de bord pour voir les analyses
+
+rag_disabled_title = RAG Business Intelligence Désactivé
+rag_disabled_message = Le système RAG BI est installé mais actuellement désactivé. Le tableau de bord affiche uniquement le mode chat LLM classique.
+rag_disabled_action = Pour activer RAG BI et accéder aux analyses complètes :
+rag_disabled_step1 = 1. Cliquez sur le bouton Configurer ci-dessus
+rag_disabled_step2 = 2. Définissez le statut RAG BI sur "True"
+rag_disabled_step3 = 3. Enregistrez votre configuration
+rag_disabled_step4 = 4. Revenez à ce tableau de bord pour voir les analyses complètes

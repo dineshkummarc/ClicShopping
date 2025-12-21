@@ -512,3 +512,37 @@ success_rate = Success Rate
 avg_time = Avg Time
 total = Total
 no_source_data = No source data available for the selected period
+
+# Informational messages for disabled features
+chatgpt_not_installed_title = ChatGPT Module Not Installed
+chatgpt_not_installed_message = The ChatGPT AI module is not currently installed on your system. This module provides advanced AI-powered features for your e-commerce platform.
+chatgpt_not_installed_action = To install and enable the ChatGPT module:
+chatgpt_not_installed_step1 = 1. Click the Configure button above
+chatgpt_not_installed_step2 = 2. Follow the installation instructions
+chatgpt_not_installed_step3 = 3. Enable the ChatGPT module in the configuration
+chatgpt_not_installed_step4 = 4. Return to this dashboard to access all features
+
+chatgpt_disabled_title = ChatGPT Module Disabled
+chatgpt_disabled_message = The ChatGPT AI module is installed but currently disabled. Enable it to access AI-powered features.
+chatgpt_disabled_action = To enable the ChatGPT module:
+chatgpt_disabled_step1 = 1. Click the Configure button above
+chatgpt_disabled_step2 = 2. Set the ChatGPT module status to "True"
+chatgpt_disabled_step3 = 3. Save your configuration
+chatgpt_disabled_step4 = 4. Return to this dashboard
+
+rag_not_installed_title = RAG Business Intelligence Not Installed
+rag_not_installed_message = The RAG BI (Retrieval-Augmented Generation Business Intelligence) system is not currently installed. RAG BI provides advanced analytics, semantic search, and intelligent data insights.
+rag_not_installed_action = To install and enable RAG BI:
+rag_not_installed_step1 = 1. Click the Configure button above
+rag_not_installed_step2 = 2. Navigate to the RAG BI configuration section
+rag_not_installed_step3 = 3. Follow the installation instructions
+rag_not_installed_step4 = 4. Enable RAG BI in the configuration
+rag_not_installed_step5 = 5. Return to this dashboard to view analytics
+
+rag_disabled_title = RAG Business Intelligence Disabled
+rag_disabled_message = The RAG BI system is installed but currently disabled. The dashboard is showing classic LLM chat mode only.
+rag_disabled_action = To enable RAG BI and access full analytics:
+rag_disabled_step1 = 1. Click the Configure button above
+rag_disabled_step2 = 2. Set the RAG BI status to "True"
+rag_disabled_step3 = 3. Save your configuration
+rag_disabled_step4 = 4. Return to this dashboard to view full analytics
