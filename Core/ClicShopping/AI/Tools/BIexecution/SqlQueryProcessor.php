@@ -36,7 +36,7 @@ class SqlQueryProcessor
    * @param int $languageId Language ID for placeholder resolution
    * @param bool $debug Enable debug mode
    */
-  public function __construct( SecurityLogger $securityLogger, int $languageId, bool $debug = false)
+  public function __construct(SecurityLogger $securityLogger, int $languageId, bool $debug = false)
   {
     $this->securityLogger = $securityLogger;
     $this->languageId = $languageId;

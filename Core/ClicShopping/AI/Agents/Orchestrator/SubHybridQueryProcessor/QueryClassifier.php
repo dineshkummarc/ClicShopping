@@ -59,6 +59,11 @@ class QueryClassifier extends BaseQueryProcessor
   private ?QuerySplitter $querySplitter = null;
 
   /**
+   * @var bool Whether to use pattern-based detection
+   */
+  private bool $usePatterns;
+
+  /**
    * Constructor
    *
    * @param bool $debug Enable debug logging

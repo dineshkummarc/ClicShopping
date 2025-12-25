@@ -26,6 +26,7 @@ CLICSHOPPING::loadSite('ClicShoppingAdmin');
 
 $CLICSHOPPING_Db = Registry::get('Db');
 $CLICSHOPPING_Language = Registry::get('Language');
+
 AdministratorAdmin::hasUserAccess();
 
 $prompt = HTML::sanitize($_POST['message']);

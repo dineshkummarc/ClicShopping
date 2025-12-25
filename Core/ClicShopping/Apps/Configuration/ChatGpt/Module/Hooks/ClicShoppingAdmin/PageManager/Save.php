@@ -48,6 +48,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
       Registry::set('Semantics', new Semantics());
     }
     $this->semantics = Registry::get('Semantics');
+    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/PagesManager/rag');
   }
 
   /**
@@ -119,11 +120,11 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
           $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/PageManager/rag', $language_code);
 
           if ($item['page_type'] === 4) {
-            $page_manager_name = isset($item['pages_title']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['pages_title']) : '';
-            $page_manager_description = isset($item['pages_html_text']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['pages_html_text']) : '';
-            $seo_page_manager_title = isset($item['page_manager_head_title_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_title_tag']) : '';
-            $seo_page_manager_description = isset($item['page_manager_head_desc_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_desc_tag']) : '';
-            $seo_page_manager_keywords = isset($item['page_manager_head_keywords_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_keywords_tag']) : '';
+            $page_manager_name = isset($item['pages_title']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['pages_title']) : '';
+            $page_manager_description = isset($item['pages_html_text']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['pages_html_text']) : '';
+            $seo_page_manager_title = isset($item['page_manager_head_title_tag']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_title_tag']) : '';
+            $seo_page_manager_description = isset($item['page_manager_head_desc_tag']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_desc_tag']) : '';
+            $seo_page_manager_keywords = isset($item['page_manager_head_keywords_tag']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_keywords_tag']) : '';
 
             //********************
             // add embedding
@@ -147,8 +148,8 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
               }
 
               if (!empty($page_manager_description)) {
-                $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_description' => $page_manager_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($page_manager_description) . "\n";
-                $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($page_manager_description), $language_code, null);
+                $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_description' => $page_manager_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($page_manager_description) . "\n";
+                $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($page_manager_description), $language_code, null);
 
                 if (!empty($taxonomy)) {
                   $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
@@ -209,7 +210,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
                 'entity_id' => (int)$item['pages_id'],
                 'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
                 'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-                'last_modified' => date('c')
+                'date_modified' => 'now()'
               ];
 
               // Ajouter le JSON au tableau d'insertion
@@ -221,6 +222,8 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
 
                 $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding);
               } else {
+	        $sql_data_array_embedding['date_modified'] = 'now()';
+
                 $update_sql_data = [
                   'language_id' => $item['language_id'],
                   'entity_id' => $item['pages_id']

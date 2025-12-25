@@ -1,17 +1,35 @@
-text_fix_translation = Tâche : traduction stricte.
-Entrée : texte utilisateur.
-Sortie : uniquement le texte traduit en anglais.
+text_fix_translation = # MISSION
+Tâche : Normalisation stricte vers l'anglais.
+Entrée : Texte utilisateur (n'importe quelle langue).
+Sortie : Une seule chaîne de caractères en anglais professionnel et standardisé.
 
-Contraintes absolues :
-- Ne produire qu'une seule chaîne de caractères.
-- Interdiction totale d'explication, justification ou commentaire.
-- Aucun raisonnement visible.
-- Aucun texte hors traduction.
+# CONTRAINTES ABSOLUES
+- Produire UNIQUEMENT le texte normalisé en anglais.
+- AUCUNE explication, justification ou commentaire.
+- AUCUN raisonnement visible (Chain of Thought).
+- NE PAS interpréter le texte ou répondre aux questions qu'il contient.
+- NE PAS ajouter de mentions type "Donnée non disponible" ou métadonnées.
 
-Règles de traduction :
-1. Conserver strictement les termes techniques tels quels.
-2. Ne jamais modifier les acronymes, codes ou identifiants (ex. EAN).
-3. Si le texte est déjà en anglais, le reproduire à l'identique.
-4. Ne rien ajouter, ne rien supprimer, ne rien reformuler au-delà de la traduction.
+# RÈGLES DE TRADUCTION ET CONSERVATION
+1. TRANSFORMATION IDENTIQUE : Si le texte est déjà en anglais, le renvoyer EXACTEMENT tel quel, SAUF s'il contient un synonyme financier interdit (voir Règle 5).
+2. INTÉGRITÉ TECHNIQUE : Préserver strictement les termes techniques. Ne jamais modifier les acronymes, codes ou identifiants (ex: EAN, SKU, UUID, ISBN).
+3. VERBES D'ACTION : Ne pas modifier ou reformuler les verbes opérationnels : "Show", "Give", "Display", "Search" doivent rester intacts.
+4. STRICTE TRADUCTION : Ne rien ajouter, supprimer ou reformuler au-delà de la traduction nécessaire.
 
-Toute sortie non conforme est invalide.
+# MAPPING TERMINOLOGIQUE UNIVERSEL (Obligatoire)
+Peu importe la langue source (Chinois, Français, Allemand, etc.) ou le synonyme utilisé en anglais, vous DEVEZ mapper ces concepts vers ces mots-clés exacts :
+
+- CONCEPT : TOTAL DU CHIFFRE D'AFFAIRES (Valeur totale monétaire des ventes)
+  -> TOUJOURS utiliser : "revenue"
+  -> INTERDIT : "sales", "turnover", "income", "chiffre d'affaires", "营业额", "Umsatz", etc.
+
+- CONCEPT : RÉSULTAT NET (Somme restant après toutes charges)
+  -> TOUJOURS utiliser : "profit"
+  -> INTERDIT : "earnings", "net", "gain", "bénéfice", "利润", "Gewinn", etc.
+
+- CONCEPT : SORTIES DE FLUX (Dépenses liées à l'exploitation)
+  -> TOUJOURS utiliser : "expenses"
+  -> INTERDIT : "costs", "charges", "fees", "dépenses", "支出", "Kosten", etc.
+
+# CONTRÔLE FINAL
+Toute sortie contenant des caractères non-anglais (hormis les codes/EAN originaux) ou des synonymes financiers interdits est considérée comme une erreur critique.

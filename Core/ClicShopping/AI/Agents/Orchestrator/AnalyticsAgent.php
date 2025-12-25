@@ -494,25 +494,14 @@ class AnalyticsAgent
       
       $this->debugLog("--- STEP 2: Generate SQL from question ---", "SQL");
       
-      // 🔧 TASK 4.3 FIX: Check for simple list queries that can use templates
-      // This avoids LLM calls for simple "list X" queries where X is a known entity
-      $templateSql = $this->getTemplateSqlForSimpleList($question);
+      // Update system message with Schema RAG if enabled
+      $this->updateSystemMessageForQuery($question);
       
-      if ($templateSql !== null) {
-        $this->debugLog("Using template SQL for simple list query", "SQL");
-        $this->debugLog("Template SQL: " . substr($templateSql, 0, 200), "SQL");
-        $sqlQueries = [$templateSql];
-        $rawResponse = "Template SQL generated for: {$question}";
-      } else {
-        // Update system message with Schema RAG if enabled
-        $this->updateSystemMessageForQuery($question);
-        
-        // Enrich question with feedback context for learning
-        $enrichedQuestion = $this->enrichQuestionWithFeedback($question, $feedbackContext);
-        
-        $this->debugLog("Calling chat.generateText()...", "SQL");
-        $rawResponse = $this->chat->generateText($enrichedQuestion);
-      }
+      // Enrich question with feedback context for learning
+      $enrichedQuestion = $this->enrichQuestionWithFeedback($question, $feedbackContext);
+      
+      $this->debugLog("Calling chat.generateText()...", "SQL");
+      $rawResponse = $this->chat->generateText($enrichedQuestion);
       $this->debugLog("Raw response from GPT (first 500 chars): " . substr($rawResponse, 0, 500), "SQL");
 
       // Extract SQL queries (skip if we already have template SQL)
@@ -801,9 +790,6 @@ class AnalyticsAgent
       error_log("\n--- STEP 1: Check if analytics query ---");
       $isAnalytics = $this->isAnalyticsQuery($question);
 
-
-
-
       error_log("isAnalyticsQuery() returned: " . ($isAnalytics ? 'TRUE' : 'FALSE'));
 
       if (!$isAnalytics) {
@@ -819,31 +805,7 @@ class AnalyticsAgent
       error_log("\n--- STEP 2: Execute query ---");
       error_log("Calling executeQuery()...");
 
-
-
-      error_log('------------$question AnalyticsAgent-----');
-      print_r($question);
-      error_log('------------$question AnalyticsAgent-----');
-
-
-
-      error_log('------------$feedbackContext AnalyticsAgent-----');
-      print_r($feedbackContext);
-      error_log('------------$feedbackContext AnalyticsAgent-----');
-
-
       $results = $this->executeQuery($question, $feedbackContext);
-
-
-
-
-      error_log('------------$results AnalyticsAgent-----');
-      print_r($results);
-      error_log('------------$results AnalyticsAgent-----');
-
-
-
-
 
       error_log("executeQuery() returned:");
       error_log("  type: " . ($results['type'] ?? 'unknown'));
@@ -1212,71 +1174,6 @@ class AnalyticsAgent
   }
 
   /**
-   * Get template SQL for simple list queries
-   * 
-   * 🔧 TASK 4.3 FIX: Provides predefined SQL templates for simple "list X" queries
-   * to avoid LLM calls and ensure consistent results for common queries.
-   * 
-   * Supported entities:
-   * - orders: Lists all orders with key fields
-   * - categories: Lists all categories (already works via LLM)
-   * - suppliers: Lists all suppliers (already works via LLM)
-   * - products: Lists all products
-   * - customers: Lists all customers
-   * 
-   * @param string $query User query
-   * @return string|null SQL template if query matches a simple list pattern, null otherwise
-   */
-  private function getTemplateSqlForSimpleList(string $query): ?string
-  {
-    $queryLower = strtolower(trim($query));
-    
-    // Pattern: "list [all] [the] {entity}"
-    // Matches: "list orders", "list all orders", "list the orders", "show orders", etc.
-    
-    // Orders
-    if (preg_match('/\b(list|show|display|give|get)\s+(?:me\s+)?(?:all\s+)?(?:the\s+)?orders?\b/i', $queryLower)) {
-      return "SELECT orders_id, 
-                     customers_name, 
-                     customers_email_address, 
-                     date_purchased, 
-                     orders_status, 
-                     currency 
-              FROM :table_orders 
-              ORDER BY orders_id DESC 
-              LIMIT 100";
-    }
-    
-    // Products (if needed)
-    if (preg_match('/\b(list|show|display|give|get)\s+(?:me\s+)?(?:all\s+)?(?:the\s+)?products?\b/i', $queryLower)) {
-      return "SELECT p.products_id, 
-                     pd.products_name, 
-                     p.products_price, 
-                     p.products_quantity 
-              FROM :table_products p
-              JOIN :table_products_description pd ON p.products_id = pd.products_id
-              WHERE pd.language_id = {$this->languageId}
-              ORDER BY p.products_id DESC
-              LIMIT 100";
-    }
-    
-    // Customers (if needed)
-    if (preg_match('/\b(list|show|display|give|get)\s+(?:me\s+)?(?:all\s+)?(?:the\s+)?customers?\b/i', $queryLower)) {
-      return "SELECT customers_id, 
-                    customers_firstname, 
-                    customers_lastname, 
-                    customers_email_address, 
-                    customers_telephone
-              FROM :table_customers
-              ORDER BY customers_id DESC
-              LIMIT 100";
-    }
-    
-    // No template found - let LLM handle it
-    return null;
-  }
-
-  /**
    * Update system message for query (Schema RAG)
    * 
    * If Schema RAG is enabled, updates the system message with only relevant
@@ -1353,4 +1250,5 @@ class AnalyticsAgent
     
     error_log($logMessage);
   }
+
 }

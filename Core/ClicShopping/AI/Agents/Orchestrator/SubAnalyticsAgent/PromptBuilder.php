@@ -159,7 +159,7 @@ class PromptBuilder
   {
     // Load language definitions from ClicShoppingAdmin/Core/languages/main.txt
     // This loads the AnalyticsAgent prompt definitions in English
-    $this->language->loadDefinitions('rag_analyitcs_agent', 'en', null, 'ClicShoppingAdmin');
+    $this->language->loadDefinitions('rag_analytics_agent', 'en', null, 'ClicShoppingAdmin');
     
     // Get all prompt components
     $baseSystemMessage = $this->language->getDef('text_system_message');
@@ -318,7 +318,7 @@ class PromptBuilder
   public function enrichWithLastSQL(string $question, string $lastSQL): string
   {
     // Load language definitions for the template
-    $this->language->loadDefinitions('rag_analyitcs_agent', 'en', null, 'ClicShoppingAdmin');
+    $this->language->loadDefinitions('rag_analytics_agent', 'en', null, 'ClicShoppingAdmin');
     
     // Get the enrichment template and replace placeholders
     $array = [

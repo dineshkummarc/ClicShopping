@@ -16,8 +16,8 @@ use ClicShopping\OM\HTML;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\AI\Domain\Embedding\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
+use ClicShopping\AI\Domain\Embedding\NewVector;
 use ClicShopping\AI\Domain\Semantics\Semantics;
 
 #[AllowDynamicProperties]
@@ -26,6 +26,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
   public mixed $app;
   public mixed $lang;
   public mixed $semantics;
+
   /**
    * Class constructor.
    *
@@ -46,7 +47,9 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     if (!Registry::exists('Semantics')) {
       Registry::set('Semantics', new Semantics());
     }
+
     $this->semantics = Registry::get('Semantics');
+    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturer/rag');
   }
 
   /**
@@ -63,7 +66,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
-    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING' ) && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
 
     if (isset($_GET['Update'], $_GET['Manufacturers'])) {
       if (isset($_GET['mID'])) {
@@ -77,9 +80,11 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         $Qcheck->bindInt(':entity_id', $mID);
         $Qcheck->execute();
 
+        $total = $Qcheck->rowCount();
+
         $insert_embedding = false;
 
-        if ($Qcheck->fetch() === false) {
+        if ($total === 0) {
           $insert_embedding = true;
         }
 
@@ -89,16 +94,15 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
                                                          mi.manufacturer_seo_title,
                                                          mi.manufacturer_seo_description,
                                                          mi.manufacturer_seo_keyword,
-                                                         mi.languages_id
+                                                         mi.languages_id 
                                                    from :table_manufacturers m,
                                                         :table_manufacturers_info mi
                                                    where m.manufacturers_id = :manufacturers_id
-                                                   and m.manufacturers_id = mi.manufacturers_id        
+                                                   and m.manufacturers_id = mi.manufacturers_id
                                                   ');
         $Qmanufacturers->bindInt(':manufacturers_id', $mID);
         $Qmanufacturers->execute();
 
-        $manufacturers_id = $Qmanufacturers->valueInt('manufacturers_id');
         $manufacturers_array = $Qmanufacturers->fetchAll();
 
         if (is_array($manufacturers_array)) {
@@ -107,20 +111,23 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
             $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturers/seo_chat_gpt', $language_code);
             $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturers/rag', $language_code);
+
+            $languages_id = $item['languages_id'];
+            $manufacturers_id = $item['manufacturers_id'];
             $manufacturers_name = $item['manufacturers_name'];
             $manufacturers_description = $item['manufacturer_description'];
             $seo_manufacturer_title = $item['manufacturer_seo_title'];
             $seo_manufacturer_description = $item['manufacturer_seo_description'];
-            $seo_manufacturer_keywords = $item['manufacturer_seo_keywords'];
+            $seo_manufacturer_keywords = $item['manufacturer_seo_keyword'];
 
 //********************
 // add embedding
 //********************
 
             if ($embedding_enabled) {
-              $embedding_data =  "\n" . $this->app->getDef('text_manufacturer_embedded') . "\n";
+              $embedding_data = "\n" . $this->app->getDef('text_manufacturer_embedded') . "\n";
 
-              $embedding_data .= $this->app->getDef('text_manufacturer_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_name) . "\n";
+              $embedding_data .= $this->app->getDef('text_manufacturer_name') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($manufacturers_name) . "\n";
               $embedding_data .= $this->app->getDef('text_manufacturer_id') . ' : ' . (int)$manufacturers_id . "\n";
 
               if (!empty($manufacturers_description)) {
@@ -148,17 +155,16 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               }
 
               if (!empty($seo_manufacturer_title)) {
-                $embedding_data .= $this->app->getDef('text_manufacturer_seo_title') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_title) . "\n";
+                $embedding_data .= $this->app->getDef('text_manufacturer_seo_title') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_title) . "\n";
               }
 
               if (!empty($seo_manufacturer_description)) {
-                $embedding_data .= $this->app->getDef('text_manufacturer_seo_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_description) . "\n";
+                $embedding_data .= $this->app->getDef('text_manufacturer_seo_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_description) . "\n";
               }
 
               if (!empty($seo_manufacturer_keywords)) {
-                $embedding_data .= $this->app->getDef('text_manufacturer_seo_keywords') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_keywords) . "\n";
+                $embedding_data .= $this->app->getDef('text_manufacturer_seo_keywords') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_keywords) . "\n";
               }
-              
 
               $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
@@ -188,7 +194,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
                 $metadata = [
                   'brand_name' => $manufacturers_name,
                   'content' => $manufacturers_description,
-                  'language_id' => (int)$item['language_id'],
+                  'language_id' => (int)$languages_id,
                   'manufacturer_id' => (int)$manufacturers_id,
                   'type' => 'manufacturers',
                   'source' => [
@@ -198,21 +204,23 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
                 'entity_id' => (int)$manufacturers_id,
                 'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
                 'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-                'last_modified' => date('c')
+                'ldate_modified' => 'now()'
               ];
 
                 // Ajouter le JSON au tableau d'insertion
                 $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
 
                 if ($insert_embedding === true) {
-                  $sql_data_array_embedding['entity_id'] = (int)$item['manufacturers_id'];
-                  $sql_data_array_embedding['language_id'] = (int)$item['languages_id'];
+                  $sql_data_array_embedding['entity_id'] = (int)$manufacturers_id;
+                  $sql_data_array_embedding['language_id'] = (int)$languages_id;
 
                   $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding);
                 } else {
+                  $sql_data_array_embedding['date_modified'] = 'now()';
+
                   $update_sql_data = [
-                    'language_id' => $item['language_id'],
-                    'entity_id' => (int)$item['manufacturers_id']
+                    'language_id' => (int)$languages_id,
+                    'entity_id' => (int)$manufacturers_id
                   ];
 
                   $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding, $update_sql_data);

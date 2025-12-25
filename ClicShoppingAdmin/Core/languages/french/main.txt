@@ -73,7 +73,8 @@ text_all_rights_admin =  Droits administration
 text_rights_employee = Droits des employés
 text_rights_visitor =  Droits des visiteurs
 
-js_error = Des erreurs sont survenues durant le traitement de votre formulaire !\nMerci de faire les corrections suivantes
+js_error = Des erreurs sont survenues durant le traitement de votre formulaire !
+Merci de faire les corrections suivantes
 
 js_options_value_price = * Le nouvel attribut produit nécessite un prix
 js_options_value_price_prefix = * Le nouvel attribut produit nécessite un préfixe de prix
@@ -88,7 +89,8 @@ js_products_image = * Le nouveau produit nécessite une image
 
 js_specials_products_price = * Un nouveau prix pour ce produit doit être fixé
 
-js_gender = * Le champ GENRE ne peut être vide.\n
+js_gender = * Le champ GENRE ne peut être vide.
+
 js_first_name = * Le champ PRENOM doit avoir au moins {{min_length}} caractères.
 js_last_name = * Le champ NOM doit avoir au moins {{min_length}} caractères.
 js_dob = * Le champ  DATE DE NAISSANCE doit être au format xx/xx/xxxx (Jour/Mois/Année).
@@ -101,10 +103,9 @@ js_state = * Le champ DEPARTEMENT doit être précisé.
 js_state_select = -- Sélectionnez --
 js_zone = * L'entrée Etat doit être choisie parmi la liste pour ce pays.
 js_country = * Le champ PAYS doit être précisé.
-js_telephone = * Le champ NUMERO DE TELEPHONE doit avoir au moins {{min_length}} caractères.\n
-js_cellular_phone = * Le champ NUMERO DE CELLULAIRE doit avoir au moins {{min_length}} caractères.\n
-
-js_password = * Le champ MOT DE PASSE et Confirmation doivent avoir au moins {{min_length}} caractères.\n
+js_telephone = * Le champ NUMERO DE TELEPHONE doit avoir au moins {{min_length}} caractères.
+js_cellular_phone = * Le champ NUMERO DE CELLULAIRE doit avoir au moins {{min_length}} caractères.
+js_password = * Le champ MOT DE PASSE et Confirmation doivent avoir au moins {{min_length}} caractères.
 
 js_order_does_not_exist = Le numéro de commande %s n'existe pas !
 
@@ -488,11 +489,12 @@ Format attendu via un exemple :
 [sujet_usage]: Dîner, réception
 [type_objectif]: Objectif
 [sujet_objectif]: Raffinement, expérience
-\n\nTexte : {{document_text}}
+
+Texte : {{document_text}}
 
 
 
-text_rag_language_instruction = \n\nIMPORTANT: Vous DEVEZ répondre en français uniquement. N'utilisez aucune autre langue dans votre réponse.
+text_rag_language_instruction = IMPORTANT: Vous DEVEZ répondre en français uniquement. N'utilisez aucune autre langue dans votre réponse.
 text_rag_answer_question_not_found = Je n'ai pas trouvé d'informations spécifiques pour répondre à votre question. Veuillez reformuler ou poser une autre question.
 text_rag_answer_question_error = Désolé, une erreur s'est produite lors du traitement de votre question. Veuillez réessayer ultérieurement.
 text_not_analytics = Cette requête ne semble pas être une requête d'analyse.
@@ -565,17 +567,15 @@ llm_guardrails_reliability = Fiabilité
 llm_guardrails_overall_score = Score global
 
 
-
-
-
 text_interpret_results = Tu es un expert en analyse de données e-commerce.
-Interprète ces résultats de requête SQL et fournis une explication claire et concise en français.\n\n
-Question : {{question}}\n\n
-Résultats : {{results}} \n\n
+Interprète ces résultats de requête SQL et fournis une explication claire et concise en français.
+Question : {{question}}
+
+Résultats : {{results}} 
+
 Interprétation :
 
 
-# Noms de colonnes pour l'affichage des tableaux
 column_entity_id = ID
 column_products_id = ID Produit
 column_manufacturers_id = ID Marque

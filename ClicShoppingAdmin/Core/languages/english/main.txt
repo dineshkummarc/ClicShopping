@@ -427,15 +427,14 @@ Expected format via an example:
 [usage_subject]: Dinner, reception
 [objective_type]: Objective
 [objective_subject]: Refinement, experience
-\n\n
+
 Text: {{document_text}}
 
 
-text_rag_language_instruction = "\n\nIMPORTANT: You MUST respond in English only. Do not use any other language in your response.\n
-text_rag_answer_question_not_found = I couldn’t find any specific information to answer your question. Please rephrase or ask another question.\n
-text_rag_answer_question_error = Sorry, an error has been created during the process. Please try more later.\n
-
-text_not_analytics = This query does not appear to be an analytical query.\n
+text_rag_language_instruction = IMPORTANT: You MUST respond in English only. Do not use any other language in your response.
+text_rag_answer_question_not_found = I couldn’t find any specific information to answer your question. Please rephrase or ask another question.
+text_rag_answer_question_error = Sorry, an error has been created during the process. Please try more later.
+text_not_analytics = This query does not appear to be an analytical query.
 
 
 text_parentheses_mismatch_error = Mismatched parentheses: {{openParenCount}} opening vs {{closeParenCount}} closing.
@@ -504,9 +503,11 @@ llm_guardrails_overall_score = Overall Score
 
 
 text_interpret_results = You are an expert in e-commerce data analysis.
-Interpret these SQL query results and provide a clear and concise explanation in English.\n\n
-Question: {{question}}\n\n
-Results: {{results}} \n\n
+Interpret these SQL query results and provide a clear and concise explanation in English.
+Question: {{question}}
+Results: {{results}} 
+
+
 Interpretation:
 # Column names for table display
 

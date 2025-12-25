@@ -542,7 +542,7 @@ class MariaDb
       $CLICSHOPPING_Db->exec($sql);
     }
 
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_web_search_results"');
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_rag_web_search_results"');
 
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
@@ -601,34 +601,6 @@ class MariaDb
           INDEX `idx_search_engine_quality` (`search_engine`, `quality_score`),
           INDEX `idx_language_quality` (`language_id`, `quality_score`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-    EOD;
-      $CLICSHOPPING_Db->exec($sql);
-    }
-
-
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_web_search_results"');
-
-    if ($Qcheck->fetch() === false) {
-      $sql = <<<EOD
-        CREATE TABLE IF NOT EXISTS :table_web_search_results (
-      `id` INT(11) NOT NULL AUTO_INCREMENT,
-      `search_request_id` INT(11) NOT NULL COMMENT 'Lien vers rag_web_search_requests (géré par le code)',
-      `position` INT DEFAULT 0 COMMENT 'Position dans les résultats (1, 2, 3...)',
-      `title` TEXT NULL COMMENT 'Titre du résultat',
-      `link` TEXT NULL COMMENT 'URL du résultat',
-      `snippet` TEXT NULL COMMENT 'Extrait de texte descriptif',
-      `source_domain` VARCHAR(255) NULL COMMENT 'Domaine source (google.com, wikipedia.org, etc.)',
-      `relevance_score` FLOAT DEFAULT 0.0 COMMENT 'Score de pertinence calculé (0-1)',
-      `date_added` DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-      PRIMARY KEY (`id`),
-      INDEX `idx_search_request_id` (`search_request_id`),
-      INDEX `idx_relevance_score` (`relevance_score`),
-      INDEX `idx_source_domain` (`source_domain`),
-      INDEX `idx_request_relevance` (`search_request_id`, `relevance_score`),
-      INDEX `idx_domain_relevance` (`source_domain`, `relevance_score`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
     EOD;
       $CLICSHOPPING_Db->exec($sql);
@@ -987,5 +959,31 @@ class MariaDb
       
       $CLICSHOPPING_Db->exec($sql);
     }
+    
+//--------------------------------------
+// RAG Schema Embeddings
+//--------------------------------------
+
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_rag_schema_embeddings"');
+
+    if ($Qcheck->fetch() === false) {
+      $sql = <<<EOD
+      CREATE TABLE IF NOT EXISTS :table_rag_schema_embeddings (
+        id SERIAL PRIMARY KEY,
+        table_name VARCHAR(255) NOT NULL UNIQUE,
+        schema_text TEXT NOT NULL,
+        embedding_vector VECTOR(3072) NOT NULL,
+        token_count INT DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        KEY idx_table_name (table_name),
+        KEY idx_updated_at (updated_at)
+      );
+      
+      CREATE VECTOR INDEX embedding_index ON :table_rag_schema_embeddings (embedding_vector);
+    EOD;
+      $CLICSHOPPING_Db->exec($sql);
+    }
+
   }
 }

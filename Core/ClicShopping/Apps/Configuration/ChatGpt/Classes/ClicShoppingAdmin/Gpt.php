@@ -946,10 +946,11 @@ class Gpt
       throw new \Exception("Requête bloquée pour des raisons de sécurité");
     }
     
-    // Limiter la longueur
-    if (strlen($prompt) > 4096) {
-      $prompt = substr($prompt, 0, 4096);
-      error_log("WARNING: Prompt truncated to 4096 characters");
+    // Limiter la longueur (GPT-4o-mini accepte 128k tokens ≈ 512k caractères)
+    // Limite de sécurité à 100k caractères pour éviter les abus
+    if (strlen($prompt) > 100000) {
+      $prompt = substr($prompt, 0, 100000);
+      error_log("WARNING: Prompt truncated to 100000 characters (security limit)");
     }
     
     // Appliquer htmlspecialchars pour la sécurité XSS

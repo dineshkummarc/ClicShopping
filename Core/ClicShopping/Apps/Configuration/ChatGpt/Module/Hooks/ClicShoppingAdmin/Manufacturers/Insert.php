@@ -45,6 +45,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
       Registry::set('Semantics', new Semantics());
     }
     $this->semantics = Registry::get('Semantics');
+    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Manufacturer/rag');
   }
 
   /**
@@ -182,12 +183,12 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
             if ($embedding_enabled) {
               $embedding_data =  "\n" . $this->app->getDef('text_manufacturer_embedded') . "\n";
 
-              $embedding_data .= $this->app->getDef('text_manufacturer_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_name) . "\n";
+              $embedding_data .= $this->app->getDef('text_manufacturer_name') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($manufacturers_name) . "\n";
               $embedding_data .= $this->app->getDef('text_manufacturer_id') . ' : ' . (int)$manufacturers_id . "\n";
 
               if (!empty($manufacturers_description)) {
-                $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
-                $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description), $language_code, null);
+                $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
+                $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($manufacturers_description), $language_code, null);
 
                 if (!empty($taxonomy)) {
                   $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
@@ -210,15 +211,15 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
               }
 
               if (!empty($seo_manufacturer_title)) {
-                $embedding_data .= $this->app->getDef('text_manufacturer_seo_title') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_title) . "\n";
+                $embedding_data .= $this->app->getDef('text_manufacturer_seo_title') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_title) . "\n";
               }
 
               if (!empty($seo_manufacturer_description)) {
-                $embedding_data .= $this->app->getDef('text_manufacturer_seo_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_description) . "\n";
+                $embedding_data .= $this->app->getDef('text_manufacturer_seo_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_description) . "\n";
               }
 
               if (!empty($seo_manufacturer_keywords)) {
-                $embedding_data .= $this->app->getDef('text_manufacturer_seo_keywords') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_keywords) . "\n";
+                $embedding_data .= $this->app->getDef('text_manufacturer_seo_keywords') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_keywords) . "\n";
               }
 
               if (!empty($suppliers_id)) {
@@ -265,7 +266,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                 'entity_id' => (int)$manufacturers_id,
                 'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
                 'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-                'last_modified' => date('c')
+                'date_modified' => 'now()'
               ];
 
               // Ajouter le JSON au tableau d'insertion

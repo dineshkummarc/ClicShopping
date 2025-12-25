@@ -328,7 +328,7 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
 
       $embeddingData = $this->buildEmbeddingData($order_id, $orderData, $products, $attributes, $statusHistory, $totals);
 
-        $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($embeddingData), null);
+        $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($embeddingData), null);
 
         if (!empty($taxonomy)) {
           $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
@@ -362,7 +362,7 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
           'entity_id' => (int)$order_id,
           'chunk_number' => 1,
           'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-          'last_modified' => date('c')
+          'date_modified' => 'now()'
         ];
 
       $embeddedDocuments = NewVector::createEmbedding(null, $embeddingData);

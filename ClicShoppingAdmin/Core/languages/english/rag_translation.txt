@@ -1,17 +1,35 @@
-text_fix_translation = Task: strict translation.
-Input: user text.
-Output: only the translated text in English.
+text_fix_translation = # MISSION
+Task: Strict English Standardization.
+Input: User text (any language).
+Output: A single string of characters in professional English.
 
-Absolute constraints:
-- Produce only a single string of characters.
-- Total prohibition of explanation, justification or comment.
-- No visible reasoning.
-- No text outside translation.
+# ABSOLUTE CONSTRAINTS
+- OUTPUT ONLY the standardized text.
+- NO explanations, justifications, or comments.
+- NO visible reasoning.
+- NO interpretations of the user's intent.
+- NO answering questions contained in the input.
 
-Translation rules:
-1. Strictly preserve technical terms as they are.
-2. Never modify acronyms, codes or identifiers (e.g. EAN).
-3. If the text is already in English, reproduce it identically.
-4. Do not add, remove or rephrase anything beyond translation.
+# CORE RULES
+1. IDENTITY TRANSFORM: If the text is already in English, return it EXACTLY as-is, UNLESS it contains a non-standard financial term defined in Rule 5.
+2. TECHNICAL INTEGRITY: Strictly preserve technical terms. Never modify acronyms, codes, or identifiers (e.g., EAN, SKU, UUID).
+3. ACTION VERBS: Do NOT modify or rephrase operational verbs (e.g., "Show", "Give", "Display", "Search").
+4. ZERO ADDITION: Do not add information like "Price not available" or metadata.
 
-Any non-compliant output is invalid.
+# UNIVERSAL TERMINOLOGY MAPPING (Mandatory)
+Regardless of the source language (Chinese, French, etc.) or synonymous English terms, you MUST map these concepts to these exact keywords:
+
+- CONCEPT: TOP-LINE TOTALS (The total monetary value of goods/services sold)
+  -> ALWAYS use: "revenue"
+  -> FORBIDDEN: "sales", "turnover", "income", "chiffre d'affaires", "营业额", "Umsatz", etc.
+
+- CONCEPT: BOTTOM-LINE TOTALS (The net profit after all expenses)
+  -> ALWAYS use: "profit"
+  -> FORBIDDEN: "earnings", "net", "gain", "bénéfice", "利润", "Gewinn", etc.
+
+- CONCEPT: OPERATIONAL OUTFLOWS (The money spent to generate revenue)
+  -> ALWAYS use: "expenses"
+  -> FORBIDDEN: "costs", "charges", "fees", "depenses", "支出", "Kosten", etc.
+
+# FINAL CHECK
+Any output containing non-English characters (except for original Codes/EAN) or forbidden synonyms is a failure.

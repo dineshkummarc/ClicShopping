@@ -87,22 +87,22 @@ class Cron {
 // add embedding
 //********************
         $embedding_data = "\n" . $this->app->getDef('text_category_embedded') . "\n";
-        $embedding_data .= $this->app->getDef('text_category_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_name) . "\n";
+        $embedding_data .= $this->app->getDef('text_category_name') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($categories_name) . "\n";
 
        if (!empty($seo_categories_title)) {
-         $embedding_data .= $this->app->getDef('text_category_seo_title', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_title) . "\n";;
+         $embedding_data .= $this->app->getDef('text_category_seo_title', ['category_name' => $categories_name]) . ' : ' .  HTMLOverrideCommon::cleanHtmlForEmbedding($seo_categories_title) . "\n";;
        }
 
        if (!empty($seo_categories_description)) {
-         $embedding_data .= $this->app->getDef('text_category_seo_description', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_description) . "\n";;
+         $embedding_data .= $this->app->getDef('text_category_seo_description', ['category_name' => $categories_name]) . ' : ' .  HTMLOverrideCommon::cleanHtmlForEmbedding($seo_categories_description) . "\n";;
        }
 
        if (!empty($seo_categories_keywords)) {
-         $embedding_data .= $this->app->getDef('text_seo_keywords', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForEmbedding($seo_categories_keywords) . "\n";;
+         $embedding_data .= $this->app->getDef('text_seo_keywords', ['category_name' => $categories_name]) . ' : ' .  HTMLOverrideCommon::cleanHtmlForEmbedding($seo_categories_keywords) . "\n";;
        }
 
         if (!empty($categories_description)) {
-          $embedding_data .= $this->app->getDef('text_category_description', ['category_name' => $categories_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_description) . "\n";;
+          $embedding_data .= $this->app->getDef('text_category_description', ['category_name' => $categories_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($categories_description) . "\n";;
           $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($categories_description, $language_code) . "\n";
         }
 
@@ -189,18 +189,18 @@ class Cron {
 //********************
         $embedding_data =  "\n" . $this->app->getDef('text_manufacturer_embedded') . "\n";
 
-        $embedding_data .= $this->app->getDef('text_manufacturer_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_name) . "\n";
+        $embedding_data .= $this->app->getDef('text_manufacturer_name') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($manufacturers_name) . "\n";
 
         if (!empty($seo_manufacturer_title)) {
-          $embedding_data .= $this->app->getDef('text_manufacturer_seo_title') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_title) . "\n";
+          $embedding_data .= $this->app->getDef('text_manufacturer_seo_title') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_title) . "\n";
         }
 
         if (!empty($seo_manufacturer_description)) {
-          $embedding_data .= $this->app->getDef('text_manufacturer_seo_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_description) . "\n";
+          $embedding_data .= $this->app->getDef('text_manufacturer_seo_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_description) . "\n";
         }
 
         if (!empty($seo_manufacturer_keywords)) {
-          $embedding_data .= $this->app->getDef('text_manufacturer_seo_keywords') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_keywords) . "\n";
+          $embedding_data .= $this->app->getDef('text_manufacturer_seo_keywords') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_keywords) . "\n";
         }
 
         if (!empty($suppliers_id)) {
@@ -208,7 +208,7 @@ class Cron {
         }
 
         if (!empty($manufacturers_description)) {
-          $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
+          $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
           $embedding_data .= $this->app->getDef('text_manufacturer_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($manufacturers_description, $language_code) . "\n";
         }
 
@@ -286,11 +286,11 @@ class Cron {
 
       if ($Qcheck->fetch() === false) {
         $language_code = $this->lang->getLanguageCodeById((int)$item['language_id']);
-        $page_manager_name = isset($item['pages_title']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['pages_title']) : '';
-        $page_manager_description = isset($item['pages_html_text']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['pages_html_text']) : '';
-        $seo_page_manager_title = isset($item['page_manager_head_title_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_title_tag']) : '';
-        $seo_page_manager_description = isset($item['page_manager_head_desc_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_desc_tag']) : '';
-        $seo_page_manager_keywords = isset($item['page_manager_head_keywords_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_keywords_tag']) : '';
+        $page_manager_name = isset($item['pages_title']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['pages_title']) : '';
+        $page_manager_description = isset($item['pages_html_text']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['pages_html_text']) : '';
+        $seo_page_manager_title = isset($item['page_manager_head_title_tag']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_title_tag']) : '';
+        $seo_page_manager_description = isset($item['page_manager_head_desc_tag']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_desc_tag']) : '';
+        $seo_page_manager_keywords = isset($item['page_manager_head_keywords_tag']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['page_manager_head_keywords_tag']) : '';
 //********************
 // add embedding
 //********************
@@ -430,30 +430,30 @@ class Cron {
 //********************
 // add embedding
 //********************
-        $embedding_data = $this->app->getDef('text_product_name') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_name) . "\n";
+        $embedding_data = $this->app->getDef('text_product_name') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_name) . "\n";
 
         if (!empty($products_model)) {
-          $embedding_data .= $this->app->getDef('text_product_model') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_model) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_model') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_model) . "\n";
         }
 
         if (!empty($categories_name)) {
-          $embedding_data .= $this->app->getDef('text_categories_name') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_name) . "\n";
+          $embedding_data .= $this->app->getDef('text_categories_name') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($categories_name) . "\n";
         }
 
         if (!empty($manufacturer_name)) {
-          $embedding_data .= $this->app->getDef('text_product_brand_name') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($manufacturer_name) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_brand_name') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($manufacturer_name) . "\n";
         }
 
         if (!empty($products_ean)) {
-          $embedding_data .= $this->app->getDef('text_product_ean') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_ean) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_ean') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_ean) . "\n";
         }
 
         if (!empty($products_sku)) {
-          $embedding_data .= $this->app->getDef('text_product_sku') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_sku) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_sku') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_sku) . "\n";
         }
 
         if (!empty($products_date_added)) {
-          $embedding_data .= $this->app->getDef('text_product_date_added') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_date_added) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_date_added') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_date_added) . "\n";
         }
 
         if (!empty($products_status)) {
@@ -467,47 +467,47 @@ class Cron {
         }
 
         if (!empty($products_ordered)) {
-          $embedding_data .= $this->app->getDef('text_product_ordered') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_ordered) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_ordered') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_ordered) . "\n";
         }
 
         if (!empty($products_stock_reorder_level)) {
-          $embedding_data .= $this->app->getDef('text_product_stock_reorder') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_stock_reorder_level) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_stock_reorder') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_stock_reorder_level) . "\n";
         }
 
         if (!empty($products_quantity)) {
-          $embedding_data .= $this->app->getDef('text_product_stock') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_quantity) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_stock') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_quantity) . "\n";
         }
 
         if (!empty($products_quantity_alert)) {
-          $embedding_data .= $this->app->getDef('text_product_stock_alert') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_quantity_alert) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_stock_alert') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_quantity_alert) . "\n";
         }
 
         if (!empty($products_description)) {
-          $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
         }
 
         if (!empty($products_description_summary)) {
-          $embedding_data .= $this->app->getDef('text_product_description_summary') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_description_summary) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_description_summary') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_description_summary) . "\n";
         }
 
         if (!empty($seo_product_title)) {
-          $embedding_data .= $this->app->getDef('text_product_seo_title') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_product_title) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_seo_title') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_product_title) . "\n";
         }
 
         if (!empty($seo_product_description)) {
-          $embedding_data .= $this->app->getDef('text_product_seo_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_product_description) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_seo_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_product_description) . "\n";
         }
 
         if (!empty($seo_product_keywords)) {
-          $embedding_data .= $this->app->getDef('text_product_seo_keywords') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_product_keywords) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_seo_keywords') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_product_keywords) . "\n";
         }
 
         if (!empty($seo_product_tag)) {
-          $embedding_data .= $this->app->getDef('text_product_seo_tag') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($seo_product_tag) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_seo_tag') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_product_tag) . "\n";
         }
 
         if (!empty($products_description)) {
-          $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
           $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($products_description, $language_code) . "\n";
         }
 
@@ -612,11 +612,11 @@ class Cron {
         $embedding_data = $this->app->getDef('text_reviews', ['products_name' => $products_name]) . "\n";
 
         if (!empty($products_id)) {
-          $embedding_data .= $this->app->getDef('text_reviews_product_name', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_name) . "\n";
+          $embedding_data .= $this->app->getDef('text_reviews_product_name', ['products_name' => $products_name]) . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_name) . "\n";
         }
 
         if (!empty($reviews_text)) {
-          $embedding_data .= $this->app->getDef('text_reviews_description', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text) . "\n";
+          $embedding_data .= $this->app->getDef('text_reviews_description', ['products_name' => $products_name]) . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($reviews_text) . "\n";
         }
 
         if (!empty($reviews_rating)) {
@@ -624,15 +624,15 @@ class Cron {
         }
 
         if (!empty($date_added)) {
-          $embedding_data .= $this->app->getDef('text_reviews_date_added', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";
+          $embedding_data .= $this->app->getDef('text_reviews_date_added', ['products_name' => $products_name]) . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";
         }
 
         if (!empty($status)) {
-          $embedding_data .= $this->app->getDef('text_reviews_status', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($status) . "\n";
+          $embedding_data .= $this->app->getDef('text_reviews_status', ['products_name' => $products_name]) . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($status) . "\n";
         }
 
         if (!empty($customers_tag)) {
-          $embedding_data .= $this->app->getDef('text_reviews_customer_tag', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($customers_tag) . "\n";
+          $embedding_data .= $this->app->getDef('text_reviews_customer_tag', ['products_name' => $products_name]) . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($customers_tag) . "\n";
         }
 
         if (!empty($vote)) {
@@ -742,30 +742,30 @@ class Cron {
         //********************
         // add embedding
         //********************
-        $embedding_data = $this->app->getDef('text_supplier_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($supplier_name) . "\n";
+        $embedding_data = $this->app->getDef('text_supplier_name') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($supplier_name) . "\n";
 
         if (!empty($date_added)) {
-          $embedding_data .= $this->app->getDef('text_supplier_date_added', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";
+          $embedding_data .= $this->app->getDef('text_supplier_date_added', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";
         }
 
         if (!empty($suppliers_status)) {
-          $embedding_data .= $this->app->getDef('text_supplier_status', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_status) . "\n";
+          $embedding_data .= $this->app->getDef('text_supplier_status', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_status) . "\n";
         }
 
         if (!empty($suppliers_states)) {
-          $embedding_data .= $this->app->getDef('text_suppliers_states', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_states) . "\n";
+          $embedding_data .= $this->app->getDef('text_suppliers_states', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_states) . "\n";
         }
 
         if (!empty($suppliers_city)) {
-          $embedding_data .= $this->app->getDef('text_supplier_city', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_city) . "\n";
+          $embedding_data .= $this->app->getDef('text_supplier_city', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_city) . "\n";
         }
 
         if (!empty($suppliers_country_id)) {
-          $embedding_data .= $this->app->getDef('text_supplier_country_id', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_country_id) . "\n";
+          $embedding_data .= $this->app->getDef('text_supplier_country_id', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_country_id) . "\n";
         }
 
         if (!empty($suppliers_notes)) {
-          $embedding_data .= $this->app->getDef('text_suppliers_notes', ['supplier_name' => $supplier_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($suppliers_notes) . "\n";
+          $embedding_data .= $this->app->getDef('text_suppliers_notes', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_notes) . "\n";
         }
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);

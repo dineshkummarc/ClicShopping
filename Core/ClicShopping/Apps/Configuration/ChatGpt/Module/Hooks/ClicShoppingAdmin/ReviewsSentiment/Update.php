@@ -46,6 +46,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       Registry::set('Semantics', new Semantics());
     }
     $this->semantics = Registry::get('Semantics');
+    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/ReviewsSentiment/rag');    
   }
 
   /**
@@ -252,13 +253,13 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         $language_id = $item['language_id'];
 
         $products_name = $CLICSHOPPING_ProductsAdmin->getProductsName($products_id, $item['language_id']);
-        $sentiment_status = isset($item['sentiment_status']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['sentiment_status']) : '';
-        $sentiment_approved = isset($item['sentiment_approved']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['sentiment_approved']) : '';
-        $date_added = isset($item['date_added']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['date_added']) : '';
-        $description = isset($item['description']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['description']) : '';
-        $vote = isset($item['vote']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['vote']) : '0';
-        $customer_id = isset($item['customer_id']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['customer_id']) : '';
-        $vote_sentiment = isset($item['vote_sentiment']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['vote_sentiment']) : '';
+        $sentiment_status = isset($item['sentiment_status']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['sentiment_status']) : '';
+        $sentiment_approved = isset($item['sentiment_approved']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['sentiment_approved']) : '';
+        $date_added = isset($item['date_added']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['date_added']) : '';
+        $description = isset($item['description']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['description']) : '';
+        $vote = isset($item['vote']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['vote']) : '0';
+        $customer_id = isset($item['customer_id']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['customer_id']) : '';
+        $vote_sentiment = isset($item['vote_sentiment']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['vote_sentiment']) : '';
 
         //********************
         // add embedding
@@ -273,9 +274,9 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
           $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_vote', ['products_name' => $products_name]) . ' : ' . $vote . "\n";
           $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_customer_id', ['products_name' => $products_name]) . ' : ' . $customer_id . "\n";
           $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_vote_sentiment', ['products_name' => $products_name]) . ' : ' . $vote_sentiment . "\n";
-          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_description', ['products_name' => $products_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($description) . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_description', ['products_name' => $products_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($description) . "\n";
 
-          $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($description), $language_code, null);
+          $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($description), $language_code, null);
 
           if (!empty($taxonomy)) {
             $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
@@ -337,7 +338,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             'entity_id' => (int)$item['id'],
             'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
             'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-            'last_modified' => date('c')
+            'date_modified' => 'now()'
           ];
 
          // Ajouter le JSON au tableau d'insertion
@@ -348,6 +349,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             $sql_data_array_embedding['language_id'] = (int)$language_id;
             $this->app->db->save('reviews_sentiment_embedding', $sql_data_array_embedding);
           } else {
+            $sql_data_array_embedding['date_modified'] = 'now()';	  
             $update_sql_data = [
               'language_id' => $language_id,
               'entity_id' => $item['id']

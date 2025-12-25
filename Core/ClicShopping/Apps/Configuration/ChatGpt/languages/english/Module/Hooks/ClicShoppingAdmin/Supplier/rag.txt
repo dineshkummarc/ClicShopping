@@ -18,8 +18,8 @@ text_suppliers_payment_terms = [Payment terms for {{supplier_name}}]
 text_status_active = [Active for {{supplier_name}}]
 text_status_inactive = [Inactive for {{supplier_name}}]
 
-You are a document analysis system. Extract a structured conceptual taxonomy from the following text.
-The text corresponds to a supplier or manufacturer profile in an e-commerce context.
+You are a document analysis system. Extract a structured conceptual taxonomy from the following supplier information.
+The text contains supplier/manufacturer profile data including contact details, location, and business information.
 The output must strictly follow the format below.
 Each relevant piece of information must be assigned to the appropriate dimension.
 Do not invent or infer any information not explicitly stated in the text.
@@ -30,6 +30,15 @@ Expected format:
 [subdomain]: Segment or specialization within the domain (e.g. Tableware, Computing, Furniture)
 [company_type]: Type of company (e.g. Manufacturer, Distributor, Wholesaler, Brand)
 [company_name]: Official name of the supplier or brand
+[contact_person]: Name of the main contact or manager
+[contact_phone]: Phone number for contact
+[contact_email]: Email address for contact
+[location_address]: Full postal address
+[location_suburb]: Suburb or neighborhood
+[location_postcode]: Postal code
+[location_city]: City name
+[location_state]: Region or state
+[location_country]: Country
 [brand_portfolio]: Main brands or product lines managed by the supplier, if mentioned
 [product_scope]: Range of products or categories supplied (e.g. Kitchenware, Lighting, Textiles)
 [market_scope]: Geographic or market coverage (e.g. National, European, Global)
@@ -45,4 +54,3 @@ Expected format:
 [keywords]: Free list of relevant keywords extracted from the text
 
 Text: {{document_text}}
-s

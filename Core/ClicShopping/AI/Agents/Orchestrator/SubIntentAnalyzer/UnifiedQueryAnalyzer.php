@@ -93,7 +93,7 @@ class UnifiedQueryAnalyzer
 
       // Single GPT call for everything
       // Use Gpt::getGptResponse() instead of non-existent complete() method
-      $response = \ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt::getGptResponse(
+      $response = Gpt::getGptResponse(
         $prompt,
         300, // max_tokens
         0.0  // temperature (deterministic for consistency)
@@ -214,14 +214,11 @@ class UnifiedQueryAnalyzer
    */
   private function buildUnifiedPrompt(string $query): string
   {
-    // Get prompt template from language file
-    $promptTemplate = $this->language->getDef('unified_analyzer_prompt');
-    
-    // Replace query placeholder
-    $prompt = sprintf($promptTemplate, $query);
+    // Get prompt template from language file with query parameter
+    $prompt = $this->language->getDef('unified_analyzer_prompt', ['query' => $query]);
     
     if ($this->debug) {
-      error_log("UnifiedQueryAnalyzer: Using prompt from language file");
+      error_log("UnifiedQueryAnalyzer: Using prompt from language file with template substitution");
     }
     
     return $prompt;
@@ -346,63 +343,5 @@ class UnifiedQueryAnalyzer
     }
 
     return $analysis;
-  }
-
-  /**
-   * Get supported languages
-   *
-   * Returns a list of ISO 639-1 language codes supported by this analyzer.
-   * Note: GPT supports 50+ languages, this is just a reference list.
-   *
-   * @return array List of supported language codes
-   */
-  public static function getSupportedLanguages(): array
-  {
-    return [
-      'en' => 'English',
-      'fr' => 'French',
-      'es' => 'Spanish',
-      'de' => 'German',
-      'it' => 'Italian',
-      'pt' => 'Portuguese',
-      'ru' => 'Russian',
-      'ja' => 'Japanese',
-      'zh' => 'Chinese',
-      'ko' => 'Korean',
-      'ar' => 'Arabic',
-      'hi' => 'Hindi',
-      'nl' => 'Dutch',
-      'pl' => 'Polish',
-      'tr' => 'Turkish',
-      'sv' => 'Swedish',
-      'da' => 'Danish',
-      'fi' => 'Finnish',
-      'no' => 'Norwegian',
-      'cs' => 'Czech',
-      'hu' => 'Hungarian',
-      'ro' => 'Romanian',
-      'el' => 'Greek',
-      'he' => 'Hebrew',
-      'th' => 'Thai',
-      'vi' => 'Vietnamese',
-      'id' => 'Indonesian',
-      'ms' => 'Malay',
-      'bn' => 'Bengali',
-      'ta' => 'Tamil',
-      'te' => 'Telugu',
-      'mr' => 'Marathi',
-      'ur' => 'Urdu',
-      'fa' => 'Persian',
-      'uk' => 'Ukrainian',
-      'bg' => 'Bulgarian',
-      'sr' => 'Serbian',
-      'hr' => 'Croatian',
-      'sk' => 'Slovak',
-      'sl' => 'Slovenian',
-      'lt' => 'Lithuanian',
-      'lv' => 'Latvian',
-      'et' => 'Estonian',
-      // ... and 20+ more languages supported by GPT
-    ];
   }
 }

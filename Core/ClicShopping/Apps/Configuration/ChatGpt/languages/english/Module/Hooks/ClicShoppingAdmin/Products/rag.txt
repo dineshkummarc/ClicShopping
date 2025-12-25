@@ -20,7 +20,7 @@ text_product_seo_title = [Product SEO title]
 text_product_seo_description = [Product SEO description]
 text_product_seo_keywords = [Product SEO keywords]
 text_product_seo_tag = [Product SEO tag]
-text_product_taxonomy = [Products Taxonomy]
+text_product_taxonomy = [Product Taxonomy]
 
 text_create_taxonomy = You are a document analysis system. Extract a structured conceptual taxonomy from the following text.
 The text corresponds to an e-commerce product.

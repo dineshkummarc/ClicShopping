@@ -548,7 +548,7 @@ class OrchestratorAgent
 
     // --- 1. Keywords for inclusion (Actionable Analytics) ---
 
-// Get keywords from the dedicated pattern class for better management.
+    // Get keywords from the dedicated pattern class for better management.
     $analyticsKeywords = AnalyticsPattern::getSimpleAnalyticsKeywords();
 
     // Create a regex pattern with word boundaries for precise matching

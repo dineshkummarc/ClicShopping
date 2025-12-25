@@ -45,7 +45,9 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
     if (!Registry::exists('Semantics')) {
       Registry::set('Semantics', new Semantics());
     }
+
     $this->semantics = Registry::get('Semantics');
+    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Categories/rag');
   }
 
   /**
@@ -188,11 +190,11 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
             if ($embedding_enabled) {
               $embedding_data =  "\n" . $this->app->getDef('text_category_embedded') . "\n";
 
-              $embedding_data .= $this->app->getDef('text_category_name') . ' : ' . HtmlOverrideCommon::cleanHtmlForEmbedding($categories_name) . "\n";
+              $embedding_data .= $this->app->getDef('text_category_name') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($categories_name) . "\n";
               $embedding_data .= $this->app->getDef('text_category_id') . ' : ' . (int)$categories_id . "\n";
 
               if (!empty($categories_description)) {
-                $categories_description = HtmlOverrideCommon::cleanHtmlForEmbedding($categories_description);
+                $categories_description = HTMLOverrideCommon::cleanHtmlForEmbedding($categories_description);
                 $embedding_data .= $this->app->getDef('text_category_description', ['category_name' => $categories_name]) . ' : ' . $categories_description . "\n";;
 
                 $taxonomy = $this->semantics->createTaxonomy($categories_description, $language_code, null);
@@ -218,15 +220,15 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
               }
 
               if (!empty($seo_categories_title)) {
-                $embedding_data .= $this->app->getDef('text_category_seo_title', ['category_name' => $categories_name]) . ' : ' .  HtmlOverrideCommon::cleanHtmlForSEO($seo_categories_title) . "\n";
+                $embedding_data .= $this->app->getDef('text_category_seo_title', ['category_name' => $categories_name]) . ' : ' .  HTMLOverrideCommon::cleanHtmlForSEO($seo_categories_title) . "\n";
               }
 
               if (!empty($seo_categories_description)) {
-                $embedding_data .= $this->app->getDef('text_category_seo_description', ['category_name' => $categories_name]) . ': ' .  HtmlOverrideCommon::cleanHtmlForSEO($seo_categories_description) . "\n";
+                $embedding_data .= $this->app->getDef('text_category_seo_description', ['category_name' => $categories_name]) . ': ' .  HTMLOverrideCommon::cleanHtmlForSEO($seo_categories_description) . "\n";
               }
 
               if (!empty($seo_categories_keywords)) {
-                $embedding_data .= $this->app->getDef('text_category_seo_keywords', ['category_name' => $categories_name]) . ' : ' . HtmlOverrideCommon::cleanHtmlForSEO($seo_categories_keywords) . "\n";
+                $embedding_data .= $this->app->getDef('text_category_seo_keywords', ['category_name' => $categories_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForSEO($seo_categories_keywords) . "\n";
               }
 
               $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);

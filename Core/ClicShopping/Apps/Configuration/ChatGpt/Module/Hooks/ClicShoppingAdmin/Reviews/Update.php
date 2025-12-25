@@ -47,7 +47,9 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     if (!Registry::exists('Semantics')) {
       Registry::set('Semantics', new Semantics());
     }
+
     $this->semantics = Registry::get('Semantics');
+    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Reviews/rag');
   }
 
   /**
@@ -139,7 +141,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             $embedding_data .= $this->app->getDef('text_reviews_id', ['reviews_id' => $reviews_id]) . "\n";
 
             if (!empty($products_id)) {
-              $embedding_data .= $this->app->getDef('text_reviews_product_name', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($products_name) . "\n";
+              $embedding_data .= $this->app->getDef('text_reviews_product_name', ['products_name' => $products_name]) . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_name) . "\n";
             }
 
 
@@ -148,13 +150,13 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             }
 
             if (!empty($date_added)) {
-              $embedding_data .= $this->app->getDef('text_reviews_date_added', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";
+              $embedding_data .= $this->app->getDef('text_reviews_date_added', ['products_name' => $products_name]) . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";
             }
 
             if (!empty($reviews_text)) {
-              $embedding_data .= $this->app->getDef('text_reviews_description', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text) . "\n";
+              $embedding_data .= $this->app->getDef('text_reviews_description', ['products_name' => $products_name]) . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($reviews_text) . "\n";
 
-              $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text), $language_code, null);
+              $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($reviews_text), $language_code, null);
 
               if (!empty($taxonomy)) {
                 $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
@@ -177,11 +179,11 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             }
 
           if (!empty($status)) {
-            $embedding_data .= $this->app->getDef('text_reviews_status', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($status) . "\n";
+            $embedding_data .= $this->app->getDef('text_reviews_status', ['products_name' => $products_name]) . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($status) . "\n";
           }
 
           if (!empty($customers_tag)) {
-            $embedding_data .= $this->app->getDef('text_reviews_customer_tag', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($customers_tag) . "\n";
+            $embedding_data .= $this->app->getDef('text_reviews_customer_tag', ['products_name' => $products_name]) . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($customers_tag) . "\n";
           }
 
           if (!empty($vote)) {
@@ -218,8 +220,8 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
             // MetaData  creation 
             $metadata = [
-              'review_name' => HtmlOverrideCommon::cleanHtmlForEmbedding($products_name),
-              'content' => HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text) ,
+              'review_name' => HTMLOverrideCommon::cleanHtmlForEmbedding($products_name),
+              'content' => HTMLOverrideCommon::cleanHtmlForEmbedding($reviews_text),
               'language_id' => (int)$item['languages_id'],
               'reviews_id' => (int)$item['reviews_id'],
               'type' => 'reviews',
@@ -230,7 +232,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               'entity_id' => (int)$item['reviews_id'],
               'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
               'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-              'last_modified' => date('c')
+              'date_modified' => 'now()'
             ];
 
            // Ajouter le JSON au tableau d'insertion
@@ -242,6 +244,8 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
               
               $this->app->db->save('reviews_embedding', $sql_data_array_embedding);
             } else {
+              $sql_data_array_embedding['date_modified'] = 'now()';	    
+      
               $update_sql_data = [
                 'language_id' => (int)$item['languages_id'],
                 'entity_id' => (int)$item['reviews_id']

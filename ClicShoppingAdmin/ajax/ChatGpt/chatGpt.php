@@ -458,6 +458,10 @@ try {
     error_log('   Has response: ' . (isset($dataToFormat['response']) ? 'YES' : 'NO'));
     error_log('   Has interpretation: ' . (isset($dataToFormat['interpretation']) ? 'YES' : 'NO'));
     error_log('   Has source_attribution: ' . (isset($dataToFormat['source_attribution']) ? 'YES' : 'NO'));
+    error_log('   Has results: ' . (isset($dataToFormat['results']) ? 'YES (' . count($dataToFormat['results']) . ' rows)' : 'NO'));
+    if (isset($dataToFormat['results']) && !empty($dataToFormat['results'])) {
+      error_log('   First result row keys: ' . implode(', ', array_keys($dataToFormat['results'][0])));
+    }
   }
 
 

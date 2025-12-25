@@ -112,7 +112,7 @@ class SchemaEmbedder
   {
     $Qembedding = $this->db->prepare('
       SELECT embedding_vector
-      FROM :table_schema_embeddings
+      FROM :table_rag_schema_embeddings
       WHERE table_name = :table_name
     ');
     
@@ -136,7 +136,7 @@ class SchemaEmbedder
   {
     $Qembeddings = $this->db->query('
       SELECT table_name, embedding_vector
-      FROM :table_schema_embeddings
+      FROM :table_rag_schema_embeddings
       ORDER BY table_name
     ');
     
@@ -166,7 +166,7 @@ class SchemaEmbedder
     }
     
     // Delete all existing embeddings
-    $this->db->query('DELETE FROM :table_schema_embeddings');
+    $this->db->query('DELETE FROM :table_rag_schema_embeddings');
     
     // Regenerate
     return $this->embedAllTables($fullSchemaText);

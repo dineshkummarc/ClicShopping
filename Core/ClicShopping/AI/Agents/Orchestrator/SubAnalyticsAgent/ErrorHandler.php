@@ -114,7 +114,7 @@ class ErrorHandler
       $query->execute();
       $rows = $query->fetchAll(\PDO::FETCH_ASSOC);
       $queryResults = $this->queryExecutor->deduplicateRows($rows);
-
+    
       // Success!
       return [
         'success' => true,

@@ -18,6 +18,9 @@ use ClicShopping\Apps\Tools\Cronjob\Classes\ClicShoppingAdmin\Cron;
 class Run extends \ClicShopping\OM\PagesActionsAbstract
 {
   protected string $code;
+  protected string $app;
+  protected string $id;
+  protected string $hooks;
 
   public function __construct()
   {

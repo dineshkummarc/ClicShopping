@@ -48,6 +48,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       Registry::set('Semantics', new Semantics());
     }
     $this->semantics = Registry::get('Semantics');
+
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Orders/rag');
   }
 
@@ -285,6 +286,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
     }
 
+
     if ($isNew) {
       $sql_data_array_embedding['entity_id'] = (int)$order_id;
       $this->app->db->save('orders_embedding', $sql_data_array_embedding);
@@ -329,27 +331,27 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
       $embeddingData = $this->buildEmbeddingData($order_id, $orderData, $products, $attributes, $statusHistory, $totals);
 
-      $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($embeddingData), null);
+      $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($embeddingData), null, 50);
 
-      if (!empty($taxonomy)) {
-        $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
-        $tags = [];
+        if (!empty($taxonomy)) {
+          $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
+          $tags = [];
 
-        foreach ($lines as $line) {
-          if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
-            $tags[$matches[1]] = trim($matches[2]);
+          foreach ($lines as $line) {
+            if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
+              $tags[$matches[1]] = trim($matches[2]);
+            }
           }
+        } else {
+          $tags = [];
         }
-      } else {
-        $tags = [];
-      }
 
-       $embeddingData .= "\n" . $this->app->getDef('text_orders_taxonomy') . " :\n";
+        $embeddingData .= "\n" . $this->app->getDef('text_orders_taxonomy') . " :\n";
 
-      foreach ($tags as $key => $value) {
-        $embeddingData .= "[$key]: $value\n";
-      }
-
+        foreach ($tags as $key => $value) {
+          $embeddingData .= "[$key]: $value\n";
+        }
+	
  // MetaData  creation 
       $metadata = [
         'order_name' => $this->app->getDef('text_order_information'),
@@ -363,7 +365,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         'entity_id' => (int)$order_id,
         'chunk_number' => 1,
         'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-        'last_modified' => date('c')
+        'date_modified' => 'now()'
       ];
 
       $embeddedDocuments = NewVector::createEmbedding(null, $embeddingData);

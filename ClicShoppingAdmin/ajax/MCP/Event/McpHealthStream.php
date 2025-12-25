@@ -26,7 +26,7 @@
  */
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\McpHealth;
 use ClicShopping\OM\CLICSHOPPING;
-
+use \ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
 // Include the necessary core files
 define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../../Core/ClicShopping/') . '/');
@@ -38,6 +38,8 @@ spl_autoload_register('ClicShopping\OM\CLICSHOPPING::autoload');
 // Initialize the application environment
 CLICSHOPPING::initialize();
 CLICSHOPPING::loadSite('ClicShoppingAdmin');
+
+AdministratorAdmin::hasUserAccess();
 
 // Set the appropriate headers for Server-Sent Events
 header('Content-Type: text/event-stream');

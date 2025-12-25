@@ -67,7 +67,7 @@ class HeaderMenu
 
       if (isset($_SESSION['admin'])) {
         $output .=  Gpt::gptModalMenu();
-	
+
         if ($_SESSION['admin']['access'] == 1 && count(glob(ErrorHandler::getDirectory() . 'phpmail_error-*.txt', GLOB_NOSORT)) > 0) {
           $output .= '<span>' . HTML::link(CLICSHOPPING::link(null, 'A&Tools\EditLogError&LogErrorPhpMailer'), '<i class="bi bi-exclamation-circle-fill text-warning" tiltle="Mail"></i>') . '</span> ';
         }

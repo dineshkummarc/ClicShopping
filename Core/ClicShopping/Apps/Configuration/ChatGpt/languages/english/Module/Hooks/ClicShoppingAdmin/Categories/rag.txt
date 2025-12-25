@@ -5,7 +5,7 @@ text_category_description = [category description: {{category_name}}]
 text_category_seo_title = [category SEO title: {{category_name}}]
 text_category_seo_description = [category SEO description: {{category_name}}]
 text_category_seo_keywords = [category SEO keywords: {{category_name}}]
-text_category_taxonomy = [Taxonomy of the category]
+text_category_taxonomy = [Category Taxonomy]
 
 text_create_taxonomy = You are a document analysis system. Extract a structured conceptual taxonomy from the following text.
 The text corresponds to an e-commerce category (not a product, not a supplier).

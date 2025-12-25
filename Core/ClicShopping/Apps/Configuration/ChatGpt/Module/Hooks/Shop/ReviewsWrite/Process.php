@@ -120,13 +120,13 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
        $language_code = $this->lang->getLanguageCodeById((int)$item['language_id']);
        $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/PageManager/process', $language_code);
 
-        $reviews_text = isset($item['reviews_text']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['reviews_text']) : '';
+        $reviews_text = isset($item['reviews_text']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['reviews_text']) : '';
         $reviews_rating = isset($item['reviews_rating']) ? (int)$item['reviews_rating'] : 0;
         $reviews_read = isset($item['reviews_read']) ? (int)$item['reviews_read'] : 0;
         $date_added = isset($item['date_added']) ? $item['date_added'] : '';
         $status = isset($item['status']) ? (int)$item['status'] : 0;
         $customers_id = isset($item['customers_id']) ? (int)$item['customers_id'] : 0;
-        $customers_tag = isset($item['customers_tag']) ? HtmlOverrideCommon::cleanHtmlForEmbedding($item['customers_tag']) : '';
+        $customers_tag = isset($item['customers_tag']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['customers_tag']) : '';
         $vote = isset($item['vote']) ? (int)$item['vote'] : 0;
         $sentiment = isset($item['sentiment']) ? (int)$item['sentiment'] : 0;
         $products_id = isset($item['products_id']) ? (int)$item['products_id'] : 0;
@@ -142,7 +142,7 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
         $embedding_data .= $this->app->getDef('text_reviews_description') . ' : ' . $reviews_text . '\n';
 
         if (!empty($reviews_text)) {
-           $embedding_data .= $this->app->getDef('text_reviews_description', ['products_name' => $products_name]) . ': ' . HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text) . "\n";
+           $embedding_data .= $this->app->getDef('text_reviews_description', ['products_name' => $products_name]) . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($reviews_text) . "\n";
 
            $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text), $language_code, null);
 
@@ -203,7 +203,7 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
 
             // MetaData  creation
             $metadata = [
-              'review_name' => HtmlOverrideCommon::cleanHtmlForEmbedding($products_name),
+              'review_name' => HTMLOverrideCommon::cleanHtmlForEmbedding($products_name),
               'content' => HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text) ,
               'language_id' => (int)$item['languages_id'],
               'reviews_id' => (int)$item['reviews_id'],
@@ -215,7 +215,7 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
               'entity_id' => (int)$item['reviews_id'],
               'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
               'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-              'last_modified' => date('c')
+               date_modified' => 'now()'
             ];
 
              // Ajouter le JSON au tableau d'insertion
@@ -227,6 +227,8 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
 
               $this->app->db->save('reviews_embedding', $sql_data_array_embedding);
             } else {
+	      $sql_data_array_embedding['date_modified'] = 'now()';
+			  
               $update_sql_data = [
                 'language_id' => (int)$item['languages_id'],
                 'entity_id' => (int)$item['reviews_id']

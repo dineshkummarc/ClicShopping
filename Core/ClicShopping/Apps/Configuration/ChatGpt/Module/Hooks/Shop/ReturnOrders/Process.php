@@ -184,7 +184,7 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
         $embedding_data .= $this->returnOrdersHistory($return_id);
 
         if (!empty($this->returnOrdersHistory($return_id))) {
-          $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($embedding_data), null);
+          $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($embedding_data), null);
 
           if (!empty($taxonomy)) {
             $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
@@ -232,29 +232,30 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
 
           $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
 
-                  // MetaData  creation
-                  $metadata = [
-                    'return_order_name' => $this->app->getDef('text_orders_products_return'),
-                    'content' => HtmlOverrideCommon::cleanHtmlForEmbedding($this->returnOrdersHistory($return_id)),
-                    'return_id' => (int)$return_id,
-                    'type' => 'return_orders',
-                    'source' => [
-                      'type' => 'manual',
-                      'name' => 'manual'
-                    ],
-                    'entity_id' => (int)$return_id,
-                    'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
-                    'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-                    'last_modified' => date('c')
-                  ];
+          // MetaData  creation
+          $metadata = [
+            'return_order_name' => $this->app->getDef('text_orders_products_return'),
+            'content' => HTMLOverrideCommon::cleanHtmlForEmbedding($this->returnOrdersHistory($return_id)),
+            'return_id' => (int)$return_id,
+            'type' => 'return_orders',
+            'source' => [
+              'type' => 'manual',
+              'name' => 'manual'
+            ],
+            'entity_id' => (int)$return_id,
+            'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
+            'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
+            'date_modified' => 'now()'
+          ];
 
-                  // Ajouter le JSON au tableau d'insertion
-                  $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
+          // Ajouter le JSON au tableau d'insertion
+          $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
           if ($insert_embedding === true) {
             $sql_data_array_embedding['entity_id'] = $return_id;
 
             $this->app->db->save('return_orders_embedding', $sql_data_array_embedding);
           } else {
+	    $sql_data_array_embedding['date_modified'] = 'now()';
             $update_sql_data = ['entity_id' => $return_id];
 
             $this->app->db->save('return_orders_embedding', $sql_data_array_embedding, $update_sql_data);
