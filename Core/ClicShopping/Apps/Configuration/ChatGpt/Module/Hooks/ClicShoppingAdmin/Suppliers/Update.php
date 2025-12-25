@@ -268,5 +268,5 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         }
       }
     }
-  }
+
 }

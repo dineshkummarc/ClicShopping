@@ -215,7 +215,7 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
               'entity_id' => (int)$item['reviews_id'],
               'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
               'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-               date_modified' => 'now()'
+               'date_modified' => 'now()'
             ];
 
              // Ajouter le JSON au tableau d'insertion
