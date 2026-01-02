@@ -164,10 +164,10 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
   }
 
   /**
-   * Builds the embedding data for the order.
+   * Builds the embedding data for the order using normalized atomic keys.
    *
-   * This method constructs the embedding data string using the provided order details,
-   * products, attributes, status history, and totals.
+   * This method constructs factual, deterministic embedding data with atomic keys
+   * suitable for semantic search and vector embeddings.
    *
    * @param int $order_id The order ID.
    * @param array $order The order details.
@@ -183,73 +183,147 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     $customers_city = Hash::displayDecryptedDataText($order['customers_city']);
     $customers_name = Hash::displayDecryptedDataText($order['customers_name']);
     $customers_company = Hash::displayDecryptedDataText($order['customers_company']);
+    $delivery_city = Hash::displayDecryptedDataText($order['delivery_city']);
 
-    $data = $this->app->getDef('text_order_information') . "\n";
-    $data .=  $this->app->getDef('text_order_information_order_id') . ' : ' . $order_id . "\n";
-    $data .= $this->app->getDef('text_order_customer_name') . ' : ' . $customers_name . "\n";
-
-    if (!empty($customers_company)) {
-      $data .= $this->app->getDef('text_order_company') . ' : ' . $customers_company . "\n";
-    }
-
-    $data .= $this->app->getDef('text_order_customer_city') . ' : ' . $customers_city . "\n";
-    $data .= $this->app->getDef('text_order_customer_country') . ' : ' . $order['customers_country'] . "\n";
-    $data .= $this->app->getDef('text_order_customer_payment_method') . ' : ' .$order['payment_method'] . "\n";
-    $data .= $this->app->getDef('text_order_customer_status') . ' : ' . $order['orders_status'] . "\n";
-    $data .= $this->app->getDef('text_order_customer_date_purchased') . ' : ' . $order['date_purchased'] . "\n";
-    $data .= $this->app->getDef('text_order_customer_delivery_city') . ' : ' . Hash::displayDecryptedDataText($order['delivery_city']) . "\n";
-    $data .= $this->app->getDef('text_order_customer_delivery_country') . ' : ' . $order['delivery_country'] . "\n";
-    $data .= $this->app->getDef('text_order_customer_currency') . ' : ' . $order['currency'] . "\n";
-
-    $data .= "\n" . $this->app->getDef('text_order_products_details') . "\n";
+    // Use language file definitions for atomic keys
+    $data = "[{$this->app->getDef('text_key_domain')}]: {$this->app->getDef('text_value_domain_ecommerce')}\n";
+    $data .= "[{$this->app->getDef('text_key_entity')}]: {$this->app->getDef('text_value_entity_order')}\n\n";
     
+    // Order information - atomic keys from language file
+    $data .= "[{$this->app->getDef('text_key_order_id')}]: $order_id\n";
+    $data .= "[{$this->app->getDef('text_key_order_date')}]: " . str_replace(' ', 'T', $order['date_purchased']) . "\n";
+    $data .= "[{$this->app->getDef('text_key_order_status')}]: {$order['orders_status']}\n";
+    $data .= "[{$this->app->getDef('text_key_order_currency')}]: {$order['currency']}\n";
+    
+    // Normalize payment method using HTMLOverrideCommon
+    $paymentMethod = HTMLOverrideCommon::normalizeForAtomicKey($order['payment_method']);
+    $data .= "[{$this->app->getDef('text_key_order_payment_method')}]: $paymentMethod\n\n";
+    
+    // Customer information - atomic keys from language file
+    $data .= "[{$this->app->getDef('text_key_customer_name')}]: $customers_name\n";
+    if (!empty($customers_company)) {
+      $data .= "[{$this->app->getDef('text_key_customer_company')}]: $customers_company\n";
+    }
+    $data .= "[{$this->app->getDef('text_key_customer_city')}]: $customers_city\n";
+    $data .= "[{$this->app->getDef('text_key_customer_country')}]: {$order['customers_country']}\n\n";
+    
+    // Delivery information - atomic keys from language file
+    $data .= "[{$this->app->getDef('text_key_delivery_city')}]: $delivery_city\n";
+    $data .= "[{$this->app->getDef('text_key_delivery_country')}]: {$order['delivery_country']}\n\n";
+    
+    // Products information - indexed atomic keys from language file
+    $productIndex = 1;
     foreach ($products as $product) {
-      $data .= $this->app->getDef('text_order_products_name') . ' : ' . $product['products_name'] . "\n";
-      $data .= $this->app->getDef('text_order_products_model') . ' : ' . $product['products_model'] . "\n";
-      $data .= $this->app->getDef('text_order_products_price') . ' : ' . $product['products_price'] . "\n";
-      $data .= $this->app->getDef('text_order_products_qty') . ' : ' . $product['products_quantity'] . "\n";
-      $data .= $this->app->getDef('text_order_products_taxe') . ' : ' . $product['products_tax'] . "\n";
-      $data .=  $this->app->getDef('text_order_products_final_price') . ' : ' . $product['final_price'] . "\n";
+      $prefix = count($products) > 1 ? "$productIndex." : "";
+      $baseKey = $this->app->getDef('text_key_product_name');
+      $data .= "[" . str_replace('product.', "product.{$prefix}", $baseKey) . "]: {$product['products_name']}\n";
+      
+      $baseKey = $this->app->getDef('text_key_product_model');
+      $data .= "[" . str_replace('product.', "product.{$prefix}", $baseKey) . "]: {$product['products_model']}\n";
+      
+      $baseKey = $this->app->getDef('text_key_product_price');
+      $data .= "[" . str_replace('product.', "product.{$prefix}", $baseKey) . "]: {$product['products_price']}\n";
+      
+      $baseKey = $this->app->getDef('text_key_product_quantity');
+      $data .= "[" . str_replace('product.', "product.{$prefix}", $baseKey) . "]: {$product['products_quantity']}\n";
+      
+      $baseKey = $this->app->getDef('text_key_product_tax_rate');
+      $data .= "[" . str_replace('product.', "product.{$prefix}", $baseKey) . "]: " . ($product['products_tax'] / 100) . "\n";
+      
+      // Product attributes if any - indexed atomic keys from language file
+      if (!empty($attributes) && is_array($attributes)) {
+        $attrIndex = 1;
+        foreach ($attributes as $attribute) {
+          if (isset($attribute['orders_products_id']) && $attribute['orders_products_id'] == $product['orders_products_id']) {
+            $baseKey = $this->app->getDef('text_key_product_attribute_option');
+            $data .= "[" . str_replace(['product.', 'attribute.'], ["product.{$prefix}", "attribute.{$attrIndex}."], $baseKey) . "]: {$attribute['products_options']}\n";
+            
+            $baseKey = $this->app->getDef('text_key_product_attribute_value');
+            $data .= "[" . str_replace(['product.', 'attribute.'], ["product.{$prefix}", "attribute.{$attrIndex}."], $baseKey) . "]: {$attribute['products_options_values']}\n";
+            $attrIndex++;
+          }
+        }
+      }
+      
+      $data .= "\n";
+      $productIndex++;
     }
-
-    if (!empty($attributes) && is_array($attributes)) {
-      $data .= "\n" . $this->app->getDef('text_products_attributes_details') . "\n";
-
-      foreach ($attributes as $attribute) {
-        $data .= $this->app->getDef('text_products_attributes_products_reference')  . ' : ' . $attribute['products_attributes_reference'] . "\n";
-        $data .= $this->app->getDef('text_products_attributes_products_option') . ' : ' . $attribute['products_options'] . "\n";
-        $data .= $this->app->getDef('text_products_attributes_products_value')  . ' : ' . $attribute['products_options_values'] . "\n";
-        $data .= $this->app->getDef('text_products_attributes_products_value')  . ' : ' . $attribute['options_values_price'] . "\n";
+    
+    // Totals information - atomic keys from language file with normalization
+    $totalMapping = [
+      'Sous Total' => $this->app->getDef('text_key_total_subtotal'),
+      'Sub-Total' => $this->app->getDef('text_key_total_subtotal'),
+      'Subtotal' => $this->app->getDef('text_key_total_subtotal'),
+      'Shipping' => $this->app->getDef('text_key_total_shipping'),
+      'Expédition' => $this->app->getDef('text_key_total_shipping'),
+      'Tax' => $this->app->getDef('text_key_total_tax'),
+      'TVA' => $this->app->getDef('text_key_total_tax'),
+      'Taxe' => $this->app->getDef('text_key_total_tax'),
+      'Total' => $this->app->getDef('text_key_total_total')
+    ];
+    
+    foreach ($totals as $total) {
+      $titleClean = trim(strip_tags($total['title']));
+      $key = null;
+      
+      foreach ($totalMapping as $search => $mapped) {
+        if (stripos($titleClean, $search) !== false) {
+          $key = $mapped;
+          break;
+        }
+      }
+      
+      if ($key) {
+        $data .= "[$key]: {$total['value']}\n";
       }
     }
-
+    
+    // Status history - indexed atomic keys from language file, only with comments (factual insights)
     if (!empty($statusHistory) && is_array($statusHistory)) {
-      $data .= "\n" . $this->app->getDef('text_products_order_history') . "\n";
-
+      $data .= "\n";
+      $historyIndex = 1;
+      $hasComments = false;
+      
       foreach ($statusHistory as $status) {
-        if(!empty($status['date_added'])) {
-          $data .= $this->app->getDef('text_products_order_history_date') . ' : ' . $status['date_added'] . "\n";
-        }
-        if (!empty($status['orders_status_id'])) {
-          $data .= $this->app->getDef('text_products_order_history_status') . ' : ' . $status['orders_status_id'] . "\n";
-        }
         if (!empty($status['comments'])) {
-          $data .= $this->app->getDef('text_products_order_history_comment') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($status['comments']) . "\n";
-        }
-        if (!empty($status['orders_tracking_number'])){
-          $data .= $this->app->getDef('text_products_order_history_tracking') . ' : ' . $status['orders_tracking_number'] . "\n";
-        }
-        if (!empty($status['orders_tracking_number'])) {
-          $data .= $this->app->getDef('text_products_order_history_admin') . ' : ' . $status['admin_user_name'] . "\n";
+          $hasComments = true;
+          
+          $baseKey = $this->app->getDef('text_key_history_date');
+          $data .= "[" . str_replace('history.', "history.{$historyIndex}.", $baseKey) . "]: " . str_replace(' ', 'T', $status['date_added']) . "\n";
+          
+          $baseKey = $this->app->getDef('text_key_history_status');
+          $data .= "[" . str_replace('history.', "history.{$historyIndex}.", $baseKey) . "]: {$status['orders_status_id']}\n";
+          
+          $baseKey = $this->app->getDef('text_key_history_comment');
+          $data .= "[" . str_replace('history.', "history.{$historyIndex}.", $baseKey) . "]: " . HTMLOverrideCommon::cleanHtmlForEmbedding($status['comments']) . "\n";
+          
+          if (!empty($status['orders_tracking_number'])) {
+            $baseKey = $this->app->getDef('text_key_history_tracking');
+            $data .= "[" . str_replace('history.', "history.{$historyIndex}.", $baseKey) . "]: {$status['orders_tracking_number']}\n";
+          }
+          if (!empty($status['admin_user_name'])) {
+            $baseKey = $this->app->getDef('text_key_history_admin');
+            $data .= "[" . str_replace('history.', "history.{$historyIndex}.", $baseKey) . "]: {$status['admin_user_name']}\n";
+          }
+          
+          $historyIndex++;
         }
       }
-    }
-
-    if (!empty($totals) && is_array($totals)) {
-      $data .= "\n" . $this->app->getDef('text_orders_total') . "\n";
-      foreach ($totals as $total) {
-        $data .= $this->app->getDef('text_orders_total_title') . ' : ' . $total['title'] . "\n";
-        $data .= $this->app->getDef('text_orders_total_value') . ' : ' . $total['value'] . "\n";
+      
+      // If no comments, just add the most recent status (factual state)
+      if (!$hasComments && !empty($statusHistory)) {
+        $lastStatus = end($statusHistory);
+        
+        $baseKey = $this->app->getDef('text_key_history_date');
+        $data .= "[" . str_replace('history.', "history.1.", $baseKey) . "]: " . str_replace(' ', 'T', $lastStatus['date_added']) . "\n";
+        
+        $baseKey = $this->app->getDef('text_key_history_status');
+        $data .= "[" . str_replace('history.', "history.1.", $baseKey) . "]: {$lastStatus['orders_status_id']}\n";
+        
+        if (!empty($lastStatus['admin_user_name'])) {
+          $baseKey = $this->app->getDef('text_key_history_admin');
+          $data .= "[" . str_replace('history.', "history.1.", $baseKey) . "]: {$lastStatus['admin_user_name']}\n";
+        }
       }
     }
 
@@ -285,7 +359,6 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     if (!empty($metadata)) {
       $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
     }
-
 
     if ($isNew) {
       $sql_data_array_embedding['entity_id'] = (int)$order_id;
@@ -331,30 +404,17 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
       $embeddingData = $this->buildEmbeddingData($order_id, $orderData, $products, $attributes, $statusHistory, $totals);
 
-      $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($embeddingData), null, 50);
-
-        if (!empty($taxonomy)) {
-          $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
-          $tags = [];
-
-          foreach ($lines as $line) {
-            if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
-              $tags[$matches[1]] = trim($matches[2]);
-            }
-          }
-        } else {
-          $tags = [];
+      // Extract atomic keys from embedding data for metadata
+      $tags = [];
+      if (preg_match_all('/^\[([^\]]+)\]:\s*(.+)$/m', $embeddingData, $matches, PREG_SET_ORDER)) {
+        foreach ($matches as $match) {
+          $tags[] = $match[1]; // Store only keys (atomic identifiers)
         }
+      }
 
-        $embeddingData .= "\n" . $this->app->getDef('text_orders_taxonomy') . " :\n";
-
-        foreach ($tags as $key => $value) {
-          $embeddingData .= "[$key]: $value\n";
-        }
-	
- // MetaData  creation 
+      // MetaData creation
       $metadata = [
-        'order_name' => $this->app->getDef('text_order_information'),
+        'order_name' => 'Order #' . $order_id,
         'content' => $embeddingData,
         'order_id' => (int)$order_id,
         'type' => 'orders',
@@ -364,7 +424,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
         ],
         'entity_id' => (int)$order_id,
         'chunk_number' => 1,
-        'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
+        'tags' => $tags,
         'date_modified' => 'now()'
       ];
 

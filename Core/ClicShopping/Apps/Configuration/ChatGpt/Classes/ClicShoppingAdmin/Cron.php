@@ -103,7 +103,23 @@ class Cron {
 
         if (!empty($categories_description)) {
           $embedding_data .= $this->app->getDef('text_category_description', ['category_name' => $categories_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($categories_description) . "\n";;
-          $embedding_data .= $this->app->getDef('text_category_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($categories_description, $language_code) . "\n";
+        }
+
+        // Generate taxonomy separately (NOT added to embedding_data)
+        $tags = [];
+        if (!empty($categories_description)) {
+          $taxonomy = Semantics::createTaxonomy($categories_description, $language_code);
+
+          if (!empty($taxonomy)) {
+            $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
+
+            foreach ($lines as $line) {
+              // Updated regex to handle optional spaces before colon: [key] : value or [key]: value
+              if (preg_match('/^\[([^\]]+)\]\s*:\s*(.+)$/', $line, $matches)) {
+                $tags[$matches[1]] = trim($matches[2]);
+              }
+            }
+          }
         }
 
        $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);

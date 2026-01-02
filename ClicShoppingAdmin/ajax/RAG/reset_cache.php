@@ -158,7 +158,7 @@ try {
   }
   
   // ============================================================================
-  // 4. Reset Prompt Cache (includes semantic query cache - TASK 4.3.2)
+  // 5. Reset Prompt Cache (includes semantic query cache - TASK 4.3.2)
   // ============================================================================
   if (in_array('prompts', $cacheTypes)) {
     try {
@@ -189,7 +189,7 @@ try {
   }
   
   // ============================================================================
-  // 5. Reset Semantic Query Cache (TASK 4.3.2 - separate option)
+  // 6. Reset Semantic Query Cache (TASK 4.3.2 - separate option)
   // ============================================================================
   if (in_array('semantic', $cacheTypes)) {
     try {

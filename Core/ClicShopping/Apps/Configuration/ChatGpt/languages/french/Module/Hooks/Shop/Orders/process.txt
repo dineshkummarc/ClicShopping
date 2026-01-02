@@ -35,6 +35,5 @@ text_key_history_comment = historique.commentaire
 text_key_history_tracking = historique.suivi
 text_key_history_admin = historique.admin
 
-
 text_value_domain_ecommerce = ecommerce
 text_value_entity_order = commande

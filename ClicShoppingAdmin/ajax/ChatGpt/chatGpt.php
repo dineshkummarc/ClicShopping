@@ -29,6 +29,7 @@ spl_autoload_register('ClicShopping\OM\CLICSHOPPING::autoload');
 
 CLICSHOPPING::initialize();
 CLICSHOPPING::loadSite('ClicShoppingAdmin');
+
 AdministratorAdmin::hasUserAccess();
 
 header('Content-Type: application/json; charset=UTF-8');
@@ -158,9 +159,12 @@ try {
 
   // ✅ Validation 3: Ambiguity check (NEW - Test 5.5)
   // Detect very short or vague queries like "ça", "quoi", "ok"
+  // NOTE: We use high confidence (1.0) here because we only want to detect
+  // short/vague queries at this stage, NOT low-confidence classifications
+  // (which happens later after actual intent analysis)
   
   $clarificationHelper = new ClarificationHelper(false); // debug mode off in production
-  $intent = ['type' => 'unknown', 'confidence' => 0.3, 'metadata' => []];
+  $intent = ['type' => 'unknown', 'confidence' => 1.0, 'metadata' => []];
   $ambiguityCheck = $clarificationHelper->detectAmbiguity($intent, $userQuery, []);
 
   if ($ambiguityCheck['is_ambiguous']) {
