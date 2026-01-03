@@ -35,7 +35,7 @@ class pi_products_info_recommendation
       $this->enabled = \defined('MODULE_PRODUCTS_INFO_RECOMMENDATION_STATUS') ? (MODULE_PRODUCTS_INFO_RECOMMENDATION_STATUS == 'True') : false;
     }
 
-    if (CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'False') {
+    if (!\defined('CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING') || CLICSHOPPING_APP_CHATGPT_CH_OPENAI_EMBEDDING == 'False') {
       $this->enabled = false;
     }
   }

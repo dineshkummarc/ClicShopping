@@ -3890,16 +3890,16 @@
         },
         {
             "name": "theodo-group/llphant",
-            "version": "0.11.8",
+            "version": "0.11.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/LLPhant/LLPhant.git",
-                "reference": "070b3818d538725a0e4938f806be808fa5f0d610"
+                "reference": "38724a147bfccf79d0e92f37f8b1d4b26c136751"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/LLPhant/LLPhant/zipball/070b3818d538725a0e4938f806be808fa5f0d610",
-                "reference": "070b3818d538725a0e4938f806be808fa5f0d610",
+                "url": "https://api.github.com/repos/LLPhant/LLPhant/zipball/38724a147bfccf79d0e92f37f8b1d4b26c136751",
+                "reference": "38724a147bfccf79d0e92f37f8b1d4b26c136751",
                 "shasum": ""
             },
             "require": {
@@ -3917,8 +3917,9 @@
                 "yethee/tiktoken": "^0.10.0"
             },
             "require-dev": {
-                "codewithkyrian/chromadb-php": "dev-main",
-                "doctrine/orm": "^2.20.0",
+                "codewithkyrian/chromadb-php": "1.0.0",
+                "doctrine/dbal": "^4",
+                "doctrine/orm": "^3",
                 "elasticsearch/elasticsearch": "^8.15",
                 "hkulekci/qdrant": "^v0.5.7",
                 "laravel/pint": "v1.15.3",
@@ -3973,9 +3974,9 @@
             ],
             "support": {
                 "issues": "https://github.com/LLPhant/LLPhant/issues",
-                "source": "https://github.com/LLPhant/LLPhant/tree/0.11.8"
+                "source": "https://github.com/LLPhant/LLPhant/tree/0.11.9"
             },
-            "time": "2025-10-01T07:11:32+00:00"
+            "time": "2026-01-03T18:44:05+00:00"
         },
         {
             "name": "yethee/tiktoken",
@@ -4039,12 +4040,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Roave/SecurityAdvisories.git",
-                "reference": "412d91dc6342787fd733523797d9c9faf2ad3ea5"
+                "reference": "5ba14c800ff89c74333c22d56ca1c1f35c424805"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/412d91dc6342787fd733523797d9c9faf2ad3ea5",
-                "reference": "412d91dc6342787fd733523797d9c9faf2ad3ea5",
+                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/5ba14c800ff89c74333c22d56ca1c1f35c424805",
+                "reference": "5ba14c800ff89c74333c22d56ca1c1f35c424805",
                 "shasum": ""
             },
             "conflict": {
@@ -4105,7 +4106,7 @@
                 "backpack/filemanager": "<2.0.2|>=3,<3.0.9",
                 "bacula-web/bacula-web": "<9.7.1",
                 "badaso/core": "<=2.9.11",
-                "bagisto/bagisto": "<=2.3.7",
+                "bagisto/bagisto": "<2.3.10",
                 "barrelstrength/sprout-base-email": "<1.2.7",
                 "barrelstrength/sprout-forms": "<3.9",
                 "barryvdh/laravel-translation-manager": "<0.6.8",
@@ -5038,7 +5039,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-12-30T23:05:26+00:00"
+            "time": "2026-01-02T22:05:49+00:00"
         }
     ],
     "aliases": [],
