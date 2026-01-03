@@ -222,6 +222,76 @@ class HTMLOverrideCommon extends HTML
   }
 
   /**
+   * Normalizes a string for use as an atomic key in embeddings.
+   * Converts to lowercase, replaces spaces and accented characters.
+   *
+   * @param string $text The text to normalize.
+   * @return string The normalized text in snake_case format.
+   */
+  public static function normalizeForAtomicKey(string $text): string
+  {
+    // Convert to lowercase
+    $normalized = strtolower($text);
+    
+    // Replace accented characters with their base equivalents
+    $accents = [
+      'à' => 'a', 'á' => 'a', 'â' => 'a', 'ã' => 'a', 'ä' => 'a', 'å' => 'a',
+      'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e',
+      'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
+      'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'õ' => 'o', 'ö' => 'o',
+      'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u',
+      'ý' => 'y', 'ÿ' => 'y',
+      'ñ' => 'n', 'ç' => 'c'
+    ];
+    
+    $normalized = str_replace(array_keys($accents), array_values($accents), $normalized);
+    
+    // Replace spaces and special characters with underscores
+    $normalized = preg_replace('/[^a-z0-9]+/', '_', $normalized);
+    
+    // Remove leading/trailing underscores
+    $normalized = trim($normalized, '_');
+    
+    return $normalized;
+  }
+
+  /**
+   * Clean HTML entities from JSON response
+   * 
+   * Specifically designed for cleaning LLM JSON responses that may contain:
+   * - Malformed entities without semicolon (&quot instead of &quot;)
+   * - Standard HTML entities (&nbsp;, &amp;, etc.)
+   * - Mixed encoding issues
+   * 
+   * Used by ClassificationEngine for cleaning GPT JSON responses.
+   * 
+   * @param string $text Text to clean (typically JSON string)
+   * @return string Cleaned text with entities decoded
+   */
+  public static function cleanJsonEntities(string $text): string
+  {
+    // First pass: Handle malformed entities without semicolon using regex
+    // This MUST come before str_replace to catch patterns like &quot:
+    $cleaned = preg_replace('/&quot(?![a-z0-9;])/i', '"', $text);
+    $cleaned = preg_replace('/&apos(?![a-z0-9;])/i', "'", $cleaned);
+    $cleaned = preg_replace('/&amp(?![a-z0-9;])/i', '&', $cleaned);
+    $cleaned = preg_replace('/&lt(?![a-z0-9;])/i', '<', $cleaned);
+    $cleaned = preg_replace('/&gt(?![a-z0-9;])/i', '>', $cleaned);
+    
+    // Second pass: Convert common encoded characters with semicolon
+    $cleaned = str_replace(
+      ['&nbsp;', '&amp;', '&quot;', '&lt;', '&gt;', '&apos;'],
+      [' ', '&', '"', '<', '>', "'"],
+      $cleaned
+    );
+    
+    // Third pass: Standard html_entity_decode for any remaining well-formed entities
+    $cleaned = html_entity_decode($cleaned, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    
+    return $cleaned;
+  }
+
+  /**
    * Minifies a block of JavaScript code by removing unnecessary characters such as comments,
    * extra whitespaces, and semicolons. Also converts certain JavaScript notations to more concise formats.
    *

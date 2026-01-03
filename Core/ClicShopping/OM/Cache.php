@@ -88,8 +88,12 @@ class Cache
       return false;
     }
 
-    $fullKey = $this->getFullKey();
-    $filename = static::getPath() . $fullKey . '.cache';
+    // Ensure namespace directory exists
+    if (!$this->ensureNamespaceDirectory()) {
+      return false;
+    }
+
+    $filename = $this->getFilePath();
 
     // Préparer les données avec métadonnées
     $cacheData = [
@@ -120,7 +124,8 @@ class Cache
       // Forcer les permissions pour contourner le umask
       @chmod($filename, 0664);
 
-      // Mettre à jour le cache mémoire
+      // Mettre à jour le cache mémoire (use full key for backward compatibility)
+      $fullKey = $this->getFullKey();
       $this->updateMemoryCache($fullKey, $data);
 
       return true;
@@ -133,10 +138,61 @@ class Cache
    * Gets the full key including namespace
    *
    * @return string
+   * @deprecated Use getNamespacePath() and key separately
    */
   protected function getFullKey(): string
   {
     return $this->namespace ? $this->namespace . '_' . $this->key : $this->key;
+  }
+
+  /**
+   * Gets the namespace as a directory path
+   *
+   * @return string The namespace path with trailing slash, or empty string
+   */
+  protected function getNamespacePath(): string
+  {
+    if (empty($this->namespace)) {
+      return '';
+    }
+    
+    // Convert namespace to directory path
+    // 'Rag/Intent' → 'Rag/Intent/'
+    // 'context' → 'context/'
+    return rtrim($this->namespace, '/') . '/';
+  }
+
+  /**
+   * Ensures the namespace directory exists
+   *
+   * @return bool True if directory exists or was created successfully
+   */
+  protected function ensureNamespaceDirectory(): bool
+  {
+    $namespacePath = $this->getNamespacePath();
+    
+    if (empty($namespacePath)) {
+      return true;
+    }
+    
+    $fullPath = static::getPath() . $namespacePath;
+    
+    if (!is_dir($fullPath)) {
+      return mkdir($fullPath, 0775, true);
+    }
+    
+    return true;
+  }
+
+  /**
+   * Gets the full file path for the cache file
+   *
+   * @return string The complete file path
+   */
+  protected function getFilePath(): string
+  {
+    $namespacePath = $this->getNamespacePath();
+    return static::getPath() . $namespacePath . $this->key . '.cache';
   }
 
   /**
@@ -159,7 +215,7 @@ class Cache
       return is_numeric($expire) && ($difference < $expire);
     }
 
-    $filename = static::getPath() . $fullKey . '.cache';
+    $filename = $this->getFilePath();
 
     if (is_file($filename)) {
       if (!isset($expire)) {
@@ -187,7 +243,7 @@ class Cache
       return static::$memoryCache[$fullKey]['data'];
     }
 
-    $filename = static::getPath() . $fullKey . '.cache';
+    $filename = $this->getFilePath();
 
     if (is_file($filename)) {
       $contents = file_get_contents($filename);
@@ -234,8 +290,7 @@ class Cache
    */
   public function getMetadata(): ?array
   {
-    $fullKey = $this->getFullKey();
-    $filename = static::getPath() . $fullKey . '.cache';
+    $filename = $this->getFilePath();
 
     if (!is_file($filename)) {
       return null;
@@ -393,7 +448,7 @@ class Cache
    */
   public function getTime()
   {
-    $filename = static::getPath() . $this->getFullKey() . '.cache';
+    $filename = $this->getFilePath();
     return is_file($filename) ? filemtime($filename) : false;
   }
 
@@ -412,18 +467,30 @@ class Cache
       return false;
     }
 
-    $fullKey = $namespace ? $namespace . '_' . $key : $key;
+    // Get namespace path
+    $namespacePath = '';
+    if (!empty($namespace)) {
+      $namespacePath = rtrim($namespace, '/') . '/';
+    }
 
-    if (is_file(static::getPath() . $fullKey . '.cache')) {
+    $searchPath = static::getPath() . $namespacePath;
+    $filename = $searchPath . $key . '.cache';
+
+    if (is_file($filename)) {
       return true;
     }
 
     if ($strict === false) {
-      $key_length = strlen($fullKey);
-      $d = dir(static::getPath());
+      $key_length = strlen($key);
+      
+      if (!is_dir($searchPath)) {
+        return false;
+      }
+      
+      $d = dir($searchPath);
 
       while (($entry = $d->read()) !== false) {
-        if ((strlen($entry) >= $key_length) && (substr($entry, 0, $key_length) == $fullKey)) {
+        if ((strlen($entry) >= $key_length) && (substr($entry, 0, $key_length) == $key)) {
           $d->close();
           return true;
         }
@@ -477,18 +544,30 @@ class Cache
       return false;
     }
 
-    $fullKey = $namespace ? $namespace . '_' . $key : $key;
-    $key_length = strlen($fullKey);
+    // Get namespace path
+    $namespacePath = '';
+    if (!empty($namespace)) {
+      $namespacePath = rtrim($namespace, '/') . '/';
+    }
 
-    // Supprimer du cache mémoire
+    $searchPath = static::getPath() . $namespacePath;
+    
+    if (!is_dir($searchPath)) {
+      return true; // Nothing to clear
+    }
+
+    $key_length = strlen($key);
+
+    // Supprimer du cache mémoire (use old format for backward compatibility)
+    $fullKey = $namespace ? $namespace . '_' . $key : $key;
     unset(static::$memoryCache[$fullKey]);
 
-    $DLcache = new DirectoryListing(static::getPath());
+    $DLcache = new DirectoryListing($searchPath);
     $DLcache->setIncludeDirectories(false);
 
     foreach ($DLcache->getFiles() as $file) {
-      if ((strlen($file['name']) >= $key_length) && (substr($file['name'], 0, $key_length) == $fullKey)) {
-        unlink(static::getPath() . $file['name']);
+      if ((strlen($file['name']) >= $key_length) && (substr($file['name'], 0, $key_length) == $key)) {
+        unlink($searchPath . $file['name']);
       }
     }
 
