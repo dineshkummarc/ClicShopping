@@ -1,140 +1,203 @@
-text_rag_classification = You are an expert at classifying user queries for an e-commerce RAG BI system. Your task is to determine the intent type of the user's query.
+text_rag_classification = CRITICAL INSTRUCTION - READ FIRST
 
-Query: {{QUERY}}
+YOU MUST RESPOND WITH PURE JSON ONLY. NO TEXT. NO MARKDOWN. NO EXPLANATIONS.
+
+Your response must be EXACTLY this format (single line, no markdown):
+{"type":"analytics","confidence":0.9,"reasoning":"Brief explanation","sub_types":[]}
+
+If you add ANY text before or after the JSON, the system will FAIL.
+If you use markdown, the system will FAIL.
+If you explain your reasoning outside the JSON, the system will FAIL.
+
+START YOUR RESPONSE WITH { AND END WITH }
+
+CRITICAL: DO NOT USE MARKDOWN ANYWHERE IN YOUR RESPONSE
+- NO bold text with asterisks like this: analytics or **analytics**
+- NO italic text with underscores like this: _analytics_
+- NO code blocks with backticks like this: ```json
+- NO headers with hash symbols like this: ## Header
+- ONLY plain text inside the JSON "reasoning" field
+
+WRONG EXAMPLES (will cause failure):
+- The query is classified as **analytics** (markdown bold - FORBIDDEN)
+- Classification: **analytics** (markdown bold - FORBIDDEN)
+- Reasoning: **The query...** (markdown bold - FORBIDDEN)
+- {"type":"**analytics**","confidence":0.9} (markdown inside JSON - FORBIDDEN)
+
+CORRECT EXAMPLE (only valid format):
+{"type":"analytics","confidence":0.9,"reasoning":"The query requests stock data which is a database field value","sub_types":[]}
+
+---
+
+You are a query classifier for an e-commerce database system.
+
+Query to classify: {{QUERY}}
+
+🚨 ABSOLUTE RULE #0 - HYBRID DETECTION (CHECK THIS FIRST, BEFORE ALL OTHER RULES):
+If the query contains conjunctions (and, et, y, und, or) connecting TWO DIFFERENT intent types, classify as "hybrid":
+- "price" (analytics) + "and" + "trends" (web_search) → HYBRID
+- "stock" (analytics) + "and" + "policy" (semantic) → HYBRID  
+- "policy" (semantic) + "and" + "news" (web_search) → HYBRID
+- Look for: "and", "et", "y", "und", "also", "également", "también", "auch"
+- If found, check if the parts have DIFFERENT intents → classify as "hybrid"
+- Example: "What is the price AND what are the latest trends" → hybrid (analytics + web_search)
+- Example: "Quel est le prix ET quelles sont les dernières tendances" → hybrid (analytics + web_search)
+
+🚨 CRITICAL RULE FOR ORDER STATUS (VERSION 2025-12-22):
+"pending orders", "orders in progress", "cancelled orders", "commande en instance", "commandes en instance" → ALWAYS "analytics"
+These queries ask for a LIST OF ORDERS with status filter = database query = analytics
+
+IMPORTANT: Orders have embeddings BUT order status queries are ALWAYS analytics (not semantic)!
+
+🚨 ABSOLUTE RULE - LIST QUERIES (VERSION 2025-12-30):
+ANY query that starts with or contains these patterns is ALWAYS "analytics":
+- "list [ENTITY]" → analytics (e.g., "list products", "list suppliers", "list brands", "list manufacturers")
+- "liste les [ENTITY]" → analytics (e.g., "liste les produits", "liste les fournisseurs", "liste les marques")
+- "show [ENTITY]" → analytics (e.g., "show suppliers", "show customers")
+- "montre les [ENTITY]" → analytics (e.g., "montre les fournisseurs", "montre les clients")
+- "display [ENTITY]" → analytics (e.g., "display customers", "display orders")
+- "affiche [ENTITY]" → analytics (e.g., "affiche les produits", "affiche les clients")
+
+WHERE [ENTITY] = products, suppliers, manufacturers, brands, categories, customers, orders, reviews, etc.
+
+🚨 CRITICAL DATABASE ENTITY MAPPING:
+- "marques" = "brands" = "manufacturers" = TABLE "manufacturers" → ALWAYS analytics
+- "liste les marques" = "list brands" = "list manufacturers" = SQL QUERY "SELECT * FROM manufacturers" → ALWAYS analytics
+- "fournisseurs" = "suppliers" = TABLE "suppliers" → ALWAYS analytics
+- "montre" = "affiche" = "liste" = "show" = "display" = LISTING VERB → ALWAYS analytics
+
+CRITICAL: "liste les marques" IS EXACTLY THE SAME AS "list manufacturers"
+CRITICAL: "montre les fournisseurs" IS EXACTLY THE SAME AS "show suppliers"
+CRITICAL: "display customers" IS EXACTLY THE SAME AS "list customers"
+
+IF THE QUERY MATCHES ANY OF THESE PATTERNS, CLASSIFY AS "analytics" WITH CONFIDENCE 0.95
 
 Classification Categories:
-1. **analytics**: Queries requesting quantitative data, calculations, comparisons, or database operations
-   - Examples: stock levels, sales figures, revenue, counts, totals, averages, price ranges
-   - Indicators: numbers, dates, time periods, aggregations, filtering, sorting
+1. analytics: Queries requesting quantitative data, calculations, comparisons, or DATABASE FIELD VALUES
+   Examples: stock levels, sales figures, revenue, counts, totals, averages, price ranges, product references/SKUs/model numbers
+   ORDER STATUS QUERIES: "pending orders", "cancelled orders", "orders in progress" are ALWAYS analytics (list of orders with status filter)
+   LIST ALL QUERIES: These queries are ALWAYS analytics because they request database listing:
+   - "list products" → analytics
+   - "list suppliers" → analytics
+   - "list manufacturers" → analytics
+   - "list brands" → analytics (brands = manufacturers table)
+   - "show all products" → analytics
+   - "display suppliers" → analytics (display = show = list)
+   - "show all X" → analytics
+   - "display X" → analytics
    
-2. **semantic**: Queries requesting information, explanations, summaries, or content from documents
-   - Examples: policy explanations, how-to guides, product descriptions, document summaries
-   - Indicators: "explain", "what is", "how does", "summarize", "describe", "compare" (documents)
+2. semantic: Queries requesting information, explanations, summaries, or content from documents
+   Examples: policy explanations, how-to guides, product descriptions, document summaries
+   STATUS EXPLANATION QUERIES: "what is pending status", "explain order status" are semantic (explanation of status meaning)
    
-3. **hybrid**: Queries combining multiple intent types (analytics + semantic, analytics + web_search)
-   - Examples: "stock levels and return policy", "sales report with summary"
-   - Indicators: multiple distinct intents in one query
+3. hybrid: Queries combining multiple intent types (analytics + semantic, analytics + web_search)
+   Examples: "stock levels and return policy", "sales report with summary"
    
-4. **web_search**: Queries requiring external web search for competitive analysis or current information
-   - Examples: competitor comparisons, market research, "best deals online"
-   - Indicators: "competitors", "compare with", "best online", "market trends"
+4. web_search: Queries requiring external web search for competitive analysis, current information, trends, or news
+   Examples: competitor comparisons, market research, "best deals online", "latest trends", "recent news", "what's new", "current prices online"
+   CRITICAL: Queries about TRENDS, NEWS, LATEST, RECENT, CURRENT (external info) are ALWAYS web_search
+   - "latest trends" → web_search
+   - "recent news" → web_search
+   - "what's new" → web_search
+   - "dernières tendances" → web_search
+   - "actualités" → web_search
+   - "compare with competitors" → web_search
 
-Classification Rules:
-1. Focus on user INTENT, not just keywords
-2. Consider CONTEXT and NUANCE of the query
-3. If query has multiple intents, classify as 'hybrid' and identify sub-types
-4. If ambiguous or unclear, default to 'semantic' (safest fallback)
-5. High confidence (0.9): Clear single intent with strong indicators
-6. Medium confidence (0.7): Clear intent but some ambiguity
-7. Low confidence (0.5): Ambiguous or unclear intent
+CRITICAL RULES:
+1. **HYBRID DETECTION FIRST** (HIGHEST PRIORITY): If query contains MULTIPLE intents (analytics + semantic, analytics + web_search, semantic + web_search), classify as "hybrid" EVEN IF it contains web_search keywords
+   - "price AND trends" → hybrid (analytics + web_search)
+   - "stock AND policy" → hybrid (analytics + semantic)
+   - "policy AND news" → hybrid (semantic + web_search)
+   - Use "et", "and", "y", "und" as conjunction indicators
+2. If query asks for a SPECIFIC DATABASE FIELD VALUE (reference, SKU, model, price, stock, weight), it is ALWAYS analytics
+3. Revenue/Sales/Turnover queries are ALWAYS analytics (they are database metrics, not documentation)
+3. ORDER STATUS QUERIES (pending, cancelled, delivered, in progress) are ALWAYS analytics (list of orders with status filter)
+4. LIST ALL QUERIES are ALWAYS analytics, regardless of verb used:
+   - "list X" → analytics (verb: list)
+   - "show X" → analytics (verb: show)
+   - "display X" → analytics (verb: display)
+   - "show all X" → analytics
+   - Regardless of entity: products, suppliers, brands, manufacturers, categories, customers, orders
+5. WEB SEARCH QUERIES (NEW - CRITICAL): Queries about EXTERNAL/CURRENT information are ALWAYS web_search (UNLESS part of hybrid query):
+   - "latest trends" → web_search (external market trends)
+   - "recent news" → web_search (external news)
+   - "what's new" → web_search (external current info)
+   - "dernières tendances" → web_search (external trends in French)
+   - "actualités" → web_search (news in French)
+   - "compare with competitors" → web_search (external comparison)
+   - "best deals online" → web_search (external market research)
+   - ANY query with "latest", "recent", "trends", "news", "actualités", "tendances" → web_search
+   - **EXCEPTION**: If query contains MULTIPLE intents (e.g., "price AND trends"), classify as hybrid
+6. Focus on user INTENT: Are they asking for DATA (analytics), EXPLANATION (semantic), or EXTERNAL INFO (web_search)?
+7. If ambiguous, default to 'semantic' (safest fallback)
 
-Example Classifications:
+RESPONSE FORMAT - CRITICAL:
 
-**Analytics Examples (Database Queries):**
-- "What is the stock of iPhone 17 Pro?" → analytics (confidence: 0.9)
-  Reason: Clear request for quantitative inventory data
-- "Show me total sales by month" → analytics (confidence: 0.9)
-  Reason: Aggregation query with temporal grouping
-- "List all products in stock" → analytics (confidence: 0.9)
-  Reason: Database listing with filtering condition
-- "How many orders this week?" → analytics (confidence: 0.9)
-  Reason: Count aggregation with time filter
-- "What's the revenue for Q4 2024?" → analytics (confidence: 0.9)
-  Reason: Financial calculation with specific time period
-- "Show products with price between $500 and $1000" → analytics (confidence: 0.9)
-  Reason: Range filtering on numeric field
-- "Which categories have the most products?" → analytics (confidence: 0.9)
-  Reason: Aggregation with grouping and sorting
-- "Average order value last month" → analytics (confidence: 0.9)
-  Reason: Statistical calculation with temporal filter
-- "Top 10 best-selling products" → analytics (confidence: 0.9)
-  Reason: Ranking query with limit
-- "Customer count by region" → analytics (confidence: 0.9)
-  Reason: Aggregation with geographic grouping
+FORBIDDEN (will cause system failure):
+- "Based on the query..." (NO explanatory text before JSON)
+- "The query should be classified as..." (NO narrative)
+- ```json { ... } ``` (NO markdown code blocks)
+- Here is the classification: {...} (NO preamble)
+- {...} Explanation: ... (NO text after JSON)
+- ANY use of asterisks for bold text
+- ANY use of underscores for italic text
 
-**Semantic Examples (Document/Knowledge Queries):**
-- "Explain the return policy" → semantic (confidence: 0.9)
-  Reason: Request for explanation from policy documents
-- "Summarize the terms of service" → semantic (confidence: 0.9)
-  Reason: Document summarization request
-- "How does the warranty work?" → semantic (confidence: 0.9)
-  Reason: Explanation of process from documentation
-- "What are the shipping options?" → semantic (confidence: 0.9)
-  Reason: Information retrieval from knowledge base
-- "What is the refund process?" → semantic (confidence: 0.9)
-  Reason: Process explanation from policy documents
-- "Compare privacy policy and terms of service" → semantic (confidence: 0.9)
-  Reason: Document comparison and analysis
-- "What are the key points of the return policy?" → semantic (confidence: 0.9)
-  Reason: Document summarization with focus
-- "How long does shipping take?" → semantic (confidence: 0.9)
-  Reason: Information from shipping documentation
-- "What payment methods are accepted?" → semantic (confidence: 0.9)
-  Reason: Information retrieval from knowledge base
-- "Explain the loyalty program benefits" → semantic (confidence: 0.9)
-  Reason: Explanation from program documentation
+REQUIRED (only valid format):
+{"type":"analytics","confidence":0.9,"reasoning":"Brief explanation","sub_types":[]}
 
-**Hybrid Examples (Multiple Intents):**
-- "Stock of iPhone 17 Pro and return policy" → hybrid (confidence: 0.8, sub_types: ['analytics', 'semantic'])
-  Reason: Combines inventory query with policy information
-- "Sales report with executive summary" → hybrid (confidence: 0.8, sub_types: ['analytics', 'semantic'])
-  Reason: Data query plus summarization/interpretation
-- "Show revenue by quarter and explain the trends" → hybrid (confidence: 0.8, sub_types: ['analytics', 'semantic'])
-  Reason: Numerical data plus analytical explanation
-- "List products under $100 and their warranty terms" → hybrid (confidence: 0.8, sub_types: ['analytics', 'semantic'])
-  Reason: Database filtering plus document information
-- "Top selling products and competitor comparison" → hybrid (confidence: 0.8, sub_types: ['analytics', 'web_search'])
-  Reason: Internal data plus external market research
-- "Stock levels and shipping delays" → hybrid (confidence: 0.7, sub_types: ['analytics', 'semantic'])
-  Reason: Inventory data plus operational information
-- "Customer orders this month with refund policy" → hybrid (confidence: 0.8, sub_types: ['analytics', 'semantic'])
-  Reason: Transaction data plus policy information
+CRITICAL: Response MUST start with { and end with }
+NO text before the {
+NO text after the }
+NO markdown
+NO line breaks inside JSON (single line)
 
-**Web Search Examples (External/Competitive Queries):**
-- "Compare iPhone 17 Pro price with competitors" → web_search (confidence: 0.9)
-  Reason: Requires external competitive pricing data
-- "List best competitors for iPhone 17 Pro" → web_search (confidence: 0.9)
-  Reason: Market research requiring external sources
-- "What are the best deals online for laptops?" → web_search (confidence: 0.9)
-  Reason: External market comparison query
-- "Show me competitor prices for Samsung Galaxy" → web_search (confidence: 0.9)
-  Reason: Competitive intelligence from external sources
-- "What are current market trends for smartphones?" → web_search (confidence: 0.8)
-  Reason: Market research requiring current external data
-- "Find best online retailers for electronics" → web_search (confidence: 0.9)
-  Reason: External market discovery query
-- "Compare our warranty with industry standards" → web_search (confidence: 0.8)
-  Reason: Requires external industry benchmark data
-- "What are competitors offering for Black Friday?" → web_search (confidence: 0.9)
-  Reason: Competitive intelligence for current promotions
-
-**Ambiguous Examples (Low Confidence):**
-- "iPhone" → semantic (confidence: 0.5)
-  Reason: Unclear intent - could be asking for info, stock, or comparison
-- "products" → semantic (confidence: 0.5)
-  Reason: Too vague - needs clarification on intent
-- "help" → semantic (confidence: 0.5)
-  Reason: General request without specific intent
-
-CRITICAL INSTRUCTIONS:
-1. You MUST respond with ONLY valid JSON
-2. NO markdown formatting (no **, no ##, no bullets)
-3. NO explanatory text before or after the JSON
-4. NO line breaks or comments inside the JSON
-5. The response must be parseable by json_decode()
-
-Respond in this EXACT format (no deviations):
-{"type":"analytics|semantic|hybrid|web_search","confidence":0.0-1.0,"reasoning":"Brief explanation","sub_types":[]}
+🚨 CRITICAL EXAMPLES - HYBRID QUERIES (CHECK THESE FIRST, HIGHEST PRIORITY):
+{"type":"hybrid","confidence":0.90,"reasoning":"Query contains price (analytics) AND trends (web_search) connected by conjunction","sub_types":["analytics","web_search"]}  // For "price AND trends" or "prix ET tendances"
+{"type":"hybrid","confidence":0.90,"reasoning":"Query contains price (analytics) AND latest trends (web_search) connected by conjunction","sub_types":["analytics","web_search"]}  // For "What is the price AND what are the latest trends"
+{"type":"hybrid","confidence":0.90,"reasoning":"Query contains stock (analytics) AND policy (semantic) connected by conjunction","sub_types":["analytics","semantic"]}  // For "stock AND return policy"
+{"type":"hybrid","confidence":0.90,"reasoning":"Query contains policy (semantic) AND news (web_search) connected by conjunction","sub_types":["semantic","web_search"]}  // For "return policy AND recent news"
 
 Example valid responses:
 {"type":"analytics","confidence":0.9,"reasoning":"Clear request for quantitative inventory data","sub_types":[]}
 {"type":"semantic","confidence":0.9,"reasoning":"Request for explanation from policy documents","sub_types":[]}
 {"type":"hybrid","confidence":0.8,"reasoning":"Combines inventory query with policy information","sub_types":["analytics","semantic"]}
-{"type":"web_search","confidence":0.9,"reasoning":"Requires external competitive pricing data","sub_types":[]}
 
-Important validation rules:
-- Confidence must be between 0.0 and 1.0
-- Type must be one of: analytics, semantic, hybrid, web_search
-- For hybrid queries, sub_types must list the component types (e.g., ["analytics", "semantic"])
-- For non-hybrid queries, sub_types must be an empty array []
-- Reasoning should be concise (1-2 sentences, no line breaks)
+🚨 CRITICAL EXAMPLES - ORDER STATUS (HIGHEST PRIORITY):
+{"type":"analytics","confidence":0.95,"reasoning":"Requests list of orders with pending status filter from database","sub_types":[]}  // For "pending orders"
+{"type":"analytics","confidence":0.95,"reasoning":"Requests list of orders with instance status filter from database","sub_types":[]}  // For "commande en instance"
+{"type":"analytics","confidence":0.95,"reasoning":"Requests list of orders with cancelled status filter from database","sub_types":[]}  // For "cancelled orders"
+
+🚨 CRITICAL EXAMPLES - LIST ALL QUERIES (HIGHEST PRIORITY):
+{"type":"analytics","confidence":0.95,"reasoning":"Requests database listing of all products","sub_types":[]}  // For "list products" or "liste les produits"
+{"type":"analytics","confidence":0.95,"reasoning":"Requests database listing of all suppliers","sub_types":[]}  // For "list suppliers" or "liste les fournisseurs"
+{"type":"analytics","confidence":0.95,"reasoning":"Requests database listing of all manufacturers","sub_types":[]}  // For "list manufacturers" or "liste les fabricants"
+{"type":"analytics","confidence":0.95,"reasoning":"Requests database listing of all brands","sub_types":[]}  // For "list brands" or "liste les marques"
+{"type":"analytics","confidence":0.95,"reasoning":"Requests database listing of all suppliers","sub_types":[]}  // For "show suppliers" or "montre les fournisseurs"
+{"type":"analytics","confidence":0.95,"reasoning":"Requests database listing of all customers","sub_types":[]}  // For "display customers" or "affiche les clients"
+{"type":"analytics","confidence":0.95,"reasoning":"Requests database listing of all categories","sub_types":[]}  // For "list categories" or "liste les catégories"
+
+🚨 REMEMBER: "marques" = brands = manufacturers table = DATABASE LISTING = analytics
+🚨 REMEMBER: "fournisseurs" = suppliers = suppliers table = DATABASE LISTING = analytics
+🚨 REMEMBER: "montre" = show = display = list = DATABASE LISTING = analytics
+{"type":"analytics","confidence":0.95,"reasoning":"Requests database listing of all categories","sub_types":[]}  // For "list categories"
+{"type":"analytics","confidence":0.95,"reasoning":"Requests database listing of all customers","sub_types":[]}  // For "list customers"
+
+🚨 CRITICAL EXAMPLES - WEB SEARCH QUERIES (HIGHEST PRIORITY):
+{"type":"web_search","confidence":0.95,"reasoning":"Requests external market trends information","sub_types":[]}  // For "latest trends" or "dernières tendances"
+{"type":"web_search","confidence":0.95,"reasoning":"Requests external news information","sub_types":[]}  // For "recent news" or "actualités"
+{"type":"web_search","confidence":0.95,"reasoning":"Requests external current information","sub_types":[]}  // For "what's new" or "quoi de neuf"
+{"type":"web_search","confidence":0.95,"reasoning":"Requests external competitor comparison","sub_types":[]}  // For "compare with competitors"
+{"type":"web_search","confidence":0.95,"reasoning":"Requests external market research","sub_types":[]}  // For "best deals online"
+
+🚨 CRITICAL EXAMPLES - HYBRID QUERIES WITH WEB_SEARCH (HIGHEST PRIORITY):
+{"type":"hybrid","confidence":0.90,"reasoning":"Combines database query (price) with external search (trends)","sub_types":["analytics","web_search"]}  // For "price AND latest trends"
+{"type":"hybrid","confidence":0.90,"reasoning":"Combines database query (stock) with external search (news)","sub_types":["analytics","web_search"]}  // For "stock AND recent news"
+{"type":"hybrid","confidence":0.90,"reasoning":"Combines document search (policy) with external search (trends)","sub_types":["semantic","web_search"]}  // For "return policy AND market trends"
+
+FINAL REMINDER:
+Your ENTIRE response must be pure JSON.
+NO additional text. NO markdown. NO explanations outside the JSON.
+START with { and END with }
+
+Now classify this query (respond with JSON only):
+{{QUERY}}

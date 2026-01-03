@@ -150,6 +150,7 @@ class ResultSynthesizer
           break;
 
         case 'web_search':
+        case 'web_search_response':
         case 'web':
           $isValid = $this->validator->validateWebResult($result);
           break;
@@ -379,8 +380,32 @@ class ResultSynthesizer
           break;
 
         case 'web_search':
-          if (isset($result['results'])) {
-            $aggregated['web_results'] = array_merge($aggregated['web_results'], (array)$result['results']);
+        case 'web_search_response':
+        case 'web':
+          // Web search results have 'result' (singular) not 'results' (plural)
+          if (isset($result['result'])) {
+            $aggregated['web_results'][] = $result;
+            
+            // Extract items from result if available
+            if (isset($result['result']['items']) && is_array($result['result']['items'])) {
+              $aggregated['data'] = array_merge($aggregated['data'], $result['result']['items']);
+            }
+            
+            // Extract formatted text if available (for price comparisons)
+            if (isset($result['result']['formatted_text']) && !empty($result['result']['formatted_text'])) {
+              $aggregated['text_responses'][] = $result['result']['formatted_text'];
+            }
+          }
+          
+          // Also check for 'results' (plural) from PlanExecutor
+          if (isset($result['results']) && is_array($result['results'])) {
+            $aggregated['web_results'][] = $result;
+            $aggregated['data'] = array_merge($aggregated['data'], $result['results']);
+          }
+          
+          // Extract text_response if available
+          if (isset($result['text_response']) && !empty($result['text_response'])) {
+            $aggregated['text_responses'][] = $result['text_response'];
           }
           break;
       }
@@ -411,7 +436,11 @@ class ResultSynthesizer
 
     // Determine primary result type
     $primaryType = 'mixed';
-    if (!empty($aggregated['analytics_results']) && empty($aggregated['semantic_results'])) {
+    
+    // 🔧 FIX: Check for web_results first (highest priority for display)
+    if (!empty($aggregated['web_results'])) {
+      $primaryType = 'web_search_response';
+    } elseif (!empty($aggregated['analytics_results']) && empty($aggregated['semantic_results'])) {
       $primaryType = 'analytics_response';
     } elseif (!empty($aggregated['semantic_results']) && empty($aggregated['analytics_results'])) {
       $primaryType = 'semantic_results';
@@ -504,6 +533,34 @@ class ResultSynthesizer
     // Add web results if present
     if (!empty($aggregated['web_results'])) {
       $finalResult['web_results'] = $aggregated['web_results'];
+      
+      // 🔧 FIX: Generate text_response for web search results if not already present
+      if (empty($textResponse)) {
+        $firstWebResult = $aggregated['web_results'][0];
+        
+        // Check if this is a price comparison
+        if (isset($firstWebResult['result']['is_price_comparison']) && $firstWebResult['result']['is_price_comparison']) {
+          // Price comparison - use formatted text
+          if (isset($firstWebResult['result']['formatted_text'])) {
+            $finalResult['text_response'] = $firstWebResult['result']['formatted_text'];
+            $finalResult['response'] = $firstWebResult['result']['formatted_text'];
+          }
+        } else {
+          // Standard web search - format items using WebSearchResultFormatter
+          if (isset($firstWebResult['result']['items']) && is_array($firstWebResult['result']['items'])) {
+            $items = $firstWebResult['result']['items'];
+            $query = $firstWebResult['query'] ?? 'votre recherche';
+            
+            $formattedText = \ClicShopping\AI\Helper\Formatter\WebSearchResultFormatter::formatAsHtml($query, $items);
+            
+            $finalResult['text_response'] = $formattedText;
+            $finalResult['response'] = $formattedText;
+          }
+        }
+        
+        // Update primary type to web_search_response
+        $finalResult['type'] = 'web_search_response';
+      }
     }
 
     // 🆕 Debug: Log if source_attribution is in final result

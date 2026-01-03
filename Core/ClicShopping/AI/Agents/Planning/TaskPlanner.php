@@ -236,6 +236,24 @@ class TaskPlanner
     private function selectSubTaskPlanner(array $intent, string $query): object
     {
         $intentType = $intent['type'] ?? 'analytics';
+        $confidence = $intent['confidence'] ?? 0.5;
+
+        // TASK 5.2.1.1: Check for hybrid queries FIRST (highest priority)
+        // Hybrid queries need special handling via HybridQueryProcessor
+        if ($intentType === 'hybrid' || ($intent['is_hybrid'] ?? false)) {
+            if ($this->debug) {
+                $this->securityLogger->logSecurityEvent(
+                    "HYBRID QUERY DETECTED - Routing to OrchestratorAgent.hybridQueryProcessor (NOT TaskPlanner)",
+                    'warning'
+                );
+                $this->securityLogger->logSecurityEvent(
+                    "BUG: TaskPlanner should NOT handle hybrid queries - they should be routed in OrchestratorAgent.handleFullOrchestration()",
+                    'error'
+                );
+            }
+            // Fallback to standard for now (this should never be reached after OrchestratorAgent fix)
+            return $this->subTaskPlanners['standard'];
+        }
 
         // Pour les requêtes sémantiques, utiliser directement le planificateur sémantique
         // Note: L'intent type peut être 'semantic' ou 'semantic_search'
@@ -250,7 +268,8 @@ class TaskPlanner
         }
 
         // Pour les requêtes web_search, utiliser le planificateur web search
-        if ($intentType === 'web_search') {
+        // ✅ FIX (2025-01-02): Handle both 'web_search' and 'web' (QueryClassifier normalizes web_search → web)
+        if ($intentType === 'web_search' || $intentType === 'web') {
             if ($this->debug) {
                 $this->securityLogger->logSecurityEvent(
                     "Routing to web_search planner for intent type: {$intentType}",

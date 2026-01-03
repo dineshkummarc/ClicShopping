@@ -17,7 +17,7 @@ use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\Adm
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Agents\Orchestrator\OrchestratorAgent;
 use ClicShopping\AI\Agents\Memory\MemoryRetentionService;
-use ClicShopping\AI\Insfrastructure\Metrics\StatisticsTracker;
+  use ClicShopping\AI\Infrastructure\Metrics\StatisticsTracker;
 use ClicShopping\AI\Helper\Formatter\ResultFormatter;
 use ClicShopping\AI\Helper\ClarificationHelper;
 use ClicShopping\AI\Helper\AgentResponseHelper;
@@ -44,12 +44,9 @@ try {
   // 0. CONFIGURE TIMEOUT (Test 5.6)
   // ============================================
   // Set maximum execution time for RAG queries to prevent blocking
-  $maxExecutionTime = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME') 
-    ? (int)CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME 
-    : 30;
+  $maxExecutionTime = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME') ? (int)CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME : 30;
   
-  $timeoutEnabled = defined('CLICSHOPPING_APP_CHATGPT_RA_ENABLE_TIMEOUT') 
-    && CLICSHOPPING_APP_CHATGPT_RA_ENABLE_TIMEOUT === 'True';
+  $timeoutEnabled = defined('CLICSHOPPING_APP_CHATGPT_RA_ENABLE_TIMEOUT') && CLICSHOPPING_APP_CHATGPT_RA_ENABLE_TIMEOUT === 'True';
   
   if ($timeoutEnabled) {
     set_time_limit($maxExecutionTime);
@@ -444,8 +441,11 @@ try {
   $dataToFormat['entity_id'] = $entityId;
   $dataToFormat['entity_type'] = $entityType;
 
-  // 🆕 Preserve source_attribution if present in aiResponse['data']
-  if (isset($aiResponse['data']['source_attribution'])) {
+  // 🆕 Preserve source_attribution if present in aiResponse (check both root and data levels)
+  // TASK 5.2.1.2: Check root level first (from ResponseProcessor), then data level
+  if (isset($aiResponse['source_attribution'])) {
+    $dataToFormat['source_attribution'] = $aiResponse['source_attribution'];
+  } elseif (isset($aiResponse['data']['source_attribution'])) {
     $dataToFormat['source_attribution'] = $aiResponse['data']['source_attribution'];
   }
 
@@ -455,57 +455,78 @@ try {
       $dataToFormat['response'] = $aiResponse['text_response'];
     }
   }
-
-  if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-    error_log('📦 DATA TO FORMAT (after processing):');
-    error_log('   Type: ' . ($dataToFormat['type'] ?? 'NONE'));
-    error_log('   Has response: ' . (isset($dataToFormat['response']) ? 'YES' : 'NO'));
-    error_log('   Has interpretation: ' . (isset($dataToFormat['interpretation']) ? 'YES' : 'NO'));
-    error_log('   Has source_attribution: ' . (isset($dataToFormat['source_attribution']) ? 'YES' : 'NO'));
-    error_log('   Has results: ' . (isset($dataToFormat['results']) ? 'YES (' . count($dataToFormat['results']) . ' rows)' : 'NO'));
-    if (isset($dataToFormat['results']) && !empty($dataToFormat['results'])) {
-      error_log('   First result row keys: ' . implode(', ', array_keys($dataToFormat['results'][0])));
-    }
-  }
-
-
-
-  // 🆕 Check if memory context display is enabled and context is available
-  $displayMemory = defined('CLICSHOPPING_APP_CHATGPT_RA_DISPLAY_MEMORY_CONTEXT')  && CLICSHOPPING_APP_CHATGPT_RA_DISPLAY_MEMORY_CONTEXT === 'True';
   
-  if ($displayMemory && !empty($context) && isset($memoryService)) {
-    // Use the context already retrieved earlier (line 104)
-    // Transform it to the format expected by ResultFormatter
-    $memoryContext = [
-      'short_term_context' => $context['short_term'] ?? [],
-      'long_term_context' => $context['long_term'] ?? [],
-      'feedback_context' => [], // Feedback context not yet in retrieveContext
-      'has_context' => !empty($context['short_term']) || !empty($context['long_term']),
-    ];
+  // 🔧 FIX: For web_search_response and hybrid, use text_response directly (already formatted HTML)
+  if ($dataToFormat['type'] === 'web_search_response' && isset($aiResponse['text_response'])) {
+    $formatted = $aiResponse['text_response'];
+    $formattedResult = ['content' => $formatted]; // Initialize for consistency
     
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('💾 MEMORY CONTEXT FOR DISPLAY:');
-      error_log('   Short-term: ' . count($memoryContext['short_term_context']));
-      error_log('   Long-term: ' . count($memoryContext['long_term_context']));
-      error_log('   Feedback: ' . count($memoryContext['feedback_context']));
-      error_log('   Has context: ' . ($memoryContext['has_context'] ? 'YES' : 'NO'));
+      error_log('✅ Using pre-formatted WebSearch HTML: ' . strlen($formatted) . ' chars');
+    }
+  } elseif ($dataToFormat['type'] === 'hybrid' && isset($aiResponse['text_response'])) {
+    // 🔧 TASK 5.3.1.1: For hybrid queries, use text_response directly (already formatted HTML)
+    // ResultSynthesizer already combines and formats all sub-query results into HTML
+    $formatted = $aiResponse['text_response'];
+    $formattedResult = ['content' => $formatted]; // Initialize for consistency
+    
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      error_log('🔀 HYBRID QUERY DETECTED - Using pre-formatted text_response');
+      error_log('   text_response length: ' . strlen($aiResponse['text_response']));
+      error_log('   Contains web-search-results: ' . (strpos($aiResponse['text_response'], 'web-search-results') !== false ? 'YES' : 'NO'));
+    }
+  } else {
+    // Use ResultFormatter for other types (analytics, semantic, etc.)
+    
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      error_log('📦 DATA TO FORMAT (after processing):');
+      error_log('   Type: ' . ($dataToFormat['type'] ?? 'NONE'));
+      error_log('   Has response: ' . (isset($dataToFormat['response']) ? 'YES' : 'NO'));
+      error_log('   Has interpretation: ' . (isset($dataToFormat['interpretation']) ? 'YES' : 'NO'));
+      error_log('   Has source_attribution: ' . (isset($dataToFormat['source_attribution']) ? 'YES' : 'NO'));
+      error_log('   Has results: ' . (isset($dataToFormat['results']) ? 'YES (' . count($dataToFormat['results']) . ' rows)' : 'NO'));
+      if (isset($dataToFormat['results']) && !empty($dataToFormat['results'])) {
+        error_log('   First result row keys: ' . implode(', ', array_keys($dataToFormat['results'][0])));
+      }
+    }
+
+    // 🆕 Check if memory context display is enabled and context is available
+    $displayMemory = defined('CLICSHOPPING_APP_CHATGPT_RA_DISPLAY_MEMORY_CONTEXT')  && CLICSHOPPING_APP_CHATGPT_RA_DISPLAY_MEMORY_CONTEXT === 'True';
+    
+    if ($displayMemory && !empty($context) && isset($memoryService)) {
+      // Use the context already retrieved earlier (line 104)
+      // Transform it to the format expected by ResultFormatter
+      $memoryContext = [
+        'short_term_context' => $context['short_term'] ?? [],
+        'long_term_context' => $context['long_term'] ?? [],
+        'feedback_context' => [], // Feedback context not yet in retrieveContext
+        'has_context' => !empty($context['short_term']) || !empty($context['long_term']),
+      ];
+      
+      if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+        error_log('💾 MEMORY CONTEXT FOR DISPLAY:');
+        error_log('   Short-term: ' . count($memoryContext['short_term_context']));
+        error_log('   Long-term: ' . count($memoryContext['long_term_context']));
+        error_log('   Feedback: ' . count($memoryContext['feedback_context']));
+        error_log('   Has context: ' . ($memoryContext['has_context'] ? 'YES' : 'NO'));
+      }
+      
+      // Use formatWithMemory if memory context is relevant
+      $formattedResult = $resultFormatter->formatWithMemory($dataToFormat, $memoryContext);
+    } else {
+      // Use standard format without memory context
+      $formattedResult = $resultFormatter->format($dataToFormat);
     }
     
-    // Use formatWithMemory if memory context is relevant
-    $formattedResult = $resultFormatter->formatWithMemory($dataToFormat, $memoryContext);
-  } else {
-    // Use standard format without memory context
-    $formattedResult = $resultFormatter->format($dataToFormat);
-  }
-  
-  $formatted = $formattedResult['content'] ?? '';
-  
-  if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-    error_log('✅ Using ResultFormatter: ' . strlen($formatted) . ' chars');
-    if (isset($formattedResult['has_memory_context'])) {
-      error_log('   Memory context integrated: YES');
+    $formatted = $formattedResult['content'] ?? '';
+    
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      error_log('✅ Using ResultFormatter: ' . strlen($formatted) . ' chars');
+      if (isset($formattedResult['has_memory_context'])) {
+        error_log('   Memory context integrated: YES');
+      }
     }
-  }
+  } // Close the if/elseif/else block
 
   if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
     error_log('📤 FORMATTED RESPONSE:');
@@ -692,6 +713,117 @@ try {
     error_log('   Classification: ' . ($aiResponse['intent']['type'] ?? 'unknown'));
   }
 
+  // ============================================
+  // 11. VALIDATE RESPONSE STRUCTURE (Task 5.3.2.2)
+  // ============================================
+  
+  /**
+   * Validate response structure before sending to frontend
+   * Ensures all required fields are present and valid
+   * 
+   * @param array $response Response data to validate
+   * @return array ['valid' => bool, 'errors' => array, 'warnings' => array]
+   */
+  $validateResponseStructure = function($response) {
+    $errors = [];
+    $warnings = [];
+    
+    // Required fields validation
+    $requiredFields = [
+      'success' => 'boolean',
+      'interaction_id' => 'string',
+      'text_response' => 'string',
+      'type' => 'string',
+      'confidence' => 'numeric',
+      'agent_used' => 'string',
+      'execution_time' => 'numeric',
+      'entity_id' => 'numeric',
+      'entity_type' => 'string',
+      'language_id' => 'numeric'
+    ];
+    
+    foreach ($requiredFields as $field => $expectedType) {
+      if (!isset($response[$field])) {
+        $errors[] = "Missing required field: {$field}";
+        continue;
+      }
+      
+      $value = $response[$field];
+      $actualType = gettype($value);
+      
+      // Type validation
+      switch ($expectedType) {
+        case 'boolean':
+          if (!is_bool($value)) {
+            $errors[] = "Field '{$field}' must be boolean, got {$actualType}";
+          }
+          break;
+          
+        case 'string':
+          if (!is_string($value)) {
+            $errors[] = "Field '{$field}' must be string, got {$actualType}";
+          } elseif ($field === 'text_response' && empty(trim($value))) {
+            $warnings[] = "Field 'text_response' is empty";
+          }
+          break;
+          
+        case 'numeric':
+          if (!is_numeric($value) && !is_int($value) && !is_float($value)) {
+            $errors[] = "Field '{$field}' must be numeric, got {$actualType}";
+          }
+          break;
+      }
+    }
+    
+    // Validate nested structures
+    if (isset($response['metrics'])) {
+      if (!is_array($response['metrics'])) {
+        $errors[] = "Field 'metrics' must be an array";
+      } else {
+        $requiredMetrics = ['confidence_score', 'security_score', 'hallucination_score', 'response_quality', 'relevance_score'];
+        foreach ($requiredMetrics as $metric) {
+          if (!isset($response['metrics'][$metric])) {
+            $warnings[] = "Missing metric: {$metric}";
+          } elseif (!is_numeric($response['metrics'][$metric])) {
+            $errors[] = "Metric '{$metric}' must be numeric";
+          }
+        }
+      }
+    } else {
+      $warnings[] = "Missing 'metrics' object";
+    }
+    
+    if (isset($response['metadata'])) {
+      if (!is_array($response['metadata'])) {
+        $errors[] = "Field 'metadata' must be an array";
+      }
+    } else {
+      $warnings[] = "Missing 'metadata' object";
+    }
+    
+    // Validate confidence range (0-1)
+    if (isset($response['confidence'])) {
+      $conf = (float)$response['confidence'];
+      if ($conf < 0 || $conf > 1) {
+        $warnings[] = "Confidence score out of range [0,1]: {$conf}";
+      }
+    }
+    
+    // Validate type is one of expected values
+    if (isset($response['type'])) {
+      $validTypes = ['analytics', 'semantic', 'web_search', 'hybrid', 'error', 'clarification'];
+      if (!in_array($response['type'], $validTypes)) {
+        $warnings[] = "Unexpected type value: {$response['type']}";
+      }
+    }
+    
+    return [
+      'valid' => empty($errors),
+      'errors' => $errors,
+      'warnings' => $warnings
+    ];
+  };
+  
   $jsonResponse = [
     'success' => true,
     'interaction_id' => $clientInteractionId,
@@ -719,6 +851,44 @@ try {
       'user_id' => $userId
     ]
   ];
+  
+  // Validate response structure
+  $validation = $validateResponseStructure($jsonResponse);
+  
+  if (!$validation['valid']) {
+    // Log validation errors
+    error_log('❌ RESPONSE VALIDATION FAILED:');
+    foreach ($validation['errors'] as $error) {
+      error_log('   - ' . $error);
+    }
+    
+    // Return error response
+    if (ob_get_length()) ob_clean();
+    
+    echo json_encode([
+      'success' => false,
+      'error' => 'Erreur de validation de la réponse',
+      'error_code' => 'RESPONSE_VALIDATION_ERROR',
+      'interaction_id' => $clientInteractionId ?? null,
+      'validation_errors' => $validation['errors']
+    ], JSON_UNESCAPED_UNICODE);
+    
+    exit;
+  }
+  
+  // Log warnings if any
+  if (!empty($validation['warnings'])) {
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      error_log('⚠️ RESPONSE VALIDATION WARNINGS:');
+      foreach ($validation['warnings'] as $warning) {
+        error_log('   - ' . $warning);
+      }
+    }
+  }
+  
+  if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+    error_log('✅ RESPONSE VALIDATION PASSED');
+  }
 
   // Ajouter les infos de debug si activé
   if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {

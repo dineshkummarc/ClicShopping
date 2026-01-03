@@ -11,7 +11,6 @@
 namespace ClicShopping\AI\Helper\Intent;
 
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domain\Patterns\AnalyticsPattern;
 
 /**
  * AnalyticsProcessor Class
@@ -33,6 +32,16 @@ class AnalyticsProcessor
 {
   private SecurityLogger $logger;
   private bool $debug;
+  
+  /**
+   * Cached pattern bypass check result
+   * 
+   * TASK 6.4.5: Optimize pattern bypass checks
+   * Cache the result once in constructor instead of checking repeatedly
+   * 
+   * @var bool True if Pure LLM mode (patterns disabled), False if Pattern mode
+   */
+  private bool $usePureLlmMode;
 
   /**
    * Constructor
@@ -43,6 +52,10 @@ class AnalyticsProcessor
   {
     $this->logger = new SecurityLogger();
     $this->debug = $debug;
+    
+    // TASK 6.4.5: Cache pattern bypass check once (optimization)
+    // This eliminates 3 repeated checks throughout the class
+    $this->usePureLlmMode = !defined('USE_PATTERN_BASED_DETECTION') || USE_PATTERN_BASED_DETECTION === 'False';
   }
 
   /**
@@ -50,6 +63,10 @@ class AnalyticsProcessor
    *
    * Uses analytics patterns to determine confidence score.
    * Higher confidence for queries with multiple analytics indicators.
+   *
+   * PATTERN BYPASS: Respects USE_PATTERN_BASED_DETECTION flag
+   * - Pure LLM mode: Returns low confidence (LLM handles classification)
+   * - Pattern mode: Uses AnalyticsPattern for detection
    *
    * @param string $query Query to analyze
    * @return array Result with confidence and matched patterns
@@ -61,54 +78,24 @@ class AnalyticsProcessor
       error_log("Query: '{$query}'");
     }
 
-    $analyticsPatterns = AnalyticsPattern::detectAnalyticsQuery();
-    $matchCount = 0;
-    $matchedPatterns = [];
-
-    foreach ($analyticsPatterns as $pattern => $score) {
-      if (preg_match($pattern, $query)) {
-        $matchCount++;
-        $matchedPatterns[] = [
-          'pattern' => substr($pattern, 0, 100),
-          'score' => $score
-        ];
-        
-        if ($this->debug) {
-          error_log("✓ Analytics pattern matched (score: {$score}): " . substr($pattern, 0, 80) . "...");
-        }
+    // TASK 6.4.5: Use cached pattern bypass check (optimization)
+    if ($this->usePureLlmMode) {
+      // Pure LLM mode: Return low confidence
+      // LLM handles analytics classification through prompts
+      if ($this->debug) {
+        error_log("Analytics confidence calculation bypassed (Pure LLM mode)");
+        error_log("Returning low confidence (0.5) - LLM will handle classification");
+        error_log("--- END ANALYTICS CONFIDENCE ---\n");
       }
-    }
 
-    // Calculate confidence based on matches
-    // 1 match: 0.8 (strong single indicator)
-    // 2 matches: 0.85 (very confident)
-    // 3+ matches: 0.9 (extremely confident)
-    $confidence = 0.5; // Default
-    
-    if ($matchCount >= 1) {
-      $confidence = 0.8 + (min($matchCount - 1, 2) * 0.05);
+      return [
+        'confidence' => 0.5,
+        'match_count' => 0,
+        'matched_patterns' => [],
+        'word_count' => str_word_count($query),
+        'detection_method' => 'llm',
+      ];
     }
-
-    // Adjust for query length
-    $wordCount = str_word_count($query);
-    if ($wordCount >= 10) {
-      $confidence = min(0.95, $confidence + 0.05);
-    }
-    // Note: Don't penalize short analytics queries (they're often concise)
-
-    if ($this->debug) {
-      error_log("Analytics matches: {$matchCount} patterns");
-      error_log("Word count: {$wordCount}");
-      error_log("Calculated confidence: {$confidence}");
-      error_log("--- END ANALYTICS CONFIDENCE ---\n");
-    }
-
-    return [
-      'confidence' => round($confidence, 2),
-      'match_count' => $matchCount,
-      'matched_patterns' => $matchedPatterns,
-      'word_count' => $wordCount,
-    ];
   }
 
   /**

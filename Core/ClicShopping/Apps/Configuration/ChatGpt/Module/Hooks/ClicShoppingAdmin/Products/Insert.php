@@ -335,7 +335,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
               }
 
               if (!empty($products_description)) {
-	       $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
+	              $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
                 $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($products_description), $language_code, null);
 
                 if (!empty($taxonomy)) {
@@ -359,57 +359,39 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
               }
             }
 
+            // Generate embeddings
             $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
-            $embeddings = [];
 
-            foreach ($embeddedDocuments as $embeddedDocument) {
-              if (is_array($embeddedDocument->embedding)) {
-                $embeddings[] = $embeddedDocument->embedding;
-              }
-            }
-
-            if (!empty($embeddings)) {
-              $flattened_embedding = $embeddings[0];
-              $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
-
-              $sql_data_array_embedding = [
-                'content' => $embedding_data,
-                'type' => 'products',
-                'sourcetype' => 'manual',
-                'sourcename' => 'manual',
-                'date_modified' => 'now()',
-                'entity_id' => (int)$item['products_id'],
-                'language_id' => (int)$item['language_id']
-              ];
-
-              $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-
-              // MetaData  creation 
-              $metadata = [
+            if (!empty($embeddedDocuments)) {
+              // Prepare base metadata
+              $baseMetadata = [
                 'product_name' => $products_name,
                 'content' => $products_description,
-                'language_id' => (int)$item['language_id'],
-                'product_id' => (int)$item['products_id'],
                 'type' => 'products',
+                'product_id' => (int)$item['products_id'],
+                'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
                 'source' => [
                   'type' => 'manual',
                   'name' => 'manual'
-                ],
-                'entity_id' => (int)$item['products_id'],
-                'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
-                'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-                'date_modified' => 'now()'
+                ]
               ];
 
-              // Ajouter le JSON au tableau d'insertion
-              $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
+              // Save all chunks using centralized method
+              $result = NewVector::saveEmbeddingsWithChunks(
+                $embeddedDocuments,
+                'products_embedding',
+                (int)$item['products_id'],
+                (int)$item['language_id'],
+                $baseMetadata,
+                $this->app->db,
+                false  // isUpdate = false for insert
+              );
 
-              $update_sql_data = [
-                'language_id' => $item['language_id'],
-                'entity_id' => (int)$item['products_id']
-              ];
-
-              $this->app->db->save('products_embedding', $sql_data_array_embedding, $update_sql_data);
+              if (!$result['success']) {
+                error_log("Products/Insert: Failed to save embeddings for product {$item['products_id']} - " . $result['error']);
+              } else {
+                error_log("Products/Insert: Successfully saved {$result['chunks_saved']} chunk(s) for product {$item['products_id']}");
+              }
             }
           }
         }

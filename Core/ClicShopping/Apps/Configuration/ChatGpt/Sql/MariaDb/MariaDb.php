@@ -986,4 +986,229 @@ class MariaDb
     }
 
   }
+
+  /**
+   * Add taxonomy and metadata columns to embedding tables
+   * 
+   * This method adds the required JSON columns for taxonomy and metadata separation
+   * to all specified embedding tables. It ensures that embeddings contain only pure
+   * content while taxonomy and metadata are stored separately.
+   * 
+   * @param array $tables List of table names to update (without prefix)
+   * @return array Results of schema updates with status for each table
+   */
+  public static function addTaxonomyColumns(array $tables = []): array
+  {
+    $CLICSHOPPING_Db = Registry::get('Db');
+    $prefix = \ClicShopping\OM\CLICSHOPPING::getConfig('db_table_prefix');
+    $results = [];
+    
+    // Default to all known embedding tables if none specified
+    if (empty($tables)) {
+      $tables = [
+        'categories_embedding',
+        'products_embedding',
+        'orders_embedding',
+        'manufacturers_embedding',
+        'suppliers_embedding',
+        'pages_manager_embedding',
+        'return_orders_embedding',
+        'reviews_embedding',
+        'reviews_sentiment_embedding'
+      ];
+    }
+    
+    foreach ($tables as $table) {
+      $fullTableName = $prefix . $table;
+      $tableResult = [
+        'table' => $fullTableName,
+        'taxonomy_added' => false,
+        'metadata_added' => false,
+        'errors' => []
+      ];
+      
+      try {
+        // Check if table exists
+        $checkTable = $CLICSHOPPING_Db->query("SHOW TABLES LIKE '{$fullTableName}'");
+        if ($checkTable->fetch() === false) {
+          $tableResult['errors'][] = "Table does not exist";
+          $results[] = $tableResult;
+          continue;
+        }
+        
+        // Add taxonomy column if it doesn't exist
+        try {
+          $CLICSHOPPING_Db->exec("
+            ALTER TABLE {$fullTableName} 
+            ADD COLUMN IF NOT EXISTS taxonomy JSON DEFAULT NULL 
+            COMMENT 'Structured taxonomy metadata (separate from embedding content)'
+          ");
+          $tableResult['taxonomy_added'] = true;
+        } catch (\Exception $e) {
+          $tableResult['errors'][] = "Taxonomy column: " . $e->getMessage();
+        }
+        
+        // Add metadata column if it doesn't exist
+        try {
+          $CLICSHOPPING_Db->exec("
+            ALTER TABLE {$fullTableName} 
+            ADD COLUMN IF NOT EXISTS metadata JSON DEFAULT NULL 
+            COMMENT 'Document metadata for filtering and display'
+          ");
+          $tableResult['metadata_added'] = true;
+        } catch (\Exception $e) {
+          $tableResult['errors'][] = "Metadata column: " . $e->getMessage();
+        }
+        
+        $tableResult['success'] = empty($tableResult['errors']);
+        
+      } catch (\Exception $e) {
+        $tableResult['errors'][] = "General error: " . $e->getMessage();
+        $tableResult['success'] = false;
+      }
+      
+      $results[] = $tableResult;
+    }
+    
+    return $results;
+  }
+
+  /**
+   * Create indexes for JSON metadata queries
+   * 
+   * Creates functional indexes on JSON fields to enable efficient filtering
+   * by metadata fields like document_type, entity_type, etc.
+   * 
+   * @param string $tableName Table name (without prefix) to create indexes on
+   * @return bool Success status
+   */
+  public static function createMetadataIndexes(string $tableName): bool
+  {
+    $CLICSHOPPING_Db = Registry::get('Db');
+    $prefix = \ClicShopping\OM\CLICSHOPPING::getConfig('db_table_prefix');
+    $fullTableName = $prefix . $tableName;
+    
+    try {
+      // Check if table exists
+      $checkTable = $CLICSHOPPING_Db->query("SHOW TABLES LIKE '{$fullTableName}'");
+      if ($checkTable->fetch() === false) {
+        error_log("Table {$fullTableName} does not exist");
+        return false;
+      }
+      
+      // Create index on metadata->>'$.document_type' for efficient filtering
+      // Using generated column approach for MariaDB compatibility
+      try {
+        $CLICSHOPPING_Db->exec("
+          ALTER TABLE {$fullTableName} 
+          ADD INDEX IF NOT EXISTS idx_metadata_document_type 
+          ((CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.document_type')) AS CHAR(50))))
+        ");
+      } catch (\Exception $e) {
+        error_log("Index creation for document_type failed: " . $e->getMessage());
+        // Continue with other indexes even if this one fails
+      }
+      
+      // Create index on metadata->>'$.entity_type' for efficient filtering
+      try {
+        $CLICSHOPPING_Db->exec("
+          ALTER TABLE {$fullTableName} 
+          ADD INDEX IF NOT EXISTS idx_metadata_entity_type 
+          ((CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.entity_type')) AS CHAR(50))))
+        ");
+      } catch (\Exception $e) {
+        error_log("Index creation for entity_type failed: " . $e->getMessage());
+      }
+      
+      return true;
+      
+    } catch (\Exception $e) {
+      error_log("Error creating metadata indexes for {$fullTableName}: " . $e->getMessage());
+      return false;
+    }
+  }
+
+  /**
+   * Validate schema changes
+   * 
+   * Verifies that the taxonomy and metadata columns were added successfully
+   * and that indexes were created properly.
+   * 
+   * @param string $tableName Table name (without prefix) to validate
+   * @return array Validation results with detailed status
+   */
+  public static function validateSchema(string $tableName): array
+  {
+    $CLICSHOPPING_Db = Registry::get('Db');
+    $prefix = \ClicShopping\OM\CLICSHOPPING::getConfig('db_table_prefix');
+    $fullTableName = $prefix . $tableName;
+    
+    $validation = [
+      'table' => $fullTableName,
+      'exists' => false,
+      'has_taxonomy_column' => false,
+      'has_metadata_column' => false,
+      'has_content_column' => false,
+      'has_embedding_column' => false,
+      'indexes' => [],
+      'record_count' => 0,
+      'errors' => []
+    ];
+    
+    try {
+      // Check if table exists
+      $checkTable = $CLICSHOPPING_Db->query("SHOW TABLES LIKE '{$fullTableName}'");
+      if ($checkTable->fetch() === false) {
+        $validation['errors'][] = "Table does not exist";
+        return $validation;
+      }
+      $validation['exists'] = true;
+      
+      // Check columns
+      $columns = $CLICSHOPPING_Db->query("SHOW COLUMNS FROM {$fullTableName}");
+      while ($column = $columns->fetch()) {
+        $columnName = $column['Field'];
+        
+        if ($columnName === 'taxonomy') {
+          $validation['has_taxonomy_column'] = true;
+          $validation['taxonomy_type'] = $column['Type'];
+        }
+        if ($columnName === 'metadata') {
+          $validation['has_metadata_column'] = true;
+          $validation['metadata_type'] = $column['Type'];
+        }
+        if ($columnName === 'content') {
+          $validation['has_content_column'] = true;
+        }
+        if ($columnName === 'embedding') {
+          $validation['has_embedding_column'] = true;
+        }
+      }
+      
+      // Check indexes
+      $indexes = $CLICSHOPPING_Db->query("SHOW INDEX FROM {$fullTableName}");
+      while ($index = $indexes->fetch()) {
+        $validation['indexes'][] = $index['Key_name'];
+      }
+      
+      // Get record count
+      $countResult = $CLICSHOPPING_Db->query("SELECT COUNT(*) as cnt FROM {$fullTableName}");
+      $countRow = $countResult->fetch();
+      $validation['record_count'] = (int)($countRow['cnt'] ?? 0);
+      
+      // Overall validation status
+      $validation['valid'] = 
+        $validation['exists'] &&
+        $validation['has_taxonomy_column'] &&
+        $validation['has_metadata_column'] &&
+        $validation['has_content_column'] &&
+        $validation['has_embedding_column'];
+      
+    } catch (\Exception $e) {
+      $validation['errors'][] = $e->getMessage();
+      $validation['valid'] = false;
+    }
+    
+    return $validation;
+  }
 }

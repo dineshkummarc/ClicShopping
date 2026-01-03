@@ -413,16 +413,35 @@ modal_reset_cache_error = Erreur : Impossible de réinitialiser le cache. Vérif
 modal_reset_cache_reactivate_button = Réactiver le bouton
 
 # Types de Cache
-cache_type_files = 📁 Cache Fichiers (RAG)
-cache_type_files_desc = Fichiers JSON dans Work/Cache/Rag/
-cache_type_translations = 🌐 Cache Traductions
-cache_type_translations_desc = Traductions en cache dans Work/Cache/Translations/
 cache_type_database = 💾 Cache Base de Données
-cache_type_database_desc = Table clic_rag_query_cache
-cache_type_prompts = 💬 Cache Prompts
-cache_type_prompts_desc = Réponses LLM en cache (rag_cache.cache)
-cache_type_semantic = 🔍 Cache Requêtes Sémantiques
-cache_type_semantic_desc = Résultats de recherche RAG en cache (TASK 4.3.2)
+cache_type_database_desc = Table de base de données clic_rag_query_cache (résultats de requêtes SQL)
+cache_type_schema = 🗂️ Cache Requêtes Schéma
+cache_type_schema_desc = Requêtes de schéma de base de données en cache dans Work/Cache/Rag/SchemaQuery/
+cache_type_intent = 🎯 Cache Classification d'Intention
+cache_type_intent_desc = Classifications d'intention en cache dans Work/Cache/Rag/Intent/
+cache_type_ambiguity = 🔀 Cache Ambiguïté
+cache_type_ambiguity_desc = Résolutions d'ambiguïté en cache dans Work/Cache/Rag/Ambiguity/
+cache_type_translation_ambiguity = 🌐 Cache Traduction Ambiguïté
+cache_type_translation_ambiguity_desc = Traductions d'ambiguïté en cache dans Work/Cache/Rag/Translation/
+cache_type_context = 📋 Cache Contexte
+cache_type_context_desc = Récupérations de contexte en cache dans Work/Cache/Rag/Context/
+cache_type_embedding = 🔢 Cache Embeddings
+cache_type_embedding_desc = Embeddings vectoriels en cache dans Work/Cache/Rag/Embedding/
+cache_type_embedding_search = 🔍 Cache Recherche Embeddings
+cache_type_embedding_search_desc = Résultats de recherche d'embeddings en cache dans Work/Cache/Rag/EmbeddingSearch/
+cache_type_translations = 🌐 Cache Traductions
+cache_type_translations_desc = Traductions en cache dans Work/Cache/Rag/Translation/
+cache_type_classification = 🎯 Cache Classification
+cache_type_classification_desc = Classifications de requêtes en cache dans Work/Cache/Rag/Classification/
+
+# Caches Fichiers
+file_caches_statistics = Statistiques des Caches Fichiers
+cache_status = Statut
+cache_enabled = Activé
+cache_disabled = Désactivé
+cache_files = Fichiers
+cache_size = Taille
+cache_directory = Répertoire
 
 # Onglet 7 - Section Sécurité
 tab7_title = 🔒 Sécurité & Qualité
@@ -494,6 +513,11 @@ cache_reset_translations_deleted = Traductions supprimées
 cache_reset_db_entries_deleted = Entrées DB supprimées
 cache_reset_prompts_deleted = Prompts supprimés
 cache_reset_semantic_deleted = Requêtes sémantiques supprimées
+cache_reset_schema_deleted = Fichiers cache schéma supprimés
+cache_reset_intent_deleted = Fichiers cache intention supprimés
+cache_reset_ambiguity_deleted = Fichiers cache ambiguïté supprimés
+cache_reset_schema_deleted = Fichiers cache schéma supprimés
+cache_reset_translation_ambiguity_deleted = Fichiers cache traduction ambiguïté supprimés
 cache_reset_error_occurred = Une erreur est survenue
 cache_reset_resetting = Resetting...
 

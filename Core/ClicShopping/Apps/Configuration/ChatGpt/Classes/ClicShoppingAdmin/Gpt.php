@@ -947,10 +947,12 @@ class Gpt
     }
     
     // Limiter la longueur (GPT-4o-mini accepte 128k tokens ≈ 512k caractères)
-    // Limite de sécurité à 100k caractères pour éviter les abus
-    if (strlen($prompt) > 100000) {
-      $prompt = substr($prompt, 0, 100000);
-      error_log("WARNING: Prompt truncated to 100000 characters (security limit)");
+    // Utiliser la limite configurable ou défaut à 100k caractères
+    $maxPromptLength = defined('CLICSHOPPING_APP_CHATGPT_MAX_PROMPT_LENGTH') ? (int)CLICSHOPPING_APP_CHATGPT_MAX_PROMPT_LENGTH : 100000; // Default: 100K characters (~25K tokens)
+    
+    if (strlen($prompt) > $maxPromptLength) {
+      $prompt = substr($prompt, 0, $maxPromptLength);
+      error_log("WARNING: Prompt truncated to {$maxPromptLength} characters (security limit)");
     }
     
     // Appliquer htmlspecialchars pour la sécurité XSS
@@ -1280,6 +1282,8 @@ class Gpt
 ';
 
       // Charger les scripts JavaScript
+      // TASK 5.3.2.1: Load DOMPurify BEFORE chat_send.js for HTML sanitization
+      $script .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.7/purify.min.js"></script>' . "\n";
       $script .= '<script src="' . HTTP::getShopUrlDomain() . 'ext/javascript/clicshopping/ClicShoppingAdmin/ChatGpt/chat_clarification.js"></script>' . "\n";
       $script .= '<script src="' . HTTP::getShopUrlDomain() . 'ext/javascript/clicshopping/ClicShoppingAdmin/ChatGpt/chat_send.js"></script>' . "\n";
       $script .= '<script src="' . HTTP::getShopUrlDomain() . 'ext/javascript/clicshopping/ClicShoppingAdmin/ChatGpt/chat_feedback.js"></script>' . "\n";

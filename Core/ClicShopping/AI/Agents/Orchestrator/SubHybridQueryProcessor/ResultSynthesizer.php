@@ -97,25 +97,50 @@ class ResultSynthesizer extends BaseQueryProcessor
 
   /**
    * Extract data from sub-query results
+   * 
+   * TASK 5.3.1.1: Added deduplication to prevent duplicate HTML in web search results
    */
   private function extractResultData(array $subQueryResults): array
   {
     $combinedText = [];
     $combinedData = [];
     $sources = [];
+    $addedContentHashes = []; // Track added content to prevent duplicates
 
     foreach ($subQueryResults as $result) {
       // Extract text_response if available (preferred for synthesis)
       if (isset($result['text_response']) && !empty($result['text_response'])) {
-        $combinedText[] = $result['text_response'];
+        $hash = md5($result['text_response']);
+        if (!isset($addedContentHashes[$hash])) {
+          $combinedText[] = $result['text_response'];
+          $addedContentHashes[$hash] = true;
+          
+          if ($this->debug) {
+            $this->logInfo("Added text_response to combined text", ['hash' => substr($hash, 0, 8), 'length' => strlen($result['text_response'])]);
+          }
+        } else {
+          if ($this->debug) {
+            $this->logInfo("Skipped duplicate text_response", ['hash' => substr($hash, 0, 8)]);
+          }
+        }
       }
       
       // Extract result data
       if (isset($result['result'])) {
         if (is_string($result['result'])) {
-          // Only add if not already added via text_response
-          if (!isset($result['text_response'])) {
+          // Check if this content is already added (by hash)
+          $hash = md5($result['result']);
+          if (!isset($addedContentHashes[$hash])) {
             $combinedText[] = $result['result'];
+            $addedContentHashes[$hash] = true;
+            
+            if ($this->debug) {
+              $this->logInfo("Added result string to combined text", ['hash' => substr($hash, 0, 8), 'length' => strlen($result['result'])]);
+            }
+          } else {
+            if ($this->debug) {
+              $this->logInfo("Skipped duplicate result string", ['hash' => substr($hash, 0, 8)]);
+            }
           }
         } elseif (is_array($result['result'])) {
           $combinedData[] = $result['result'];
@@ -291,34 +316,24 @@ class ResultSynthesizer extends BaseQueryProcessor
   }
 
   /**
-   * Synthesize hybrid results (combine with LLM)
-   * REQ-4.5: Combine results with source attribution using LLM
+   * Synthesize hybrid results (combine without LLM)
+   * REQ-4.5: Combine results with source attribution
+   * 
+   * TASK 5.2.1.1: Changed to direct concatenation instead of LLM synthesis
+   * The sub-queries already have formatted text_response fields, so we just
+   * need to combine them with clear section headers. No LLM call needed.
    */
   private function synthesizeHybrid(array $combinedText, string $originalQuery): string
   {
     if (empty($combinedText)) return "Results processed successfully.";
 
-    $prompt = "Synthesize these results into a coherent answer for the query: '{$originalQuery}'\n\nResults:\n";
-    foreach ($combinedText as $i => $text) {
-      $prompt .= ($i + 1) . ". {$text}\n";
-    }
-    $prompt .= "\nProvide a clear, concise synthesis maintaining source attribution:";
-
-    // Validate prompt before LLM call
-    $validatedPrompt = $this->promptValidator->process($prompt, ['operation' => 'synthesis']);
-    if (empty($validatedPrompt)) {
-      $this->logWarning("Prompt validation failed, using fallback");
-      return implode("\n\n", $combinedText);
+    // ✅ Simply concatenate the formatted text responses with separators
+    // Each text_response is already formatted by ResultFormatter
+    if ($this->debug) {
+      $this->logInfo("Hybrid synthesis: Combining " . count($combinedText) . " formatted responses");
     }
 
-    try {
-      $textResponse = Gpt::getGptResponse($validatedPrompt, 300);
-      if ($this->debug) $this->logInfo("Hybrid synthesis: Combined multiple sources with LLM");
-      return $textResponse;
-    } catch (\Exception $e) {
-      $this->logWarning("Error in LLM synthesis, using fallback", ['error' => $e->getMessage()]);
-      return implode("\n\n", $combinedText);
-    }
+    return implode("\n\n---\n\n", $combinedText);
   }
 
   /**

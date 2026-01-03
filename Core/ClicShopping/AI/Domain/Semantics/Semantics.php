@@ -16,10 +16,6 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 
 use ClicShopping\AI\Rag\MultiDBRAGManager;
-use ClicShopping\AI\Domain\Patterns\AnalyticsPattern;
-use ClicShopping\AI\Domain\Patterns\HybridPattern;
-use ClicShopping\AI\Domain\Patterns\SemanticsPattern;
-use ClicShopping\AI\Domain\Patterns\WebSearchPattern;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Interfaces\ConfigurableComponent;
 
@@ -259,6 +255,8 @@ class Semantics implements ConfigurableComponent
    * - filters: Query filtering expressions
    * - sorting: Result ordering expressions
    *
+   * TASK 2.9.8.6.11: Added pattern bypass check for Pure LLM mode
+   *
    * @return array<string, array<string>> Associative array where:
    *                                     - key: pattern category (string)
    *                                     - value: array of regex patterns (string[])
@@ -266,7 +264,12 @@ class Semantics implements ConfigurableComponent
    */
   public static function analyticsPatterns(): array
   {
-    return AnalyticsPattern::getAnalyticsPatterns();
+    // Pure LLM mode: patterns are disabled
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
+        CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      error_log("Semantics::analyticsPatterns() - Pure LLM mode, returning empty array");
+    }
+    return [];
   }
 
   /**
@@ -284,13 +287,20 @@ class Semantics implements ConfigurableComponent
    * - account: Account-related queries
    * - feedback: Reviews and opinions
    *
+   * TASK 2.9.8.6.11: Added pattern bypass check for Pure LLM mode
+   *
    * @return array<string, array<string>> Associative array where:
    *                                     - key: pattern category (string)
    *                                     - value: array of regex patterns (string[])
    */
   public static function semanticPatterns(): array
   {
-    return SemanticsPattern::getSemanticPatterns();
+    // Pure LLM mode: patterns are disabled
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
+        CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      error_log("Semantics::semanticPatterns() - Pure LLM mode, returning empty array");
+    }
+    return [];
   }
 
   /**
@@ -373,6 +383,9 @@ class Semantics implements ConfigurableComponent
     $hasCriticalMatch = self::hasCriticalMatch($translated);
 
     // Check geographic exceptions first
+    // @deprecated Pattern-based detection removed in Pure LLM mode
+    // This code is never executed (USE_PATTERN_BASED_DETECTION removed in task 5.1.6)
+    // TODO: Remove this dead code block in Q2 2026
     if (SemanticsPattern::isGeographicQuery($text)) {
       return false;
     }
@@ -470,23 +483,37 @@ class Semantics implements ConfigurableComponent
   /**
    * Detects competitor comparison queries (delegates to PatternAnalyzer)
    * 
+   * TASK 2.9.8.6.11: Added pattern bypass check for Pure LLM mode
+   * 
    * @param string $text Text to analyze
    * @return bool True if competitor comparison detected
    */
   public static function isCompetitorComparisonQuery(string $text): bool
   {
-    return WebSearchPattern::isCompetitorComparisonQuery($text);
+    // Pure LLM mode: patterns are disabled, return false
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
+        CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      error_log("Semantics::isCompetitorComparisonQuery() - Pure LLM mode, returning false");
+    }
+    return false;
   }
 
   /**
    * Checks if text contains critical analytics patterns (delegates to PatternAnalyzer)
+   * 
+   * TASK 2.9.8.6.11: Added pattern bypass check for Pure LLM mode
    * 
    * @param string $text Text to analyze
    * @return bool True if critical pattern found
    */
   public static function hasCriticalMatch(string $text): bool
   {
-    return HybridPattern::hasCriticalMatch($text);
+    // Pure LLM mode: patterns are disabled, return false
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
+        CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      error_log("Semantics::hasCriticalMatch() - Pure LLM mode, returning false");
+    }
+    return false;
   }
 
   /**
@@ -501,8 +528,6 @@ class Semantics implements ConfigurableComponent
     // Delegate to ClassificationEngine component
     return ClassificationEngine::calculateScore($text);
   }
-
-
 
   /*************************
    * Implementation of ConfigurableComponent interface
@@ -984,12 +1009,12 @@ class Semantics implements ConfigurableComponent
    * @return string
    * @throws \Exception
    */
-  public function createTaxonomy(string $text, ?string $language_code, ?int $min_character = 300): string
+  public function createTaxonomy(string $text, string $prompt, ?string $language_code, ?int $min_character = 300): string
   {
     $result = '';
     $text = trim($text);
 
-    $prompt = CLICSHOPPING::getDef('text_create_taxonomy', ['document_text' => $text]);
+   // $prompt = CLICSHOPPING::getDef('text_create_taxonomy', ['document_text' => $text]);
 
     if (strlen($prompt) > $min_character && str_word_count($text) > $min_character) {
       $result = Gpt::getGptResponse($prompt);
@@ -997,5 +1022,4 @@ class Semantics implements ConfigurableComponent
 
     return is_string($result) ? trim($result) : '';
   }
-
 }

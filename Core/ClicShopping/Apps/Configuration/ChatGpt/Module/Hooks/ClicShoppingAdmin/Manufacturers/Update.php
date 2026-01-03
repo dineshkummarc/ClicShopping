@@ -166,65 +166,34 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
                 $embedding_data .= $this->app->getDef('text_manufacturer_seo_keywords') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($seo_manufacturer_keywords) . "\n";
               }
 
+              // Generate embeddings
               $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-              $embeddings = [];
-
-              foreach ($embeddedDocuments as $embeddedDocument) {
-                if (is_array($embeddedDocument->embedding)) {
-                  $embeddings[] = $embeddedDocument->embedding;
-                }
-              }
-
-              if (!empty($embeddings)) {
-                $flattened_embedding = $embeddings[0];
-                $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
-
-                $sql_data_array_embedding = [
-                  'content' => $embedding_data,
-                  'type' => 'manufacturers',
-                  'sourcetype' => 'manual',
-                  'sourcename' => 'manual',
-                  'date_modified' => 'now()'
-                ];
-
-                $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-
-                // MetaData  creation 
-                $metadata = [
-                  'brand_name' => $manufacturers_name,
-                  'content' => $manufacturers_description,
-                  'language_id' => (int)$languages_id,
-                  'manufacturer_id' => (int)$manufacturers_id,
-                  'type' => 'manufacturers',
-                  'source' => [
-                    'type' => 'manual',
-                    'name' => 'manual'
-                  ],
-                'entity_id' => (int)$manufacturers_id,
-                'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
-                'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-                'ldate_modified' => 'now()'
+              // Prepare base metadata
+              $baseMetadata = [
+                'brand_name' => $manufacturers_name,
+                'content' => $manufacturers_description ?? '',
+                'manufacturer_id' => (int)$manufacturers_id,
+                'type' => 'manufacturers',
+                'tags' => isset($tags) ? $tags : [],
+                'source' => ['type' => 'manual', 'name' => 'manual']
               ];
 
-                // Ajouter le JSON au tableau d'insertion
-                $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
+              // Save all chunks using centralized method
+              $result = NewVector::saveEmbeddingsWithChunks(
+                $embeddedDocuments,
+                'manufacturers_embedding',
+                (int)$manufacturers_id,
+                (int)$languages_id,
+                $baseMetadata,
+                $this->app->db,
+                !$insert_embedding  // isUpdate = true if not inserting
+              );
 
-                if ($insert_embedding === true) {
-                  $sql_data_array_embedding['entity_id'] = (int)$manufacturers_id;
-                  $sql_data_array_embedding['language_id'] = (int)$languages_id;
-
-                  $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding);
-                } else {
-                  $sql_data_array_embedding['date_modified'] = 'now()';
-
-                  $update_sql_data = [
-                    'language_id' => (int)$languages_id,
-                    'entity_id' => (int)$manufacturers_id
-                  ];
-
-                  $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding, $update_sql_data);
-                }
+              if (!$result['success']) {
+                error_log("Manufacturers Update: Failed to save embeddings - " . $result['error']);
+              } else {
+                error_log("Manufacturers Update: Successfully saved {$result['chunks_saved']} chunks for manufacturer {$manufacturers_id}");
               }
             }
           }

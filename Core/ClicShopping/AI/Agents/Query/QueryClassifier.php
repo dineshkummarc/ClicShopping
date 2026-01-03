@@ -11,12 +11,9 @@
 namespace ClicShopping\AI\Agents\Query;
 
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domain\Patterns\AnalyticsPattern;
-use ClicShopping\AI\Domain\Patterns\HybridPattern;
-use ClicShopping\AI\Domain\Patterns\HybridKeywords;
-use ClicShopping\AI\Domain\Patterns\SemanticsPattern;
-use ClicShopping\AI\Domain\Patterns\WebSearchPattern;
 use ClicShopping\AI\Domain\Semantics\SubSemantics\ClassificationEngine;
+use ClicShopping\AI\Infrastructure\Cache\ClassificationCache;
+use ClicShopping\OM\Registry;
 
 /**
  * QueryClassifier Class
@@ -29,11 +26,14 @@ use ClicShopping\AI\Domain\Semantics\SubSemantics\ClassificationEngine;
  * - Semantics
  *
  * All classification logic should be maintained here to avoid duplication and inconsistencies.
+ * 
+ * TASK 2.10.2 (2025-12-26): Added ClassificationCache integration for performance optimization
  */
 class QueryClassifier
 {
   private SecurityLogger $logger;
   private bool $debug;
+  private ?ClassificationCache $classificationCache = null;
 
   /**
    * Constructor
@@ -44,12 +44,31 @@ class QueryClassifier
   {
     $this->logger = new SecurityLogger();
     $this->debug = $debug;
+    
+    // TASK 2.10.2: Initialize ClassificationCache
+    if (!Registry::exists('ClassificationCache')) {
+      Registry::set('ClassificationCache', new ClassificationCache(2592000, $this->debug));
+    }
+    $this->classificationCache = Registry::get('ClassificationCache');
+    
+    if ($this->debug) {
+      $this->logger->logSecurityEvent('ClassificationCache initialized', 'info');
+      $this->logger->logSecurityEvent('Pure LLM mode active - all classification via LLM', 'info');
+    }
   }
 
   /**
    * Classify a query into one of: analytics, semantic, web_search, hybrid
    * 
    * 🔧 TASK 4.3 (2025-12-11): Enhanced fallback logic
+   * 🔧 TASK 2026-01-02: Added optional HybridPreFilter for hybrid query detection
+   * 
+   * CLASSIFICATION FLOW:
+   * 1. If USE_HYBRID_PRE_FILTER='True' and translatedQuery provided:
+   *    - Try HybridPreFilter (pattern-based, English-only)
+   *    - If hybrid detected: Return hybrid classification (90% confidence)
+   *    - If no match: Fall through to LLM classification
+   * 2. Use LLM classification for all other cases
    * 
    * FALLBACK STRATEGY:
    * - Default type: 'semantic' (safer than 'analytics')
@@ -60,6 +79,7 @@ class QueryClassifier
    * - Semantic queries are safer to misclassify (RAG search is more forgiving)
    * - Analytics queries require precise SQL generation (higher risk if wrong)
    * - Web search queries are rare and have very specific patterns
+   * - HybridPreFilter solves LLM weakness (ignoring second intent in hybrid queries)
    *
    * @param string $query Query to classify (can be in any language)
    * @param string|null $translatedQuery Optional pre-translated query (English)
@@ -67,399 +87,61 @@ class QueryClassifier
    */
   public function classify(string $query, ?string $translatedQuery = null): array
   {
-    $queryLower = strtolower($query);
-    $translatedLower = $translatedQuery ? strtolower($translatedQuery) : $queryLower;
+    // Check if HybridPreFilter is enabled
+    $useHybridPreFilter = (defined('USE_HYBRID_PRE_FILTER') 
+        && USE_HYBRID_PRE_FILTER === 'True');
     
-    $confidence = 0.5; // Base confidence
-    $type = 'semantic'; // 🔧 TASK 4.3: Default to semantic (safer fallback)
-    $reasoning = [];
-
-    // ============================================
-    // STEP 0: DETECT HYBRID QUERIES FIRST
-    // ============================================
-    $hybridResult = $this->detectHybridQuery($query, $translatedQuery);
-    if ($hybridResult['is_hybrid']) {
-      return [
-        'type' => 'hybrid',
-        'confidence' => $hybridResult['confidence'],
-        'reasoning' => $hybridResult['reasoning'],
-      ];
-    }
-
-    // ============================================
-    // STEP 1: ANALYTICS PATTERNS (HIGHEST PRIORITY)
-    // ============================================
-    $analyticsResult = $this->detectAnalyticsQuery($query, $translatedQuery);
-    if ($analyticsResult['is_analytics']) {
-      return [
-        'type' => 'analytics',
-        'confidence' => $analyticsResult['confidence'],
-        'reasoning' => $analyticsResult['reasoning'],
-      ];
-    }
-
-    // ============================================
-    // STEP 2: WEB SEARCH PATTERNS
-    // ============================================
-    $webSearchResult = $this->detectWebSearchQuery($query, $translatedQuery);
-    if ($webSearchResult['is_web_search']) {
-      return [
-        'type' => 'web_search',
-        'confidence' => $webSearchResult['confidence'],
-        'reasoning' => $webSearchResult['reasoning'],
-      ];
-    }
-
-    // ============================================
-    // STEP 3: SEMANTIC PATTERNS
-    // ============================================
-    $semanticResult = $this->detectSemanticQuery($query, $translatedQuery);
-    
-    // ============================================
-    // STEP 4: LLM FALLBACK (if confidence is low)
-    // ============================================
-    // If no pattern matched with high confidence, use LLM to analyze
-    if ($semanticResult['confidence'] <= 0.5) {
+    // Try HybridPreFilter if enabled and translated query available
+    if ($useHybridPreFilter && $translatedQuery !== null) {
       if ($this->debug) {
-        $this->logger->logSecurityEvent("No pattern matched with high confidence, using LLM fallback", 'info');
+        $this->logger->logSecurityEvent(
+          'Trying HybridPreFilter for hybrid detection',
+          'info'
+        );
       }
       
-      $llmResult = $this->classifyWithLLM($query, $translatedQuery);
+      // Use HybridPreFilter (pattern-based, English-only)
+      $hybridCheck = \ClicShopping\AI\Domain\Patterns\HybridPreFilter::preFilter($translatedQuery);
       
-      // If LLM has higher confidence, use its classification
-      if ($llmResult['confidence'] > $semanticResult['confidence']) {
-        return $llmResult;
-      }
-    }
-    
-    return [
-      'type' => 'semantic',
-      'confidence' => $semanticResult['confidence'],
-      'reasoning' => $semanticResult['reasoning'],
-    ];
-  }
-
-  /**
-   * Detect hybrid queries (multiple intents)
-   *
-   * TASK 2.15: Added analytics + analytics detection with French connectors
-   * TASK 4.5.6 FIX: Enhanced to detect queries with BOTH analytics AND semantic keywords
-   * 
-   * ALGORITHM:
-   * 1. Check explicit hybrid patterns (with connectors like "and", "et")
-   * 2. Check for presence of BOTH analytics AND semantic keywords
-   * 3. Check for presence of BOTH analytics AND web_search keywords
-   * 4. Check for "our/my X vs competitors" pattern (internal + external)
-   *
-   * @param string $query Original query
-   * @param string|null $translatedQuery Translated query
-   * @return array Result with is_hybrid, confidence, reasoning
-   */
-  private function detectHybridQuery(string $query, ?string $translatedQuery): array
-  {
-    $queryToCheck = $translatedQuery ?? $query;
-    $queryLower = strtolower($queryToCheck);
-    
-    // STEP 1: Check explicit hybrid patterns (with connectors)
-    $patterns = HybridPattern::detectHybridQuery();
-
-    foreach ($patterns as $pattern => $score) {
-      if (preg_match($pattern, $query) || ($translatedQuery && preg_match($pattern, $translatedQuery))) {
-        return [
-          'is_hybrid' => true,
-          'confidence' => $score,
-          'reasoning' => ["Matched hybrid pattern with connector: {$pattern}"],
-        ];
-      }
-    }
-    
-    // STEP 2: Check for BOTH analytics AND semantic keywords (without connector)
-    // This catches queries like "sales with summary", "list products and their warranty"
-    // REFACTORED (2025-12-11): Use centralized HybridKeywords class (English only)
-    $hasAnalytics = false;
-    $hasSemantic = false;
-    $hasWebSearch = false;
-    
-    // Get keywords from centralized class (ALL ENGLISH ONLY)
-    $analyticsKeywords = HybridKeywords::getAnalyticsKeywords();
-    $semanticKeywords = HybridKeywords::getSemanticKeywords();
-    $webSearchKeywords = HybridKeywords::getWebSearchKeywords();
-    
-    // Check for analytics keywords
-    foreach ($analyticsKeywords as $keyword) {
-      if (stripos($queryLower, $keyword) !== false) {
-        $hasAnalytics = true;
-        break;
-      }
-    }
-    
-    // Check for semantic keywords
-    foreach ($semanticKeywords as $keyword) {
-      if (stripos($queryLower, $keyword) !== false) {
-        $hasSemantic = true;
-        break;
-      }
-    }
-    
-    // Check for web search keywords
-    foreach ($webSearchKeywords as $keyword) {
-      if (stripos($queryLower, $keyword) !== false) {
-        $hasWebSearch = true;
-        break;
-      }
-    }
-    
-    // STEP 3: Determine if hybrid based on keyword combinations
-    // BUT: Only classify as hybrid if there's a clear intent to combine multiple data sources
-    // Don't classify as hybrid if one intent is clearly dominant
-    // REFACTORED (2025-12-11): Use centralized HybridKeywords class
-    
-    // Check for strong web search indicators (these should NOT be hybrid)
-    $strongWebSearchIndicators = HybridKeywords::getStrongWebSearchIndicators();
-    
-    $hasStrongWebSearch = false;
-    foreach ($strongWebSearchIndicators as $pattern) {
-      if (preg_match($pattern, $queryLower)) {
-        $hasStrongWebSearch = true;
-        break;
-      }
-    }
-    
-    // If web search is dominant, don't classify as hybrid
-    // (e.g., "compare price with competitors" is web_search, not hybrid)
-    if ($hasStrongWebSearch && !$hasSemantic) {
-      // Let web_search detection handle this
-      return [
-        'is_hybrid' => false,
-        'confidence' => 0,
-        'reasoning' => []
-      ];
-    }
-    
-    // Analytics + Semantic = Hybrid (e.g., "sales with summary", "stock and policy")
-    // BUT: Check if "and" is part of a common phrase (e.g., "terms and conditions")
-    // REFACTORED (2025-12-11): Use centralized HybridKeywords class
-    if ($hasAnalytics && $hasSemantic) {
-      // Check for common phrases where "and" is NOT a connector
-      $commonPhrases = HybridKeywords::getCommonPhrasePatterns();
-      
-      $hasCommonPhrase = false;
-      foreach ($commonPhrases as $phrase) {
-        if (preg_match($phrase, $queryLower)) {
-          $hasCommonPhrase = true;
-          break;
+      if ($hybridCheck !== null) {
+        // Pattern detected hybrid query
+        if ($this->debug) {
+          $this->logger->logStructured(
+            'info',
+            'QueryClassifier',
+            'hybrid_pre_filter_match',
+            [
+              'query' => substr($translatedQuery, 0, 50),
+              'type' => 'hybrid',
+              'sub_types' => $hybridCheck['sub_types'] ?? [],
+              'confidence' => $hybridCheck['confidence'] ?? 0.90,
+              'detection_method' => 'pattern_pre_filter',
+              'note' => 'HybridPreFilter detected hybrid query (no LLM call)'
+            ]
+          );
         }
+        
+        return $hybridCheck;
       }
       
-      // If it's just a common phrase, not hybrid
-      // Check if query has actual analytics keywords (not just semantic)
-      $hasActualAnalytics = false;
-      foreach (['stock', 'inventory', 'sales', 'revenue', 'data'] as $keyword) {
-        if (stripos($queryLower, $keyword) !== false) {
-          $hasActualAnalytics = true;
-          break;
-        }
-      }
-      
-      if ($hasCommonPhrase && !$hasActualAnalytics) {
-        // Pure semantic query about policies/terms
-        return [
-          'is_hybrid' => false,
-          'confidence' => 0,
-          'reasoning' => []
-        ];
-      }
-      
-      return [
-        'is_hybrid' => true,
-        'confidence' => 0.85,
-        'reasoning' => ["Query contains BOTH analytics and semantic keywords"],
-      ];
-    }
-    
-    // Analytics + Web Search = Hybrid ONLY if there's a clear connector or internal reference
-    // (e.g., "our stock vs competitors", "show revenue and compare with market")
-    // REFACTORED (2025-12-11): Use centralized HybridKeywords class
-    if ($hasAnalytics && $hasWebSearch) {
-      // Check for connectors or internal reference
-      $connectorPatterns = HybridKeywords::getConnectorPatterns();
-      $internalRefPatterns = HybridKeywords::getInternalReferencePatterns();
-      
-      $hasConnector = false;
-      foreach ($connectorPatterns as $pattern) {
-        if (preg_match($pattern, $queryLower)) {
-          $hasConnector = true;
-          break;
-        }
-      }
-      
-      $hasInternalRef = false;
-      foreach ($internalRefPatterns as $pattern) {
-        if (preg_match($pattern, $queryLower)) {
-          $hasInternalRef = true;
-          break;
-        }
-      }
-      
-      if ($hasConnector || $hasInternalRef) {
-        return [
-          'is_hybrid' => true,
-          'confidence' => 0.85,
-          'reasoning' => ["Query combines internal analytics with external web search"],
-        ];
-      }
-      
-      // Otherwise, let web_search detection handle it
-      return [
-        'is_hybrid' => false,
-        'confidence' => 0,
-        'reasoning' => []
-      ];
-    }
-    
-    // Semantic + Web Search = Hybrid (e.g., "explain our policy vs competitors")
-    // REFACTORED (2025-12-11): Use centralized HybridKeywords class
-    if ($hasSemantic && $hasWebSearch) {
-      // Check for internal reference (our, my, the)
-      $internalRefPatterns = HybridKeywords::getInternalReferencePatterns();
-      
-      $hasInternalRef = false;
-      foreach ($internalRefPatterns as $pattern) {
-        if (preg_match($pattern, $queryLower)) {
-          $hasInternalRef = true;
-          break;
-        }
-      }
-      
-      if ($hasInternalRef) {
-        return [
-          'is_hybrid' => true,
-          'confidence' => 0.85,
-          'reasoning' => ["Query compares internal information with external competitors"],
-        ];
-      }
-      
-      // Otherwise, let web_search detection handle it
-      return [
-        'is_hybrid' => false,
-        'confidence' => 0,
-        'reasoning' => []
-      ];
-    }
-    
-    // STEP 4: Check for "our/my X vs competitors" pattern (internal + external)
-    // REFACTORED (2025-12-11): Use centralized pattern
-    if (preg_match('/\b(our|my|the)\b.*\b(vs|versus|compared to|against)\b.*\b(competitor|competitors|competition)\b/i', $queryLower)) {
-      return [
-        'is_hybrid' => true,
-        'confidence' => 0.85,
-        'reasoning' => ["Query compares internal data with external competitors"],
-      ];
-    }
-
-    $array = [
-      'is_hybrid' => false,
-      'confidence' => 0,
-      'reasoning' => []
-    ];
-
-    return $array;
-  }
-
-  /**
-   * Detect analytics queries (database/SQL queries)
-   * 
-   * TASK 4.5.7 FIX: Exclude queries with web_search keywords (competitors, market, online)
-   * to prevent misclassification of external queries as analytics
-   * 
-   * REFACTORED (2025-12-11): Use centralized HybridKeywords class for exclusions
-   *
-   * @param string $query Original query
-   * @param string|null $translatedQuery Translated query
-   * @return array Result with is_analytics, confidence, reasoning
-   */
-  public function detectAnalyticsQuery(string $query, ?string $translatedQuery): array
-  {
-    $queryToCheck = $translatedQuery ?? $query;
-    $queryLower = strtolower($queryToCheck);
-    
-    // TASK 4.5.7 FIX: Check for web_search keywords first
-    // If query has "competitors", "market", "online" etc., it's likely web_search, not analytics
-    // REFACTORED (2025-12-11): Use centralized HybridKeywords class
-    $webSearchExclusions = HybridKeywords::getWebSearchExclusionPatterns();
-    
-    foreach ($webSearchExclusions as $exclusion) {
-      if (preg_match($exclusion, $queryLower)) {
-        // This is likely a web_search query, not analytics
-        return ['is_analytics' => false, 'confidence' => 0, 'reasoning' => []];
+      // Pattern didn't match - fall through to LLM
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          'HybridPreFilter no match - falling back to LLM',
+          'info'
+        );
       }
     }
     
-    $patterns = AnalyticsPattern::detectAnalyticsQuery();
-
-    foreach ($patterns as $pattern => $score) {
-      if (preg_match($pattern, $query) || ($translatedQuery && preg_match($pattern, $translatedQuery))) {
-        return [
-          'is_analytics' => true,
-          'confidence' => $score,
-          'reasoning' => ["Matched analytics pattern: {$pattern}"],
-        ];
-      }
+    // Pure LLM mode or HybridPreFilter didn't match
+    if ($this->debug) {
+      $mode = $useHybridPreFilter ? 'LLM fallback (HybridPreFilter no match)' : 'Pure LLM mode';
+      $this->logger->logSecurityEvent("$mode - using LLM for classification", 'info');
     }
-
-    return ['is_analytics' => false, 'confidence' => 0, 'reasoning' => []];
-  }
-
-  /**
-   * Detect web search queries (external search)
-   *
-   * @param string $query Original query
-   * @param string|null $translatedQuery Translated query
-   * @return array Result with is_web_search, confidence, reasoning
-   */
-  private function detectWebSearchQuery(string $query, ?string $translatedQuery): array
-  {
-    $patterns = WebSearchPattern::getWebSearchPatterns();
-
-    foreach ($patterns as $pattern => $score) {
-      if (preg_match($pattern, $query) || ($translatedQuery && preg_match($pattern, $translatedQuery))) {
-        return [
-          'is_web_search' => true,
-          'confidence' => $score,
-          'reasoning' => ["Matched web search pattern: {$pattern}"],
-        ];
-      }
-    }
-
-    return ['is_web_search' => false, 'confidence' => 0, 'reasoning' => []];
-  }
-
-  /**
-   * Detect semantic queries (knowledge base/RAG queries)
-   *
-   * @param string $query Original query
-   * @param string|null $translatedQuery Translated query
-   * @return array Result with confidence and reasoning
-   */
-  private function detectSemanticQuery(string $query, ?string $translatedQuery): array
-  {
-    $patterns = SemanticsPattern::detectSemanticQuery();
-
-    $confidence = 0.5; // Default semantic confidence
-    $reasoning = ['Default classification: semantic'];
-
-    foreach ($patterns as $pattern => $score) {
-      if (preg_match($pattern, $query) || ($translatedQuery && preg_match($pattern, $translatedQuery))) {
-        $confidence = $score;
-        $reasoning = ["Matched semantic pattern: {$pattern}"];
-        break;
-      }
-    }
-
-    return [
-      'confidence' => $confidence,
-      'reasoning' => $reasoning,
-    ];
+    
+    $result = $this->classifyWithLLM($query, $translatedQuery);
+    $result['detection_method'] = 'llm';
+    return $result;
   }
 
   /**
@@ -514,9 +196,17 @@ class QueryClassifier
    * Classify query using LLM fallback when patterns fail
    * 
    * 🔧 TASK 4.5.5 (2025-12-11): Updated to handle new array return format from checkSemantics
+   * 🔧 TASK 2.10.2 (2025-12-26): Added ClassificationCache integration for performance optimization
    * 
    * This method uses ClassificationEngine::checkSemantics() which calls the LLM
    * to determine if a query is 'analytics', 'semantic', 'hybrid', or 'web_search'.
+   * 
+   * CACHE FLOW:
+   * 1. Check ClassificationCache for cached result
+   * 2. If cache HIT: Return cached result (instant, ~1ms)
+   * 3. If cache MISS: Call LLM via ClassificationEngine
+   * 4. Store LLM result in cache for future queries
+   * 5. Return classification result
    * 
    * @param string $query Original query
    * @param string|null $translatedQuery Translated query (English)
@@ -527,6 +217,45 @@ class QueryClassifier
     // Use translated query if available, otherwise use original
     $queryToClassify = $translatedQuery ?? $query;
     
+    // TASK 2.10.2: Check cache first
+    if ($this->classificationCache !== null) {
+      $cached = $this->classificationCache->getCachedClassification($query, $translatedQuery);
+      
+      if ($cached !== null) {
+        if ($this->debug) {
+          $this->logger->logStructured(
+            'info',
+            'QueryClassifier',
+            'classification_cache_hit',
+            [
+              'query' => substr($queryToClassify, 0, 50),
+              'type' => $cached['type'],
+              'confidence' => $cached['confidence'],
+              'cache_age' => $cached['cache_age'] ?? 'unknown',
+              'note' => 'Returned from cache (no LLM call)'
+            ]
+          );
+        }
+        
+        // Return cached result
+        return $cached;
+      }
+      
+      // Cache miss - log and proceed to LLM call
+      if ($this->debug) {
+        $this->logger->logStructured(
+          'info',
+          'QueryClassifier',
+          'classification_cache_miss',
+          [
+            'query' => substr($queryToClassify, 0, 50),
+            'note' => 'Cache miss - calling LLM'
+          ]
+        );
+      }
+    }
+    
+    // Original LLM classification logic
     if ($this->debug) {
       $this->logger->logSecurityEvent(
         "Using LLM fallback for classification: {$queryToClassify}",
@@ -554,6 +283,19 @@ class QueryClassifier
         $classificationResult['confidence'] = 0.5;
       }
       
+      // Prepare result
+      $result = [
+        'type' => $type,
+        'confidence' => $classificationResult['confidence'] ?? 0.7,
+        'reasoning' => [$classificationResult['reasoning'] ?? 'LLM classification fallback'],
+        'sub_types' => $classificationResult['sub_types'] ?? []
+      ];
+      
+      // TASK 2.10.2: Cache the result for future queries
+      if ($this->classificationCache !== null) {
+        $this->classificationCache->cacheClassification($query, $translatedQuery, $result);
+      }
+      
       // Log classification with confidence and reasoning
       if ($this->debug) {
         $this->logger->logStructured(
@@ -565,17 +307,13 @@ class QueryClassifier
             'type' => $type,
             'confidence' => $classificationResult['confidence'] ?? 0.7,
             'reasoning' => $classificationResult['reasoning'] ?? 'N/A',
-            'sub_types' => $classificationResult['sub_types'] ?? []
+            'sub_types' => $classificationResult['sub_types'] ?? [],
+            'cached' => 'yes'
           ]
         );
       }
       
-      return [
-        'type' => $type,
-        'confidence' => $classificationResult['confidence'] ?? 0.7,
-        'reasoning' => [$classificationResult['reasoning'] ?? 'LLM classification fallback'],
-        'sub_types' => $classificationResult['sub_types'] ?? []
-      ];
+      return $result;
       
     } catch (\Exception $e) {
       if ($this->debug) {

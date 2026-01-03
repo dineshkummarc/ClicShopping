@@ -73,14 +73,14 @@ class IntentAnalyzer
   // Performance monitoring
   private ?PerformanceMonitor $performanceMonitor = null;
 
-  // 🔧 PHASE 9: New SubIntentAnalyzer components
+  // 🔧 PHASE 9: New SubIntentAnalyzer components (deprecated - kept for backward compatibility)
   private TranslationService $translationService;
   private IntentAnalyzerFactory $intentFactory;
 
-  // 🔧 PHASE 14: Unified analyzer for language + intent detection
+  // 🔧 PHASE 14: Unified analyzer for language + intent detection (ALWAYS used)
   private ?UnifiedQueryAnalyzer $unifiedAnalyzer = null;
-  private bool $useUnifiedAnalyzer = false; // Feature flag
-  private bool $useHybridMode = true; // Use fast path for FR/EN, GPT for others
+  private bool $useUnifiedAnalyzer = true; // Always true - required for analytics
+  private bool $useHybridMode = false; // Deprecated - Pure LLM mode only
 
   /**
    * Constructor
@@ -105,20 +105,16 @@ class IntentAnalyzer
     $this->translationService = new TranslationService($debug);
     $this->intentFactory = new IntentAnalyzerFactory($debug);
 
-    // 🔧 PHASE 14: Initialize UnifiedQueryAnalyzer (optional, controlled by feature flag)
-    // Check if unified analyzer should be used (can be configured via environment variable or config)
-    $this->useUnifiedAnalyzer = (bool)getenv('USE_UNIFIED_ANALYZER'); // Default: false
+    // 🔧 PHASE 14: Initialize UnifiedQueryAnalyzer (ALWAYS used - required for analytics)
+    // UnifiedQueryAnalyzer is hardcoded to always be used because:
+    // 1. Analytics queries break without it
+    // 2. Required for Pure LLM mode operation
+    // 3. Provides comprehensive intent classification (analytics, semantic, web_search, hybrid)
+    $this->useUnifiedAnalyzer = true;
+    $this->unifiedAnalyzer = new UnifiedQueryAnalyzer($debug);
     
-    if ($this->useUnifiedAnalyzer) {
-      $this->unifiedAnalyzer = new UnifiedQueryAnalyzer($debug);
-      
-      if ($this->debug) {
-        $this->logger->logSecurityEvent("IntentAnalyzer initialized with UNIFIED analyzer (Phase 14)", 'info');
-      }
-    } else {
-      if ($this->debug) {
-        $this->logger->logSecurityEvent("IntentAnalyzer initialized with refactored SubIntentAnalyzer architecture", 'info');
-      }
+    if ($this->debug) {
+      $this->logger->logSecurityEvent("IntentAnalyzer initialized with UNIFIED analyzer (Phase 14 - always enabled)", 'info');
     }
   }
 
@@ -186,158 +182,43 @@ class IntentAnalyzer
     
     $timings['cache_check'] = (microtime(true) - $cacheCheckStart) * 1000;
 
-    // 2. Choose analysis approach based on feature flag
-    if ($this->useUnifiedAnalyzer && $this->unifiedAnalyzer !== null) {
-      // 🔧 PHASE 14: Hybrid approach - fast path for FR/EN, GPT for others
-      
-      if ($this->useHybridMode) {
-        // Quick language detection using patterns
-        $quickLang = \ClicShopping\AI\Domain\Patterns\LanguagePattern::detectLanguageQuick($query);
-        
-        if ($quickLang === 'en' || $quickLang === 'fr') {
-          // Fast path: Use traditional approach for FR/EN
-          if ($this->debug) {
-            error_log("🚀 Using FAST PATH for {$quickLang} (Phase 14 Hybrid)");
-          }
-          
-          $translationStart = microtime(true);
-          $translationResult = $this->translationService->translateIfNeeded($query);
-          $translatedQuery = $translationResult['translated_query'];
-          $timings['translation'] = $translationResult['translation_time_ms'];
-          
-          $intentStart = microtime(true);
-          $intentResult = $this->intentFactory->analyzeIntent($translatedQuery, $query);
-          $timings['intent_analysis'] = (microtime(true) - $intentStart) * 1000;
-          
-          $queryType = $intentResult['type'];
-          $confidence = $intentResult['confidence'];
-          $metadata = $intentResult['metadata'];
-          $metadata['language'] = $quickLang;
-          $metadata['detection_method'] = 'pattern';
-          
-          if ($this->debug) {
-            error_log("Language: {$quickLang} (pattern detection)");
-            error_log("Translation: " . ($translationResult['was_translated'] ? 'PERFORMED' : 'SKIPPED'));
-            error_log("Translated query: '{$translatedQuery}'");
-            error_log("Intent type: '{$queryType}' (confidence: " . round($confidence, 3) . ")");
-          }
-          
-        } else {
-          // Slow path: Use unified analyzer for other languages
-          if ($this->debug) {
-            error_log("🚀 Using UNIFIED analyzer for non-FR/EN language (Phase 14)");
-          }
-          
-          $unifiedStart = microtime(true);
-          $unifiedResult = $this->unifiedAnalyzer->analyzeQuery($query);
-          $unifiedTime = (microtime(true) - $unifiedStart) * 1000;
-          
-          $translatedQuery = $unifiedResult['translated_query'];
-          $queryType = $unifiedResult['intent_type'];
-          $confidence = $unifiedResult['confidence'];
-          $metadata = [
-            'language' => $unifiedResult['language'],
-            'was_translated' => $unifiedResult['was_translated'],
-            'detection_method' => 'gpt',
-          ];
-          
-          // Create intentResult structure for unified mode
-          $intentResult = [
-            'type' => $queryType,
-            'confidence' => $confidence,
-            'metadata' => $metadata,
-            'reasoning' => ['unified_analyzer'], // Unified mode doesn't provide detailed reasoning
-            'is_hybrid' => false,
-          ];
-          
-          $timings['translation'] = 0; // Included in unified call
-          $timings['intent_analysis'] = $unifiedTime;
-          
-          if ($this->debug) {
-            error_log("Language: {$unifiedResult['language']} (GPT detection)");
-            error_log("Translation: " . ($unifiedResult['was_translated'] ? 'PERFORMED' : 'SKIPPED'));
-            error_log("Translated query: '{$translatedQuery}'");
-            error_log("Intent type: '{$queryType}' (confidence: " . round($confidence, 3) . ")");
-            error_log("Unified analysis time: " . round($unifiedTime, 2) . "ms");
-          }
-        }
-        
-      } else {
-        // Full GPT mode: Use unified analyzer for all languages
-        if ($this->debug) {
-          error_log("🚀 Using UNIFIED analyzer (Full GPT mode - Phase 14)");
-        }
-        
-        $unifiedStart = microtime(true);
-        $unifiedResult = $this->unifiedAnalyzer->analyzeQuery($query);
-        $unifiedTime = (microtime(true) - $unifiedStart) * 1000;
-        
-        $translatedQuery = $unifiedResult['translated_query'];
-        $queryType = $unifiedResult['intent_type'];
-        $confidence = $unifiedResult['confidence'];
-        $metadata = [
-          'language' => $unifiedResult['language'],
-          'was_translated' => $unifiedResult['was_translated'],
-          'detection_method' => 'gpt',
-        ];
-        
-        // Create intentResult structure for unified mode
-        $intentResult = [
-          'type' => $queryType,
-          'confidence' => $confidence,
-          'metadata' => $metadata,
-          'reasoning' => ['unified_analyzer'], // Unified mode doesn't provide detailed reasoning
-          'is_hybrid' => false,
-        ];
-        
-        $timings['translation'] = 0; // Included in unified call
-        $timings['intent_analysis'] = $unifiedTime;
-        
-        if ($this->debug) {
-          error_log("Language: {$unifiedResult['language']}");
-          error_log("Translation: " . ($unifiedResult['was_translated'] ? 'PERFORMED' : 'SKIPPED'));
-          error_log("Translated query: '{$translatedQuery}'");
-          error_log("Intent type: '{$queryType}' (confidence: " . round($confidence, 3) . ")");
-          error_log("Unified analysis time: " . round($unifiedTime, 2) . "ms");
-        }
-      }
-      
-    } else {
-      // 🔧 PHASE 9: Use traditional approach (separate translation + intent analysis)
-      if ($this->debug) {
-        error_log("📊 Using TRADITIONAL analyzer (Phase 9)");
-      }
-      
-      // 2a. Translate query if needed (using TranslationService)
-      $translationStart = microtime(true);
-      $translationResult = $this->translationService->translateIfNeeded($query);
-      $translatedQuery = $translationResult['translated_query'];
-      $timings['translation'] = $translationResult['translation_time_ms'];
-
-      if ($this->debug) {
-        error_log("Translation: " . ($translationResult['was_translated'] ? 'PERFORMED' : 'SKIPPED'));
-        error_log("Translated query: '{$translatedQuery}'");
-      }
-
-      // 2b. Analyze intent (using IntentAnalyzerFactory)
-      $intentStart = microtime(true);
-      $intentResult = $this->intentFactory->analyzeIntent($translatedQuery, $query);
-      $timings['intent_analysis'] = (microtime(true) - $intentStart) * 1000;
-
-      $queryType = $intentResult['type'];
-      $confidence = $intentResult['confidence'];
-      $metadata = $intentResult['metadata'];
-
-      if ($this->debug) {
-        error_log("Intent type: '{$queryType}' (confidence: " . round($confidence, 3) . ")");
-        // Fix: Handle reasoning as array safely
-        $reasoning = $intentResult['reasoning'] ?? [];
-        if (is_array($reasoning)) {
-          error_log("Reasoning: " . implode('; ', $reasoning));
-        } else {
-          error_log("Reasoning: " . $reasoning);
-        }
-      }
+    // 2. Use UnifiedQueryAnalyzer (ALWAYS - required for analytics)
+    // UnifiedQueryAnalyzer provides comprehensive intent classification for all query types
+    if ($this->debug) {
+      error_log("🚀 Using UNIFIED analyzer (Pure LLM mode - always enabled)");
+    }
+    
+    $unifiedStart = microtime(true);
+    $unifiedResult = $this->unifiedAnalyzer->analyzeQuery($query);
+    $unifiedTime = (microtime(true) - $unifiedStart) * 1000;
+    
+    $translatedQuery = $unifiedResult['translated_query'];
+    $queryType = $unifiedResult['intent_type'];
+    $confidence = $unifiedResult['confidence'];
+    $metadata = [
+      'language' => $unifiedResult['language'],
+      'was_translated' => $unifiedResult['was_translated'],
+      'detection_method' => 'llm',
+    ];
+    
+    // Create intentResult structure for unified mode
+    $intentResult = [
+      'type' => $queryType,
+      'confidence' => $confidence,
+      'metadata' => $metadata,
+      'reasoning' => ['unified_analyzer'], // Unified mode doesn't provide detailed reasoning
+      'is_hybrid' => false,
+    ];
+    
+    $timings['translation'] = 0; // Included in unified call
+    $timings['intent_analysis'] = $unifiedTime;
+    
+    if ($this->debug) {
+      error_log("Language: {$unifiedResult['language']}");
+      error_log("Translation: " . ($unifiedResult['was_translated'] ? 'PERFORMED' : 'SKIPPED'));
+      error_log("Translated query: '{$translatedQuery}'");
+      error_log("Intent type: '{$queryType}' (confidence: " . round($confidence, 3) . ")");
+      error_log("Unified analysis time: " . round($unifiedTime, 2) . "ms");
     }
 
     // 4. Extract additional metadata (entities, context, etc.)
@@ -393,6 +274,10 @@ class IntentAnalyzer
   /**
    * Check cache for existing analysis result
    *
+   * Cache location: Work/Cache/Rag/Intent/intent_*.cache
+   * Cache key: md5(strtolower(trim($query)))
+   * Cache TTL: 5 minutes (300 seconds)
+   *
    * @param string $cacheKey Cache key
    * @param string $query Original query
    * @return array|null Cached result or null if not found
@@ -404,7 +289,8 @@ class IntentAnalyzer
         $this->performanceMonitor->startOperation('cache_check', ['query' => $query]);
       }
       
-      $cache = new Cache($cacheKey, 'intent');
+      // Use 'Rag/Intent' namespace to store cache in Work/Cache/Rag/Intent/
+      $cache = new Cache($cacheKey, 'Rag/Intent');
       
       if ($cache->exists($this->cacheTTL)) {
         $cached = $cache->get();
@@ -458,17 +344,20 @@ class IntentAnalyzer
   /**
    * Cache analysis result
    *
+   * Cache location: Work/Cache/Rag/Intent/intent_*.cache
+   *
    * @param string $cacheKey Cache key
    * @param array $result Analysis result
    */
   private function cacheResult(string $cacheKey, array $result): void
   {
     try {
-      $cache = new Cache($cacheKey, 'intent');
+      // Use 'Rag/Intent' namespace to store cache in Work/Cache/Rag/Intent/
+      $cache = new Cache($cacheKey, 'Rag/Intent');
       $cache->save($result);
       
       if ($this->debug) {
-        error_log("✅ Result cached successfully");
+        error_log("✅ Result cached successfully in Work/Cache/Rag/Intent/");
       }
       
     } catch (\Exception $e) {
@@ -576,37 +465,28 @@ class IntentAnalyzer
 
   /**
    * Enable or disable unified analyzer (Phase 14)
-   *
-   * @param bool $enable True to enable unified analyzer, false to use traditional approach
+   * 
+   * @deprecated UnifiedQueryAnalyzer is now always enabled (required for analytics)
+   * @param bool $enable Ignored - unified analyzer is always enabled
    * @return void
    */
   public function setUseUnifiedAnalyzer(bool $enable): void
   {
-    $this->useUnifiedAnalyzer = $enable;
-    
-    // Initialize unified analyzer if enabling and not already initialized
-    if ($enable && $this->unifiedAnalyzer === null) {
-      $this->unifiedAnalyzer = new UnifiedQueryAnalyzer($this->debug);
-      
-      if ($this->debug) {
-        $this->logger->logSecurityEvent("UnifiedQueryAnalyzer enabled dynamically", 'info');
-      }
-    }
-    
+    // UnifiedQueryAnalyzer is now always enabled - this method is deprecated
     if ($this->debug) {
-      $mode = $enable ? 'UNIFIED (Phase 14)' : 'TRADITIONAL (Phase 9)';
-      error_log("🔄 Analyzer mode switched to: {$mode}");
+      error_log("⚠️ DEPRECATED: setUseUnifiedAnalyzer() called but UnifiedQueryAnalyzer is always enabled");
     }
   }
 
   /**
    * Check if unified analyzer is enabled
-   *
-   * @return bool True if unified analyzer is enabled
+   * 
+   * @deprecated UnifiedQueryAnalyzer is now always enabled (required for analytics)
+   * @return bool Always returns true
    */
   public function isUsingUnifiedAnalyzer(): bool
   {
-    return $this->useUnifiedAnalyzer;
+    return true; // Always true - unified analyzer is always enabled
   }
   
   /**

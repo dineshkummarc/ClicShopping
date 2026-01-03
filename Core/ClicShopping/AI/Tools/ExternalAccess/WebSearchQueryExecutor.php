@@ -15,7 +15,6 @@ use ClicShopping\AI\Helper\ProductHelper;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Helper\Formatter\ResultFormatter;
 use ClicShopping\AI\Agents\Memory\ConversationMemory;
-use ClicShopping\AI\Domain\Patterns\HybridPattern;
 use ClicShopping\AI\Domain\Search\WebSearchTool;
 
 /**
@@ -435,11 +434,32 @@ class WebSearchQueryExecutor
   /**
    * Detect if query is asking for price comparison
    *
+   * PATTERN BYPASS: Respects USE_PATTERN_BASED_DETECTION flag
+   * - Pure LLM mode: Returns false (price comparison disabled)
+   * - Pattern mode: Uses HybridPattern for detection
+   *
    * @param string $query Query to analyze
    * @return bool True if price comparison query
    */
   private function isPriceComparisonQuery(string $query): bool
   {
+    // TASK 2.9.8.6.1: Check if pattern-based detection is enabled
+    if (!defined('USE_PATTERN_BASED_DETECTION') || USE_PATTERN_BASED_DETECTION === 'False') {
+      // Pure LLM mode: Price comparison detection disabled
+      // LLM will handle price comparison queries through standard web search
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "Price comparison detection bypassed (Pure LLM mode)",
+          'info'
+        );
+      }
+      return false;
+    }
+
+    // Pattern mode: Use HybridPattern for detection
+    // @deprecated Pattern-based detection removed in Pure LLM mode
+    // This code is never executed (USE_PATTERN_BASED_DETECTION removed in task 5.1.6)
+    // TODO: Remove this dead code block in Q2 2026
     $priceComparisonPatterns = HybridPattern::priceComparisonPatterns();
 
     foreach ($priceComparisonPatterns as $pattern) {

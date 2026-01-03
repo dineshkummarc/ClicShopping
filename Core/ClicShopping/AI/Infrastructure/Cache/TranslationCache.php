@@ -37,7 +37,7 @@ class TranslationCache
   public function __construct(int $lifetime = 2592000)
   {
     $this->cache = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
-    $this->cacheDir = CLICSHOPPING::BASE_DIR . 'Work/Cache/Translations/';
+    $this->cacheDir = CLICSHOPPING::BASE_DIR . 'Work/Cache/Rag/Translation/';
     $this->lifetime = $lifetime;
     $this->checkTranslationCache();
 
@@ -133,5 +133,48 @@ class TranslationCache
     }
 
     return $success;
+  }
+
+  /**
+   * Get cache statistics.
+   *
+   * @return array Statistics about the cache.
+   */
+  public function getStatistics(): array
+  {
+    if (!is_dir($this->cacheDir)) {
+      return [
+        'enabled' => $this->cache,
+        'directory' => $this->cacheDir,
+        'file_count' => 0,
+        'total_size' => 0,
+        'oldest_file' => null,
+        'newest_file' => null
+      ];
+    }
+
+    $files = glob($this->cacheDir . '*.json');
+    $totalSize = 0;
+    $oldestTime = PHP_INT_MAX;
+    $newestTime = 0;
+
+    foreach ($files as $file) {
+      $totalSize += filesize($file);
+      $mtime = filemtime($file);
+      $oldestTime = min($oldestTime, $mtime);
+      $newestTime = max($newestTime, $mtime);
+    }
+
+    return [
+      'enabled' => $this->cache,
+      'directory' => $this->cacheDir,
+      'file_count' => count($files),
+      'total_size' => $totalSize,
+      'total_size_mb' => round($totalSize / 1024 / 1024, 2),
+      'oldest_file' => $oldestTime < PHP_INT_MAX ? date('Y-m-d H:i:s', $oldestTime) : null,
+      'newest_file' => $newestTime > 0 ? date('Y-m-d H:i:s', $newestTime) : null,
+      'lifetime' => $this->lifetime,
+      'lifetime_days' => round($this->lifetime / 86400, 1)
+    ];
   }
 }

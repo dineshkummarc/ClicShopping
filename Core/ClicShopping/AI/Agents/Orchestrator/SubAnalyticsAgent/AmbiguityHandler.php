@@ -12,6 +12,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent;
 
 use ClicShopping\AI\Security\InputValidator;
 use ClicShopping\AI\Helper\AgentResponseHelper;
+use ClicShopping\AI\Helper\Detection\AmbiguousQueryDetector;
 
 /**
  * AmbiguityHandler

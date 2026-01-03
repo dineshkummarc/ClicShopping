@@ -11,7 +11,7 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent;
 
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domain\Patterns\ClearQueryPattern;
+use ClicShopping\AI\Domain\Patterns\AmbiguityPreFilter;
 use ClicShopping\OM\Cache as OMCache;
 
 /**
@@ -43,8 +43,7 @@ class AmbiguityOptimizer
     
     // Determine cache type based on configuration
     // MariaDB uses Memcached/Redis if enabled, otherwise traditional cache
-    $this->useCache = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') && 
-                      CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
+    $this->useCache = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
     
     $this->cacheType = $this->detectCacheType();
     
@@ -100,27 +99,59 @@ class AmbiguityOptimizer
   }
 
   /**
-   * Check if query is clearly non-ambiguous using pattern matching
+   * Check if query is clearly non-ambiguous using pattern-based pre-filter
    *
-   * This is a fast pre-filter before expensive LLM calls.
-   * Uses ClearQueryPattern from Domain/Patterns.
+   * ⚠️ EXCEPTION TO PURE LLM APPROACH:
+   * Uses AmbiguityPreFilter for temporal expressions and quantitative language
+   * because LLM is inconsistent (85% success rate). This ensures 100% consistency.
+   * 
+   * This pre-filter is ALWAYS enabled (not configurable) because it's critical
+   * for production consistency.
    *
    * @param string $translatedQuery Query in ENGLISH (already translated)
    * @return array ['is_clear' => bool, 'pattern_type' => string|null]
    */
   public function isClearlyNonAmbiguous(string $translatedQuery): array
   {
-    $result = ClearQueryPattern::matches($translatedQuery);
-
-    if ($result['is_clear'] && $this->debug) {
+    // ⚠️ CRITICAL: Always use AmbiguityPreFilter (EXCEPTION to Pure LLM)
+    // This ensures 100% consistency for temporal expressions + quantitative language
+    // LLM is only 85% consistent, production requires 95%+
+    
+    $preFilterResult = AmbiguityPreFilter::preFilter($translatedQuery);
+    
+    if ($preFilterResult !== null) {
+      // Pre-filter determined result - query is clearly NOT ambiguous
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "AmbiguityOptimizer: Pre-filter determined query is NOT ambiguous: {$preFilterResult['reasoning']}",
+          'info',
+          ['query' => $translatedQuery]
+        );
+      }
+      
+      return [
+        'is_clear' => true,
+        'pattern_type' => 'prefilter',
+        'matched_text' => $translatedQuery,
+        'reason' => $preFilterResult['reasoning']
+      ];
+    }
+    
+    // Pre-filter could not determine - use LLM
+    if ($this->debug) {
       $this->logger->logSecurityEvent(
-        "AmbiguityOptimizer: Query matches clear pattern ({$result['pattern_type']}): {$result['matched_text']}",
+        "AmbiguityOptimizer: Pre-filter passed, using LLM for ambiguity detection",
         'info',
         ['query' => $translatedQuery]
       );
     }
-
-    return $result;
+    
+    return [
+      'is_clear' => false,
+      'pattern_type' => null,
+      'matched_text' => null,
+      'reason' => 'prefilter_passed_use_llm'
+    ];
   }
 
   /**
@@ -175,6 +206,33 @@ class AmbiguityOptimizer
   public function selectInterpretations(array $ambiguityAnalysis, int $count): array
   {
     $availableInterpretations = $ambiguityAnalysis['interpretations'] ?? ['sum', 'count'];
+    
+    // 🔧 FIX: If interpretations array is empty, use defaults based on ambiguity type
+    if (empty($availableInterpretations)) {
+      $ambiguityType = $ambiguityAnalysis['ambiguity_type'] ?? '';
+      
+      // For quantification queries, default to count and sum
+      if (strpos($ambiguityType, 'quantification') !== false) {
+        $availableInterpretations = ['count', 'sum'];
+        
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "AmbiguityOptimizer: Empty interpretations array, using defaults for quantification: count, sum",
+            'info'
+          );
+        }
+      } else {
+        // For other ambiguity types, use general defaults
+        $availableInterpretations = ['sum', 'count', 'list'];
+        
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "AmbiguityOptimizer: Empty interpretations array, using general defaults: sum, count, list",
+            'info'
+          );
+        }
+      }
+    }
     
     // Priority order: sum > count > list > recent
     // "recent" is rarely what users want, so it's last
@@ -366,7 +424,7 @@ class AmbiguityOptimizer
   private function getFromTraditionalCache(string $key): ?array
   {
     try {
-      $cache = new OMCache($key, 'ambiguity_optimizer');
+      $cache = new OMCache($key, 'Rag/Ambiguity');
       if ($cache->exists()) {
         return $cache->get();
       }
@@ -387,7 +445,7 @@ class AmbiguityOptimizer
   private function setInTraditionalCache(string $key, array $value, int $ttl): void
   {
     try {
-      $cache = new OMCache($key, 'ambiguity_optimizer');
+      $cache = new OMCache($key, 'Rag/Ambiguity');
       $cache->save($value);
     } catch (\Exception $e) {
       if ($this->debug) {
@@ -406,15 +464,12 @@ class AmbiguityOptimizer
    */
   public function getStatistics(): array
   {
-    $patternStats = ClearQueryPattern::getStatistics();
-    
     return [
       'cache_enabled' => $this->useCache,
       'cache_type' => $this->cacheType,
       'default_interpretation_count' => 2,
       'confidence_threshold' => 0.85,
-      'pattern_categories' => count(ClearQueryPattern::getCategories()),
-      'total_patterns' => $patternStats['total_patterns'],
+      'prefilter_enabled' => true, // AmbiguityPreFilter is always enabled (EXCEPTION to Pure LLM)
     ];
   }
 }

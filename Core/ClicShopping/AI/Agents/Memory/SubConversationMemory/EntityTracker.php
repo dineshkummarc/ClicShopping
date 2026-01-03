@@ -13,6 +13,7 @@ namespace ClicShopping\AI\Agents\Memory\SubConversationMemory;
 use AllowDynamicProperties;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\OM\CLICSHOPPING;
 
 /**
  * EntityTracker Class
@@ -107,7 +108,7 @@ class EntityTracker
     // 🔧 TASK 4.4.1 PHASE 2: Use DoctrineOrm instead of direct DB access
     try {
       // Get table prefix from configuration
-      $prefix = \ClicShopping\OM\CLICSHOPPING::getConfig('db_table_prefix', 'DB');
+      $prefix = CLICSHOPPING::getConfig('db_table_prefix', 'DB');
       
       // TASK 2.8 FIX: Use rag_conversation_memory_embedding table which stores entity_id
       // This table is used by LongTermMemoryManager to store interactions with embeddings

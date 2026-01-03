@@ -167,7 +167,7 @@
                     <tr>
                       <td><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('help_model_phi4_name'); ?></strong></td>
                       <td><?php echo $CLICSHOPPING_ChatGpt->getDef('help_model_phi4_best'); ?></td>
-                      <td><span class="badge bg-success"><?php echo $CLICSHOPPING_ChatGpt->getDef('help_badge_yes'); ?></span></td>
+                      <td><span class="badge bg-success"><?php echo $CLICSHOPPING_ChatGpt->getDef('help_badge_no'); ?></span></td>
                       <td><span class="badge bg-danger"><?php echo $CLICSHOPPING_ChatGpt->getDef('help_badge_no'); ?></span></td>
                       <td><span class="badge bg-success"><?php echo $CLICSHOPPING_ChatGpt->getDef('help_model_phi4_speed'); ?></span></td>
                       <td><span class="badge bg-success"><?php echo $CLICSHOPPING_ChatGpt->getDef('help_model_phi4_cost'); ?></span></td>

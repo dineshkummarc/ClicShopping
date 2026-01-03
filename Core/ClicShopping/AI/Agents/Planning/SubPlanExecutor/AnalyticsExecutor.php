@@ -155,6 +155,94 @@ class AnalyticsExecutor
    */
   public function formatAnalyticsResult(array $rawResult): array
   {
+    // 🔍 DEBUG: Trace results through formatting
+    error_log("\n" . str_repeat("=", 100));
+    error_log("DEBUG: AnalyticsExecutor.formatAnalyticsResult() CALLED");
+    error_log(str_repeat("=", 100));
+    error_log("Raw result type: " . ($rawResult['type'] ?? 'unknown'));
+    error_log("Raw result has 'results' key: " . (isset($rawResult['results']) ? 'YES' : 'NO'));
+    
+    if (isset($rawResult['results'])) {
+      error_log("Raw result 'results' count: " . count($rawResult['results']));
+      error_log("Raw result 'results' is_array: " . (is_array($rawResult['results']) ? 'YES' : 'NO'));
+      
+      if (!empty($rawResult['results']) && is_array($rawResult['results'])) {
+        error_log("First row keys: " . implode(', ', array_keys($rawResult['results'][0])));
+        error_log("First row data: " . json_encode($rawResult['results'][0]));
+      }
+    }
+    error_log(str_repeat("=", 100) . "\n");
+    
+    // 🔧 FIX: Handle ambiguous results type
+    // When query is ambiguous, the system returns multiple interpretations
+    // Instead of passing ambiguous results to UI (which doesn't handle them),
+    // we select the best interpretation and return it as a normal result
+    if (isset($rawResult['type']) && $rawResult['type'] === 'analytics_results_ambiguous') {
+      error_log("✅ Detected ambiguous results - selecting best interpretation");
+      
+      // Get the interpretation results
+      $interpretationResults = $rawResult['interpretation_results'] ?? [];
+      
+      if (!empty($interpretationResults)) {
+        // Find the interpretation with the most results
+        $bestInterpretation = null;
+        $maxResults = 0;
+        
+        foreach ($interpretationResults as $key => $interpretation) {
+          $resultCount = count($interpretation['results'] ?? []);
+          error_log("  Interpretation '{$key}': {$resultCount} results");
+          error_log("    Has 'interpretation' key: " . (isset($interpretation['interpretation']) ? 'YES' : 'NO'));
+          if (isset($interpretation['interpretation'])) {
+            error_log("    Interpretation text: " . substr($interpretation['interpretation'], 0, 100));
+          }
+          
+          if ($resultCount > $maxResults) {
+            $maxResults = $resultCount;
+            $bestInterpretation = $interpretation;
+          }
+        }
+        
+        // If we found a good interpretation, use it
+        if ($bestInterpretation !== null && !empty($bestInterpretation['results'])) {
+          error_log("  Selected best interpretation with {$maxResults} results");
+          
+          // Use the interpretation from the best result, or generate one
+          $interpretation = $bestInterpretation['interpretation'] ?? null;
+          
+          // If interpretation is empty or generic, generate a better one
+          if (empty($interpretation) || $interpretation === 'Résultats trouvés') {
+            error_log("  Interpretation is empty/generic, generating from results...");
+            $interpretation = $this->generateInterpretationFromResults(
+              $bestInterpretation['results'],
+              $rawResult['query'] ?? ''
+            );
+            error_log("  Generated interpretation: " . substr($interpretation, 0, 100));
+          }
+          
+          // Convert to standard analytics_response format
+          return [
+            'type' => 'analytics_response',
+            'question' => $rawResult['query'] ?? '',
+            'interpretation' => $interpretation,
+            'results' => $bestInterpretation['results'],
+            'sql_query' => $bestInterpretation['sql_query'] ?? '',
+            'original_sql_query' => $bestInterpretation['sql_query'] ?? '',
+            'entity_id' => null,
+            'entity_type' => null,
+            'source_attribution' => [
+              'source_type' => 'Analytics Database',
+              'source_icon' => '📊',
+              'source_details' => 'Data retrieved from transactional database',
+              'table_name' => $this->extractTableNameFromSql($bestInterpretation['sql_query'] ?? null),
+            ],
+          ];
+        }
+      }
+      
+      // If no good interpretation found, fall through to generate default interpretation
+      error_log("  No good interpretation found, falling through");
+    }
+    
     // Check if result is already properly formatted as analytics_response
     if (isset($rawResult['type']) && $rawResult['type'] === 'analytics_response') {
       // Already formatted, just ensure entity metadata and source attribution are preserved
@@ -231,6 +319,59 @@ class AnalyticsExecutor
   }
 
   /**
+   * Generate interpretation from results
+   *
+   * @param array $results Results array
+   * @param string $question Original question
+   * @return string Interpretation
+   */
+  private function generateInterpretationFromResults(array $results, string $question): string
+  {
+    if (empty($results)) {
+      return "Aucun résultat trouvé pour : {$question}";
+    }
+    
+    $count = count($results);
+    $firstResult = $results[0];
+    
+    // Build interpretation based on the data
+    $parts = [];
+    
+    // Check for product name
+    if (isset($firstResult['products_name'])) {
+      $parts[] = "Produit : {$firstResult['products_name']}";
+    }
+    
+    // Check for price
+    if (isset($firstResult['catalog_price'])) {
+      $parts[] = "Prix : {$firstResult['catalog_price']}€";
+    } elseif (isset($firstResult['products_price'])) {
+      $parts[] = "Prix : {$firstResult['products_price']}€";
+    }
+    
+    // Check for quantity
+    if (isset($firstResult['products_quantity'])) {
+      $parts[] = "Quantité en stock : {$firstResult['products_quantity']}";
+    } elseif (isset($firstResult['total_quantity'])) {
+      $parts[] = "Quantité totale : {$firstResult['total_quantity']}";
+    }
+    
+    // Check for SKU/model
+    if (isset($firstResult['products_model'])) {
+      $parts[] = "Modèle : {$firstResult['products_model']}";
+    } elseif (isset($firstResult['sku'])) {
+      $parts[] = "SKU : {$firstResult['sku']}";
+    }
+    
+    if (!empty($parts)) {
+      return implode(', ', $parts);
+    }
+    
+    // Fallback
+    return "{$count} résultat" . ($count > 1 ? 's' : '') . " trouvé" . ($count > 1 ? 's' : '');
+  }
+
+  /**
    * Generate default interpretation when none is provided
    *
    * @param array $rawResult Raw result from AnalyticsAgent
@@ -238,14 +379,33 @@ class AnalyticsExecutor
    */
   private function generateDefaultInterpretation(array $rawResult): string
   {
+    // 🔍 DEBUG: Trace why "Aucun résultat trouvé" is generated
+    error_log("\n" . str_repeat("=", 100));
+    error_log("DEBUG: generateDefaultInterpretation() CALLED");
+    error_log(str_repeat("=", 100));
+    error_log("rawResult keys: " . implode(', ', array_keys($rawResult)));
+    error_log("rawResult['results'] isset: " . (isset($rawResult['results']) ? 'YES' : 'NO'));
+    
     $results = $rawResult['results'] ?? [];
+    error_log("results after ?? []: is_array=" . (is_array($results) ? 'YES' : 'NO'));
+    error_log("results count: " . count($results));
+    
     $count = count($results);
     $question = $rawResult['question'] ?? 'votre requête';
     
+    error_log("count: {$count}");
+    error_log("question: {$question}");
+    
     // No results
     if ($count === 0) {
+      error_log("❌ RETURNING: Aucun résultat trouvé (count === 0)");
+      error_log("This is the message user sees!");
+      error_log(str_repeat("=", 100) . "\n");
       return "Aucun résultat trouvé pour : {$question}";
     }
+    
+    error_log("✅ Has results, generating interpretation");
+    error_log(str_repeat("=", 100) . "\n");
     
     // Single result
     if ($count === 1) {

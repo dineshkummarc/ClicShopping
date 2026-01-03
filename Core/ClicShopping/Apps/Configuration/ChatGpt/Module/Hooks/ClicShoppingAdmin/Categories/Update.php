@@ -161,63 +161,36 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
                 $embedding_data .= $this->app->getDef('text_category_seo_keywords', ['category_name' => $categories_name]) . ' : ' .  HTMLOverrideCommon::cleanHtmlForSEO($seo_categories_keywords) . "\n";
               }
 
+              // Generate embeddings
               $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-              $embeddings = [];
-
-              foreach ($embeddedDocuments as $embeddedDocument) {
-                if (is_array($embeddedDocument->embedding)) {
-                  $embeddings[] = $embeddedDocument->embedding;
-                }
-              }
-
-              if (!empty($embeddings)) {
-                $flattened_embedding = $embeddings[0];
-                $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
-
-                $sql_data_array_embedding = [
-                  'content' => $embedding_data,
-                  'type' => 'categories',
-                  'sourcetype' => 'manual',
-                  'sourcename' => 'manual',
-                  'date_modified' => 'now()'
-                ];
-
-                $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-
-                // MetaData  creation 
-                $metadata = [
-                  'category_name' => $categories_name,
-                  'content' => $categories_description,
-                  'language_id' => (int)$item['language_id'],
-                  'category_id' => (int)$categories_id,
-                  'type' => 'categories',
-                  'source' => [
-                    'type' => 'manual',
-                    'name' => 'manual'
+              // Prepare base metadata
+              $baseMetadata = [
+                'category_name' => $categories_name,
+                'content' => $categories_description,
+                'type' => 'categories',
+                'source' => [
+                  'type' => 'manual',
+                  'name' => 'manual'
                 ],
-                'entity_id' => (int)$categories_id,
-                'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
-                'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-                'last_modified' => date('c')
+                'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : []
               ];
 
-              // Ajouter le JSON au tableau d'insertion
-              $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
+              // Save all chunks using centralized method
+              $result = NewVector::saveEmbeddingsWithChunks(
+                $embeddedDocuments,
+                'categories_embedding',
+                (int)$categories_id,
+                (int)$item['language_id'],
+                $baseMetadata,
+                $this->app->db,
+                !$insert_embedding  // isUpdate = true if not inserting
+              );
 
-                if ($insert_embedding === true) {
-                  $sql_data_array_embedding['entity_id'] = $categories_id;
-                  $sql_data_array_embedding['language_id'] = $item['language_id'];
-
-                  $this->app->db->save('categories_embedding', $sql_data_array_embedding);
-                } else {
-                  $update_sql_data = [
-                    'language_id' => $item['language_id'],
-                    'entity_id' => $categories_id
-                  ];
-
-                  $this->app->db->save('categories_embedding', $sql_data_array_embedding, $update_sql_data);
-                }
+              if (!$result['success']) {
+                error_log("Categories Update: Failed to save embeddings for category {$categories_id} - " . $result['error']);
+              } else {
+                error_log("Categories Update: Successfully saved {$result['chunks_saved']} chunks for category {$categories_id}");
               }
             }
           }

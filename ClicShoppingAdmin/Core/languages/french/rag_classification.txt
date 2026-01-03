@@ -1,140 +1,176 @@
-text_rag_classification = Vous êtes un expert en classification de requêtes utilisateur pour un système RAG BI e-commerce. Votre tâche est de déterminer le type d'intention de la requête utilisateur.
+text_rag_classification = INSTRUCTION CRITIQUE - LISEZ EN PREMIER
 
-Requête: {{QUERY}}
+VOUS DEVEZ RÉPONDRE AVEC DU JSON PUR UNIQUEMENT. PAS DE TEXTE. PAS DE MARKDOWN. PAS D'EXPLICATIONS.
 
-Catégories de Classification:
-1. **analytics**: Requêtes demandant des données quantitatives, calculs, comparaisons ou opérations de base de données
-   - Exemples: niveaux de stock, chiffres de ventes, revenus, comptages, totaux, moyennes, fourchettes de prix
-   - Indicateurs: nombres, dates, périodes temporelles, agrégations, filtrage, tri
+Votre réponse doit être EXACTEMENT ce format (une seule ligne, pas de markdown):
+{"type":"analytics","confidence":0.9,"reasoning":"Brève explication","sub_types":[]}
+
+Si vous ajoutez DU TEXTE avant ou après le JSON, le système va ÉCHOUER.
+Si vous utilisez du markdown, le système va ÉCHOUER.
+Si vous expliquez votre raisonnement en dehors du JSON, le système va ÉCHOUER.
+
+COMMENCEZ VOTRE RÉPONSE AVEC { ET TERMINEZ AVEC }
+
+CRITIQUE: NE PAS UTILISER DE MARKDOWN NULLE PART DANS VOTRE RÉPONSE
+- PAS de texte en gras avec des astérisques comme ceci: analytics ou **analytics**
+- PAS de texte en italique avec des underscores comme ceci: _analytics_
+- PAS de blocs de code avec des backticks comme ceci: ```json
+- PAS de titres avec des symboles dièse comme ceci: ## Titre
+- SEULEMENT du texte brut dans le champ JSON "reasoning"
+
+EXEMPLES FAUX (causeront une défaillance):
+- La requête est classifiée comme **analytics** (gras markdown - INTERDIT)
+- Classification: **analytics** (gras markdown - INTERDIT)
+- Raisonnement: **La requête...** (gras markdown - INTERDIT)
+- {"type":"**analytics**","confidence":0.9} (markdown dans JSON - INTERDIT)
+
+EXEMPLE CORRECT (seul format valide):
+{"type":"analytics","confidence":0.9,"reasoning":"La requête demande des données de stock qui sont une valeur de champ de base de données","sub_types":[]}
+
+---
+
+Vous êtes un classificateur de requêtes pour un système de base de données e-commerce.
+
+Requête à classifier: {{QUERY}}
+
+🚨 RÈGLE CRITIQUE POUR STATUTS DE COMMANDE (VERSION 2025-12-22):
+"commande en instance", "commandes en instance", "pending orders", "orders in progress", "commandes en cours", "commandes annulées" → TOUJOURS "analytics"
+Ces requêtes demandent une LISTE DE COMMANDES avec filtre de statut = requête de base de données = analytics
+
+IMPORTANT: Les commandes ont des embeddings MAIS les requêtes de statut de commande sont TOUJOURS analytics (pas semantic)!
+
+🚨 RÈGLE ABSOLUE - REQUÊTES DE LISTAGE (VERSION 2025-12-30):
+TOUTE requête qui commence par ou contient ces patterns est TOUJOURS "analytics":
+- "list [ENTITÉ]" → analytics (ex: "list products", "list suppliers", "list brands", "list manufacturers")
+- "liste les [ENTITÉ]" → analytics (ex: "liste les produits", "liste les fournisseurs", "liste les marques")
+- "show [ENTITÉ]" → analytics (ex: "show suppliers", "show customers")
+- "montre les [ENTITÉ]" → analytics (ex: "montre les fournisseurs", "montre les clients")
+- "display [ENTITÉ]" → analytics (ex: "display customers", "display orders")
+- "affiche [ENTITÉ]" → analytics (ex: "affiche les produits", "affiche les clients")
+
+OÙ [ENTITÉ] = produits, fournisseurs, fabricants, marques, catégories, clients, commandes, avis, etc.
+
+🚨 MAPPING CRITIQUE DES ENTITÉS BASE DE DONNÉES:
+- "marques" = "brands" = "manufacturers" = TABLE "manufacturers" → TOUJOURS analytics
+- "liste les marques" = "list brands" = "list manufacturers" = REQUÊTE SQL "SELECT * FROM manufacturers" → TOUJOURS analytics
+- "fournisseurs" = "suppliers" = TABLE "suppliers" → TOUJOURS analytics
+- "montre" = "affiche" = "liste" = "show" = "display" = VERBE DE LISTAGE → TOUJOURS analytics
+
+CRITIQUE: "liste les marques" EST EXACTEMENT LA MÊME CHOSE QUE "list manufacturers"
+CRITIQUE: "montre les fournisseurs" EST EXACTEMENT LA MÊME CHOSE QUE "show suppliers"
+CRITIQUE: "display customers" EST EXACTEMENT LA MÊME CHOSE QUE "list customers"
+
+SI LA REQUÊTE CORRESPOND À UN DE CES PATTERNS, CLASSIFIEZ COMME "analytics" AVEC CONFIANCE 0.95
+
+Catégories de classification:
+1. analytics: Requêtes demandant des données quantitatives, calculs, comparaisons, ou VALEURS DE CHAMPS DE BASE DE DONNÉES
+   Exemples: niveaux de stock, chiffres de ventes, revenus, comptages, totaux, moyennes, fourchettes de prix, références/SKU/numéros de modèle de produits
+   REQUÊTES DE STATUT DE COMMANDE: "commandes en instance", "commandes annulées", "commandes en cours" sont TOUJOURS analytics (liste de commandes avec filtre de statut)
+   REQUÊTES LISTER TOUT: Ces requêtes sont TOUJOURS analytics car elles demandent un listage de base de données:
+   - "liste les produits" → analytics
+   - "liste les fournisseurs" → analytics
+   - "liste les fabricants" → analytics
+   - "liste les marques" → analytics (marques = brands = table manufacturers)
+   - "affiche tous les produits" → analytics
+   - "montre les fournisseurs" → analytics (montre = affiche = liste)
+   - "affiche tous les X" → analytics
+   - "montre les X" → analytics
    
-2. **semantic**: Requêtes demandant des informations, explications, résumés ou contenu de documents
-   - Exemples: explications de politiques, guides pratiques, descriptions de produits, résumés de documents
-   - Indicateurs: "expliquer", "qu'est-ce que", "comment", "résumer", "décrire", "comparer" (documents)
+2. semantic: Requêtes demandant des informations, explications, résumés, ou contenu de documents
+   Exemples: explications de politiques, guides pratiques, descriptions de produits, résumés de documents
+   REQUÊTES D'EXPLICATION DE STATUT: "qu'est-ce que le statut en instance", "expliquer le statut de commande" sont semantic (explication de la signification du statut)
    
-3. **hybrid**: Requêtes combinant plusieurs types d'intentions (analytics + semantic, analytics + web_search)
-   - Exemples: "niveaux de stock et politique de retour", "rapport de ventes avec résumé"
-   - Indicateurs: plusieurs intentions distinctes dans une seule requête
+3. hybrid: Requêtes combinant plusieurs types d'intention (analytics plus semantic, analytics plus web_search)
+   Exemples: "niveaux de stock et politique de retour", "rapport de ventes avec résumé"
    
-4. **web_search**: Requêtes nécessitant une recherche web externe pour analyse concurrentielle ou informations actuelles
-   - Exemples: comparaisons avec concurrents, recherche de marché, "meilleures offres en ligne"
-   - Indicateurs: "concurrents", "comparer avec", "meilleur en ligne", "tendances du marché"
+4. web_search: Requêtes nécessitant une recherche web externe pour analyse concurrentielle, informations actuelles, tendances, ou actualités
+   Exemples: comparaisons de concurrents, recherche de marché, "meilleures offres en ligne", "dernières tendances", "actualités récentes", "quoi de neuf", "prix actuels en ligne"
+   CRITIQUE: Les requêtes sur TENDANCES, ACTUALITÉS, DERNIÈRES, RÉCENTES, ACTUELLES (info externe) sont TOUJOURS web_search
+   - "dernières tendances" → web_search
+   - "actualités récentes" → web_search
+   - "quoi de neuf" → web_search
+   - "latest trends" → web_search
+   - "recent news" → web_search
+   - "comparer avec les concurrents" → web_search
 
-Règles de Classification:
-1. Concentrez-vous sur l'INTENTION de l'utilisateur, pas seulement les mots-clés
-2. Considérez le CONTEXTE et les NUANCES de la requête
-3. Si la requête a plusieurs intentions, classez comme 'hybrid' et identifiez les sous-types
-4. Si ambigu ou peu clair, par défaut 'semantic' (repli le plus sûr)
-5. Confiance élevée (0.9): Intention unique claire avec indicateurs forts
-6. Confiance moyenne (0.7): Intention claire mais avec ambiguïté
-7. Confiance faible (0.5): Intention ambiguë ou peu claire
+RÈGLES CRITIQUES:
+1. Si la requête demande une VALEUR DE CHAMP DE BASE DE DONNÉES SPÉCIFIQUE (référence, SKU, modèle, prix, stock, poids), c'est TOUJOURS analytics
+2. Les requêtes de Revenu/Ventes/Chiffre d'affaires sont TOUJOURS analytics (ce sont des métriques de base de données, pas de la documentation)
+3. Les REQUÊTES DE STATUT DE COMMANDE (en instance, annulé, livré, en cours) sont TOUJOURS analytics (liste de commandes avec filtre de statut)
+4. Les REQUÊTES LISTER TOUT sont TOUJOURS analytics, peu importe le verbe utilisé:
+   - "liste X" → analytics (verbe: lister)
+   - "affiche X" → analytics (verbe: afficher)
+   - "montre X" → analytics (verbe: montrer)
+   - "affiche tous les X" → analytics
+   - Peu importe l'entité: produits, fournisseurs, marques, fabricants, catégories, clients, commandes
+5. REQUÊTES DE RECHERCHE WEB (NOUVEAU - CRITIQUE): Les requêtes sur des informations EXTERNES/ACTUELLES sont TOUJOURS web_search:
+   - "dernières tendances" → web_search (tendances du marché externe)
+   - "actualités récentes" → web_search (actualités externes)
+   - "quoi de neuf" → web_search (info actuelle externe)
+   - "latest trends" → web_search (tendances en anglais)
+   - "recent news" → web_search (actualités en anglais)
+   - "comparer avec les concurrents" → web_search (comparaison externe)
+   - "meilleures offres en ligne" → web_search (recherche de marché externe)
+   - TOUTE requête avec "dernières", "récentes", "tendances", "actualités", "latest", "recent", "trends", "news" → web_search
+6. Concentrez-vous sur l'INTENTION de l'utilisateur: Demande-t-il des DONNÉES (analytics), une EXPLICATION (semantic), ou des INFOS EXTERNES (web_search)?
+7. En cas d'ambiguïté, par défaut 'semantic' (repli le plus sûr)
 
-Exemples de Classifications:
+FORMAT DE RÉPONSE - CRITIQUE:
 
-**Exemples Analytics (Requêtes Base de Données):**
-- "Quel est le stock de iPhone 17 Pro?" → analytics (confiance: 0.9)
-  Raison: Demande claire de données quantitatives d'inventaire
-- "Montre-moi les ventes totales par mois" → analytics (confiance: 0.9)
-  Raison: Requête d'agrégation avec regroupement temporel
-- "Liste tous les produits en stock" → analytics (confiance: 0.9)
-  Raison: Liste de base de données avec condition de filtrage
-- "Combien de commandes cette semaine?" → analytics (confiance: 0.9)
-  Raison: Agrégation de comptage avec filtre temporel
-- "Quel est le chiffre d'affaires pour Q4 2024?" → analytics (confiance: 0.9)
-  Raison: Calcul financier avec période spécifique
-- "Montre les produits entre 500€ et 1000€" → analytics (confiance: 0.9)
-  Raison: Filtrage par plage sur champ numérique
-- "Quelles catégories ont le plus de produits?" → analytics (confiance: 0.9)
-  Raison: Agrégation avec regroupement et tri
-- "Valeur moyenne des commandes le mois dernier" → analytics (confiance: 0.9)
-  Raison: Calcul statistique avec filtre temporel
-- "Top 10 des produits les plus vendus" → analytics (confiance: 0.9)
-  Raison: Requête de classement avec limite
-- "Nombre de clients par région" → analytics (confiance: 0.9)
-  Raison: Agrégation avec regroupement géographique
+INTERDIT (causera une défaillance du système):
+- "Basé sur la requête..." (PAS de texte explicatif avant le JSON)
+- "La requête devrait être classifiée comme..." (PAS de narration)
+- ```json { ... } ``` (PAS de blocs de code markdown)
+- Voici la classification: {...} (PAS de préambule)
+- {...} Explication: ... (PAS de texte après le JSON)
+- TOUTE utilisation d'astérisques pour du texte en gras
+- TOUTE utilisation d'underscores pour du texte en italique
 
-**Exemples Semantic (Requêtes Documents/Connaissances):**
-- "Explique la politique de retour" → semantic (confiance: 0.9)
-  Raison: Demande d'explication depuis documents de politique
-- "Résume les conditions générales de vente" → semantic (confiance: 0.9)
-  Raison: Demande de résumé de document
-- "Comment fonctionne la garantie?" → semantic (confiance: 0.9)
-  Raison: Explication de processus depuis documentation
-- "Quelles sont les options d'expédition?" → semantic (confiance: 0.9)
-  Raison: Récupération d'information depuis base de connaissances
-- "Quel est le processus de remboursement?" → semantic (confiance: 0.9)
-  Raison: Explication de processus depuis documents de politique
-- "Compare la politique de confidentialité et les CGV" → semantic (confiance: 0.9)
-  Raison: Comparaison et analyse de documents
-- "Quels sont les points clés de la politique de retour?" → semantic (confiance: 0.9)
-  Raison: Résumé de document avec focus
-- "Combien de temps prend la livraison?" → semantic (confiance: 0.9)
-  Raison: Information depuis documentation d'expédition
-- "Quels moyens de paiement sont acceptés?" → semantic (confiance: 0.9)
-  Raison: Récupération d'information depuis base de connaissances
-- "Explique les avantages du programme de fidélité" → semantic (confiance: 0.9)
-  Raison: Explication depuis documentation du programme
+REQUIS (seul format valide):
+{"type":"analytics","confidence":0.9,"reasoning":"Brève explication","sub_types":[]}
 
-**Exemples Hybrid (Intentions Multiples):**
-- "Stock de iPhone 17 Pro et politique de retour" → hybrid (confiance: 0.8, sub_types: ['analytics', 'semantic'])
-  Raison: Combine requête d'inventaire avec information de politique
-- "Rapport de ventes avec résumé exécutif" → hybrid (confiance: 0.8, sub_types: ['analytics', 'semantic'])
-  Raison: Requête de données plus résumé/interprétation
-- "Montre le chiffre d'affaires par trimestre et explique les tendances" → hybrid (confiance: 0.8, sub_types: ['analytics', 'semantic'])
-  Raison: Données numériques plus explication analytique
-- "Liste les produits sous 100€ et leurs conditions de garantie" → hybrid (confiance: 0.8, sub_types: ['analytics', 'semantic'])
-  Raison: Filtrage base de données plus information documentaire
-- "Produits les plus vendus et comparaison concurrents" → hybrid (confiance: 0.8, sub_types: ['analytics', 'web_search'])
-  Raison: Données internes plus recherche de marché externe
-- "Niveaux de stock et délais d'expédition" → hybrid (confiance: 0.7, sub_types: ['analytics', 'semantic'])
-  Raison: Données d'inventaire plus information opérationnelle
-- "Commandes clients ce mois avec politique de remboursement" → hybrid (confiance: 0.8, sub_types: ['analytics', 'semantic'])
-  Raison: Données transactionnelles plus information de politique
-
-**Exemples Web Search (Requêtes Externes/Concurrentielles):**
-- "Compare le prix de iPhone 17 Pro avec les concurrents" → web_search (confiance: 0.9)
-  Raison: Nécessite données de prix concurrentiels externes
-- "Liste les meilleurs concurrents pour iPhone 17 Pro" → web_search (confiance: 0.9)
-  Raison: Recherche de marché nécessitant sources externes
-- "Quelles sont les meilleures offres en ligne pour ordinateurs portables?" → web_search (confiance: 0.9)
-  Raison: Requête de comparaison de marché externe
-- "Montre-moi les prix concurrents pour Samsung Galaxy" → web_search (confiance: 0.9)
-  Raison: Intelligence concurrentielle depuis sources externes
-- "Quelles sont les tendances actuelles du marché pour smartphones?" → web_search (confiance: 0.8)
-  Raison: Recherche de marché nécessitant données externes actuelles
-- "Trouve les meilleurs détaillants en ligne pour électronique" → web_search (confiance: 0.9)
-  Raison: Requête de découverte de marché externe
-- "Compare notre garantie avec les standards de l'industrie" → web_search (confiance: 0.8)
-  Raison: Nécessite données de référence industrielle externes
-- "Qu'offrent les concurrents pour le Black Friday?" → web_search (confiance: 0.9)
-  Raison: Intelligence concurrentielle pour promotions actuelles
-
-**Exemples Ambigus (Confiance Faible):**
-- "iPhone" → semantic (confiance: 0.5)
-  Raison: Intention peu claire - pourrait demander info, stock, ou comparaison
-- "produits" → semantic (confiance: 0.5)
-  Raison: Trop vague - nécessite clarification sur l'intention
-- "aide" → semantic (confiance: 0.5)
-  Raison: Demande générale sans intention spécifique
-
-INSTRUCTIONS CRITIQUES:
-1. Vous DEVEZ répondre avec UNIQUEMENT du JSON valide
-2. PAS de formatage markdown (pas de **, pas de ##, pas de puces)
-3. PAS de texte explicatif avant ou après le JSON
-4. PAS de sauts de ligne ou commentaires dans le JSON
-5. La réponse doit être analysable par json_decode()
-
-Répondez dans ce format EXACT (aucune déviation):
-{"type":"analytics|semantic|hybrid|web_search","confidence":0.0-1.0,"reasoning":"Brève explication","sub_types":[]}
+CRITIQUE: La réponse DOIT commencer par { et se terminer par }
+PAS de texte avant le {
+PAS de texte après le }
+PAS de markdown
+PAS de sauts de ligne dans le JSON (une seule ligne)
 
 Exemples de réponses valides:
 {"type":"analytics","confidence":0.9,"reasoning":"Demande claire de données quantitatives d'inventaire","sub_types":[]}
 {"type":"semantic","confidence":0.9,"reasoning":"Demande d'explication depuis documents de politique","sub_types":[]}
 {"type":"hybrid","confidence":0.8,"reasoning":"Combine requête d'inventaire avec information de politique","sub_types":["analytics","semantic"]}
-{"type":"web_search","confidence":0.9,"reasoning":"Nécessite données de prix concurrentiels externes","sub_types":[]}
 
-Règles de validation importantes:
-- La confiance doit être entre 0.0 et 1.0
-- Le type doit être l'un de: analytics, semantic, hybrid, web_search
-- Pour les requêtes hybrid, sub_types doit lister les types composants (ex: ["analytics", "semantic"])
-- Pour les requêtes non-hybrid, sub_types doit être un tableau vide []
-- Le raisonnement doit être concis (1-2 phrases, pas de sauts de ligne)
+🚨 EXEMPLES CRITIQUES - STATUTS DE COMMANDE (PRIORITÉ MAXIMALE):
+{"type":"analytics","confidence":0.95,"reasoning":"Demande liste de commandes avec filtre de statut en instance depuis base de données","sub_types":[]}  // Pour "pending orders"
+{"type":"analytics","confidence":0.95,"reasoning":"Demande liste de commandes avec filtre de statut en instance depuis base de données","sub_types":[]}  // Pour "commande en instance"
+{"type":"analytics","confidence":0.95,"reasoning":"Demande liste de commandes avec filtre de statut annulé depuis base de données","sub_types":[]}  // Pour "cancelled orders"
+
+🚨 EXEMPLES CRITIQUES - REQUÊTES LISTER TOUT (PRIORITÉ MAXIMALE):
+{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de tous les produits","sub_types":[]}  // Pour "list products" ou "liste les produits"
+{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de tous les fournisseurs","sub_types":[]}  // Pour "list suppliers" ou "liste les fournisseurs"
+{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de tous les fabricants","sub_types":[]}  // Pour "list manufacturers" ou "liste les fabricants"
+{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de toutes les marques","sub_types":[]}  // Pour "list brands" ou "liste les marques"
+{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de tous les fournisseurs","sub_types":[]}  // Pour "show suppliers" ou "montre les fournisseurs"
+{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de tous les clients","sub_types":[]}  // Pour "display customers" ou "affiche les clients"
+{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de toutes les catégories","sub_types":[]}  // Pour "list categories" ou "liste les catégories"
+
+🚨 RAPPEL: "marques" = brands = table manufacturers = LISTAGE BASE DE DONNÉES = analytics
+🚨 RAPPEL: "fournisseurs" = suppliers = table suppliers = LISTAGE BASE DE DONNÉES = analytics
+🚨 RAPPEL: "montre" = affiche = liste = LISTAGE BASE DE DONNÉES = analytics
+{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de toutes les catégories","sub_types":[]}  // Pour "list categories"
+{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de tous les clients","sub_types":[]}  // Pour "list customers"
+
+🚨 EXEMPLES CRITIQUES - REQUÊTES WEB SEARCH (PRIORITÉ MAXIMALE):
+{"type":"web_search","confidence":0.95,"reasoning":"Demande d'informations sur les tendances du marché externe","sub_types":[]}  // Pour "dernières tendances" ou "latest trends"
+{"type":"web_search","confidence":0.95,"reasoning":"Demande d'informations d'actualités externes","sub_types":[]}  // Pour "actualités récentes" ou "recent news"
+{"type":"web_search","confidence":0.95,"reasoning":"Demande d'informations actuelles externes","sub_types":[]}  // Pour "quoi de neuf" ou "what's new"
+{"type":"web_search","confidence":0.95,"reasoning":"Demande de comparaison avec concurrents externes","sub_types":[]}  // Pour "comparer avec les concurrents" ou "compare with competitors"
+{"type":"web_search","confidence":0.95,"reasoning":"Demande de recherche de marché externe","sub_types":[]}  // Pour "meilleures offres en ligne" ou "best deals online"
+
+RAPPEL FINAL:
+Votre RÉPONSE ENTIÈRE doit être du JSON pur.
+PAS de texte supplémentaire. PAS de markdown. PAS d'explications en dehors du JSON.
+COMMENCEZ avec { et TERMINEZ avec }
+
+Maintenant classifiez cette requête (répondez avec JSON uniquement):
+{{QUERY}}

@@ -131,9 +131,9 @@ ConversationMemory (Core Orchestrator - ~430 lignes)
 - [x] ContextResolver - ✅ COMPLETE
 - [x] EntityTracker - ✅ COMPLETE
 - [x] MemoryStatistics - ✅ COMPLETE
-- [ ] Intégration dans ConversationMemory - TODO
-- [ ] Documentation complète - TODO
-- [ ] Tests - TODO
+- [ ] - Intégration dans ConversationMemory - TODO
+- [ ] - Documentation complète - TODO
+- [ ] - Tests - TODO
 
 **Progression:** 5/5 composants créés (100%) - Intégration en attente
 

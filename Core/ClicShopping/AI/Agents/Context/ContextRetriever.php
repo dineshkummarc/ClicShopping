@@ -118,7 +118,7 @@ class ContextRetriever
     // 2. Check cache
     if ($this->cacheEnabled) {
       $cacheKey = $this->generateCacheKey($classification, $query, $limit);
-      $cache = new Cache($cacheKey, 'context');
+      $cache = new Cache($cacheKey, 'Rag/Context');
 
       if ($cache->exists($this->cacheTTL)) {
         $cached = $cache->get();
@@ -180,7 +180,7 @@ class ContextRetriever
     if ($this->cacheEnabled && !empty($context)) {
       try {
         $cacheKey = $this->generateCacheKey($classification, $query, $limit);
-        $cache = new Cache($cacheKey, 'context');
+        $cache = new Cache($cacheKey, 'Rag/Context');
         $cache->save($context);
 
         if ($this->debug) {
@@ -851,7 +851,7 @@ class ContextRetriever
     // 2. Check cache
     if ($this->cacheEnabled) {
       $cacheKey = $this->generateCacheKey($classification, $query, $limit);
-      $cache = new Cache($cacheKey, 'context');
+      $cache = new Cache($cacheKey, 'Rag/Context');
 
       if ($cache->exists($this->cacheTTL)) {
         $cached = $cache->get();
@@ -901,7 +901,7 @@ class ContextRetriever
     if ($this->cacheEnabled && !empty($context)) {
       try {
         $cacheKey = $this->generateCacheKey($classification, $query, $limit);
-        $cache = new Cache($cacheKey, 'context');
+        $cache = new Cache($cacheKey, 'Rag/Context');
         $cache->save($context);
 
         if ($this->debug) {

@@ -10,7 +10,6 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
-use ClicShopping\AI\Domain\Patterns\LanguagePattern;
 use ClicShopping\AI\Domain\Semantics\Semantics;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
@@ -21,14 +20,18 @@ use ClicShopping\Sites\Common\HTMLOverrideCommon;
  * Handles query translation and language detection.
  * Extracted from IntentAnalyzer to follow Single Responsibility Principle.
  *
+ * PHASE 8.4 CLEANUP: Removed deprecated LanguagePattern dependency.
+ * Pure LLM mode: Always translates through LLM for consistent multilingual processing.
+ *
  * Responsibilities:
- * - Detect if query is in English
- * - Translate non-English queries to English
+ * - Force translation through LLM (Pure LLM mode)
+ * - Translate all queries to English for internal processing
  * - Clean translation output (remove GPT prefixes)
  * - Handle translation errors gracefully
  *
  * @package ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer
  * @since 2025-12-14
+ * @updated 2026-01-03 Phase 8.4 cleanup - Pure LLM mode
  */
 class TranslationService
 {
@@ -148,72 +151,29 @@ class TranslationService
   /**
    * Detect if query is in English
    *
-   * Uses multiple heuristics:
-   * 1. French-specific characters (éèêëàâäùûüôöîïç)
-   * 2. Common French words (le, la, les, pour, dans, etc.)
-   * 3. Common English words (the, a, an, of, in, etc.)
-   * 4. Character set analysis (ASCII vs non-ASCII ratio)
+   * PHASE 8.4: Pure LLM Mode - Always return false to force translation
+   * 
+   * In Pure LLM mode, we ALWAYS pass queries through the LLM translation service.
+   * The LLM will:
+   * - Detect if the query is already in English
+   * - Return it unchanged if it's English
+   * - Translate it if it's in another language
+   * 
+   * This approach:
+   * - Simplifies the code (no complex pattern matching)
+   * - Ensures consistent behavior across all languages (FR, ES, DE, EN, IT, PT, etc.)
+   * - Leverages LLM's superior language detection capabilities
+   * - Handles edge cases and mixed-language queries automatically
+   * - Supports the multilingual UI with English processing architecture
    *
    * @param string $query Query to analyze
-   * @return bool True if query appears to be in English
+   * @return bool Always returns false to force LLM translation
    */
   public function isEnglish(string $query): bool
   {
-    $queryLower = strtolower(trim($query));
-
-    // Empty query → assume English (safe default)
-    if (empty($queryLower)) {
-      return true;
-    }
-
-    // 1. Check for French-specific characters (strong indicator)
-    $frenchCharPattern = LanguagePattern::getFrenchCharacterPattern();
-    if (preg_match($frenchCharPattern, $queryLower)) {
-      return false;
-    }
-
-    // 2. Check for common French words (strong indicators)
-    $frenchWords = LanguagePattern::getFrenchWordPatterns();
-
-    foreach ($frenchWords as $pattern) {
-      if (preg_match('/' . $pattern . '/u', $queryLower)) {
-        return false;
-      }
-    }
-
-    // 3. Check for common English words (positive indicators)
-    $englishWords = LanguagePattern::getEnglishWordPatterns();
-
-    $englishMatches = 0;
-    foreach ($englishWords as $pattern) {
-      if (preg_match('/' . $pattern . '/u', $queryLower)) {
-        $englishMatches++;
-        if ($englishMatches >= 2) {
-          // Found 2+ English words and no French indicators → likely English
-          return true;
-        }
-      }
-    }
-
-    // 4. If we found 1 English word and no French indicators, likely English
-    if ($englishMatches >= 1) {
-      return true;
-    }
-
-    // 5. Check character set - if mostly ASCII (no accents), likely English
-    $nonAsciiCount = preg_match_all('/[^\x00-\x7F]/u', $query);
-    $totalChars = mb_strlen($query, 'UTF-8');
-
-    if ($totalChars > 0) {
-      $nonAsciiRatio = $nonAsciiCount / $totalChars;
-
-      // If less than 5% non-ASCII characters, likely English
-      if ($nonAsciiRatio < 0.05) {
-        return true;
-      }
-    }
-
-    // Default: assume not English (safer to translate than to skip)
+    // Pure LLM mode: Always return false to force translation
+    // The LLM will detect if the query is already in English and return it unchanged
+    // This ensures consistent multilingual processing with English as the internal language
     return false;
   }
 
@@ -225,13 +185,21 @@ class TranslationService
    * - "The translation is: ..."
    * - "English: ..."
    *
+   * PHASE 8.4: Patterns inlined from LanguagePattern (removed dependency)
+   *
    * @param string $translatedQuery Raw translation from GPT
    * @return string Clean translation
    */
   public function extractCleanTranslation(string $translatedQuery): string
   {
-    // Get centralized translation prefix patterns
-    $patterns = LanguagePattern::getTranslationPrefixPatterns();
+    // PHASE 8.4: Patterns inlined below (no longer calling LanguagePattern)
+    $patterns = [
+      'quoted_after_is' => '/is:\s*"([^"]+)"|is:\s*\'([^\']+)\'/',
+      'full_quoted_prefix' => '/^(Translation:|Translated:|English:|Result:|Answer:|Response:)\s*"([^"]+)"$/i',
+      'simple_prefix_1' => '/^(Translation:|Translated:|English:|Result:|Answer:|Response:)\s*/i',
+      'simple_prefix_2' => '/^(The translation is|This translates to|In English):\s*/i',
+      'simple_prefix_3' => '/^(Here is the translation|The English version is):\s*/i',
+    ];
     
     // Pattern 1: Extract text between quotes after "is:"
     if (preg_match($patterns['quoted_after_is'], $translatedQuery, $matches)) {

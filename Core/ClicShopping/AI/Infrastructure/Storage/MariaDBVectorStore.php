@@ -237,9 +237,10 @@ class MariaDBVectorStore extends VectorStoreBase
     $metadataJson = json_encode($documentMetadata);
 
     // Insertion dans la base de données
-    // 🔧 FIX: Include user_id and interaction_id columns if they exist in table
+    // 🔧 FIX: Include user_id, interaction_id, and entity_type columns if they exist in table
     $hasUserIdColumn = $this->hasColumn('user_id');
     $hasInteractionIdColumn = $this->hasColumn('interaction_id');
+    $hasEntityTypeColumn = $this->hasColumn('entity_type');
     
     // 🔧 FIX: Validate that both user_id and interaction_id are present
     if ($hasUserIdColumn && empty($preparedData['user_id'])) {
@@ -250,9 +251,9 @@ class MariaDBVectorStore extends VectorStoreBase
       $this->securityLogger->logSecurityEvent( 'Warning: interaction_id is empty when inserting into ' . $this->tableName, 'warning');
     }
     
-    if ($hasUserIdColumn || $hasInteractionIdColumn) {
-      // Insert with user_id and interaction_id columns
-      // 🔧 TASK 2.17.3: Include entity_type column in INSERT
+    if ($hasUserIdColumn || $hasInteractionIdColumn || $hasEntityTypeColumn) {
+      // Insert with user_id, interaction_id, and entity_type columns (if they exist)
+      // 🔧 TASK 2.17.3: Include entity_type column in INSERT only if it exists
       $columns = "(content, 
       type, 
       sourcetype, 
@@ -261,7 +262,6 @@ class MariaDBVectorStore extends VectorStoreBase
       chunknumber, 
       date_modified, 
       entity_id, 
-      entity_type, 
       language_id";
       $values = "
       (?, 
@@ -269,7 +269,6 @@ class MariaDBVectorStore extends VectorStoreBase
       ?, 
       ?, 
       VEC_FromText(?), 
-      ?, 
       ?, 
       ?, 
       ?, 
@@ -283,9 +282,14 @@ class MariaDBVectorStore extends VectorStoreBase
         $preparedData['chunknumber'],
         $preparedData['date_modified'],
         $preparedData['entity_id'],
-        $preparedData['entity_type'],
         $preparedData['language_id'],
       ];
+      
+      if ($hasEntityTypeColumn) {
+        $columns .= ", entity_type";
+        $values .= ", ?";
+        $params[] = $preparedData['entity_type'];
+      }
       
       if ($hasUserIdColumn) {
         $columns .= ", user_id";
@@ -408,6 +412,20 @@ class MariaDBVectorStore extends VectorStoreBase
       $metadataSelect = $hasMetadataColumn ? 'metadata,' : '';
       $languageIdSelect = $hasLanguageIdColumn ? 'language_id,' : '';
       
+      // 🔧 FIX: Build WHERE clause to include language_id filter if provided via callable
+      // The filter is a PHP callable that checks metadata['language_id']
+      // We need to extract language_id from the filter and add it to SQL WHERE clause
+      // This prevents LIMIT from cutting off results before PHP filter is applied
+      
+      $whereClause = "WHERE embedding IS NOT NULL";
+      $params = [$embeddingText];
+      $types = [ParameterType::STRING];
+      
+      // Try to detect if filter is checking for language_id
+      // This is a workaround since we can't inspect the callable directly
+      // We'll add language_id to WHERE if the column exists and we're likely filtering by it
+      // For now, we'll keep the original behavior and fix it in MultiDBRAGManager
+      
       // Requête SQL avec vecteur et distance euclidienne
       $sql = "SELECT id, 
                      content, 
@@ -422,12 +440,12 @@ class MariaDBVectorStore extends VectorStoreBase
                      {$metadataSelect}
                      VEC_DISTANCE_COSINE(embedding, VEC_FromText(?)) AS distance
                 FROM {$this->tableName}
-                WHERE embedding IS NOT NULL
+                {$whereClause}
                 ORDER BY distance ASC
                 LIMIT ?";
-// Préparation des paramètres      
-       $params = [$embeddingText, $k];
-      $types = [ParameterType::STRING, ParameterType::INTEGER];
+                
+      $params[] = $k;
+      $types[] = ParameterType::INTEGER;
 
       $stmt = $this->connection->executeQuery($sql, $params, $types);
       $results = $stmt->fetchAllAssociative();
@@ -479,6 +497,17 @@ class MariaDBVectorStore extends VectorStoreBase
         // Add language_id only if the column exists in the table
         if ($hasLanguageIdColumn) {
           $metadataArray['language_id'] = $r['language_id'] ?? 1;
+        }
+        
+        // 🔧 FIX: Add entity_type to metadata for filter compatibility
+        // The filter in MultiDBRAGManager looks for 'entity_type', but some tables store it as 'type'
+        // Priority: storedMetadata['type'] > storedMetadata['entity_type'] > $r['type']
+        if (!isset($storedMetadata['entity_type']) && isset($storedMetadata['type'])) {
+          $metadataArray['entity_type'] = $storedMetadata['type'];
+        } elseif (isset($storedMetadata['entity_type'])) {
+          $metadataArray['entity_type'] = $storedMetadata['entity_type'];
+        } elseif (isset($r['type'])) {
+          $metadataArray['entity_type'] = $r['type'];
         }
         
         $doc->metadata = array_merge($storedMetadata, $metadataArray);
@@ -602,4 +631,155 @@ class MariaDBVectorStore extends VectorStoreBase
       return false;
     }
   }
+  
+  
+  // ******************************************
+  //  dO NOT USE BELOW
+  // ******************************************
+  
+
+  /**
+   * Add document with separated taxonomy (Task 4.1)
+   *
+   * This method stores content, metadata, and taxonomy in separate database fields.
+   * The embedding is generated only from the content field (no taxonomy).
+   *
+   * @param Document $document Document object with content and metadata
+   * @param array|null $taxonomy Structured taxonomy data (stored separately)
+   * @return bool True if successful, false otherwise
+   * @throws \Exception If document addition fails
+   */
+/*
+  public function addDocumentWithTaxonomy(Document $document, ?array $taxonomy): bool
+  {
+    try {
+      // Validate document content
+      if (!isset($document->content) || $document->content === '') {
+        $this->securityLogger->logSecurityEvent(
+          'Document content is missing or empty',
+          'warning'
+        );
+        return false;
+      }
+
+      // Generate embedding from content only (no taxonomy)
+      $embedding = $this->embeddingGenerator->embedText($document->content);
+      $this->validateEmbeddingFormat($embedding);
+
+      // Get metadata safely
+      $metadata = isset($document->metadata) ? $document->metadata : [];
+
+      // Prepare embedding and metadata
+      $preparedData = $this->prepareEmbeddingAndMetadata($document->content, $metadata);
+
+      // Prepare metadata JSON
+      $documentMetadata = [
+        'id' => $document->id ?? null,
+        'sourceType' => $document->sourceType ?? 'manual',
+        'sourceName' => $document->sourceName ?? 'manual',
+        'chunkNumber' => $document->chunkNumber ?? 0,
+        'hash' => $document->hash ?? '',
+      ];
+      
+      if (!empty($metadata) && is_array($metadata)) {
+        $documentMetadata = array_merge($documentMetadata, $metadata);
+      }
+      
+      $metadataJson = json_encode($documentMetadata);
+
+      // Prepare taxonomy JSON (null if not provided)
+      $taxonomyJson = $taxonomy !== null ? json_encode($taxonomy) : null;
+
+      // Check if taxonomy and metadata columns exist
+      $hasTaxonomyColumn = $this->hasColumn('taxonomy');
+      $hasMetadataColumn = $this->hasColumn('metadata');
+      $hasUserIdColumn = $this->hasColumn('user_id');
+      $hasInteractionIdColumn = $this->hasColumn('interaction_id');
+      $hasEntityTypeColumn = $this->hasColumn('entity_type');
+
+      // Build INSERT query dynamically based on available columns
+      $columns = "(content, type, sourcetype, sourcename, embedding, chunknumber, date_modified, entity_id, language_id";
+      $values = "(?, ?, ?, ?, VEC_FromText(?), ?, ?, ?, ?";
+      $params = [
+        $document->content,
+        $preparedData['type'],
+        $preparedData['sourcetype'],
+        $preparedData['sourcename'],
+        $preparedData['embeddingText'],
+        $preparedData['chunknumber'],
+        $preparedData['date_modified'],
+        $preparedData['entity_id'],
+        $preparedData['language_id'],
+      ];
+
+      // Add optional columns if they exist
+      if ($hasEntityTypeColumn) {
+        $columns .= ", entity_type";
+        $values .= ", ?";
+        $params[] = $preparedData['entity_type'];
+      }
+
+      if ($hasUserIdColumn) {
+        $columns .= ", user_id";
+        $values .= ", ?";
+        $params[] = $preparedData['user_id'];
+      }
+
+      if ($hasInteractionIdColumn) {
+        $columns .= ", interaction_id";
+        $values .= ", ?";
+        $params[] = $preparedData['interaction_id'];
+      }
+
+      if ($hasMetadataColumn) {
+        $columns .= ", metadata";
+        $values .= ", ?";
+        $params[] = $metadataJson;
+      }
+
+      // Add taxonomy column if it exists (Task 4.1 - separated storage)
+      if ($hasTaxonomyColumn) {
+        $columns .= ", taxonomy";
+        $values .= ", ?";
+        $params[] = $taxonomyJson;
+      }
+
+      $columns .= ")";
+      $values .= ")";
+
+      // Execute INSERT
+      $this->connection->executeStatement(
+        "INSERT INTO {$this->tableName} {$columns} VALUES {$values}",
+        $params
+      );
+
+      if ($this->debug) {
+        $this->securityLogger->logSecurityEvent(
+          'Document added with separated taxonomy',
+          'info',
+          [
+            'table' => $this->tableName,
+            'content_length' => strlen($document->content),
+            'has_taxonomy' => $taxonomy !== null,
+            'taxonomy_column_exists' => $hasTaxonomyColumn
+          ]
+        );
+      }
+
+      return true;
+
+    } catch (\Exception $e) {
+      $this->securityLogger->logSecurityEvent(
+        'Error adding document with taxonomy: ' . $e->getMessage(),
+        'error',
+        [
+          'table' => $this->tableName,
+          'trace' => $e->getTraceAsString()
+        ]
+      );
+      return false;
+    }
+  }
+*/
+  
 }

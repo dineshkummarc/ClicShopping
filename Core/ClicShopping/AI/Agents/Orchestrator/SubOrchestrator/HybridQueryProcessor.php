@@ -597,14 +597,15 @@ class HybridQueryProcessor
    * Execute a single sub-query
    *
    * Executes a single sub-query from a complex query decomposition.
-   * This is a helper method used by handleComplexQuery() to process each
-   * sub-query independently.
+   * This is a helper method used by handleComplexQuery() and processHybridQuery() 
+   * to process each sub-query independently.
    *
    * The method:
    * 1. Creates a simple intent for the sub-query
    * 2. Creates an execution plan via TaskPlanner
    * 3. Executes the plan via PlanExecutor
-   * 4. Returns result with success status
+   * 4. Generates text_response from result using ResultFormatter
+   * 5. Returns result with success status and text_response
    *
    * @param array $subQuery Sub-query with structure:
    *   - query: string (sub-query text)
@@ -622,9 +623,11 @@ class HybridQueryProcessor
    *   - type: string (query type)
    *   - query: string (sub-query text)
    *   - result: mixed (execution result)
+   *   - text_response: string (formatted text response)
    *   - error: string (error message if failed)
    * 
    * @see handleComplexQuery() for usage context
+   * @see processHybridQuery() for usage context
    */
   private function executeSubQuery(array $subQuery, array $context, object $taskPlanner, object $planExecutor): array
   {
@@ -643,22 +646,55 @@ class HybridQueryProcessor
       // Create plan for this sub-query
       $subPlan = $taskPlanner->createPlan($subIntent, $queryText, $context);
 
-      // Execute the plan
-      $result = $planExecutor->execute($subPlan);
+      // Execute the plan - returns array, not ExecutionPlan object
+      $executionResult = $planExecutor->execute($subPlan);
 
-      return [
-        'success' => true,
+      // ✅ TASK 5.2.1.1: Generate text_response from result
+      // The ResultSynthesizer expects text_response for synthesis
+      $textResponse = '';
+      if (isset($executionResult['result'])) {
+        $formatter = new \ClicShopping\AI\Helper\Formatter\ResultFormatter();
+        
+        // Prepare result for formatting - add type and query if missing
+        $resultToFormat = $executionResult['result'];
+        if (is_array($resultToFormat)) {
+          if (!isset($resultToFormat['type'])) {
+            $resultToFormat['type'] = $queryType;
+          }
+          // ✅ Add query field so formatters can display the correct title
+          if (!isset($resultToFormat['query']) && !isset($resultToFormat['question'])) {
+            $resultToFormat['query'] = $queryText;
+          }
+        }
+        
+        $formatted = $formatter->format($resultToFormat);
+        
+        // Extract the 'content' field from formatted result (it's an array)
+        if (is_array($formatted) && isset($formatted['content'])) {
+          $textResponse = $formatted['content'];
+        } elseif (is_string($formatted)) {
+          $textResponse = $formatted;
+        } else {
+          // Fallback: convert to string
+          $textResponse = is_array($executionResult['result']) 
+            ? json_encode($executionResult['result'], JSON_UNESCAPED_UNICODE) 
+            : (string)$executionResult['result'];
+        }
+      }
+
+      return array_merge($executionResult, [
         'type' => $queryType,
         'query' => $queryText,
-        'result' => $result
-      ];
+        'text_response' => $textResponse
+      ]);
 
     } catch (\Exception $e) {
       return [
         'success' => false,
         'type' => $subQuery['type'] ?? 'unknown',
         'query' => $subQuery['query'] ?? '',
-        'error' => $e->getMessage()
+        'error' => $e->getMessage(),
+        'text_response' => ''
       ];
     }
   }
@@ -1017,5 +1053,154 @@ class HybridQueryProcessor
     }
 
     return $response;
+  }
+
+  /**
+   * TASK 5.2.1.1: Process hybrid query by splitting and executing sub-queries
+   *
+   * This method orchestrates the complete hybrid query processing pipeline:
+   * 1. Split query into sub-queries using QuerySplitter
+   * 2. Execute each sub-query via TaskPlanner and PlanExecutor
+   * 3. Synthesize results from all sub-queries
+   * 4. Store interaction in memory
+   * 5. Return final response
+   *
+   * @param string $query Query to process (already translated to English)
+   * @param array $intent Intent analysis from UnifiedQueryAnalyzer
+   * @param array $context Enriched context with conversation history
+   * @param object $taskPlanner TaskPlanner instance for plan creation
+   * @param object $planExecutor PlanExecutor instance for plan execution
+   * @param object $responseProcessor ResponseProcessor for building final response
+   * @param object $memoryManager MemoryManager for storing results
+   * @param string $userId User identifier
+   * @param int $languageId Language identifier
+   * @param float $startTime Start time for performance tracking
+   * @return array Final response with structure:
+   *   - success: bool (execution status)
+   *   - text_response: string (synthesized response)
+   *   - result: array (combined results)
+   *   - metadata: array (execution metadata including query_type='hybrid')
+   *   - execution_time: float (total execution time)
+   */
+  public function processHybridQuery(
+    string $query,
+    array $intent,
+    array $context,
+    object $taskPlanner,
+    object $planExecutor,
+    object $responseProcessor,
+    object $memoryManager,
+    string $userId,
+    int $languageId,
+    float $startTime
+  ): array {
+    try {
+      if ($this->debug) {
+        $this->logger->logStructured('info', 'HybridQueryProcessor', 'processHybridQuery_start', [
+          'query' => substr($query, 0, 100),
+          'intent_type' => $intent['type'] ?? 'unknown',
+          'is_hybrid' => $intent['is_hybrid'] ?? false
+        ]);
+      }
+
+      // 1. Split query into sub-queries
+      $subQueries = $this->splitHybridQuery($query, $intent);
+
+      if (empty($subQueries)) {
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "Query splitting failed - no sub-queries generated",
+            'warning'
+          );
+        }
+
+        return [
+          'success' => false,
+          'error' => 'Failed to split hybrid query',
+          'execution_time' => microtime(true) - $startTime
+        ];
+      }
+
+      if ($this->debug) {
+        $this->logger->logStructured('info', 'HybridQueryProcessor', 'query_split', [
+          'sub_query_count' => count($subQueries),
+          'sub_queries' => array_map(fn($sq) => [
+            'query' => substr($sq['query'], 0, 50),
+            'type' => $sq['type'],
+            'priority' => $sq['priority'] ?? 1
+          ], $subQueries)
+        ]);
+      }
+
+      // 2. Execute each sub-query
+      $subResults = [];
+      foreach ($subQueries as $subQuery) {
+        $result = $this->executeSubQuery($subQuery, $context, $taskPlanner, $planExecutor);
+        $subResults[] = $result;
+      }
+
+      // 3. Synthesize results
+      $synthesizedResult = $this->synthesizeResults($subResults, $query);
+
+      // 4. Build final response
+      // ✅ TASK 5.2.1.1: Pass synthesizedResult directly as executionResult
+      // The synthesizedResult already has the correct structure with text_response at top level
+      $response = $responseProcessor->buildOrchestrationResponse(
+        $synthesizedResult, // Pass directly, not wrapped in ['result' => ...]
+        $intent,
+        $query,
+        $startTime,
+        $synthesizedResult['entity_id'] ?? 0, // Extract entity_id from synthesized result
+        $synthesizedResult['entity_type'] ?? 'hybrid', // Extract entity_type from synthesized result
+        null // llmResponseProcessor (not needed for hybrid)
+      );
+
+      // 5. Set metadata to indicate hybrid query
+      if (!isset($response['metadata'])) {
+        $response['metadata'] = [];
+      }
+      $response['metadata']['query_type'] = 'hybrid';
+      $response['metadata']['sub_query_count'] = count($subQueries);
+      $response['metadata']['successful_sub_queries'] = count(array_filter($subResults, fn($r) => $r['success'] ?? false));
+
+      // 6. Store in memory
+      $memoryManager->storeOrchestrationResult(
+        $query,
+        $query,
+        $response,
+        $intent,
+        ['is_related_to_context' => false],
+        null, // plan (not available for hybrid)
+        [],   // validationResults
+        0,    // entityId
+        'hybrid', // entityType
+        $userId,
+        $languageId,
+        null, // queryAnalyzer
+        $responseProcessor
+      );
+
+      if ($this->debug) {
+        $this->logger->logStructured('info', 'HybridQueryProcessor', 'processHybridQuery_complete', [
+          'success' => true,
+          'execution_time_ms' => round((microtime(true) - $startTime) * 1000, 2)
+        ]);
+      }
+
+      return $response;
+
+    } catch (\Exception $e) {
+      $this->logger->logSecurityEvent(
+        "Error in processHybridQuery: " . $e->getMessage(),
+        'error'
+      );
+
+      return [
+        'success' => false,
+        'error' => 'Hybrid query processing failed: ' . $e->getMessage(),
+        'execution_time' => microtime(true) - $startTime,
+        'metadata' => ['query_type' => 'hybrid']
+      ];
+    }
   }
 }

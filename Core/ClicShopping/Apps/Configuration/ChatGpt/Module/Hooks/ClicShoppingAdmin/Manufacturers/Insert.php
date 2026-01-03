@@ -226,53 +226,34 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                 $embedding_data .= $this->app->getDef('text_manufacturer_suppliers_id') . ' : ' . $suppliers_id . "\n";
               }
 
+              // Generate embeddings
               $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-              $embeddings = [];
-
-              foreach ($embeddedDocuments as $embeddedDocument) {
-                if (is_array($embeddedDocument->embedding)) {
-                  $embeddings[] = $embeddedDocument->embedding;
-                }
-              }
-
-              if (!empty($embeddings)) {
-                $flattened_embedding = $embeddings[0];
-                $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
-
-                $sql_data_array_embedding = [
-                  'content' => $embedding_data,
-                  'type' => 'manufacturers',
-                  'sourcetype' => 'manual',
-                  'sourcename' => 'manual',
-                  'date_modified' => 'now()',
-                  'entity_id' => $item['manufacturers_id'],
-                  'language_id' => $item['languages_id']
-                ];
-
-                $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-
-              // MetaData  creation 
-              $metadata = [
+              // Prepare base metadata
+              $baseMetadata = [
                 'brand_name' => $manufacturers_name,
-                'content' => $manufacturers_description,
-                'language_id' => (int)$item['language_id'],
+                'content' => $manufacturers_description ?? '',
                 'manufacturer_id' => (int)$manufacturers_id,
                 'type' => 'manufacturers',
-                'source' => [
-                  'type' => 'manual',
-                  'name' => 'manual'
-                ],
-                'entity_id' => (int)$manufacturers_id,
-                'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
-                'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-                'date_modified' => 'now()'
+                'tags' => isset($tags) ? $tags : [],
+                'source' => ['type' => 'manual', 'name' => 'manual']
               ];
 
-              // Ajouter le JSON au tableau d'insertion
-                $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
+              // Save all chunks using centralized method
+              $result = NewVector::saveEmbeddingsWithChunks(
+                $embeddedDocuments,
+                'manufacturers_embedding',
+                (int)$item['manufacturers_id'],
+                (int)$item['languages_id'],
+                $baseMetadata,
+                $this->app->db,
+                false  // isUpdate = false for insert
+              );
 
-                $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding);
+              if (!$result['success']) {
+                error_log("Manufacturers Insert: Failed to save embeddings - " . $result['error']);
+              } else {
+                error_log("Manufacturers Insert: Successfully saved {$result['chunks_saved']} chunks for manufacturer {$manufacturers_id}");
               }
             }
           }

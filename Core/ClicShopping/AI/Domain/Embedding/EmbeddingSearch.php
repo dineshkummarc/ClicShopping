@@ -127,7 +127,7 @@ class EmbeddingSearch
       // 1. Check search result cache first (10 min TTL)
       if ($this->cacheEnabled) {
         $searchCacheKey = $this->generateSearchCacheKey($query, $limit, $minScore, $filter);
-        $searchCache = new Cache($searchCacheKey, 'embedding_search');
+        $searchCache = new Cache($searchCacheKey, 'Rag/EmbeddingSearch');
         
         if ($searchCache->exists($this->searchCacheTTL)) {
           $cached = $searchCache->get();
@@ -144,7 +144,7 @@ class EmbeddingSearch
             
             $this->logger->logStructured(
               'info',
-              'EmbeddingSearch',
+              'Rag/EmbeddingSearch',
               'search_cache_hit',
               [
                 'query' => substr($query, 0, 100),
@@ -201,7 +201,7 @@ class EmbeddingSearch
       
       $this->logger->logStructured(
         'info',
-        'EmbeddingSearch',
+        'Rag/EmbeddingSearch',
         'search_completed',
         [
           'query' => substr($query, 0, 100),
@@ -217,7 +217,7 @@ class EmbeddingSearch
       if ($this->cacheEnabled && !empty($resultsArray)) {
         try {
           $searchCacheKey = $this->generateSearchCacheKey($query, $limit, $minScore, $filter);
-          $searchCache = new Cache($searchCacheKey, 'embedding_search');
+          $searchCache = new Cache($searchCacheKey, 'Rag/EmbeddingSearch');
           $searchCache->save($resultsArray);
           
           if ($this->debug) {
@@ -276,7 +276,7 @@ class EmbeddingSearch
       // 1. Check embedding cache (1 hour TTL)
       if ($this->cacheEnabled) {
         $embeddingCacheKey = $this->generateEmbeddingCacheKey($query);
-        $embeddingCache = new Cache($embeddingCacheKey, 'embedding');
+        $embeddingCache = new Cache($embeddingCacheKey, 'Rag/Embedding');
         
         if ($embeddingCache->exists($this->embeddingCacheTTL)) {
           $cached = $embeddingCache->get();
@@ -318,7 +318,7 @@ class EmbeddingSearch
       if ($this->cacheEnabled) {
         try {
           $embeddingCacheKey = $this->generateEmbeddingCacheKey($query);
-          $embeddingCache = new Cache($embeddingCacheKey, 'embedding');
+          $embeddingCache = new Cache($embeddingCacheKey, 'Rag/Embedding');
           $embeddingCache->save($embedding);
           
           if ($this->debug) {
@@ -451,8 +451,8 @@ class EmbeddingSearch
   public function clearCache(): void
   {
     try {
-      Cache::clear('embedding', 'embedding');
-      Cache::clear('embedding_search', 'embedding_search');
+      Cache::clear('Rag/Embedding', 'Rag/Embedding');
+      Cache::clear('Rag/EmbeddingSearch', 'Rag/EmbeddingSearch');
       
       if ($this->debug) {
         $this->logger->logSecurityEvent("EmbeddingSearch: Cache cleared", 'info');

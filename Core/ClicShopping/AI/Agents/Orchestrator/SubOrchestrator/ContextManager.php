@@ -17,10 +17,9 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
-use ClicShopping\AI\Domain\Patterns\AnalyticsPattern;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ContextSwitchDetector;
-use ClicShopping\AI\Domain\Semantics\SubSemantics\SemanticDomainDetector;
+use ClicShopping\AI\Helper\Detection\ContextSwitchDetector;
+use ClicShopping\AI\Helper\Detection\SemanticDomainDetector;
 
 
 class ContextManager
@@ -233,46 +232,23 @@ class ContextManager
   /**
    * Filtre le contexte à long terme en cas de changement de domaine.
    *
+   * NOTE: Pure LLM mode - domain-based filtering is disabled
+   * Returns unfiltered context to allow LLM to determine relevance
+   *
    * @param array $longTermContext Contexte à long terme (mémoire)
    * @param array $decision Décision de l'agent (contient le nouveau domaine)
-   * @return array Contexte filtré
+   * @return array Contexte non filtré (LLM determines relevance)
    */
   private function filterLongTermMemory(array $longTermContext, array $decision): array
   {
-    // 1. Vérifie si la raison de la décision est un changement de domaine
-    if (isset($decision['reason']) && strpos($decision['reason'], 'Domain switch') !== false) {
-
-      // 2. Extrait le nouveau nom de domaine de la raison
-      if (preg_match('/-> (\w+)/', $decision['reason'], $matches)) {
-        $newDomain = $matches[1];
-
-        // 3. Récupère les mots-clés du nouveau domaine depuis la source centralisée
-        // C'est l'appel crucial qui utilise la fonction que vous avez créée dans AnalyticsPattern.php
-        $keywords = AnalyticsPattern::getDomainKeywords($newDomain);
-
-        // 4. Si aucun mot-clé n'est trouvé pour ce domaine, on ne filtre pas (on garde tout)
-        if (empty($keywords)) {
-          return $longTermContext;
-        }
-
-        // 5. Filtre le contexte à long terme pour ne garder que les entrées pertinentes
-        return array_filter($longTermContext, function($item) use ($newDomain, $keywords) {
-          $content = mb_strtolower($item['content'] ?? '');
-
-          // Vérifie si le contenu de l'entrée de mémoire contient au moins un des mots-clés
-          foreach ($keywords as $keyword) {
-            if (strpos($content, $keyword) !== false) {
-              return true; // Garde l'entrée
-            }
-          }
-
-          return false; // Écarte l'entrée
-        });
-      }
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "Long-term memory filtering SKIPPED - Pure LLM mode (LLM determines relevance)",
+        'info'
+      );
     }
-
-    // Si pas de changement de domaine ou si l'extraction a échoué, retourne le contexte original
-    return $longTermContext;
+    
+    return $longTermContext; // Return unfiltered context in pure LLM mode
   }
 
   /**

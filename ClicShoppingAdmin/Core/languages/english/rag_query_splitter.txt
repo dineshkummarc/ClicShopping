@@ -1,0 +1,26 @@
+prompt_split_hybrid = Split this hybrid query into separate, independent sub-queries.
+Query: {{query}}
+INSTRUCTIONS:
+    1. Identify ALL distinct questions or requests in the query\n
+    2. Split them into separate sub-queries\n
+    3. Each sub-query must be complete and answerable on its own\n
+    4. Classify each as 'analytics' (data/numbers), 'semantic' (information/explanation), or 'web_search' (external info)
+EXAMPLES:
+Query: "What is the price of iPhone 17 Pro and what is the return policy"\n
+Result: 
+    [
+        {"query": "What is the price of iPhone 17 Pro", "type": "analytics"}, 
+        {"query": "What is the return policy", "type": "semantic"}
+    ]
+Query: "Show me sales today and explain our shipping process"
+Result: 
+    [
+        {"query": "Show me sales today", "type": "analytics"}, 
+        {"query": "Explain our shipping process", "type": "semantic"}
+    ]
+Return ONLY a JSON array. No markdown, no explanation.
+JSON:
+
+
+report_query_analytics_template = Get {subject} stock and sales data
+report_query_semantic_template = Get {subject} product information and features

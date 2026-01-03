@@ -15,7 +15,6 @@ use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Orchestrator\AnalyticsAgent;
 use ClicShopping\AI\Agents\Memory\ConversationMemory;
 use ClicShopping\OM\Registry;
-use ClicShopping\AI\Domain\Patterns\MultiQueryPattern;
 
 /**
  * AnalyticsQueryExecutor Class
@@ -408,15 +407,37 @@ class AnalyticsQueryExecutor
    * Detect if query contains multiple SQL queries (AND connector)
    *
    * TASK 6.2: Enhanced multi-query detection using centralized patterns
+   * TASK 2.9.8.6.1: Added pattern bypass for Pure LLM mode
    * 
    * Uses MultiQueryPattern class for pattern management (English-only)
+   * 
+   * PATTERN BYPASS: Respects USE_PATTERN_BASED_DETECTION flag
+   * - Pure LLM mode: Returns false (multi-query detection disabled)
+   * - Pattern mode: Uses MultiQueryPattern for detection
    * 
    * @param string $query Query to analyze
    * @return array|false Array of sub-queries or false if single query
    */
   private function detectMultipleSqlQueries(string $query): array|false
   {
+    // TASK 2.9.8.6.1: Check if pattern-based detection is enabled
+    if (!defined('USE_PATTERN_BASED_DETECTION') || USE_PATTERN_BASED_DETECTION === 'False') {
+      // Pure LLM mode: Multi-query detection disabled
+      // LLM will handle each query independently
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "Multi-query detection bypassed (Pure LLM mode)",
+          'info'
+        );
+      }
+      return false;
+    }
+
+    // Pattern mode: Use MultiQueryPattern for detection
     // TASK 6.2: Use centralized MultiQueryPattern class
+    // @deprecated Pattern-based detection removed in Pure LLM mode
+    // This code is never executed (USE_PATTERN_BASED_DETECTION removed in task 5.1.6)
+    // TODO: Remove this dead code block in Q2 2026
     $result = MultiQueryPattern::detectMultipleQueries($query);
     
     if ($result !== false && $this->debug) {

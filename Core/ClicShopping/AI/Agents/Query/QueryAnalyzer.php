@@ -13,8 +13,6 @@ namespace ClicShopping\AI\Agents\Query;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Helper\LanguageHelper;
-use ClicShopping\AI\Domain\Patterns\AnalyticsPattern;
-use ClicShopping\AI\Domain\Patterns\SemanticsPattern;
 
 /**
  * QueryAnalyzer Class
@@ -175,7 +173,7 @@ class QueryAnalyzer
    * Extract entities from message
    *
    * Identifies e-commerce entities (products, categories, customers, orders, etc.)
-   * using pattern matching from SemanticsPattern.
+   * using inline pattern definitions (Pure LLM mode - patterns disabled).
    *
    * @param string $message Message text
    * @return array Extracted entities (unique list)
@@ -185,8 +183,16 @@ class QueryAnalyzer
     $message = mb_strtolower($message);
     $entities = [];
 
-    // Define entity patterns with synonyms, plurals, and multi-word expressions
-    $entityPatterns = SemanticsPattern::extractEntitiesFromMessage();
+    // Define entity patterns inline (Pure LLM mode - pattern classes disabled)
+    // These are basic patterns for entity detection
+    $entityPatterns = [
+      'product' => ['product', 'products', 'item', 'items', 'article', 'articles'],
+      'category' => ['category', 'categories', 'section', 'sections'],
+      'customer' => ['customer', 'customers', 'client', 'clients', 'user', 'users'],
+      'order' => ['order', 'orders', 'purchase', 'purchases', 'sale', 'sales'],
+      'manufacturer' => ['manufacturer', 'manufacturers', 'brand', 'brands', 'supplier', 'suppliers'],
+      'review' => ['review', 'reviews', 'rating', 'ratings', 'comment', 'comments'],
+    ];
 
     foreach ($entityPatterns as $entityType => $patterns) {
       foreach ($patterns as $pattern) {
@@ -223,8 +229,11 @@ class QueryAnalyzer
       'ranges'   => []
     ];
 
-    // 1. Define allowed fields
-    $allowedFields = AnalyticsPattern::getStructuredFields();
+    // 1. Define allowed fields inline (Pure LLM mode - pattern classes disabled)
+    $allowedFields = [
+      'price', 'stock', 'quantity', 'sku', 'model', 'weight', 'status',
+      'date', 'name', 'description', 'category', 'manufacturer', 'rating'
+    ];
     $fieldPattern = implode('|', $allowedFields);
 
     // 2. Handle boolean filters (with/without)

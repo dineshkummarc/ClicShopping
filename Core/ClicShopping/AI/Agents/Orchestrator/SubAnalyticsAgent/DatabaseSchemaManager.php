@@ -74,14 +74,17 @@ class DatabaseSchemaManager
     }
 
     try {
-      // Retrieve the table schema
-      $query = $this->db->prepare("DESCRIBE " . $table);
+      // Retrieve the table schema WITH COMMENTS
+      $query = $this->db->prepare("SHOW FULL COLUMNS FROM " . $table);
       $query->execute();
       $columns = $query->fetchAll(\PDO::FETCH_ASSOC);
 
       $schema = [];
       foreach ($columns as $column) {
-        $schema[$column['Field']] = $column['Type'];
+        $schema[$column['Field']] = [
+          'type' => $column['Type'],
+          'comment' => $column['Comment'] ?? ''
+        ];
       }
 
       // Cache the schema
@@ -136,8 +139,8 @@ class DatabaseSchemaManager
           $table = $safeTable;
         }
 
-        // Retrieve columns for each table
-        $columnsQuery = $this->db->prepare("DESCRIBE " . $table);
+        // Retrieve columns for each table WITH COMMENTS
+        $columnsQuery = $this->db->prepare("SHOW FULL COLUMNS FROM " . $table);
         $columnsQuery->execute();
         $columns = $columnsQuery->fetchAll();
 
@@ -149,7 +152,8 @@ class DatabaseSchemaManager
             'null' => $column['Null'],
             'key' => $column['Key'],
             'default' => $column['Default'],
-            'extra' => $column['Extra']
+            'extra' => $column['Extra'],
+            'comment' => $column['Comment'] ?? '' // Include column comment
           ];
         }
       }
@@ -220,7 +224,7 @@ class DatabaseSchemaManager
 
         $schema = $this->getTableSchema($table);
 
-        foreach ($schema as $column => $type) {
+        foreach ($schema as $column => $columnInfo) {
           // Validate column name
           $safeColumn = InputValidator::sanitizeIdentifier($column);
 
@@ -231,6 +235,9 @@ class DatabaseSchemaManager
             );
             $column = $safeColumn;
           }
+
+          // Extract type from column info (now returns array with 'type' and 'comment')
+          $type = is_array($columnInfo) ? $columnInfo['type'] : $columnInfo;
 
           // Detect ID columns that could be foreign keys
           if (preg_match('/_id$/', $column) && strpos($type, 'int') !== false) {
@@ -293,7 +300,7 @@ class DatabaseSchemaManager
     foreach ($tables as $table) {
       $schema = $this->getTableSchema($table);
 
-      foreach ($schema as $column => $type) {
+      foreach ($schema as $column => $columnInfo) {
         if (!isset($allColumns[$column])) {
           $allColumns[$column] = [];
         }

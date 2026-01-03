@@ -12,7 +12,6 @@ namespace ClicShopping\AI\Agents\Orchestrator;
 
 use AllowDynamicProperties;
 
-use ClicShopping\AI\Domain\Patterns\HybridPattern;
 use ClicShopping\AI\Tools\BIexecution\QueryExecutor;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
@@ -28,10 +27,10 @@ use ClicShopping\AI\Security\DbSecurity;
 
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\DatabaseSchemaManager;
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\ResultInterpreter;
-use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\AmbiguousQueryDetector;
+use ClicShopping\AI\Helper\Detection\AmbiguousQueryDetector;
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\PromptBuilder;
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\AmbiguityHandler;
-use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\ErrorHandler;
+use ClicShopping\AI\Handler\Error\AnalyticsErrorHandler;
 
 use ClicShopping\AI\Tools\BIexecution\SqlQueryProcessor;
 use ClicShopping\AI\Helper\AgentResponseHelper;
@@ -42,6 +41,7 @@ use ClicShopping\AI\Infrastructure\Cache\QueryCache;
 
 use ClicShopping\AI\Tools\BIexecution;
 use ClicShopping\AI\Agents\Orchestrator\CorrectionAgent;
+use ClicShopping\AI\Domain\Patterns\ModificationKeywordsPattern;
 /**
  * Class AnalyticsAgent
  * Handles database analytics and query processing with AI assistance
@@ -75,7 +75,7 @@ class AnalyticsAgent
   private AmbiguousQueryDetector $ambiguityDetector;
   private PromptBuilder $promptBuilder;
   private AmbiguityHandler $ambiguityHandler;
-  private ErrorHandler $errorHandler;
+  private AnalyticsErrorHandler $errorHandler;
   private mixed $app;
   private mixed $lang;
   
@@ -176,8 +176,8 @@ class AnalyticsAgent
       $this->debug
     );
     
-    // Initialize ErrorHandler for error recovery and messaging
-    $this->errorHandler = new ErrorHandler(
+    // Initialize AnalyticsErrorHandler for error recovery and messaging
+    $this->errorHandler = new AnalyticsErrorHandler(
       $this->db,
       $this->correctionAgent,
       $this->queryExecutor,
@@ -422,8 +422,38 @@ class AnalyticsAgent
       
       $this->debugLog("--- STEP 0.5: Check for ambiguous query ---", "AMBIGUITY");
       
-      // TASK 6.1: Detect ambiguous queries using translated query
-      $ambiguityAnalysis = $this->ambiguityDetector->detectAmbiguity($queryForAmbiguity);
+      // 🚀 OPTIMIZATION: Skip ambiguity detection for high-confidence analytics queries
+      // Get classification confidence from isAnalyticsQuery (already called in processBusinessQuery)
+      // If confidence >= 0.9, skip ambiguity detection to save 1-2 seconds
+      $skipAmbiguity = false;
+      $classificationConfidence = 0.0;
+      
+      // Re-classify to get confidence (cached, so very fast)
+      $translatedForClassification = \ClicShopping\AI\Domain\Semantics\Semantics::translateToEnglish($question, 80);
+      $cleanTranslation = $this->resultInterpreter->extractCleanTranslation($translatedForClassification);
+      $classifier = new \ClicShopping\AI\Agents\Query\QueryClassifier($this->debug);
+      $classificationResult = $classifier->classify($cleanTranslation, $cleanTranslation);
+      
+      $classificationConfidence = $classificationResult['confidence'] ?? 0.0;
+      
+      if ($classificationResult['type'] === 'analytics' && $classificationConfidence >= 0.9) {
+        $skipAmbiguity = true;
+        $this->debugLog("⚡ SKIPPING ambiguity detection (high confidence: {$classificationConfidence})", "OPTIMIZATION");
+        $this->securityLogger->logSecurityEvent(
+          "Ambiguity detection skipped for high-confidence analytics query",
+          'info',
+          [
+            'query' => substr($question, 0, 100),
+            'confidence' => $classificationConfidence,
+            'time_saved_estimate' => '1-2 seconds'
+          ]
+        );
+      }
+      
+      // TASK 6.1: Detect ambiguous queries using translated query (only if not skipped)
+      $ambiguityAnalysis = $skipAmbiguity 
+        ? ['is_ambiguous' => false, 'skipped' => true, 'reason' => 'high_confidence_analytics', 'confidence' => $classificationConfidence]
+        : $this->ambiguityDetector->detectAmbiguity($queryForAmbiguity);
       
       if ($ambiguityAnalysis['is_ambiguous']) {
         $this->debugLog("AMBIGUOUS QUERY DETECTED!", "AMBIGUITY");
@@ -462,7 +492,11 @@ class AnalyticsAgent
           // Continue with default interpretation
         }
       } else {
-        $this->debugLog("No ambiguity detected - proceeding normally", "AMBIGUITY");
+        if (isset($ambiguityAnalysis['skipped']) && $ambiguityAnalysis['skipped']) {
+          $this->debugLog("⚡ Ambiguity detection SKIPPED (reason: {$ambiguityAnalysis['reason']}, confidence: {$ambiguityAnalysis['confidence']})", "OPTIMIZATION");
+        } else {
+          $this->debugLog("No ambiguity detected - proceeding normally", "AMBIGUITY");
+        }
       }
       
       $this->debugLog("--- STEP 1: Check QueryCache ---", "CACHE");
@@ -1063,28 +1097,18 @@ class AnalyticsAgent
    */
   private function translateQueryForAmbiguity(string $question): string
   {
-    // Check if already in English (simple heuristic)
-    $englishKeywords = ['list', 'show', 'count', 'sum', 'total', 'average', 'products', 'orders', 'customers'];
-    $questionLower = mb_strtolower($question);
-    
-    $englishWordCount = 0;
-    foreach ($englishKeywords as $keyword) {
-      if (strpos($questionLower, $keyword) !== false) {
-        $englishWordCount++;
-      }
-    }
-    
-    // If query contains multiple English keywords, assume it's already in English
-    if ($englishWordCount >= 2) {
-      if ($this->debug) {
-        error_log("Query appears to be in English already, skipping translation");
-      }
-      return $question;
-    }
+    // FULL LLM MODE: Always translate using LLM, no pattern-based shortcuts
+    // This ensures consistent behavior (Pure LLM mode - no pattern matching)
     
     // Check cache first
     $cacheKey = 'translation_ambiguity_' . md5($question);
-    $cacheFile = CLICSHOPPING::BASE_DIR . 'Work/Cache/' . $cacheKey . '.cache';
+    $cacheDir = CLICSHOPPING::BASE_DIR . 'Work/Cache/Rag/Translation/';
+    $cacheFile = $cacheDir . $cacheKey . '.cache';
+    
+    // Ensure cache directory exists
+    if (!is_dir($cacheDir)) {
+      @mkdir($cacheDir, 0755, true);
+    }
     
     if (file_exists($cacheFile)) {
       $cached = file_get_contents($cacheFile);
@@ -1124,26 +1148,23 @@ class AnalyticsAgent
    * Detects if the query is a modification of a previous query
    * Note: Questions are translated to English before processing
    *
+   * TASK 5.1.1: Refactored to use ModificationKeywordsPattern
+   * TASK 7.1.2.2: Updated to use centralized pattern class with getAllKeywords() support
+   *
    * @param string $question The user's question (in English after translation)
    * @return bool True if it's a modification query
    */
   private function isModificationRequest(string $question): bool
   {
-    // Mots-clés en ANGLAIS car la question est traduite avant traitement
-    $modificationKeywords = HybridPattern::modificationKeywords();
+    // Use centralized pattern class (uses getAllKeywords() internally)
+    $isModification = ModificationKeywordsPattern::isModificationRequest($question);
 
-    $questionLower = mb_strtolower($question);
-
-    foreach ($modificationKeywords as $keyword) {
-      if (strpos($questionLower, $keyword) !== false) {
-        if ($this->debug) {
-          error_log("🔄 Modification request detected with keyword: {$keyword}");
-        }
-        return true;
-      }
+    if ($isModification && $this->debug) {
+      $keyword = ModificationKeywordsPattern::getModificationKeyword($question);
+      error_log("🔄 Modification request detected with keyword: {$keyword}");
     }
 
-    return false;
+    return $isModification;
   }
 
   /**

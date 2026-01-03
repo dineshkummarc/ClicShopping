@@ -24,7 +24,11 @@ use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Domain\Semantics\Semantics;
 use ClicShopping\AI\Infrastructure\Cache\Cache;
+use ClicShopping\AI\Helper\InsufficientInformationDetector;
+use ClicShopping\AI\Handler\Fallback\LLMFallbackHandler;
+use ClicShopping\AI\Handler\Fallback\WebSearchHandler;
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Registry;
 
 /**
  * SemanticSearchOrchestrator Class
@@ -43,6 +47,8 @@ class SemanticSearchOrchestrator
   private ?Cache $cache = null;
   private string $userId;
   private int $languageId;
+  private $language;
+  private InsufficientInformationDetector $infoDetector;
 
   /**
    * Constructor
@@ -57,6 +63,13 @@ class SemanticSearchOrchestrator
     $this->userId = $userId;
     $this->languageId = $languageId;
     $this->debug = $debug;
+
+    // Load language definitions
+    $this->language = Registry::get('Language');
+    $this->language->loadDefinitions('rag_semantic_search_orchestrator', 'en', null, 'ClicShoppingAdmin');
+    
+    // Initialize insufficient information detector
+    $this->infoDetector = new InsufficientInformationDetector();
 
     // Initialize cache if enabled (Task 4.3.2)
     if ($this->shouldInitializeCache()) {
@@ -172,25 +185,17 @@ class SemanticSearchOrchestrator
             $responseContent = trim($matches[1]);
             
             // 🔧 TASK 2.17.2: Ignore generic LLM responses that don't have actual information
-            // These are responses like "I don't have that information" or generic advice
-            $isGenericResponse = (
-              stripos($responseContent, "I don't have that information") !== false ||
-              stripos($responseContent, "I would need more specific information") !== false ||
-              stripos($responseContent, "consult the company's official website") !== false ||
-              stripos($responseContent, "contact their customer service") !== false ||
-              stripos($responseContent, "Je n'ai pas cette information") !== false ||
-              stripos($responseContent, "J'aurais besoin de plus d'informations") !== false
-            );
+            // 🔧 FIX 2025-12-28: Use InsufficientInformationDetector helper
+            $isGenericResponse = $this->infoDetector->isInsufficientInformation($responseContent);
             
             // Check if response has actual content (not empty, not generic)
-            if (!empty($responseContent) && strlen($responseContent) > 10 && !$isGenericResponse) {
+            if (!$isGenericResponse) {
               $hasContent = true;
               
               if ($this->debug) {
-                $this->logger->logSecurityEvent(
-                  "Conversation memory document has useful content (length: " . strlen($responseContent) . ")",
-                  'info'
-                );
+                $logMessage = $this->language->getDef('text_log_conversation_memory_useful');
+                $logMessage = str_replace('{{length}}', strlen($responseContent), $logMessage);
+                $this->logger->logSecurityEvent($logMessage, 'info');
               }
               break;
             } elseif ($isGenericResponse) {
@@ -221,23 +226,16 @@ class SemanticSearchOrchestrator
               $responseContent = trim($matches[1]);
               
               // Check if this is the useful response (not generic)
-              $isGenericResponse = (
-                stripos($responseContent, "I don't have that information") !== false ||
-                stripos($responseContent, "I would need more specific information") !== false ||
-                stripos($responseContent, "consult the company's official website") !== false ||
-                stripos($responseContent, "contact their customer service") !== false ||
-                stripos($responseContent, "Je n'ai pas cette information") !== false ||
-                stripos($responseContent, "J'aurais besoin de plus d'informations") !== false
-              );
+              // 🔧 FIX 2025-12-28: Use InsufficientInformationDetector helper
+              $isGenericResponse = $this->infoDetector->isInsufficientInformation($responseContent);
               
-              if (!empty($responseContent) && strlen($responseContent) > 10 && !$isGenericResponse) {
+              if (!$isGenericResponse) {
                 $extractedResponse = $responseContent;
                 
                 if ($this->debug) {
-                  $this->logger->logSecurityEvent(
-                    "Extracted useful response from conversation memory (length: " . strlen($extractedResponse) . ")",
-                    'info'
-                  );
+                  $logMessage = $this->language->getDef('text_log_extracted_response');
+                  $logMessage = str_replace('{{length}}', strlen($extractedResponse), $logMessage);
+                  $this->logger->logSecurityEvent($logMessage, 'info');
                 }
                 break;
               }
@@ -504,22 +502,12 @@ class SemanticSearchOrchestrator
           // 🔧 TASK 4.4: Check if answer is generic "no information" message
           // If RAG found documents but they're not relevant to the query, return null to trigger LLM fallback
           $responseText = $answer['response'] ?? $answer['answer'] ?? '';
-          $isGenericNoInfo = (
-            stripos($responseText, "don't have that information") !== false ||
-            stripos($responseText, "no information found") !== false ||
-            stripos($responseText, "I don't have") !== false ||
-            stripos($responseText, "Je n'ai pas cette information") !== false ||
-            stripos($responseText, "aucune information") !== false ||
-            empty($responseText) ||
-            strlen(trim($responseText)) < 20  // Very short responses are likely generic
-          );
+          $isGenericNoInfo = $this->infoDetector->isInsufficientInformation($responseText);
           
           if ($isGenericNoInfo) {
             if ($this->debug) {
-              $this->logger->logSecurityEvent(
-                "RAG returned generic 'no information' response - documents found but not relevant - triggering LLM fallback",
-                'info'
-              );
+              $logMessage = $this->language->getDef('text_log_rag_generic_response');
+              $this->logger->logSecurityEvent($logMessage, 'info');
             }
             // Return null to trigger LLM fallback
             return null;
@@ -528,10 +516,9 @@ class SemanticSearchOrchestrator
           return $answer;
         } catch (\Throwable $e) {
           if ($this->debug) {
-            $this->logger->logSecurityEvent(
-              "RAG synthesis failed: " . $e->getMessage() . " - returning raw results",
-              'warning'
-            );
+            $logMessage = $this->language->getDef('text_log_rag_synthesis_failed');
+            $logMessage = str_replace('{{error}}', $e->getMessage(), $logMessage);
+            $this->logger->logSecurityEvent($logMessage, 'warning');
           }
           // If synthesis fails, return raw results to be formatted upstream
           return $results;
@@ -724,6 +711,7 @@ class SemanticSearchOrchestrator
       'answer' => $answer,  // 🔧 TASK 2.17.2: Keep 'answer' for backward compatibility
       'response' => $answer,  // 🔧 TASK 2.17.2: Add 'response' for consistency
       'text_response' => $answer,  // 🔧 TASK 2.17.2: Keep 'text_response' for backward compatibility
+      'documents' => $result['documents'] ?? [],  // 🔧 TASK 3.5.1.3: Keep 'documents' for hallucination detection
       'results' => $result['documents'] ?? [],
       'sources' => $result['documents'] ?? [],  // 🔧 TASK 2.17.2: Add 'sources' alias
       'metadata' => [

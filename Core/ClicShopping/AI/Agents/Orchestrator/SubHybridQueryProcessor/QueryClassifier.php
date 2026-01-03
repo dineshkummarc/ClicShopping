@@ -10,10 +10,9 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor;
 
-use ClicShopping\AI\Domain\Patterns\AnalyticsPattern;
-use ClicShopping\AI\Domain\Patterns\SemanticsPattern;
-use ClicShopping\AI\Domain\Patterns\WebSearchPattern;
 use ClicShopping\AI\Domain\Semantics\Semantics;
+use ClicShopping\AI\Domain\Patterns\WebSearchPostFilter;
+use ClicShopping\AI\Domain\Patterns\HybridPreFilter;
 
 /**
  * QueryClassifier - Classifies queries into analytics, semantic, web_search, or hybrid types
@@ -38,41 +37,17 @@ use ClicShopping\AI\Domain\Semantics\Semantics;
 class QueryClassifier extends BaseQueryProcessor
 {
   /**
-   * Confidence threshold for intent detection
-   * 
-   * TASK 13.2 & 13.6 (2025-12-14): Increased from 0.60 to 0.87 to reduce hybrid over-classification
-   * - First tried 0.70 but still had hybrid over-classification with semantic 0.85 + analytics 0.90
-   * - Then tried 0.80 but still had issues with ambiguous patterns like "show me", "what is"
-   * - Tried 0.88 but it was too high, missing true hybrid query (Test 42)
-   * - Tried 0.86 but still missing Test 42
-   * - Tried 0.85 but too low, back to hybrid over-classification
-   * - Settled on 0.87 as optimal balance:
-   *   - Queries with semantic 0.85 + analytics 0.90 will be single-type (analytics wins)
-   *   - True hybrid queries with both intents >= 0.87 will be detected correctly
-   * - This effectively implements disambiguation by preferring the stronger intent
-   */
-  private const INTENT_THRESHOLD = 0.87;
-
-  /**
-   * @var QuerySplitter|null Query splitter for fallback hybrid detection
-   */
-  private ?QuerySplitter $querySplitter = null;
-
-  /**
-   * @var bool Whether to use pattern-based detection
-   */
-  private bool $usePatterns;
-
-  /**
    * Constructor
    *
    * @param bool $debug Enable debug logging
-   * @param QuerySplitter|null $querySplitter Query splitter instance (for fallback hybrid detection)
    */
-  public function __construct(bool $debug = false, ?QuerySplitter $querySplitter = null)
+  public function __construct(bool $debug = false)
   {
     parent::__construct($debug, 'QueryClassifier');
-    $this->querySplitter = $querySplitter;
+    
+    if ($this->debug) {
+      $this->logInfo("Pure LLM mode active - all classification via LLM");
+    }
   }
 
   /**
@@ -106,218 +81,150 @@ class QueryClassifier extends BaseQueryProcessor
   /**
    * Classify query type: analytic, semantic, web, or hybrid
    *
-   * This is the main classification method that determines the query type
-   * by analyzing patterns and computing confidence scores.
-   *
-   * IMPORTANT: All patterns are in English. French queries are translated to English first.
+   * Pure LLM mode: Always uses LLM for classification.
    *
    * @param string $query Query to classify
    * @return array Classification result with type, confidence, and reasoning
    */
   public function classifyQueryType(string $query): array
   {
-    // Translate query to English if needed (all patterns are in English)
+    // Translate query to English if needed
     $translatedQuery = Semantics::translateToEnglish($query, 80);
-    $q = $this->normalizeQuery($translatedQuery);
 
     if ($this->debug) {
-      $this->logInfo("Classifying query", [
+      $this->logInfo("Classifying query (Pure LLM mode)", [
         'original' => $query,
-        'translated' => $translatedQuery,
-        'normalized' => $q
+        'translated' => $translatedQuery
       ]);
     }
 
-    // Stage 1: Independent detectors
-    $analytic = $this->detectAnalytic($q);
-    $semantic = $this->detectSemantic($q);
-    $web = $this->detectWeb($q);
-
-    // Stage 2: Hybrid resolution
-    $scores = [
-      'analytic' => $analytic['score'],
-      'semantic' => $semantic['score'],
-      'web' => $web['score'],
-    ];
-
-    $intentCount = count(array_filter($scores, fn($s) => $s >= self::INTENT_THRESHOLD));
-
-    // Stage 2.5: Fallback to detectMultipleIntents() if threshold not met
-    // This catches hybrid queries that don't meet the high threshold (0.87)
-    // but have explicit connectors, multiple verbs, or other hybrid indicators
-    $fallbackDetected = false;
-    if ($intentCount < 2 && $this->querySplitter !== null) {
-      // Check if query has multiple intents using alternative detection
-      // Use translated query for consistency with pattern matching
-      $hasMultipleIntents = $this->querySplitter->detectMultipleIntents($translatedQuery, ['is_hybrid' => false]);
+    // Check if HybridPreFilter is enabled
+    $useHybridPreFilter = (defined('USE_HYBRID_PRE_FILTER') 
+        && USE_HYBRID_PRE_FILTER === 'True');
+    
+    // Try HybridPreFilter if enabled
+    if ($useHybridPreFilter) {
+      // ✅ CRITICAL FIX (2025-01-02): Check HybridPreFilter FIRST
+      // LLM tends to focus on first intent and ignore second intent in hybrid queries
+      // Pattern-based pre-filter provides deterministic detection for hybrid queries
+      $hybridCheck = HybridPreFilter::preFilter($translatedQuery);
       
-      if ($hasMultipleIntents) {
-        $fallbackDetected = true;
-        $intentCount = 2; // Override for logging
-        
+      if ($hybridCheck !== null) {
         if ($this->debug) {
-          $this->logInfo("Hybrid detected via fallback method", [
-            'scores' => $scores,
-            'method' => 'detectMultipleIntents'
+          $this->logInfo("HybridPreFilter detected hybrid query", [
+            'query' => $translatedQuery,
+            'sub_types' => $hybridCheck['sub_types'] ?? []
           ]);
         }
+        return $hybridCheck;
       }
     }
 
-    // Stage 3: Determine final type, confidence, and evidence
-    if ($intentCount >= 2 || $fallbackDetected) {
-      $type = 'hybrid';
-      $confidence = $this->computeHybridScore($scores);
-
-      $evidence = array_merge(
-        $analytic['evidence'],
-        $semantic['evidence'],
-        $web['evidence']
-      );
+    // Always use LLM for classification
+    $result = $this->classifyWithLLM($translatedQuery);
+    $result['detection_method'] = 'llm';
+    
+    // ✅ CRITICAL FIX (2025-01-02): Apply WebSearchPostFilter to detect trends/news queries
+    // The LLM prompt alone is not reliable for detecting web_search queries
+    // Pattern-based post-filter provides deterministic detection for:
+    // - Trends/news keywords (latest, recent, trends, news, what's new)
+    // - Competitor keywords (competitors, competition, rival)
+    // - Price comparison keywords (compare, vs, best price)
+    $result = WebSearchPostFilter::postFilter($translatedQuery, $result);
+    
+    // Sync intent_type back to type (post-filter may have changed intent_type)
+    if (isset($result['intent_type'])) {
+      $result['type'] = $result['intent_type'];
       
-      if ($fallbackDetected) {
-        $evidence[] = "hybrid: detected via alternative method (connectors/verbs/structure)";
+      // Normalize: web_search → web (for backward compatibility)
+      if ($result['type'] === 'web_search') {
+        $result['type'] = 'web';
       }
-    } else {
-      $type = array_keys($scores, max($scores))[0];
-      $confidence = max($scores);
-      $evidence = ${$type}['evidence'];
     }
-
-    $result = [
-      'type' => $type,
-      'confidence' => round($confidence, 2),
-      'reasoning' => $evidence,
-      'is_hybrid' => ($type === 'hybrid'),
-    ];
-
-    if ($this->debug) {
-      $this->logInfo("Classification complete", [
-        'type' => $type,
-        'confidence' => $confidence,
-        'scores' => $scores,
-        'intent_count' => $intentCount,
-        'is_hybrid' => ($type === 'hybrid')
-      ]);
-    }
-
+    
     return $result;
   }
 
   /**
-   * Detect analytic intent
-   *
-   * Uses AnalyticsPattern class to detect SQL-based data retrieval queries.
-   *
-   * @param string $q Normalized query
-   * @return array Detection result with score and evidence
+   * Classify query using LLM
+   * 
+   * This method uses Semantics::checkSemantics() which calls the LLM
+   * to determine if a query is 'analytics', 'semantic', 'hybrid', or 'web_search'.
+   * 
+   * @param string $translatedQuery Translated query (English)
+   * @return array Classification result with type, confidence, reasoning
    */
-  private function detectAnalytic(string $q): array
+  private function classifyWithLLM(string $translatedQuery): array
   {
-    $patterns = AnalyticsPattern::detectAnalyticsQuery();
-
-    $score = 0.0;
-    $evidence = [];
-
-    foreach ($patterns as $pattern => $patternScore) {
-      if (preg_match($pattern, $q)) {
-        if ($patternScore > $score) {
-          $score = $patternScore;
-        }
-        $evidence[] = "analytic: {$pattern}";
+    if ($this->debug) {
+      $this->logInfo("Using LLM for classification", [
+        'query' => $translatedQuery
+      ]);
+    }
+    
+    try {
+      // Use Semantics::checkSemantics() which returns array with type, confidence, reasoning
+      $classificationResult = Semantics::checkSemantics($translatedQuery);
+      
+      // Extract type
+      $type = $classificationResult['type'] ?? 'semantic';
+      
+      // Normalize type: LLM may return 'analytics' (plural) or 'analytic' (singular)
+      if ($type === 'analytics') {
+        $type = 'analytic';
       }
-    }
-
-    if ($this->debug && $score > 0) {
-      $this->logInfo("Analytics detection", ['score' => $score, 'evidence_count' => count($evidence)]);
-    }
-
-    return ['score' => $score, 'evidence' => $evidence];
-  }
-
-  /**
-   * Detect semantic intent
-   *
-   * Uses SemanticsPattern class to detect embedding-based knowledge retrieval queries.
-   *
-   * @param string $q Normalized query
-   * @return array Detection result with score and evidence
-   */
-  private function detectSemantic(string $q): array
-  {
-    $patterns = SemanticsPattern::detectSemanticQuery();
-
-    $score = 0.0;
-    $evidence = [];
-
-    foreach ($patterns as $pattern => $patternScore) {
-      if (preg_match($pattern, $q)) {
-        if ($patternScore > $score) {
-          $score = $patternScore;
-        }
-        $evidence[] = "semantic: {$pattern}";
+      
+      // ✅ FIX (2025-01-02): Normalize 'web_search' → 'web' (LLM may return either)
+      if ($type === 'web_search') {
+        $type = 'web';
       }
-    }
-
-    if ($this->debug && $score > 0) {
-      $this->logInfo("Semantic detection", ['score' => $score, 'evidence_count' => count($evidence)]);
-    }
-
-    return ['score' => $score, 'evidence' => $evidence];
-  }
-
-  /**
-   * Detect web search intent
-   *
-   * Uses WebSearchPattern class to detect external search requirements.
-   *
-   * @param string $q Normalized query
-   * @return array Detection result with score and evidence
-   */
-  private function detectWeb(string $q): array
-  {
-    $patterns = WebSearchPattern::getWebSearchPatterns();
-
-    $score = 0.0;
-    $evidence = [];
-
-    foreach ($patterns as $pattern => $patternScore) {
-      if (preg_match($pattern, $q)) {
-        if ($patternScore > $score) {
-          $score = $patternScore;
+      
+      // Validate response (supports 4 categories)
+      $validTypes = ['analytic', 'semantic', 'web', 'hybrid'];
+      if (!in_array($type, $validTypes)) {
+        if ($this->debug) {
+          $this->logWarning("LLM returned invalid type", [
+            'type' => $type,
+            'defaulting_to' => 'semantic'
+          ]);
         }
-        $evidence[] = "web: {$pattern}";
+        $type = 'semantic';
+        $classificationResult['confidence'] = 0.5;
       }
+      
+      // Log classification with confidence and reasoning
+      if ($this->debug) {
+        $this->logInfo("LLM classification complete", [
+          'query' => $translatedQuery,
+          'type' => $type,
+          'confidence' => $classificationResult['confidence'] ?? 0.7,
+          'reasoning' => $classificationResult['reasoning'] ?? 'N/A'
+        ]);
+      }
+      
+      return [
+        'type' => $type,
+        'intent_type' => $type, // For WebSearchPostFilter compatibility
+        'confidence' => $classificationResult['confidence'] ?? 0.7,
+        'reasoning' => [$classificationResult['reasoning'] ?? 'LLM classification'],
+        'is_hybrid' => ($type === 'hybrid'),
+      ];
+      
+    } catch (\Exception $e) {
+      if ($this->debug) {
+        $this->logError("LLM classification failed", [
+          'error' => $e->getMessage()
+        ]);
+      }
+      
+      // Fallback: semantic
+      return [
+        'type' => 'semantic',
+        'intent_type' => 'semantic', // For WebSearchPostFilter compatibility
+        'confidence' => 0.5,
+        'reasoning' => ['LLM classification failed, defaulting to semantic'],
+        'is_hybrid' => false,
+      ];
     }
-
-    if ($this->debug && $score > 0) {
-      $this->logInfo("Web search detection", ['score' => $score, 'evidence_count' => count($evidence)]);
-    }
-
-    return ['score' => $score, 'evidence' => $evidence];
-  }
-
-  /**
-   * Compute hybrid confidence score
-   *
-   * Calculates confidence score for hybrid queries based on individual intent scores.
-   * Higher confidence when multiple intents have strong scores.
-   *
-   * @param array $scores Individual intent scores
-   * @return float Hybrid confidence score
-   */
-  private function computeHybridScore(array $scores): float
-  {
-    // Matrix-style: stronger if two domains exceed 0.8
-    $high = array_filter($scores, fn($v) => $v >= 0.80);
-
-    if (count($high) >= 2) {
-      return 0.95;
-    }
-    if (count($high) === 1) {
-      return 0.90;
-    }
-
-    return 0.85;
   }
 }

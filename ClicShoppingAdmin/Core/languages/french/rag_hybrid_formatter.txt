@@ -1,0 +1,7 @@
+results_for = Résultats pour :
+response_label = Réponse :
+source_details_label = ℹ️ Détails des sources (
+combined_queries_suffix = requêtes combinées)
+web_search_results_title = 🌐 Résultats de Recherche Web
+analytics_results_title = 📊 Résultats Analytiques
+semantic_results_title = 📚 Résultats Sémantiques

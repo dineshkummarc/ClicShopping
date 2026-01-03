@@ -174,35 +174,47 @@ class ResultValidator
   public function validateWebResult(array $result): bool
   {
     return $this->validateResult($result, 'web_search', function($result, &$validationErrors) {
-      // Check for result data
-      if (!isset($result['result']) || empty($result['result'])) {
-        $validationErrors[] = "Missing result data";
-        return false;
+      // 🔧 FIX: Support both structures:
+      // 1. PlanExecutor: results at root level
+      // 2. WebSearchQueryExecutor: results nested in 'result' field
+      
+      $resultData = $result;
+      
+      // If 'result' field exists, use it (WebSearchQueryExecutor structure)
+      if (isset($result['result']) && is_array($result['result'])) {
+        $resultData = $result['result'];
       }
 
-      $resultData = $result['result'];
-
-      // Check for web search results
-      $hasResults = isset($resultData['results']) && is_array($resultData['results']) && !empty($resultData['results']);
+      // Check for web search results (support both 'results' and 'items')
+      $hasResults = (isset($resultData['results']) && is_array($resultData['results']) && !empty($resultData['results'])) ||
+                    (isset($resultData['items']) && is_array($resultData['items']) && !empty($resultData['items']));
       $hasSources = isset($resultData['sources']) && is_array($resultData['sources']) && !empty($resultData['sources']);
       $hasUrls = isset($resultData['urls']) && is_array($resultData['urls']) && !empty($resultData['urls']);
+      $hasTextResponse = isset($result['text_response']) && !empty($result['text_response']);
       
-      if (!$hasResults && !$hasSources && !$hasUrls) {
-        $validationErrors[] = "Missing web search results, sources, or URLs";
+      // Web search is valid if it has results, sources, URLs, or text_response
+      if (!$hasResults && !$hasSources && !$hasUrls && !$hasTextResponse) {
+        $validationErrors[] = "Missing web search results, sources, URLs, or text_response";
         return false;
       }
 
-      // Extract and validate URLs
-      $urls = $this->extractUrls($resultData, $hasResults, $hasUrls);
-      
-      if (empty($urls)) {
-        $validationErrors[] = "No URLs found in web search results";
-        return false;
-      }
-
-      if (!$this->hasValidUrl($urls)) {
-        $validationErrors[] = "No valid URLs found";
-        return false;
+      // If we have results, validate URLs
+      if ($hasResults) {
+        // Extract and validate URLs
+        $urls = $this->extractUrls($resultData, $hasResults, $hasUrls);
+        
+        if (empty($urls)) {
+          // No URLs is acceptable if we have text_response
+          if (!$hasTextResponse) {
+            $validationErrors[] = "No URLs found in web search results";
+            return false;
+          }
+        } else {
+          if (!$this->hasValidUrl($urls)) {
+            $validationErrors[] = "No valid URLs found";
+            return false;
+          }
+        }
       }
 
       // Validate source attribution

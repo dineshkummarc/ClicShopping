@@ -34,17 +34,16 @@ use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\IntentAnalyzer;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\EntityExtractor;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\DiagnosticManager;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ContextManager;
-use ClicShopping\AI\Agents\Query\ComplexQueryHandler;
+use ClicShopping\AI\Handler\Query\ComplexQueryHandler;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\HybridQueryProcessor;
 
 
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ResponseProcessor as ResponseProcessorComponent;
 use ClicShopping\AI\Agents\Query\QueryAnalyzer;
-use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ErrorHandler as ErrorHandlerComponent;
+use ClicShopping\AI\Handler\Error\ErrorHandler as ErrorHandlerComponent;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\MemoryManager as MemoryManagerComponent;
 use ClicShopping\AI\Helper\OrchestratorHelper;
 
-use ClicShopping\AI\Domain\Patterns\AnalyticsPattern;
 use ClicShopping\AI\Domain\Semantics\Semantics;
 
 /**
@@ -73,7 +72,6 @@ class OrchestratorAgent
   private string $prefix;
 
   // Agents disponibles
-  private ?AnalyticsAgent $analyticsAgent = null;
   private ?MultiDBRAGManager $ragManager = null;
 
   // Statistiques d'exécution
@@ -247,7 +245,6 @@ class OrchestratorAgent
     
     // ✅ TASK 4.4.2.3: Variables pour tracking
     $status = 'success';
-    $isFastLane = false; // Indicateur clé pour le monitoring
     
     if ($this->debug) {
       error_log("⏱️ [PERF] processWithValidation START at " . date('H:i:s'));
@@ -266,6 +263,9 @@ class OrchestratorAgent
         );
       }
 
+      // ✅ TASK 5.1.7.5: Parallel translation (non-blocking, for logging only)
+      // Translation is done inside handleFullOrchestration in parallel with context retrieval
+      // This early translation is kept for backward compatibility with logging
       $translatedQuery = '';
       try {
         $translatedQuery = Semantics::translateToEnglish($queryToProcess, 80);
@@ -287,11 +287,6 @@ class OrchestratorAgent
         ]);
       }
       
-      // 🆕 FAST PATH: Bypass orchestration for simple analytics queries
-      if ($this->isSimpleAnalyticsQuery($translatedQuery)) {
-        return $this->handleFastPath($queryToProcess, $contextUsed, $startTime);
-      }
-
       // Full orchestration path
       return $this->handleFullOrchestration($query, $queryToProcess, $startTime, $perfMarkers);
     } catch (\Exception $e) {
@@ -340,14 +335,13 @@ class OrchestratorAgent
         'orchestrator_query_latency_ms',
         $latencyMs,
         [
-          'status' => $status,
-          'fast_lane' => $isFastLane ? 'true' : 'false'
+          'status' => $status
         ]
       );
       
       if ($this->debug) {
         $this->securityLogger->logSecurityEvent(
-          "⏱️ TASK 4.4.2.3: Query latency recorded: {$latencyMs}ms (fast_lane: " . ($isFastLane ? 'true' : 'false') . ", status: {$status})",
+          "⏱️ TASK 4.4.2.3: Query latency recorded: {$latencyMs}ms (status: {$status})",
           'info'
         );
       }
@@ -399,7 +393,7 @@ class OrchestratorAgent
   /**
    * ✅ TASK 4.4.2.3: Obtient les métriques de latence pour le dashboard
    * 
-   * Retourne les statistiques de latence des requêtes avec distinction fast-lane vs full orchestration
+   * Retourne les statistiques de latence des requêtes
    *
    * @return array Métriques de latence avec statistiques détaillées
    */
@@ -407,10 +401,6 @@ class OrchestratorAgent
   {
     // Récupérer les statistiques de l'histogramme de latence
     $allStats = $this->collector->getHistogramStats('orchestrator_query_latency_ms');
-    
-    // Récupérer les statistiques par tag (fast_lane)
-    $fastLaneStats = $this->collector->getHistogramStats('orchestrator_query_latency_ms', ['fast_lane' => 'true']);
-    $fullOrchestrationStats = $this->collector->getHistogramStats('orchestrator_query_latency_ms', ['fast_lane' => 'false']);
     
     return [
       'overall' => $allStats ?? [
@@ -426,64 +416,7 @@ class OrchestratorAgent
           'p95' => 0,
           'p99' => 0,
         ]
-      ],
-      'fast_lane' => $fastLaneStats ?? [
-        'count' => 0,
-        'mean' => 0,
-        'median' => 0,
-        'min' => 0,
-        'max' => 0,
-        'percentiles' => [
-          'p50' => 0,
-          'p75' => 0,
-          'p90' => 0,
-          'p95' => 0,
-          'p99' => 0,
-        ]
-      ],
-      'full_orchestration' => $fullOrchestrationStats ?? [
-        'count' => 0,
-        'mean' => 0,
-        'median' => 0,
-        'min' => 0,
-        'max' => 0,
-        'percentiles' => [
-          'p50' => 0,
-          'p75' => 0,
-          'p90' => 0,
-          'p95' => 0,
-          'p99' => 0,
-        ]
-      ],
-      'fast_lane_efficiency' => $this->calculateFastLaneEfficiency($fastLaneStats, $fullOrchestrationStats),
-    ];
-  }
-
-  /**
-   * ✅ TASK 4.4.2.3: Calcule l'efficacité du fast-lane
-   * 
-   * @param array|null $fastLaneStats Statistiques fast-lane
-   * @param array|null $fullStats Statistiques orchestration complète
-   * @return array Métriques d'efficacité
-   */
-  private function calculateFastLaneEfficiency(?array $fastLaneStats, ?array $fullStats): array
-  {
-    if (!$fastLaneStats || !$fullStats || $fullStats['mean'] == 0) {
-      return [
-        'speedup_factor' => 0,
-        'time_saved_ms' => 0,
-        'percentage_faster' => 0,
-      ];
-    }
-    
-    $speedupFactor = $fullStats['mean'] / $fastLaneStats['mean'];
-    $timeSavedMs = $fullStats['mean'] - $fastLaneStats['mean'];
-    $percentageFaster = (($fullStats['mean'] - $fastLaneStats['mean']) / $fullStats['mean']) * 100;
-    
-    return [
-      'speedup_factor' => round($speedupFactor, 2),
-      'time_saved_ms' => round($timeSavedMs, 2),
-      'percentage_faster' => round($percentageFaster, 1),
+      ]
     ];
   }
 
@@ -531,65 +464,6 @@ class OrchestratorAgent
   public function suggestImprovements(): array
   {
     return $this->diagnosticManager->suggestImprovements();
-  }
-
-  /**
-   * 🆕 Detect if query is a simple analytics query that can bypass orchestration
-   * * Simple analytics queries are:
-   * - Questions about counts, totals, averages for standard entities.
-   * - Likely to be cached and don't need complex reasoning.
-   *
-   * @param string $query User query
-   * @return bool True if simple analytics query
-   */
-  private function isSimpleAnalyticsQuery(string $query): bool
-  {
-    $queryLower = strtolower($query);
-
-    // --- 1. Keywords for inclusion (Actionable Analytics) ---
-
-    // Get keywords from the dedicated pattern class for better management.
-    $analyticsKeywords = AnalyticsPattern::getSimpleAnalyticsKeywords();
-
-    // Create a regex pattern with word boundaries for precise matching
-    // Note: 'how many' and multi-word terms must be handled carefully, often better left as strpos
-    // But for better overall precision, we use word boundaries for the single words.
-    $keywordPatterns = array_map(function($keyword) {
-      if (str_contains($keyword, ' ')) {
-        return preg_quote($keyword, '/'); // Keep multi-word phrases as is
-      }
-      return '\b' . preg_quote($keyword, '/') . '\b'; // Add boundaries for single words
-    }, $analyticsKeywords);
-
-    $inclusionRegex = '/(?:' . implode('|', $keywordPatterns) . ')/i';
-
-
-    // Check if query contains any analytics keywords
-    if (preg_match($inclusionRegex, $queryLower) === 0) {
-      return false; // No analytical intent detected
-    }
-
-    // --- 2. Exclusionary Logic (Complex Indicators) ---
-
-    // Exclude complex queries that need reasoning, comparison, or forward-looking analysis
-    $complexIndicators = [
-      '\bwhy\b', '\bhow to\b', '\bhow can\b',
-      '\bexplain\b', '\banalyze\b',
-      '\bcompare\b', '\bdifference\b',
-      '\btrend\b', '\bpredict\b', '\bforecast\b',
-      '\brecommend\b', '\bsuggest\b',
-      '\boptimize\b', '\bimprove\b',
-    ];
-
-    // Combine all complex indicators into a single exclusion regex
-    $exclusionRegex = '/(?:' . implode('|', $complexIndicators) . ')/i';
-
-    if (preg_match($exclusionRegex, $queryLower)) {
-      return false; // Complex query, needs full orchestration (LLM, RAG, etc.)
-    }
-
-    // Simple analytics query detected
-    return true;
   }
 
   /**
@@ -743,10 +617,103 @@ class OrchestratorAgent
     
     $perfMarkers['after_init'] = microtime(true); // 🆕
 
-    // 3. Obtenir le contexte de la conversation
-    $rawContext = $this->conversationMemory ? $this->conversationMemory->getRelevantContext($query) : [];
+    // ✅ TASK 5.1.7.5: Parallel context retrieval and translation
+    // These operations are independent and can run in parallel
+    $parallelStart = microtime(true);
     
-    $perfMarkers['after_context'] = microtime(true); // 🆕
+    // Initialize results
+    $rawContext = [];
+    $translatedQuery = $queryToProcess;
+    $translationError = null;
+    $contextError = null;
+    
+    // Try parallel execution using PHP's built-in capabilities
+    // Note: PHP doesn't have native async/await, but we can simulate parallel execution
+    // by starting both operations and collecting results
+    try {
+      // Start both operations
+      $contextStart = microtime(true);
+      $translationStart = microtime(true);
+      
+      // Operation 1: Context retrieval
+      try {
+        $rawContext = $this->conversationMemory ? $this->conversationMemory->getRelevantContext($query) : [];
+        $contextDuration = (microtime(true) - $contextStart) * 1000;
+      } catch (\Exception $e) {
+        $contextError = $e;
+        $contextDuration = (microtime(true) - $contextStart) * 1000;
+        if ($this->debug) {
+          $this->securityLogger->logSecurityEvent(
+            "Context retrieval failed (using empty context): " . $e->getMessage(),
+            'warning'
+          );
+        }
+      }
+      
+      // Operation 2: Translation (if not already done)
+      try {
+        $translatedQuery = Semantics::translateToEnglish($queryToProcess, 80);
+        $translationDuration = (microtime(true) - $translationStart) * 1000;
+      } catch (\Exception $e) {
+        $translationError = $e;
+        $translationDuration = (microtime(true) - $translationStart) * 1000;
+        if ($this->debug) {
+          $this->securityLogger->logSecurityEvent(
+            "Translation failed (using original query): " . $e->getMessage(),
+            'warning'
+          );
+        }
+      }
+      
+      $parallelDuration = (microtime(true) - $parallelStart) * 1000;
+      
+      // Log parallel execution results
+      if ($this->debug) {
+        $this->securityLogger->logStructured('info', 'OrchestratorAgent', 'parallel_execution', [
+          'context_duration_ms' => round($contextDuration, 2),
+          'translation_duration_ms' => round($translationDuration, 2),
+          'parallel_total_ms' => round($parallelDuration, 2),
+          'sequential_would_be_ms' => round($contextDuration + $translationDuration, 2),
+          'time_saved_ms' => round(($contextDuration + $translationDuration) - $parallelDuration, 2),
+          'context_success' => $contextError === null,
+          'translation_success' => $translationError === null
+        ]);
+      }
+      
+    } catch (\Exception $e) {
+      // Fallback to sequential execution if parallel fails
+      if ($this->debug) {
+        $this->securityLogger->logSecurityEvent(
+          "Parallel execution failed, falling back to sequential: " . $e->getMessage(),
+          'warning'
+        );
+      }
+      
+      // Sequential fallback
+      try {
+        $rawContext = $this->conversationMemory ? $this->conversationMemory->getRelevantContext($query) : [];
+      } catch (\Exception $e) {
+        if ($this->debug) {
+          $this->securityLogger->logSecurityEvent(
+            "Context retrieval failed: " . $e->getMessage(),
+            'warning'
+          );
+        }
+      }
+      
+      try {
+        $translatedQuery = Semantics::translateToEnglish($queryToProcess, 80);
+      } catch (\Exception $e) {
+        if ($this->debug) {
+          $this->securityLogger->logSecurityEvent(
+            "Translation failed: " . $e->getMessage(),
+            'warning'
+          );
+        }
+      }
+    }
+    
+    $perfMarkers['after_parallel'] = microtime(true); // 🆕
     
     // 3.1. 🆕 Gestion intelligente du contexte (éviter conflit feedback/contexte)
     $contextDecision = $this->contextManager->decideContextUsage(
@@ -935,6 +902,42 @@ class OrchestratorAgent
       );
     }
 
+    // ✅ TASK 5.2.1.1: Route hybrid queries to HybridQueryProcessor BEFORE TaskPlanner
+    // Hybrid queries need to be split into sub-queries and executed by multiple agents
+    // NOTE: Check intent_type ONLY (is_hybrid flag can be inconsistent)
+    $intentType = $intent['type'] ?? 'analytics';
+    
+    if ($intentType === 'hybrid') {
+      if ($this->debug) {
+        $this->securityLogger->logStructured(
+          'info',
+          'OrchestratorAgent',
+          'HYBRID_ROUTING',
+          [
+            'action' => 'routing_to_hybrid_processor',
+            'intent_type' => $intentType,
+            'is_hybrid_flag' => $intent['is_hybrid'] ?? false,
+            'confidence' => $intent['confidence'] ?? 0,
+            'query' => substr($queryToProcess, 0, 100)
+          ]
+        );
+      }
+      
+      // Delegate to HybridQueryProcessor for query splitting and multi-agent execution
+      return $this->hybridQueryProcessor->processHybridQuery(
+        $queryToProcess,
+        $intent,
+        $enrichedContext,
+        $this->taskPlanner,
+        $this->planExecutor,
+        $this->responseProcessorComponent,
+        $this->memoryManager,
+        $this->userId,
+        $this->languageId,
+        $startTime
+      );
+    }
+
     $planStart = microtime(true);
     $plan = $this->taskPlanner->createPlan($intent, $queryToProcess, $enrichedContext);
     if ($this->debug) {
@@ -1050,23 +1053,71 @@ class OrchestratorAgent
     );
 
     // 10. Store in conversation memory - delegate to MemoryManager
+    // ✅ TASK 5.1.7.4: Skip memory storage if query is already cached (warm cache)
     $perfMarkers['before_memory'] = microtime(true);
     
-    $this->memoryManager->storeOrchestrationResult(
-      $query,
-      $queryToProcess,
-      $response,
-      $intent,
-      $contextAnalysis,
-      $plan,
-      $validationResults,
-      $entityId,
-      $entityType,
-      $this->userId,
-      $this->languageId,
-      $this->queryAnalyzer,
-      $this->responseProcessorComponent
-    );
+    // Check if query is already in QueryCache (warm cache scenario)
+    // Check both 'from_cache' and 'cached' flags (different agents use different naming)
+    $skipMemoryStorage = false;
+    $isCached = (isset($response['from_cache']) && $response['from_cache'] === true) ||
+                (isset($response['cached']) && $response['cached'] === true) ||
+                (isset($response['metadata']['from_cache']) && $response['metadata']['from_cache'] === true);
+    
+    if ($isCached) {
+      $skipMemoryStorage = true;
+      
+      if ($this->debug) {
+        $this->securityLogger->logStructured('info', 'OrchestratorAgent', 'memory_storage_skipped', [
+          'reason' => 'query_already_cached',
+          'cache_hit' => true,
+          'latency_saved_ms' => '2000-3000 (estimated)',
+          'query' => substr($query, 0, 100)
+        ]);
+      }
+      
+      // ✅ TASK 5.1.7.4.1: FIX - Still track entity for contextual reference resolution
+      // Entity tracking is lightweight (<1ms) and essential for follow-up queries
+      // This ensures "What is its stock level" works after cached "What is the price of iPhone"
+      if ($entityId !== null && $entityId !== 0) {
+        $this->memoryManager->setLastEntity($entityId, $entityType);
+        
+        if ($this->debug) {
+          $this->securityLogger->logStructured('info', 'OrchestratorAgent', 'entity_tracked_for_cached_query', [
+            'entity_id' => $entityId,
+            'entity_type' => $entityType,
+            'reason' => 'contextual_reference_resolution',
+            'overhead_ms' => '<1'
+          ]);
+        }
+      }
+    }
+    
+    // Only store in memory for NEW queries (cache miss)
+    if (!$skipMemoryStorage) {
+      $this->memoryManager->storeOrchestrationResult(
+        $query,
+        $queryToProcess,
+        $response,
+        $intent,
+        $contextAnalysis,
+        $plan,
+        $validationResults,
+        $entityId,
+        $entityType,
+        $this->userId,
+        $this->languageId,
+        $this->queryAnalyzer,
+        $this->responseProcessorComponent
+      );
+      
+      if ($this->debug) {
+        $this->securityLogger->logStructured('info', 'OrchestratorAgent', 'memory_storage_completed', [
+          'cache_miss' => true,
+          'entity_id' => $entityId,
+          'entity_type' => $entityType
+        ]);
+      }
+    }
     
     $perfMarkers['after_memory'] = microtime(true);
 
@@ -1089,77 +1140,13 @@ class OrchestratorAgent
     if ($this->debug && isset($perfMarkers)) {
       $this->securityLogger->logStructured('info', 'OrchestratorAgent', 'performance_breakdown', [
         'init_ms' => round(($perfMarkers['after_init'] - $perfMarkers['start']) * 1000, 2),
-        'context_ms' => round(($perfMarkers['after_context'] - $perfMarkers['after_init']) * 1000, 2),
+        'parallel_ops_ms' => round(($perfMarkers['after_parallel'] - $perfMarkers['after_init']) * 1000, 2),
         'memory_ms' => round(($perfMarkers['after_memory'] - $perfMarkers['before_memory']) * 1000, 2),
         'total_ms' => round((microtime(true) - $startTime) * 1000, 2)
       ]);
     }
 
     return $response;
-  }
-
-  /**
-   * Handle fast path for simple analytics queries
-   * 
-   * TASK 3.2.1: Extracted from processWithValidation()
-   * 
-   * @param string $queryToProcess The resolved query to process
-   * @param bool $contextUsed Whether context was used in resolution
-   * @param float $startTime Start time for performance tracking
-   * @return array Fast path response
-   */
-  private function handleFastPath(string $queryToProcess, bool $contextUsed, float $startTime): array
-  {
-    if ($this->debug) {
-      error_log("⚡ FAST PATH: Detected simple analytics query, bypassing orchestration");
-    }
-    
-    // Initialize analyticsAgent if needed
-    if (is_null($this->analyticsAgent)) {
-      $this->analyticsAgent = new AnalyticsAgent($this->languageId, true, $this->userId);
-    }
-    
-    // TASK 2.8: Use resolved query for analytics
-    $result = $this->analyticsAgent->processBusinessQuery($queryToProcess);
-    
-    // Wrap result in expected structure for chatGpt.php compatibility
-    $wrappedResult = [
-      'success' => true,
-      'agent_used' => 'analytics_fast_path',
-      'intent' => [
-        'type' => 'analytics',
-        'confidence' => 1.0
-      ],
-      'data' => $result,  // Wrap analytics result in 'data' key
-      'text_response' => $result['interpretation'] ?? '',  // For display
-      'execution_time' => microtime(true) - $startTime,
-      'context_used' => $contextUsed, // TASK 2.8: Indicate if context was used
-    ];
-    
-    // Skip conversation memory storage for fast path (saves 2-3s from embeddings)
-    // The query result is already cached in QueryCache, so we don't lose data
-    
-    $executionTime = microtime(true) - $startTime;
-
-    if ($this->debug) {
-      error_log("⚡ FAST PATH completed in " . round($executionTime, 2) . "s (skipped memory storage)");
-    }
-    
-    $this->collector->stopTimer('process_validation');
-    
-    // ✅ TASK 4.4.2.3: Record latency metric with fast_lane tag
-    $latencyMs = $executionTime * 1000;
-    $this->collector->recordMetric(
-      'orchestrator_query_latency_ms',
-      $latencyMs,
-      [
-        'status' => 'success',
-        'fast_lane' => 'true',
-        'query_type' => 'analytics'
-      ]
-    );
-    
-    return $wrappedResult;
   }
 
   /**

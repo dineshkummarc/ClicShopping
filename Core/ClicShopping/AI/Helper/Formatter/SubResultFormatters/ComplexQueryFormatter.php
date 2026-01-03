@@ -11,6 +11,8 @@
 namespace ClicShopping\AI\Helper\Formatter\SubResultFormatters;
 
 use ClicShopping\OM\Hash;
+use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\LlmGuardrails;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 
@@ -28,15 +30,43 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 class ComplexQueryFormatter extends AbstractFormatter
 {
   /**
+   * @var \ClicShopping\OM\Language Language instance for translations
+   */
+  private $language;
+  
+  /**
+   * @var string Current language code
+   */
+  private string $languageCode;
+  
+  /**
+   * Constructor
+   * 
+   * @param bool $debug Enable debug mode
+   * @param bool $displaySql Display SQL queries
+   */
+  public function __construct(bool $debug = false, bool $displaySql = false)
+  {
+    parent::__construct($debug, $displaySql);
+    
+    // Initialize language
+    $this->language = Registry::get('Language');
+    $this->languageCode = $this->language->get('code');
+    $this->language->loadDefinitions('rag_complex_query_formatter', $this->languageCode, null, 'ClicShoppingAdmin');
+  }
+  
+  /**
    * Check if this formatter can handle the given results
    * 
    * @param array $results Results to check
-   * @return bool True if results are complex_query or hybrid type
+   * @return bool True if results are complex_query type (NOT hybrid - that's handled by HybridFormatter)
    */
   public function canHandle(array $results): bool
   {
     $type = $results['type'] ?? '';
-    return in_array($type, ['complex_query', 'hybrid', 'hybrid_results']);
+    // Note: 'hybrid' is now handled by HybridFormatter (priority 105)
+    // ComplexQueryFormatter handles 'complex_query' and legacy 'hybrid_results'
+    return in_array($type, ['complex_query', 'hybrid_results']);
   }
 
   /**
@@ -54,7 +84,7 @@ class ComplexQueryFormatter extends AbstractFormatter
     $question = $results['question'] ?? $results['query'] ?? 'Unknown request';
 
     $output = "<div class='complex-query-results'>";
-    $output .= "<h4>Résultats pour : " . htmlspecialchars($question) . "</h4>";
+    $output .= "<h4>" . $this->language->getDef('text_rag_complex_query_results_for') . " " . htmlspecialchars($question) . "</h4>";
 
     // Display mixed source attribution (🔀 Mixed)
     if (isset($results['source_attribution'])) {
@@ -63,8 +93,12 @@ class ComplexQueryFormatter extends AbstractFormatter
 
     // Display overall interpretation/summary if available
     $interpretationText = '';
+    $isHtmlContent = false;
+    
     if (isset($results['text_response']) && !empty($results['text_response'])) {
       $interpretationText = $results['text_response'];
+      // Check if text_response contains HTML
+      $isHtmlContent = (strpos($interpretationText, '<div') !== false || strpos($interpretationText, '<p>') !== false);
     } elseif (isset($results['response']) && !empty($results['response'])) {
       $interpretationText = $results['response'];
     } elseif (isset($results['interpretation']) && $results['interpretation'] !== 'Array') {
@@ -72,10 +106,19 @@ class ComplexQueryFormatter extends AbstractFormatter
     }
 
     if (!empty($interpretationText)) {
-      $output .= "<div class='overall-summary alert alert-primary' style='margin-top: 15px;'>";
-      $output .= "<strong>📋 Synthèse globale :</strong><br>";
-      $output .= Hash::displayDecryptedDataText($interpretationText);
-      $output .= "</div>";
+      // ✅ TASK 5.3.2.1: Don't double-encode HTML content from text_response
+      if ($isHtmlContent) {
+        // text_response already contains formatted HTML - use as-is
+        $output .= "<div class='overall-summary alert alert-primary' style='margin-top: 15px;'>";
+        $output .= $interpretationText;
+        $output .= "</div>";
+      } else {
+        // Plain text - apply HTML encoding
+        $output .= "<div class='overall-summary alert alert-primary' style='margin-top: 15px;'>";
+        $output .= "<strong>📋 " . $this->language->getDef('text_rag_complex_query_global_summary') . "</strong><br>";
+        $output .= Hash::displayDecryptedDataText($interpretationText);
+        $output .= "</div>";
+      }
     }
 
     // Guardrails for overall response
@@ -98,7 +141,7 @@ class ComplexQueryFormatter extends AbstractFormatter
     // Display aggregated data if available (legacy support)
     if (!empty($results['data']) && is_array($results['data'])) {
       $output .= "<div class='mt-3'>";
-      $output .= "<h5>Données agrégées:</h5>";
+      $output .= "<h5>" . $this->language->getDef('text_rag_complex_query_aggregated_data') . "</h5>";
       $output .= $this->formatAggregatedData($results['data']);
       $output .= "</div>";
     }
@@ -110,9 +153,9 @@ class ComplexQueryFormatter extends AbstractFormatter
 
       $output .= "<div class='mt-3 sub-results-summary alert alert-secondary'>";
       $output .= "<p style='margin: 0;'><small>";
-      $output .= "✓ {$successCount} sous-requête(s) exécutée(s) avec succès";
+      $output .= "✓ {$successCount} " . $this->language->getDef('text_rag_complex_query_sub_queries_success');
       if ($failedCount > 0) {
-        $output .= " | ✗ {$failedCount} échec(s)";
+        $output .= " | ✗ {$failedCount} " . $this->language->getDef('text_rag_complex_query_failures');
       }
       $output .= "</small></p>";
       $output .= "</div>";
@@ -143,11 +186,11 @@ class ComplexQueryFormatter extends AbstractFormatter
   private function formatMultiSectionResults(array $subResults): string
   {
     $output = "<div class='multi-section-results' style='margin-top: 20px;'>";
-    $output .= "<h5>📊 Résultats détaillés par section</h5>";
+    $output .= "<h5>📊 " . $this->language->getDef('text_rag_complex_query_detailed_results') . "</h5>";
 
     foreach ($subResults as $index => $subResult) {
       $sectionNumber = $index + 1;
-      $subQuery = $subResult['sub_query'] ?? $subResult['query'] ?? "Section {$sectionNumber}";
+      $subQuery = $subResult['sub_query'] ?? $subResult['query'] ?? $this->language->getDef('text_rag_complex_query_section_result') . " {$sectionNumber}";
       $subType = $subResult['type'] ?? 'unknown';
       
       // Determine section icon and title based on type
@@ -205,10 +248,10 @@ class ComplexQueryFormatter extends AbstractFormatter
   private function getSectionTitle(string $type): string
   {
     return match($type) {
-      'analytics', 'analytics_results', 'analytics_response' => 'Analyse de données',
-      'semantic', 'semantic_results' => 'Recherche sémantique',
-      'web_search', 'web_search_results' => 'Recherche web',
-      default => 'Résultat'
+      'analytics', 'analytics_results', 'analytics_response' => $this->language->getDef('text_rag_complex_query_section_data_analysis'),
+      'semantic', 'semantic_results' => $this->language->getDef('text_rag_complex_query_section_semantic_search'),
+      'web_search', 'web_search_results' => $this->language->getDef('text_rag_complex_query_section_web_search'),
+      default => $this->language->getDef('text_rag_complex_query_section_result')
     };
   }
 
@@ -235,7 +278,7 @@ class ComplexQueryFormatter extends AbstractFormatter
 
     if (!empty($interpretationText)) {
       $output .= "<div class='section-interpretation' style='margin: 10px 0; padding: 10px; background-color: white; border-radius: 4px;'>";
-      $output .= "<strong>Réponse :</strong><br>";
+      $output .= "<strong>" . $this->language->getDef('text_rag_complex_query_response') . "</strong><br>";
       $output .= Hash::displayDecryptedDataText($interpretationText);
       $output .= "</div>";
     }
@@ -285,7 +328,7 @@ class ComplexQueryFormatter extends AbstractFormatter
       $escaped = htmlspecialchars($formatted, ENT_NOQUOTES | ENT_SUBSTITUTE, 'UTF-8');
       
       $output .= "<div class='sql-query' style='margin: 10px 0;'>";
-      $output .= "<strong>Requête SQL :</strong>";
+      $output .= "<strong>" . $this->language->getDef('text_rag_complex_query_sql_query') . "</strong>";
       $output .= "<pre style='background-color: #f4f4f4; padding: 10px; border-radius: 4px; overflow-x: auto;'>{$escaped}</pre>";
       $output .= "</div>";
     }
@@ -317,7 +360,7 @@ class ComplexQueryFormatter extends AbstractFormatter
     // Display document count if available
     if (isset($subResult['document_count']) && $subResult['document_count'] > 0) {
       $output .= "<div class='document-info' style='margin: 10px 0; font-size: 0.9em; color: #666;'>";
-      $output .= "📚 {$subResult['document_count']} document(s) trouvé(s)";
+      $output .= "📚 {$subResult['document_count']} " . $this->language->getDef('text_rag_complex_query_documents_found');
       $output .= "</div>";
     }
 
@@ -325,7 +368,7 @@ class ComplexQueryFormatter extends AbstractFormatter
     if (isset($subResult['embeddings_context']) && is_array($subResult['embeddings_context']) && !empty($subResult['embeddings_context'])) {
       $output .= "<div class='embeddings-context' style='margin: 10px 0;'>";
       $output .= "<details>";
-      $output .= "<summary style='cursor: pointer; color: #007bff;'>Voir les sources (contexte)</summary>";
+      $output .= "<summary style='cursor: pointer; color: #007bff;'>" . $this->language->getDef('text_rag_complex_query_view_sources') . "</summary>";
       $output .= "<div style='margin-top: 10px; padding: 10px; background-color: white; border-radius: 4px;'>";
       
       foreach ($subResult['embeddings_context'] as $idx => $context) {
@@ -335,7 +378,7 @@ class ComplexQueryFormatter extends AbstractFormatter
         if (!empty($content)) {
           $output .= "<div style='margin-bottom: 10px; padding: 8px; border-left: 3px solid #28a745;'>";
           $output .= "<div style='font-size: 0.85em; color: #666; margin-bottom: 5px;'>";
-          $output .= "Score de similarité : " . number_format($score, 3);
+          $output .= $this->language->getDef('text_rag_complex_query_similarity_score') . " " . number_format($score, 3);
           $output .= "</div>";
           $output .= "<div>" . htmlspecialchars(substr($content, 0, 200)) . "...</div>";
           $output .= "</div>";
@@ -370,7 +413,7 @@ class ComplexQueryFormatter extends AbstractFormatter
       $output .= "<div class='web-results' style='margin: 10px 0;'>";
       
       foreach ($subResult['web_results'] as $idx => $result) {
-        $title = $result['title'] ?? "Résultat " . ($idx + 1);
+        $title = $result['title'] ?? $this->language->getDef('text_rag_complex_query_result_number') . " " . ($idx + 1);
         $snippet = $result['snippet'] ?? $result['description'] ?? '';
         $url = $result['url'] ?? $result['link'] ?? '';
         
@@ -400,7 +443,7 @@ class ComplexQueryFormatter extends AbstractFormatter
     // Display external URLs
     if (isset($subResult['urls']) && is_array($subResult['urls']) && !empty($subResult['urls'])) {
       $output .= "<div class='external-urls' style='margin: 10px 0;'>";
-      $output .= "<strong>🔗 Liens externes :</strong>";
+      $output .= "<strong>🔗 " . $this->language->getDef('text_rag_complex_query_external_links') . "</strong>";
       $output .= "<ul style='margin-top: 5px;'>";
       
       foreach ($subResult['urls'] as $url) {
@@ -426,19 +469,19 @@ class ComplexQueryFormatter extends AbstractFormatter
   private function formatPriceComparison(array $priceComparison): string
   {
     $output = "<div class='price-comparison' style='margin: 10px 0; padding: 10px; background-color: white; border-radius: 4px; border: 1px solid #28a745;'>";
-    $output .= "<strong>💰 Comparaison de prix</strong>";
+    $output .= "<strong>💰 " . $this->language->getDef('text_rag_complex_query_price_comparison') . "</strong>";
 
     if (isset($priceComparison['internal_price'])) {
       $internalPrice = $priceComparison['internal_price'];
       $currency = $priceComparison['currency'] ?? '€';
       $output .= "<div style='margin-top: 8px;'>";
-      $output .= "<strong>Notre prix :</strong> " . number_format((float)$internalPrice, 2, ',', ' ') . " {$currency}";
+      $output .= "<strong>" . $this->language->getDef('text_rag_complex_query_our_price') . "</strong> " . number_format((float)$internalPrice, 2, ',', ' ') . " {$currency}";
       $output .= "</div>";
     }
 
     if (isset($priceComparison['external_prices']) && is_array($priceComparison['external_prices'])) {
       $output .= "<div style='margin-top: 8px;'>";
-      $output .= "<strong>Prix concurrents :</strong>";
+      $output .= "<strong>" . $this->language->getDef('text_rag_complex_query_competitor_prices') . "</strong>";
       $output .= "<ul style='margin: 5px 0;'>";
       
       foreach ($priceComparison['external_prices'] as $competitor) {
@@ -457,7 +500,7 @@ class ComplexQueryFormatter extends AbstractFormatter
 
     if (isset($priceComparison['recommendation'])) {
       $output .= "<div style='margin-top: 8px; padding: 8px; background-color: #d4edda; border-radius: 4px;'>";
-      $output .= "<strong>💡 Recommandation :</strong> " . htmlspecialchars($priceComparison['recommendation']);
+      $output .= "<strong>💡 " . $this->language->getDef('text_rag_complex_query_recommendation') . "</strong> " . htmlspecialchars($priceComparison['recommendation']);
       $output .= "</div>";
     }
 
@@ -484,7 +527,7 @@ class ComplexQueryFormatter extends AbstractFormatter
 
     if ($isMixed) {
       $output = '<div class="source-attribution alert alert-info" style="margin-top: 10px; padding: 10px; border-left: 4px solid #6c757d;">';
-      $output .= '<h6 style="margin-top: 0;"><strong>🔀 Sources Multiples (Requête Hybride)</strong></h6>';
+      $output .= '<h6 style="margin-top: 0;"><strong>🔀 ' . $this->language->getDef('text_rag_complex_query_multiple_sources') . '</strong></h6>';
       
       if (!empty($sourceAttribution['source_details'])) {
         $output .= '<div style="font-size: 0.9em; color: #666; margin-bottom: 8px;">';
@@ -495,7 +538,7 @@ class ComplexQueryFormatter extends AbstractFormatter
       // List all sources
       if (isset($sourceAttribution['sources']) && is_array($sourceAttribution['sources'])) {
         $output .= '<div style="font-size: 0.85em; color: #555;">';
-        $output .= '<strong>Sources utilisées :</strong>';
+        $output .= '<strong>' . $this->language->getDef('text_rag_complex_query_sources_used') . '</strong>';
         $output .= '<ul style="margin: 5px 0; padding-left: 20px;">';
         foreach ($sourceAttribution['sources'] as $source) {
           $output .= '<li>' . htmlspecialchars($source) . '</li>';
@@ -531,7 +574,7 @@ class ComplexQueryFormatter extends AbstractFormatter
     if (isset($data[0]['sub_query'])) {
       foreach ($data as $index => $subData) {
         $output .= "<div class='sub-data' style='margin-bottom: 15px;'>";
-        $output .= "<strong>Sous-requête " . ($index + 1) . ":</strong> ";
+        $output .= "<strong>" . $this->language->getDef('text_rag_complex_query_sub_query') . " " . ($index + 1) . ":</strong> ";
         $output .= htmlspecialchars($subData['sub_query'] ?? 'N/A');
 
         if (!empty($subData['data'])) {

@@ -30,7 +30,7 @@ help_semantic_example_4 = Procédures de l'entreprise
 
 # Comparaison des Modèles
 help_comparison_title = Modèles IA Disponibles - Guide de Comparaison
-help_comparison_intro = Choisissez le bon modèle pour vos besoins. Tous les modèles ont été testés et fonctionnent de manière fiable.
+help_comparison_intro = Choisissez le bon modèle pour vos besoins. Tous les modèles ont été testés et fonctionnent de manière fiable. Veuillez noter que les modèles peuvent évoluer et avoir un impact sur les résultats. Gpt-4 et Gpt4.1 sont biens adaptés à ce type d'analyse.
 
 help_table_model = Modèle
 help_table_best_for = Idéal Pour

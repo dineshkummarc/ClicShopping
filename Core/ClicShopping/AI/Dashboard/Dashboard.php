@@ -31,7 +31,7 @@ class Dashboard
   public function __construct()
   {
     $this->db = Registry::get('Db'); // Kept for backward compatibility
-    $this->prefix = \ClicShopping\OM\CLICSHOPPING::getConfig('db_table_prefix');
+    $this->prefix = CLICSHOPPING::getConfig('db_table_prefix');
     $this->statsCollector = new DashboardStatsCollector();
 
     try {
@@ -56,7 +56,8 @@ class Dashboard
       'token_stats' => $this->getTokenStats($periodDays),
       'source_stats' => $this->getSourceStats($periodDays),
       'advanced_stats' => $this->statsCollector->collectAllStats($periodDays),
-      'alert_stats' => $this->getAlertStats()
+      'alert_stats' => $this->getAlertStats(),
+      'websearch_stats' => $this->getWebSearchStats($periodDays)
     ];
   }
 
@@ -296,11 +297,50 @@ class Dashboard
         'status' => $cacheHitRate >= 50 ? 'healthy' : ($cacheHitRate >= 30 ? 'warning' : 'critical')
       ];
 
+      // 🔧 ADD WEBSEARCH COMPONENT (2025-12-28)
+      // WebSearch queries use intent_type='web_search' in rag_interactions
+      $websearchResults = DoctrineOrm::select("
+        SELECT 
+          COUNT(DISTINCT i.interaction_id) as total,
+          SUM(CASE WHEN s.error_occurred = 0 THEN 1 ELSE 0 END) as success,
+          AVG(s.confidence_score) as avg_confidence,
+          AVG(s.response_quality) as avg_quality
+        FROM {$prefix}rag_interactions i
+        LEFT JOIN {$prefix}rag_statistics s ON i.interaction_id = s.interaction_id
+        WHERE i.intent_type = 'web_search'
+      ");
+      
+      if (!empty($websearchResults)) {
+        $wsTotal = (int)($websearchResults[0]['total'] ?? 0);
+        $wsSuccess = (int)($websearchResults[0]['success'] ?? 0);
+        $wsSuccessRate = $wsTotal > 0 ? round(($wsSuccess / $wsTotal) * 100, 1) : 0;
+        
+        if ($wsTotal > 0) {
+          $components['WebSearch'] = [
+            'total_calls' => $wsTotal,
+            'successful_calls' => $wsSuccess,
+            'success_rate' => $wsSuccessRate,
+            'avg_execution_time' => 0,
+            'avg_confidence' => round($websearchResults[0]['avg_confidence'] ?? 0, 1),
+            'avg_quality' => round($websearchResults[0]['avg_quality'] ?? 0, 1),
+            'status' => $wsSuccessRate >= 90 ? 'healthy' : ($wsSuccessRate >= 70 ? 'warning' : 'critical')
+          ];
+          
+          // Add to agentStats for backward compatibility
+          $agentStats['web_search'] = [
+            'success_rate' => $wsSuccessRate . '%',
+            'avg_confidence' => $websearchResults[0]['avg_confidence'] ?? 0,
+            'avg_quality' => $websearchResults[0]['avg_quality'] ?? 0
+          ];
+        }
+      }
+
       return [
         'analytics' => ['success_rate' => $agentStats['analytics_agent']['success_rate'] ?? '0%'],
         'semantic' => ['success_rate' => $agentStats['semantic_agent']['success_rate'] ?? '0%'],
         'hybrid' => ['success_rate' => $agentStats['hybrid_agent']['success_rate'] ?? '0%'],
         'orchestrator' => ['success_rate' => $agentStats['orchestrator']['success_rate'] ?? '0%'],
+        'websearch' => ['success_rate' => $agentStats['web_search']['success_rate'] ?? '0%'],
         'cache' => ['average_quality_score' => $cacheAvgQuality / 100],
         'components' => $components
       ];
@@ -691,6 +731,130 @@ class Dashboard
       'feedback_ratio' => 0,
       'satisfaction_rate' => 0,
       'performance_status' => 'unknown'
+    ];
+  }
+
+  /**
+   * Get WebSearch statistics
+   * 
+   * @param int $periodDays Number of days to analyze
+   * @return array WebSearch statistics including queries, success rate, cache performance
+   */
+  public function getWebSearchStats(int $periodDays = 7): array
+  {
+    try {
+      // 🔧 MIGRATED TO DOCTRINEORM
+      $prefix = CLICSHOPPING::getConfig('db_table_prefix');
+      
+      // Get WebSearch queries from rag_interactions where intent_type = 'web_search'
+      // Join with rag_statistics to get performance metrics
+      // Note: rag_interactions doesn't have a 'success' column, so we determine success from rag_statistics
+      $webSearchResults = DoctrineOrm::select("
+        SELECT 
+          COUNT(DISTINCT i.interaction_id) as total_queries,
+          SUM(CASE WHEN s.error_occurred = 0 THEN 1 ELSE 0 END) as successful_queries,
+          SUM(CASE WHEN s.error_occurred = 1 THEN 1 ELSE 0 END) as failed_queries,
+          AVG(s.response_time_ms) as avg_response_time,
+          AVG(s.confidence_score) as avg_confidence,
+          AVG(s.response_quality) as avg_quality,
+          SUM(s.tokens_total) as total_tokens,
+          SUM(s.api_cost_usd) as total_cost,
+          SUM(CASE WHEN s.cache_hit = 1 THEN 1 ELSE 0 END) as cache_hits,
+          SUM(CASE WHEN s.cache_hit = 0 THEN 1 ELSE 0 END) as cache_misses
+        FROM {$prefix}rag_interactions i
+        LEFT JOIN {$prefix}rag_statistics s ON i.interaction_id = s.interaction_id
+        WHERE i.date_added >= DATE_SUB(NOW(), INTERVAL ? DAY)
+          AND i.intent_type = 'web_search'
+      ", [$periodDays]);
+      
+      $row = $webSearchResults[0] ?? [];
+      
+      $totalQueries = (int)($row['total_queries'] ?? 0);
+      $successfulQueries = (int)($row['successful_queries'] ?? 0);
+      $failedQueries = (int)($row['failed_queries'] ?? 0);
+      $avgResponseTime = round((float)($row['avg_response_time'] ?? 0), 2);
+      $avgConfidence = round((float)($row['avg_confidence'] ?? 0), 1);
+      $avgQuality = round((float)($row['avg_quality'] ?? 0), 1);
+      $totalTokens = (int)($row['total_tokens'] ?? 0);
+      $totalCost = (float)($row['total_cost'] ?? 0);
+      $cacheHits = (int)($row['cache_hits'] ?? 0);
+      $cacheMisses = (int)($row['cache_misses'] ?? 0);
+      
+      // Calculate success rate
+      $successRate = $totalQueries > 0 ? round(($successfulQueries / $totalQueries) * 100, 1) : 0;
+      
+      // Calculate cache hit rate
+      $totalCacheRequests = $cacheHits + $cacheMisses;
+      $cacheHitRate = $totalCacheRequests > 0 ? round(($cacheHits / $totalCacheRequests) * 100, 1) : 0;
+      
+      // Get WebSearch queries by time period (for trend analysis)
+      $trendResults = DoctrineOrm::select("
+        SELECT 
+          DATE(i.date_added) as query_date,
+          COUNT(DISTINCT i.interaction_id) as count,
+          AVG(s.response_time_ms) as avg_time
+        FROM {$prefix}rag_interactions i
+        LEFT JOIN {$prefix}rag_statistics s ON i.interaction_id = s.interaction_id
+        WHERE i.date_added >= DATE_SUB(NOW(), INTERVAL ? DAY)
+          AND i.intent_type = 'web_search'
+        GROUP BY DATE(i.date_added)
+        ORDER BY query_date ASC
+      ", [$periodDays]);
+      
+      $trends = [];
+      foreach ($trendResults as $trendRow) {
+        $trends[] = [
+          'date' => $trendRow['query_date'],
+          'count' => (int)$trendRow['count'],
+          'avg_time' => round((float)$trendRow['avg_time'], 2)
+        ];
+      }
+      
+      return [
+        'total_queries' => $totalQueries,
+        'successful_queries' => $successfulQueries,
+        'failed_queries' => $failedQueries,
+        'success_rate' => $successRate,
+        'avg_response_time' => $avgResponseTime,
+        'avg_confidence' => $avgConfidence,
+        'avg_quality' => $avgQuality,
+        'total_tokens' => $totalTokens,
+        'total_cost' => $totalCost,
+        'cache_hits' => $cacheHits,
+        'cache_misses' => $cacheMisses,
+        'cache_hit_rate' => $cacheHitRate,
+        'trends' => $trends,
+        'period_days' => $periodDays,
+        'status' => $successRate >= 90 ? 'healthy' : ($successRate >= 70 ? 'warning' : 'critical')
+      ];
+      
+    } catch (\Exception $e) {
+      error_log('Dashboard: Error getting WebSearch stats - ' . $e->getMessage());
+      return $this->getDefaultWebSearchStats($periodDays);
+    }
+  }
+
+  /**
+   * Get default WebSearch statistics (fallback)
+   */
+  private function getDefaultWebSearchStats(int $periodDays = 7): array
+  {
+    return [
+      'total_queries' => 0,
+      'successful_queries' => 0,
+      'failed_queries' => 0,
+      'success_rate' => 0,
+      'avg_response_time' => 0,
+      'avg_confidence' => 0,
+      'avg_quality' => 0,
+      'total_tokens' => 0,
+      'total_cost' => 0,
+      'cache_hits' => 0,
+      'cache_misses' => 0,
+      'cache_hit_rate' => 0,
+      'trends' => [],
+      'period_days' => $periodDays,
+      'status' => 'unknown'
     ];
   }
 }

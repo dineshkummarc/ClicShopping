@@ -14,8 +14,6 @@ use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Memory\EntityTypeRegistry;
 use ClicShopping\AI\Helper\EntityHelper;
-use ClicShopping\AI\Domain\Patterns\HybridPattern;
-use ClicShopping\AI\Domain\Patterns\SemanticsPattern;
 use LLPhant\Chat\Message;
 
 /**
@@ -40,6 +38,16 @@ class ContextResolver
   private int $maxContextWindow = 5; // Max messages to analyze for context
   private EntityTypeRegistry $entityRegistry;
   private ?EntityTracker $entityTracker = null; // TASK 4.4.2.7: Injected dependency
+  
+  /**
+   * Cached pattern bypass check result
+   * 
+   * TASK 6.4.5: Optimize pattern bypass checks
+   * Cache the result once in constructor instead of checking repeatedly
+   * 
+   * @var bool True if Pure LLM mode (patterns disabled), False if Pattern mode
+   */
+  private bool $usePureLlmMode;
 
   /**
    * Constructor
@@ -56,6 +64,10 @@ class ContextResolver
     $this->logger = new SecurityLogger();
     $this->entityRegistry = EntityTypeRegistry::getInstance();
     $this->entityTracker = $entityTracker; // TASK 4.4.2.7: Store injected tracker
+    
+    // TASK 6.4.5: Cache pattern bypass check once (optimization)
+    // This eliminates 8 repeated checks throughout the class
+    $this->usePureLlmMode = !defined('USE_PATTERN_BASED_DETECTION') || USE_PATTERN_BASED_DETECTION === 'False';
 
     if ($this->debug) {
       $trackerStatus = $entityTracker !== null ? 'with EntityTracker' : 'without EntityTracker';
@@ -68,19 +80,54 @@ class ContextResolver
 
   /**
    * Detect contextual references in a query
+   * 
+   * TASK 6.4.8.1 EXTENSION: Pattern-based reference detection disabled in Pure LLM mode
+   * 
+   * Examples of contextual references:
+   * - "it", "this", "that" (demonstrative pronouns)
+   * - "previous", "last" (temporal references)
+   * - "same", "similar" (comparative references)
+   * 
+   * CRITICAL: Pattern-based detection is DISABLED when USE_PATTERN_BASED_DETECTION = 'False'
+   * 
+   * Issue: Pattern '/\b(and)\s+(\w+)\b/i' was incorrectly matching queries like 
+   * "Show model and price" which should NOT be contextual.
+   * 
+   * Solution: In Pure LLM mode, let the LLM decide if a query needs context based on
+   * actual pronouns and conversation history, not broad patterns like "and".
    *
    * @param string $query Query to analyze
    * @return bool True if references detected
    */
   public function detectContextualReferences(string $query): bool
   {
-    $referencePatterns = SemanticsPattern::getReferencePatterns();
+    // TASK 6.4.5: Use cached pattern bypass check (optimization)
+    // In Pure LLM mode, patterns should NOT be used for contextual reference detection
+    if ($this->usePureLlmMode) {
+      // Pure LLM mode: Pattern-based contextual reference detection is DISABLED
+      // Let the LLM decide if context is needed based on actual conversation analysis
+      // Patterns like '/\b(and)\s+(\w+)\b/i' cause false positives
+      
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "Contextual reference pattern detection DISABLED (Pure LLM mode): {$query}",
+          'info'
+        );
+      }
+      
+      return false;
+    }
+    
+    // Legacy pattern-based detection (only when patterns explicitly enabled)
+    // @deprecated This approach causes false positives and will be removed in future
+    // Pattern detection disabled in Pure LLM mode - return empty array
+    $referencePatterns = [];
 
     foreach ($referencePatterns as $pattern) {
       if (preg_match($pattern, $query)) {
         if ($this->debug) {
           $this->logger->logSecurityEvent(
-            "Contextual reference detected in query: {$query}",
+            "Contextual reference detected (PATTERN mode): {$query}",
             'info'
           );
         }
@@ -94,10 +141,21 @@ class ContextResolver
   /**
    * Detect implicit contextual queries (queries that need context but don't have pronouns)
    * 
-   * Examples:
+   * TASK 6.4.8.1: Pattern-based implicit context detection disabled in Pure LLM mode
+   * 
+   * Examples of implicit contextual queries:
    * - "compare avec les concurrents" (needs product from previous query)
    * - "show more details" (needs entity from previous query)
    * - "what's the price" (needs product from previous query)
+   * 
+   * CRITICAL: Pattern-based detection is DISABLED when USE_PATTERN_BASED_DETECTION = 'False'
+   * 
+   * Issue: Pattern '/^(?:what|how much|tell me|show|give).*\b(price|cost|pricing)\b(?!.*\b(?:of|for)\s+\w+)/i'
+   * was incorrectly matching queries like "Show model and price" which should return ALL products,
+   * not just the last product from context.
+   * 
+   * Solution: In Pure LLM mode, let the LLM decide if context is needed based on conversation
+   * history and query semantics, not rigid patterns.
    * 
    * ENGLISH ONLY: All patterns are in English as per design.
    * Query must be translated to English before calling this method.
@@ -107,14 +165,34 @@ class ContextResolver
    */
   public function detectImplicitContextualQuery(string $query): bool
   {
-    // Patterns for queries that need context but don't have explicit pronouns
-    $implicitContextPatterns = HybridPattern::detectImplicitContextualQuery();
+    // TASK 6.4.5: Use cached pattern bypass check (optimization)
+    // In Pure LLM mode, patterns should NOT be used for implicit context detection
+    if ($this->usePureLlmMode) {
+      // Pure LLM mode: Pattern-based implicit context detection is DISABLED
+      // Let the LLM decide if context is needed based on conversation history
+      // and query semantics, not rigid patterns that cause false positives
+      
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "Implicit context pattern detection DISABLED (Pure LLM mode): {$query}",
+          'info'
+        );
+      }
+      
+      return false;
+    }
+    
+    // Legacy pattern-based detection (only when patterns explicitly enabled)
+    // @deprecated This approach causes false positives and will be removed in future
+    // See: kiro_documentation/2025_12_22/IMPLICIT_CONTEXT_PATTERN_ISSUE.md
+    // Pattern detection disabled in Pure LLM mode - return empty array
+    $implicitContextPatterns = [];
 
     foreach ($implicitContextPatterns as $pattern) {
       if (preg_match($pattern, $query)) {
         if ($this->debug) {
           $this->logger->logSecurityEvent(
-            "Implicit contextual query detected: {$query}",
+            "Implicit contextual query detected (PATTERN mode): {$query}",
             'info'
           );
         }

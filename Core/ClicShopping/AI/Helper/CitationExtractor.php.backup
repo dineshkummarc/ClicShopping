@@ -1,0 +1,469 @@
+<?php
+/**
+ *
+ * @copyright 2008 - https://www.clicshopping.org
+ * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
+ * @Licence GPL 2 & MIT
+ * @Info : https://www.clicshopping.org/forum/trademark/
+ *
+ */
+
+namespace ClicShopping\AI\Helper;
+
+use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\OM\CLICSHOPPING;
+
+/**
+ * CitationExtractor Class
+ *
+ * Extracts source citations from LLM-generated answers.
+ * Supports multiple citation formats and languages.
+ *
+ * Citation Formats Supported:
+ * 1. Inline citations: "According to [document name], ..." or "Selon [nom du document], ..."
+ * 2. Source lists: "Sources:\n - Document 1\n - Document 2"
+ *
+ * Languages Supported:
+ * - French (fr): "Selon", "D'après", "Sources"
+ * - English (en): "According to", "As stated in", "Sources"
+ * - Spanish (es): "Según", "De acuerdo con", "Fuentes"
+ * - German (de): "Laut", "Gemäß", "Quellen"
+ *
+ * @package ClicShopping\AI\Helper
+ */
+class CitationExtractor
+{
+  private SecurityLogger $logger;
+  private bool $debug;
+
+  /**
+   * Constructor
+   *
+   * @param bool $debug Enable debug logging
+   */
+  public function __construct(bool $debug = false)
+  {
+    $this->logger = new SecurityLogger();
+    $this->debug = $debug;
+  }
+
+  /**
+   * Extract all citations from an answer
+   *
+   * Extracts both inline citations and source lists from the LLM answer.
+   * Returns a structured array with citation information.
+   *
+   * @param string $answer LLM-generated answer
+   * @param string $language Language code (fr, en, es, de)
+   * @return array Citation data with keys:
+   *               - inline_citations: array of inline citation strings
+   *               - source_list: array of source document names
+   *               - has_citations: bool indicating if any citations found
+   *               - citation_count: total number of citations
+   */
+  public function extractCitations(string $answer, string $language = 'en'): array
+  {
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "📝 CitationExtractor: Extracting citations from answer (language: {$language})",
+        'info'
+      );
+    }
+
+    // Extract inline citations
+    $inlineCitations = $this->extractInlineCitations($answer, $language);
+
+    // Extract source list
+    $sourceList = $this->extractSourceList($answer, $language);
+
+    // Calculate totals
+    $citationCount = count($inlineCitations) + count($sourceList);
+    $hasCitations = $citationCount > 0;
+
+    $result = [
+      'inline_citations' => $inlineCitations,
+      'source_list' => $sourceList,
+      'has_citations' => $hasCitations,
+      'citation_count' => $citationCount,
+      'language' => $language
+    ];
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        sprintf(
+          "📊 Citations extracted: %d inline, %d in source list, total: %d",
+          count($inlineCitations),
+          count($sourceList),
+          $citationCount
+        ),
+        'info'
+      );
+    }
+
+    return $result;
+  }
+
+  /**
+   * Extract inline citations from answer
+   *
+   * Finds citations embedded in the text like:
+   * - "According to [document name], ..."
+   * - "Selon [nom du document], ..."
+   *
+   * Uses language definitions from CLICSHOPPING::getDef() for citation markers.
+   *
+   * @param string $answer LLM-generated answer
+   * @param string $language Language code
+   * @return array Array of cited document names
+   */
+  public function extractInlineCitations(string $answer, string $language = 'en'): array
+  {
+    $citations = [];
+
+    // Get language-specific markers from definitions
+    $markers = $this->getInlineMarkers($language);
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "📝 Markers for {$language}: " . implode(', ', $markers),
+        'info'
+      );
+      echo "DEBUG: Markers for {$language}: " . implode(', ', $markers) . "\n";
+    }
+
+    if (empty($markers)) {
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "⚠️  No inline citation markers found for language: {$language}",
+          'warning'
+        );
+      }
+      return [];
+    }
+
+    // Build regex pattern for inline citations
+    // Pattern: (marker) [document name], ...
+    // Example: "According to Return Policy, ..."
+    // Capture everything after marker until comma, period, or end of sentence
+    $markerPattern = implode('|', array_map('preg_quote', $markers));
+    $pattern = "/(?:{$markerPattern})\s+([^,\.;:]+)/iu";
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "🔍 Regex pattern: {$pattern}",
+        'info'
+      );
+    }
+
+    if (preg_match_all($pattern, $answer, $matches)) {
+      foreach ($matches[1] as $citation) {
+        // Clean up citation (trim whitespace, remove quotes)
+        $citation = trim($citation);
+        $citation = trim($citation, '"\'«»„"');
+
+        if (!empty($citation)) {
+          $citations[] = $citation;
+        }
+      }
+    }
+
+    if ($this->debug && !empty($citations)) {
+      $this->logger->logSecurityEvent(
+        "📌 Found " . count($citations) . " inline citations: " . implode(', ', $citations),
+        'info'
+      );
+    }
+
+    return array_unique($citations);
+  }
+
+  /**
+   * Extract source list from answer
+   *
+   * Finds source lists at the end of answers like:
+   * Sources:
+   *  - Document 1
+   *  - Document 2
+   *
+   * Uses language definitions from CLICSHOPPING::getDef() for source headers.
+   *
+   * @param string $answer LLM-generated answer
+   * @param string $language Language code
+   * @return array Array of source document names
+   */
+  public function extractSourceList(string $answer, string $language = 'en'): array
+  {
+    $sources = [];
+
+    // Get language-specific header from definitions
+    $header = $this->getSourceHeader($language);
+
+    if (empty($header)) {
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "⚠️  No source header found for language: {$language}",
+          'warning'
+        );
+      }
+      return [];
+    }
+
+    // Build regex pattern for source section
+    // Pattern: (header):\n - source1\n - source2
+    $pattern = "/{$header}\s*:\s*\n((?:\s*-\s*.+\n?)+)/iu";
+
+    if (preg_match($pattern, $answer, $matches)) {
+      $sourceSection = $matches[1];
+
+      // Extract individual sources (lines starting with " - ")
+      $sourcePattern = '/\s*-\s*(.+?)(?:\n|$)/u';
+
+      if (preg_match_all($sourcePattern, $sourceSection, $sourceMatches)) {
+        foreach ($sourceMatches[1] as $source) {
+          // Clean up source (trim whitespace, remove quotes)
+          $source = trim($source);
+          $source = trim($source, '"\'«»„"');
+
+          if (!empty($source)) {
+            $sources[] = $source;
+          }
+        }
+      }
+    }
+
+    if ($this->debug && !empty($sources)) {
+      $this->logger->logSecurityEvent(
+        "📚 Found source list with " . count($sources) . " sources: " . implode(', ', $sources),
+        'info'
+      );
+    }
+
+    return array_unique($sources);
+  }
+
+  /**
+   * Verify cited documents exist in retrieved sources
+   *
+   * Checks if each cited document can be found in the list of retrieved sources.
+   * Uses fuzzy matching to handle variations in document names.
+   *
+   * @param array $citations Citation data from extractCitations()
+   * @param array $retrievedSources Array of source documents from RAG
+   * @return array Verification result with keys:
+   *               - valid_citations: array of citations that match sources
+   *               - invalid_citations: array of citations that don't match
+   *               - unmatched_sources: array of sources not cited
+   *               - match_rate: float percentage of citations that matched
+   */
+  public function verifyCitations(array $citations, array $retrievedSources): array
+  {
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "🔍 Verifying citations against " . count($retrievedSources) . " retrieved sources",
+        'info'
+      );
+    }
+
+    // Combine all citations (inline + source list)
+    $allCitations = array_merge(
+      $citations['inline_citations'] ?? [],
+      $citations['source_list'] ?? []
+    );
+    $allCitations = array_unique($allCitations);
+
+    // Extract document names from retrieved sources
+    $sourceNames = $this->extractSourceNames($retrievedSources);
+
+    // Match citations to sources
+    $validCitations = [];
+    $invalidCitations = [];
+
+    foreach ($allCitations as $citation) {
+      $matched = false;
+
+      foreach ($sourceNames as $sourceName) {
+        if ($this->fuzzyMatch($citation, $sourceName)) {
+          $validCitations[] = [
+            'citation' => $citation,
+            'matched_source' => $sourceName
+          ];
+          $matched = true;
+          break;
+        }
+      }
+
+      if (!$matched) {
+        $invalidCitations[] = $citation;
+      }
+    }
+
+    // Find unmatched sources (sources not cited)
+    $citedSources = array_column($validCitations, 'matched_source');
+    $unmatchedSources = array_diff($sourceNames, $citedSources);
+
+    // Calculate match rate
+    $matchRate = count($allCitations) > 0
+      ? (count($validCitations) / count($allCitations)) * 100
+      : 0;
+
+    $result = [
+      'valid_citations' => $validCitations,
+      'invalid_citations' => $invalidCitations,
+      'unmatched_sources' => array_values($unmatchedSources),
+      'match_rate' => round($matchRate, 2),
+      'total_citations' => count($allCitations),
+      'total_sources' => count($sourceNames)
+    ];
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        sprintf(
+          "✅ Verification complete: %d/%d citations matched (%.1f%%)",
+          count($validCitations),
+          count($allCitations),
+          $matchRate
+        ),
+        'info'
+      );
+
+      if (!empty($invalidCitations)) {
+        $this->logger->logSecurityEvent(
+          "⚠️  Invalid citations: " . implode(', ', $invalidCitations),
+          'warning'
+        );
+      }
+    }
+
+    return $result;
+  }
+
+  /**
+   * Get inline citation markers for a language
+   *
+   * Loads markers from language definitions using CLICSHOPPING::getDef().
+   *
+   * @param string $language Language code
+   * @return array Array of citation marker strings
+   */
+  private function getInlineMarkers(string $language): array
+  {
+    $markerString = CLICSHOPPING::getDef('text_rag_citation_inline_markers');
+    
+    // Check if getDef() returned the key itself (not found)
+    if (empty($markerString) || $markerString === 'text_rag_citation_inline_markers') {
+      return [];
+    }
+    
+    // Split by pipe separator
+    $markers = explode('|', $markerString);
+    $markers = array_map('trim', $markers);
+    $markers = array_filter($markers);
+    
+    return $markers;
+  }
+
+  /**
+   * Get source header for a language
+   *
+   * Loads header from language definitions using CLICSHOPPING::getDef().
+   *
+   * @param string $language Language code
+   * @return string Source header string
+   */
+  private function getSourceHeader(string $language): string
+  {
+    $header = CLICSHOPPING::getDef('text_rag_citation_source_header');
+    
+    // Check if getDef() returned the key itself (not found)
+    if (empty($header) || $header === 'text_rag_citation_source_header') {
+      return '';
+    }
+    
+    return $header;
+  }
+
+  /**
+   * Extract document names from retrieved sources
+   *
+   * Handles multiple source formats (objects, arrays, strings).
+   *
+   * @param array $sources Array of source documents
+   * @return array Array of document names
+   */
+  private function extractSourceNames(array $sources): array
+  {
+    $names = [];
+
+    foreach ($sources as $source) {
+      $name = null;
+
+      // Handle object format
+      if (is_object($source)) {
+        $name = $source->title ?? $source->name ?? $source->document_name ?? null;
+
+        // Try metadata
+        if ($name === null && isset($source->metadata)) {
+          $metadata = $source->metadata;
+          $name = $metadata['title'] ?? $metadata['name'] ?? $metadata['document_name'] ?? null;
+        }
+      }
+      // Handle array format
+      elseif (is_array($source)) {
+        $name = $source['title'] ?? $source['name'] ?? $source['document_name'] ?? null;
+
+        // Try metadata
+        if ($name === null && isset($source['metadata'])) {
+          $metadata = $source['metadata'];
+          $name = $metadata['title'] ?? $metadata['name'] ?? $metadata['document_name'] ?? null;
+        }
+      }
+      // Handle string format
+      elseif (is_string($source)) {
+        $name = $source;
+      }
+
+      if ($name !== null && !empty($name)) {
+        $names[] = $name;
+      }
+    }
+
+    return array_unique($names);
+  }
+
+  /**
+   * Fuzzy match two strings
+   *
+   * Uses case-insensitive substring matching and similarity scoring.
+   * Handles common variations like:
+   * - "Return Policy" matches "ClicShopping Return Policy"
+   * - "Politique de Retour" matches "Politique de Retour ClicShopping"
+   *
+   * @param string $citation Citation string
+   * @param string $source Source document name
+   * @return bool True if strings match
+   */
+  private function fuzzyMatch(string $citation, string $source): bool
+  {
+    // Normalize strings (lowercase, trim)
+    $citation = mb_strtolower(trim($citation));
+    $source = mb_strtolower(trim($source));
+
+    // Exact match
+    if ($citation === $source) {
+      return true;
+    }
+
+    // Substring match (citation is part of source or vice versa)
+    if (mb_strpos($source, $citation) !== false || mb_strpos($citation, $source) !== false) {
+      return true;
+    }
+
+    // Similarity score (Levenshtein distance)
+    $maxLength = max(mb_strlen($citation), mb_strlen($source));
+    $distance = levenshtein($citation, $source);
+    $similarity = 1 - ($distance / $maxLength);
+
+    // Match if similarity > 80%
+    return $similarity > 0.8;
+  }
+}

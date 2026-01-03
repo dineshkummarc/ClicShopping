@@ -179,62 +179,31 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
 
           $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-          $embeddings = [];
+          // Prepare base metadata for centralized chunk management
+          $baseMetadata = [
+            'review_name' => HTMLOverrideCommon::cleanHtmlForEmbedding($products_name),
+            'content' => HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text),
+            'type' => 'reviews',  // Entity type (goes in 'type' column)
+            'reviews_id' => (int)$item['reviews_id'],
+            'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
+            'source' => ['type' => 'manual', 'name' => 'manual']  // Goes in 'sourcetype' and 'sourcename' columns
+          ];
 
-          foreach ($embeddedDocuments as $embeddedDocument) {
-            if (is_array($embeddedDocument->embedding)) {
-              $embeddings[] = $embeddedDocument->embedding;
-            }
-          }
+          // Save all chunks using centralized method
+          $result = NewVector::saveEmbeddingsWithChunks(
+            $embeddedDocuments,
+            'reviews_embedding',  // Table name
+            (int)$item['reviews_id'],
+            (int)$item['languages_id'],
+            $baseMetadata,
+            $this->app->db,
+            !$insert_embedding  // isUpdate = true if not inserting (i.e., updating existing entity)
+          );
 
-          if (!empty($embeddings)) {
-            $flattened_embedding = $embeddings[0];
-            $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
-
-            $sql_data_array_embedding = [
-              'content' => $embedding_data,
-              'type' => 'reviews',
-              'sourcetype' => 'manual',
-              'sourcename' => 'manual',
-              'date_modified' => 'now()'
-            ];
-
-            $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-
-            // MetaData  creation
-            $metadata = [
-              'review_name' => HTMLOverrideCommon::cleanHtmlForEmbedding($products_name),
-              'content' => HtmlOverrideCommon::cleanHtmlForEmbedding($reviews_text) ,
-              'language_id' => (int)$item['languages_id'],
-              'reviews_id' => (int)$item['reviews_id'],
-              'type' => 'reviews',
-              'source' => [
-                'type' => 'manual',
-                'name' => 'manual'
-              ],
-              'entity_id' => (int)$item['reviews_id'],
-              'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
-              'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-               'date_modified' => 'now()'
-            ];
-
-             // Ajouter le JSON au tableau d'insertion
-            $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
-
-            if ($insert_embedding === true) {
-              $sql_data_array_embedding['entity_id'] = (int)$item['reviews_id'];
-              $sql_data_array_embedding['language_id'] = (int)$item['languages_id'];
-
-              $this->app->db->save('reviews_embedding', $sql_data_array_embedding);
-            } else {
-	      $sql_data_array_embedding['date_modified'] = 'now()';
-			  
-              $update_sql_data = [
-                'language_id' => (int)$item['languages_id'],
-                'entity_id' => (int)$item['reviews_id']
-              ];
-              $this->app->db->save('reviews_embedding', $sql_data_array_embedding, $update_sql_data);
-            }
+          if (!$result['success']) {
+            error_log("Shop/ReviewsWrite: Failed to save embeddings - " . $result['error']);
+          } else {
+            error_log("Shop/ReviewsWrite: Successfully saved {$result['chunks_saved']} chunk(s) for review {$item['reviews_id']}");
           }
         }
       }

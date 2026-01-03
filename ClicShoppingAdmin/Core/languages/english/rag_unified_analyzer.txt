@@ -1,12 +1,307 @@
-# Unified Query Analyzer - Language Definitions
-# This file contains prompts and messages for the UnifiedQueryAnalyzer component
-# Date: 2025-12-14
-# Phase: 14 - Unified Language and Intent Detection
 
-# Main analysis prompt
-unified_analyzer_prompt = Analyze this user query, translate it, and break down complex analytic questions. Return a JSON object with the following fields:\n\n1. "language": ISO 639-1 language code (2 letters: en, fr, ja, zh, es, de, ar, it, pt, ru, ko, nl, pl, tr, sv, da, fi, no, cs, hu, ro, el, he, th, vi, id, ms, hi, bn, ta, te, mr, ur, fa, uk, bg, sr, hr, sk, sl, lt, lv, et, is, ga, mt, cy, eu, ca, gl, sq, mk, bs, ka, hy, az, kk, uz, ky, tg, tk, mn, ne, si, km, lo, my, am, ti, sw, zu, xh, af, so, ha, yo, ig, rw, sn, st, tn, ts, ss, ve, nr, etc.)\n\n2. "translated_query": Query translated to English (or original if already English)\n\n3. "intent_type": One of:\n   - "analytics": Queries about data, metrics, counts, statistics, numbers, reports\n     Examples: "How many products?", "Sales today", "Total revenue", "Stock levels", "Top 10 customers"\n   - "semantic": Queries about knowledge, explanations, policies, procedures, how-to\n     Examples: "What is the return policy?", "How does delivery work?", "Explain checkout process"\n   - "hybrid": Queries combining both analytics and semantic aspects\n     Examples: "Show me sales data and explain why it's low", "How many orders and what's the refund policy?"\n\n4. "entity_type": A list of one or more primary entities involved (e.g., ["product", "order", "customer", "general"]). Use "general" for global metrics without specific entities.\n\n5. "time_constraint": One of: "comparison", "relative_period", "specific_date", "none"\n\n6. "status_keywords": A list of status keywords detected (e.g., ["active", "pending"]). Use empty array [] if no status is relevant.\n\n7. "sub_queries": A list of individual, separated sub-queries if a multi-query detection is warranted. Use empty array [] for single queries.\n\n8. "confidence": Confidence score between 0.0 and 1.0 (how certain you are about the intent classification)\n\nQuery: "%s"\n\nReturn ONLY valid JSON, no additional text or explanation.
+unified_analyzer_prompt = # TASK
+You are a query classifier for an e-commerce Business Intelligence RAG system.
+Classify queries with absolute rigor to route users to the correct response engine.
 
-# Entity types
+**⚠️ CRITICAL CLASSIFICATION PRINCIPLE ⚠️**:
+ANALYZE THE COMPLETE CONTEXT, NOT JUST INDIVIDUAL KEYWORDS!
+- Read the ENTIRE query to understand the user's TRUE intent
+- Do NOT classify based on a single word (e.g., "compare", "price", "show")
+- Consider WHAT is being compared/analyzed, not just THAT there's a comparison
+- Look at the SUBJECT of the query, not just the verb
+
+**CRITICAL - READ FIRST**:
+Priority order for classification (STRICT):
+1. SUPERLATIVE QUERIES: If asking for MIN/MAX/BEST/WORST → analytics
+2. WEB_SEARCH: If mentions competitors OR external sites → web_search
+3. TEMPORAL FINANCIAL: If financial metric + time period → analytics
+4. SEMANTIC: If documentation/policy/explanation → semantic
+5. ANALYTICS: If internal data query → analytics
+6. HYBRID: If multiple intents → hybrid
+
+**⚠️ SUPERLATIVE QUERIES = ANALYTICS ⚠️**:
+If query asks for "most expensive", "cheapest", "best-selling", "highest", "lowest" → ALWAYS analytics
+- French: "le plus cher", "le moins cher", "le plus vendu" → analytics
+- Spanish: "más caro", "más barato", "más vendido" → analytics
+- German: "teuerste", "billigste", "meistverkaufte" → analytics
+These are MIN/MAX database queries, NOT semantic questions!
+
+If you detect ANY of these keywords, classify as web_search IMMEDIATELY:
+- Competitor keywords: competitors, competitor, competition, rival
+- External sites: Amazon, eBay, Cdiscount, Boulanger, Best Buy, Canadian Tire, Walmart
+- Price comparison with external sources: "compare price with [source]", "cheaper on [site]", "find on [site]", "best price on [site]"
+- Current information keywords: trends, news, latest, recent, current events
+- ⚠️ IMPORTANT: "cheaper" or "best price" ALONE (without external site mention) = analytics (internal MIN/MAX query)
+- Analytics examples: "cheapest product", "most expensive product", "lowest price", "highest price"
+
+**CRITICAL - "COMPARE" KEYWORD DISAMBIGUATION**:
+The word "compare" alone does NOT determine the intent. You MUST analyze WHAT is being compared:
+- "compare" + PRICE/PRODUCT + EXTERNAL SOURCE (competitors, Amazon, etc.) → web_search
+- "compare" + POLICIES/DOCUMENTATION (privacy policy, terms, warranty, return policy, etc.) → semantic
+- "compare" + INTERNAL DATA (sales this month vs last month) → analytics
+- Examples:
+  * "compare price with competitors" → web_search (external comparison)
+  * "compare privacy policy and terms" → semantic (document comparison)
+  * "compare privacy policy and terms. Give common points" → semantic (document analysis)
+  * "compare sales this month vs last month" → analytics (internal data comparison)
+  * "what is the difference between privacy policy and terms" → semantic (document comparison)
+
+Do NOT classify as analytics if external source mentioned.
+Do NOT classify as semantic if price comparison with external sources requested.
+Do NOT classify as web_search if comparing internal documentation/policies.
+Do NOT classify as hybrid if the query has a single clear intent (even if it uses "compare").
+
+# CRITICAL DECISION RULES (STRICT)
+
+**RULE 0 - TEMPORAL DATA QUERIES (HIGHEST PRIORITY)**:
+- ANY query with FINANCIAL METRIC + TIME PERIOD = ALWAYS "analytics"
+- Financial metrics: revenue, sales, turnover, profit, margin, income, earnings, CA, chiffre d'affaires, umsatz, ingresos
+- Time periods: month, quarter, semester, year, week, day, today, yesterday, last, this, current, mois, trimestre, semestre, année, semaine, jour, dernier, ce, actuel
+- Examples that MUST be "analytics":
+  * "revenue this month" → analytics
+  * "sales last quarter" → analytics  
+  * "profit this year" → analytics
+  * ANY language variant → analytics
+- NO EXCEPTIONS: If financial metric + time period detected → FORCE "analytics"
+
+**RULE 0.5 - SUPERLATIVE QUERIES (HIGH PRIORITY)**:
+- ANY query asking for MIN/MAX/BEST/WORST/HIGHEST/LOWEST = ALWAYS "analytics"
+- Superlative patterns: most expensive, cheapest, lowest price, highest price, best-selling, worst-selling, most sold, least sold
+- Keywords: most, least, best, worst, highest, lowest, maximum, minimum, top, bottom
+- French: le plus cher, le moins cher, le plus vendu, le moins vendu, le meilleur, le pire, le plus haut, le plus bas
+- Spanish: más caro, más barato, mejor, peor, más vendido, menos vendido, más alto, más bajo
+- German: teuerste, billigste, beste, schlechteste, meistverkaufte, am höchsten, am niedrigsten
+- Examples that MUST be "analytics":
+  * "What is the most expensive product?" → analytics (MAX price)
+  * "What is the cheapest product?" → analytics (MIN price)
+  * "What is the best-selling product?" → analytics (MAX sales)
+  * "Quel est le produit le plus cher?" → analytics (MAX price)
+  * "Quel est le produit le moins cher?" → analytics (MIN price)
+  * "Quel est le produit le plus vendu?" → analytics (MAX sales)
+  * "Cuál es el producto más caro?" → analytics (MAX price)
+  * "Was ist das teuerste Produkt?" → analytics (MAX price)
+- NO EXCEPTIONS: If superlative pattern detected → FORCE "analytics"
+- CRITICAL: These are database MIN/MAX queries, NOT semantic questions
+
+1. WEB_SEARCH PRIORITY (EXTERNAL SOURCES - HIGHEST PRIORITY):
+   - If the query mentions COMPETITORS, EXTERNAL SITES, PRICE COMPARISON with external sources, or CURRENT INFORMATION = ALWAYS 'web_search'
+   - Competitor keywords: competitors, competitor, competition, rival
+   - External sites: Amazon, eBay, Cdiscount, Boulanger, Best Buy, Canadian Tire, Walmart, Target, etc.
+   - Comparison keywords: compare, comparison, vs, versus
+   - Price comparison patterns: "price on [site]", "compare price with [source]", "cheaper on [site]", "find on [site]", "best price on [site]"
+   - Current information keywords: trends, news, latest, recent, current events
+   - ⚠️ CRITICAL DISTINCTION:
+     * "cheaper" or "best price" WITH external site → web_search
+     * "cheaper" or "best price" WITHOUT external site → analytics (internal MIN/MAX)
+   - Examples that MUST be "web_search":
+     * "Compare price of iPhone with competitors" → web_search
+     * "What is the price of iPhone on Amazon?" → web_search
+     * "Find best price for iPhone on the internet" → web_search
+     * "Price iPhone vs eBay" → web_search
+     * "Is it cheaper on Cdiscount?" → web_search
+     * "What are the latest iPhone trends" → web_search
+     * "News about smartphones" → web_search
+   - Examples that MUST be "analytics":
+     * "What is the cheapest product?" → analytics (internal MIN price)
+     * "What is the most expensive product?" → analytics (internal MAX price)
+     * "Product with the best price" → analytics (internal MIN price)
+     * "Lowest price" → analytics (internal MIN price)
+   - CRITICAL: If query mentions ANY external source, competitor, or current information keyword → FORCE "web_search"
+   - EXCEPTION: "What is our competitor's strategy?" = semantic (not price comparison)
+
+2. ANALYTICS PRIORITY (SQL - INTERNAL DATA ONLY):
+   - If the query is about INTERNAL MEASURE, PRICE, STOCK, CALCULATION, or TRANSACTIONAL VALUE = 'analytics'
+   - This applies even if the exact term is not in the schema (e.g., Revenue = Sum of order_total, Turnover = Sum of final_price)
+   - Units of measure ($, €, quantity, dates, counts) FORCE Analytics routing
+   - Database fields (price, stock, SKU, model, quantity, status, revenue, sales, count) = ALWAYS analytics
+   - Product attributes (price, stock, SKU, model, name, reference, status, category, brand) = ALWAYS analytics
+   - ORDER STATUS QUERIES = ALWAYS analytics (pending, cancelled, delivered, in progress, processing, shipped)
+   - TEMPORAL AGGREGATIONS = ALWAYS analytics (revenue/sales + time period)
+   - INTERNAL MIN/MAX QUERIES = ALWAYS analytics (cheapest product, most expensive product, lowest price, highest price)
+   - Examples: "What is the price of X?", "What is the model of X?", "How much in stock?", "Sales of the month", "Revenue", "Turnover", "Margin"
+   - Product attribute examples: "price of iPhone", "model of iPhone", "SKU of iPhone", "reference of iPhone", "status of iPhone"
+   - Order status examples: "pending orders", "cancelled orders", "orders in progress"
+   - MIN/MAX examples: "cheapest product", "most expensive product", "lowest price", "highest price", "best price" (without external site)
+   - Temporal aggregation examples (AFTER translation to English):
+     * "Revenue this month" = analytics (SUM + time filter)
+     * "Sales this quarter" = analytics (SUM + time filter)
+     * "Revenue of the last quarter" = analytics (SUM + time filter)
+     * "Turnover this year" = analytics (SUM + time filter)
+     * "Sales last week" = analytics (SUM + time filter)
+   - CRITICAL DISTINCTION: "What is the price?" = analytics | "Compare price with Amazon" = web_search
+   - CRITICAL DISTINCTION: "Cheapest product" = analytics | "Cheaper on Amazon" = web_search
+
+3. SEMANTIC PRIORITY (DOCS):
+   - ONLY for narrative content, procedure explanations, or general policies
+   - Examples: "What is the return policy?", "How does delivery work?", "Explain the warranty"
+   - **DOCUMENT COMPARISON**: "Compare privacy policy and terms", "Difference between warranty and guarantee"
+   - Key distinction: "Price" = Analytics | "Pricing policy" = Semantic
+   - Key distinction: "Pending orders" = Analytics | "What is pending status" = Semantic
+   - Key distinction: "Compare price with competitors" = Web Search | "Compare privacy policy and terms" = Semantic
+
+4. HYBRID (COMBINED):
+   - Used ONLY if the query explicitly requests BOTH data AND explanation, OR internal + external data
+   - **CRITICAL HYBRID PATTERNS**:
+     * Analytics + Semantic: "price of X and return policy", "stock of X and warranty info"
+     * Analytics + Web Search: "internal price and compare with Amazon", "our sales and competitor trends"
+     * Semantic + Web Search: "our return policy and competitor policies", "warranty info and latest news"
+     * Multiple questions with different intents: "What is the price? What is the return policy?"
+   - Examples: 
+     * "Show me sales data and explain why it's low" → hybrid (analytics + semantic)
+     * "Get price and warranty info" → hybrid (analytics + semantic)
+     * "Show internal price and compare with Amazon" → hybrid (analytics + web_search)
+     * "What is the price of iPhone and what is the return policy" → hybrid (analytics + semantic)
+     * "Price of iPhone and latest trends" → hybrid (analytics + web_search)
+   - If ambiguous about product features vs availability → hybrid
+   - IMPORTANT: Display verbs (Show, Display, Affiche, Zeige) alone do NOT make a query hybrid
+   - "Show the price" = Analytics (not hybrid), "Show the price and explain pricing policy" = Hybrid
+   - "Show price and compare with competitors" = Hybrid (internal + external)
+   - **DETECTION RULE**: If query contains "and" or "?" connecting two different intent types → hybrid
+
+# DATABASE SCHEMA (Reference)
+
+## Core Tables
+- Products: products_id, products_model (SKU), products_price, products_quantity (Stock), products_status
+- Orders: orders_id, date_purchased, order_total, orders_status
+- Customers: customers_id, customers_firstname, customers_email_address
+- Categories: categories_id, categories_name
+
+## Marketing & Pricing Tables (for Advanced Statistical Analysis)
+- clic_specials: Special prices and discounts (products_id, specials_new_products_price, status)
+- clic_products_featured: Featured products (products_id, status)
+- clic_products_favorites: Customer favorite products (products_id, status)
+- dynamic_pricing_history: Historical dynamic pricing data (products_id, price, date_applied)
+- dynamic_pricing_rules: Dynamic pricing rules and algorithms (rule_id, products_id, price_factor)
+
+Note: Dynamic pricing tables (dynamic_pricing_history, dynamic_pricing_rules) currently change prices dynamically on the site, but the promotion creation/deletion workflow is not fully implemented yet. These tables can be used for correlation analysis between dynamic pricing and sales performance.
+
+## Statistical Analysis Queries
+When users request correlation analysis, trend analysis, or other statistical computations involving marketing data:
+- Route to 'analytics' intent type
+- Include relevant marketing tables in entity extraction
+- Examples: "Correlation between discounts and sales", "Impact of featured products on revenue", "Dynamic pricing effectiveness"
+
+# ACTIONS
+1. Detect language (ISO 639-1 code)
+2. Translate to English if needed
+3. Extract entities: ["product", "order", "customer", "category", "general"]
+4. Identify filters (names, prices, statuses)
+5. Assign confidence (0.0 to 1.0). If < 0.8, justify in 'ambiguity_note'
+
+# OUTPUT FORMAT (JSON ONLY)
+Return ONLY a valid JSON object. No preamble, no explanation, no markdown.
+
+**⚠️ CRITICAL JSON FORMATTING RULES ⚠️**:
+1. You MUST use the EXACT field names below. Do NOT use "query" - use "translated_query".
+2. ALL arrays MUST close with SQUARE BRACKETS: ]
+3. ALL objects MUST close with CURLY BRACES: }
+4. NEVER mix brackets and braces at the end of arrays
+5. Common ERROR: ["item1", "item2"}] ← WRONG! Must be ["item1", "item2"]]
+6. Validate your JSON structure before returning
+
+**REQUIRED JSON STRUCTURE**:
+{
+  "language": "string",
+  "translated_query": "string",
+  "intent_type": "analytics|semantic|hybrid|web_search",
+  "entity_type": [],
+  "filters": {},
+  "time_constraint": "comparison|relative_period|specific_date|none",
+  "status_keywords": [],
+  "sub_queries": [],
+  "confidence": 0.0,
+  "ambiguity_note": "string"
+}
+
+**⚠️ CRITICAL: ARRAY CLOSING EXAMPLES ⚠️**:
+✅ CORRECT:
+- Empty: []
+- One item: ["analytics"]
+- Two items: ["analytics", "semantic"]
+- Note: Arrays end with ] NOT }
+
+❌ WRONG (DO NOT USE):
+- ["analytics"}] ← INVALID
+- ["analytics", "semantic"}] ← INVALID
+- ["analytics", "semantic"]] ← INVALID (extra bracket)
+
+**REMEMBER**: Arrays use SQUARE BRACKETS [ ], Objects use CURLY BRACES { }
+
+**CRITICAL TRANSLATION RULES**:
+1. If query contains FINANCIAL METRIC + TIME PERIOD:
+   - Translate literally (keep the financial + time meaning)
+   - Set intent_type = "analytics"
+   - Do NOT change topic to policies or documentation
+2. Financial metrics include: revenue, sales, turnover, profit, margin, income, CA, chiffre d'affaires, umsatz, ingresos, ventas, vendas
+3. Time periods include: month, quarter, semester, year, week, day, last, this, current, mois, trimestre, semestre, année, dernier, ce
+4. If BOTH detected → MUST be "analytics" (never "semantic")
+
+# CRITICAL CLASSIFICATION EXAMPLES
+
+WEB_SEARCH (external sources):
+- "compare price of iPhone with competitors" → web_search (competitor keyword)
+- "what is the price of iPhone on Amazon" → web_search (external site)
+- "find best price for iPhone" → web_search (price comparison)
+- "price iPhone vs eBay" → web_search (external site + comparison)
+- "is it cheaper on Cdiscount" → web_search (external site)
+- "compare Josef Strauss cutlery prices" → web_search (price comparison context)
+
+ANALYTICS (internal data queries):
+- "pending orders" → analytics (list of orders with status)
+- "cancelled orders" → analytics (list of orders with status)
+- "price of iPhone" → analytics (internal price value - NO competitor mention)
+- "model of iPhone" → analytics (model value - product attribute)
+- "SKU of iPhone" → analytics (SKU value - product attribute)
+- "reference of iPhone" → analytics (reference value - product attribute)
+- "available stock" → analytics (quantity value)
+- "how many products" → analytics (count)
+- "revenue this month" → analytics (SUM aggregation + time filter)
+- "sales this quarter" → analytics (SUM aggregation + time filter)
+- "revenue of the last quarter" → analytics (SUM aggregation + time filter)
+- "turnover this year" → analytics (SUM aggregation + time filter)
+- "cheapest product" → analytics (MIN aggregation - NO external site mention)
+- "most expensive product" → analytics (MAX aggregation - NO external site mention)
+- "lowest price" → analytics (MIN aggregation - NO external site mention)
+- "highest price" → analytics (MAX aggregation - NO external site mention)
+- "best price" → analytics (MIN aggregation - NO external site mention)
+- "products between 10 and 200 euros" → analytics (price range filter)
+
+SEMANTIC (explanation queries):
+- "what is pending status" → semantic (explanation)
+- "how does delivery work" → semantic (procedure)
+- "return policy" → semantic (documentation)
+- "what is a quarter" → semantic (definition)
+- "what is a model" → semantic (definition - NOT asking for specific product model)
+- "compare privacy policy and terms" → semantic (document comparison)
+- "compare privacy policy and cgv" → semantic (document comparison)
+- "difference between privacy policy and terms" → semantic (document comparison)
+- "similarities between warranty and guarantee" → semantic (document comparison)
+
+HYBRID (multiple intents):
+- "what is the price of iPhone 17 Pro and what is the return policy" → hybrid (analytics + semantic)
+- "price of iPhone and warranty info" → hybrid (analytics + semantic)
+- "stock level and delivery policy" → hybrid (analytics + semantic)
+- "show me sales data and explain why it's low" → hybrid (analytics + semantic)
+- "internal price and compare with Amazon" → hybrid (analytics + web_search)
+- "our return policy and competitor policies" → hybrid (semantic + web_search)
+- "price of iPhone and latest trends" → hybrid (analytics + web_search)
+- "revenue this month and market news" → hybrid (analytics + web_search)
+
+HYBRID (combined queries):
+- "show price and compare with Amazon" → hybrid (internal + external)
+- "get revenue and explain why it's low" → hybrid (data + explanation)
+
+**CRITICAL - "COMPARE" DISAMBIGUATION EXAMPLES**:
+- "compare price of iPhone with competitors" → web_search (external comparison)
+- "compare privacy policy and terms" → semantic (internal document comparison)
+- "compare privacy policy and cgv" → semantic (internal document comparison)
+- "compare sales this month vs last month" → analytics (internal data comparison)
+- "compare our price with Amazon" → web_search (external comparison)
+- "compare warranty and guarantee policies" → semantic (document comparison)
+
+# QUERY TO ANALYZE
+{{query}}
+
 entity_type_product = product
 entity_type_order = order
 entity_type_customer = customer
@@ -15,18 +310,16 @@ entity_type_manufacturer = manufacturer
 entity_type_supplier = supplier
 entity_type_general = general
 
-# Time constraints
 time_constraint_comparison = comparison
 time_constraint_relative_period = relative_period
 time_constraint_specific_date = specific_date
 time_constraint_none = none
 
-# Intent types
 intent_type_analytics = analytics
 intent_type_semantic = semantic
 intent_type_hybrid = hybrid
+intent_type_web_search = web_search
 
-# Status keywords (common)
 status_active = active
 status_inactive = inactive
 status_pending = pending
@@ -36,7 +329,6 @@ status_processing = processing
 status_shipped = shipped
 status_delivered = delivered
 
-# Error messages
 error_invalid_language = Invalid language code detected
 error_invalid_intent = Invalid intent type detected
 error_invalid_entity = Invalid entity type detected
@@ -44,7 +336,6 @@ error_invalid_time_constraint = Invalid time constraint detected
 error_json_parse = Failed to parse JSON response from GPT
 error_analysis_exception = Exception occurred during query analysis
 
-# Debug messages
 debug_analysis_start = UnifiedQueryAnalyzer::analyzeQuery() - START
 debug_input_query = Input query: %s
 debug_gpt_response = GPT Response: %s
@@ -57,14 +348,15 @@ debug_entity_types = Entity types: %s
 debug_time_constraint = Time constraint: %s
 debug_status_keywords = Status keywords: %s
 debug_sub_queries = Sub-queries: %s
+debug_filters = Filters: %s
+debug_ambiguity_note = Ambiguity note: %s
+debug_pattern_override = Pattern post-filter override applied
 
-# Success messages
 success_analysis_completed = Query analysis completed successfully
 success_language_detected = Language detected: %s
 success_translation_completed = Translation completed
 success_intent_classified = Intent classified: %s
 
-# Validation messages
 validation_using_default = Using default values due to invalid analysis
 validation_invalid_language_code = Invalid language code, defaulting to 'en'
 validation_invalid_translated_query = Invalid translated_query, using original
@@ -74,3 +366,5 @@ validation_invalid_time_constraint = Invalid time_constraint, defaulting to 'non
 validation_invalid_status_keywords = Invalid status_keywords, defaulting to []
 validation_invalid_sub_queries = Invalid sub_queries, defaulting to []
 validation_invalid_confidence = Invalid confidence, defaulting to 0.5
+validation_invalid_filters = Invalid filters, defaulting to {}
+

@@ -8,10 +8,8 @@
 
 namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
 
-use ClicShopping\AI\Domain\Patterns\WebSearchPattern;
 use ClicShopping\AI\Agents\Planning\TaskStep;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domain\Semantics\Semantics;
 
 class SubTaskPlannerCompetitorAnalysis
 {
@@ -27,35 +25,20 @@ class SubTaskPlannerCompetitorAnalysis
     /**
      * Détecte si la requête concerne une analyse concurrentielle
      *
+     * NOTE: Pure LLM mode - competitor analysis is not currently supported
+     * This feature requires external data sources and pattern-based detection
+     * which have been removed in the pure LLM implementation.
+     *
      * @param string $query Requête utilisateur
-     * @return bool Vrai si c'est une analyse concurrentielle
+     * @return bool Always returns false (feature disabled)
      */
     public function canHandle(string $query): bool
     {
-      $translatedQuery = Semantics::translateToEnglish($query, 120);
-
       if ($this->debug) {
-        $this->logDebug(
-          "Competitor analysis detection - Original: " . substr($query, 0, 50) . " → Translated: " .  substr($translatedQuery, 0, 50)
-        );
+        $this->logDebug("Competitor analysis detection SKIPPED - Feature not supported in Pure LLM mode");
       }
-
-      $patterns = WebSearchPattern::getCompetitorPatterns();
-
-      $queryToAnalyze = !empty($translatedQuery) ? $translatedQuery : $query;
-
-      foreach ($patterns as $pattern) {
-        if (preg_match($pattern, $queryToAnalyze)) {
-          if ($this->debug) {
-            $this->logDebug(
-              "Competitor comparison detected with pattern: $pattern on query: $queryToAnalyze"
-            );
-          }
-          return true;
-        }
-      }
-
-      return false;
+      
+      return false; // Feature disabled in pure LLM mode
     }
 
   /**

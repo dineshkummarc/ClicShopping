@@ -124,33 +124,31 @@ class Cron {
 
        $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-       $embeddings = [];
+       // Prepare base metadata
+       $baseMetadata = [
+         'brand_name' => $categories_name,
+         'content' => $embedding_data,
+         'type' => 'category',
+         'tags' => $tags,
+         'source' => ['type' => 'manual', 'name' => 'manual']
+       ];
 
-        foreach ($embeddedDocuments as $embeddedDocument) {
-          if (is_array($embeddedDocument->embedding)) {
-            $embeddings[] = $embeddedDocument->embedding;
-          }
-        }
+       // Save all chunks using centralized method
+       $result = NewVector::saveEmbeddingsWithChunks(
+         $embeddedDocuments,
+         'categories_embedding',
+         (int)$item['categories_id'],
+         (int)$item['language_id'],
+         $baseMetadata,
+         $this->app->db,
+         false  // isUpdate = false (cron only creates missing embeddings)
+       );
 
-        if (!empty($embeddings)) {
-          $flattened_embedding = $embeddings[0];
-          $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
-
-          $sql_data_array_embedding = [
-            'content' => $embedding_data,
-            'type' => 'category',
-            'sourcetype' => 'manual',
-            'sourcename' => 'manual',
-            'date_modified' => 'now()',
-            'language_id' => $item['language_id'],
-            'metadata' => $item['metadata'],
-          ];
-
-          $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-          $sql_data_array_embedding['entity_id'] = $item['categories_id'];
-
-          $this->app->db->save('categories_embedding', $sql_data_array_embedding);
-        }
+       if (!$result['success']) {
+         error_log("Cron Categories: Failed to save embeddings for category {$item['categories_id']} - " . $result['error']);
+       } else {
+         error_log("Cron Categories: Successfully saved {$result['chunks_saved']} chunks for category {$item['categories_id']}");
+       }
       }
     }
   }
@@ -230,32 +228,29 @@ class Cron {
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-        $embeddings = [];
+        // Prepare base metadata
+        $baseMetadata = [
+          'brand_name' => $manufacturers_name,
+          'content' => $embedding_data,
+          'type' => 'manufacturers',
+          'source' => ['type' => 'manual', 'name' => 'manual']
+        ];
 
-        foreach ($embeddedDocuments as $embeddedDocument) {
-          if (is_array($embeddedDocument->embedding)) {
-            $embeddings[] = $embeddedDocument->embedding;
-          }
-        }
+        // Save all chunks using centralized method
+        $result = NewVector::saveEmbeddingsWithChunks(
+          $embeddedDocuments,
+          'manufacturers_embedding',
+          (int)$item['manufacturers_id'],
+          (int)$item['languages_id'],
+          $baseMetadata,
+          $this->app->db,
+          false  // isUpdate = false (cron only creates missing embeddings)
+        );
 
-        if (!empty($embeddings)) {
-          $flattened_embedding = $embeddings[0];
-          $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
-
-          $sql_data_array_embedding = [
-            'content' => $embedding_data,
-            'type' => 'manufacturers',
-            'sourcetype' => 'manual',
-            'sourcename' => 'manual',
-            'date_modified' => 'now()',
-            'language_id' => $item['languages_id'],
-            'metadata' => $item['metadata'],
-          ];
-
-          $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-          $sql_data_array_embedding['entity_id'] = $item['manufacturers_id'];
-
-          $this->app->db->save('manufacturers_embedding', $sql_data_array_embedding);
+        if (!$result['success']) {
+          error_log("Cron Manufacturers: Failed to save embeddings for manufacturer {$item['manufacturers_id']} - " . $result['error']);
+        } else {
+          error_log("Cron Manufacturers: Successfully saved {$result['chunks_saved']} chunks for manufacturer {$item['manufacturers_id']}");
         }
       }
     }
@@ -331,32 +326,38 @@ class Cron {
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-        $embeddings = [];
-
-        foreach ($embeddedDocuments as $embeddedDocument) {
-          if (is_array($embeddedDocument->embedding)) {
-            $embeddings[] = $embeddedDocument->embedding;
-          }
+        // Extract atomic keys for metadata tags (similar to hook)
+        $tags = [];
+        if (preg_match_all('/^\[([^\]]+)\]:/m', $embedding_data, $matches)) {
+          $tags = array_unique($matches[1]);
         }
 
-        if (!empty($embeddings)) {
-          $flattened_embedding = $embeddings[0];
-          $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
+        // Prepare base metadata (matching PageManager hook structure)
+        $baseMetadata = [
+          'brand_name' => $page_manager_name,
+          'content' => $page_manager_description,
+          'type' => 'pages_manager',  // Entity type (goes in 'type' column)
+          'document_type' => 'general_page',  // Default for cron (no LLM extraction)
+          'tags' => $tags,
+          'legal_clauses' => [],  // Empty for cron (no LLM extraction)
+          'source' => ['type' => 'manual', 'name' => 'manual']  // Goes in 'sourcetype' and 'sourcename' columns
+        ];
 
-          $sql_data_array_embedding = [
-            'content' => $embedding_data,
-            'type' => 'page_manager',
-            'sourcetype' => 'manual',
-            'sourcename' => 'manual',
-            'date_modified' => 'now()',
-            'language_id' => $item['language_id'],
-            'metadata' => $item['metadata'],
-          ];
+        // Save all chunks using centralized method
+        $result = NewVector::saveEmbeddingsWithChunks(
+          $embeddedDocuments,
+          'pages_manager_embedding',  // Table name (different from entity type!)
+          (int)$item['pages_id'],
+          (int)$item['language_id'],
+          $baseMetadata,
+          $this->app->db,
+          false  // isUpdate = false (cron only creates missing embeddings)
+        );
 
-          $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-          $sql_data_array_embedding['entity_id'] = $item['pages_id'];
-
-          $this->app->db->save('pages_manager_embedding', $sql_data_array_embedding);
+        if (!$result['success']) {
+          error_log("Cron PageManager: Failed to save embeddings for page {$item['pages_id']} - " . $result['error']);
+        } else {
+          error_log("Cron PageManager: Successfully saved {$result['chunks_saved']} chunks for page {$item['pages_id']}");
         }
       }
     }
@@ -529,32 +530,29 @@ class Cron {
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-        $embeddings = [];
+        // Prepare base metadata
+        $baseMetadata = [
+          'brand_name' => $manufacturer_name ?? '',
+          'content' => $embedding_data,
+          'type' => 'products',
+          'source' => ['type' => 'manual', 'name' => 'manual']
+        ];
 
-        foreach ($embeddedDocuments as $embeddedDocument) {
-          if (is_array($embeddedDocument->embedding)) {
-            $embeddings[] = $embeddedDocument->embedding;
-          }
-        }
+        // Save all chunks using centralized method
+        $result = NewVector::saveEmbeddingsWithChunks(
+          $embeddedDocuments,
+          'products_embedding',
+          (int)$item['products_id'],
+          (int)$item['language_id'],
+          $baseMetadata,
+          $this->app->db,
+          false  // isUpdate = false (cron only creates missing embeddings)
+        );
 
-        if (!empty($embeddings)) {
-          $flattened_embedding = $embeddings[0];
-          $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
-
-          $sql_data_array_embedding = [
-            'content' => $embedding_data,
-            'type' => 'products',
-            'sourcetype' => 'manual',
-            'sourcename' => 'manual',
-            'date_modified' => 'now()',
-            'language_id' => $item['language_id'],
-             'metadata' => $item['metadata'],
-          ];
-
-          $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-          $sql_data_array_embedding['entity_id'] = $item['products_id'];
-
-          $this->app->db->save('products_embedding', $sql_data_array_embedding);
+        if (!$result['success']) {
+          error_log("Cron Products: Failed to save embeddings for product {$item['products_id']} - " . $result['error']);
+        } else {
+          error_log("Cron Products: Successfully saved {$result['chunks_saved']} chunks for product {$item['products_id']}");
         }
       }
     }
@@ -661,36 +659,33 @@ class Cron {
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-        $embeddings = [];
+        // Prepare base metadata
+        $baseMetadata = [
+          'brand_name' => $products_name,
+          'content' => $embedding_data,
+          'type' => 'reviews',
+          'source' => ['type' => 'manual', 'name' => 'manual']
+        ];
 
-        foreach ($embeddedDocuments as $embeddedDocument) {
-          if (is_array($embeddedDocument->embedding)) {
-            $embeddings[] = $embeddedDocument->embedding;
-          }
+        // Save all chunks using centralized method
+        $result = NewVector::saveEmbeddingsWithChunks(
+          $embeddedDocuments,
+          'reviews_embedding',
+          (int)$item['reviews_id'],
+          (int)$language_id,
+          $baseMetadata,
+          $this->app->db,
+          false  // isUpdate = false (cron only creates missing embeddings)
+        );
+
+        if (!$result['success']) {
+          error_log("Cron Reviews: Failed to save embeddings for review {$item['reviews_id']} - " . $result['error']);
+        } else {
+          error_log("Cron Reviews: Successfully saved {$result['chunks_saved']} chunks for review {$item['reviews_id']}");
         }
-
-        if (!empty($embeddings)) {
-          $flattened_embedding = $embeddings[0];
-          $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
-
-          $sql_data_array_embedding = [
-            'content' => $embedding_data,
-            'type' => 'reviews',
-            'sourcetype' => 'manual',
-            'sourcename' => 'manual',
-            'date_modified' => 'now()',
-            'language_id' => $item['languages_id'],
-            'metadata' => $item['metadata'],
-          ];
-
-          $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-          $sql_data_array_embedding['entity_id'] = $item['reviews_id'];
-
-          $this->app->db->save('reviews_embedding', $sql_data_array_embedding);
-        }
-}
+      }
     }
-}
+  }
 
   /**
    * Updates the embedding suppliers .
@@ -786,31 +781,30 @@ class Cron {
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-        $embeddings = [];
+        // Prepare base metadata (suppliers table doesn't have language_id)
+        $baseMetadata = [
+          'brand_name' => $supplier_name,
+          'content' => $embedding_data,
+          'type' => 'suppliers',
+          'source' => ['type' => 'manual', 'name' => 'manual']
+        ];
 
-        foreach ($embeddedDocuments as $embeddedDocument) {
-          if (is_array($embeddedDocument->embedding)) {
-            $embeddings[] = $embeddedDocument->embedding;
-          }
-        }
+        // Save all chunks using centralized method
+        // Note: Suppliers table doesn't have language_id, so we pass null
+        $result = NewVector::saveEmbeddingsWithChunks(
+          $embeddedDocuments,
+          'suppliers_embedding',
+          (int)$item['suppliers_id'],
+          null,  // language_id - suppliers table doesn't have this column
+          $baseMetadata,
+          $this->app->db,
+          false  // isUpdate = false (cron only creates missing embeddings)
+        );
 
-        if (!empty($embeddings)) {
-          $flattened_embedding = $embeddings[0];
-          $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
-
-          $sql_data_array_embedding = [
-            'content' => $embedding_data,
-            'type' => 'suppliers',
-            'sourcetype' => 'manual',
-            'sourcename' => 'manual',
-            'date_modified' => 'now()',
-            'metadata' => $item['metadata'],
-          ];
-
-          $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-          $sql_data_array_embedding['entity_id'] = $item['suppliers_id'];
-
-          $this->app->db->save('suppliers_embedding', $sql_data_array_embedding);
+        if (!$result['success']) {
+          error_log("Cron Suppliers: Failed to save embeddings for supplier {$item['suppliers_id']} - " . $result['error']);
+        } else {
+          error_log("Cron Suppliers: Successfully saved {$result['chunks_saved']} chunks for supplier {$item['suppliers_id']}");
         }
       }
     }
@@ -832,12 +826,9 @@ class Cron {
       $this->updateAllEmbeddingProducts($value['id']);
       $this->updateAllEmbeddingPageManager($value['id']);
       $this->updateAllEmbeddingReviews($value['id']);
-      $this->updateAllEmbeddingSuppliers($value['id']);
-      $this->updateAllEmbeddingReviews($value['id']);
-      
-      //add more
     }
 
+    // Suppliers doesn't use language_id, so it's called once outside the loop
     $this->updateAllEmbeddingSuppliers();
   }
 

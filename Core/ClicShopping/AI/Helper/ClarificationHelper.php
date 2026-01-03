@@ -11,7 +11,6 @@
 namespace ClicShopping\AI\Helper;
 
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domain\Patterns\AmbiguityPattern;
 use ClicShopping\AI\Domain\Semantics\Semantics;
 
 /**
@@ -23,6 +22,9 @@ use ClicShopping\AI\Domain\Semantics\Semantics;
  * - Detect ambiguity in user queries
  * - Generate appropriate clarification questions
  * - Suggest options for disambiguation
+ * 
+ * PURE LLM MODE: All ambiguity detection is handled by LLM prompts
+ * Pattern-based detection has been removed
  * 
  * @package ClicShopping\AI\Helper
  * @since 2025-11-14
@@ -216,51 +218,31 @@ class ClarificationHelper
   /**
    * Detect missing parameters in a query
    * 
-   * Uses AmbiguityPattern for centralized keyword management (ENGLISH ONLY)
-   * All queries should be translated to English before calling this method
+   * PURE LLM MODE: Parameter detection is handled by LLM prompts
+   * This method always returns empty array in Pure LLM mode
    *
    * @param string $query Query to analyze (in English)
    * @param array $intent Intent analysis
-   * @return array List of missing parameters
+   * @return array List of missing parameters (always empty in Pure LLM mode)
    */
   private function detectMissingParameters(string $query, array $intent): array
   {
-    $missing = [];
-    $parameterKeywords = AmbiguityPattern::getMissingParameterKeywords();
-
-    // Check for price query without product
-    $pricePattern = '/\b(' . implode('|', $parameterKeywords['price_without_product']['keywords']) . ')\b/i';
-    if (preg_match($pricePattern, $query)) {
-      if (!isset($intent['metadata']['entities']) || empty($intent['metadata']['entities'])) {
-        $missing[] = $parameterKeywords['price_without_product']['missing'];
-      }
+    // PURE LLM MODE: Parameter detection disabled
+    // LLM handles ambiguity detection through prompts
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "Missing parameter detection bypassed (Pure LLM mode)",
+        'info'
+      );
     }
-
-    // Check for stock query without product
-    $stockPattern = '/\b(' . implode('|', $parameterKeywords['stock_without_product']['keywords']) . ')\b/i';
-    if (preg_match($stockPattern, $query)) {
-      if (!isset($intent['metadata']['entities']) || empty($intent['metadata']['entities'])) {
-        $missing[] = $parameterKeywords['stock_without_product']['missing'];
-      }
-    }
-
-    // Check for time-based query without time range
-    $salesPattern = '/\b(' . implode('|', $parameterKeywords['sales_without_time']['keywords']) . ')\b/i';
-    $timePattern = '/\b(' . implode('|', $parameterKeywords['sales_without_time']['time_keywords']) . ')\b/i';
-    if (preg_match($salesPattern, $query)) {
-      if (!preg_match($timePattern, $query)) {
-        $missing[] = $parameterKeywords['sales_without_time']['missing'];
-      }
-    }
-
-    return $missing;
+    return [];
   }
 
   /**
    * Check if query has unresolved contextual reference
    * 
-   * Uses AmbiguityPattern for centralized pronoun list (ENGLISH ONLY)
-   * All queries should be translated to English before calling this method
+   * PURE LLM MODE: No pattern matching
+   * Delegates to AmbiguousQueryDetector which uses LLM for detection
    *
    * @param string $query Query to check (in English)
    * @param array $context Conversation context
@@ -268,68 +250,54 @@ class ClarificationHelper
    */
   private function hasUnresolvedReference(string $query, array $context): bool
   {
-    $pronouns = AmbiguityPattern::getContextualPronouns();
+    // PURE LLM MODE: This check is now handled by AmbiguousQueryDetector
+    // which uses the LLM prompt to detect unresolved references
+    // 
+    // The ambiguity prompt already has rules for:
+    // - Time expressions ("this month", "this year") are NOT ambiguous
+    // - Pronouns without context ARE ambiguous
+    //
+    // We keep this method for backward compatibility but it always returns false
+    // because the real detection happens in the LLM prompt
     
-    foreach ($pronouns as $pronoun) {
-      if (preg_match('/\b' . preg_quote($pronoun, '/') . '\b/i', $query)) {
-        // Check if we have context
-        if (empty($context) || !isset($context['last_entity_id'])) {
-          return true;
-        }
-      }
-    }
-
-    return false;
+    return false; // LLM handles this in the ambiguity detection prompt
   }
 
   /**
    * Generate question for missing parameters
    * 
-   * Uses AmbiguityPattern for centralized questions (ENGLISH ONLY)
+   * PURE LLM MODE: Returns default question
+   * LLM handles clarification through prompts
    *
    * @param array $missingInfo Missing parameters
    * @return string Question
    */
   private function generateMissingParameterQuestion(array $missingInfo): string
   {
-    $questions = AmbiguityPattern::getClarificationQuestions();
-
-    foreach ($missingInfo as $missing) {
-      if (isset($questions[$missing])) {
-        return $questions[$missing];
-      }
-    }
-
-    return $questions['default'];
+    // PURE LLM MODE: Return default question
+    return "Could you please provide more details about your request?";
   }
 
   /**
    * Generate options for missing parameters
    * 
-   * Uses AmbiguityPattern for centralized options (ENGLISH ONLY)
+   * PURE LLM MODE: Returns empty array
+   * LLM handles option generation through prompts
    *
    * @param array $missingInfo Missing parameters
-   * @return array Options
+   * @return array Options (always empty in Pure LLM mode)
    */
   private function generateParameterOptions(array $missingInfo): array
   {
-    $allOptions = AmbiguityPattern::getClarificationOptions();
-
-    foreach ($missingInfo as $missing) {
-      if (isset($allOptions[$missing])) {
-        return $allOptions[$missing];
-      }
-    }
-
+    // PURE LLM MODE: Return empty array
     return [];
   }
 
   /**
    * Detect if a query is too short or vague
    * 
-   * NEW: Test 5.5 - Détection d'ambiguïté
-   * Detects queries like "ça", "quoi", "ok" that are too vague to process
-   * Uses AmbiguityPattern for centralized pattern management
+   * PURE LLM MODE: Only checks very basic criteria (length < 2)
+   * LLM handles vague query detection through prompts
    *
    * @param string $query Query to check
    * @return array Ambiguity detection result
@@ -337,27 +305,16 @@ class ClarificationHelper
   private function detectShortOrVagueQuery(string $query): array
   {
     $query = trim($query);
-    $queryLower = mb_strtolower($query, 'UTF-8');
     $queryLength = mb_strlen($query, 'UTF-8');
 
-    // Get patterns from AmbiguityPattern
-    $minLength = AmbiguityPattern::getMinimumQueryLength();
-    $vagueWords = AmbiguityPattern::getVagueWords();
+    // PURE LLM MODE: Only check for extremely short queries (< 2 chars)
+    // LLM handles vague query detection through prompts
     
-    // Flatten vague words from both languages
-    $allVagueWords = [];
-    foreach ($vagueWords as $language => $categories) {
-      foreach ($categories as $category => $words) {
-        $allVagueWords = array_merge($allVagueWords, $words);
-      }
-    }
-    $allVagueWords = array_unique($allVagueWords);
-
-    // Check 1: Very short queries
-    if ($queryLength < $minLength) {
+    // Only check for extremely short queries (< 2 chars)
+    if ($queryLength < 2) {
       if ($this->debug) {
         $this->logger->logSecurityEvent(
-          "Query too short: '{$query}' ({$queryLength} chars)",
+          "Query too short: '{$query}' ({$queryLength} chars) - Pure LLM mode",
           'info'
         );
       }
@@ -366,71 +323,16 @@ class ClarificationHelper
         'is_ambiguous' => true,
         'ambiguity_type' => 'too_short',
         'missing_info' => ['query_content'],
-        'suggestions' => $this->generateVagueSuggestions(),
+        'suggestions' => [
+          "Rechercher un produit",
+          "Voir les commandes",
+          "Obtenir de l'aide"
+        ],
         'confidence' => 0.0
       ];
     }
 
-    // Check 2: Single vague word
-    $words = preg_split('/\s+/', $queryLower);
-    if (count($words) === 1 && in_array($words[0], $allVagueWords)) {
-      if ($this->debug) {
-        $this->logger->logSecurityEvent(
-          "Single vague word detected: '{$query}'",
-          'info'
-        );
-      }
-
-      return [
-        'is_ambiguous' => true,
-        'ambiguity_type' => 'vague_word',
-        'missing_info' => ['specific_intent'],
-        'suggestions' => $this->generateVagueSuggestions(),
-        'confidence' => 0.0
-      ];
-    }
-
-    // Check 3: Query starts with vague word and is short (< 15 chars)
-    if ($queryLength < 15) {
-      foreach ($allVagueWords as $vagueWord) {
-        if (strpos($queryLower, $vagueWord) === 0) {
-          if ($this->debug) {
-            $this->logger->logSecurityEvent(
-              "Query starts with vague word: '{$query}'",
-              'info'
-            );
-          }
-
-          return [
-            'is_ambiguous' => true,
-            'ambiguity_type' => 'vague_start',
-            'missing_info' => ['context_details'],
-            'suggestions' => $this->generateVagueSuggestions(),
-            'confidence' => 0.1
-          ];
-        }
-      }
-    }
-
-    // Check 4: Only punctuation or special characters
-    if (preg_match('/^[\s\p{P}\p{S}]+$/u', $query)) {
-      if ($this->debug) {
-        $this->logger->logSecurityEvent(
-          "Query contains only punctuation/special chars: '{$query}'",
-          'info'
-        );
-      }
-
-      return [
-        'is_ambiguous' => true,
-        'ambiguity_type' => 'no_content',
-        'missing_info' => ['meaningful_content'],
-        'suggestions' => $this->generateVagueSuggestions(),
-        'confidence' => 0.0
-      ];
-    }
-
-    // Query is clear enough
+    // Query is clear enough for LLM
     return [
       'is_ambiguous' => false,
       'ambiguity_type' => null,
@@ -442,15 +344,18 @@ class ClarificationHelper
 
   /**
    * Generate helpful suggestions for vague queries
-   * Uses AmbiguityPattern for centralized suggestions
+   * 
+   * PURE LLM MODE: Returns default suggestions
    * 
    * @return array List of suggested questions
    */
   private function generateVagueSuggestions(): array
   {
-    $suggestions = AmbiguityPattern::getSuggestedQuestions();
-    
-    // Return French suggestions by default
-    return $suggestions['french'] ?? [];
+    // PURE LLM MODE: Return default suggestions
+    return [
+      "Rechercher un produit",
+      "Voir les commandes",
+      "Obtenir de l'aide"
+    ];
   }
 }

@@ -61,6 +61,7 @@ $monitoring = null;
 $aggregator = null;
 $alertManager = null;
 $orchestrator = null;
+$websearchStats = []; // WebSearch statistics
 
 // Only attempt to load Dashboard data if RAG is enabled
 if ($config['rag_enabled']) {
@@ -78,6 +79,7 @@ if ($config['rag_enabled']) {
         $tokenChartData = TokenChartDataProvider::getChartsData();
         $advancedStats = $data['advanced_stats'] ?? [];
         $alertStats = $data['alert_stats'] ?? [];
+        $websearchStats = $data['websearch_stats'] ?? []; // WebSearch statistics
 
         // Variables for compatibility
         $activeAlerts = $healthReport['active_alerts'] ?? [];
@@ -565,6 +567,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </td>
                           </tr>
                         <?php endforeach; ?>
+                        
+                        <!-- WebSearch Component Row -->
+                        <?php if (!empty($websearchStats) && $websearchStats['total_queries'] > 0): ?>
+                          <tr style="background-color: #f0f8ff;">
+                            <td><strong>🌐 Web Search</strong></td>
+                            <td><?php echo $websearchStats['total_queries']; ?></td>
+                            <td>
+                              <span style="color: <?php echo ($websearchStats['success_rate'] >= 95 ? 'var(--success)' : ($websearchStats['success_rate'] >= 80 ? 'var(--warning)' : 'var(--danger)'));?>">
+                                <?php echo $websearchStats['success_rate']; ?>%
+                              </span>
+                            </td>
+                            <td><?php echo round($websearchStats['avg_response_time'] / 1000, 3); ?>s</td>
+                            <td>
+                              <span class="badge bg-<?php echo $websearchStats['status'] === 'healthy' ? 'success' : ($websearchStats['status'] === 'warning' ? 'warning' : 'danger');?>">
+                                <?php echo strtoupper($websearchStats['status']); ?>
+                              </span>
+                            </td>
+                          </tr>
+                        <?php endif; ?>
                         </tbody>
                       </table>
                     </div>
@@ -1238,6 +1259,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                               <td><?php echo $agent['avg_confidence']; ?>%</td>
                             </tr>
                           <?php endforeach; ?>
+                          
+                          <!-- WebSearch Agent Row -->
+                          <?php if (!empty($websearchStats) && $websearchStats['total_queries'] > 0): ?>
+                            <tr style="background-color: #f0f8ff;">
+                              <td><strong>🌐 Web Search</strong></td>
+                              <td><?php echo $websearchStats['total_queries']; ?></td>
+                              <td>
+                                <?php 
+                                $totalAgentUsage = $advancedStats['agents']['total_usage'] ?? 1;
+                                $websearchPercentage = round(($websearchStats['total_queries'] / $totalAgentUsage) * 100, 1);
+                                ?>
+                                <div class="progress" style="width: 60px; height: 20px;">
+                                  <div class="progress-bar bg-info" style="width: <?php echo $websearchPercentage; ?>%"></div>
+                                </div>
+                                <?php echo $websearchPercentage; ?>%
+                              </td>
+                              <td>
+                                <span class="badge <?php echo $websearchStats['success_rate'] >= 80 ? 'bg-success' : ($websearchStats['success_rate'] >= 60 ? 'bg-warning' : 'bg-danger');?>">
+                                  <?php echo $websearchStats['success_rate']; ?>%
+                                </span>
+                              </td>
+                              <td><?php echo $websearchStats['avg_confidence']; ?>%</td>
+                            </tr>
+                          <?php endif; ?>
                           </tbody>
                         </table>
                       </div>
@@ -1769,6 +1814,157 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </div>
                 </div>
               </div>
+
+              <!-- File Caches Statistics -->
+              <div class="row mt-4">
+                <div class="col-md-12">
+                  <div class="card">
+                    <div class="card-header">
+                      <h6>📁 <?php echo $CLICSHOPPING_ChatGpt->getDef('file_caches_statistics'); ?></h6>
+                    </div>
+                    <div class="card-body">
+                      <div class="row">
+                        <?php
+                        // Get Translation Cache Statistics
+                        try {
+                          $translationCache = new \ClicShopping\AI\Infrastructure\Cache\TranslationCache();
+                          $translationStats = $translationCache->getStatistics();
+                        } catch (Exception $e) {
+                          $translationStats = ['enabled' => false, 'file_count' => 0, 'total_size_mb' => 0];
+                        }
+                        
+                        // Get Classification Cache Statistics
+                        try {
+                          $classificationCache = new \ClicShopping\AI\Infrastructure\Cache\ClassificationCache();
+                          $classificationStats = $classificationCache->getStatistics();
+                        } catch (Exception $e) {
+                          $classificationStats = ['enabled' => false, 'file_count' => 0, 'total_size_mb' => 0];
+                        }
+                        ?>
+                        
+                        <!-- Translation Cache -->
+                        <div class="col-md-6 mb-3">
+                          <div class="card" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                            <div class="card-body">
+                              <h6 class="card-title">🌐 <?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_translations'); ?></h6>
+                              <table class="table table-sm table-borderless mb-0">
+                                <tr>
+                                  <td><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_status'); ?>:</strong></td>
+                                  <td class="text-end">
+                                    <?php if ($translationStats['enabled']): ?>
+                                      <span class="badge bg-success"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_enabled'); ?></span>
+                                    <?php else: ?>
+                                      <span class="badge bg-secondary"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_disabled'); ?></span>
+                                    <?php endif; ?>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_files'); ?>:</strong></td>
+                                  <td class="text-end"><?php echo number_format($translationStats['file_count']); ?></td>
+                                </tr>
+                                <tr>
+                                  <td><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_size'); ?>:</strong></td>
+                                  <td class="text-end"><?php echo $translationStats['total_size_mb']; ?> MB</td>
+                                </tr>
+                                <tr>
+                                  <td><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_directory'); ?>:</strong></td>
+                                  <td class="text-end"><small><?php echo basename($translationStats['directory']); ?></small></td>
+                                </tr>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <!-- Classification Cache -->
+                        <div class="col-md-6 mb-3">
+                          <div class="card" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);">
+                            <div class="card-body">
+                              <h6 class="card-title">🎯 <?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_classification'); ?></h6>
+                              <table class="table table-sm table-borderless mb-0">
+                                <tr>
+                                  <td><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_status'); ?>:</strong></td>
+                                  <td class="text-end">
+                                    <?php if ($classificationStats['enabled']): ?>
+                                      <span class="badge bg-success"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_enabled'); ?></span>
+                                    <?php else: ?>
+                                      <span class="badge bg-secondary"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_disabled'); ?></span>
+                                    <?php endif; ?>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_files'); ?>:</strong></td>
+                                  <td class="text-end"><?php echo number_format($classificationStats['file_count']); ?></td>
+                                </tr>
+                                <tr>
+                                  <td><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_size'); ?>:</strong></td>
+                                  <td class="text-end"><?php echo $classificationStats['total_size_mb']; ?> MB</td>
+                                </tr>
+                                <tr>
+                                  <td><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_directory'); ?>:</strong></td>
+                                  <td class="text-end"><small><?php echo basename($classificationStats['directory']); ?></small></td>
+                                </tr>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- WebSearch Cache Statistics -->
+              <?php if (!empty($websearchStats) && $websearchStats['total_queries'] > 0): ?>
+              <div class="row mt-4">
+                <div class="col-md-12">
+                  <div class="card">
+                    <div class="card-header">
+                      <h6>🌐 <?php echo $CLICSHOPPING_ChatGpt->getDef('websearch_cache_statistics') ?? 'Web Search Cache Statistics'; ?></h6>
+                    </div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-3">
+                          <div class="card text-center" style="background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);">
+                            <div class="card-body">
+                              <h3><?php echo $websearchStats['cache_hit_rate']; ?>%</h3>
+                              <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_hit_rate') ?? 'Cache Hit Rate'; ?></p>
+                              <small><?php echo $websearchStats['cache_hits']; ?> / <?php echo ($websearchStats['cache_hits'] + $websearchStats['cache_misses']); ?> <?php echo $CLICSHOPPING_ChatGpt->getDef('cache_requests') ?? 'requests'; ?></small>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="card text-center" style="background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);">
+                            <div class="card-body">
+                              <h3><?php echo $websearchStats['total_queries']; ?></h3>
+                              <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('websearch_total_queries') ?? 'Total Queries'; ?></p>
+                              <small><?php echo $websearchStats['period_days']; ?> <?php echo $CLICSHOPPING_ChatGpt->getDef('time_days') ?? 'days'; ?></small>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="card text-center" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);">
+                            <div class="card-body">
+                              <h3><?php echo $websearchStats['success_rate']; ?>%</h3>
+                              <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('component_success_rate') ?? 'Success Rate'; ?></p>
+                              <small><?php echo $websearchStats['successful_queries']; ?> / <?php echo $websearchStats['total_queries']; ?> <?php echo $CLICSHOPPING_ChatGpt->getDef('cache_requests') ?? 'requests'; ?></small>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="card text-center" style="background: linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%);">
+                            <div class="card-body">
+                              <h3><?php echo round($websearchStats['avg_response_time'] / 1000, 2); ?>s</h3>
+                              <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('component_avg_time') ?? 'Avg Response Time'; ?></p>
+                              <small><?php echo $CLICSHOPPING_ChatGpt->getDef('websearch_per_query') ?? 'per query'; ?></small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <?php endif; ?>
             </div>
 
             <div style="padding: 20px;">
@@ -2127,8 +2323,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!-- ============================================================================ -->
 <!-- MODAL: Reset Cache -->
 <!-- ============================================================================ -->
+<!-- MODAL: Reset Cache -->
+<!-- ============================================================================ -->
 <div class="modal fade" id="resetCacheModal" tabindex="-1" aria-labelledby="resetCacheModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header bg-warning text-dark">
         <h5 class="modal-title" id="resetCacheModalLabel">
@@ -2144,44 +2342,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <p><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('modal_reset_cache_select'); ?></strong></p>
         
-        <div class="form-check mb-2">
-          <input class="form-check-input" type="checkbox" id="cache_files" name="cache_types[]" value="files" checked>
-          <label class="form-check-label" for="cache_files">
-            <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_files'); ?></strong>
-            <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_files_desc'); ?></small>
-          </label>
-        </div>
-        
-        <div class="form-check mb-2">
-          <input class="form-check-input" type="checkbox" id="cache_translations" name="cache_types[]" value="translations" checked>
-          <label class="form-check-label" for="cache_translations">
-            <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_translations'); ?></strong>
-            <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_translations_desc'); ?></small>
-          </label>
-        </div>
-        
-        <div class="form-check mb-2">
-          <input class="form-check-input" type="checkbox" id="cache_database" name="cache_types[]" value="database" checked>
-          <label class="form-check-label" for="cache_database">
-            <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_database'); ?></strong>
-            <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_database_desc'); ?></small>
-          </label>
-        </div>
-        
-        <div class="form-check mb-2">
-          <input class="form-check-input" type="checkbox" id="cache_prompts" name="cache_types[]" value="prompts" checked>
-          <label class="form-check-label" for="cache_prompts">
-            <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_prompts'); ?></strong>
-            <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_prompts_desc'); ?></small>
-          </label>
-        </div>
-        
-        <div class="form-check mb-2">
-          <input class="form-check-input" type="checkbox" id="cache_semantic" name="cache_types[]" value="semantic" checked>
-          <label class="form-check-label" for="cache_semantic">
-            <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_semantic'); ?></strong>
-            <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_semantic_desc'); ?></small>
-          </label>
+        <!-- 2 Column Layout -->
+        <div class="row">
+          <!-- Left Column -->
+          <div class="col-md-6">
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_database" name="cache_types[]" value="database" checked>
+              <label class="form-check-label" for="cache_database">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_database'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_database_desc'); ?></small>
+              </label>
+            </div>
+            
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_schema" name="cache_types[]" value="schema" checked>
+              <label class="form-check-label" for="cache_schema">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_schema'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_schema_desc'); ?></small>
+              </label>
+            </div>
+            
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_intent" name="cache_types[]" value="intent" checked>
+              <label class="form-check-label" for="cache_intent">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_intent'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_intent_desc'); ?></small>
+              </label>
+            </div>
+            
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_ambiguity" name="cache_types[]" value="ambiguity" checked>
+              <label class="form-check-label" for="cache_ambiguity">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_ambiguity'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_ambiguity_desc'); ?></small>
+              </label>
+            </div>
+            
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_translation_ambiguity" name="cache_types[]" value="translation_ambiguity" checked>
+              <label class="form-check-label" for="cache_translation_ambiguity">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_translation_ambiguity'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_translation_ambiguity_desc'); ?></small>
+              </label>
+            </div>
+          </div>
+          
+          <!-- Right Column -->
+          <div class="col-md-6">
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_context" name="cache_types[]" value="context" checked>
+              <label class="form-check-label" for="cache_context">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_context'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_context_desc'); ?></small>
+              </label>
+            </div>
+            
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_embedding" name="cache_types[]" value="embedding" checked>
+              <label class="form-check-label" for="cache_embedding">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_embedding'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_embedding_desc'); ?></small>
+              </label>
+            </div>
+            
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_embedding_search" name="cache_types[]" value="embedding_search" checked>
+              <label class="form-check-label" for="cache_embedding_search">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_embedding_search'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_embedding_search_desc'); ?></small>
+              </label>
+            </div>
+            
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_translations" name="cache_types[]" value="translations" checked>
+              <label class="form-check-label" for="cache_translations">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_translations'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_translations_desc'); ?></small>
+              </label>
+            </div>
+            
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_classification" name="cache_types[]" value="classification" checked>
+              <label class="form-check-label" for="cache_classification">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_classification'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_classification_desc'); ?></small>
+              </label>
+            </div>
+          </div>
         </div>
         
         <div id="cacheResetResult" class="mt-3" style="display: none;"></div>
@@ -2254,6 +2501,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (data.details.semantic !== undefined) {
               message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_semantic_deleted'); ?> : ' + data.details.semantic + '</li>';
+            }
+            if (data.details.schema !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_schema_deleted'); ?> : ' + data.details.schema + '</li>';
+            }
+            if (data.details.intent !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_intent_deleted'); ?> : ' + data.details.intent + '</li>';
+            }
+            if (data.details.ambiguity !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_ambiguity_deleted'); ?> : ' + data.details.ambiguity + '</li>';
+            }
+            if (data.details.schema !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_schema_deleted'); ?> : ' + data.details.schema + '</li>';
+            }
+            if (data.details.translation_ambiguity !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_translation_ambiguity_deleted'); ?> : ' + data.details.translation_ambiguity + '</li>';
             }
             message += '</ul>';
           }

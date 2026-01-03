@@ -44,6 +44,18 @@ If the query requests MULTIPLE SPECIFIC FIELDS (e.g., "price and SKU", "model an
 
 Multi-field queries are EXPLICIT about what data is needed. Return is_ambiguous: false immediately.
 
+**FOURTH CRITICAL RULE - GROUP BY QUERIES ARE NOT AMBIGUOUS**:
+If the query contains "by [dimension]" pattern (e.g., "sales by category", "revenue by month", "orders by status"), this is NOT ambiguous:
+    * "sales by category" → NOT ambiguous (SUM sales grouped by category)
+    * "revenue by month" → NOT ambiguous (SUM revenue grouped by month)
+    * "orders by status" → NOT ambiguous (COUNT orders grouped by status)
+    * "ventes par catégorie" → NOT ambiguous (SUM ventes grouped by catégorie)
+    * "commandes par statut" → NOT ambiguous (COUNT commandes grouped by statut)
+    * "chiffre d'affaires par trimestre" → NOT ambiguous (SUM revenue grouped by quarter)
+
+GROUP BY queries have CLEAR aggregation intent with explicit grouping dimension. Return is_ambiguous: false immediately.
+Default interpretation: SUM for financial metrics (sales, revenue, turnover), COUNT for entities (orders, customers, products).
+
 Respond ONLY with valid JSON in this exact format:
 {
 "is_ambiguous": true/false,
@@ -97,6 +109,12 @@ Examples:
     - "prix et quantité" -> NOT ambiguous (multi-field query with 2 specific fields).
     - "Show model and price" -> NOT ambiguous (display verb + multi-field query).
     - "Affiche le modèle et le prix" -> NOT ambiguous (display verb + multi-field query).
+    - "sales by category" -> NOT ambiguous (GROUP BY query with clear aggregation: SUM sales grouped by category).
+    - "revenue by month" -> NOT ambiguous (GROUP BY query with clear aggregation: SUM revenue grouped by month).
+    - "orders by status" -> NOT ambiguous (GROUP BY query with clear aggregation: COUNT orders grouped by status).
+    - "ventes par catégorie" -> NOT ambiguous (GROUP BY query: SUM ventes grouped by catégorie).
+    - "commandes par statut" -> NOT ambiguous (GROUP BY query: COUNT commandes grouped by statut).
+    - "chiffre d'affaires par trimestre" -> NOT ambiguous (GROUP BY query: SUM revenue grouped by quarter).
     - "Show orders" -> AMBIGUOUS (all vs recent vs active, NO time reference).
     - "Show all orders" -> NOT ambiguous (explicit scope "all").
     - "Show sales" -> AMBIGUOUS (no time reference, no quantification, no scope).

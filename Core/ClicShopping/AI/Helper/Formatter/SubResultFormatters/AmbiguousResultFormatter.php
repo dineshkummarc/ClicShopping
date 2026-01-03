@@ -17,6 +17,8 @@
 
 namespace ClicShopping\AI\Helper\Formatter\SubResultFormatters;
 
+use ClicShopping\OM\Registry;
+
 /**
  * Class AmbiguousResultFormatter
  * 
@@ -25,6 +27,34 @@ namespace ClicShopping\AI\Helper\Formatter\SubResultFormatters;
  */
 class AmbiguousResultFormatter extends AbstractFormatter
 {
+  /**
+   * @var \ClicShopping\OM\Language Language instance for translations
+   */
+  private $language;
+  
+  /**
+   * @var string Current language code
+   */
+  private string $languageCode;
+  
+  /**
+   * Constructor
+   * 
+   * @param bool $debug Enable debug mode
+   * @param bool $displaySql Display SQL queries
+   */
+  public function __construct(bool $debug = false, bool $displaySql = false)
+  {
+    parent::__construct($debug, $displaySql);
+    
+    // Initialize language
+    $this->language = Registry::get('Language');
+    $this->languageCode = $this->language->get('code');
+    
+    // Load language definitions once
+    $this->language->loadDefinitions('rag_formatters', $this->languageCode, null, 'ClicShoppingAdmin');
+  }
+  
   /**
    * Check if this formatter can handle the given results
    * 
@@ -55,8 +85,8 @@ class AmbiguousResultFormatter extends AbstractFormatter
     
     // Ambiguity notice
     $html .= '<div class="ambiguity-notice alert alert-info">';
-    $html .= '<strong>⚠️ Multiple Interpretations Detected</strong><br>';
-    $html .= 'Your query could mean different things. Here are the results for each interpretation:';
+    $html .= '<strong>⚠️ ' . $this->language->getDef('text_rag_ambiguous_multiple_interpretations') . '</strong><br>';
+    $html .= $this->language->getDef('text_rag_ambiguous_explanation');
     $html .= '</div>';
     
     // Each interpretation
@@ -67,7 +97,7 @@ class AmbiguousResultFormatter extends AbstractFormatter
     // Recommendation
     if (isset($results['recommendation'])) {
       $html .= '<div class="ambiguity-recommendation alert alert-success">';
-      $html .= '<strong>💡 Recommendation:</strong> ' . htmlspecialchars($results['recommendation']);
+      $html .= '<strong>💡 ' . $this->language->getDef('text_rag_ambiguous_recommendation') . '</strong> ' . htmlspecialchars($results['recommendation']);
       $html .= '</div>';
     }
     
@@ -111,7 +141,7 @@ class AmbiguousResultFormatter extends AbstractFormatter
     // SQL Query (collapsible)
     if (isset($interpretation['sql_query'])) {
       $html .= '<details class="sql-details mb-3">';
-      $html .= '<summary class="text-primary" style="cursor: pointer;">View SQL Query</summary>';
+      $html .= '<summary class="text-primary" style="cursor: pointer;">' . $this->language->getDef('text_rag_ambiguous_view_sql') . '</summary>';
       $html .= '<pre class="sql-query bg-light p-2 mt-2"><code>';
       $html .= htmlspecialchars($interpretation['sql_query']);
       $html .= '</code></pre>';
@@ -141,7 +171,7 @@ class AmbiguousResultFormatter extends AbstractFormatter
     $count = $interpretation['count'] ?? 0;
     
     if (empty($results)) {
-      return '<p class="text-muted">No results found</p>';
+      return '<p class="text-muted">' . $this->language->getDef('text_rag_ambiguous_no_results') . '</p>';
     }
     
     // Single value result (like COUNT or SUM)

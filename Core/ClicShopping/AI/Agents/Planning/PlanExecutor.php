@@ -328,6 +328,7 @@ class PlanExecutor
           break;
 
         case 'web_search':
+        case 'web': // Backward compatibility (QueryClassifier normalizes web_search → web)
           $result = $this->executeWebSearch($step, $context);
           break;
 
@@ -536,8 +537,8 @@ class PlanExecutor
         ];
       }
 
-      // Create text response
-      $textResponse = $this->formatWebSearchResponse($query, $formattedResults);
+      // Create text response using WebSearchResultFormatter
+      $textResponse = \ClicShopping\AI\Helper\Formatter\WebSearchResultFormatter::formatAsHtml($query, $formattedResults);
 
       if ($this->debug) {
         $this->securityLogger->logSecurityEvent(
@@ -556,6 +557,18 @@ class PlanExecutor
         'metadata' => $searchResult['metadata'] ?? [],
         'cached' => $searchResult['cached'] ?? false,
         'cache_source' => $searchResult['cache_source'] ?? 'none',
+        // 🔧 FIX: Add source_attribution for ResultSynthesizer validation
+        'source_attribution' => [
+          'source_type' => 'web_search',
+          'primary_source' => 'Web Search',
+          'source_icon' => '🌐',
+          'details' => [
+            'url_count' => count($formattedResults),
+            'cache_source' => $searchResult['cache_source'] ?? 'none',
+            'cached' => $searchResult['cached'] ?? false,
+          ],
+          'confidence' => 0.7,
+        ],
       ];
 
     } catch (\Exception $e) {
@@ -573,42 +586,6 @@ class PlanExecutor
         'text_response' => "Web search error: " . $e->getMessage(),
       ];
     }
-  }
-
-  /**
-   * Format web search results into human-readable text with HTML links
-   * 
-   * @param string $query Original query
-   * @param array $results Search results
-   * @return string Formatted text response with HTML links
-   */
-  private function formatWebSearchResponse(string $query, array $results): string
-  {
-    if (empty($results)) {
-      return "No web results found for: {$query}";
-    }
-
-    $text = "Web search results for: {$query}\n\n";
-    $text .= "Found " . count($results) . " results:\n\n";
-
-    foreach ($results as $index => $result) {
-      $position = $index + 1;
-      $text .= "{$position}. {$result['title']}\n";
-      $text .= "   {$result['snippet']}\n";
-      
-      if (!empty($result['price'])) {
-        $text .= "   Price: {$result['price']}\n";
-      }
-      
-      // Format link as HTML with target="_blank" to open in new tab
-      if (!empty($result['link'])) {
-        $text .= "   Source: <a href=\"{$result['link']}\" target=\"_blank\" rel=\"noopener noreferrer\">{$result['link']}</a>\n\n";
-      } else {
-        $text .= "   Source: N/A\n\n";
-      }
-    }
-
-    return $text;
   }
 
   /**

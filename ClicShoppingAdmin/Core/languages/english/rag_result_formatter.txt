@@ -1,0 +1,26 @@
+no_results_to_display = No results to display
+clarification_needed_message = Your query requires clarification.
+clarification_needed_label = Clarification needed:
+raw_result_label = Raw result:
+
+analytics_results_title = Analytics Results:
+analytics_result_number = Result
+analytics_rows_count = Rows:
+
+web_search_results_title = Web Search Results:
+web_search_source_label = Source:
+web_search_additional_info = Additional Information:
+
+price_comparison_title = PRICE COMPARISON REPORT
+price_comparison_product = Product:
+price_comparison_your_price = Your Price:
+price_comparison_competitors_analyzed = Competitors Analyzed:
+price_comparison_average_price = Average Competitor Price:
+price_comparison_competitor_prices = Competitor Prices:
+price_comparison_cheapest = Cheapest:
+price_comparison_most_expensive = Most Expensive:
+price_comparison_difference = Difference:
+price_comparison_competitive_status = Competitive Status:
+price_comparison_recommendation = RECOMMENDATION:
+price_comparison_no_competitors = No competitor prices found for comparison
+price_comparison_recommendation_label = Recommendation:

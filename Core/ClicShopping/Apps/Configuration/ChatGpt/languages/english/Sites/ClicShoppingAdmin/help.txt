@@ -30,7 +30,7 @@ help_semantic_example_4 = Company procedures
 
 # Model Comparison
 help_comparison_title = Available AI Models - Comparison Guide
-help_comparison_intro = Choose the right model for your needs. All models have been tested and work reliably.
+help_comparison_intro = Choose the right model for your needs. All models have been tested and work reliably. Please note that models can evolve and impact results. Gpt-4 and Gpt4.1 are well-suited for this type of analysis.
 
 help_table_model = Model
 help_table_best_for = Best For

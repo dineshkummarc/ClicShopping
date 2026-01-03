@@ -11,6 +11,7 @@
 namespace ClicShopping\AI\Helper\Formatter\SubResultFormatters;
 
 use ClicShopping\OM\Hash;
+use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\LlmGuardrails;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 
@@ -26,6 +27,31 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 class WebSearchFormatter extends AbstractFormatter
 {
   /**
+   * @var \ClicShopping\OM\Language Language instance for translations
+   */
+  private $language;
+  
+  /**
+   * @var string Current language code
+   */
+  private string $languageCode;
+  
+  /**
+   * Constructor
+   * 
+   * @param bool $debug Enable debug mode
+   * @param bool $displaySql Display SQL queries
+   */
+  public function __construct(bool $debug = false, bool $displaySql = false)
+  {
+    parent::__construct($debug, $displaySql);
+    
+    // Initialize language
+    $this->language = Registry::get('Language');
+    $this->languageCode = $this->language->get('code');
+  }
+  
+  /**
    * Check if this formatter can handle the given results
    * 
    * @param array $results Results to check
@@ -34,7 +60,7 @@ class WebSearchFormatter extends AbstractFormatter
   public function canHandle(array $results): bool
   {
     $type = $results['type'] ?? '';
-    return $type === 'web_search' || $type === 'web_search_results';
+    return $type === 'web_search' || $type === 'web_search_results' || $type === 'web_search_response';
   }
 
   /**
@@ -45,10 +71,25 @@ class WebSearchFormatter extends AbstractFormatter
    */
   public function format(array $results): array
   {
+    // Load language definitions
+    $this->language->loadDefinitions('rag_web_search_formatter', $this->languageCode, null, 'ClicShoppingAdmin');
+    
     $question = $results['question'] ?? $results['query'] ?? 'Unknown request';
 
+    // ✅ TASK 5.3.2.1: Log response structure for debugging
+    if ($this->debug) {
+      error_log('[WebSearchFormatter] Formatting web search results');
+      error_log('[WebSearchFormatter] Result keys: ' . implode(', ', array_keys($results)));
+      error_log('[WebSearchFormatter] Has text_response: ' . (isset($results['text_response']) ? 'YES' : 'NO'));
+      if (isset($results['text_response'])) {
+        $isHtml = (strpos($results['text_response'], '<') !== false);
+        error_log('[WebSearchFormatter] text_response is HTML: ' . ($isHtml ? 'YES' : 'NO'));
+        error_log('[WebSearchFormatter] text_response length: ' . strlen($results['text_response']));
+      }
+    }
+
     $output = "<div class='web-search-results'>";
-    $output .= "<h4>Résultats de recherche web pour : " . htmlspecialchars($question) . "</h4>";
+    $output .= "<h4>" . $this->language->getDef('text_rag_web_search_results_for') . " " . htmlspecialchars($question) . "</h4>";
 
     // Display source attribution
     if (isset($results['source_attribution'])) {
@@ -57,8 +98,12 @@ class WebSearchFormatter extends AbstractFormatter
 
     // Display interpretation/summary
     $interpretationText = '';
+    $isHtmlContent = false;
+    
     if (isset($results['text_response']) && !empty($results['text_response'])) {
       $interpretationText = $results['text_response'];
+      // Check if text_response contains HTML (from ResultSynthesizer)
+      $isHtmlContent = (strpos($interpretationText, '<div') !== false || strpos($interpretationText, '<p>') !== false);
     } elseif (isset($results['interpretation']) && $results['interpretation'] !== 'Array') {
       $interpretationText = $results['interpretation'];
     } elseif (isset($results['response']) && !empty($results['response'])) {
@@ -66,8 +111,15 @@ class WebSearchFormatter extends AbstractFormatter
     }
 
     if (!empty($interpretationText)) {
-      $output .= "<div class='interpretation'><strong>Résumé :</strong> " 
-              . Hash::displayDecryptedDataText($interpretationText) . "</div>";
+      // ✅ TASK 5.3.2.1: Don't double-encode HTML content from text_response
+      if ($isHtmlContent) {
+        // text_response already contains formatted HTML - use as-is
+        $output .= "<div class='interpretation'>" . $interpretationText . "</div>";
+      } else {
+        // Plain text - apply HTML encoding
+        $output .= "<div class='interpretation'><strong>" . $this->language->getDef('text_rag_web_search_summary') . "</strong> " 
+                . Hash::displayDecryptedDataText($interpretationText) . "</div>";
+      }
     }
 
     // Guardrails
@@ -132,21 +184,21 @@ class WebSearchFormatter extends AbstractFormatter
   private function formatPriceComparison(array $priceComparison): string
   {
     $output = "<div class='price-comparison alert alert-info'>";
-    $output .= "<h5>💰 Comparaison de prix</h5>";
+    $output .= "<h5>💰 " . $this->language->getDef('text_rag_web_search_price_comparison') . "</h5>";
 
     // Internal price
     if (isset($priceComparison['internal_price'])) {
       $internalPrice = $priceComparison['internal_price'];
       $currency = $priceComparison['currency'] ?? '€';
       $output .= "<div class='internal-price'>";
-      $output .= "<strong>Notre prix :</strong> " . number_format((float)$internalPrice, 2, ',', ' ') . " {$currency}";
+      $output .= "<strong>" . $this->language->getDef('text_rag_web_search_our_price') . "</strong> " . number_format((float)$internalPrice, 2, ',', ' ') . " {$currency}";
       $output .= "</div>";
     }
 
     // External prices
     if (isset($priceComparison['external_prices']) && is_array($priceComparison['external_prices'])) {
       $output .= "<div class='external-prices' style='margin-top: 10px;'>";
-      $output .= "<strong>Prix concurrents :</strong>";
+      $output .= "<strong>" . $this->language->getDef('text_rag_web_search_competitor_prices') . "</strong>";
       $output .= "<ul>";
       
       foreach ($priceComparison['external_prices'] as $competitor) {
@@ -159,7 +211,7 @@ class WebSearchFormatter extends AbstractFormatter
         $output .= htmlspecialchars($name) . " : " . number_format((float)$price, 2, ',', ' ') . " {$currency}";
         
         if (!empty($url)) {
-          $output .= " <a href='" . htmlspecialchars($url) . "' target='_blank' rel='noopener noreferrer'>🔗 Voir</a>";
+          $output .= " <a href='" . htmlspecialchars($url) . "' target='_blank' rel='noopener noreferrer'>🔗 " . $this->language->getDef('text_rag_web_search_see') . "</a>";
         }
         
         // Show percentage difference if internal price exists
@@ -184,7 +236,7 @@ class WebSearchFormatter extends AbstractFormatter
     // Recommendation
     if (isset($priceComparison['recommendation'])) {
       $output .= "<div class='recommendation' style='margin-top: 10px; padding: 8px; background-color: #f8f9fa; border-radius: 4px;'>";
-      $output .= "<strong>💡 Recommandation :</strong> " . htmlspecialchars($priceComparison['recommendation']);
+      $output .= "<strong>💡 " . $this->language->getDef('text_rag_web_search_recommendation') . "</strong> " . htmlspecialchars($priceComparison['recommendation']);
       $output .= "</div>";
     }
 
@@ -202,10 +254,10 @@ class WebSearchFormatter extends AbstractFormatter
   private function formatWebResults(array $webResults): string
   {
     $output = "<div class='web-results'>";
-    $output .= "<h5>🌐 Résultats de recherche externe</h5>";
+    $output .= "<h5>🌐 " . $this->language->getDef('text_rag_web_search_external_results') . "</h5>";
 
     foreach ($webResults as $index => $result) {
-      $title = $result['title'] ?? "Résultat " . ($index + 1);
+      $title = $result['title'] ?? $this->language->getDef('text_rag_web_search_result') . " " . ($index + 1);
       $snippet = $result['snippet'] ?? $result['description'] ?? '';
       $url = $result['url'] ?? $result['link'] ?? '';
       
@@ -253,7 +305,7 @@ class WebSearchFormatter extends AbstractFormatter
   private function formatExternalSources(array $sources): string
   {
     $output = "<div class='external-sources' style='margin-top: 15px;'>";
-    $output .= "<h6>📚 Sources externes consultées :</h6>";
+    $output .= "<h6>📚 " . $this->language->getDef('text_rag_web_search_external_sources') . "</h6>";
     $output .= "<ul>";
 
     foreach ($sources as $source) {
@@ -289,7 +341,7 @@ class WebSearchFormatter extends AbstractFormatter
   private function formatExternalUrls(array $urls): string
   {
     $output = "<div class='external-urls' style='margin-top: 15px;'>";
-    $output .= "<h6>🔗 Liens externes :</h6>";
+    $output .= "<h6>🔗 " . $this->language->getDef('text_rag_web_search_external_links') . "</h6>";
     $output .= "<ul>";
 
     foreach ($urls as $url) {
@@ -318,7 +370,7 @@ class WebSearchFormatter extends AbstractFormatter
     }
 
     $output = "<div class='comparison-table' style='margin-top: 15px;'>";
-    $output .= "<h5>📊 Tableau comparatif</h5>";
+    $output .= "<h5>📊 " . $this->language->getDef('text_rag_web_search_comparison_table') . "</h5>";
     
     // Use inherited method from AbstractFormatter
     $output .= $this->generateTable($comparisonTable, 'table table-bordered table-striped');

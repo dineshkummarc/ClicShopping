@@ -300,63 +300,34 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-        $embeddings = [];
+        // Prepare base metadata
+        $baseMetadata = [
+          'review_sentiment_name' => HtmlOverrideCommon::cleanHtmlForEmbedding($products_name),
+          'content' => HtmlOverrideCommon::cleanHtmlForEmbedding($description),
+          'id' => (int)$item['id'],
+          'type' => 'review_sentiment',
+          'source' => [
+            'type' => 'manual',
+            'name' => 'manual'
+          ],
+          'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : []
+        ];
 
-        foreach ($embeddedDocuments as $embeddedDocument) {
-          if (is_array($embeddedDocument->embedding)) {
-            $embeddings[] = $embeddedDocument->embedding;
-          }
-        }
+        // Save all chunks using centralized method
+        $result = NewVector::saveEmbeddingsWithChunks(
+          $embeddedDocuments,
+          'reviews_sentiment_embedding',
+          (int)$item['id'],
+          (int)$item['language_id'],
+          $baseMetadata,
+          $this->app->db,
+          !$insert_embedding  // isUpdate = true if not inserting
+        );
 
-          if (!empty($embeddings)) {
-            $flattened_embedding = $embeddings[0];
-            $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
-
-            $sql_data_array_embedding = [
-              'content' => $embedding_data,
-              'type' => 'review_sentiment',
-              'sourcetype' => 'manual',
-              'sourcename' => 'manual',
-              'date_modified' => 'now()',
-              'language_id' => (int)$item['language_id'],
-              'entity_id' => (int)$item['id'],
-             ];
-
-          $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-
-            // MetaData  creation 
-            $metadata = [
-            'review_sentiment_name' => HtmlOverrideCommon::cleanHtmlForEmbedding($products_name),
-            'content' => HtmlOverrideCommon::cleanHtmlForEmbedding($description) ,
-            'language_id' => (int)$item['language_id'],
-            'id' => (int)$item['id'],
-            'type' => 'review_sentiment',
-            'source' => [
-              'type' => 'manual',
-              'name' => 'manual'
-            ],
-            'entity_id' => (int)$item['id'],
-            'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
-            'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-            'date_modified' => 'now()'
-          ];
-
-         // Ajouter le JSON au tableau d'insertion
-          $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
-
-          if ($insert_embedding === true) {
-            $sql_data_array_embedding['entity_id'] = (int)$item['id'];
-            $sql_data_array_embedding['language_id'] = (int)$language_id;
-            $this->app->db->save('reviews_sentiment_embedding', $sql_data_array_embedding);
-          } else {
-            $sql_data_array_embedding['date_modified'] = 'now()';	  
-            $update_sql_data = [
-              'language_id' => $language_id,
-              'entity_id' => $item['id']
-            ];
-
-            $this->app->db->save('reviews_sentiment_embedding', $sql_data_array_embedding, $update_sql_data);
-          }
+        if (!$result['success']) {
+          error_log("ReviewsSentiment: Failed to save embeddings for sentiment {$item['id']} - " . $result['error']);
+        } else {
+          error_log("ReviewsSentiment: Successfully saved {$result['chunks_saved']} chunks for sentiment {$item['id']}");
         }
       }
     }

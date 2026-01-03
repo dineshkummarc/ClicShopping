@@ -177,6 +177,11 @@ class SqlQueryProcessor
     $cleaned = strip_tags($cleaned);
     $cleaned = trim($cleaned);
 
+    // CRITICAL FIX: Remove SQL comments BEFORE validation
+    // LLM sometimes adds explanatory comments like "-- Corrected: YEAR instead of MONTH"
+    // These comments are legitimate but trigger security validation
+    $cleaned = $this->removeSqlComments($cleaned);
+
     // TASK 4.3.4: Add table prefix if missing (regression fix)
     $cleaned = $this->addTablePrefix($cleaned);
 
@@ -184,6 +189,29 @@ class SqlQueryProcessor
     $cleaned = $this->fixMultiWordLikePatterns($cleaned);
 
     return $cleaned;
+  }
+
+  /**
+   * Removes SQL comments from query
+   * Handles both single-line (--) and multi-line comments
+   * 
+   * @param string $sql SQL query with potential comments
+   * @return string SQL query without comments
+   */
+  private function removeSqlComments(string $sql): string
+  {
+    // Remove single-line comments (-- comment)
+    // Match -- followed by anything until end of line
+    $sql = preg_replace('/--[^\n\r]*/', '', $sql);
+    
+    // Remove multi-line comments (/* comment */)
+    $sql = preg_replace('/\/\*.*?\*\//s', '', $sql);
+    
+    // Clean up extra whitespace left by comment removal
+    $sql = preg_replace('/\s+/', ' ', $sql);
+    $sql = trim($sql);
+    
+    return $sql;
   }
 
   /**
@@ -445,15 +473,18 @@ class SqlQueryProcessor
   {
     try {
       // Check if SQL has MONTH() filter but no YEAR() filter
-      $hasMonthFilter = preg_match('/MONTH\s*\([^)]+\)\s+(IN|=)/i', $sql);
+      $hasMonthFilter = preg_match('/MONTH\s*\(([^)]+)\)\s+(IN|=)/i', $sql, $monthMatches);
       $hasYearFilter = preg_match('/YEAR\s*\([^)]+\)\s*=\s*\d{4}/i', $sql);
 
       if ($hasMonthFilter && !$hasYearFilter) {
         $currentYear = date('Y');
         
+        // Extract the column name from MONTH() function
+        $dateColumn = isset($monthMatches[1]) ? trim($monthMatches[1]) : 'date_purchased';
+        
         if ($this->debug) {
           $this->securityLogger->logSecurityEvent(
-            "Fixing date filter: Adding YEAR({$currentYear}) to query with MONTH() filter",
+            "Fixing date filter: Adding YEAR({$currentYear}) to query with MONTH() filter (column: {$dateColumn})",
             'info'
           );
         }
@@ -462,7 +493,7 @@ class SqlQueryProcessor
         // Pattern 1: WHERE MONTH(...) - add YEAR before MONTH
         $sql = preg_replace(
           '/(WHERE\s+)(MONTH\s*\([^)]+\))/i',
-          "$1YEAR(o.date_purchased) = {$currentYear} AND $2",
+          "$1YEAR({$dateColumn}) = {$currentYear} AND $2",
           $sql,
           1 // Only replace first occurrence
         );
@@ -472,7 +503,7 @@ class SqlQueryProcessor
         if (!preg_match('/YEAR\s*\([^)]+\)\s*=\s*\d{4}/i', $sql)) {
           $sql = preg_replace(
             '/(AND\s+)(MONTH\s*\([^)]+\))/i',
-            "AND YEAR(o.date_purchased) = {$currentYear} AND $2",
+            "AND YEAR({$dateColumn}) = {$currentYear} AND $2",
             $sql,
             1
           );

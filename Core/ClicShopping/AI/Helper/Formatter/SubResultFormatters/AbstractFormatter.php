@@ -12,6 +12,7 @@ namespace ClicShopping\AI\Helper\Formatter\SubResultFormatters;
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
+use ClicShopping\OM\Hash;
 /**
  * AbstractFormatter - Base class for all result formatters
  */
@@ -72,6 +73,11 @@ abstract class AbstractFormatter
   {
     if ($value === null) return '-';
     if ($value === '') return '-';
+
+    // Decrypt sensitive fields FIRST (before any other formatting)
+    if (is_string($value)) {
+      $value = Hash::displayDecryptedDataText($value);
+    }
 
     // Quantities (must be tested FIRST before prices)
     if (preg_match('/(quantity|stock|sold|count|total_products|total_quantity|number|items)/i', $columnName)) {
@@ -137,6 +143,36 @@ abstract class AbstractFormatter
       'internal_id',
       'system_id'
     ];
+    
+    // 🚨 CRITICAL: Filter out ID columns in global aggregations
+    // When result has aggregation columns (AVG, SUM, COUNT, etc.) without GROUP BY,
+    // we should NOT display ID columns (products_id, orders_id, etc.)
+    $hasAggregation = false;
+    $aggregationColumns = [];
+    
+    foreach (array_keys($row) as $key) {
+      // Check if column name suggests it's an aggregation result
+      if (preg_match('/(total|count|sum|avg|average|prix_moyen|moyenne|somme)/i', $key)) {
+        $hasAggregation = true;
+        $aggregationColumns[] = $key;
+      }
+    }
+    
+    // If this looks like a global aggregation (has aggregation column + only 1-2 columns total),
+    // filter out ID columns
+    $isGlobalAggregation = $hasAggregation && count($row) <= 3;
+    
+    if ($isGlobalAggregation) {
+      // Add ID columns to system fields for global aggregations
+      $systemFields = array_merge($systemFields, [
+        'products_id',
+        'orders_id',
+        'customers_id',
+        'categories_id',
+        'manufacturers_id',
+        'id'
+      ]);
+    }
 
     $filteredRow = [];
 

@@ -10,6 +10,8 @@
 
 namespace ClicShopping\AI\Infrastructure\Schema;
 
+use ClicShopping\AI\Domain\Embedding\NewVector;
+use ClicShopping\AI\Domain\Patterns\SchemaSynonymPatterns;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Cache as OMCache;
 
@@ -31,23 +33,33 @@ use ClicShopping\OM\Cache as OMCache;
 class SchemaRetriever
 {
   private mixed $db;
-  private mixed $embeddingService;
   private SchemaEmbedder $schemaEmbedder;
+  private ColumnIndex $columnIndex;
   private bool $debug;
   private string $useCache;
+  private bool $useEmbeddings;
   
   /**
    * Constructor
    * 
    * @param bool $debug Debug mode flag for logging
+   * @param bool $useEmbeddings Whether to use embeddings (default: false for Pure LLM mode)
    */
-  public function __construct(bool $debug = false)
+  public function __construct(bool $debug = false, bool $useEmbeddings = false)
   {
     $this->db = Registry::get('Db');
-    $this->embeddingService = Registry::get('EmbeddingService');
     $this->schemaEmbedder = new SchemaEmbedder($debug);
+    $this->columnIndex = new ColumnIndex($debug);
     $this->debug = $debug;
     $this->useCache = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True' ? 'True' : 'False';
+    $this->useEmbeddings = $useEmbeddings;
+    
+    if ($this->debug) {
+      error_log("[SchemaRetriever] Initialized with embeddings: " . ($useEmbeddings ? 'ENABLED' : 'DISABLED (Pure LLM mode)'));
+    }
+    
+    // Build column index on first use
+    $this->columnIndex->build();
   }
   
   /**
@@ -114,6 +126,9 @@ class SchemaRetriever
    * Get relevant tables based on query similarity
    * 
    * Uses embedding-based similarity search with fallback mechanisms
+   * In Pure LLM mode (useEmbeddings=false), skips embeddings and uses only column matching
+   * 
+   * TASK 5 - ITEM 1: Schema cache moved to Work/Cache/Rag/SchemaQuery/
    * 
    * @param string $query User query
    * @param int $maxTables Maximum number of tables to return
@@ -123,18 +138,48 @@ class SchemaRetriever
   {
     // Check cache first
     if ($this->useCache === 'True') {
-      $cacheKey = 'schema_rag_query_' . md5($query . '_' . $maxTables);
-      $cache = new OMCache($cacheKey);
+      // TASK 5 - ITEM 1: Use namespace to organize cache in subdirectory
+      // This creates cache files in Work/Cache/Rag/SchemaQuery/*.cache
+      $cacheKey = md5($query . '_' . $maxTables . '_' . ($this->useEmbeddings ? 'emb' : 'pure'));
+      $cache = new OMCache($cacheKey, 'Rag/SchemaQuery');  // Namespace creates subdirectory structure
       $cached = $cache->get();
       
       if (!empty($cached)) {
         if ($this->debug) {
-          error_log("[SchemaRetriever] Using cached table list");
+          error_log("[SchemaRetriever] Using cached table list from Rag/SchemaQuery/");
         }
         return $cached;
       }
     }
     
+    // Pure LLM mode: skip embeddings, use only column matching
+    if (!$this->useEmbeddings) {
+      if ($this->debug) {
+        error_log("[SchemaRetriever] Pure LLM mode: using column matching only (embeddings disabled)");
+      }
+      
+      $tables = $this->fallbackKeywordMatching($query);
+      
+      if (!empty($tables)) {
+        $tables = array_slice($tables, 0, $maxTables);
+        
+        // Cache the result
+        if ($this->useCache === 'True') {
+          $cache->save($tables);
+        }
+        
+        return $tables;
+      }
+      
+      // If keyword matching fails, use common tables
+      if ($this->debug) {
+        error_log("[SchemaRetriever] Keyword matching returned no results, using common tables");
+      }
+      
+      return $this->getCommonTables();
+    }
+    
+    // Embedding mode: try embeddings first, then fallback
     try {
       // Try embedding-based retrieval (primary method)
       $tables = $this->getTablesBySimilarity($query, $maxTables);
@@ -142,7 +187,7 @@ class SchemaRetriever
       if (!empty($tables)) {
         // Cache the result
         if ($this->useCache === 'True') {
-          $cache->save($tables, 3600); // 1 hour TTL
+          $cache->save($tables); // Cache without TTL metadata
         }
         
         return $tables;
@@ -173,7 +218,7 @@ class SchemaRetriever
   }
   
   /**
-   * Get tables by embedding similarity
+   * Get tables by embedding similarity with dynamic column matching
    * 
    * @param string $query User query
    * @param int $maxTables Maximum number of tables
@@ -181,11 +226,17 @@ class SchemaRetriever
    */
   private function getTablesBySimilarity(string $query, int $maxTables): array
   {
-    // Create query embedding
-    $queryEmbedding = $this->embeddingService->createEmbedding($query);
+    // Create query embedding using NewVector directly
+    $embeddedDocs = NewVector::createEmbedding(null, $query);
     
-    if (empty($queryEmbedding)) {
+    if (empty($embeddedDocs) || !isset($embeddedDocs[0]->embedding)) {
       throw new \Exception("Failed to create query embedding");
+    }
+    
+    $queryEmbedding = $embeddedDocs[0]->embedding;
+    
+    if ($this->debug) {
+      error_log("[SchemaRetriever] Query embedding created: " . count($queryEmbedding) . " dimensions");
     }
     
     // Load all table embeddings
@@ -195,26 +246,140 @@ class SchemaRetriever
       throw new \Exception("No table embeddings found in database");
     }
     
-    // Calculate similarity scores
-    $scores = [];
-    foreach ($tableEmbeddings as $tableName => $embedding) {
-      $scores[$tableName] = $this->cosineSimilarity($queryEmbedding, $embedding);
+    if ($this->debug) {
+      error_log("[SchemaRetriever] Loaded " . count($tableEmbeddings) . " table embeddings");
     }
     
-    // Sort by similarity (descending)
-    arsort($scores);
+    // Calculate embedding similarity scores
+    $embeddingScores = [];
+    foreach ($tableEmbeddings as $tableName => $embedding) {
+      $embeddingScores[$tableName] = $this->cosineSimilarity($queryEmbedding, $embedding);
+    }
+    
+    // Apply dynamic column matching
+    $finalScores = $this->applyDynamicScoring($query, $embeddingScores);
+    
+    // Sort by final score (descending)
+    arsort($finalScores);
     
     if ($this->debug) {
-      error_log("[SchemaRetriever] Top 5 similarity scores:");
+      error_log("[SchemaRetriever] Top 5 final scores:");
       $count = 0;
-      foreach ($scores as $table => $score) {
+      foreach ($finalScores as $table => $score) {
         if ($count++ >= 5) break;
         error_log("  - {$table}: " . round($score, 4));
       }
     }
     
     // Return top N tables
-    return array_slice(array_keys($scores), 0, $maxTables);
+    return array_slice(array_keys($finalScores), 0, $maxTables);
+  }
+  
+  /**
+   * Apply dynamic scoring based on column matching
+   * 
+   * @param string $query User query
+   * @param array $embeddingScores Embedding similarity scores
+   * @return array Final scores
+   */
+  private function applyDynamicScoring(string $query, array $embeddingScores): array
+  {
+    // Extract query keywords
+    $queryKeywords = $this->extractQueryKeywords($query);
+    
+    // Find column matches
+    $columnMatchScores = [];
+    foreach ($queryKeywords as $keyword) {
+      $matches = $this->columnIndex->find($keyword);
+      foreach ($matches as $match) {
+        $table = $match['table'];
+        $columnMatchScores[$table] = ($columnMatchScores[$table] ?? 0) + 1;
+      }
+    }
+    
+    // Normalize column scores
+    $maxColumnScore = !empty($columnMatchScores) ? max($columnMatchScores) : 1;
+    foreach ($columnMatchScores as $table => $score) {
+      $columnMatchScores[$table] = $score / $maxColumnScore;
+    }
+    
+    // Combine scores
+    $finalScores = [];
+    foreach ($embeddingScores as $table => $embScore) {
+      $colScore = $columnMatchScores[$table] ?? 0;
+      
+      // Composite score: 30% embedding + 70% column matching
+      $finalScores[$table] = ($embScore * 0.3) + ($colScore * 0.7);
+      
+      // Penalty for reference tables
+      if ($this->isReferenceTable($table)) {
+        $finalScores[$table] *= 0.5;
+      }
+      
+      // Penalty for junction tables
+      if ($this->isJunctionTable($table)) {
+        $finalScores[$table] *= 0.6;
+      }
+    }
+    
+    return $finalScores;
+  }
+  
+  /**
+   * Extract keywords from query
+   * 
+   * @param string $query User query
+   * @return array Array of keywords
+   */
+  private function extractQueryKeywords(string $query): array
+  {
+    $query = strtolower($query);
+    
+    // Load synonyms from pattern configuration
+    static $synonyms = null;
+    if ($synonyms === null) {
+      $synonyms = SchemaSynonymPatterns::getSynonyms();
+    }
+    
+    // Remove special chars and split
+    $query = preg_replace('/[^a-z0-9\s]/', ' ', $query);
+    $words = preg_split('/\s+/', $query);
+    
+    // Filter and expand with synonyms
+    $keywords = [];
+    foreach ($words as $word) {
+      if (strlen($word) > 3) {
+        $keywords[] = $word;
+        // Add synonyms
+        if (isset($synonyms[$word])) {
+          $keywords = array_merge($keywords, $synonyms[$word]);
+        }
+      }
+    }
+    
+    return array_unique($keywords);
+  }
+  
+  /**
+   * Check if table is a reference table
+   * 
+   * @param string $tableName Table name
+   * @return bool True if reference table
+   */
+  private function isReferenceTable(string $tableName): bool
+  {
+    return preg_match('/_classes$|_rules$|_format$|_status$/', $tableName) === 1;
+  }
+  
+  /**
+   * Check if table is a junction table
+   * 
+   * @param string $tableName Table name
+   * @return bool True if junction table
+   */
+  private function isJunctionTable(string $tableName): bool
+  {
+    return preg_match('/_to_/', $tableName) === 1;
   }
   
   /**
@@ -234,7 +399,7 @@ class SchemaRetriever
     $magnitude1 = 0.0;
     $magnitude2 = 0.0;
     
-    for ($i = 0; $i < count($vec1); $i++) {
+    for ($i = 0, $iMax = count($vec1); $i < $iMax; $i++) {
       $dotProduct += $vec1[$i] * $vec2[$i];
       $magnitude1 += $vec1[$i] * $vec1[$i];
       $magnitude2 += $vec2[$i] * $vec2[$i];
@@ -260,18 +425,11 @@ class SchemaRetriever
    */
   private function fallbackKeywordMatching(string $query): array
   {
-    $keywords = [
-      'stock|inventory|quantity|quantité' => ['clic_products', 'clic_products_description'],
-      'order|commande|sale|vente' => ['clic_orders', 'clic_orders_products', 'clic_orders_total', 'clic_customers'],
-      'price|prix|cost|coût' => ['clic_products', 'clic_products_specials', 'clic_products_description'],
-      'customer|client|buyer|acheteur' => ['clic_customers', 'clic_orders'],
-      'category|categorie|catégorie' => ['clic_categories', 'clic_categories_description', 'clic_products_to_categories'],
-      'brand|manufacturer|marque|fabricant' => ['clic_manufacturers', 'clic_manufacturers_info', 'clic_products'],
-      'review|avis|rating|note' => ['clic_reviews', 'clic_reviews_description', 'clic_products'],
-      'supplier|fournisseur' => ['clic_suppliers', 'clic_suppliers_info', 'clic_manufacturers'],
-      'return|retour' => ['clic_return_orders', 'clic_orders', 'clic_products'],
-      'sentiment|opinion' => ['clic_reviews_sentiment', 'clic_reviews_sentiment_description', 'clic_reviews'],
-    ];
+    // Load patterns from configuration
+    static $keywords = null;
+    if ($keywords === null) {
+      $keywords = require CLICSHOPPING_BASE_DIR . 'AI/Domain/Patterns/SchemaFallbackKeywordPatterns.php';
+    }
     
     $matchedTables = [];
     $queryLower = strtolower($query);
@@ -298,17 +456,21 @@ class SchemaRetriever
    */
   private function getCommonTables(): array
   {
-    return [
-      'clic_products',
-      'clic_products_description',
-      'clic_orders',
-      'clic_customers',
-      'clic_categories'
-    ];
+    // Load common tables from pattern configuration
+    static $commonTables = null;
+    if ($commonTables === null) {
+      $commonTables = require CLICSHOPPING_BASE_DIR . 'AI/Domain/Patterns/SchemaCommonTablesPattern.php';
+    }
+    
+    return $commonTables;
   }
   
   /**
    * Build schema text from table names
+   * 
+   * Reads schema directly from database using SHOW FULL COLUMNS
+   * to include column comments. This approach is database-agnostic
+   * and doesn't require embedding tables.
    * 
    * @param array $tableNames Array of table names
    * @return string Schema text
@@ -317,35 +479,71 @@ class SchemaRetriever
   {
     $schemaParts = [];
     $schemaParts[] = "IMPORTANT: Regarding the structure of the e-commerce tables, please note the following details:\n";
+    $schemaParts[] = "PRIORITY RULES:";
+    $schemaParts[] = "- For product weight queries: Use clic_products.products_weight (contains actual weight VALUES)";
+    $schemaParts[] = "- clic_weight_classes is a REFERENCE table for weight UNITS (kg, g, lbs, oz) NOT weight values";
+    $schemaParts[] = "- When asked about a product's weight, ALWAYS query clic_products, NOT clic_weight_classes\n";
     
     $sectionNumber = 1;
     
     foreach ($tableNames as $tableName) {
-      // Get schema text from database
-      $Qschema = $this->db->prepare('
-        SELECT schema_text
-        FROM :table_schema_embeddings
-        WHERE table_name = :table_name
-      ');
-      
-      $Qschema->bindValue(':table_name', $tableName);
-      $Qschema->execute();
-      
-      if ($Qschema->fetch()) {
-        $schemaText = $Qschema->value('schema_text');
+      try {
+        // Build schema directly from database with column comments
+        $schemaText = $this->buildSchemaWithComments($tableName);
         
-        // Remove "Table: tablename" prefix if present
-        $schemaText = preg_replace('/^Table:\s+' . preg_quote($tableName, '/') . '\s*\n/', '', $schemaText);
-        
-        // Add numbered section
-        $schemaParts[] = "{$sectionNumber}. Table {$tableName}:\n{$schemaText}";
-        $sectionNumber++;
+        if (!empty($schemaText)) {
+          $schemaParts[] = "{$sectionNumber}. {$schemaText}";
+          $sectionNumber++;
+        }
+      } catch (\Exception $e) {
+        if ($this->debug) {
+          error_log("[SchemaRetriever] Error building schema for {$tableName}: " . $e->getMessage());
+        }
+        // Continue with next table
       }
     }
     
     $schemaParts[] = "\nImportant: When generating SQL queries, strictly follow these table structures and do not invent columns.\n";
     
     return implode("\n", $schemaParts);
+  }
+  
+  /**
+   * Build schema text with column comments from database
+   * 
+   * Uses SHOW FULL COLUMNS to get column information including comments.
+   * This is database-agnostic and works on MariaDB, MySQL, and compatible databases.
+   * 
+   * @param string $tableName Table name
+   * @return string Schema text with column descriptions
+   */
+  private function buildSchemaWithComments(string $tableName): string
+  {
+    $schemaText = "Table {$tableName}:\n";
+    
+    // Use SHOW FULL COLUMNS to get column info with comments
+    $Qcolumns = $this->db->query("SHOW FULL COLUMNS FROM {$tableName}");
+    
+    $columns = [];
+    while ($Qcolumns->fetch()) {
+      $field = $Qcolumns->value('Field');
+      $type = $Qcolumns->value('Type');
+      $comment = $Qcolumns->value('Comment');
+      
+      if (!empty($comment)) {
+        // Include comment for better LLM understanding
+        $columns[] = "  - {$field} ({$type}): {$comment}";
+      } else {
+        // No comment, just show field and type
+        $columns[] = "  - {$field} ({$type})";
+      }
+    }
+    
+    if (!empty($columns)) {
+      $schemaText .= implode("\n", $columns);
+    }
+    
+    return $schemaText;
   }
   
   /**
@@ -356,15 +554,11 @@ class SchemaRetriever
    */
   private function getContextLimit(string $modelName): int
   {
-    // Model-specific limits (conservative, leaving room for response)
-    $limits = [
-      'qwen/qwen3-4b' => 3500,      // 4K context - 500 for response
-      'qwen3-4b' => 3500,
-      'microsoft/phi-4' => 15000,    // 16K context - 1K for response
-      'phi-4' => 15000,
-      'gpt-4o' => 120000,            // 128K context - 8K for response
-      'gpt-4o-mini' => 120000,       // 128K context - 8K for response
-    ];
+    // Load model limits from pattern configuration
+    static $limits = null;
+    if ($limits === null) {
+      $limits = require CLICSHOPPING_BASE_DIR . 'AI/Domain/Patterns/SchemaModelContextLimitsPattern.php';
+    }
     
     // Check for exact match
     if (isset($limits[$modelName])) {
@@ -373,6 +567,7 @@ class SchemaRetriever
     
     // Check for partial match (e.g., "qwen/qwen3-4b-instruct" matches "qwen3-4b")
     foreach ($limits as $pattern => $limit) {
+      if ($pattern === 'default') continue;
       if (stripos($modelName, $pattern) !== false) {
         return $limit;
       }
@@ -380,10 +575,10 @@ class SchemaRetriever
     
     // Default to conservative limit for unknown models
     if ($this->debug) {
-      error_log("[SchemaRetriever] Unknown model '{$modelName}', using default limit 3500");
+      error_log("[SchemaRetriever] Unknown model '{$modelName}', using default limit");
     }
     
-    return 3500;
+    return $limits['default'];
   }
   
   /**

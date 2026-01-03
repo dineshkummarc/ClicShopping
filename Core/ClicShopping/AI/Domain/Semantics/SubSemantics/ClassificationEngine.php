@@ -11,16 +11,24 @@
 namespace ClicShopping\AI\Domain\Semantics\SubSemantics;
 
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domain\Patterns\AnalyticsPattern;
-use ClicShopping\AI\Domain\Patterns\SemanticsPattern;
-use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
+use ClicShopping\AI\Domain\Patterns\ClassificationEnginePatterns;
+use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Registry;
 
 /**
  * ClassificationEngine
  * 
- * Core classification logic for determining query types.
- * Uses pattern matching and scoring to classify queries as analytics or semantic.
+ * Core classification logic for determining query types using Pure LLM mode.
+ * 
+ * REFACTORED 2025-12-30:
+ * - Removed unused pattern-based functions (Pure LLM mode)
+ * - Uses HTMLOverrideCommon::cleanJsonEntities() for entity cleaning
+ * - Uses ClassificationEnginePatterns for JSON fixing patterns
+ * - Reduced from 577 lines to ~350 lines (39% reduction)
+ * 
+ * @version 2.0 - Refactored for Pure LLM mode
  */
 class ClassificationEngine
 {
@@ -37,328 +45,37 @@ class ClassificationEngine
   }
   
   /**
-   * Classifies a query as 'analytics' or 'semantic'
+   * Fix malformed JSON array closing
    * 
-   * @param string $query Query to classify
-   * @param int $threshold Classification threshold (default: 2 for better field detection)
-   * @return string 'analytics' or 'semantic'
-   */
-  public static function classifyQuery(string $query, int $threshold = 2): string
-  {
-    self::initLogger();
-
-    $text_result = 'semantic';
-
-    // Calculate score based on patterns
-    $score = self::calculateScore($query);
-    
-    // Log classification
-    if (self::$logger && defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      self::$logger->logStructured(
-        'info',
-        'Semantics',
-        'calculateScore',
-        [
-          'query' => $query,
-          'score' => $score,
-          'threshold' => $threshold
-        ]
-      );
-    }
-    
-    // Classify based on score
-    if ($score >= $threshold) {
-      $result = 'analytics';
-    }
-    
-    // Check for enhanced semantic patterns
-    if (SemanticsPattern::isEnhancedSemanticQuery($query)) {
-      $result = $text_result;
-    }
-    
-    // Check keywords as fallback
-    if (AnalyticsPattern::hasAnalyticsKeywords($query)) {
-      $result = 'analytics';
-    }
-    
-    if (SemanticsPattern::hasSemanticKeywords($query)) {
-      $result = $text_result;
-    }
-
-
-    error_log("\n ================== classifyQuery =================== \n");
-    error_log($result . "\n");
-    error_log("\n ================== classifyQuery ===================  \n");
-
-
-    // Default to semantic for general questions
-    return $result;
-  }
-  
-  /**
-   * Calculates classification score based on pattern matching
+   * ✅ TASK 5.2.1.1: LLMs sometimes close arrays with }] instead of ]]
+   * This causes JSON parsing to fail for hybrid queries
    * 
-   * @param string $query Query to analyze
-   * @return int Score (number of pattern categories matched)
+   * Uses ClassificationEnginePatterns for the fix logic.
+   * 
+   * @param string $json JSON string to fix
+   * @return string Fixed JSON string
    */
-  public static function calculateScore(string $query): int
+  private static function fixMalformedArrayClosing(string $json): string
   {
-    $patterns = AnalyticsPattern::getAnalyticsPatterns();
-    //$weights
-
-    $matchedCategories = [];
+    $fixed = ClassificationEnginePatterns::fixMalformedArrayClosing($json);
     
-    foreach ($patterns as $category => $categoryPatterns) {
-      foreach ($categoryPatterns as $pattern) {
-        if (preg_match($pattern, $query)) {
-          $matchedCategories[$category] = true;
-          
-          // Log pattern match
-          if (self::$logger && defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-              CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-            self::$logger->logSecurityEvent(
-              "Pattern match detected: Category: $category | Pattern: $pattern",
-              'info'
-            );
-          }
-          
-          break; // One match per category is enough
-        }
-      }
-    }
-    
-    $score = count($matchedCategories);
-    
-    // FIX TASK 4.4: Boost score for database field queries
-    // Detect queries asking for specific database fields (not general information)
-    $fieldBoost = self::detectDatabaseFieldQuery($query);
-    if ($fieldBoost > 0) {
-      $score += $fieldBoost;
-      
-      if (self::$logger && defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-          CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-        self::$logger->logSecurityEvent(
-          "Database field query boost applied: +{$fieldBoost}",
-          'info'
-        );
-      }
-    }
-    
-    if (self::$logger && defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
+    // Log if we made a fix
+    if ($fixed !== $json && self::$logger && 
+        defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
         CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      self::$logger->logSecurityEvent(
-        "Total score: $score",
-        'info'
-      );
-    }
-    
-    return $score;
-  }
-
-  /**
-   * Detects if query is asking for specific database field(s)
-   * 
-   * IMPROVED VERSION: Uses dynamic field discovery via DatabaseSchemaIntrospector
-   * 
-   * Intelligent detection based on:
-   * 1. Query structure: "give me the [FIELD] of [ENTITY]"
-   * 2. Dynamic database field detection (no hardcoded lists)
-   * 3. Context: asking for data retrieval, not explanation
-   * 
-   * @param string $query Query to analyze
-   * @return int Boost score (0 = no boost, 2 = strong boost)
-   */
-  private static function detectDatabaseFieldQuery(string $query): int
-  {
-    $boost = 0;
-    
-    // Pattern 1: "give me/show me/get/what is THE [FIELD] OF/FOR [entity]"
-    // This structure indicates asking for a specific field value
-    $fieldRequestPattern = '/\b(give|show|get|display|find|fetch|retrieve|what\s+is|what\'s|tell\s+me)\s+(?:me\s+)?(?:the\s+)?(\w+)\s+(?:of|for|from)\b/i';
-    
-    if (preg_match($fieldRequestPattern, $query, $matches)) {
-      $potentialField = strtolower($matches[2] ?? '');
-      
-      // Use dynamic field detection (no hardcoded list)
-      if (DoctrineOrm::isDatabaseField($potentialField)) {
-        $boost = max($boost, 2); // Strong boost
-      }
-    }
-    
-    // Pattern 2: "give me/show me [FIELD] and [FIELD]" (without "of")
-    // Example: "show me the weight and dimensions"
-    $multiFieldPattern = '/\b(give|show|get|display)\s+(?:me\s+)?(?:the\s+)?(\w+)\s+and\s+(\w+)\b/i';
-    if (preg_match($multiFieldPattern, $query, $matches)) {
-      $field1 = strtolower($matches[2] ?? '');
-      $field2 = strtolower($matches[3] ?? '');
-      
-      if (DoctrineOrm::isDatabaseField($field1) || 
-          DoctrineOrm::isDatabaseField($field2)) {
-        $boost = max($boost, 2); // Strong boost for multi-field queries
-      }
-    }
-    
-    // Pattern 3: Multiple fields with "and": "price and sku", "weight and height"
-    if (preg_match('/\b(\w+)\s+and\s+(\w+)\b/i', $query, $matches)) {
-      $field1 = strtolower($matches[1] ?? '');
-      $field2 = strtolower($matches[2] ?? '');
-      
-      if (DoctrineOrm::isDatabaseField($field1) && 
-          DoctrineOrm::isDatabaseField($field2)) {
-        $boost = max($boost, 2); // Strong boost when both are fields
-      }
-    }
-    
-    // Pattern 4: Direct field mention with entity
-    // Example: "product sku", "item reference", "order number", "order status"
-    $directFieldPattern = '/\b(product|item|order|customer|category|supplier|manufacturer|review|sentiment)\s+(\w+)\b/i';
-    if (preg_match($directFieldPattern, $query, $matches)) {
-      $potentialField = strtolower($matches[2] ?? '');
-      if (DoctrineOrm::isDatabaseField($potentialField)) {
-        $boost = max($boost, 2); // Increase to strong boost for direct mentions
-      }
-    }
-    
-    // Pattern 5: Field mentioned anywhere in query (fallback)
-    // Check if any database field is mentioned
-    $words = preg_split('/\s+/', strtolower($query));
-    foreach ($words as $word) {
-      $word = trim($word, '.,!?;:');
-      if (DoctrineOrm::isDatabaseField($word)) {
-        $boost = max($boost, 1); // Weak boost if field is just mentioned
-      }
-    }
-    
-    return $boost;
-  }
-
-  /**
-   * DEPRECATED: Use DoctrineOrm::isDatabaseField() instead
-   * 
-   * This method is kept for backward compatibility but delegates to DoctrineOrm.
-   * 
-   * @param string $word Word to check
-   * @return bool True if it's a database field
-   * @deprecated Use DoctrineOrm::isDatabaseField() instead
-   */
-  private static function isDatabaseField(string $word): bool
-  {
-    // Delegate to DoctrineOrm (proper place for DB operations)
-    return DoctrineOrm::isDatabaseField($word);
-  }
-
-  /*
-   * $weights
-   *
-  private static function calculateScore(string $text): int
-  {
-    $analyticsPatterns = self::analyticsPatterns();
-
-    // More selective weights for analytics patterns
-    $weights = [
-      'performance' => 3,    // Strong analytics indicators
-      'calculation' => 3,
-      'comparison' => 2.5,
-      'price' => 2,
-      'quantity' => 2,
-      'filters' => 1.5,
-      'sorting' => 1.5,
-      'time' => 1,
-      'entity' => 0.5,      // Weak analytics indicators
-      'category' => 0.5,
-      'customer' => 0.5
-    ];
-
-    $score = 0;
-
-    foreach ($analyticsPatterns as $category => $patterns) {
-      foreach ($patterns as $pattern) {
-        if (preg_match($pattern, $text)) {
-          self::logSecurityEvent("Pattern match detected: Category: $category | Pattern: $pattern", 'info');
-          $score += $weights[$category] ?? 1;
-        }
-      }
-    }
-
-    return (int)$score;
-  }
-
-  */
-
-
-
-  /**
-   * Gets fallback classification when GPT classification fails
-   * 
-   * 🔧 TASK 4.3 (2025-12-11): Enhanced fallback logic with explicit logging
-   * 
-   * FALLBACK STRATEGY:
-   * 1. Check enhanced semantic patterns first (highest priority)
-   * 2. Check analytics keywords (medium priority)
-   * 3. Default to semantic (safest fallback)
-   * 
-   * RATIONALE:
-   * - Semantic is safer default than analytics
-   * - RAG search is more forgiving than SQL generation
-   * - Analytics requires precise patterns to avoid false positives
-   * 
-   * @param string $text Text to classify
-   * @return string 'analytics' or 'semantic'
-   */
-  public static function getFallbackClassification(string $text): string
-  {
-    self::initLogger();
-    
-    // Check enhanced semantic patterns first
-    if (SemanticsPattern::isEnhancedSemanticQuery($text)) {
-      if (self::$logger) {
-        self::$logger->logStructured(
-          'info',
-          'ClassificationEngine',
-          'fallback_classification',
-          [
-            'result' => 'semantic',
-            'reason' => 'enhanced_pattern_match',
-            'query' => $text
-          ]
-        );
-      }
-      return 'semantic';
-    }
-    
-    // Check analytics keywords
-    if (AnalyticsPattern::hasAnalyticsKeywords($text)) {
-      if (self::$logger) {
-        self::$logger->logStructured(
-          'info',
-          'ClassificationEngine',
-          'fallback_classification',
-          [
-            'result' => 'analytics',
-            'reason' => 'keyword_match',
-            'query' => $text
-          ]
-        );
-      }
-      return 'analytics';
-    }
-    
-    // 🔧 TASK 4.3: Default to semantic for general questions (safer fallback)
-    if (self::$logger) {
       self::$logger->logStructured(
         'info',
         'ClassificationEngine',
-        'fallback_classification',
+        'json_array_closing_fixed',
         [
-          'result' => 'semantic',
-          'reason' => 'default_fallback',
-          'query' => $text,
-          'note' => 'No patterns matched, defaulting to semantic (safer than analytics)'
+          'original' => $json,
+          'fixed' => $fixed,
+          'note' => 'Fixed malformed array closing: removed } before ]'
         ]
       );
     }
     
-    return 'semantic';
+    return $fixed;
   }
   
   /**
@@ -382,11 +99,11 @@ class ClassificationEngine
     
     try {
       // Load language definitions for classification prompt
-      $CLICSHOPPING_Language = \ClicShopping\OM\Registry::get('Language');
+      $CLICSHOPPING_Language = Registry::get('Language');
       $CLICSHOPPING_Language->loadDefinitions('rag_classification', 'en', null, 'ClicShoppingAdmin');
       
       // Load new classification prompt from language file
-      $promptTemplate = \ClicShopping\OM\CLICSHOPPING::getDef('text_rag_classification');
+      $promptTemplate = CLICSHOPPING::getDef('text_rag_classification');
       
       if (!$promptTemplate || $promptTemplate === 'text_rag_classification') {
         // Language definition not found, use fallback
@@ -413,35 +130,113 @@ class ClassificationEngine
         );
       }
       
-      // Try to parse JSON response
-      $result = json_decode(trim($response), true);
+      // Clean response: Remove markdown code blocks if present
+      // LLMs often wrap JSON in ```json ... ``` despite instructions
+      $cleanResponse = trim($response);
       
-      // If JSON parsing fails, try to extract classification from markdown/text response
+      // Remove markdown code blocks (```json ... ``` or ``` ... ```)
+      $cleanResponse = preg_replace('/^```(?:json)?\s*/m', '', $cleanResponse);
+      $cleanResponse = preg_replace('/\s*```$/m', '', $cleanResponse);
+      
+      // Remove any leading/trailing whitespace again
+      $cleanResponse = trim($cleanResponse);
+      
+      // Comprehensive HTML entity cleanup
+      // Uses HTMLOverrideCommon::cleanJsonEntities() for consistent entity handling
+      $cleanResponse = HTMLOverrideCommon::cleanJsonEntities($cleanResponse);
+      
+      // ✅ TASK 5.2.1.1: Fix common JSON malformation - array closing with }] instead of ]]
+      // LLMs sometimes close arrays with }] which is invalid JSON
+      // Example: ["analytics", "semantic"}] → ["analytics", "semantic"]]
+      $cleanResponse = self::fixMalformedArrayClosing($cleanResponse);
+      
+      // Log cleaned response if different from original
+      if ($cleanResponse !== trim($response) && self::$logger && 
+          defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
+          CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+        self::$logger->logStructured(
+          'info',
+          'ClassificationEngine',
+          'checkSemantics_cleaned_response',
+          [
+            'query' => $text,
+            'original' => $response,
+            'cleaned' => $cleanResponse,
+            'note' => 'Removed markdown code blocks, decoded HTML entities, and fixed malformed array closing'
+          ]
+        );
+      }
+      
+      // Try to parse JSON response
+      $result = json_decode($cleanResponse, true);
+      
+      // Check if JSON parsing succeeded
       if (json_last_error() !== JSON_ERROR_NONE) {
+        // Log JSON error for debugging
+        if (self::$logger && defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+          self::$logger->logStructured(
+            'warning',
+            'ClassificationEngine',
+            'json_parse_error',
+            [
+              'query' => $text,
+              'error' => json_last_error_msg(),
+              'cleaned_response' => $cleanResponse
+            ]
+          );
+        }
+        $result = null;
+      }
+      
+      // If JSON parsing failed, try to extract classification from markdown/text response
+      if ($result === null) {
         // Try multiple patterns to extract type and confidence from markdown response
         $type = null;
         $confidence = 0.5;
         $reasoning = '';
         $sub_types = [];
         
-        // Pattern 1: **Classification: TYPE (confidence: X.X)**
-        if (preg_match('/\*\*Classification:\s*(\w+)\s*\(confidence:\s*([\d.]+)\)\*\*/i', $response, $matches)) {
+        // Pattern 1: Classification: **TYPE** followed by Confidence: X.X (new format)
+        if (preg_match('/Classification:\s*\*\*(\w+)\*\*.*?Confidence:\s*([\d.]+)/is', $response, $matches)) {
           $type = strtolower(trim($matches[1]));
           $confidence = (float)$matches[2];
         }
-        // Pattern 2: **Classification**: TYPE (confidence: X.X)
-        elseif (preg_match('/\*\*Classification\*\*:\s*(\w+)\s*\(confidence:\s*([\d.]+)\)/i', $response, $matches)) {
+        // Pattern 2: **Classification:** TYPE (confidence: X.X) - most common format
+        elseif (preg_match('/\*\*Classification:\*\*\s*(\w+)\s*\(confidence:\s*([\d.]+)\)/i', $response, $matches)) {
           $type = strtolower(trim($matches[1]));
           $confidence = (float)$matches[2];
         }
-        // Pattern 3: TYPE (confidence: X.X) at start of line
+        // Pattern 3: **Classification: TYPE (confidence: X.X)** - with closing **
+        elseif (preg_match('/\*\*Classification:\s*(\w+)\s*\(confidence:\s*([\d.]+)\)\*\*/i', $response, $matches)) {
+          $type = strtolower(trim($matches[1]));
+          $confidence = (float)$matches[2];
+        }
+        // Pattern 4: TYPE (confidence: X.X) at start of line
         elseif (preg_match('/^[\s\-\*]*(\w+)\s*\(confidence:\s*([\d.]+)\)/im', $response, $matches)) {
           $type = strtolower(trim($matches[1]));
           $confidence = (float)$matches[2];
         }
-        // Pattern 4: **Intent Type:** TYPE followed by **Confidence:** X.X
+        // Pattern 5: **Intent Type:** TYPE followed by **Confidence:** X.X
         elseif (preg_match('/\*\*Intent Type:\*\*\s*(\w+)/i', $response, $typeMatches) &&
                 preg_match('/\*\*Confidence:\*\*\s*([\d.]+)/i', $response, $confMatches)) {
+          $type = strtolower(trim($typeMatches[1]));
+          $confidence = (float)$confMatches[1];
+        }
+        // Pattern 6: **Classification:** TYPE on separate line, then **Confidence:** X.X
+        elseif (preg_match('/\*\*Classification:\*\*\s*(\w+)/i', $response, $typeMatches) &&
+                preg_match('/\*\*Confidence:\*\*\s*([\d.]+)/i', $response, $confMatches)) {
+          $type = strtolower(trim($typeMatches[1]));
+          $confidence = (float)$confMatches[1];
+        }
+        // Pattern 7: "classified as **TYPE**" followed by "**Confidence: X.X**"
+        elseif (preg_match('/classified\s+as\s+\*\*(\w+)\*\*/i', $response, $typeMatches) &&
+                preg_match('/\*\*Confidence:\s*([\d.]+)\*\*/i', $response, $confMatches)) {
+          $type = strtolower(trim($typeMatches[1]));
+          $confidence = (float)$confMatches[1];
+        }
+        // Pattern 8: "should be classified as **TYPE**" followed by "**Confidence: X.X**"
+        elseif (preg_match('/should\s+be\s+classified\s+as\s+\*\*(\w+)\*\*/i', $response, $typeMatches) &&
+                preg_match('/\*\*Confidence:\s*([\d.]+)\*\*/i', $response, $confMatches)) {
           $type = strtolower(trim($typeMatches[1]));
           $confidence = (float)$confMatches[1];
         }

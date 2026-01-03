@@ -11,6 +11,7 @@
 namespace ClicShopping\AI\Helper\Formatter\SubResultFormatters;
 
 use ClicShopping\OM\Hash;
+use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\LlmGuardrails;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 
@@ -19,6 +20,32 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
  */
 class AnalyticsFormatter extends AbstractFormatter
 {
+  /**
+   * @var \ClicShopping\OM\Language Language instance for translations
+   */
+  private $language;
+  
+  /**
+   * @var string Current language code
+   */
+  private string $languageCode;
+  
+  /**
+   * Constructor
+   * 
+   * @param bool $debug Enable debug mode
+   * @param bool $displaySql Display SQL queries
+   */
+  public function __construct(bool $debug = false, bool $displaySql = false)
+  {
+    parent::__construct($debug, $displaySql);
+    
+    // Initialize language
+    $this->language = Registry::get('Language');
+    $this->languageCode = $this->language->get('code');
+    $this->language->loadDefinitions('rag_formatters', $this->languageCode, null, 'ClicShoppingAdmin');
+  }
+  
   public function canHandle(array $results): bool
   {
     $type = $results['type'] ?? '';
@@ -29,13 +56,32 @@ class AnalyticsFormatter extends AbstractFormatter
   {
     $question = $results['question'] ?? $results['query'] ?? 'Unknown request';
 
+    // DEBUG: Log what we receive
+    if ($this->debug) {
+      error_log("=== ANALYTICS FORMATTER DEBUG ===");
+      error_log("Results keys: " . implode(', ', array_keys($results)));
+      error_log("Has 'results': " . (isset($results['results']) ? 'YES' : 'NO'));
+      error_log("Has 'data_results': " . (isset($results['data_results']) ? 'YES' : 'NO'));
+      
+      $dataRows = $results['results'] ?? $results['data_results'] ?? [];
+      if (!empty($dataRows)) {
+        error_log("Data rows is array: " . (is_array($dataRows) ? 'YES' : 'NO'));
+        error_log("Data rows count: " . count($dataRows));
+        if (is_array($dataRows) && !empty($dataRows)) {
+          error_log("First row keys: " . implode(', ', array_keys($dataRows[0])));
+        }
+      } else {
+        error_log("No data rows found");
+      }
+    }
+
     // TASK 6.2: Check if this is a multi-query result
     if (isset($results['multiple_results']) && is_array($results['multiple_results'])) {
       return $this->formatMultipleResults($results);
     }
 
     $output = "<div class='analytics-results'>";
-    $output .= "<h4>Résultats pour : " . htmlspecialchars($question) . "</h4>";
+    $output .= "<h4>" . $this->language->getDef('text_rag_analytics_results_for') . " " . htmlspecialchars($question) . "</h4>";
 
     // Display source attribution
     if (isset($results['source_attribution'])) {
@@ -49,15 +95,26 @@ class AnalyticsFormatter extends AbstractFormatter
 
     // Interpretation
     $interpretationText = '';
+    $isHtmlContent = false;
+    
     if (isset($results['text_response']) && !empty($results['text_response'])) {
       $interpretationText = $results['text_response'];
+      // Check if text_response contains HTML
+      $isHtmlContent = (strpos($interpretationText, '<div') !== false || strpos($interpretationText, '<p>') !== false);
     } elseif (isset($results['interpretation']) && $results['interpretation'] !== 'Array') {
       $interpretationText = $results['interpretation'];
     }
 
     if (!empty($interpretationText)) {
-      $output .= "<div class='interpretation'><strong>Interprétation :</strong> " 
-              . Hash::displayDecryptedDataText($interpretationText) . "</div>";
+      // ✅ TASK 5.3.2.1: Don't double-encode HTML content from text_response
+      if ($isHtmlContent) {
+        // text_response already contains formatted HTML - use as-is
+        $output .= "<div class='interpretation'>" . $interpretationText . "</div>";
+      } else {
+        // Plain text - apply HTML encoding
+        $output .= "<div class='interpretation'><strong>" . $this->language->getDef('text_rag_analytics_interpretation') . "</strong> " 
+                . Hash::displayDecryptedDataText($interpretationText) . "</div>";
+      }
     }
 
     // Guardrails
@@ -72,12 +129,14 @@ class AnalyticsFormatter extends AbstractFormatter
 
     $output .= "<div class='mt-2'></div>";
 
-    // Data table
-    if (isset($results['results']) && is_array($results['results']) && !empty($results['results'])) {
-      $output .= $this->formatDataTable($results['results']);
+    // Data table - Support both 'results' and 'data_results' keys
+    $dataRows = $results['results'] ?? $results['data_results'] ?? [];
+    
+    if (is_array($dataRows) && !empty($dataRows)) {
+      $output .= $this->formatDataTable($dataRows);
     } else {
       $output .= "<div class='alert alert-info'>";
-      $output .= "<strong>Note :</strong> Les données détaillées sont disponibles dans l'interprétation ci-dessus.";
+      $output .= "<strong>" . $this->language->getDef('text_rag_analytics_note') . "</strong> " . $this->language->getDef('text_rag_analytics_detailed_data_available');
       $output .= "</div>";
     }
 
@@ -113,9 +172,9 @@ class AnalyticsFormatter extends AbstractFormatter
     $queryCount = count($multipleResults);
 
     $output = "<div class='analytics-results multiple-queries'>";
-    $output .= "<h4>Résultats pour : " . htmlspecialchars($originalQuery) . "</h4>";
+    $output .= "<h4>" . $this->language->getDef('text_rag_analytics_results_for') . " " . htmlspecialchars($originalQuery) . "</h4>";
     $output .= "<div class='alert alert-info'>";
-    $output .= "<strong>Note :</strong> Cette requête contient {$queryCount} sous-requêtes. Les résultats sont affichés séparément ci-dessous.";
+    $output .= "<strong>" . $this->language->getDef('text_rag_analytics_note') . "</strong> " . str_replace('{count}', $queryCount, $this->language->getDef('text_rag_analytics_note_multiple_queries'));
     $output .= "</div>";
 
     // Display source attribution
@@ -126,16 +185,16 @@ class AnalyticsFormatter extends AbstractFormatter
     // Process each sub-query result
     foreach ($multipleResults as $index => $subResult) {
       $subQueryNum = $index + 1;
-      $subQuery = $subResult['query'] ?? "Sous-requête {$subQueryNum}";
+      $subQuery = $subResult['query'] ?? $this->language->getDef('text_rag_analytics_sub_query') . " {$subQueryNum}";
       
       $output .= "<div class='sub-query-result' style='margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px;'>";
-      $output .= "<h5 style='color: #0066cc;'>📊 Requête {$subQueryNum} : " . htmlspecialchars($subQuery) . "</h5>";
+      $output .= "<h5 style='color: #0066cc;'>📊 " . $this->language->getDef('text_rag_analytics_query') . " {$subQueryNum} : " . htmlspecialchars($subQuery) . "</h5>";
 
       // Check if this sub-query failed
       if (isset($subResult['error']) || (isset($subResult['success']) && $subResult['success'] === false)) {
-        $errorMsg = $subResult['error'] ?? 'Erreur inconnue';
+        $errorMsg = $subResult['error'] ?? $this->language->getDef('text_rag_analytics_unknown_error');
         $output .= "<div class='alert alert-warning'>";
-        $output .= "<strong>⚠️ Erreur :</strong> " . htmlspecialchars($errorMsg);
+        $output .= "<strong>⚠️ " . $this->language->getDef('text_rag_analytics_error') . "</strong> " . htmlspecialchars($errorMsg);
         $output .= "</div>";
         $output .= "</div>"; // Close sub-query-result
         continue;
@@ -148,20 +207,20 @@ class AnalyticsFormatter extends AbstractFormatter
 
       // Interpretation
       if (isset($subResult['interpretation']) && !empty($subResult['interpretation'])) {
-        $output .= "<div class='interpretation'><strong>Interprétation :</strong> " 
+        $output .= "<div class='interpretation'><strong>" . $this->language->getDef('text_rag_analytics_interpretation') . "</strong> " 
                 . Hash::displayDecryptedDataText($subResult['interpretation']) . "</div>";
       }
 
       // Data table
       if (isset($subResult['rows']) && is_array($subResult['rows']) && !empty($subResult['rows'])) {
         $output .= "<div class='results-table'>";
-        $output .= "<h6>Données :</h6>";
+        $output .= "<h6>" . $this->language->getDef('text_rag_analytics_data') . "</h6>";
         $output .= $this->generateTable($subResult['rows'], 'table table-bordered table-striped');
-        $output .= "<div class='result-count'><em>Nombre de résultats : " . $subResult['row_count'] . "</em></div>";
+        $output .= "<div class='result-count'><em>" . $this->language->getDef('text_rag_analytics_result_count') . " " . $subResult['row_count'] . "</em></div>";
         $output .= "</div>";
       } else {
         $output .= "<div class='alert alert-info'>";
-        $output .= "<strong>Note :</strong> Aucune donnée trouvée pour cette requête.";
+        $output .= "<strong>" . $this->language->getDef('text_rag_analytics_note') . "</strong> " . $this->language->getDef('text_rag_analytics_no_data_found');
         $output .= "</div>";
       }
 
@@ -171,10 +230,10 @@ class AnalyticsFormatter extends AbstractFormatter
     // Display all SQL queries if requested
     if ($this->displaySql && isset($results['sql_queries']) && is_array($results['sql_queries'])) {
       $output .= "<div class='all-sql-queries' style='margin-top: 20px;'>";
-      $output .= "<h5>Toutes les requêtes SQL exécutées :</h5>";
+      $output .= "<h5>" . $this->language->getDef('text_rag_analytics_all_sql_queries') . "</h5>";
       foreach ($results['sql_queries'] as $index => $sql) {
         $output .= "<div class='sql-query-item'>";
-        $output .= "<strong>Requête " . ($index + 1) . " :</strong>";
+        $output .= "<strong>" . $this->language->getDef('text_rag_analytics_query') . " " . ($index + 1) . " :</strong>";
         $output .= $this->formatSqlQuery($sql);
         $output .= "</div>";
       }
@@ -205,7 +264,7 @@ class AnalyticsFormatter extends AbstractFormatter
     $escaped = htmlspecialchars($formatted, ENT_NOQUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
     return "<div class='col-md-12 row sql-query'>
-            <strong>Requête SQL :</strong>
+            <strong>" . $this->language->getDef('text_rag_analytics_sql_query') . "</strong>
             <pre>{$escaped}</pre>
           </div>";
   }
@@ -217,7 +276,7 @@ class AnalyticsFormatter extends AbstractFormatter
     }
 
     $output = "<div class='results-table'>";
-    $output .= "<h5>Données :</h5>";
+    $output .= "<h5>" . $this->language->getDef('text_rag_analytics_data') . "</h5>";
     
     // Use inherited method from AbstractFormatter
     $output .= $this->generateTable($data, 'table table-bordered table-striped');

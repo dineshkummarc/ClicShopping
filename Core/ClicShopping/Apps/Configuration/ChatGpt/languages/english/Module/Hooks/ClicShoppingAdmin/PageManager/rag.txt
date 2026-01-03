@@ -1,32 +1,79 @@
-text_page_manager_embedded = [Page Manager]
-text_page_manager_name = [Page title : {{page_title}}]
-text_page_manager_id = [ID : {{page_id}}]
-text_page_manager_description = [Description : {{page_description}}]
-text_page_manager_seo_title = [Seo title : {{page_seo_title}}]
-text_page_manager_seo_description = [Seo description : {{page_seo_description}}]
-text_page_manager_seo_keywords = [Seo keywords:  {{page_seo_keywords}}]
-text_page_manager_taxonomy = [Taxonomy]
+text_key_domain = domain
+text_key_entity = entity
 
-text_create_taxonomy = You are a document analysis system. Extract a structured conceptual taxonomy from the following text.
-The text corresponds to a content page (guide, article, documentation, terms & conditions, FAQ), not a product, brand, or supplier.
-The output must strictly follow the format below.
-Every relevant piece of information must be assigned to the appropriate dimension.
-Do not invent or infer information not explicitly present in the text.
+text_key_document_id = document.id
+text_key_document_type = document.type
+text_key_document_title = document.title
+text_key_document_language = document.language
 
-Expected format:
+text_key_seo_title = seo.title
+text_key_seo_description = seo.description
+text_key_seo_keywords = seo.keywords
 
-[domain]: General domain of the content (e.g. Legal, Marketing, Technology, Lifestyle)
-[type_item]: Type of content or document (e.g. Article, Guide, Terms & Conditions, Tutorial)
-[theme]: Conceptual or functional theme of the content (e.g. Compliance, Performance, Best Practices)
-[usage_type]: Main type of usage or function (e.g. Reference, Training, Consultation)
-[subject_usage]: Specific usage scenario or context if mentioned (e.g. B2B, Internal Use, Customer-facing)
-[objective]: Purpose or goal of the content (e.g. Inform, Train, Explain)
-[source]: Origin or author if specified (e.g. Supplier, Internal Document, External Author)
-[criteria]: Standards, norms, or specific characteristics mentioned (e.g. Legal, Safety, Version)
-[practice]: Methods, processes, or best practices detailed in the content
-[sensory_dimension]: Perceptual or user experience aspects if mentioned (e.g. Readability, Accessibility)
-[symbolic_dimension]: Conceptual or symbolic value if mentioned (e.g. Credibility, Trust)
-[restriction]: Limitations, constraints, or conditions specified in the text (e.g. License, Compatibility)
-[tags]: Free list of relevant keywords extracted from the text, separated by commas
+text_key_jurisdiction = document.jurisdiction
+text_key_party_seller = party.seller
+text_key_party_buyer = party.buyer
+text_key_governing_law = clause.governing_law
+text_key_court = clause.court
 
-Text: {{document_text}}
+text_key_clause_order = clause.order
+text_key_clause_prices = clause.prices
+text_key_clause_payment_methods = clause.payment.methods
+text_key_clause_delivery_method = clause.delivery.method
+text_key_clause_withdrawal = clause.withdrawal
+text_key_clause_warranty = clause.warranty
+text_key_clause_liability = clause.liability
+text_key_clause_data_protection = clause.data_protection
+
+text_value_domain_ecommerce = ecommerce
+text_value_entity_document = document
+
+text_value_type_terms = terms_and_conditions
+text_value_type_privacy = privacy_policy
+text_value_type_faq = faq
+text_value_type_about = about_us
+text_value_type_contact = contact
+text_value_type_general = general_page
+text_value_present = present
+text_value_absent = absent
+
+text_prompt_extract_metadata = You are a legal document metadata extraction system specialized in e-commerce documents.
+Analyze this document carefully and extract ALL relevant metadata:
+
+**Document Title:** {title}
+**Document Language:** {language_code}
+**Document Content:**
+{content}
+
+Return ONLY a valid JSON object with this EXACT structure (no markdown, no code blocks, no explanation):
+
+{
+  "document_type": "specific type like: terms_and_conditions, privacy_policy, faq, user_guide, etc.",
+  "jurisdiction": "country name if mentioned, otherwise null",
+  "party_seller": "present if seller/vendor is mentioned, otherwise null",
+  "party_buyer": "present if buyer/customer is mentioned, otherwise null",
+  "payment_methods": ["list ALL payment methods found: paypal, credit_card, bank_transfer, check, stripe, etc."],
+  "delivery_method": "delivery/shipping method found, otherwise null",
+  "withdrawal_period": "return period like: 14_days, 7_days, 30_days, 60_days, otherwise null",
+  "warranty": "warranty type found, otherwise null",
+  "liability": "liability type found, otherwise null",
+  "data_protection": "data protection law like: gdpr, ccpa, law_78_17_1978, otherwise null",
+  "governing_law": "country whose law applies, otherwise null",
+  "court": "city/jurisdiction for disputes, otherwise null"
+}
+
+CRITICAL INSTRUCTIONS:
+1. Analyze the ENTIRE content provided
+2. Look for legal terms, payment methods, shipping info, return policies
+3. Be SPECIFIC with document_type (not just "general_page")
+4. Extract ALL payment methods found (not just one)
+5. Use snake_case for values (e.g., "terms_and_conditions", "credit_card")
+6. Return ONLY the JSON object, nothing else
+7. If information is not found, use null (not empty string)
+8. Work in ANY language - understand French, English, Chinese, Arabic, etc.
+
+EXAMPLES:
+- If you see "conditions générales de vente" → document_type: "terms_and_conditions"
+- If you see "PayPal, carte bancaire, chèque" → payment_methods: ["paypal", "credit_card", "check"]
+- If you see "14 jours" or "14 days" → withdrawal_period: "14_days"
+- If you see "Tribunal de Fréjus" → court: "Frejus"

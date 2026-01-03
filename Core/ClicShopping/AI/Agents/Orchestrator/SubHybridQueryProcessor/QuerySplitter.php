@@ -10,12 +10,10 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor;
 
-use ClicShopping\AI\Domain\Patterns\WebSearchPattern;
-use ClicShopping\AI\Domain\Patterns\ComplexQueryPattern;
-use ClicShopping\AI\Domain\Patterns\AnalyticsPattern;
-use ClicShopping\AI\Domain\Patterns\DependencyPattern;
+use ClicShopping\OM\Registry;
 use ClicShopping\AI\Domain\Semantics\Semantics;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\AI\Domain\Patterns\QuerySplitterPatterns;
 
 /**
  * QuerySplitter - Splits complex queries into sub-queries
@@ -38,6 +36,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
  *
  * @package ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor
  * @since 2025-12-14
+ * @version 2.0 - Internationalized 2025-12-30
  */
 class QuerySplitter extends BaseQueryProcessor
 {
@@ -57,6 +56,16 @@ class QuerySplitter extends BaseQueryProcessor
   private const TRANSLATION_CACHE_TTL = 3600;
 
   /**
+   * @var object Language object for translations
+   */
+  private $language;
+
+  /**
+   * @var string Current language code
+   */
+  private string $languageCode;
+
+  /**
    * Constructor
    *
    * @param bool $debug Enable debug logging
@@ -66,6 +75,15 @@ class QuerySplitter extends BaseQueryProcessor
   {
     parent::__construct($debug, 'QuerySplitter');
     $this->classifier = $classifier ?? new QueryClassifier($debug);
+    
+    // Initialize language support
+    $this->language = Registry::get('Language');
+    $this->languageCode = $this->language->get('code');
+    $this->language->loadDefinitions('rag_query_splitter', $this->languageCode, null, 'ClicShoppingAdmin');
+    
+    if ($this->debug) {
+      $this->logInfo("QuerySplitter initialized - Pure LLM mode only");
+    }
   }
 
   /**
@@ -122,6 +140,9 @@ class QuerySplitter extends BaseQueryProcessor
   /**
    * Detect if query contains multiple intents (hybrid query)
    *
+   * NOTE: Pure LLM mode - pattern-based hybrid detection is disabled
+   * Relies on QueryClassifier's LLM classification for hybrid detection
+   *
    * @param string $query Query to analyze
    * @param array $intent Intent analysis (optional)
    * @return bool True if hybrid query detected
@@ -129,104 +150,15 @@ class QuerySplitter extends BaseQueryProcessor
   public function detectMultipleIntents(string $query, array $intent = []): bool
   {
     try {
+      // Check both is_hybrid flag AND type === 'hybrid'
       if ($intent['is_hybrid'] ?? false) return true;
+      if (($intent['type'] ?? '') === 'hybrid') return true;
 
-      // Report/analysis patterns (CENTRALIZED)
-      $reportPatterns = ComplexQueryPattern::getReportPatterns();
-      
-      foreach ($reportPatterns as $pattern) {
-        if (preg_match($pattern, $query)) {
-          if ($this->debug) $this->logInfo("Hybrid: report pattern", ['query' => $query]);
-          return true;
-        }
+      // In Pure LLM mode, rely on QueryClassifier's LLM classification
+      // which already handles hybrid detection
+      if ($this->debug) {
+        $this->logInfo("Pattern-based hybrid detection disabled in Pure LLM mode");
       }
-
-      // Multiple verbs (CENTRALIZED)
-      $verbs = ComplexQueryPattern::getActionVerbs();
-      $verbCount = count(array_filter($verbs, fn($v) => preg_match('/\b' . preg_quote($v, '/') . '\b/i', $query)));
-      
-      if ($verbCount >= 2) {
-        if ($this->debug) $this->logInfo("Hybrid: multiple verbs", ['count' => $verbCount]);
-        return true;
-      }
-
-      // Explicit connectors (CENTRALIZED)
-      $connectors = ComplexQueryPattern::getConnectors()['strong'];
-      foreach ($connectors as $connector) {
-        if (stripos($query, $connector) !== false) {
-          if ($this->debug) $this->logInfo("Hybrid: connector", ['connector' => $connector]);
-          return true;
-        }
-      }
-
-      // Multiple questions or semicolons
-      if (substr_count($query, '?') >= 2 || substr_count($query, ';') >= 1) {
-        if ($this->debug) $this->logInfo("Hybrid: multiple questions/semicolons");
-        return true;
-      }
-
-      // Period-delimited sentences with dependencies (CENTRALIZED)
-      if (DependencyPattern::hasPeriodDelimitedDependencies($query)) {
-        if ($this->debug) $this->logInfo("Hybrid: period-delimited with dependency");
-        return true;
-      }
-
-      // Comma-separated with different types
-      if (strpos($query, ',') !== false) {
-        $parts = array_filter(array_map('trim', explode(',', $query)), fn($p) => strlen($p) >= 3);
-        if (count($parts) >= 2) {
-          $types = array_map(fn($p) => $this->classifier->classifyQueryType($p)['type'], $parts);
-          if (count(array_unique($types)) > 1) {
-            if ($this->debug) $this->logInfo("Hybrid: comma-separated different types");
-            return true;
-          }
-        }
-      }
-
-      // Analytics + analytics (CENTRALIZED)
-      $analyticsKeywords = AnalyticsPattern::getAnalyticsKeywords();
-      $analyticsMatches = count(array_filter($analyticsKeywords, fn($k) => preg_match('/\b' . preg_quote($k, '/') . '\b/i', $query)));
-      
-      if ($analyticsMatches >= 2) {
-        // Check for explicit connectors
-        foreach ($connectors as $connector) {
-          if (preg_match('/\b' . preg_quote($connector, '/') . '\b/i', $query)) {
-            if ($this->debug) $this->logInfo("Hybrid: analytics + analytics", ['matches' => $analyticsMatches]);
-            return true;
-          }
-        }
-        
-        // Check for simple "and" connector with analytics keywords
-        if (preg_match('/\band\b/i', $query)) {
-          // Split by "and" and check if both parts contain analytics keywords
-          $parts = preg_split('/\band\b/i', $query, -1, PREG_SPLIT_NO_EMPTY);
-          $parts = array_filter(array_map('trim', $parts), fn($p) => strlen($p) >= 3);
-          
-          if (count($parts) >= 2) {
-            // Check if each part contains at least one analytics keyword
-            $analyticsPartsCount = 0;
-            foreach ($parts as $part) {
-              $hasAnalyticsKeyword = false;
-              foreach ($analyticsKeywords as $keyword) {
-                if (preg_match('/\b' . preg_quote($keyword, '/') . '\b/i', $part)) {
-                  $hasAnalyticsKeyword = true;
-                  break;
-                }
-              }
-              if ($hasAnalyticsKeyword) {
-                $analyticsPartsCount++;
-              }
-            }
-            
-            // If at least 2 parts have analytics keywords, it's a hybrid query
-            if ($analyticsPartsCount >= 2) {
-              if ($this->debug) $this->logInfo("Hybrid: analytics + analytics (simple 'and')", ['matches' => $analyticsMatches, 'parts' => $analyticsPartsCount]);
-              return true;
-            }
-          }
-        }
-      }
-
       return false;
     } catch (\Exception $e) {
       $this->logError("Error in detectMultipleIntents", $e);
@@ -246,11 +178,8 @@ class QuerySplitter extends BaseQueryProcessor
     try {
       if ($this->debug) $this->logInfo("Splitting hybrid query", ['query' => $query]);
 
-      $prompt = "Split this query into separate sub-queries. Each sub-query should be independent.\n\n";
-      $prompt .= "Query: {$query}\n\n";
-      $prompt .= "Return a JSON array of sub-queries with their type (analytics, semantic, or web_search).\n";
-      $prompt .= "Example: [{\"query\": \"sales today\", \"type\": \"analytics\"}, {\"query\": \"what is our return policy\", \"type\": \"semantic\"}]\n\n";
-      $prompt .= "JSON:";
+      // Get prompt from language file and replace {query} placeholder
+      $prompt = $this->language->getDef('prompt_split_hybrid', array('query' => $query));
 
       $validatedPrompt = $this->validatePrompt($prompt);
       if (empty($validatedPrompt)) {
@@ -260,9 +189,26 @@ class QuerySplitter extends BaseQueryProcessor
 
       try {
         $response = Gpt::getGptResponse($validatedPrompt, 300);
+        
+        // Log the raw LLM response for debugging
+        if ($this->debug) {
+          $this->logInfo("LLM response for query splitting", ['response' => substr($response, 0, 500)]);
+        }
 
         if (preg_match('/\[.*\]/s', $response, $matches)) {
           $subQueries = json_decode($matches[0], true);
+          
+          // Log JSON parsing result
+          if ($this->debug) {
+            if (json_last_error() !== JSON_ERROR_NONE) {
+              $this->logWarning("JSON parsing failed", [
+                'error' => json_last_error_msg(),
+                'json' => substr($matches[0], 0, 200)
+              ]);
+            } else {
+              $this->logInfo("JSON parsed successfully", ['sub_query_count' => count($subQueries ?? [])]);
+            }
+          }
 
           if (is_array($subQueries) && !empty($subQueries)) {
             // Filter out short parts (<=5 chars)
@@ -270,18 +216,16 @@ class QuerySplitter extends BaseQueryProcessor
             
             // Add classification, confidence, priority, and dependency detection
             foreach ($subQueries as $index => &$subQuery) {
-              // Always get classification to ensure confidence scores
+              // ✅ CRITICAL FIX (2026-01-02): Always use QueryClassifier for sub-query classification
+              // The LLM splitting may return incorrect types (e.g., "semantic" instead of "web_search")
+              // QueryClassifier applies WebSearchPostFilter which provides deterministic detection
               $classification = $this->classifier->classifyQueryType($subQuery['query']);
               
-              // Set type if missing or empty
-              if (!isset($subQuery['type']) || empty($subQuery['type'])) {
-                $subQuery['type'] = $classification['type'];
-              }
+              // ✅ ALWAYS override type with QueryClassifier result (don't trust LLM type)
+              $subQuery['type'] = $classification['type'];
               
               // Always set confidence score
-              if (!isset($subQuery['confidence'])) {
-                $subQuery['confidence'] = $classification['confidence'];
-              }
+              $subQuery['confidence'] = $classification['confidence'];
               
               // Always set priority
               if (!isset($subQuery['priority'])) {
@@ -290,36 +234,23 @@ class QuerySplitter extends BaseQueryProcessor
               
               // Detect dependencies: if this is not the first query, check for dependency indicators (CENTRALIZED)
               if ($index > 0 && !isset($subQuery['depends_on'])) {
-                $prevQuery = $subQueries[$index - 1]['query'];
-                $currentQuery = $subQuery['query'];
-                
-                // Translate to English for pattern matching (English-only patterns)
-                // LLM may return queries in original language, so we translate them
-                // Using cached translation for performance
-                $prevQueryEnglish = $this->translateToEnglishCached($prevQuery);
-                $currentQueryEnglish = $this->translateToEnglishCached($currentQuery);
-                
-                // Use centralized DependencyPattern for detection (English patterns)
-                $dependency = DependencyPattern::detectDependency($prevQueryEnglish, $currentQueryEnglish);
-                
-                if ($dependency['has_dependency']) {
-                  $subQuery['depends_on'] = $index; // Depends on previous sub-query (1-indexed)
-                  $subQuery['dependency_type'] = $dependency['type'];
-                  
-                  if ($this->debug) {
-                    $this->logInfo("Dependency detected", [
-                      'query' => $currentQuery,
-                      'query_en' => $currentQueryEnglish,
-                      'type' => $dependency['type'],
-                      'indicator' => $dependency['indicator']
-                    ]);
-                  }
+                // Dependencies are now handled by LLM during query splitting
+                // Pattern-based dependency detection is disabled in Pure LLM mode
+                if ($this->debug) {
+                  $this->logInfo("Dependency detection handled by LLM during splitting");
                 }
               }
             }
 
             if ($this->debug) $this->logInfo("Query split via LLM", ['count' => count($subQueries)]);
             return $subQueries;
+          }
+        } else {
+          // Log when regex doesn't find JSON array
+          if ($this->debug) {
+            $this->logWarning("No JSON array found in LLM response", [
+              'response_preview' => substr($response, 0, 200)
+            ]);
           }
         }
 
@@ -348,21 +279,14 @@ class QuerySplitter extends BaseQueryProcessor
     try {
       if ($this->debug) $this->logInfo("Splitting complex query", ['query' => $query]);
 
-      // Report/Analysis queries
-      if (preg_match('/\b(create|generate|make|build)\s+(?:(?:a|an)\s+)?(?:(?:analysis|detailed|comprehensive)\s+)?(report|analysis|summary)\s+(?:for|of|on|about)\s+(.+)/i', $query, $matches)) {
+      // Report/Analysis queries - using pattern from QuerySplitterPatterns
+      if (preg_match(QuerySplitterPatterns::REPORT_QUERY_PATTERN, $query, $matches)) {
         return $this->splitReportQuery(trim($matches[3]), $query);
       }
 
-      // Try splitting by various delimiters
-      $delimiters = [
-        'comma' => ',',
-        'and_then' => '/\s+and\s+then\s+/i',
-        'period' => '/\.\s+/i',  // Period followed by space (sentence boundary)
-        'and' => '/\band\b/i',
-        'question' => '?',
-        'semicolon' => ';'
-      ];
-
+      // Try splitting by various delimiters - using patterns from QuerySplitterPatterns
+      $delimiters = QuerySplitterPatterns::DELIMITER_PATTERNS;
+      
       foreach ($delimiters as $type => $delimiter) {
         $result = $this->splitByDelimiter($query, $delimiter, $type);
         if (!empty($result)) return $result;
@@ -381,17 +305,27 @@ class QuerySplitter extends BaseQueryProcessor
 
   /**
    * Split report query into analytics + semantic + optional web_search
+   *
+   * NOTE: Pure LLM mode - web search detection handled by LLM during classification
    */
   private function splitReportQuery(string $subject, string $originalQuery): array
   {
     $subQueries = [
-      ['query' => "Get {$subject} stock and sales data", 'type' => 'analytics', 'priority' => 1, 'original_part' => $originalQuery],
-      ['query' => "Get {$subject} product information and features", 'type' => 'semantic', 'priority' => 2, 'original_part' => $originalQuery]
+      [
+        'query' => str_replace('{subject}', $subject, $this->language->getDef('report_query_analytics_template')),
+        'type' => 'analytics',
+        'priority' => 1,
+        'original_part' => $originalQuery
+      ],
+      [
+        'query' => str_replace('{subject}', $subject, $this->language->getDef('report_query_semantic_template')),
+        'type' => 'semantic',
+        'priority' => 2,
+        'original_part' => $originalQuery
+      ]
     ];
 
-    if (WebSearchPattern::isExternalQuery($subject)) {
-      $subQueries[] = ['query' => "Search for {$subject} market analysis and competitor reviews", 'type' => 'web_search', 'priority' => 3, 'original_part' => $originalQuery];
-    }
+    // LLM will determine if web search is needed during classification
 
     if ($this->debug) $this->logInfo("Split report query", ['subject' => $subject, 'count' => count($subQueries)]);
     return $subQueries;
@@ -399,6 +333,8 @@ class QuerySplitter extends BaseQueryProcessor
 
   /**
    * Split query by delimiter
+   *
+   * NOTE: Pure LLM mode - dependency detection handled by LLM during query analysis
    */
   private function splitByDelimiter(string $query, $delimiter, string $type): array
   {
@@ -416,12 +352,8 @@ class QuerySplitter extends BaseQueryProcessor
       if ($analyticsCount < 2) return [];
     }
 
-    // Special handling for "period" - detect dependencies (CENTRALIZED)
+    // LLM handles dependencies during query analysis
     $hasDependency = false;
-    if ($type === 'period' && count($parts) >= 2) {
-      $dependency = DependencyPattern::detectDependency($parts[0], $parts[1]);
-      $hasDependency = $dependency['has_dependency'];
-    }
 
     $subQueries = [];
     foreach ($parts as $index => $part) {
@@ -453,20 +385,19 @@ class QuerySplitter extends BaseQueryProcessor
   /**
    * Detect if query contains multiple SQL queries (AND connector)
    *
-   * Uses MultiQueryPattern class for pattern management (English-only)
+   * NOTE: Pure LLM mode - multi-query detection is disabled
+   * This method always returns false in pure LLM mode
    * 
    * @param string $query Query to analyze
-   * @return array|false Array of sub-queries or false if single query
+   * @return array|false Always returns false (feature disabled)
    */
   public function detectMultipleSqlQueries(string $query): array|false
   {
-    $result = \ClicShopping\AI\Domain\Patterns\MultiQueryPattern::detectMultipleQueries($query);
-    
-    if ($result !== false && $this->debug) {
-      $this->logInfo("Detected multi-query", ['sub_query_count' => count($result)]);
+    if ($this->debug) {
+      $this->logInfo("Multi-query pattern detection disabled in Pure LLM mode, returning false");
     }
     
-    return $result;
+    return false;
   }
 
   /**
@@ -478,7 +409,11 @@ class QuerySplitter extends BaseQueryProcessor
   public function simpleSplit(string $query): array
   {
     try {
-      $parts = array_filter(array_map('trim', preg_split('/\b(and|then|also)\b/i', $query)), fn($p) => strlen($p) >= 3);
+      // Use pattern from QuerySplitterPatterns
+      $parts = array_filter(
+        array_map('trim', preg_split(QuerySplitterPatterns::SIMPLE_SPLIT_PATTERN, $query)),
+        fn($p) => strlen($p) >= 3
+      );
       
       $subQueries = [];
       foreach ($parts as $part) {
@@ -552,11 +487,29 @@ class QuerySplitter extends BaseQueryProcessor
   private function validatePrompt(string $prompt): string
   {
     try {
-      if (empty(trim($prompt))) return '';
-      if (strlen($prompt) > 4096) $prompt = substr($prompt, 0, 4096);
+      if (empty(trim($prompt))) {
+        return '';
+      }
+
+      // Modern LLMs support up to 128K tokens (~400K+ characters)
+      // Use configurable limit or default to 100K characters
+      $maxLength = defined('CLICSHOPPING_APP_CHATGPT_MAX_PROMPT_LENGTH') ? (int)CLICSHOPPING_APP_CHATGPT_MAX_PROMPT_LENGTH : 100000; // Default: 100K characters (~25K tokens)
+      
+      if (strlen($prompt) > $maxLength) {
+        if ($this->debug) {
+          $this->logWarning("Prompt exceeds maximum length ({$maxLength} chars), truncating", [
+            'original_length' => strlen($prompt),
+            'truncated_length' => $maxLength
+          ]);
+        }
+        $prompt = substr($prompt, 0, $maxLength);
+      }
+      
+      // Security: Remove potentially dangerous HTML tags
       if (preg_match('/<script|<iframe/i', $prompt)) {
         $prompt = preg_replace('/<script.*?<\/script>|<iframe.*?<\/iframe>/is', '', $prompt);
       }
+
       return $prompt;
     } catch (\Exception $e) {
       $this->logError("Error validating prompt", $e);

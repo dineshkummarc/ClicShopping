@@ -13,8 +13,31 @@ Output: A single string of characters in professional English.
 # CORE RULES
 1. IDENTITY TRANSFORM: If the text is already in English, return it EXACTLY as-is, UNLESS it contains a non-standard financial term defined in Rule 5.
 2. TECHNICAL INTEGRITY: Strictly preserve technical terms. Never modify acronyms, codes, or identifiers (e.g., EAN, SKU, UUID).
-3. ACTION VERBS: Do NOT modify or rephrase operational verbs (e.g., "Show", "Give", "Display", "Search").
+3. ACTION VERBS: DO NOT modify or rephrase operational verbs (e.g., "Show", "Give", "Display", "Search").
 4. ZERO ADDITION: Do not add information like "Price not available" or metadata.
+5. SMART REDUNDANCY DETECTION:
+   Apply this decision logic to determine if two parts of a query are redundant:
+   
+   **Step 1: Extract components from each part**
+   - What METRIC is requested? (revenue, price, stock, count, etc.)
+   - What TIME PERIOD? (month, quarter, year, week, day, etc.)
+   - What ENTITY? (product, order, customer, etc.)
+   - What AGGREGATION? (sum, count, average, list, etc.)
+   
+   **Step 2: Compare components**
+   - If ALL components are IDENTICAL but expressed with SYNONYMS → REDUNDANT (eliminate)
+   - If ANY component is DIFFERENT → NOT REDUNDANT (preserve both)
+   
+   **Step 3: Check for sequence indicators**
+   - Words like "then", "puis", "después", "dann", "followed by", "after that" → SEQUENTIAL (preserve both)
+   - Sequential requests are NEVER redundant even if similar
+   
+   **Examples of comparison logic**:
+   - "revenue by month" vs "revenue monthly" → SAME metric, SAME period, SYNONYMS → REDUNDANT ✓
+   - "revenue by month" vs "revenue by quarter" → SAME metric, DIFFERENT period → NOT REDUNDANT ✗
+   - "revenue" vs "profit" → DIFFERENT metric → NOT REDUNDANT ✗
+   - "price" vs "stock" → DIFFERENT metric → NOT REDUNDANT ✗
+   - "count products" vs "list products" → SAME entity, DIFFERENT aggregation → NOT REDUNDANT ✗
 
 # UNIVERSAL TERMINOLOGY MAPPING (Mandatory)
 Regardless of the source language (Chinese, French, etc.) or synonymous English terms, you MUST map these concepts to these exact keywords:
@@ -30,6 +53,60 @@ Regardless of the source language (Chinese, French, etc.) or synonymous English 
 - CONCEPT: OPERATIONAL OUTFLOWS (The money spent to generate revenue)
   -> ALWAYS use: "expenses"
   -> FORBIDDEN: "costs", "charges", "fees", "depenses", "支出", "Kosten", etc.
+
+# EXAMPLES OF SMART REDUNDANCY DETECTION
+
+## Example 1: TRUE REDUNDANCY (Eliminate)
+Input: "donne moi le chiffre d'affaire de l'année 2025 par mois et donne moi le chiffre d'affaires de l'année 2025 mensuellement"
+Analysis:
+  Part 1: metric=revenue, period=month, year=2025
+  Part 2: metric=revenue, period=monthly (synonym of month), year=2025
+  Comparison: ALL components identical, just synonyms
+  Decision: REDUNDANT → Eliminate
+Output: "Give me the revenue for 2025 by month"
+
+## Example 2: DIFFERENT TIME PERIODS (Preserve)
+Input: "donne moi le chiffre d'affaire de l'année 2025 par mois et donne moi le chiffre d'affaires de l'année 2025 répartie par trimestre"
+Analysis:
+  Part 1: metric=revenue, period=month, year=2025
+  Part 2: metric=revenue, period=quarter, year=2025
+  Comparison: metric SAME, period DIFFERENT (month ≠ quarter)
+  Decision: NOT REDUNDANT → Preserve both
+Output: "Give me the revenue for 2025 by month and give me the revenue for 2025 by quarter"
+
+## Example 3: SEQUENTIAL REQUESTS (Preserve)
+Input: "donne moi le chiffre d'affaire de l'année 2025 par mois puis donne moi le chiffre d'affaires de l'année 2025 répartie par trimestre"
+Analysis:
+  Sequence indicator: "puis" (then)
+  Decision: SEQUENTIAL → Preserve both with "then"
+Output: "Give me the revenue for 2025 by month then give me the revenue for 2025 by quarter"
+
+## Example 4: DIFFERENT METRICS (Preserve)
+Input: "show me the price and the stock"
+Analysis:
+  Part 1: metric=price
+  Part 2: metric=stock
+  Comparison: DIFFERENT metrics
+  Decision: NOT REDUNDANT → Preserve both
+Output: "Show me the price and the stock"
+
+## Example 5: SYNONYM VERBS (Eliminate)
+Input: "show me products and display products"
+Analysis:
+  Part 1: verb=show, entity=products
+  Part 2: verb=display (synonym of show), entity=products
+  Comparison: ALL components identical, just synonyms
+  Decision: REDUNDANT → Eliminate
+Output: "Show me products"
+
+## Example 6: DIFFERENT AGGREGATIONS (Preserve)
+Input: "count the products and list the products"
+Analysis:
+  Part 1: aggregation=count, entity=products
+  Part 2: aggregation=list, entity=products
+  Comparison: entity SAME, aggregation DIFFERENT (count ≠ list)
+  Decision: NOT REDUNDANT → Preserve both
+Output: "Count the products and list the products"
 
 # FINAL CHECK
 Any output containing non-English characters (except for original Codes/EAN) or forbidden synonyms is a failure.

@@ -41,7 +41,17 @@ class SchemaEmbedder
   public function __construct(bool $debug = false)
   {
     $this->db = Registry::get('Db');
-    $this->embeddingService = Registry::get('EmbeddingService');
+    
+    // Try to get embedding service, but don't fail if it's not available
+    try {
+      $this->embeddingService = Registry::exists('EmbeddingService') ? Registry::get('EmbeddingService') : null;
+    } catch (\Exception $e) {
+      $this->embeddingService = null;
+      if ($debug) {
+        error_log("[SchemaEmbedder] EmbeddingService not available: " . $e->getMessage());
+      }
+    }
+    
     $this->debug = $debug;
   }
   
@@ -135,7 +145,7 @@ class SchemaEmbedder
   public function getAllTableEmbeddings(): array
   {
     $Qembeddings = $this->db->query('
-      SELECT table_name, embedding_vector
+      SELECT table_name, VEC_ToText(embedding_vector) as embedding_text
       FROM :table_rag_schema_embeddings
       ORDER BY table_name
     ');
@@ -144,8 +154,17 @@ class SchemaEmbedder
     
     while ($Qembeddings->fetch()) {
       $tableName = $Qembeddings->value('table_name');
-      $embeddingJson = $Qembeddings->value('embedding_vector');
-      $embeddings[$tableName] = json_decode($embeddingJson, true);
+      
+      // Skip technical tables (should not be in embeddings, but filter just in case)
+      if (strpos($tableName, '_embedding') !== false || strpos($tableName, 'clic_rag_') === 0) {
+        continue;
+      }
+      
+      $embeddingText = $Qembeddings->value('embedding_text');
+      
+      // Parse VECTOR text format: [val1,val2,...]
+      $embeddingText = trim($embeddingText, '[]');
+      $embeddings[$tableName] = array_map('floatval', explode(',', $embeddingText));
     }
     
     return $embeddings;

@@ -9,11 +9,11 @@
  * @date 2025-11-17
  */
 
-use ClicShopping\AI\Insfrastructure\Cache\Cache;
-use ClicShopping\AI\Insfrastructure\Cache\QueryCache;
-use ClicShopping\AI\Insfrastructure\Cache\SubQueryCache\CacheFileStorage;
-use ClicShopping\AI\Insfrastructure\Cache\TranslationCache;
+use ClicShopping\OM\Cache as OMCache;
+use ClicShopping\AI\Infrastructure\Cache\TranslationCache;
+use ClicShopping\AI\Infrastructure\Cache\ClassificationCache;
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Registry;
 
 // Bootstrap
 define('PAGE_PARSE_START_TIME', microtime());
@@ -26,6 +26,7 @@ spl_autoload_register('ClicShopping\OM\CLICSHOPPING::autoload');
 CLICSHOPPING::initialize();
 CLICSHOPPING::loadSite('ClicShoppingAdmin');
 AdministratorAdmin::hasUserAccess();
+
 // Set JSON header
 header('Content-Type: application/json');
 
@@ -54,42 +55,14 @@ try {
   $errors = [];
   
   // ============================================================================
-  // 1. Reset File Cache (RAG)
-  // ============================================================================
-  if (in_array('files', $cacheTypes)) {
-    try {
-      $fileStorage = new CacheFileStorage(true);
-      
-      // Get stats before flush
-      $statsBefore = $fileStorage->getStats();
-      $filesBefore = $statsBefore['total_files'] ?? 0;
-      
-      // Flush file cache
-      $fileStorage->flush();
-      
-      // Get stats after flush
-      $statsAfter = $fileStorage->getStats();
-      $filesAfter = $statsAfter['total_files'] ?? 0;
-      
-      $results['files'] = $filesBefore - $filesAfter;
-      
-      error_log("Cache Reset: File cache flushed - {$results['files']} files deleted");
-      
-    } catch (Exception $e) {
-      $errors[] = "File cache: " . $e->getMessage();
-      error_log("Cache Reset Error (files): " . $e->getMessage());
-    }
-  }
-  
-  // ============================================================================
-  // 2. Reset Translation Cache
+  // 1. Reset Translation Cache
   // ============================================================================
   if (in_array('translations', $cacheTypes)) {
     try {
       $translationCache = new TranslationCache();
       
       // Count files before
-      $cacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Translations/';
+      $cacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Translation/';
       $filesBefore = 0;
       
       if (is_dir($cacheDir)) {
@@ -130,22 +103,51 @@ try {
   }
   
   // ============================================================================
-  // 3. Reset Database Cache
+  // 3. Reset Classification Cache
+  // ============================================================================
+  if (in_array('classification', $cacheTypes)) {
+    try {
+      $classificationCache = new ClassificationCache();
+      
+      // Get stats before
+      $statsBefore = $classificationCache->getStatistics();
+      $filesBefore = $statsBefore['file_count'] ?? 0;
+      
+      // Flush classification cache
+      $classificationCache->clearCache();
+      
+      // Get stats after
+      $statsAfter = $classificationCache->getStatistics();
+      $filesAfter = $statsAfter['file_count'] ?? 0;
+      
+      $results['classification'] = $filesBefore - $filesAfter;
+      
+      error_log("Cache Reset: Classification cache flushed - {$results['classification']} files deleted");
+      
+    } catch (Exception $e) {
+      $errors[] = "Classification cache: " . $e->getMessage();
+      error_log("Cache Reset Error (classification): " . $e->getMessage());
+    }
+  }
+  
+  // ============================================================================
+  // 3. Reset Database Query Cache
   // ============================================================================
   if (in_array('database', $cacheTypes)) {
     try {
-      $queryCache = new QueryCache();
+      $db = Registry::get('Db');
+      $prefix = CLICSHOPPING::getConfig('db_table_prefix');
       
-      // Get stats before flush
-      $statsBefore = $queryCache->getStats();
-      $entriesBefore = $statsBefore['total_entries'] ?? 0;
+      // Count entries before
+      $result = $db->query("SELECT COUNT(*) as count FROM {$prefix}rag_query_cache");
+      $entriesBefore = $result->fetch()['count'] ?? 0;
       
-      // Flush database cache
-      $queryCache->flush();
+      // Truncate table
+      $db->query("TRUNCATE TABLE {$prefix}rag_query_cache");
       
-      // Get stats after flush
-      $statsAfter = $queryCache->getStats();
-      $entriesAfter = $statsAfter['total_entries'] ?? 0;
+      // Count entries after
+      $result = $db->query("SELECT COUNT(*) as count FROM {$prefix}rag_query_cache");
+      $entriesAfter = $result->fetch()['count'] ?? 0;
       
       $results['database'] = $entriesBefore - $entriesAfter;
       
@@ -158,84 +160,425 @@ try {
   }
   
   // ============================================================================
-  // 5. Reset Prompt Cache (includes semantic query cache - TASK 4.3.2)
+  // 4. Reset Schema Query Cache (TASK 5 - ITEM 1)
   // ============================================================================
-  if (in_array('prompts', $cacheTypes)) {
+  if (in_array('schema', $cacheTypes)) {
     try {
-      $cache = new Cache(true);
+      // Count schema cache files before (new location)
+      $schemaCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/SchemaQuery/';
+      $filesBefore = 0;
       
-      // Get stats before
-      $statsBefore = $cache->getPromptCacheStats();
-      $entriesBefore = $statsBefore['entries'] ?? 0;
-      
-      // Delete the cache file (contains both prompts and semantic queries)
-      $cacheFile = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/rag_cache.cache';
-      $deleted = 0;
-      
-      if (file_exists($cacheFile)) {
-        if (unlink($cacheFile)) {
-          $deleted = $entriesBefore;
+      if (is_dir($schemaCacheDir)) {
+        $files = glob($schemaCacheDir . '*.cache');
+        $filesBefore = count($files);
+        
+        // Delete schema cache files
+        foreach ($files as $file) {
+          @unlink($file);
         }
       }
       
-      $results['prompts'] = $deleted;
+      // Also check old location (root cache directory with Rag_SchemaQuery_ prefix)
+      $oldCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/';
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = glob($oldCacheDir . 'Rag_SchemaQuery_*.cache');
+        $filesBefore += count($oldFiles);
+        
+        // Delete old schema cache files
+        foreach ($oldFiles as $file) {
+          @unlink($file);
+        }
+      }
       
-      error_log("Cache Reset: Prompt cache flushed (includes semantic queries) - {$results['prompts']} entries deleted");
+      // Count files after
+      $filesAfter = 0;
+      if (is_dir($schemaCacheDir)) {
+        $files = glob($schemaCacheDir . '*.cache');
+        $filesAfter = count($files);
+      }
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = glob($oldCacheDir . 'Rag_SchemaQuery_*.cache');
+        $filesAfter += count($oldFiles);
+      }
+      
+      $results['schema'] = $filesBefore - $filesAfter;
+      
+      error_log("Cache Reset: Schema query cache flushed - {$results['schema']} files deleted");
       
     } catch (Exception $e) {
-      $errors[] = "Prompt cache: " . $e->getMessage();
-      error_log("Cache Reset Error (prompts): " . $e->getMessage());
+      $errors[] = "Schema cache: " . $e->getMessage();
+      error_log("Cache Reset Error (schema): " . $e->getMessage());
     }
   }
   
   // ============================================================================
-  // 6. Reset Semantic Query Cache (TASK 4.3.2 - separate option)
+  // 5. Reset Intent Classification Cache (TASK 5.1.7.6)
   // ============================================================================
-  if (in_array('semantic', $cacheTypes)) {
+  if (in_array('intent', $cacheTypes)) {
     try {
-      $cache = new Cache(true);
+      // Count intent cache files before (new location - all files)
+      $intentCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Intent/';
+      $filesBefore = 0;
       
-      // Get stats before
-      $statsBefore = $cache->getPromptCacheStats();
-      $entriesBefore = $statsBefore['entries'] ?? 0;
-      
-      // Read cache file and filter out semantic queries
-      $cacheFile = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/rag_cache.cache';
-      $deleted = 0;
-      
-      if (file_exists($cacheFile)) {
-        $cacheContent = file_get_contents($cacheFile);
-        $cacheData = json_decode($cacheContent, true);
+      if (is_dir($intentCacheDir)) {
+        $files = glob($intentCacheDir . '*.cache');
+        $filesBefore = count($files);
         
-        if ($cacheData !== null && is_array($cacheData)) {
-          $originalCount = count($cacheData);
-          
-          // Filter out semantic queries (those with JSON response containing "type":"semantic")
-          $filteredCache = [];
-          foreach ($cacheData as $key => $entry) {
-            $response = $entry['response'] ?? '';
-            // Check if response is a JSON string containing semantic query result
-            $decoded = json_decode($response, true);
-            if ($decoded === null || !isset($decoded['type']) || $decoded['type'] !== 'semantic') {
-              // Keep non-semantic entries
-              $filteredCache[$key] = $entry;
-            }
-          }
-          
-          $deleted = $originalCount - count($filteredCache);
-          
-          // Save filtered cache back to file
-          file_put_contents($cacheFile, json_encode($filteredCache));
+        // Delete all intent cache files
+        foreach ($files as $file) {
+          @unlink($file);
         }
       }
       
-      $results['semantic'] = $deleted;
+      // Also check old location (root cache directory with Rag_Intent_ prefix)
+      $oldCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/';
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = glob($oldCacheDir . 'Rag_Intent_*.cache');
+        $filesBefore += count($oldFiles);
+        
+        // Delete old intent cache files
+        foreach ($oldFiles as $file) {
+          @unlink($file);
+        }
+      }
       
-      error_log("Cache Reset: Semantic query cache flushed - {$results['semantic']} entries deleted");
+      // Count files after
+      $filesAfter = 0;
+      if (is_dir($intentCacheDir)) {
+        $files = glob($intentCacheDir . '*.cache');
+        $filesAfter = count($files);
+      }
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = glob($oldCacheDir . 'Rag_Intent_*.cache');
+        $filesAfter += count($oldFiles);
+      }
+      
+      $results['intent'] = $filesBefore - $filesAfter;
+      
+      error_log("Cache Reset: Intent classification cache flushed - {$results['intent']} files deleted");
       
     } catch (Exception $e) {
-      $errors[] = "Semantic cache: " . $e->getMessage();
-      error_log("Cache Reset Error (semantic): " . $e->getMessage());
+      $errors[] = "Intent cache: " . $e->getMessage();
+      error_log("Cache Reset Error (intent): " . $e->getMessage());
+    }
+  }
+  
+  // ============================================================================
+  // 6. Reset Ambiguity Cache (TASK 4 - Cache Migration)
+  // ============================================================================
+  if (in_array('ambiguity', $cacheTypes)) {
+    try {
+      // Count ambiguity cache files before (new location - all files)
+      $ambiguityCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Ambiguity/';
+      $filesBefore = 0;
+      
+      if (is_dir($ambiguityCacheDir)) {
+        $files = glob($ambiguityCacheDir . '*.cache');
+        $filesBefore = count($files);
+        
+        // Delete all ambiguity cache files
+        foreach ($files as $file) {
+          @unlink($file);
+        }
+      }
+      
+      // Also check old location (root cache directory with Rag_Ambiguity_ prefix)
+      $oldCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/';
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = glob($oldCacheDir . 'Rag_Ambiguity_*.cache');
+        $filesBefore += count($oldFiles);
+        
+        // Delete old ambiguity cache files
+        foreach ($oldFiles as $file) {
+          @unlink($file);
+        }
+      }
+      
+      // Also check very old location (ambiguity_optimizer directory)
+      $veryOldCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/ambiguity_optimizer/';
+      if (is_dir($veryOldCacheDir)) {
+        $veryOldFiles = glob($veryOldCacheDir . '*.cache');
+        $filesBefore += count($veryOldFiles);
+        
+        // Delete very old ambiguity cache files
+        foreach ($veryOldFiles as $file) {
+          @unlink($file);
+        }
+      }
+      
+      // Count files after
+      $filesAfter = 0;
+      if (is_dir($ambiguityCacheDir)) {
+        $files = glob($ambiguityCacheDir . '*.cache');
+        $filesAfter = count($files);
+      }
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = glob($oldCacheDir . 'Rag_Ambiguity_*.cache');
+        $filesAfter += count($oldFiles);
+      }
+      if (is_dir($veryOldCacheDir)) {
+        $veryOldFiles = glob($veryOldCacheDir . '*.cache');
+        $filesAfter += count($veryOldFiles);
+      }
+      
+      $results['ambiguity'] = $filesBefore - $filesAfter;
+      
+      error_log("Cache Reset: Ambiguity cache flushed - {$results['ambiguity']} files deleted");
+      
+    } catch (Exception $e) {
+      $errors[] = "Ambiguity cache: " . $e->getMessage();
+      error_log("Cache Reset Error (ambiguity): " . $e->getMessage());
+    }
+  }
+  
+  // ============================================================================
+  // 7. Reset Translation Ambiguity Cache
+  // ============================================================================
+  if (in_array('translation_ambiguity', $cacheTypes)) {
+    try {
+      // Count translation ambiguity cache files before (new location)
+      $translationAmbiguityCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Translation/';
+      $filesBefore = 0;
+      
+      if (is_dir($translationAmbiguityCacheDir)) {
+        $files = glob($translationAmbiguityCacheDir . 'translation_ambiguity_*.cache');
+        $filesBefore = count($files);
+        
+        // Delete translation ambiguity cache files
+        foreach ($files as $file) {
+          @unlink($file);
+        }
+      }
+      
+      // Also check old location (root cache directory)
+      $oldCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/';
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = glob($oldCacheDir . 'translation_ambiguity_*.cache');
+        $filesBefore += count($oldFiles);
+        
+        // Delete old translation ambiguity cache files
+        foreach ($oldFiles as $file) {
+          @unlink($file);
+        }
+      }
+      
+      // Count files after
+      $filesAfter = 0;
+      if (is_dir($translationAmbiguityCacheDir)) {
+        $files = glob($translationAmbiguityCacheDir . 'translation_ambiguity_*.cache');
+        $filesAfter = count($files);
+      }
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = glob($oldCacheDir . 'translation_ambiguity_*.cache');
+        $filesAfter += count($oldFiles);
+      }
+      
+      $results['translation_ambiguity'] = $filesBefore - $filesAfter;
+      
+      error_log("Cache Reset: Translation ambiguity cache flushed - {$results['translation_ambiguity']} files deleted");
+      
+    } catch (Exception $e) {
+      $errors[] = "Translation ambiguity cache: " . $e->getMessage();
+      error_log("Cache Reset Error (translation_ambiguity): " . $e->getMessage());
+    }
+  }
+  
+  // ============================================================================
+  // 8. Reset Context Cache
+  // ============================================================================
+  if (in_array('context', $cacheTypes)) {
+    try {
+      // Count context cache files before (new location)
+      $contextCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Context/';
+      $filesBefore = 0;
+      
+      if (is_dir($contextCacheDir)) {
+        $files = glob($contextCacheDir . '*.cache');
+        $filesBefore = count($files);
+        
+        // Delete all context cache files
+        foreach ($files as $file) {
+          @unlink($file);
+        }
+      }
+      
+      // Also check old location (root cache directory with Rag_Context_ or context_ prefix)
+      $oldCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/';
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = array_merge(
+          glob($oldCacheDir . 'Rag_Context_*.cache'),
+          glob($oldCacheDir . 'context_*.cache')
+        );
+        $filesBefore += count($oldFiles);
+        
+        // Delete old context cache files
+        foreach ($oldFiles as $file) {
+          @unlink($file);
+        }
+      }
+      
+      // Count files after
+      $filesAfter = 0;
+      if (is_dir($contextCacheDir)) {
+        $files = glob($contextCacheDir . '*.cache');
+        $filesAfter = count($files);
+      }
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = array_merge(
+          glob($oldCacheDir . 'Rag_Context_*.cache'),
+          glob($oldCacheDir . 'context_*.cache')
+        );
+        $filesAfter += count($oldFiles);
+      }
+      
+      $results['context'] = $filesBefore - $filesAfter;
+      
+      error_log("Cache Reset: Context cache flushed - {$results['context']} files deleted");
+      
+    } catch (Exception $e) {
+      $errors[] = "Context cache: " . $e->getMessage();
+      error_log("Cache Reset Error (context): " . $e->getMessage());
+    }
+  }
+  
+  // ============================================================================
+  // 9. Reset Embedding Cache
+  // ============================================================================
+  if (in_array('embedding', $cacheTypes)) {
+    try {
+      // Count embedding cache files before (new location)
+      $embeddingCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Embedding/';
+      $filesBefore = 0;
+      
+      if (is_dir($embeddingCacheDir)) {
+        $files = glob($embeddingCacheDir . '*.cache');
+        $filesBefore = count($files);
+        
+        // Delete all embedding cache files
+        foreach ($files as $file) {
+          @unlink($file);
+        }
+      }
+      
+      // Also check old location (root cache directory with Rag_Embedding_ or embedding_ prefix)
+      $oldCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/';
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = array_merge(
+          glob($oldCacheDir . 'Rag_Embedding_*.cache'),
+          glob($oldCacheDir . 'embedding_*.cache')
+        );
+        // Exclude embedding_search files
+        $oldFiles = array_filter($oldFiles, function($file) {
+          return strpos(basename($file), 'embedding_search_') !== 0;
+        });
+        $filesBefore += count($oldFiles);
+        
+        // Delete old embedding cache files
+        foreach ($oldFiles as $file) {
+          @unlink($file);
+        }
+      }
+      
+      // Count files after
+      $filesAfter = 0;
+      if (is_dir($embeddingCacheDir)) {
+        $files = glob($embeddingCacheDir . '*.cache');
+        $filesAfter = count($files);
+      }
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = array_merge(
+          glob($oldCacheDir . 'Rag_Embedding_*.cache'),
+          glob($oldCacheDir . 'embedding_*.cache')
+        );
+        $oldFiles = array_filter($oldFiles, function($file) {
+          return strpos(basename($file), 'embedding_search_') !== 0;
+        });
+        $filesAfter += count($oldFiles);
+      }
+      
+      $results['embedding'] = $filesBefore - $filesAfter;
+      
+      error_log("Cache Reset: Embedding cache flushed - {$results['embedding']} files deleted");
+      
+    } catch (Exception $e) {
+      $errors[] = "Embedding cache: " . $e->getMessage();
+      error_log("Cache Reset Error (embedding): " . $e->getMessage());
+    }
+  }
+  
+  // ============================================================================
+  // 10. Reset EmbeddingSearch Cache
+  // ============================================================================
+  if (in_array('embedding_search', $cacheTypes)) {
+    try {
+      // Count embedding search cache files before (new location)
+      $embeddingSearchCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/EmbeddingSearch/';
+      $filesBefore = 0;
+      
+      if (is_dir($embeddingSearchCacheDir)) {
+        $files = glob($embeddingSearchCacheDir . '*.cache');
+        $filesBefore = count($files);
+        
+        // Delete all embedding search cache files
+        foreach ($files as $file) {
+          @unlink($file);
+        }
+      }
+      
+      // Also check old locations
+      $oldCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/';
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = array_merge(
+          glob($oldCacheDir . 'Rag_EmbeddingSearch_*.cache'),
+          glob($oldCacheDir . 'EmbeddingSearch_*.cache'),
+          glob($oldCacheDir . 'embedding_search_*.cache')
+        );
+        $filesBefore += count($oldFiles);
+        
+        // Delete old embedding search cache files
+        foreach ($oldFiles as $file) {
+          @unlink($file);
+        }
+      }
+      
+      // Also check old embedding_search directory
+      $oldEmbeddingSearchDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/embedding_search/';
+      if (is_dir($oldEmbeddingSearchDir)) {
+        $oldDirFiles = glob($oldEmbeddingSearchDir . '*.cache');
+        $filesBefore += count($oldDirFiles);
+        
+        // Delete files from old directory
+        foreach ($oldDirFiles as $file) {
+          @unlink($file);
+        }
+      }
+      
+      // Count files after
+      $filesAfter = 0;
+      if (is_dir($embeddingSearchCacheDir)) {
+        $files = glob($embeddingSearchCacheDir . '*.cache');
+        $filesAfter = count($files);
+      }
+      if (is_dir($oldCacheDir)) {
+        $oldFiles = array_merge(
+          glob($oldCacheDir . 'Rag_EmbeddingSearch_*.cache'),
+          glob($oldCacheDir . 'EmbeddingSearch_*.cache'),
+          glob($oldCacheDir . 'embedding_search_*.cache')
+        );
+        $filesAfter += count($oldFiles);
+      }
+      if (is_dir($oldEmbeddingSearchDir)) {
+        $oldDirFiles = glob($oldEmbeddingSearchDir . '*.cache');
+        $filesAfter += count($oldDirFiles);
+      }
+      
+      $results['embedding_search'] = $filesBefore - $filesAfter;
+      
+      error_log("Cache Reset: EmbeddingSearch cache flushed - {$results['embedding_search']} files deleted");
+      
+    } catch (Exception $e) {
+      $errors[] = "EmbeddingSearch cache: " . $e->getMessage();
+      error_log("Cache Reset Error (embedding_search): " . $e->getMessage());
     }
   }
   

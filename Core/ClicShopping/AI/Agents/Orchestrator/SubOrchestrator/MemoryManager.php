@@ -227,7 +227,7 @@ class MemoryManager
       'intent_confidence' => $intent['confidence'],
       'intent_type' => $intent['type'] ?? 'unknown',
       'execution_time' => $response['execution_time'],
-      'plan_steps' => count($plan->getSteps()),
+      'plan_steps' => $plan !== null ? count($plan->getSteps()) : 0, // TASK 5.2.1.1: Handle null plan
       'validations_performed' => count($validationResults),
       'entity_id' => $entityId,
       'entity_type' => $entityType,
@@ -235,7 +235,7 @@ class MemoryManager
       'language_id' => $languageId,
       'timestamp' => time(),
       'response_type' => $response['type'] ?? 'unknown',
-      'keywords' => $queryAnalyzer->extractKeywords($query),
+      'keywords' => $queryAnalyzer !== null ? $queryAnalyzer->extractKeywords($query) : [], // Handle null queryAnalyzer
       'original_query' => $query,
       'processed_query' => $queryToProcess,
       'is_related_to_context' => $contextAnalysis['is_related_to_context'],
@@ -244,6 +244,21 @@ class MemoryManager
       'related_entities' => $contextAnalysis['related_entities'],
     ];
 
+    // 🔧 FIX: Skip memory storage for web_search to avoid embedding timeout
+    // WebSearch results don't need to be in long-term memory
+    $intentType = $intent['type'] ?? 'unknown';
+    
+    if ($intentType === 'web_search') {
+      if ($this->debug) {
+        $this->securityLogger->logStructured('info', 'MemoryManager', 'skipped_websearch_storage', [
+          'reason' => 'web_search results not stored in memory to avoid embedding timeout',
+          'query' => $query
+        ]);
+      }
+      // Skip memory storage for web_search
+      return;
+    }
+    
     // Store interaction
     if ($this->conversationMemory) {
       $formattedResponse = $responseProcessor->formatResponseForMemory($response);

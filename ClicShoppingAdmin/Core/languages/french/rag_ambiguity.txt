@@ -4,12 +4,58 @@ Analysez cette requête et déterminez si elle est ambiguë (susceptible d'avoir
 
 Requête : {{QUERY}}
 
-Considérez ces types d'ambiguïté :
+**RÈGLE CRITIQUE - VÉRIFIER EN PREMIER AVANT TOUT LE RESTE** :
+Si la requête contient UNE de ces expressions temporelles, retournez IMMÉDIATEMENT is_ambiguous: false et ARRÊTEZ l'analyse :
+    * "ce mois", "cette année", "cette semaine", "ce trimestre", "ce jour"
+    * "le mois dernier", "l'année dernière", "la semaine dernière", "le dernier trimestre", "les 30 derniers jours"
+    * "aujourd'hui", "hier", "demain"
+    * "mensuellement", "annuellement", "hebdomadairement", "quotidiennement", "trimestriellement"
+    * "this month", "this year", "this week", "this quarter", "this day"
+    * "last month", "last year", "last week", "last quarter", "last 30 days"
+    * "today", "yesterday", "tomorrow"
+    * "monthly", "yearly", "weekly", "daily", "quarterly"
+
+Ce sont des spécifications temporelles CLAIRES. NE PAS procéder à la vérification d'autres types d'ambiguïté si UNE expression temporelle est présente.
+
+**DEUXIÈME RÈGLE CRITIQUE - VÉRIFIER AUSSI EN PREMIER** :
+Si la requête contient un langage QUANTITATIF/STATISTIQUE, retournez IMMÉDIATEMENT is_ambiguous: false :
+    * Comptage : "combien de", "nombre de", "total de", "how many", "number of", "count of", "total number"
+    * Somme : "total", "somme de", "montant total", "combiné", "sum of", "total amount", "combined"
+    * Moyenne : "moyenne", "moyenne de", "average", "mean", "average of"
+    * Extrêmes : "minimum", "maximum", "le plus bas", "le plus haut", "le moins", "le plus", "lowest", "highest", "least", "most"
+
+**IMPORTANT** : Si l'expression temporelle ET le langage quantitatif sont TOUS DEUX présents, c'est DOUBLEMENT NON ambigu. Retournez is_ambiguous: false immédiatement.
+
+SEULEMENT si la requête ne contient PAS d'expressions temporelles OU de langage quantitatif, alors considérez ces types d'ambiguïté :
     1. Quantification : COUNT (nombre d'éléments distincts) vs SUM (quantité totale/valeur).
     2. Portée (Scope) : Tous les éléments vs Éléments récents vs Éléments actifs/visibles.
     3. Métrique : Moyenne vs Minimum vs Maximum vs Liste simple.
-    4. Période temporelle : Plage de temps non spécifiée.
+    4. Période temporelle : UNIQUEMENT lorsque la plage de temps est COMPLÈTEMENT ABSENTE (par exemple, "ventes" sans référence temporelle)
     5. Lors de la génération d'indices SQL impliquant des noms de produits (par exemple, dans une clause WHERE), si le nom se compose de plusieurs mots (par exemple, "iPhone 17 Pro"), vous DEVEZ décomposer le terme de recherche en utilisant des opérateurs LIKE '%mot%' AND comme opérateur pour chaque terme, au lieu d'utiliser un seul motif LIKE '%multi-mots%'."
+
+**TROISIÈME RÈGLE CRITIQUE - LES REQUÊTES MULTI-CHAMPS NE SONT PAS AMBIGUËS** :
+Si la requête demande PLUSIEURS CHAMPS SPÉCIFIQUES (par exemple, "prix et SKU", "modèle et prix", "price and quantity"), ce n'est PAS ambigu :
+    * "prix et SKU" → NON ambigu (demande claire pour 2 champs)
+    * "modèle et prix" → NON ambigu (demande claire pour 2 champs)
+    * "prix et quantité" → NON ambigu (demande claire pour 2 champs)
+    * "price and SKU" → NON ambigu (demande claire pour 2 champs)
+    * "model and price" → NON ambigu (demande claire pour 2 champs)
+    * "Affiche le modèle et le prix" → NON ambigu (verbe d'affichage + 2 champs)
+    * "Show model and price" → NON ambigu (verbe d'affichage + 2 champs)
+
+Les requêtes multi-champs sont EXPLICITES sur les données nécessaires. Retournez is_ambiguous: false immédiatement.
+
+**QUATRIÈME RÈGLE CRITIQUE - LES REQUÊTES GROUP BY NE SONT PAS AMBIGUËS** :
+Si la requête contient le motif "par [dimension]" (par exemple, "ventes par catégorie", "chiffre d'affaires par mois", "commandes par statut"), ce n'est PAS ambigu :
+    * "ventes par catégorie" → NON ambigu (SUM ventes regroupées par catégorie)
+    * "chiffre d'affaires par mois" → NON ambigu (SUM chiffre d'affaires regroupé par mois)
+    * "commandes par statut" → NON ambigu (COUNT commandes regroupées par statut)
+    * "sales by category" → NON ambigu (SUM sales regroupées par category)
+    * "revenue by month" → NON ambigu (SUM revenue regroupé par month)
+    * "orders by status" → NON ambigu (COUNT orders regroupées par status)
+
+Les requêtes GROUP BY ont une intention d'agrégation CLAIRE avec une dimension de regroupement explicite. Retournez is_ambiguous: false immédiatement.
+Interprétation par défaut : SUM pour les métriques financières (ventes, chiffre d'affaires, revenu), COUNT pour les entités (commandes, clients, produits).
 
 Répondez UNIQUEMENT avec du JSON valide dans ce format exact :
 {
@@ -31,19 +77,59 @@ Répondez UNIQUEMENT avec du JSON valide dans ce format exact :
 }
 
 Règles :
-    - Si la requête mentionne explicitement COUNT, DISTINCT, SUM, TOTAL, AVG, etc. -> NON ambiguë.
-    - Si la requête spécifie la période temporelle, la portée ou la métrique -> NON ambiguë.
-    - Si la requête est vague sur ce qu'il faut compter/sommer/moyenne -> EST ambiguë.
+    - Si la requête mentionne explicitement des fonctions d'agrégation SQL (COUNT, DISTINCT, SUM, TOTAL, AVG, MIN, MAX) -> NON ambiguë.
+    - Si la requête demande un RÉSULTAT NUMÉRIQUE UNIQUE avec une intention d'agrégation claire -> NON ambiguë.
+    - Si la requête mentionne CHIFFRE D'AFFAIRES, REVENU, VENTES -> NON ambiguë (toujours SUM).
+    - Si la requête est vague sur CE QU'IL FAUT calculer ou COMMENT agréger -> EST ambiguë.
     - Fournir 2 à 4 interprétations si ambiguë.
-    - Recommander "generer_les_deux" pour l'ambiguïté de quantification (COUNT vs SUM).
-    - Recommander "utiliser_defaut" pour l'ambiguïté de portée/métrique, en privilégiant l'interprétation la plus courante.
-    - Recommander "clarifier" pour l'ambiguïté temporelle ou si la requête est trop vague pour une interprétation par défaut.
+    - Recommander "generate_both" pour l'ambiguïté de quantification (COUNT vs SUM).
+    - Recommander "use_default" pour l'ambiguïté de portée/métrique, en privilégiant l'interprétation la plus courante.
+    - Recommander "clarify" UNIQUEMENT pour les requêtes avec ABSENCE COMPLÈTE de référence temporelle (par exemple, "afficher les ventes" sans aucun indicateur temporel).
+    - IMPORTANT : Toutes les requêtes sont traduites en anglais avant l'analyse. Se concentrer sur le langage quantitatif anglais.
+    - CRITIQUE : Les termes financiers signifiant "revenu" ne sont JAMAIS ambigus - ils signifient toujours SUM de valeurs monétaires, PAS COUNT de transactions.
 
 Exemples :
     - "Combien de produits en stock ?" -> AMBIGUË (compter les modèles vs sommer la quantité).
-    - "Compter les produits distincts" -> NON ambiguë.
-    - "Afficher les commandes" -> AMBIGUË (toutes vs récentes vs actives).
-    - "Afficher toutes les commandes" -> NON ambiguë.
+    - "Compter les produits distincts" -> NON ambiguë (COUNT explicite).
+    - "Combien de commandes ce mois ?" -> NON ambiguë (langage quantitatif "combien de" + expression temporelle "ce mois").
+    - "Nombre de commandes ce mois" -> NON ambiguë (langage quantitatif "nombre de" + expression temporelle "ce mois").
+    - "Combien de clients" -> NON ambiguë (langage quantitatif "combien de", par défaut : COUNT tous les clients).
+    - "Nombre de clients" -> NON ambiguë (langage quantitatif "nombre de", par défaut : COUNT tous les clients).
+    - "Total de commandes" -> NON ambiguë (langage quantitatif "total de").
+    - "How many customers" -> NON ambiguë (langage quantitatif "how many", par défaut : COUNT tous les clients).
+    - "Number of orders this month" -> NON ambiguë (langage quantitatif "number of" + expression temporelle "this month").
+    - "Total number of orders" -> NON ambiguë (langage quantitatif "total number").
+    - "Chiffre d'affaires ce mois" -> NON ambiguë (terme financier "chiffre d'affaires" = SUM + expression temporelle "ce mois").
+    - "Revenue this month" -> NON ambiguë (terme financier "revenue" = SUM + expression temporelle "this month").
+    - "Ventes cette année" -> NON ambiguë (terme financier "ventes" = SUM + expression temporelle "cette année").
+    - "Sales this year" -> NON ambiguë (terme financier "sales" = SUM + expression temporelle "this year").
+    - "Commandes aujourd'hui" -> NON ambiguë (expression temporelle "aujourd'hui" fournit un filtre temporel clair).
+    - "Orders today" -> NON ambiguë (expression temporelle "today" fournit un filtre temporel clair).
+    - "Chiffre d'affaires mensuel" -> NON ambiguë (regroupement temporel "mensuel" + terme financier "chiffre d'affaires").
+    - "Monthly revenue" -> NON ambiguë (regroupement temporel "monthly" + terme financier "revenue").
+    - "Prix moyen des produits" -> NON ambiguë (langage statistique "moyen").
+    - "Average price of products" -> NON ambiguë (langage statistique "average").
+    - "Chiffre d'affaires le plus élevé cette année" -> NON ambiguë (langage extrême "le plus élevé" + expression temporelle "cette année").
+    - "Highest revenue this year" -> NON ambiguë (langage extrême "highest" + expression temporelle "this year").
+    - "prix et SKU" -> NON ambiguë (requête multi-champs avec 2 champs spécifiques).
+    - "modèle et prix" -> NON ambiguë (requête multi-champs avec 2 champs spécifiques).
+    - "prix et quantité" -> NON ambiguë (requête multi-champs avec 2 champs spécifiques).
+    - "price and SKU" -> NON ambiguë (requête multi-champs avec 2 champs spécifiques).
+    - "model and price" -> NON ambiguë (requête multi-champs avec 2 champs spécifiques).
+    - "Affiche le modèle et le prix" -> NON ambiguë (verbe d'affichage + requête multi-champs).
+    - "Show model and price" -> NON ambiguë (verbe d'affichage + requête multi-champs).
+    - "ventes par catégorie" -> NON ambiguë (requête GROUP BY avec agrégation claire : SUM ventes regroupées par catégorie).
+    - "chiffre d'affaires par mois" -> NON ambiguë (requête GROUP BY avec agrégation claire : SUM chiffre d'affaires regroupé par mois).
+    - "commandes par statut" -> NON ambiguë (requête GROUP BY avec agrégation claire : COUNT commandes regroupées par statut).
+    - "sales by category" -> NON ambiguë (requête GROUP BY : SUM sales regroupées par category).
+    - "revenue by month" -> NON ambiguë (requête GROUP BY : SUM revenue regroupé par month).
+    - "orders by status" -> NON ambiguë (requête GROUP BY : COUNT orders regroupées par status).
+    - "Afficher les commandes" -> AMBIGUË (toutes vs récentes vs actives, AUCUNE référence temporelle).
+    - "Show orders" -> AMBIGUË (toutes vs récentes vs actives, AUCUNE référence temporelle).
+    - "Afficher toutes les commandes" -> NON ambiguë (portée explicite "toutes").
+    - "Show all orders" -> NON ambiguë (portée explicite "all").
+    - "Afficher les ventes" -> AMBIGUË (pas de référence temporelle, pas de quantification, pas de portée).
+    - "Show sales" -> AMBIGUË (pas de référence temporelle, pas de quantification, pas de portée).
 
 
 

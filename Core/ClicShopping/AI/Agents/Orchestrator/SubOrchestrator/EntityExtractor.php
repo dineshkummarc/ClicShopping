@@ -13,6 +13,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 use AllowDynamicProperties;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\OM\CLICSHOPPING;
 
 /**
  * EntityExtractor Class
@@ -403,7 +404,7 @@ class EntityExtractor
       $embeddingTables = DoctrineOrm::getEmbeddingTables();
       
       // Filter tables based on entity type if specified
-      $prefix = \ClicShopping\OM\CLICSHOPPING::getConfig('db_table_prefix');
+      $prefix = CLICSHOPPING::getConfig('db_table_prefix');
       if (!empty($entityType) && $entityType !== 'unknown') {
         // Pluralize entity type (simple approach - add 's' if not already plural)
         $pluralEntity = $entityType;

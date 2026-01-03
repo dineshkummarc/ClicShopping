@@ -413,16 +413,35 @@ modal_reset_cache_error = Error: Unable to reset cache. Check the logs.
 modal_reset_cache_reactivate_button = Reactivate button
 
 # Cache Types
-cache_type_files = 📁 File Cache (RAG)
-cache_type_files_desc = JSON files in Work/Cache/Rag/
-cache_type_translations = 🌐 Translation Cache
-cache_type_translations_desc = Cached translations in Work/Cache/Translations/
 cache_type_database = 💾 Database Cache
-cache_type_database_desc = Table clic_rag_query_cache
-cache_type_prompts = 💬 Prompt Cache
-cache_type_prompts_desc = Cached LLM responses (rag_cache.cache)
-cache_type_semantic = 🔍 Semantic Query Cache
-cache_type_semantic_desc = Cached RAG search results (TASK 4.3.2)
+cache_type_database_desc = Database table clic_rag_query_cache (SQL query results)
+cache_type_schema = 🗂️ Schema Query Cache
+cache_type_schema_desc = Cached database schema queries in Work/Cache/Rag/SchemaQuery/
+cache_type_intent = 🎯 Intent Classification Cache
+cache_type_intent_desc = Cached intent classifications in Work/Cache/Rag/Intent/
+cache_type_ambiguity = 🔀 Ambiguity Cache
+cache_type_ambiguity_desc = Cached ambiguity resolutions in Work/Cache/Rag/Ambiguity/
+cache_type_translation_ambiguity = 🌐 Translation Ambiguity Cache
+cache_type_translation_ambiguity_desc = Cached ambiguity translations in Work/Cache/Rag/Translation/
+cache_type_context = 📋 Context Cache
+cache_type_context_desc = Cached context retrievals in Work/Cache/Rag/Context/
+cache_type_embedding = 🔢 Embedding Cache
+cache_type_embedding_desc = Cached vector embeddings in Work/Cache/Rag/Embedding/
+cache_type_embedding_search = 🔍 Embedding Search Cache
+cache_type_embedding_search_desc = Cached embedding search results in Work/Cache/Rag/EmbeddingSearch/
+cache_type_translations = 🌐 Translation Cache
+cache_type_translations_desc = Cached translations in Work/Cache/Rag/Translation/
+cache_type_classification = 🎯 Classification Cache
+cache_type_classification_desc = Cached query classifications in Work/Cache/Rag/Classification/
+
+# File Caches
+file_caches_statistics = File Caches Statistics
+cache_status = Status
+cache_enabled = Enabled
+cache_disabled = Disabled
+cache_files = Files
+cache_size = Size
+cache_directory = Directory
 
 # Tab 7 - Security Section
 tab7_title = 🔒 Security & Quality
@@ -494,6 +513,11 @@ cache_reset_translations_deleted = Translations deleted
 cache_reset_db_entries_deleted = DB entries deleted
 cache_reset_prompts_deleted = Prompts deleted
 cache_reset_semantic_deleted = Semantic queries deleted
+cache_reset_schema_deleted = Schema cache files deleted
+cache_reset_intent_deleted = Intent cache files deleted
+cache_reset_ambiguity_deleted = Ambiguity cache files deleted
+cache_reset_schema_deleted = Schema cache files deleted
+cache_reset_translation_ambiguity_deleted = Translation ambiguity cache files deleted
 cache_reset_error_occurred = An error occurred
 cache_reset_resetting = Resetting...
 

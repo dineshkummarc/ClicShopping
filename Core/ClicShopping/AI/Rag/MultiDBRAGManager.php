@@ -558,10 +558,6 @@ class MultiDBRAGManager
    * @return array Array of matching documents with similarity scores
    */
 
-  /**
-   * MODIFIED searchDocuments - Ajouter les logs
-   * Remplacer le début de la méthode searchDocuments
-   */
   public function searchDocuments(string $query, int $limit = 5, float $minScore = 0.5, int|null $languageId = null, string|null $entityType = null): array
   {
     try {
@@ -615,30 +611,52 @@ class MultiDBRAGManager
       if ($languageId !== null || $entityType !== null) {
         $filter = function($metadata) use ($languageId, $entityType) {
           $match = true;
+          
+          // Only filter by language_id if it exists in metadata
+          // Some tables (like orders) don't have language_id column
           if ($languageId !== null && isset($metadata['language_id'])) {
             $match = $match && ($metadata['language_id'] == $languageId);
           }
+          // If language_id filter is requested but column doesn't exist, accept the document
+          // This allows orders (no language_id) to appear in results
+          
           if ($entityType !== null && isset($metadata['entity_type'])) {
             $match = $match && ($metadata['entity_type'] == $entityType);
           }
+          
           return $match;
         };
       }
 
       // RECHERCHE PRIORITAIRE
+      // 🔧 FIX: Increase limit before filtering to ensure we get enough results after PHP filter
+      // The SQL LIMIT happens BEFORE the PHP filter, so if we request 10 results but filter by language_id,
+      // we might get 0 results if the first 10 aren't in the target language
+      // Solution: Request more results (limit * 5) to ensure we have enough after filtering
+      $sqlLimit = $limit * 5;  // Request 5x more results to account for filtering
+      
       foreach ($this->knownEmbeddingTable() as $priorityTable) {
         if (isset($this->vectorStores[$priorityTable])) {
           error_log("Searching in priority table: {$priorityTable}");
 
           try {
 // Check here  $results = 0;
-            $results = $this->vectorStores[$priorityTable]->similaritySearch($queryEmbedding, $limit * 2, max(0.01, $minScore - 0.15), $filter);
+            $results = $this->vectorStores[$priorityTable]->similaritySearch($queryEmbedding, $sqlLimit, max(0.01, $minScore - 0.15), $filter);
             $resultsArray = is_array($results) ? $results : iterator_to_array($results);
 
             foreach ($resultsArray as $document) {
+              // 🔧 FIX: Only apply priority boost to documents that match the language filter
+              // This prevents Orders (no language_id) from getting boosted above PageManager
               if (isset($document->metadata['score'])) {
-                $document->metadata['score'] = min(1.0, $document->metadata['score'] * 1.15);
-                $document->metadata['priority_boost'] = true;
+                // Only boost if document has language_id AND it matches the requested language
+                // OR if no language filter was requested
+                $shouldBoost = ($languageId === null) || 
+                               (isset($document->metadata['language_id']) && $document->metadata['language_id'] == $languageId);
+                
+                if ($shouldBoost) {
+                  $document->metadata['score'] = min(1.0, $document->metadata['score'] * 1.15);
+                  $document->metadata['priority_boost'] = true;
+                }
               }
               $allResults[] = $document;
             }
@@ -648,6 +666,25 @@ class MultiDBRAGManager
         }
       }
 
+      // 🔧 FIX: Sort all results by score BEFORE taking top N
+      // This ensures PageManager (high score + boost) ranks above Categories/Manufacturers
+      usort($allResults, function($a, $b) {
+        $scoreA = $a->metadata['score'] ?? 0;
+        $scoreB = $b->metadata['score'] ?? 0;
+        return $scoreB <=> $scoreA; // Descending order (highest score first)
+      });
+      
+      if ($this->debug) {
+        error_log("📊 After sorting by score, top 5 results:");
+        foreach (array_slice($allResults, 0, 5) as $i => $doc) {
+          $score = $doc->metadata['score'] ?? 0;
+          $entityType = $doc->metadata['entity_type'] ?? 'unknown';
+          $entityId = $doc->metadata['entity_id'] ?? 'unknown';
+          $boost = isset($doc->metadata['priority_boost']) ? '✓' : '✗';
+          error_log("  #" . ($i+1) . " - Score: " . number_format($score, 4) . " - Boost: {$boost} - Type: {$entityType} - ID: {$entityId}");
+        }
+      }
+      
       // Prepare audit metadata
       $auditMetadata = [
         'priority_table' => $priorityTable ?? 'none',
@@ -965,13 +1002,31 @@ class MultiDBRAGManager
       // Build context from documents (with priority handling)
       $context = $this->optimizeContext($documents, 3000);
 
-      // Generate answer using LLM with context
-      $synthesisPrompt = "Based on the following information, answer this question: {$question}\n\nInformation:\n{$context}\n\nProvide a clear, concise answer based ONLY on the information provided above. If the information doesn't fully answer the question, say what you can based on the available information.";
+      // TASK 5.2.1.4: Collect document names for citation
+      $documentNames = [];
+      foreach ($documents as $doc) {
+        $docName = $this->extractDocumentName($doc);
+        // Only include real document names (not generic "Document" fallback)
+        if ($docName !== "Document") {
+          $documentNames[] = $docName;
+        }
+      }
+      
+      // Remove duplicates and re-index array
+      $documentNames = array_values(array_unique($documentNames));
 
-      // 🔥 CRITICAL FIX: Add language instruction to ensure response in correct language
-      // This forces the LLM to respond in the user's language (French/English)
+      // Generate answer using LLM with context
+      $synthesisPrompt = "Based on the following information, answer this question: {$question}\n\nInformation:\n{$context}\n\n";
+      
+      // 🔧 TASK 5.2.1.3 FIX: DO NOT ask LLM to cite sources - we display them separately
+      // The formatter will display sources at the end in italic, so the LLM should not include them
+      
+      $synthesisPrompt .= "Answer:";
+
+      // 🔥 CRITICAL FIX: Add language instruction with anti-hallucination rules
+      // This forces the LLM to respond in the user's language and prevents hallucination
       $languageInstruction = CLICSHOPPING::getDef('text_rag_language_instruction');
-      $synthesisPrompt .= $languageInstruction;
+      $synthesisPrompt .= "\n\n" . $languageInstruction;
 
       if ($this->debug) {
         error_log("📤 Prompt with language instruction: " . strlen($synthesisPrompt) . " chars");
@@ -1048,13 +1103,16 @@ class MultiDBRAGManager
     };
 
     foreach ($documents as $i => $doc) {
+      // 🔧 TASK 3.5.2.3: Extract real document name from metadata
+      $documentName = $this->extractDocumentName($doc);
+      
       // Priority documents get FULL content (no truncation)
       if ($isPriorityDoc($doc)) {
         $docContent = $doc->content; // ✅ FULL CONTENT
-        $label = "Document " . ($i + 1) . " (Priority Source)";
+        $label = $documentName . " (Priority Source)";
         
         if ($this->debug) {
-          error_log("📄 Doc #{$i} PRIORITY: " . strlen($docContent) . " chars (full content)");
+          error_log("📄 Doc #{$i} PRIORITY ({$documentName}): " . strlen($docContent) . " chars (full content)");
         }
       } else {
         // Other documents are truncated
@@ -1062,10 +1120,10 @@ class MultiDBRAGManager
         if (strlen($docContent) > $maxCharsPerDoc) {
           $docContent = mb_substr($docContent, 0, $maxCharsPerDoc) . "\n[...content truncated...]";
         }
-        $label = "Document " . ($i + 1);
+        $label = $documentName;
         
         if ($this->debug) {
-          error_log("📄 Doc #{$i} secondary: " . strlen($docContent) . " chars (truncated)");
+          error_log("📄 Doc #{$i} secondary ({$documentName}): " . strlen($docContent) . " chars (truncated)");
         }
       }
 
@@ -1087,6 +1145,85 @@ class MultiDBRAGManager
     }
 
     return $context;
+  }
+
+  /**
+   * Extract document name from document metadata
+   * 
+   * 🔧 TASK 5.2.1.3: Extract real document names for citation
+   * 
+   * This method extracts the document name from metadata to use in prompts
+   * instead of generic "Document 1", "Document 2" labels.
+   * 
+   * Priority order:
+   * 1. title (most common)
+   * 2. document_name
+   * 3. brand_name (for pages_manager)
+   * 4. product_name (for products)
+   * 5. category_name (for categories)
+   * 6. name
+   * 7. page_title
+   * 8. source_table (as fallback)
+   * 9. "Document" (last resort - changed from "Unknown Document" to avoid polluting LLM responses)
+   * 
+   * @param object $doc Document object with metadata
+   * @return string Document name
+   */
+  private function extractDocumentName($doc): string
+  {
+    // Try to get metadata
+    $metadata = null;
+    if (is_object($doc) && isset($doc->metadata)) {
+      $metadata = $doc->metadata;
+    } elseif (is_array($doc) && isset($doc['metadata'])) {
+      $metadata = $doc['metadata'];
+    }
+    
+    if ($metadata === null) {
+      return "Document";
+    }
+    
+    // Try different metadata fields in priority order
+    // 🔧 TASK 5.2.1.3: Added brand_name and category_name based on diagnostic results
+    $possibleFields = ['title', 'document_name', 'brand_name', 'product_name', 'category_name', 'name', 'page_title'];
+    
+    foreach ($possibleFields as $field) {
+      if (isset($metadata[$field]) && !empty($metadata[$field])) {
+        $name = trim($metadata[$field]);
+        
+        // Clean up the name (remove extra whitespace, limit length)
+        $name = preg_replace('/\s+/', ' ', $name);
+        
+        // Limit length to 100 chars for readability
+        if (strlen($name) > 100) {
+          $name = substr($name, 0, 97) . '...';
+        }
+        
+        return $name;
+      }
+    }
+    
+    // Fallback: use source_table if available
+    if (isset($metadata['source_table']) && !empty($metadata['source_table'])) {
+      $tableName = $metadata['source_table'];
+      
+      // Remove prefix and _embedding suffix
+      $prefix = CLICSHOPPING::getConfig('db_table_prefix');
+      if (!empty($prefix) && strpos($tableName, $prefix) === 0) {
+        $tableName = substr($tableName, strlen($prefix));
+      }
+      $tableName = str_replace('_embedding', '', $tableName);
+      
+      // Convert to readable format (e.g., "pages_manager_description" -> "Pages Manager Description")
+      $tableName = str_replace('_', ' ', $tableName);
+      $tableName = ucwords($tableName);
+      
+      return $tableName;
+    }
+    
+    // Last resort: return generic name (changed from "Unknown Document" to "Document")
+    // 🔧 TASK 5.2.1.3: This prevents "(Unknown Document)" from appearing in LLM responses
+    return "Document";
   }
 
   /**

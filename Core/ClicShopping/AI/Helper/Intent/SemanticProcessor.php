@@ -11,7 +11,6 @@
 namespace ClicShopping\AI\Helper\Intent;
 
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domain\Patterns\SemanticsPattern;
 
 /**
  * SemanticProcessor Class
@@ -33,6 +32,16 @@ class SemanticProcessor
 {
   private SecurityLogger $logger;
   private bool $debug;
+  
+  /**
+   * Cached pattern bypass check result
+   * 
+   * TASK 6.4.5: Optimize pattern bypass checks
+   * Cache the result once in constructor instead of checking repeatedly
+   * 
+   * @var bool True if Pure LLM mode (patterns disabled), False if Pattern mode
+   */
+  private bool $usePureLlmMode;
 
   /**
    * Constructor
@@ -43,6 +52,10 @@ class SemanticProcessor
   {
     $this->logger = new SecurityLogger();
     $this->debug = $debug;
+    
+    // TASK 6.4.5: Cache pattern bypass check once (optimization)
+    // This eliminates 11 repeated checks throughout the class
+    $this->usePureLlmMode = !defined('USE_PATTERN_BASED_DETECTION')  || USE_PATTERN_BASED_DETECTION === 'False';
   }
 
   /**
@@ -50,6 +63,10 @@ class SemanticProcessor
    *
    * Uses semantic patterns to determine confidence score.
    * Higher confidence for queries with multiple semantic keywords.
+   *
+   * PATTERN BYPASS: Respects USE_PATTERN_BASED_DETECTION flag
+   * - Pure LLM mode: Returns low confidence (LLM handles classification)
+   * - Pattern mode: Uses SemanticsPattern for detection
    *
    * @param string $query Query to analyze
    * @return array Result with confidence and matched patterns
@@ -61,66 +78,52 @@ class SemanticProcessor
       error_log("Query: '{$query}'");
     }
 
-    $semanticPatterns = SemanticsPattern::detectSemanticQuery();
-    $matchCount = 0;
-    $matchedPatterns = [];
-
-    foreach ($semanticPatterns as $pattern => $score) {
-      if (preg_match($pattern, $query)) {
-        $matchCount++;
-        $matchedPatterns[] = [
-          'pattern' => substr($pattern, 0, 100),
-          'score' => $score
-        ];
-        
-        if ($this->debug) {
-          error_log("✓ Semantic pattern matched (score: {$score}): " . substr($pattern, 0, 80) . "...");
-        }
+    // TASK 6.4.5: Use cached pattern bypass check (optimization)
+    if ($this->usePureLlmMode) {
+      // Pure LLM mode: Return low confidence
+      // LLM handles semantic classification through prompts
+      if ($this->debug) {
+        error_log("Semantic confidence calculation bypassed (Pure LLM mode)");
+        error_log("Returning low confidence (0.5) - LLM will handle classification");
+        error_log("--- END SEMANTIC CONFIDENCE ---\n");
       }
+
+      return [
+        'confidence' => 0.5,
+        'match_count' => 0,
+        'matched_patterns' => [],
+        'word_count' => str_word_count($query),
+        'detection_method' => 'llm',
+      ];
     }
 
-    // Calculate confidence based on matches
-    // 1 match: 0.85 (semantic keywords are very specific)
-    // 2+ matches: 0.9 (extremely confident)
-    $confidence = 0.5; // Default
-    
-    if ($matchCount >= 1) {
-      $confidence = 0.85 + (min($matchCount - 1, 1) * 0.05);
-    }
-
-    // Adjust for query length
-    $wordCount = str_word_count($query);
-    if ($wordCount >= 10) {
-      $confidence = min(0.95, $confidence + 0.05);
-    } elseif ($wordCount <= 2) {
-      $confidence = max(0.5, $confidence - 0.2);
-    }
-
-    if ($this->debug) {
-      error_log("Semantic matches: {$matchCount} patterns");
-      error_log("Word count: {$wordCount}");
-      error_log("Calculated confidence: {$confidence}");
-      error_log("--- END SEMANTIC CONFIDENCE ---\n");
-    }
-
-    return [
-      'confidence' => round($confidence, 2),
-      'match_count' => $matchCount,
-      'matched_patterns' => $matchedPatterns,
-      'word_count' => $wordCount,
-    ];
-  }
+      }
 
   /**
    * Check if query requires conversation context
    *
    * Detects contextual references like "it", "this", "that", etc.
    *
+   * PATTERN BYPASS: Respects USE_PATTERN_BASED_DETECTION flag
+   * - Pure LLM mode: Returns false (LLM handles context detection)
+   * - Pattern mode: Uses SemanticsPattern for detection
+   *
    * @param string $query Query to check
    * @return bool True if requires context
    */
   public function requiresConversationContext(string $query): bool
   {
+    // TASK 6.4.5: Use cached pattern bypass check (optimization)
+    if ($this->usePureLlmMode) {
+      // Pure LLM mode: Context detection disabled
+      // LLM handles context requirements through conversation analysis
+      return false;
+    }
+
+    // @deprecated Pattern-based detection removed in Pure LLM mode
+    // This code is never executed (USE_PATTERN_BASED_DETECTION removed in task 5.1.6)
+    // TODO: Remove this dead code block in Q2 2026
+    // Pattern mode: Use SemanticsPattern for detection
     $contextualPatterns = SemanticsPattern::requiresConversationContext();
 
     foreach ($contextualPatterns as $pattern) {
@@ -140,6 +143,10 @@ class SemanticProcessor
    * - Contextual references
    * - Semantic filters
    *
+   * PATTERN BYPASS: Respects USE_PATTERN_BASED_DETECTION flag
+   * - Pure LLM mode: Returns minimal metadata
+   * - Pattern mode: Uses SemanticsPattern for extraction
+   *
    * @param string $query Query to analyze
    * @return array Semantic metadata
    */
@@ -151,6 +158,17 @@ class SemanticProcessor
       'search_intent' => null,
     ];
 
+    // TASK 6.4.5: Use cached pattern bypass check (optimization)
+    if ($this->usePureLlmMode) {
+      // Pure LLM mode: Return minimal metadata
+      // LLM extracts metadata through prompts
+      return $metadata;
+    }
+
+    // @deprecated Pattern-based detection removed in Pure LLM mode
+    // This code is never executed (USE_PATTERN_BASED_DETECTION removed in task 5.1.6)
+    // TODO: Remove this dead code block in Q2 2026
+    // Pattern mode: Use SemanticsPattern for extraction
     // Extract semantic keywords
     $semanticKeywords = SemanticsPattern::calculateConfidenceSemanticKeywords();
     foreach ($semanticKeywords as $keyword) {

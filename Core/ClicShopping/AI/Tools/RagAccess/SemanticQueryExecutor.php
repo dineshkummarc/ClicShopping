@@ -32,6 +32,8 @@ class SemanticQueryExecutor
   private SecurityLogger $logger;
   private bool $debug;
   private ?ConversationMemory $conversationMemory;
+  private $language;
+  private string $languageCode;
 
   /**
    * Constructor
@@ -44,6 +46,13 @@ class SemanticQueryExecutor
     $this->logger = new SecurityLogger();
     $this->debug = $debug;
     $this->conversationMemory = $conversationMemory;
+    
+    // Initialize language
+    $this->language = Registry::get('Language');
+    $this->languageCode = $this->language->get('code');
+    
+    // Load language definitions once
+    $this->language->loadDefinitions('rag_semantic_query_executor', $this->languageCode, null, 'ClicShoppingAdmin');
   }
 
   /**
@@ -189,6 +198,52 @@ class SemanticQueryExecutor
         $entityId
       );
       
+      // TASK 5.2.1.3: Extract document names from search results for source attribution
+      $documentNames = [];
+      if (!empty($searchResults['results'])) {
+        foreach ($searchResults['results'] as $result) {
+          $metadata = $result['metadata'] ?? [];
+          
+          // Try to extract document name from metadata
+          $docName = null;
+          $possibleFields = ['title', 'document_name', 'name', 'page_title', 'product_name', 'category_name', 'pages_title'];
+          
+          foreach ($possibleFields as $field) {
+            if (isset($metadata[$field]) && !empty($metadata[$field])) {
+              $docName = trim($metadata[$field]);
+              break;
+            }
+          }
+          
+          // Fallback to source_table if no name found
+          if ($docName === null && isset($metadata['source_table'])) {
+            $tableName = $metadata['source_table'];
+            // Remove prefix and _embedding suffix
+            $prefix = defined('CLICSHOPPING_DB_TABLE_PREFIX') ? CLICSHOPPING_DB_TABLE_PREFIX : 'clic_';
+            if (strpos($tableName, $prefix) === 0) {
+              $tableName = substr($tableName, strlen($prefix));
+            }
+            $tableName = str_replace('_embedding', '', $tableName);
+            $tableName = str_replace('_', ' ', $tableName);
+            $docName = ucwords($tableName);
+          }
+          
+          if ($docName !== null) {
+            $documentNames[] = $docName;
+          }
+        }
+      }
+      
+      // 🔧 TASK 5.2.1.3: Remove duplicate document names and re-index array
+      $documentNames = array_values(array_unique($documentNames));
+      
+      if ($this->debug && !empty($documentNames)) {
+        $this->logger->logSecurityEvent(
+          "TASK 5.2.1.3: Extracted document names: " . implode(', ', $documentNames),
+          'info'
+        );
+      }
+      
       // Extract entity from search results if not already set
       if (!empty($searchResults['results'])) {
         $firstResult = $searchResults['results'][0];
@@ -248,15 +303,14 @@ class SemanticQueryExecutor
       }
 
       // Check if answer is empty or indicates no data found
-      $noDataIndicators = [
-        'no information',
-        'no data',
-        'cannot find',
-        'not found',
-        'aucune information',
-        'aucune donnée',
-        'introuvable'
-      ];
+      // Load no-data indicators from language file
+      $noDataIndicators = [];
+      for ($i = 1; $i <= 6; $i++) {
+        $indicator = $this->language->getDef("text_rag_semantic_no_data_indicator_{$i}");
+        if (!empty($indicator)) {
+          $noDataIndicators[] = $indicator;
+        }
+      }
       
       $hasNoData = false;
       foreach ($noDataIndicators as $indicator) {
@@ -415,6 +469,19 @@ class SemanticQueryExecutor
       $response['entity_id'] = $entityId;
       $response['entity_type'] = $entityType;
       
+      // TASK 5.2.1.2: Add source_attribution for display in SemanticFormatter
+      // TASK 5.2.1.3: Include document names for "Source: doc1 et doc2" display
+      // This provides user-visible information about where the answer came from
+      $response['source_attribution'] = [
+        'source_type' => $this->language->getDef('text_rag_semantic_source_type'),
+        'source_icon' => '📚',
+        'source_details' => $this->language->getDef('text_rag_semantic_source_details'),
+        'document_count' => count($documentNames),
+        'document_names' => $documentNames, // TASK 5.2.1.3: Add document names
+        'entity_type' => $entityType,
+        'entity_id' => $entityId,
+      ];
+      
       return $response;
 
     } catch (\Exception $e) {
@@ -426,7 +493,7 @@ class SemanticQueryExecutor
 
       return AgentResponseHelper::createErrorResponse(
         $query,
-        'Unable to execute semantic search. Please try again.',
+        $this->language->getDef('text_rag_semantic_error_execution'),
         'semantic',
         [
           'error_id' => $errorId,

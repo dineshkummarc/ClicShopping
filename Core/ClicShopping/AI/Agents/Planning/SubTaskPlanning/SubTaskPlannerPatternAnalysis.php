@@ -11,6 +11,7 @@ namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
 use ClicShopping\AI\Agents\Planning\TaskStep;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Domain\Semantics\Semantics;
+use ClicShopping\AI\Domain\Patterns\PatternAnalysisPattern;
 
 class SubTaskPlannerPatternAnalysis
 {
@@ -25,6 +26,9 @@ class SubTaskPlannerPatternAnalysis
     
     /**
      * Détecte si une requête concerne l'analyse de patterns
+     * 
+     * NOTE: Pure LLM Mode - This method uses pattern matching for FUTURE USE.
+     * Current implementation should delegate to LLM-based detection.
      */
     public function canHandle(string $query): bool
     {
@@ -36,30 +40,17 @@ class SubTaskPlannerPatternAnalysis
                            " → Translated: " . substr($translatedQuery, 0, 50));
         }
 
-      $patterns = [
-        '/\b(patterns?|trends?|dominant|trending)\b/i',
-        '/\b(what\s+.*\s+(patterns?|styles?))\b/i',
-        '/\b(analyze?\s+.*\s+(patterns?|trends?))\b/i',
-        '/\b(pattern\s+analysis|trend\s+analysis)\b/i',
-        '/\b(dominant\s+(patterns?|trends?))\b/i',
-        '/\b(recurring\s+(patterns?|themes?))\b/i',
-        '/\b(market\s+(trends?|patterns?))\b/i',
-      ];
-
-
-      // Utiliser la requête traduite en priorité
+        // Utiliser la requête traduite en priorité
         $queryToAnalyze = !empty($translatedQuery) ? $translatedQuery : $query;
 
-        foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $queryToAnalyze)) {
-                if ($this->debug) {
-                    $this->logDebug("Pattern analysis detected with pattern: $pattern");
-                }
-                return true;
-            }
+        // Use PatternAnalysisPattern class for detection
+        $matches = PatternAnalysisPattern::matches($queryToAnalyze);
+        
+        if ($matches && $this->debug) {
+            $this->logDebug("Pattern analysis detected using PatternAnalysisPattern class");
         }
 
-        return false;
+        return $matches;
     }
     
     /**
@@ -173,4 +164,3 @@ class SubTaskPlannerPatternAnalysis
         }
     }
 }
-?>

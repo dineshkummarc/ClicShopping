@@ -9,6 +9,7 @@
 namespace ClicShopping\AI\Infrastructure\Metrics;
 
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
+use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
 /**
@@ -57,7 +58,7 @@ class StatisticsTracker
   public function __construct(?int $userId = null, ?string $sessionId = null, ?int $languageId = null)
   {
     $this->db = Registry::get('Db');
-    $this->prefix = \ClicShopping\OM\CLICSHOPPING::getConfig('db_table_prefix');
+    $this->prefix = CLICSHOPPING::getConfig('db_table_prefix');
     $this->userId = $userId ?? 1;
     $this->sessionId = $sessionId ?? session_id();
     $this->languageId = $languageId ?? Registry::get('Language')->getId();

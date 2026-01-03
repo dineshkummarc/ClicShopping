@@ -1,0 +1,192 @@
+<?php
+/**
+ *
+ * @copyright 2008 - https://www.clicshopping.org
+ * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
+ * @Licence GPL 2 & MIT
+ * @Info : https://www.clicshopping.org/forum/trademark/
+ *
+ */
+
+namespace ClicShopping\AI\Domain\Patterns;
+
+/**
+ * HybridPreFilter
+ *
+ * Pre-filter to detect hybrid queries AFTER translation (English-only).
+ * Applied AFTER translation to catch queries with multiple intents connected by conjunctions.
+ *
+ * This pattern-based pre-filter is an EXCEPTION to Pure LLM mode.
+ * It provides deterministic detection for hybrid queries where LLM tends to focus
+ * on the first intent and ignore the second.
+ *
+ * CRITICAL: This filter operates on ENGLISH queries only (after translation).
+ * All keywords are in English. Multilingual queries are translated before this filter.
+ *
+ * ARCHITECTURE:
+ * 1. Check for English conjunctions (and, also, or)
+ * 2. Check if parts have different intent keywords (English only)
+ * 3. If yes, return hybrid classification
+ * 4. If no, return null (let LLM classify)
+ *
+ * @package ClicShopping\AI\Domain\Patterns
+ * @since 2025-01-02
+ * @updated 2025-01-02 - Simplified to English-only keywords
+ */
+class HybridPreFilter
+{
+  /**
+   * Pre-filter to detect hybrid queries before LLM classification
+   *
+   * CRITICAL: This filter is applied AFTER translation, so queries are in ENGLISH ONLY.
+   * All keywords must be in English.
+   *
+   * Checks for:
+   * 1. Conjunctions (and, also, or)
+   * 2. Different intent keywords in each part:
+   *    - Analytics: price, stock, revenue, sales, count, how many
+   *    - Semantic: policy, how, what is, explain
+   *    - Web search: trends, news, latest, recent, competitors
+   *
+   * If detected, returns hybrid classification.
+   * If not detected, returns null (let LLM classify).
+   *
+   * @param string $translatedQuery Query in English (after translation)
+   * @return array|null Hybrid classification if detected, null otherwise
+   */
+  public static function preFilter(string $translatedQuery): ?array
+  {
+    $query = strtolower($translatedQuery);
+    
+    // Step 1: Check for conjunctions (ENGLISH ONLY - query is already translated)
+    $conjunctions = [
+      ' and ',
+      ' also ',
+      ' or '
+    ];
+    
+    $hasConjunction = false;
+    $conjunctionUsed = '';
+    
+    foreach ($conjunctions as $conj) {
+      if (strpos($query, $conj) !== false) {
+        $hasConjunction = true;
+        $conjunctionUsed = trim($conj);
+        break;
+      }
+    }
+    
+    if (!$hasConjunction) {
+      return null; // No conjunction, not hybrid
+    }
+    
+    // Step 2: Split query by conjunction (ENGLISH ONLY)
+    $parts = preg_split('/\s+(and|also|or)\s+/i', $query);
+    
+    if (count($parts) < 2) {
+      return null; // Can't split, not hybrid
+    }
+    
+    // Step 3: Check intent keywords in each part (ENGLISH ONLY)
+    $analyticsKeywords = [
+      'price',
+      'stock',
+      'revenue',
+      'sales',
+      'count',
+      'how many',
+      'number of',
+      'total',
+      'average',
+      'sum'
+    ];
+    
+    $semanticKeywords = [
+      'policy',
+      'how',
+      'what is',
+      'explain',
+      'return',
+      'shipping',
+      'payment',
+      'delivery',
+      'warranty',
+      'guarantee'
+    ];
+    
+    $webSearchKeywords = [
+      'trends',
+      'news',
+      'latest',
+      'recent',
+      'competitors',
+      'competition',
+      'market',
+      'compare',
+      'comparison',
+      'what\'s new',
+      'current'
+    ];
+    
+    // Detect intent for each part
+    $intents = [];
+    
+    foreach ($parts as $part) {
+      $part = trim($part);
+      $partIntent = null;
+      
+      // Check analytics
+      foreach ($analyticsKeywords as $keyword) {
+        if (strpos($part, $keyword) !== false) {
+          $partIntent = 'analytics';
+          break;
+        }
+      }
+      
+      // Check semantic
+      if ($partIntent === null) {
+        foreach ($semanticKeywords as $keyword) {
+          if (strpos($part, $keyword) !== false) {
+            $partIntent = 'semantic';
+            break;
+          }
+        }
+      }
+      
+      // Check web_search
+      if ($partIntent === null) {
+        foreach ($webSearchKeywords as $keyword) {
+          if (strpos($part, $keyword) !== false) {
+            $partIntent = 'web_search';
+            break;
+          }
+        }
+      }
+      
+      if ($partIntent !== null) {
+        $intents[] = $partIntent;
+      }
+    }
+    
+    // Step 4: Check if we have different intents
+    $uniqueIntents = array_unique($intents);
+    
+    if (count($uniqueIntents) >= 2) {
+      // Hybrid detected!
+      return [
+        'type' => 'hybrid',
+        'intent_type' => 'hybrid',
+        'confidence' => 0.90,
+        'reasoning' => [
+          'Pattern detected hybrid query with conjunction "' . $conjunctionUsed . '" connecting ' . implode(' and ', $uniqueIntents) . ' intents'
+        ],
+        'is_hybrid' => true,
+        'sub_types' => array_values($uniqueIntents),
+        'detection_method' => 'pattern_pre_filter'
+      ];
+    }
+    
+    // Not hybrid (same intent in both parts, or couldn't detect intents)
+    return null;
+  }
+}

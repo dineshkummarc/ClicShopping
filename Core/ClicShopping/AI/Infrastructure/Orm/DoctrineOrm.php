@@ -12,7 +12,6 @@ namespace ClicShopping\AI\Infrastructure\Orm;
 
 use AllowDynamicProperties;
 
-use ClicShopping\AI\Domain\Patterns\AnalyticsPattern;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 
@@ -666,8 +665,8 @@ class DoctrineOrm
         error_log("Failed to discover database fields: " . $e->getMessage());
       }
       
-      // Fallback to static list from AnalyticsPattern
-      return AnalyticsPattern::getFallbackDatabaseFields();
+      // Fallback to static list
+      return self::getFallbackDatabaseFields();
     }
   }
   
@@ -762,7 +761,7 @@ class DoctrineOrm
     }
     
     // Check against non-database words
-    $nonDbWords = \ClicShopping\AI\Domain\Patterns\AnalyticsPattern::getNonDatabaseWords();
+    $nonDbWords = self::getNonDatabaseWords();
     if (in_array($word, $nonDbWords, true)) {
       return false;
     }
@@ -830,7 +829,7 @@ class DoctrineOrm
   private static function addFieldVariations(array $fields): array
   {
     $variations = [];
-    $abbreviations = AnalyticsPattern::getFieldAbbreviations();
+    $abbreviations = self::getFieldAbbreviations();
     
     foreach ($fields as $field) {
       $variations[] = $field;
@@ -1191,5 +1190,92 @@ class DoctrineOrm
       }
       return false;
     }
+  }
+  
+  // ============================================================================
+  // Utility Methods (moved from Old\AnalyticsPattern)
+  // ============================================================================
+  
+  /**
+   * Get fallback database fields (static list)
+   * 
+   * Used when dynamic discovery fails.
+   * Provides a comprehensive list of common database fields.
+   * 
+   * @return array List of common database fields
+   */
+  private static function getFallbackDatabaseFields(): array
+  {
+    // Use array_unique to ensure no duplicates
+    return \array_unique([
+      // Technical identifiers
+      'sku', 'ean', 'upc', 'isbn', 'gtin', 'barcode', 'code', 'reference', 'ref', 'model',
+      'id', 'number', 'serial',
+      
+      // Measurable attributes
+      'price', 'cost', 'amount', 'value', 'total', 'subtotal',
+      'stock', 'inventory', 'quantity', 'qty', 'available', 'count',
+      'weight', 'height', 'width', 'length', 'dimension', 'dimensions', 'size',
+      
+      // Timestamps
+      'date', 'time', 'created', 'updated', 'modified', 'deleted',
+      'timestamp', 'datetime',
+      
+      // Status fields
+      'status', 'state', 'active', 'enabled', 'disabled', 'published',
+      'visible', 'sold', 'shipped',
+      
+      // Financial
+      'tax', 'discount', 'margin', 'profit', 'revenue', 'sales',
+      
+      // Relationships
+      'category', 'brand', 'manufacturer', 'supplier', 'vendor',
+      
+      // Contact info
+      'email', 'phone', 'address', 'zip', 'postal', 'city', 'country',
+      
+      // Ratings
+      'rating', 'score', 'rank', 'position', 'order'
+    ]);
+  }
+  
+  /**
+   * Get non-database words (descriptive/explanatory terms)
+   * 
+   * These words are commonly used in queries but are NOT database fields.
+   * Used to filter out semantic queries from analytics queries.
+   * 
+   * @return array List of non-database words
+   */
+  private static function getNonDatabaseWords(): array
+  {
+    return [
+      'description', 'summary', 'information', 'details', 'info',
+      'explanation', 'definition', 'meaning', 'purpose',
+      'features', 'benefits', 'advantages', 'characteristics',
+      'quality', 'performance', 'specifications', 'specs',
+      'history', 'background', 'story', 'about',
+      'why', 'how', 'what', 'when', 'where', 'who',
+      'policy', 'terms', 'conditions', 'rules', 'regulations'
+    ];
+  }
+  
+  /**
+   * Get field abbreviations mapping
+   * 
+   * Maps full field names to their common abbreviations.
+   * Used for field name normalization.
+   * 
+   * @return array Mapping of full name => abbreviation
+   */
+  private static function getFieldAbbreviations(): array
+  {
+    return [
+      'quantity' => 'qty',
+      'reference' => 'ref',
+      'description' => 'desc',
+      'number' => 'no',
+      'identifier' => 'id',
+    ];
   }
 }

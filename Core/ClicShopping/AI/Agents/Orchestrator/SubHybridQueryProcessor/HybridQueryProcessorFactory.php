@@ -74,23 +74,16 @@ class HybridQueryProcessorFactory
    * Initialize all components with dependency injection
    * Order: PromptValidator, QueryClassifier, QuerySplitter, ResultSynthesizer, ResultAggregator
    * 
-   * Note: QueryClassifier and QuerySplitter have a circular dependency for hybrid detection fallback.
-   * We create QueryClassifier first, then QuerySplitter with QueryClassifier, then inject QuerySplitter
-   * back into QueryClassifier for the fallback hybrid detection method.
+   * Pure LLM mode: No circular dependencies needed - all components are independent.
+   * QueryClassifier and QuerySplitter both use LLM directly without cross-dependencies.
+   * 
+   * @since 2025-12-29 (Task 5.1.6.7: Removed circular dependency injection)
    */
   private function initializeComponents(): void
   {
     $this->promptValidator = new PromptValidator($this->debug);
     $this->queryClassifier = new QueryClassifier($this->debug);
     $this->querySplitter = new QuerySplitter($this->debug, $this->queryClassifier);
-    
-    // Inject QuerySplitter into QueryClassifier for fallback hybrid detection
-    // This is done via reflection to avoid breaking the constructor signature
-    $reflection = new \ReflectionClass($this->queryClassifier);
-    $property = $reflection->getProperty('querySplitter');
-    $property->setAccessible(true);
-    $property->setValue($this->queryClassifier, $this->querySplitter);
-    
     $this->resultSynthesizer = new ResultSynthesizer($this->debug);
     $this->resultAggregator = new ResultAggregator($this->debug);
   }

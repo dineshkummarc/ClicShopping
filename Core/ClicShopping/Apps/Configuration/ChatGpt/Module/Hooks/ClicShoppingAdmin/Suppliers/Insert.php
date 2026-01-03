@@ -168,7 +168,9 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
             $embedding_data .= $this->app->getDef('text_supplier_status', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_status) . "\n";
 
-            $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($embedding_data), null);
+            // Get default language code for taxonomy (suppliers don't have language_id)
+            $default_language_code = $this->lang->getCode() ?? 'en';
+            $taxonomy = $this->semantics->createTaxonomy(HtmlOverrideCommon::cleanHtmlForEmbedding($embedding_data), $default_language_code, null);
 
             if (!empty($taxonomy)) {
               $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
@@ -190,54 +192,35 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
             }
 	    
 	    
+            // Generate embeddings
             $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-            $embeddings = [];
+            // Prepare base metadata (suppliers table doesn't have language_id)
+            $baseMetadata = [
+              'supplier_name' => HTMLOverrideCommon::cleanHtmlForEmbedding($supplier_name),
+              'content' => HTMLOverrideCommon::cleanHtmlForEmbedding($supplier_name),
+              'supplier_id' => (int)$suppliers_id,
+              'type' => 'suppliers',
+              'tags' => isset($tags) ? $tags : [],
+              'source' => ['type' => 'manual', 'name' => 'manual']
+            ];
 
-            foreach ($embeddedDocuments as $embeddedDocument) {
-              if (is_array($embeddedDocument->embedding)) {
-                $embeddings[] = $embeddedDocument->embedding;
-              }
+            // Save all chunks using centralized method (pass null for language_id as suppliers table doesn't have this column)
+            $result = NewVector::saveEmbeddingsWithChunks(
+              $embeddedDocuments,
+              'suppliers_embedding',
+              (int)$suppliers_id,
+              null,  // language_id - suppliers table doesn't have this column
+              $baseMetadata,
+              $this->app->db,
+              false  // isUpdate = false for insert
+            );
+
+            if (!$result['success']) {
+              error_log("Suppliers Insert: Failed to save embeddings - " . $result['error']);
+            } else {
+              error_log("Suppliers Insert: Successfully saved {$result['chunks_saved']} chunks for supplier {$suppliers_id}");
             }
-
-           if (!empty($embeddings)) {
-              $flattened_embedding = $embeddings[0];
-              $new_embedding_literal = json_encode($flattened_embedding, JSON_THROW_ON_ERROR);
-
-              $sql_data_array_embedding = [
-                'content' => $embedding_data,
-                'type' => 'suppliers',
-                'sourcetype' => 'manual',
-                'sourcename' => 'manual',
-                'date_modified' => 'now()',
-                'entity_id' => $suppliers_id
-              ];
-
-              $sql_data_array_embedding['vec_embedding'] = $new_embedding_literal;
-
-             // MetaData  creation 
-              $metadata = [
-                'supplier_name' => HTMLOverrideCommon::cleanHtmlForEmbedding($supplier_name),
-                'content' => HTMLOverrideCommon::cleanHtmlForEmbedding($supplier_name),
-                'supplier_id' => (int)$suppliers_id,
-                'type' => 'suppliers',
-                'source' => [
-                  'type' => 'manual',
-                  'name' => 'manual'
-                ],
-                'entity_id' => (int)$suppliers_id,
-                'chunk_number' => isset($item['chunknumber']) ? (int)$item['chunknumber'] : 1,
-                'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
-                'date_modified' => 'now()'
-              ];
-
-              // Ajouter le JSON au tableau d'insertion
-                $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
-		
-              $sql_data_array = array_merge($sql_data_array_embedding);
-
-              $this->app->db->save('suppliers_embedding', $sql_data_array);
-           }
          }
       }
     }

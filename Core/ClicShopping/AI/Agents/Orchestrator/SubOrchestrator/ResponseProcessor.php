@@ -12,6 +12,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\OM\Registry;
 
 /**
  * ResponseProcessor Class
@@ -27,12 +28,15 @@ use ClicShopping\AI\Security\SecurityLogger;
  *
  * TASK 2.1: Extracted from OrchestratorAgent (Phase 2 - Component Extraction)
  * Requirements: REQ-4.1, REQ-8.1
+ * TASK 4: Internationalization support added
  */
 #[AllowDynamicProperties]
 class ResponseProcessor
 {
   private SecurityLogger $securityLogger;
   private bool $debug;
+  private $language;
+  private string $languageCode;
 
   /**
    * Constructor
@@ -43,6 +47,11 @@ class ResponseProcessor
   {
     $this->debug = $debug;
     $this->securityLogger = new SecurityLogger();
+
+    // Initialize language support
+    $this->language = Registry::get('Language');
+    $this->languageCode = $this->language->get('code');
+    $this->language->loadDefinitions('rag_response_processor', $this->languageCode, null, 'ClicShoppingAdmin');
 
     if ($this->debug) {
       $this->securityLogger->logSecurityEvent("ResponseProcessor initialized", 'info');
@@ -164,7 +173,7 @@ class ResponseProcessor
       // Case 1: Semantic result
       if (isset($executionResult['type']) && $executionResult['type'] === 'semantic_results') {
         // Already checked response above, return default
-        return 'Response not available';
+        return $this->language->getDef('response_not_available');
       }
       
       // TASK 2.17.1: Check for semantic type (from SemanticExecutor)
@@ -173,13 +182,13 @@ class ResponseProcessor
         if (isset($executionResult['answer']) && !empty($executionResult['answer'])) {
           return $executionResult['answer'];
         }
-        return 'Response not available';
+        return $this->language->getDef('response_not_available');
       }
 
       // Case 2: Analytics result
       if (isset($executionResult['type']) && $executionResult['type'] === 'analytics_results') {
         // Already checked interpretation above, return default
-        return 'Analysis not available';
+        return $this->language->getDef('analysis_not_available');
       }
 
       // TASK 2.17.1: Log when falling back to JSON (this should NOT happen for semantic queries)
@@ -206,11 +215,11 @@ class ResponseProcessor
           'warning'
         );
       }
-      return 'Unable to extract response from result. Please try rephrasing your question.';
+      return $this->language->getDef('response_extraction_fallback');
     }
 
     // Final fallback
-    return 'Response not available';
+    return $this->language->getDef('response_not_available');
   }
 
   /**
@@ -252,72 +261,73 @@ class ResponseProcessor
   private function analyzeError(string $message, array $context = []): array
   {
     // Known error patterns
+    // NOTE: Order matters! More specific patterns should come before general ones
     $errorPatterns = [
       // Database errors
       '/database|connection|mysql|pdo/i' => [
-        'user_message' => "Sorry, I couldn't access the data. A connection error occurred.",
-        'details' => 'Database connection error',
+        'user_message' => $this->language->getDef('error_database_user_message'),
+        'details' => $this->language->getDef('error_database_details'),
         'suggestions' => [
-          'Please try again in a few moments',
-          'If the issue persists, contact technical support'
+          $this->language->getDef('error_database_suggestion_1'),
+          $this->language->getDef('error_database_suggestion_2')
         ],
         'can_retry' => true
       ],
 
       // Timeout errors
       '/timeout|timed out|time limit/i' => [
-        'user_message' => "The request took too long to execute.",
-        'details' => 'Execution time exceeded',
+        'user_message' => $this->language->getDef('error_timeout_user_message'),
+        'details' => $this->language->getDef('error_timeout_details'),
         'suggestions' => [
-          'Try simplifying your query',
-          'Reduce the requested time range',
-          'Be more specific in your query'
+          $this->language->getDef('error_timeout_suggestion_1'),
+          $this->language->getDef('error_timeout_suggestion_2'),
+          $this->language->getDef('error_timeout_suggestion_3')
         ],
         'can_retry' => true
       ],
 
-      // SQL validation errors
-      '/sql|syntax|query/i' => [
-        'user_message' => "I couldn't understand your data request.",
-        'details' => 'Query generation error',
-        'suggestions' => [
-          'Rephrase your question more simply',
-          'Example: "What are today\'s sales?"',
-          'Avoid overly technical terms'
-        ],
-        'can_retry' => true
-      ],
-
-      // Missing data errors
+      // Missing data errors (check BEFORE SQL pattern since "query" appears in both)
       '/not found|no data|empty/i' => [
-        'user_message' => "No data was found for your request.",
-        'details' => 'No matching results',
+        'user_message' => $this->language->getDef('error_no_data_user_message'),
+        'details' => $this->language->getDef('error_no_data_details'),
         'suggestions' => [
-          'Verify that the data exists in the system',
-          'Try broadening your search',
-          'Adjust the requested time period'
+          $this->language->getDef('error_no_data_suggestion_1'),
+          $this->language->getDef('error_no_data_suggestion_2'),
+          $this->language->getDef('error_no_data_suggestion_3')
         ],
         'can_retry' => false
       ],
 
+      // SQL validation errors (after "no data" pattern)
+      '/sql|syntax|query/i' => [
+        'user_message' => $this->language->getDef('error_sql_user_message'),
+        'details' => $this->language->getDef('error_sql_details'),
+        'suggestions' => [
+          $this->language->getDef('error_sql_suggestion_1'),
+          $this->language->getDef('error_sql_suggestion_2'),
+          $this->language->getDef('error_sql_suggestion_3')
+        ],
+        'can_retry' => true
+      ],
+
       // Permission errors
       '/permission|access|denied|forbidden/i' => [
-        'user_message' => "You do not have the necessary permissions to access this data.",
-        'details' => 'Access denied',
+        'user_message' => $this->language->getDef('error_permission_user_message'),
+        'details' => $this->language->getDef('error_permission_details'),
         'suggestions' => [
-          'Contact your administrator to obtain permissions',
-          'Try querying public data instead'
+          $this->language->getDef('error_permission_suggestion_1'),
+          $this->language->getDef('error_permission_suggestion_2')
         ],
         'can_retry' => false
       ],
 
       // GPT/LLM service errors
       '/gpt|openai|api|llm/i' => [
-        'user_message' => "The AI service is temporarily unavailable.",
-        'details' => 'AI service error',
+        'user_message' => $this->language->getDef('error_ai_service_user_message'),
+        'details' => $this->language->getDef('error_ai_service_details'),
         'suggestions' => [
-          'Try again in a few moments',
-          'The service should be restored shortly'
+          $this->language->getDef('error_ai_service_suggestion_1'),
+          $this->language->getDef('error_ai_service_suggestion_2')
         ],
         'can_retry' => true
       ],
@@ -332,12 +342,12 @@ class ResponseProcessor
 
     // Generic fallback
     return [
-      'user_message' => "An unexpected error occurred while processing your request.",
+      'user_message' => $this->language->getDef('error_generic_user_message'),
       'details' => $message,
       'suggestions' => [
-        'Retry your request',
-        'Rephrase your question differently',
-        'If the problem persists, contact support'
+        $this->language->getDef('error_generic_suggestion_1'),
+        $this->language->getDef('error_generic_suggestion_2'),
+        $this->language->getDef('error_generic_suggestion_3')
       ],
       'can_retry' => true
     ];
@@ -349,7 +359,11 @@ class ResponseProcessor
    * Handles the complex logic of extracting and formatting responses,
    * especially for semantic queries which require special handling.
    * 
-   * @param array $executionResult Execution result from plan executor
+   * ✅ TASK 5.2.1.1: Updated to handle hybrid query results correctly
+   * - For hybrid queries, executionResult is the synthesized result directly (not wrapped)
+   * - For other queries, executionResult has ['result' => ...] structure
+   * 
+   * @param array $executionResult Execution result from plan executor OR synthesized hybrid result
    * @param array $intent Intent analysis result
    * @param string $query Original user query
    * @param float $startTime Start time for execution time calculation
@@ -367,16 +381,60 @@ class ResponseProcessor
     string $entityType,
     $responseProcessor
   ): array {
+    // ✅ TASK 5.2.1.1: Check if this is a hybrid result (already synthesized)
+    // Hybrid results have 'text_response' at top level and 'type' === 'hybrid'
+    $isHybridResult = isset($executionResult['text_response']) && 
+                      isset($executionResult['type']) && 
+                      $executionResult['type'] === 'hybrid';
+    
+    if ($isHybridResult) {
+      // For hybrid results, use the structure as-is (already properly formatted)
+      if ($this->debug) {
+        $this->securityLogger->logSecurityEvent(
+          "✅ TASK 5.2.1.1: Using hybrid result structure directly",
+          'info'
+        );
+      }
+      
+      // Add execution time if not present
+      if (!isset($executionResult['execution_time'])) {
+        $executionResult['execution_time'] = microtime(true) - $startTime;
+      }
+      
+      // Ensure required fields
+      $executionResult['success'] = $executionResult['success'] ?? true;
+      $executionResult['intent'] = $intent;
+      $executionResult['agent_used'] = 'orchestrator';
+      
+      // Override entity_id and entity_type if provided
+      if ($entityId > 0) {
+        $executionResult['entity_id'] = $entityId;
+      }
+      if ($entityType !== 'hybrid') {
+        $executionResult['entity_type'] = $entityType;
+      }
+      
+      return $executionResult;
+    }
+    
+    // For non-hybrid results, use the original extraction logic
     // Extract final response
-    $finalResponse = $this->extractFinalResponse($executionResult['result']);
+    $finalResponse = $this->extractFinalResponse($executionResult['result'] ?? $executionResult);
     
     // Get raw result for processing
     $rawResult = $executionResult['result'] ?? [];
     
-    // Process response through LLM formatter
-    // Fix: Ensure intentType is never null
+    // Process response through LLM formatter (if available)
+    // ✅ TASK 5.2.1.1: Check if responseProcessor is null before calling
     $intentType = $intent['type'] ?? $intent['query_type'] ?? 'semantic';
-    $dataForFormatter = $responseProcessor->processResponse($rawResult, $query, $intentType);
+    $dataForFormatter = null;
+    
+    if ($responseProcessor !== null) {
+      $dataForFormatter = $responseProcessor->processResponse($rawResult, $query, $intentType);
+    } else {
+      // For hybrid queries without LLM formatter, use raw result
+      $dataForFormatter = $rawResult;
+    }
     
     // Extract actual answer with priority logic
     $actualAnswer = $this->extractActualAnswer($rawResult, $finalResponse);
@@ -392,7 +450,7 @@ class ResponseProcessor
     }
 
     // Build final response structure
-    return [
+    $response = [
       'success' => true,
       'type' => $intent['type'],
       'data' => $dataForFormatter,
@@ -403,6 +461,32 @@ class ResponseProcessor
       'entity_type' => $entityType,
       'agent_used' => 'orchestrator',
     ];
+    
+    // ✅ TASK 5.1.7.4: Preserve cache flags from execution result
+    // Check multiple possible cache flag locations
+    if (isset($rawResult['cached']) && $rawResult['cached'] === true) {
+      $response['cached'] = true;
+      $response['from_cache'] = true;
+      if (isset($rawResult['cache_age'])) {
+        $response['cache_age'] = $rawResult['cache_age'];
+      }
+    } elseif (isset($rawResult['from_cache']) && $rawResult['from_cache'] === true) {
+      $response['from_cache'] = true;
+      $response['cached'] = true;
+    } elseif (isset($executionResult['cached']) && $executionResult['cached'] === true) {
+      $response['cached'] = true;
+      $response['from_cache'] = true;
+    }
+    
+    // TASK 5.1.6.12.1: Include source_attribution at top level for UI display
+    // Extract from dataForFormatter or rawResult
+    if (isset($dataForFormatter['source_attribution'])) {
+      $response['source_attribution'] = $dataForFormatter['source_attribution'];
+    } elseif (isset($rawResult['source_attribution'])) {
+      $response['source_attribution'] = $rawResult['source_attribution'];
+    }
+    
+    return $response;
   }
 
   /**

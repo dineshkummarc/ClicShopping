@@ -330,44 +330,6 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
   }
 
   /**
-   * Saves the embedding data to the database.
-   *
-   * This method saves the embedding data and vector to the database. If the embedding
-   * already exists, it updates the existing record.
-   *
-   * @param int $order_id The order ID.
-   * @param string $embeddingData The embedding data.
-   * @param array $embeddingVector The embedding vector.
-   * @param bool $isNew Indicates if this is a new embedding.
-   *
-   * @return void
-   * @throws \JsonException
-   */
-  private function saveEmbedding(int $order_id, string $embeddingData, array $embeddingVector, bool $isNew, array $metadata = []): void
-  {
-    $sql_data_array_embedding = [
-      'content' => $embeddingData,
-      'type' => 'orders',
-      'sourcetype' => 'manual',
-      'sourcename' => 'manual',
-      'date_modified' => 'now()',
-      'vec_embedding' => json_encode($embeddingVector, JSON_THROW_ON_ERROR)
-    ];
-
-    if (!empty($metadata)) {
-      $sql_data_array_embedding['metadata'] = json_encode($metadata, JSON_THROW_ON_ERROR);
-    }
-
-    if ($isNew) {
-      $sql_data_array_embedding['entity_id'] = (int)$order_id;
-      $this->app->db->save('orders_embedding', $sql_data_array_embedding);
-    } else {
-      $update_sql_data = ['entity_id' => (int)$order_id];
-      $this->app->db->save('orders_embedding', $sql_data_array_embedding, $update_sql_data);
-    }
-  }
-  
-  /**
    * Executes the embedding process for order updates.
    *
    * This method checks the GPT status and whether the embedding feature is enabled.
@@ -409,9 +371,6 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
 
       $embeddingData = $this->buildEmbeddingData($order_id, $orderData, $products, $attributes, $statusHistory, $totals);
 
-      // No AI-generated taxonomy - keep only factual, normalized data
-      // Taxonomies with inferences/interpretations should be stored separately, not mixed with factual data
-
       // Extract atomic keys from embedding data for metadata
       $tags = [];
       if (preg_match_all('/^\[([^\]]+)\]:\s*(.+)$/m', $embeddingData, $matches, PREG_SET_ORDER)) {
@@ -420,27 +379,33 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
         }
       }
 
-      // MetaData creation
-      $metadata = [
+      // Generate embeddings
+      $embeddedDocuments = NewVector::createEmbedding(null, $embeddingData);
+
+      // Prepare base metadata for centralized chunk management
+      $baseMetadata = [
         'order_name' => 'Order #' . $order_id,
         'content' => $embeddingData,
-        'order_id' => (int)$order_id,
-        'type' => 'orders',
-        'source' => [
-          'type' => 'manual',
-          'name' => 'manual'
-        ],
-        'entity_id' => (int)$order_id,
-        'chunk_number' => 1,
+        'type' => 'orders',  // Entity type (goes in 'type' column)
         'tags' => $tags,
-        'date_modified' => 'now()'
+        'source' => ['type' => 'manual', 'name' => 'manual']  // Goes in 'sourcetype' and 'sourcename' columns
       ];
 
-      $embeddedDocuments = NewVector::createEmbedding(null, $embeddingData);
-      $embeddingVector = $embeddedDocuments[0]->embedding ?? null;
+      // Save all chunks using centralized method
+      $result = NewVector::saveEmbeddingsWithChunks(
+        $embeddedDocuments,
+        'orders_embedding',  // Table name
+        (int)$order_id,
+        null,  // language_id - orders table doesn't have this column
+        $baseMetadata,
+        $this->app->db,
+        !$insert_embedding  // isUpdate = true if not inserting (i.e., updating existing entity)
+      );
 
-      if (!empty($embeddingVector)) {
-        $this->saveEmbedding($order_id, $embeddingData, $embeddingVector, $insert_embedding, $metadata);
+      if (!$result['success']) {
+        error_log("Shop/Orders: Failed to save embeddings - " . $result['error']);
+      } else {
+        error_log("Shop/Orders: Successfully saved {$result['chunks_saved']} chunk(s) for order {$order_id}");
       }
     }
   }

@@ -61,7 +61,14 @@ class PromptBuilder
     // Initialize SchemaRetriever if Schema RAG is enabled
     $useSchemaRAG = defined('CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG') && CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG === 'True';
     if ($useSchemaRAG) {
-      $this->schemaRetriever = new SchemaRetriever($debug);
+      // Check if embeddings should be used
+      $useEmbeddings = defined('CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_USE_EMBEDDINGS') && CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_USE_EMBEDDINGS === 'True';
+      
+      $this->schemaRetriever = new SchemaRetriever($debug, $useEmbeddings);
+      
+      if ($debug) {
+        error_log("[PromptBuilder] Schema RAG initialized with embeddings: " . ($useEmbeddings ? 'ENABLED' : 'DISABLED (Pure LLM mode)'));
+      }
     }
   }
   
@@ -166,6 +173,7 @@ class PromptBuilder
     $orderCalculation = $this->language->getDef('text_order_calculation');
     $queryExamples = $this->language->getDef('text_query_examples');
     $sqlGenerationRules = $this->language->getDef('text_sql_generation_rules');
+    $aggregationRules = $this->language->getDef('text_aggregation_rules');  // 🚨 CRITICAL: Load aggregation rules
     $sqlFormatInstructions = $this->language->getDef('text_sql_format_instructions');
     $text_multi_query_warning = $this->language->getDef('text_multi_query_warning');
     $securityGuidelines = $this->language->getDef('text_security_guidelines');
@@ -190,6 +198,7 @@ class PromptBuilder
       error_log("tableStructureInstructions length: " . strlen($tableStructureInstructions) . " chars");
       error_log("text_multi_query_warning length: " . strlen($text_multi_query_warning) . " chars");
       error_log("entityMetadataGuidelines length: " . strlen($entityMetadataGuidelines) . " chars");
+      error_log("🚨 text_aggregation_rules length: " . strlen($aggregationRules) . " chars");
       error_log("text_sql_generation_rules length: " . strlen($sqlGenerationRules) . " chars");
       error_log("text_order_calculation length: " . strlen($orderCalculation) . " chars");
       error_log("text_query_examples length: " . strlen($queryExamples) . " chars");
@@ -197,6 +206,7 @@ class PromptBuilder
       error_log("text_response_format length: " . strlen($responseFormat) . " chars");
       error_log("text_multi_token_rules length: " . strlen($multiTokenRules) . " chars");
       error_log("Contains 'MULTI-TOKEN' in multiTokenRules: " . (strpos($multiTokenRules, 'MULTI-TOKEN') !== false ? 'YES' : 'NO'));
+      error_log("Contains 'ABSOLUTE RULE' in aggregationRules: " . (strpos($aggregationRules, 'ABSOLUTE RULE') !== false ? 'YES' : 'NO'));
       error_log("First 200 chars of multiTokenRules: " . substr($multiTokenRules, 0, 200));
       error_log("================================================================================");
     }
@@ -207,14 +217,15 @@ class PromptBuilder
       $text_rag_system_analytics_rules . "\n\n" .                    // 3. Critical ambiguity rules
       $tableStructureInstructions . "\n\n" .                         // 4. Database schema (the playground)
       $entityMetadataGuidelines . "\n\n" .                           // 5. Schema metadata
-      $sqlGenerationRules . "\n\n" .                                 // 6. SQL construction rules (JOINs, etc.)
-      $orderCalculation . "\n\n" .                                   // 7. Specific calculation rules
-      $queryExamples . "\n\n" .                                      // 8. Examples (Few-shot learning)
-      $sqlFormatInstructions . "\n\n" .                              // 9. SQL code format
-      $text_multi_query_warning. "\n\n" .                            // 3. Critical multi pattern rules
-      $responseFormat . "\n\n" .                                     // 10. Response format
-      $text_rag_system_message_template . "\n\n" .                   // 11. RAG context
-      $multiTokenRules . "\n\n"                                      // 12. Parsing rules
+      $aggregationRules . "\n\n" .                                   // 6. 🚨 CRITICAL: Aggregation rules (MUST be before SQL generation)
+      $sqlGenerationRules . "\n\n" .                                 // 7. SQL construction rules (JOINs, etc.)
+      $orderCalculation . "\n\n" .                                   // 8. Specific calculation rules
+      $queryExamples . "\n\n" .                                      // 9. Examples (Few-shot learning)
+      $sqlFormatInstructions . "\n\n" .                              // 10. SQL code format
+      $text_multi_query_warning. "\n\n" .                            // 11. Critical multi pattern rules
+      $responseFormat . "\n\n" .                                     // 12. Response format
+      $text_rag_system_message_template . "\n\n" .                   // 13. RAG context
+      $multiTokenRules . "\n\n"                                      // 14. Parsing rules
     ;
     
     // Replace placeholders with actual values
@@ -384,13 +395,59 @@ class PromptBuilder
     }
     
     // Use full schema (default or fallback)
-    $fullSchema = $this->language->getDef('text_table_structure_instructions');
-    
-    if ($this->debug && !$useSchemaRAG) {
-      error_log("[PromptBuilder] Schema RAG disabled, using full schema");
+    // Generate schema with comments from database
+    if ($this->debug) {
+      error_log("[PromptBuilder] Schema RAG disabled, generating full schema with comments from database");
     }
     
-    return $fullSchema;
+    return $this->buildFullSchemaWithComments();
+  }
+  
+  /**
+   * Build full schema with column comments from database
+   * 
+   * @return string Full schema text with column comments
+   */
+  private function buildFullSchemaWithComments(): string
+  {
+    $db = Registry::get('Db');
+    
+    // Get all tables
+    $tablesQuery = "SHOW TABLES";
+    $tablesResult = $db->query($tablesQuery);
+    
+    $schema = "DATABASE SCHEMA WITH COLUMN DESCRIPTIONS:\n\n";
+    
+    while ($tableRow = $tablesResult->fetch()) {
+      $tableName = array_values($tableRow)[0];
+      
+      // Skip non-clic tables
+      if (strpos($tableName, 'clic_') !== 0) {
+        continue;
+      }
+      
+      $schema .= "Table: {$tableName}\n";
+      
+      // Get columns with comments
+      $columnsQuery = "SHOW FULL COLUMNS FROM {$tableName}";
+      $columnsResult = $db->query($columnsQuery);
+      
+      while ($column = $columnsResult->fetch()) {
+        $field = $column['Field'];
+        $type = $column['Type'];
+        $comment = !empty($column['Comment']) ? $column['Comment'] : '';
+        
+        if (!empty($comment)) {
+          $schema .= "  - {$field} ({$type}): {$comment}\n";
+        } else {
+          $schema .= "  - {$field} ({$type})\n";
+        }
+      }
+      
+      $schema .= "\n";
+    }
+    
+    return $schema;
   }
   
   /**

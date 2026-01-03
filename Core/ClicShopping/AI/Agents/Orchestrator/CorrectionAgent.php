@@ -1587,7 +1587,7 @@ class CorrectionAgent
     try {
       // 1. Récupérer les feedbacks négatifs et corrections récents
       // 🔧 TASK 4.4.1 PHASE 2: Use DoctrineOrm instead of direct DB access
-      $prefix = \ClicShopping\OM\CLICSHOPPING::getConfig('db_table_prefix');
+      $prefix = CLICSHOPPING::getConfig('db_table_prefix');
       
       $sql = "SELECT f.id,
                 f.interaction_id,
@@ -1830,7 +1830,7 @@ class CorrectionAgent
     try {
       // Query rag_statistics table for entity information
       // 🔧 TASK 4.4.1 PHASE 2: Use DoctrineOrm instead of direct DB access
-      $prefix = \ClicShopping\OM\CLICSHOPPING::getConfig('db_table_prefix');
+      $prefix = CLICSHOPPING::getConfig('db_table_prefix');
       
       $sql = "SELECT entity_id, 
                 entity_type
