@@ -403,11 +403,38 @@ text_sql_generation_rules = RÈGLES DE GÉNÉRATION SQL:
     - Retourner les résultats en une seule ligne avec plusieurs colonnes
 
 13. EXPRESSIONS TEMPORELLES DYNAMIQUES: Convertir en SQL en utilisant NOW() - INTERVAL X DAY
+    
+    RÈGLE CRITIQUE - GESTION DES LIMITES D'ANNÉE:
+    Lors de l'utilisation d'INTERVAL avec QUARTER() ou MONTH(), TOUJOURS appliquer le même INTERVAL à YEAR().
+    Cela évite les bugs lors du franchissement des limites d'année (ex: Q1 2026 cherchant Q4 2025).
+    
     - "30 derniers jours" → WHERE o.date_purchased >= NOW() - INTERVAL 30 DAY
     - "Semaine dernière" → WHERE o.date_purchased >= DATE_SUB(CURDATE(), INTERVAL 1 WEEK)
     - "Cette semaine" / "de cette semaine" → WHERE YEARWEEK(o.date_purchased, 1) = YEARWEEK(CURDATE(), 1)
-    - "Mois dernier" → WHERE MONTH(o.date_purchased) = MONTH(CURDATE() - INTERVAL 1 MONTH)
-    - "Année en cours" → WHERE YEAR(o.date_purchased) = YEAR(CURDATE())
+    
+    - "Mois dernier" / "dernier mois" → WHERE MONTH(o.date_purchased) = MONTH(CURDATE() - INTERVAL 1 MONTH)
+                                         AND YEAR(o.date_purchased) = YEAR(CURDATE() - INTERVAL 1 MONTH)
+    
+    - "Trimestre dernier" / "dernier trimestre" → WHERE QUARTER(o.date_purchased) = QUARTER(CURDATE() - INTERVAL 1 QUARTER)
+                                                   AND YEAR(o.date_purchased) = YEAR(CURDATE() - INTERVAL 1 QUARTER)
+    
+    - "Ce mois" / "ce mois-ci" → WHERE MONTH(o.date_purchased) = MONTH(CURDATE())
+                                  AND YEAR(o.date_purchased) = YEAR(CURDATE())
+    
+    - "Ce trimestre" → WHERE QUARTER(o.date_purchased) = QUARTER(CURDATE())
+                       AND YEAR(o.date_purchased) = YEAR(CURDATE())
+    
+    - "Année en cours" / "cette année" → WHERE YEAR(o.date_purchased) = YEAR(CURDATE())
+    
+    EXEMPLE - Cas de limite d'année:
+    Requête: "commandes du dernier trimestre" (demandé en janvier 2026, qui est Q1)
+    ✅ CORRECT: WHERE QUARTER(date) = QUARTER(CURDATE() - INTERVAL 1 QUARTER)
+                AND YEAR(date) = YEAR(CURDATE() - INTERVAL 1 QUARTER)
+                → Cherche Q4 2025 (correct!)
+    
+    ❌ FAUX: WHERE QUARTER(date) = QUARTER(CURDATE() - INTERVAL 1 QUARTER)
+             AND YEAR(date) = YEAR(CURDATE())
+             → Cherche Q4 2026 (n'existe pas encore!)
 
 14. Assurer la correction de la requête et prévenir les injections SQL
 15. Alerter l'utilisateur si des incohérences sont détectées (doublons, sommes incorrectes, données manquantes)

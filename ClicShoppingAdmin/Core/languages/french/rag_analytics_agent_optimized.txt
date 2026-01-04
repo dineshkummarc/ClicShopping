@@ -183,10 +183,16 @@ text_sql_generation_rules = RÈGLES DE GÉNÉRATION SQL:
     - Retourner les résultats en une seule ligne avec plusieurs colonnes
 
 11. **EXPRESSIONS TEMPORELLES DYNAMIQUES**: Convertir en SQL en utilisant NOW() - INTERVAL X DAY
+    
+    **CRITIQUE**: Lors de l'utilisation d'INTERVAL avec QUARTER() ou MONTH(), TOUJOURS appliquer le même INTERVAL à YEAR().
+    
     - "30 derniers jours" → WHERE o.date_purchased >= NOW() - INTERVAL 30 DAY
     - "Semaine dernière" → WHERE o.date_purchased >= DATE_SUB(CURDATE(), INTERVAL 1 WEEK)
-    - "Cette semaine" / "de cette semaine" → WHERE YEARWEEK(o.date_purchased, 1) = YEARWEEK(CURDATE(), 1)
-    - "Mois dernier" → WHERE MONTH(o.date_purchased) = MONTH(CURDATE() - INTERVAL 1 MONTH)
+    - "Cette semaine" → WHERE YEARWEEK(o.date_purchased, 1) = YEARWEEK(CURDATE(), 1)
+    - "Mois dernier" → WHERE MONTH(o.date_purchased) = MONTH(CURDATE() - INTERVAL 1 MONTH) AND YEAR(o.date_purchased) = YEAR(CURDATE() - INTERVAL 1 MONTH)
+    - "Trimestre dernier" → WHERE QUARTER(o.date_purchased) = QUARTER(CURDATE() - INTERVAL 1 QUARTER) AND YEAR(o.date_purchased) = YEAR(CURDATE() - INTERVAL 1 QUARTER)
+    - "Ce mois" → WHERE MONTH(o.date_purchased) = MONTH(CURDATE()) AND YEAR(o.date_purchased) = YEAR(CURDATE())
+    - "Ce trimestre" → WHERE QUARTER(o.date_purchased) = QUARTER(CURDATE()) AND YEAR(o.date_purchased) = YEAR(CURDATE())
     - "Année en cours" → WHERE YEAR(o.date_purchased) = YEAR(CURDATE())
 
 12. Assurer la correction de la requête et prévenir les injections SQL

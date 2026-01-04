@@ -306,35 +306,29 @@ class MariaDb
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
      CREATE TABLE :table_rag_correction_patterns_embedding (
-        id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-        content text DEFAULT NULL,
-        type text DEFAULT NULL,
-        sourcetype text DEFAULT NULL,
-        sourcename text DEFAULT NULL,
-        embedding vector(3072) NULL COMMENT 'Embedding vector (NULL if not yet generated)',
-        chunknumber int(11) DEFAULT 128,
-        date_modified datetime DEFAULT NULL,
+        id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key - auto-incremented unique identifier',
+        content text DEFAULT NULL COMMENT 'Correction pattern content for embedding generation',
+        type text DEFAULT NULL COMMENT 'Type of correction pattern',
+        sourcetype text DEFAULT NULL COMMENT 'Source type of the correction pattern',
+        sourcename text DEFAULT NULL COMMENT 'Name of the source system or module',
+        embedding vector(3072) NOT NULL COMMENT 'Embedding vector for semantic search',
+        metadata JSON NOT NULL DEFAULT '{}' COMMENT 'Additional metadata in JSON format',
+        chunknumber int(11) DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+        date_modified datetime DEFAULT NULL COMMENT 'Last modification timestamp',
         entity_id int(11) NULL DEFAULT 0 COMMENT 'Entity ID (0 = no specific entity, NULL = unknown)',
         entity_type VARCHAR(50) NULL COMMENT 'Type of entity (product, category, page, etc.)',
-        language_id int(11) NOT NULL,
-        metadata JSON NOT NULL DEFAULT '{}',
+        language_id int(11) NOT NULL COMMENT 'Language identifier for the correction pattern',
         VECTOR KEY (embedding),
         PRIMARY KEY (id),
         UNIQUE KEY id (id),
         KEY idx_entity_id (entity_id),
         KEY idx_language_id (language_id),
+        KEY idx_user_id (metadata(100)),
         KEY idx_entity (entity_id, entity_type),
         KEY idx_entity_language (entity_id, language_id),
         KEY idx_entity_type_language (entity_type, language_id, entity_id),
         KEY idx_date_modified (date_modified)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-      ALTER TABLE :table_rag_correction_patterns_embedding ADD COLUMN IF NOT EXISTS metadata JSON NOT NULL DEFAULT '{}' AFTER embedding;
-      ALTER TABLE :table_rag_correction_patterns_embedding ADD COLUMN IF NOT EXISTS entity_type VARCHAR(50) NULL COMMENT 'Type of entity (product, category, page, etc.)' AFTER entity_id;
-      ALTER TABLE :table_rag_correction_patterns_embedding ADD KEY IF NOT EXISTS idx_user_id (metadata(100));
-      ALTER TABLE :table_rag_correction_patterns_embedding ADD KEY IF NOT EXISTS idx_entity (entity_id, entity_type);
-      ALTER TABLE :table_rag_correction_patterns_embedding ADD KEY IF NOT EXISTS idx_entity_type_language (entity_type, language_id, entity_id);
-      ALTER TABLE :table_rag_correction_patterns_embedding ADD KEY IF NOT EXISTS idx_date_modified (date_modified);
      EOD;
 
       $CLICSHOPPING_Db->exec($sql);
@@ -370,20 +364,23 @@ class MariaDb
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
         CREATE TABLE :table_rag_conversation_memory_embedding (
-          id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-          content text DEFAULT NULL,
-          type text DEFAULT NULL,
-          sourcetype text DEFAULT NULL,
-          sourcename text DEFAULT NULL,
+          id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key - auto-incremented unique identifier',
+          content text DEFAULT NULL COMMENT 'Conversation content for embedding generation',
+          type text DEFAULT NULL COMMENT 'Type of content (conversation, message, etc.)',
+          sourcetype text DEFAULT NULL COMMENT 'Source type of the conversation',
+          sourcename text DEFAULT NULL COMMENT 'Name of the source system or module',
           embedding vector(3072) NULL COMMENT 'Embedding vector (NULL if not yet generated)',
-          chunknumber int(11) DEFAULT 128,
-          date_modified datetime DEFAULT NULL,
-          entity_id int(11) NOT NULL,
-          entity_type VARCHAR(50) DEFAULT NULL COMMENT 'Type of entity (product, category, page, etc.)',
-          language_id int(11) NOT NULL,
+          user_message TEXT COMMENT 'User message from conversation',
+          assistant_response TEXT COMMENT 'Assistant response from conversation',
+          chunknumber int(11) DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified datetime DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id int(11) NULL DEFAULT NULL COMMENT 'Entity ID (nullable for general conversations)',
+          entity_type VARCHAR(50) NULL DEFAULT NULL COMMENT 'Entity type (nullable for general conversations)',
+          language_id int(11) NOT NULL COMMENT 'Language identifier for the conversation',
           user_id VARCHAR(255) DEFAULT NULL COMMENT 'User ID for fast filtering',
           interaction_id VARCHAR(255) DEFAULT NULL COMMENT 'Interaction ID to prevent duplicates',
-          metadata JSON NOT NULL DEFAULT '{}',
+          metadata JSON NOT NULL DEFAULT '{}' COMMENT 'Additional metadata in JSON format',
+          created_at DATETIME DEFAULT NULL COMMENT 'Creation timestamp',
           VECTOR KEY (embedding),
           PRIMARY KEY (id),
           UNIQUE KEY id (id),
@@ -393,39 +390,9 @@ class MariaDb
           KEY idx_user_lang_date (user_id, language_id, date_modified),
           KEY idx_date_modified (date_modified),
           KEY idx_entity (entity_id, entity_type),
-          KEY idx_interaction_user (interaction_id, user_id)
+          KEY idx_interaction_user (interaction_id, user_id),
+          KEY idx_created_at (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-       
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD COLUMN IF NOT EXISTS metadata JSON NOT NULL DEFAULT '{}' AFTER embedding;
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD COLUMN IF NOT EXISTS entity_type VARCHAR(50) DEFAULT NULL COMMENT 'Type of entity (product, category, page, etc.)' AFTER entity_id;
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD COLUMN IF NOT EXISTS user_id VARCHAR(255) DEFAULT NULL COMMENT 'User ID for fast filtering' AFTER language_id;
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD COLUMN IF NOT EXISTS interaction_id VARCHAR(255) DEFAULT NULL COMMENT 'Interaction ID to prevent duplicates' AFTER user_id;
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_user_id (user_id);
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_interaction_id (interaction_id);
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_language_id (language_id);
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_user_lang_date (user_id, language_id, date_modified);
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_entity (entity_id, entity_type);
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_interaction_user (interaction_id, user_id);
-      
-      -- Task 0.1 (2025-12-12): Add user_message and assistant_response columns
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD COLUMN IF NOT EXISTS user_message TEXT COMMENT 'User message from conversation' AFTER embedding;
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD COLUMN IF NOT EXISTS assistant_response TEXT COMMENT 'Assistant response from conversation' AFTER user_message;
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD COLUMN IF NOT EXISTS created_at DATETIME DEFAULT NULL COMMENT 'Creation timestamp' AFTER metadata;
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_created_at (created_at);
-      
-      -- Task 2.2 Pre-fix (2025-12-12): Make embedding column nullable
-      -- Embeddings are expensive to generate, allow NULL for conversations without immediate embedding
-      ALTER TABLE :table_rag_conversation_memory_embedding MODIFY COLUMN embedding VECTOR(3072) NULL COMMENT 'Embedding vector (NULL if not yet generated)';
-      
-      -- Task 3.1 (2025-12-12): Make entity_id nullable to allow conversation memory without entity context
-      -- Issue: Field 'entity_id' doesn't have a default value - causing INSERT failures
-      -- Impact: Cannot save conversation history without entity_id
-      ALTER TABLE :table_rag_conversation_memory_embedding MODIFY COLUMN entity_id INT(11) NULL DEFAULT NULL COMMENT 'Entity ID (nullable for general conversations)';
-      ALTER TABLE :table_rag_conversation_memory_embedding MODIFY COLUMN entity_type VARCHAR(50) NULL DEFAULT NULL COMMENT 'Entity type (nullable for general conversations)';
-      
-      -- Also update rag_conversation_memory table if it exists (Task 2.16.2)
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD COLUMN IF NOT EXISTS entity_type VARCHAR(50) DEFAULT NULL COMMENT 'Type of entity (product, category, page, etc.)' AFTER entity_id;
-      ALTER TABLE :table_rag_conversation_memory_embedding ADD KEY IF NOT EXISTS idx_entity (entity_id, entity_type);
     EOD;
       $CLICSHOPPING_Db->exec($sql);
     }
@@ -695,24 +662,24 @@ class MariaDb
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
         CREATE TABLE IF NOT EXISTS :table_rag_interactions (
-          interaction_id INT NOT NULL AUTO_INCREMENT,
-          user_id INT DEFAULT NULL,
-          session_id VARCHAR(255) DEFAULT NULL,
-          question TEXT NOT NULL,
-          response TEXT DEFAULT NULL,
-          request_type VARCHAR(50) DEFAULT NULL COMMENT 'analytics, semantic, error, security_blocked',
-          confidence DECIMAL(5,2) DEFAULT NULL,
-          response_quality INT DEFAULT NULL COMMENT 'Score 0-100',
-          response_time INT DEFAULT NULL COMMENT 'Temps de réponse en ms',
+          interaction_id INT NOT NULL AUTO_INCREMENT COMMENT 'Primary key - unique interaction identifier',
+          user_id INT DEFAULT NULL COMMENT 'User ID who initiated the interaction',
+          session_id VARCHAR(255) DEFAULT NULL COMMENT 'Session identifier for tracking user sessions',
+          question TEXT NOT NULL COMMENT 'User question or query text',
+          response TEXT DEFAULT NULL COMMENT 'System response to the user query',
+          request_type VARCHAR(50) DEFAULT NULL COMMENT 'Type of request: analytics, semantic, error, security_blocked',
+          confidence DECIMAL(5,2) DEFAULT NULL COMMENT 'Confidence score of the response (0-100)',
+          response_quality INT DEFAULT NULL COMMENT 'Quality score of the response (0-100)',
+          response_time INT DEFAULT NULL COMMENT 'Response time in milliseconds',
           execution_time INT DEFAULT NULL COMMENT 'Execution time in milliseconds',
-          tokens_used INT DEFAULT NULL,
-          api_cost DECIMAL(10,6) DEFAULT NULL,
-          language_id INT DEFAULT 1,
+          tokens_used INT DEFAULT NULL COMMENT 'Number of tokens used in the API call',
+          api_cost DECIMAL(10,6) DEFAULT NULL COMMENT 'API cost in USD for this interaction',
+          language_id INT DEFAULT 1 COMMENT 'Language identifier for the interaction',
           entity_id INT DEFAULT 0 COMMENT 'Entity ID (0 = no specific entity, NULL = unknown)',
           entity_type VARCHAR(50) DEFAULT NULL COMMENT 'Type of entity (product, category, page, etc.)',
           agent_used VARCHAR(50) DEFAULT NULL COMMENT 'Agent that processed the query (orchestrator, analytics_agent, semantic_agent, etc.)',
           intent_type VARCHAR(50) DEFAULT NULL COMMENT 'Intent classification (analytics, semantic, hybrid, web_search)',
-          date_added DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          date_added DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the interaction was created',
           
           PRIMARY KEY (interaction_id),
           KEY idx_user_id (user_id),
@@ -727,56 +694,9 @@ class MariaDb
         ENGINE=InnoDB
         DEFAULT CHARSET=utf8mb4
         COLLATE=utf8mb4_unicode_ci
-        COMMENT='Table principale des interactions RAG avec métriques de base - Updated Task 2.17.4';
+        COMMENT='Main RAG interactions table with base metrics';
       EOD;
       $CLICSHOPPING_Db->exec($sql);
-    }
-    
-    // Task 2.17.4: Add missing columns to existing table if they don't exist
-    $CLICSHOPPING_Db->exec("
-      ALTER TABLE :table_rag_interactions 
-      ADD COLUMN IF NOT EXISTS execution_time INT DEFAULT NULL COMMENT 'Execution time in milliseconds' 
-      AFTER response_time
-    ");
-    
-    $CLICSHOPPING_Db->exec("
-      ALTER TABLE :table_rag_interactions 
-      ADD COLUMN IF NOT EXISTS entity_id INT DEFAULT 0 COMMENT 'Entity ID (0 = no specific entity, NULL = unknown)' 
-      AFTER language_id
-    ");
-    
-    $CLICSHOPPING_Db->exec("
-      ALTER TABLE :table_rag_interactions 
-      ADD COLUMN IF NOT EXISTS entity_type VARCHAR(50) DEFAULT NULL COMMENT 'Type of entity (product, category, page, etc.)' 
-      AFTER entity_id
-    ");
-    
-    $CLICSHOPPING_Db->exec("
-      ALTER TABLE :table_rag_interactions 
-      ADD COLUMN IF NOT EXISTS agent_used VARCHAR(50) DEFAULT NULL COMMENT 'Agent that processed the query (orchestrator, analytics_agent, semantic_agent, etc.)' 
-      AFTER entity_type
-    ");
-    
-    $CLICSHOPPING_Db->exec("
-      ALTER TABLE :table_rag_interactions 
-      ADD COLUMN IF NOT EXISTS intent_type VARCHAR(50) DEFAULT NULL COMMENT 'Intent classification (analytics, semantic, hybrid, web_search)' 
-      AFTER agent_used
-    ");
-    
-    // Add indexes if they don't exist
-    $indexResult = $CLICSHOPPING_Db->query("SHOW INDEX FROM :table_rag_interactions WHERE Key_name = 'idx_entity'");
-    if ($indexResult->fetch() === false) {
-      $CLICSHOPPING_Db->exec("ALTER TABLE :table_rag_interactions ADD INDEX idx_entity (entity_id, entity_type)");
-    }
-    
-    $indexResult = $CLICSHOPPING_Db->query("SHOW INDEX FROM :table_rag_interactions WHERE Key_name = 'idx_agent_used'");
-    if ($indexResult->fetch() === false) {
-      $CLICSHOPPING_Db->exec("ALTER TABLE :table_rag_interactions ADD INDEX idx_agent_used (agent_used)");
-    }
-    
-    $indexResult = $CLICSHOPPING_Db->query("SHOW INDEX FROM :table_rag_interactions WHERE Key_name = 'idx_intent_type'");
-    if ($indexResult->fetch() === false) {
-      $CLICSHOPPING_Db->exec("ALTER TABLE :table_rag_interactions ADD INDEX idx_intent_type (intent_type)");
     }
 
     $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_rag_statistics"');

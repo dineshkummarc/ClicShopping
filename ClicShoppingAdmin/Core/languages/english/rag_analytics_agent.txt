@@ -401,11 +401,38 @@ text_sql_generation_rules = SQL GENERATION RULES:
     - Return results in single row with multiple columns
 
 13. DYNAMIC TIME EXPRESSIONS: Convert to SQL using NOW() - INTERVAL X DAY
+    
+    CRITICAL RULE - YEAR BOUNDARY HANDLING:
+    When using INTERVAL with QUARTER() or MONTH(), ALWAYS apply the same INTERVAL to YEAR().
+    This prevents bugs when crossing year boundaries (e.g., Q1 2026 looking for Q4 2025).
+    
     - "Last 30 days" → WHERE o.date_purchased >= NOW() - INTERVAL 30 DAY
     - "Last week" → WHERE o.date_purchased >= DATE_SUB(CURDATE(), INTERVAL 1 WEEK)
     - "This week" / "of this week" → WHERE YEARWEEK(o.date_purchased, 1) = YEARWEEK(CURDATE(), 1)
+    
     - "Last month" → WHERE MONTH(o.date_purchased) = MONTH(CURDATE() - INTERVAL 1 MONTH)
-    - "Current year" → WHERE YEAR(o.date_purchased) = YEAR(CURDATE())
+                     AND YEAR(o.date_purchased) = YEAR(CURDATE() - INTERVAL 1 MONTH)
+    
+    - "Last quarter" → WHERE QUARTER(o.date_purchased) = QUARTER(CURDATE() - INTERVAL 1 QUARTER)
+                       AND YEAR(o.date_purchased) = YEAR(CURDATE() - INTERVAL 1 QUARTER)
+    
+    - "This month" → WHERE MONTH(o.date_purchased) = MONTH(CURDATE())
+                     AND YEAR(o.date_purchased) = YEAR(CURDATE())
+    
+    - "This quarter" → WHERE QUARTER(o.date_purchased) = QUARTER(CURDATE())
+                       AND YEAR(o.date_purchased) = YEAR(CURDATE())
+    
+    - "Current year" / "This year" → WHERE YEAR(o.date_purchased) = YEAR(CURDATE())
+    
+    EXAMPLE - Year Boundary Case:
+    Query: "orders from last quarter" (asked in January 2026, which is Q1)
+    ✅ CORRECT: WHERE QUARTER(date) = QUARTER(CURDATE() - INTERVAL 1 QUARTER) 
+                AND YEAR(date) = YEAR(CURDATE() - INTERVAL 1 QUARTER)
+                → Looks for Q4 2025 (correct!)
+    
+    ❌ WRONG: WHERE QUARTER(date) = QUARTER(CURDATE() - INTERVAL 1 QUARTER)
+              AND YEAR(date) = YEAR(CURDATE())
+              → Looks for Q4 2026 (doesn't exist yet!)
 
 14. Ensure query correctness and prevent SQL injections
 15. Alert user if inconsistencies detected (duplicates, incorrect sums, missing data)
