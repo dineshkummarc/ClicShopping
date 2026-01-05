@@ -124,3 +124,25 @@ if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_USE_EMBEDDINGS')) define('CLICS
 // Lower values = faster queries, less context
 // Higher values = more context, slower queries
 if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_MAX_TABLES')) define('CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_MAX_TABLES', '5');
+
+// ============================================================================
+// Reasoning Agent Configuration (2026-01-04 - Dynamic Configuration)
+// ============================================================================
+// Reasoning mode: 'chain_of_thought', 'tree_of_thought', or 'self_consistency'
+// Default: 'chain_of_thought' (sequential step-by-step reasoning)
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_REASONING_MODE')) define('CLICSHOPPING_APP_CHATGPT_RA_REASONING_MODE', 'chain_of_thought');
+
+// Maximum reasoning steps (1-50)
+// Controls how many steps the agent can take when reasoning
+// Default: 10
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_REASONING_STEPS')) define('CLICSHOPPING_APP_CHATGPT_RA_MAX_REASONING_STEPS', '10');
+
+// Self-consistency paths (2-10)
+// Number of parallel reasoning paths for self-consistency mode
+// Default: 3
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_CONSISTENCY_PATHS')) define('CLICSHOPPING_APP_CHATGPT_RA_CONSISTENCY_PATHS', '3');
+
+// Tree-of-thought paths (2-10)
+// Number of parallel reasoning paths for tree-of-thought mode
+// Default: 3
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_TREE_PATHS')) define('CLICSHOPPING_APP_CHATGPT_RA_TREE_PATHS', '3');

@@ -3,8 +3,134 @@
  * Gère l'envoi des messages dans la modal du chat
  */
 
+/**
+ * HTML Sanitization Configuration
+ * Uses DOMPurify to sanitize HTML content before rendering
+ */
+const ChatSanitizer = {
+  /**
+   * Initialize DOMPurify with safe configuration
+   */
+  init: function() {
+    // Check if DOMPurify is loaded
+    if (typeof DOMPurify === 'undefined') {
+      console.warn('ChatSanitizer: DOMPurify not loaded, HTML sanitization disabled');
+      return false;
+    }
+    
+    console.log('ChatSanitizer: DOMPurify loaded successfully');
+    return true;
+  },
+  
+  /**
+   * Sanitize HTML content with safe configuration
+   * @param {string} html - HTML content to sanitize
+   * @returns {string} - Sanitized HTML
+   */
+  sanitize: function(html) {
+    // If DOMPurify is not available, return escaped text as fallback
+    if (typeof DOMPurify === 'undefined') {
+      console.warn('ChatSanitizer: Falling back to text-only mode');
+      const div = document.createElement('div');
+      div.textContent = html;
+      return div.innerHTML;
+    }
+    
+    // Configure DOMPurify with safe tags and attributes
+    const config = {
+      // Allow safe HTML tags
+      ALLOWED_TAGS: [
+        'div', 'span', 'p', 'br', 'strong', 'em', 'b', 'i', 'u',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'ul', 'ol', 'li',
+        'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'a', 'img',
+        'blockquote', 'code', 'pre',
+        'hr', 'small', 'mark', 'del', 'ins', 'sub', 'sup'
+      ],
+      
+      // Allow safe attributes
+      ALLOWED_ATTR: [
+        'class', 'id', 'style',
+        'href', 'target', 'rel',
+        'src', 'alt', 'title',
+        'colspan', 'rowspan',
+        'data-*'
+      ],
+      
+      // Allow data attributes
+      ALLOW_DATA_ATTR: true,
+      
+      // Block dangerous tags
+      FORBID_TAGS: [
+        'script', 'iframe', 'object', 'embed', 'applet',
+        'form', 'input', 'button', 'textarea', 'select',
+        'meta', 'link', 'style', 'base'
+      ],
+      
+      // Block dangerous attributes
+      FORBID_ATTR: [
+        'onerror', 'onload', 'onclick', 'onmouseover',
+        'onfocus', 'onblur', 'onchange', 'onsubmit'
+      ],
+      
+      // Keep safe URLs only
+      ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+      
+      // Return DOM instead of string for better performance
+      RETURN_DOM: false,
+      RETURN_DOM_FRAGMENT: false,
+      
+      // Keep safe HTML structure
+      KEEP_CONTENT: true,
+      
+      // Add target="_blank" and rel="noopener noreferrer" to external links
+      ADD_ATTR: ['target', 'rel']
+    };
+    
+    try {
+      const sanitized = DOMPurify.sanitize(html, config);
+      console.log('ChatSanitizer: Sanitized HTML successfully');
+      return sanitized;
+    } catch (error) {
+      console.error('ChatSanitizer: Error during sanitization:', error);
+      // Fallback to text-only mode on error
+      const div = document.createElement('div');
+      div.textContent = html;
+      return div.innerHTML;
+    }
+  },
+  
+  /**
+   * Check if content contains potentially dangerous elements
+   * @param {string} html - HTML content to check
+   * @returns {boolean} - True if dangerous content detected
+   */
+  hasDangerousContent: function(html) {
+    const dangerousPatterns = [
+      /<script/i,
+      /<iframe/i,
+      /javascript:/i,
+      /on\w+\s*=/i,  // Event handlers like onclick=
+      /<object/i,
+      /<embed/i,
+      /<applet/i
+    ];
+    
+    return dangerousPatterns.some(pattern => pattern.test(html));
+  }
+};
+
 document.addEventListener("DOMContentLoaded", function() {
   console.log('ChatSend: Initializing...');
+  
+  // Initialize HTML sanitizer
+  const sanitizerReady = ChatSanitizer.init();
+  if (sanitizerReady) {
+    console.log('ChatSend: HTML sanitization enabled');
+  } else {
+    console.warn('ChatSend: HTML sanitization disabled - DOMPurify not loaded');
+  }
   
   const sendGptButton = document.querySelector("#sendGpt");
   
@@ -118,6 +244,8 @@ document.addEventListener("DOMContentLoaded", function() {
     })
     .then(data => {
       console.log('ChatSend: Data parsed:', data);
+      console.log('ChatSend: Response type:', data.type);
+      console.log('ChatSend: text_response length:', data.text_response ? data.text_response.length : 0);
       
       // Supprimer l'indicateur de chargement
       if (loadingDiv && loadingDiv.parentNode) {
@@ -128,6 +256,13 @@ document.addEventListener("DOMContentLoaded", function() {
       if (!data.success) {
         console.error('ChatSend: Request failed:', data.error);
         chatOutput.innerHTML += '<div class="alert alert-danger">Erreur: ' + (data.error || "Erreur inconnue") + '</div>';
+        return;
+      }
+      
+      // ✅ VALIDATION: Ensure text_response exists
+      if (!data.text_response) {
+        console.error('ChatSend: Missing text_response in response');
+        chatOutput.innerHTML += '<div class="alert alert-danger">Erreur: Réponse vide du serveur</div>';
         return;
       }
       
@@ -145,7 +280,35 @@ document.addEventListener("DOMContentLoaded", function() {
       // Créer le contenu du message
       const contentDiv = document.createElement("div");
       contentDiv.className = "message-content";
-      contentDiv.innerHTML = data.text_response;
+      
+      // ✅ FIX: Use innerHTML to render HTML content (not textContent)
+      // This allows proper rendering of formatted responses (tables, lists, links, etc.)
+      // Security: Sanitize with DOMPurify before rendering
+      if (data.text_response && typeof data.text_response === 'string') {
+        // Check for dangerous content before sanitization
+        if (ChatSanitizer.hasDangerousContent(data.text_response)) {
+          console.warn('ChatSend: Dangerous content detected, sanitizing...');
+        }
+        
+        // Sanitize HTML content before rendering
+        const sanitizedHTML = ChatSanitizer.sanitize(data.text_response);
+        contentDiv.innerHTML = sanitizedHTML;
+        
+        // ✅ SECURITY: Add rel="noopener noreferrer" to all external links
+        // This prevents security issues with target="_blank"
+        const links = contentDiv.querySelectorAll('a[target="_blank"]');
+        links.forEach(link => {
+          if (!link.hasAttribute('rel')) {
+            link.setAttribute('rel', 'noopener noreferrer');
+          }
+        });
+        
+        console.log('ChatSend: Rendered sanitized HTML content with', links.length, 'external links');
+      } else {
+        // Fallback: If text_response is not a string, display error
+        contentDiv.textContent = 'Erreur: Réponse invalide';
+        console.error('ChatSend: Invalid text_response:', typeof data.text_response);
+      }
       
       messageDiv.appendChild(contentDiv);
       

@@ -367,17 +367,6 @@ class ContextResolver
       }
     }
 
-    // TASK 4.4.2.7: Remove duplication - EntityTracker is now the single source of truth
-    // OLD LOGIC (REMOVED):
-    // if (!empty($entities['products'])) {
-    //   $entities['last_product'] = 'product ' . end($entities['products']);
-    //   $entities['last_entity'] = $entities['last_product'];
-    // }
-    // if (count($entities['products']) > 1) {
-    //   $entities['previous_entity'] = 'product ' . $entities['products'][count($entities['products']) - 2];
-    // }
-    
-    // NEW LOGIC: Get last entity from EntityTracker (single source of truth)
     if ($this->entityTracker !== null) {
       $lastTracked = $this->entityTracker->getLastTrackedEntity();
       $entities['last_entity_tracked'] = $lastTracked['reference'];
@@ -398,21 +387,5 @@ class ContextResolver
     }
 
     return $entities;
-  }
-
-
-
-  //*************************
-  // Not used
-  //*************************
-  /**
-   * Set max context window
-   *
-   * @param int $maxContextWindow Maximum messages to analyze
-   * @return void
-   */
-  public function setMaxContextWindow(int $maxContextWindow): void
-  {
-    $this->maxContextWindow = $maxContextWindow;
   }
 }

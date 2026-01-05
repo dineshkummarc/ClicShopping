@@ -26,7 +26,7 @@ use ClicShopping\AI\Agents\Memory\SubConversationMemory\ShortTermMemoryManager;
 use ClicShopping\AI\Agents\Memory\SubConversationMemory\LongTermMemoryManager;
 use ClicShopping\AI\Agents\Memory\SubConversationMemory\ContextResolver;
 use ClicShopping\AI\Agents\Memory\SubConversationMemory\EntityTracker;
-use ClicShopping\AI\Agents\Memory\SubConversationMemory\MemoryStatistics;
+use ClicShopping\AI\Infrastructure\Metrics\MemoryStatistics;
 use ClicShopping\AI\Agents\Memory\SubConversationMemory\FeedbackManager;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 
@@ -1031,6 +1031,15 @@ class ConversationMemory
       return [];
     }
   }
+
+
+//***************************
+// Not used
+//**************************
+
+
+
+
 
   /**
    * Gets the complete LLPhant ConversationHistory object.

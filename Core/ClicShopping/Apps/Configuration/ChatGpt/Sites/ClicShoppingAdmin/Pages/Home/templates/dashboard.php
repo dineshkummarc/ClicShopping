@@ -1297,6 +1297,151 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               </div>
             <?php endif; ?>
 
+            <!-- Reasoning Modes Statistics Section -->
+            <?php
+            // Get reasoning agent stats if available (from database for persistence)
+            $reasoningStats = null;
+            try {
+              if ($config['rag_enabled'] && class_exists('ClicShopping\AI\Agents\Orchestrator\ReasoningAgent')) {
+                $reasoningAgent = new \ClicShopping\AI\Agents\Orchestrator\ReasoningAgent();
+                // Use getPersistentStats() to retrieve database statistics (persists across sessions)
+                $reasoningStats = $reasoningAgent->getPersistentStats(30); // Last 30 days
+              }
+            } catch (\Exception $e) {
+              // Silently fail if ReasoningAgent is not available
+              error_log('Dashboard: Failed to load ReasoningAgent stats - ' . $e->getMessage());
+            }
+
+            if (!empty($reasoningStats) && !empty($reasoningStats['by_mode'])):
+              $hasData = false;
+              foreach ($reasoningStats['by_mode'] as $modeStats) {
+                if ($modeStats['count'] > 0) {
+                  $hasData = true;
+                  break;
+                }
+              }
+
+              if ($hasData):
+            ?>
+              <div class="row mt-4">
+                <div class="col-md-12">
+                  <div class="card">
+                    <div class="card-header">
+                      <h6><i class="bi bi-lightbulb"></i> <?php echo $CLICSHOPPING_ChatGpt->getDef('reasoning_modes_title'); ?></h6>
+                    </div>
+                    <div class="card-body">
+                      <div class="table-responsive">
+                        <table class="table table-striped">
+                          <thead>
+                          <tr>
+                            <th><?php echo $CLICSHOPPING_ChatGpt->getDef('reasoning_mode_usage'); ?></th>
+                            <th><?php echo $CLICSHOPPING_ChatGpt->getDef('reasoning_mode_usage'); ?></th>
+                            <th><?php echo $CLICSHOPPING_ChatGpt->getDef('reasoning_mode_success_rate'); ?></th>
+                            <th><?php echo $CLICSHOPPING_ChatGpt->getDef('reasoning_mode_avg_confidence'); ?></th>
+                            <th>Metric</th>
+                          </tr>
+                          </thead>
+                          <tbody>
+                          <?php
+                          $modeNames = [
+                            'chain_of_thought' => $CLICSHOPPING_ChatGpt->getDef('reasoning_mode_cot'),
+                            'tree_of_thought' => $CLICSHOPPING_ChatGpt->getDef('reasoning_mode_tot'),
+                            'self_consistency' => $CLICSHOPPING_ChatGpt->getDef('reasoning_mode_sc'),
+                          ];
+
+                          $modeIcons = [
+                            'chain_of_thought' => '🔗',
+                            'tree_of_thought' => '🌳',
+                            'self_consistency' => '🎯',
+                          ];
+
+                          foreach ($reasoningStats['by_mode'] as $mode => $modeStats):
+                            if ($modeStats['count'] == 0) continue;
+
+                            $successRate = $modeStats['count'] > 0
+                              ? round(($modeStats['successful'] / $modeStats['count']) * 100, 1)
+                              : 0;
+
+                            $avgConfidence = round($modeStats['avg_confidence'] * 100, 1);
+
+                            // Mode-specific metric
+                            $specificMetric = '';
+                            if ($mode === 'chain_of_thought') {
+                              $specificMetric = round($modeStats['avg_steps'], 1) . ' ' . $CLICSHOPPING_ChatGpt->getDef('reasoning_mode_avg_steps');
+                            } elseif ($mode === 'tree_of_thought') {
+                              $specificMetric = round($modeStats['avg_paths'], 1) . ' ' . $CLICSHOPPING_ChatGpt->getDef('reasoning_mode_avg_paths');
+                            } elseif ($mode === 'self_consistency') {
+                              $specificMetric = round($modeStats['avg_attempts'], 1) . ' ' . $CLICSHOPPING_ChatGpt->getDef('reasoning_mode_avg_attempts');
+                              $specificMetric .= ' / ' . round($modeStats['avg_agreement'] * 100, 1) . '% ' . $CLICSHOPPING_ChatGpt->getDef('reasoning_mode_avg_agreement');
+                            }
+                          ?>
+                            <tr>
+                              <td>
+                                <strong><?php echo $modeIcons[$mode]; ?> <?php echo $modeNames[$mode]; ?></strong>
+                              </td>
+                              <td><?php echo $modeStats['count']; ?></td>
+                              <td>
+                                <span class="badge <?php echo $successRate >= 80 ? 'bg-success' : ($successRate >= 60 ? 'bg-warning' : 'bg-danger');?>">
+                                  <?php echo $successRate; ?>%
+                                </span>
+                              </td>
+                              <td><?php echo $avgConfidence; ?>%</td>
+                              <td><small><?php echo $specificMetric; ?></small></td>
+                            </tr>
+                          <?php endforeach; ?>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <!-- Summary Cards -->
+                      <div class="row mt-3">
+                        <div class="col-md-4">
+                          <div class="card text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <div class="card-body">
+                              <h3><?php echo $reasoningStats['total_reasonings']; ?></h3>
+                              <p class="mb-0">Total Reasonings</p>
+                              <small><?php echo $reasoningStats['success_rate']; ?> success</small>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="card text-center" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                            <div class="card-body">
+                              <h3><?php echo round($reasoningStats['avg_steps'], 1); ?></h3>
+                              <p class="mb-0">Avg Steps</p>
+                              <small>All modes</small>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="card text-center" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                            <div class="card-body">
+                              <?php
+                              $mostUsedMode = '';
+                              $maxCount = 0;
+                              foreach ($reasoningStats['by_mode'] as $mode => $modeStats) {
+                                if ($modeStats['count'] > $maxCount) {
+                                  $maxCount = $modeStats['count'];
+                                  $mostUsedMode = $mode;
+                                }
+                              }
+                              ?>
+                              <h3><?php echo $modeIcons[$mostUsedMode] ?? ''; ?></h3>
+                              <p class="mb-0">Most Used</p>
+                              <small><?php echo $modeNames[$mostUsedMode] ?? 'N/A'; ?></small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <?php
+              endif;
+            endif;
+            ?>
+
           </div>
           <?php
           // -------------------------------------------------------------------

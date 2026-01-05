@@ -82,6 +82,20 @@ agents_success_rate = Taux de Succès
 agents_avg_confidence = Confiance Moyenne
 agents_usage_distribution = Répartition de l'Usage des Agents
 
+# Modes de Raisonnement
+reasoning_modes_title = Statistiques des Modes de Raisonnement
+reasoning_mode_cot = Chaîne de Pensée (CoT)
+reasoning_mode_tot = Arbre de Pensée (ToT)
+reasoning_mode_sc = Auto-Cohérence (SC)
+reasoning_mode_usage = Utilisations
+reasoning_mode_success_rate = Taux de Succès
+reasoning_mode_avg_steps = Étapes Moy.
+reasoning_mode_avg_paths = Chemins Moy.
+reasoning_mode_avg_attempts = Tentatives Moy.
+reasoning_mode_avg_confidence = Confiance Moy.
+reasoning_mode_avg_agreement = Accord Moy.
+reasoning_mode_no_data = Aucune donnée de raisonnement disponible
+
 # Graphiques
 chart_performance_evolution = Évolution des Performances
 chart_severity_distribution = Distribution des Sévérités
@@ -89,6 +103,7 @@ chart_request_types = Distribution des Types de Requêtes
 chart_security_scores = Scores de Sécurité
 chart_agents_performance = Performance par Agent
 chart_agents_usage = Répartition de l'Usage des Agents
+chart_reasoning_modes = Utilisation des Modes de Raisonnement
 chart_no_data = Pas de données disponibles
 
 # Alertes

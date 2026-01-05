@@ -677,27 +677,4 @@ class LongTermMemoryManager
       ];
     }
   }
-
-  //********************************
-  // not used
-  //********************************
-  /**
-   * Get the vector store instance (for compatibility)
-   *
-   * @return MariaDBVectorStore
-   */
-  public function getVectorStore(): MariaDBVectorStore
-  {
-    return $this->vectorStore;
-  }
-
-  /**
-   * Get the embedding generator instance (for compatibility)
-   *
-   * @return EmbeddingGeneratorInterface
-   */
-  public function getEmbeddingGenerator(): EmbeddingGeneratorInterface
-  {
-    return $this->embeddingGenerator;
-  }
 }
