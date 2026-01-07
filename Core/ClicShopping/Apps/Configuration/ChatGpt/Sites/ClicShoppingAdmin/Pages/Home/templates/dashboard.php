@@ -1758,8 +1758,182 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div style="padding: 20px;">
               <h5><?php echo $CLICSHOPPING_ChatGpt->getDef('tab7_title'); ?></h5>
 
-              <?php if (!empty($advancedStats['security']['total_evaluations'])): ?>
-                <!-- Security Metrics -->
+              <?php 
+              // Check if we have security monitoring data
+              $hasSecurityMonitoring = !empty($advancedStats['security_monitoring']['total_events']);
+              $hasLegacySecurity = !empty($advancedStats['security']['total_evaluations']);
+              ?>
+
+              <?php if ($hasSecurityMonitoring): ?>
+                <?php $secMonitoring = $advancedStats['security_monitoring']; ?>
+                
+                <!-- Security Health Score -->
+                <div class="row mb-4">
+                  <div class="col-md-12">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6><i class="bi bi-shield-check"></i> <?php echo $CLICSHOPPING_ChatGpt->getDef('security_health_score'); ?></h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <span><?php echo $CLICSHOPPING_ChatGpt->getDef('overall_health'); ?></span>
+                          <span class="badge <?php 
+                            echo match($secMonitoring['health_status']) {
+                              'excellent' => 'bg-success',
+                              'good' => 'bg-info',
+                              'fair' => 'bg-warning',
+                              default => 'bg-danger'
+                            };
+                          ?> fs-5"><?php echo round($secMonitoring['health_score'], 1); ?>/100</span>
+                        </div>
+                        <div class="progress" style="height: 25px;">
+                          <div class="progress-bar <?php 
+                            echo match($secMonitoring['health_status']) {
+                              'excellent' => 'bg-success',
+                              'good' => 'bg-info',
+                              'fair' => 'bg-warning',
+                              default => 'bg-danger'
+                            };
+                          ?>" 
+                          role="progressbar" 
+                          style="width: <?php echo $secMonitoring['health_score']; ?>%;" 
+                          aria-valuenow="<?php echo $secMonitoring['health_score']; ?>" 
+                          aria-valuemin="0" 
+                          aria-valuemax="100">
+                            <?php echo round($secMonitoring['health_score'], 1); ?>%
+                          </div>
+                        </div>
+                        <small class="text-muted"><?php echo ucfirst($secMonitoring['health_status']); ?> - <?php echo $CLICSHOPPING_ChatGpt->getDef('last'); ?> <?php echo $secMonitoring['period_days']; ?> <?php echo $CLICSHOPPING_ChatGpt->getDef('time_days'); ?></small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Threat Metrics -->
+                <div class="row mb-4">
+                  <div class="col-md-3">
+                    <div class="card text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                      <div class="card-body">
+                        <h3><?php echo $secMonitoring['total_events']; ?></h3>
+                        <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('total_security_events'); ?></p>
+                        <small><?php echo $secMonitoring['period_days']; ?> <?php echo $CLICSHOPPING_ChatGpt->getDef('time_days'); ?></small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="card text-center" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                      <div class="card-body">
+                        <h3><?php echo $secMonitoring['critical_count']; ?></h3>
+                        <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('critical_threats'); ?></p>
+                        <small><?php echo $CLICSHOPPING_ChatGpt->getDef('high'); ?>: <?php echo $secMonitoring['high_count']; ?></small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="card text-center" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                      <div class="card-body">
+                        <h3><?php echo $secMonitoring['blocked_count']; ?></h3>
+                        <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('blocked_queries'); ?></p>
+                        <small><?php echo round($secMonitoring['block_rate'], 1); ?>% <?php echo $CLICSHOPPING_ChatGpt->getDef('block_rate'); ?></small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="card text-center" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+                      <div class="card-body">
+                        <h3><?php echo $secMonitoring['detected_threats']; ?></h3>
+                        <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('threats_detected'); ?></p>
+                        <small><?php echo round($secMonitoring['detection_rate'], 1); ?>% <?php echo $CLICSHOPPING_ChatGpt->getDef('detection_rate'); ?></small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Detection Accuracy -->
+                <div class="row mb-4">
+                  <div class="col-md-6">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('detection_accuracy'); ?></h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="mb-3">
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span><?php echo $CLICSHOPPING_ChatGpt->getDef('detection_rate'); ?></span>
+                            <span class="badge bg-success"><?php echo round($secMonitoring['detection_rate'], 1); ?>%</span>
+                          </div>
+                          <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-success" style="width: <?php echo $secMonitoring['detection_rate']; ?>%"></div>
+                          </div>
+                        </div>
+                        <div class="mb-3">
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span><?php echo $CLICSHOPPING_ChatGpt->getDef('block_rate'); ?></span>
+                            <span class="badge bg-info"><?php echo round($secMonitoring['block_rate'], 1); ?>%</span>
+                          </div>
+                          <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-info" style="width: <?php echo $secMonitoring['block_rate']; ?>%"></div>
+                          </div>
+                        </div>
+                        <small class="text-muted">
+                          <?php echo $secMonitoring['detected_threats']; ?> <?php echo $CLICSHOPPING_ChatGpt->getDef('threats_detected_period'); ?>
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Attack Type Distribution -->
+                  <div class="col-md-6">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('attack_type_distribution'); ?></h6>
+                      </div>
+                      <div class="card-body">
+                        <?php if (!empty($secMonitoring['threat_types'])): ?>
+                          <?php foreach ($secMonitoring['threat_types'] as $threat): ?>
+                            <div class="mb-2">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span><?php echo ucfirst(str_replace('_', ' ', $threat['type'])); ?></span>
+                                <span class="badge bg-secondary"><?php echo $threat['count']; ?></span>
+                              </div>
+                              <small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('avg_score'); ?>: <?php echo round($threat['avg_score'], 2); ?></small>
+                            </div>
+                          <?php endforeach; ?>
+                        <?php else: ?>
+                          <p class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('no_threats_detected'); ?></p>
+                        <?php endif; ?>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Language Statistics -->
+                <?php if (!empty($secMonitoring['languages'])): ?>
+                <div class="row mb-4">
+                  <div class="col-md-12">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('language_statistics'); ?></h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="row">
+                          <?php foreach ($secMonitoring['languages'] as $lang): ?>
+                            <div class="col-md-3 mb-2">
+                              <div class="border rounded p-2 text-center">
+                                <div class="fs-5 fw-bold"><?php echo strtoupper($lang['language']); ?></div>
+                                <small class="text-muted"><?php echo $lang['count']; ?> <?php echo $CLICSHOPPING_ChatGpt->getDef('events'); ?></small>
+                              </div>
+                            </div>
+                          <?php endforeach; ?>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <?php endif; ?>
+
+              <?php elseif ($hasLegacySecurity): ?>
+                <!-- Legacy Security Metrics (LLM Guardrails) -->
                 <div class="row mb-4">
                   <div class="col-md-4">
                     <div class="card text-center"

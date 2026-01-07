@@ -905,6 +905,11 @@ class MariaDb
       $CLICSHOPPING_Db->exec($sql);
     }
 
+//--------------------------------------
+// RAG Security Events
+//--------------------------------------
+    self::installSecurityTables();
+
   }
 
   /**
@@ -1130,5 +1135,161 @@ class MariaDb
     }
     
     return $validation;
+  }
+
+  /**
+   * Install security events tables for RAG system
+   * 
+   * Creates tables for security event logging and configuration:
+   * - rag_security_events: Comprehensive security event logging
+   * - rag_security_config: Security configuration and thresholds
+   * 
+   * @return void
+   */
+  private static function installSecurityTables(): void
+  {
+    $CLICSHOPPING_Db = Registry::get('Db');
+
+    // Check if rag_security_events table exists
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_rag_security_events"');
+
+    if ($Qcheck->fetch() === false) {
+      $sql = <<<EOD
+      CREATE TABLE IF NOT EXISTS :table_rag_security_events (
+        `id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key - auto-incremented unique identifier',
+        `event_id` VARCHAR(255) NOT NULL COMMENT 'Unique event identifier (UUID)',
+        `event_type` ENUM(
+          'threat_detected',
+          'threat_blocked', 
+          'false_positive',
+          'security_check_passed',
+          'security_check_failed',
+          'pattern_fallback',
+          'llm_unavailable',
+          'response_validation_failed',
+          'leakage_detected',
+          'grounding_failed',
+          'query_allowed',
+          'query_blocked',
+          'security_fallback',
+          'layer_performance',
+          'test_event'
+        ) NOT NULL COMMENT 'Type of security event',
+        `severity` ENUM('low', 'medium', 'high', 'critical') NOT NULL DEFAULT 'medium' COMMENT 'Event severity level',
+        `threat_type` VARCHAR(100) DEFAULT NULL COMMENT 'Type of threat: instruction_override, exfiltration, hallucination, etc.',
+        `threat_score` DECIMAL(5,2) DEFAULT NULL COMMENT 'Threat score (0.00-1.00)',
+        `confidence` DECIMAL(5,2) DEFAULT NULL COMMENT 'Detection confidence (0.00-1.00)',
+        `user_query` TEXT NOT NULL COMMENT 'Original user query that triggered the event',
+        `query_language` VARCHAR(10) DEFAULT 'en' COMMENT 'Language of the query (en, fr, es, de)',
+        `query_hash` VARCHAR(64) DEFAULT NULL COMMENT 'MD5 hash of query for deduplication',
+        `detection_method` ENUM('llm_semantic', 'pattern_based', 'response_validation', 'hybrid') NOT NULL COMMENT 'Method used for detection',
+        `detection_layer` VARCHAR(50) DEFAULT NULL COMMENT 'Security layer that detected: SemanticSecurityAnalyzer, PatternSecurityDetector, etc.',
+        `matched_patterns` JSON DEFAULT NULL COMMENT 'Patterns that matched (if pattern-based)',
+        `llm_reasoning` TEXT DEFAULT NULL COMMENT 'LLM reasoning for the detection (if LLM-based)',
+        `action_taken` ENUM('blocked', 'allowed', 'flagged', 'logged_only', 'fallback_triggered', 'layer_executed', 'layer_failed', 'test') NOT NULL DEFAULT 'logged_only' COMMENT 'Action taken on the event',
+        `blocked` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 if query was blocked, 0 if allowed',
+        `response_generated` TEXT DEFAULT NULL COMMENT 'Response that was generated (if any)',
+        `response_blocked` TINYINT(1) DEFAULT 0 COMMENT '1 if response was blocked due to validation failure',
+        `user_id` VARCHAR(255) DEFAULT NULL COMMENT 'User ID who triggered the event',
+        `session_id` VARCHAR(255) DEFAULT NULL COMMENT 'Session identifier',
+        `ip_address` VARCHAR(45) DEFAULT NULL COMMENT 'IP address (IPv4 or IPv6)',
+        `user_agent` TEXT DEFAULT NULL COMMENT 'User agent string',
+        `interaction_id` INT DEFAULT NULL COMMENT 'FK to rag_interactions (managed by code)',
+        `request_type` VARCHAR(50) DEFAULT NULL COMMENT 'Type of request: analytics, semantic, hybrid, web_search',
+        `agent_used` VARCHAR(50) DEFAULT NULL COMMENT 'Agent that processed: orchestrator, analytics_agent, semantic_agent',
+        `detection_time_ms` INT DEFAULT NULL COMMENT 'Time taken for detection in milliseconds',
+        `total_processing_time_ms` INT DEFAULT NULL COMMENT 'Total processing time in milliseconds',
+        `metadata` JSON DEFAULT NULL COMMENT 'Additional metadata in JSON format',
+        `context` JSON DEFAULT NULL COMMENT 'Additional context about the event',
+        `error_message` TEXT DEFAULT NULL COMMENT 'Error message if detection failed',
+        `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Event creation timestamp',
+        `date_added` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Alias for created_at (consistency with other tables)',
+        `expires_at` DATETIME DEFAULT NULL COMMENT 'Expiration date for automatic cleanup (90 days default)',
+        `archived` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 if event has been archived',
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `idx_event_id` (`event_id`),
+        KEY `idx_event_type` (`event_type`),
+        KEY `idx_severity` (`severity`),
+        KEY `idx_threat_type` (`threat_type`),
+        KEY `idx_threat_score` (`threat_score`),
+        KEY `idx_detection_method` (`detection_method`),
+        KEY `idx_action_taken` (`action_taken`),
+        KEY `idx_blocked` (`blocked`),
+        KEY `idx_user_id` (`user_id`),
+        KEY `idx_session_id` (`session_id`),
+        KEY `idx_interaction_id` (`interaction_id`),
+        KEY `idx_created_at` (`created_at`),
+        KEY `idx_expires_at` (`expires_at`),
+        KEY `idx_archived` (`archived`),
+        KEY `idx_query_hash` (`query_hash`),
+        KEY `idx_severity_created` (`severity`, `created_at`),
+        KEY `idx_event_type_created` (`event_type`, `created_at`),
+        KEY `idx_user_created` (`user_id`, `created_at`),
+        KEY `idx_blocked_severity` (`blocked`, `severity`),
+        KEY `idx_threat_type_score` (`threat_type`, `threat_score`),
+        KEY `idx_detection_method_created` (`detection_method`, `created_at`),
+        KEY `idx_archived_expires` (`archived`, `expires_at`),
+        FULLTEXT KEY `ft_user_query` (`user_query`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      COMMENT='Security events log for RAG system - tracks all security-related events with 90-day retention';
+EOD;
+      $CLICSHOPPING_Db->exec($sql);
+    }
+
+    // Check if rag_security_config table exists
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_rag_security_config"');
+
+    if ($Qcheck->fetch() === false) {
+      $sql = <<<EOD
+      CREATE TABLE IF NOT EXISTS :table_rag_security_config (
+        `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+        `config_key` VARCHAR(100) NOT NULL UNIQUE COMMENT 'Configuration key (e.g., threat_threshold, llm_timeout)',
+        `config_value` TEXT NOT NULL COMMENT 'Configuration value (JSON for complex values)',
+        `config_type` ENUM('string', 'integer', 'float', 'boolean', 'json') NOT NULL DEFAULT 'string' COMMENT 'Data type of the value',
+        `description` TEXT DEFAULT NULL COMMENT 'Description of the configuration',
+        `category` VARCHAR(50) DEFAULT 'general' COMMENT 'Configuration category: thresholds, timeouts, features, alerting',
+        `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '1 if configuration is active',
+        `min_value` DECIMAL(10,4) DEFAULT NULL COMMENT 'Minimum allowed value (for numeric types)',
+        `max_value` DECIMAL(10,4) DEFAULT NULL COMMENT 'Maximum allowed value (for numeric types)',
+        `allowed_values` JSON DEFAULT NULL COMMENT 'List of allowed values (for enum-like configs)',
+        `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation timestamp',
+        `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Last update timestamp',
+        `updated_by` VARCHAR(255) DEFAULT NULL COMMENT 'User who last updated the config',
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `idx_config_key` (`config_key`),
+        KEY `idx_category` (`category`),
+        KEY `idx_is_active` (`is_active`),
+        KEY `idx_updated_at` (`updated_at`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      COMMENT='Security configuration for RAG system';
+EOD;
+      $CLICSHOPPING_Db->exec($sql);
+
+      // Insert default configuration values
+      $sql = <<<EOD
+      INSERT INTO :table_rag_security_config (`config_key`, `config_value`, `config_type`, `description`, `category`, `min_value`, `max_value`) VALUES
+        ('threat_threshold', '0.7', 'float', 'Threat score threshold for blocking (0.0-1.0)', 'thresholds', 0.0, 1.0),
+        ('high_confidence_threshold', '0.9', 'float', 'High confidence threshold (0.0-1.0)', 'thresholds', 0.0, 1.0),
+        ('false_positive_threshold', '0.3', 'float', 'Threshold below which to flag as potential false positive', 'thresholds', 0.0, 1.0),
+        ('llm_timeout_ms', '5000', 'integer', 'LLM security analysis timeout in milliseconds', 'timeouts', 1000, 30000),
+        ('pattern_timeout_ms', '100', 'integer', 'Pattern detection timeout in milliseconds', 'timeouts', 10, 1000),
+        ('total_security_timeout_ms', '6000', 'integer', 'Total security check timeout in milliseconds', 'timeouts', 1000, 30000),
+        ('use_llm_primary_security', 'true', 'boolean', 'Use LLM as primary security method', 'features', NULL, NULL),
+        ('use_pattern_fallback', 'false', 'boolean', 'Use pattern-based detection as fallback', 'features', NULL, NULL),
+        ('enable_response_validation', 'true', 'boolean', 'Enable response validation layer', 'features', NULL, NULL),
+        ('log_all_queries', 'false', 'boolean', 'Log all queries (not just threats)', 'features', NULL, NULL),
+        ('log_blocked_only', 'true', 'boolean', 'Log only blocked queries', 'features', NULL, NULL),
+        ('log_retention_days', '90', 'integer', 'Number of days to retain security logs', 'retention', 1, 365),
+        ('auto_archive_enabled', 'true', 'boolean', 'Enable automatic archiving of old logs', 'retention', NULL, NULL),
+        ('email_alerts_enabled', 'false', 'boolean', 'Enable email alerts for security events', 'alerting', NULL, NULL),
+        ('alert_email', '', 'string', 'Email address for security alerts', 'alerting', NULL, NULL),
+        ('alert_threshold_per_hour', '10', 'integer', 'Number of threats per hour to trigger alert', 'alerting', 1, 1000),
+        ('alert_on_critical_only', 'true', 'boolean', 'Only send alerts for critical severity events', 'alerting', NULL, NULL)
+      ON DUPLICATE KEY UPDATE 
+        `config_value` = VALUES(`config_value`),
+        `updated_at` = CURRENT_TIMESTAMP;
+EOD;
+      $CLICSHOPPING_Db->exec($sql);
+    }
   }
 }

@@ -60,9 +60,28 @@ class SecurityOrchestrator
     
     try {
       // ============================================
+      // STEP 0: OBFUSCATION PREPROCESSING
+      // ============================================
+      $preprocessed = ObfuscationPreprocessor::preprocess($query);
+      
+      // Use normalized query for analysis
+      $queryToAnalyze = $preprocessed['normalized'];
+      $obfuscationDetected = $preprocessed['obfuscation_detected'];
+      $confidenceBoost = $preprocessed['confidence_boost'];
+      
+      // Log obfuscation detection
+      if (!empty($obfuscationDetected)) {
+        self::$logger->logObfuscationDetection($query, $obfuscationDetected, [
+          'original' => $preprocessed['original'],
+          'normalized' => $preprocessed['normalized'],
+          'confidence_boost' => $confidenceBoost
+        ]);
+      }
+      
+      // ============================================
       // PRIMARY DEFENSE: LLM-based Semantic Analysis
       // ============================================
-      $llmAnalysis = SemanticSecurityAnalyzer::analyze($query, $language);
+      $llmAnalysis = SemanticSecurityAnalyzer::analyze($queryToAnalyze, $language);
       
       // Check if LLM analysis succeeded
       if (isset($llmAnalysis['error']) && $llmAnalysis['error']) {
@@ -90,12 +109,23 @@ class SecurityOrchestrator
       }
       
       // ============================================
-      // THREAT EVALUATION
+      // THREAT EVALUATION WITH OBFUSCATION BOOST
       // ============================================
       $isMalicious = $llmAnalysis['is_malicious'] ?? false;
       $threatScore = $llmAnalysis['threat_score'] ?? 0.0;
       $threatType = $llmAnalysis['threat_type'] ?? 'none';
       $reasoning = $llmAnalysis['reasoning'] ?? '';
+      
+      // Apply confidence boost if obfuscation detected
+      if (!empty($obfuscationDetected)) {
+        $threatScore = min(1.0, $threatScore + $confidenceBoost);
+        $reasoning .= " [Obfuscation detected: " . implode(', ', $obfuscationDetected) . "]";
+        
+        // If obfuscation detected, flag as malicious even if LLM didn't
+        if ($threatScore >= $config['threat_threshold']) {
+          $isMalicious = true;
+        }
+      }
       
       // Check against threshold
       $threshold = $config['threat_threshold'];

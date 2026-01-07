@@ -928,6 +928,49 @@ class SecurityLogger
     }
     
     /**
+     * Log obfuscation detection
+     * Logs when obfuscation techniques are detected in a query
+     * 
+     * @param string $query Original query
+     * @param array $obfuscationTypes Types of obfuscation detected
+     * @param array $details Additional details (original, normalized, confidence_boost)
+     * @return bool True if logged successfully
+     * 
+     * Requirements: 6.4.2
+     */
+    public function logObfuscationDetection(string $query, array $obfuscationTypes, array $details = []): bool
+    {
+        // Log to file
+        $this->logSecurityEvent(
+            "Obfuscation detected: " . implode(', ', $obfuscationTypes),
+            'warning',
+            [
+                'query_preview' => substr($query, 0, 100),
+                'obfuscation_types' => $obfuscationTypes,
+                'confidence_boost' => $details['confidence_boost'] ?? 0.0,
+                'normalized_preview' => isset($details['normalized']) ? substr($details['normalized'], 0, 100) : null
+            ]
+        );
+        
+        // Log to database
+        $eventDetails = [
+            'query' => $query,
+            'severity' => 'medium',
+            'action_taken' => 'obfuscation_detected',
+            'detection_method' => 'pattern_based',
+            'detection_layer' => 'preprocessing',
+            'metadata' => [
+                'obfuscation_types' => $obfuscationTypes,
+                'original' => $details['original'] ?? $query,
+                'normalized' => $details['normalized'] ?? $query,
+                'confidence_boost' => $details['confidence_boost'] ?? 0.0
+            ]
+        ];
+        
+        return $this->logEvent('obfuscation_detected', $eventDetails);
+    }
+    
+    /**
      * Check threat rates and trigger alerts if needed
      * Called after logging threat events
      * 

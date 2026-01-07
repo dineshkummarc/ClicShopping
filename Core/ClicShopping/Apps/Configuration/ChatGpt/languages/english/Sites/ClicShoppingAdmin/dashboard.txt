@@ -365,6 +365,25 @@ security_scores_chart = 📊 Security Scores
 security_no_data = No security data available
 security_data_info = Security statistics will appear here once requests have been evaluated.
 
+# Security Monitoring (Prompt Injection Detection)
+security_health_score = Security Health Score
+overall_health = Overall Health
+total_security_events = Total Security Events
+critical_threats = Critical Threats
+blocked_queries = Blocked Queries
+threats_detected = Threats Detected
+detection_rate = Detection Rate
+block_rate = Block Rate
+detection_accuracy = Detection Accuracy
+attack_type_distribution = Attack Type Distribution
+language_statistics = Language Statistics
+avg_score = Avg Score
+no_threats_detected = No threats detected
+events = events
+threats_detected_period = threats detected in this period
+last = Last
+high = High
+
 # Feedback Tab Details
 feedback_summary_7days = 📊 Summary (Last 7 days)
 feedback_total_interactions = Total interactions

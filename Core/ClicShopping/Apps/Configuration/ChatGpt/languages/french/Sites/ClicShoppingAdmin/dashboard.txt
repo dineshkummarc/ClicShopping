@@ -365,6 +365,25 @@ security_scores_chart = 📊 Scores de Sécurité
 security_no_data = Aucune donnée de sécurité disponible
 security_data_info = Les statistiques de sécurité apparaîtront ici une fois que des requêtes auront été évaluées.
 
+# Surveillance de Sécurité (Détection d'Injection de Prompt)
+security_health_score = Score de Santé Sécurité
+overall_health = Santé Globale
+total_security_events = Événements de Sécurité Totaux
+critical_threats = Menaces Critiques
+blocked_queries = Requêtes Bloquées
+threats_detected = Menaces Détectées
+detection_rate = Taux de Détection
+block_rate = Taux de Blocage
+detection_accuracy = Précision de Détection
+attack_type_distribution = Distribution des Types d'Attaque
+language_statistics = Statistiques par Langue
+avg_score = Score Moyen
+no_threats_detected = Aucune menace détectée
+events = événements
+threats_detected_period = menaces détectées dans cette période
+last = Derniers
+high = Élevé
+
 # Détails Onglet Feedback
 feedback_summary_7days = 📊 Résumé (7 derniers jours)
 feedback_total_interactions = Total interactions
