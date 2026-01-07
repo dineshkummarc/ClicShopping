@@ -146,3 +146,75 @@ if (!defined('CLICSHOPPING_APP_CHATGPT_RA_CONSISTENCY_PATHS')) define('CLICSHOPP
 // Number of parallel reasoning paths for tree-of-thought mode
 // Default: 3
 if (!defined('CLICSHOPPING_APP_CHATGPT_RA_TREE_PATHS')) define('CLICSHOPPING_APP_CHATGPT_RA_TREE_PATHS', '3');
+
+// ============================================================================
+// Security Configuration (2026-01-07 - Prompt Injection Security)
+// ============================================================================
+// PURE LLM MODE (Recommended)
+// Primary defense: LLM-based semantic analysis
+// Pattern fallback: OPTIONAL (disabled by default)
+
+// Enable LLM-based security (PRIMARY)
+// When enabled, uses SemanticSecurityAnalyzer for threat detection
+// Default: true (PURE LLM MODE)
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_USE_LLM_PRIMARY_SECURITY')) define('CLICSHOPPING_APP_CHATGPT_RA_USE_LLM_PRIMARY_SECURITY', true);
+
+// Threat threshold for blocking (0.0-1.0)
+// Queries with threat score >= threshold will be blocked
+// Default: 0.7
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_THREAT_THRESHOLD')) define('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_THREAT_THRESHOLD', 0.7);
+
+// Enable pattern-based fallback (OPTIONAL - disabled by default)
+// When enabled, uses PatternSecurityDetector if LLM is unavailable
+// Default: false (NO pattern fallback in PURE LLM mode)
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_PATTERN_FALLBACK')) define('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_PATTERN_FALLBACK', false);
+
+// LLM timeout for security analysis (milliseconds)
+// Default: 5000ms (5 seconds)
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LLM_TIMEOUT')) define('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LLM_TIMEOUT', 5000);
+
+// Logging configuration
+// Log all queries (including legitimate ones)
+// Default: false (log blocked only)
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_ALL_QUERIES')) define('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_ALL_QUERIES', false);
+
+// Log blocked queries only
+// Default: true
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_BLOCKED_ONLY')) define('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_BLOCKED_ONLY', true);
+
+// Enable response validation (post-generation security)
+// Default: true
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_RESPONSE_VALIDATION')) define('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_RESPONSE_VALIDATION', true);
+
+// ============================================
+// Security Alerting Configuration
+// ============================================
+
+// Enable email alerts for security events
+// Default: false (disabled until configured)
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERTS_ENABLED')) define('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERTS_ENABLED', false);
+
+// Email address to receive security alerts
+// Default: empty (must be configured)
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_EMAIL')) define('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_EMAIL', '');
+
+// Alert threshold: number of threats per hour before sending alert
+// Default: 10 threats per hour
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_THRESHOLD')) define('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_THRESHOLD', 10);
+
+// High threat rate threshold: triggers immediate alert
+// Default: 20 threats per hour
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_HIGH_THREAT_THRESHOLD')) define('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_HIGH_THREAT_THRESHOLD', 20);
+
+// System failure alert: enable alerts for security system failures
+// Default: true
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_FAILURE_ALERTS')) define('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_FAILURE_ALERTS', true);
+
+// Alert cooldown period (minutes): minimum time between alerts
+// Prevents alert spam
+// Default: 60 minutes (1 hour)
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_COOLDOWN')) define('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_COOLDOWN', 60);
+
+// Alert digest mode: send summary instead of individual alerts
+// Default: true (send hourly digest)
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_DIGEST_MODE')) define('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_DIGEST_MODE', true);

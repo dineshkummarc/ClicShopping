@@ -341,7 +341,14 @@ class SemanticSecurityAnalyzer
           $threatTypeMultiplier = 1.0; // Medium priority
           break;
         case 'none':
-          $threatTypeMultiplier = 0.5; // Reduce false positives
+          // BUGFIX: If is_malicious=true but threat_type='none', 
+          // the LLM detected a threat but didn't classify it properly.
+          // Don't penalize the score - treat as hallucination (1.0x)
+          if (isset($analysis['is_malicious']) && $analysis['is_malicious'] === true) {
+            $threatTypeMultiplier = 1.0;
+          } else {
+            $threatTypeMultiplier = 0.5; // Reduce false positives for truly safe queries
+          }
           break;
       }
     }
