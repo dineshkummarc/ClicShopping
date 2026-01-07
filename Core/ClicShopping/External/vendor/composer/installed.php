@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '6c96311006911a7ee07fa8dd850e2965462b70e4',
+        'reference' => '55bef59f0f8e064058e1f40d549868bfa9ce63d6',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '6c96311006911a7ee07fa8dd850e2965462b70e4',
+            'reference' => '55bef59f0f8e064058e1f40d549868bfa9ce63d6',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'doctrine/instantiator' => array(
-            'pretty_version' => '2.0.0',
-            'version' => '2.0.0.0',
-            'reference' => 'c6222283fa3f4ac679f8b9ced9a4e23f163e80d0',
+            'pretty_version' => '2.1.0',
+            'version' => '2.1.0.0',
+            'reference' => '23da848e1a2308728fe5fdddabf4be17ff9720c7',
             'type' => 'library',
             'install_path' => __DIR__ . '/../doctrine/instantiator',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => '5ba14c800ff89c74333c22d56ca1c1f35c424805',
+            'reference' => '9a341b84b3ebb8ad254193ce440b44c7d4375a4f',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
