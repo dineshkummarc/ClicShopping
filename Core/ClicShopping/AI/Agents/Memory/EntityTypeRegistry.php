@@ -369,45 +369,6 @@ class EntityTypeRegistry
     return $this->entityToTableMap[$entityType] ?? null;
   }
 
-  /**
-   * Check if entity type exists
-   *
-   * @param string $entityType Entity type to check
-   * @return bool True if exists
-   */
-  public function entityTypeExists(string $entityType): bool
-  {
-    if (!$this->initialized) {
-      $this->initialize();
-    }
-
-    return in_array($entityType, $this->entityTypes);
-  }
-
-  /**
-   * Register custom entity type
-   *
-   * Allows manual registration of entity types not in database
-   *
-   * @param string $entityType Entity type
-   * @param string $tableName Table name
-   * @return void
-   */
-  public function registerEntityType(string $entityType, string $tableName): void
-  {
-    if (!in_array($entityType, $this->entityTypes)) {
-      $this->entityTypes[] = $entityType;
-      $this->tableToEntityMap[$tableName] = $entityType;
-      $this->entityToTableMap[$entityType] = $tableName;
-
-      if ($this->debug) {
-        $this->logger->logSecurityEvent(
-          "Registered custom entity type: {$entityType} → {$tableName}",
-          'info'
-        );
-      }
-    }
-  }
 
   /**
    * Get entity types as associative array for ContextResolver

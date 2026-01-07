@@ -268,33 +268,7 @@ class AmbiguityOptimizer
     return $selected;
   }
 
-  /**
-   * Check if query should use confidence threshold optimization
-   *
-   * If the first interpretation has high confidence, we can skip
-   * generating additional interpretations.
-   *
-   * @param float $firstInterpretationConfidence Confidence of first interpretation (0-1)
-   * @return bool True if should skip additional interpretations
-   */
-  public function shouldUseConfidenceThreshold(float $firstInterpretationConfidence): bool
-  {
-    $threshold = 0.85; // High confidence threshold
-    
-    if ($firstInterpretationConfidence >= $threshold) {
-      if ($this->debug) {
-        $this->logger->logSecurityEvent(
-          "AmbiguityOptimizer: First interpretation has high confidence ({$firstInterpretationConfidence}), skipping others",
-          'info'
-        );
-      }
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
+ /**
    * Get cached ambiguity analysis
    *
    * Uses Memcached/Redis if available, otherwise traditional cache.
@@ -471,5 +445,31 @@ class AmbiguityOptimizer
       'confidence_threshold' => 0.85,
       'prefilter_enabled' => true, // AmbiguityPreFilter is always enabled (EXCEPTION to Pure LLM)
     ];
+  }
+
+  /**
+   * Check if query should use confidence threshold optimization
+   *
+   * If the first interpretation has high confidence, we can skip
+   * generating additional interpretations.
+   *
+   * @param float $firstInterpretationConfidence Confidence of first interpretation (0-1)
+   * @return bool True if should skip additional interpretations
+   */
+  public function shouldUseConfidenceThreshold(float $firstInterpretationConfidence): bool
+  {
+    $threshold = 0.85; // High confidence threshold
+
+    if ($firstInterpretationConfidence >= $threshold) {
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "AmbiguityOptimizer: First interpretation has high confidence ({$firstInterpretationConfidence}), skipping others",
+          'info'
+        );
+      }
+      return true;
+    }
+
+    return false;
   }
 }

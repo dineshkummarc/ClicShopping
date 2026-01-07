@@ -325,23 +325,6 @@ class DatabaseSchemaManager
   }
 
   /**
-   * Finds tables that contain a specific column
-   * Uses columnIndex to lookup tables containing the column
-   * Returns empty array if column not found in any table
-   *
-   * @param string $column Column name to search for
-   * @return array Array of table names containing the column
-   */
-  public function findTablesWithColumn(string $column): array
-  {
-    if (isset($this->columnIndex[$column])) {
-      return $this->columnIndex[$column];
-    }
-
-    return [];
-  }
-
-  /**
    * Gets the primary key column for a specific table
    * Searches for column with KEY='PRI' in DESCRIBE output
    *
@@ -383,16 +366,6 @@ class DatabaseSchemaManager
   }
 
   /**
-   * Gets the column index (inverse mapping of columns to tables)
-   *
-   * @return array Column index
-   */
-  public function getColumnIndex(): array
-  {
-    return $this->columnIndex;
-  }
-
-  /**
    * Gets the complete database schema
    *
    * @return array Database schema
@@ -402,6 +375,18 @@ class DatabaseSchemaManager
     return $this->databaseSchema;
   }
 
+
+  /**
+   * Gets the column index (inverse mapping of columns to tables)
+   *
+   * @return array Column index
+   */
+  public function getColumnIndex(): array
+  {
+    return $this->columnIndex;
+  }
+
+
   /**
    * Gets the column synonyms dictionary
    *
@@ -410,5 +395,22 @@ class DatabaseSchemaManager
   public function getColumnSynonyms(): array
   {
     return $this->columnSynonyms;
+  }
+
+  /**
+   * Finds tables that contain a specific column
+   * Uses columnIndex to lookup tables containing the column
+   * Returns empty array if column not found in any table
+   *
+   * @param string $column Column name to search for
+   * @return array Array of table names containing the column
+   */
+  public function findTablesWithColumn(string $column): array
+  {
+    if (isset($this->columnIndex[$column])) {
+      return $this->columnIndex[$column];
+    }
+
+    return [];
   }
 }

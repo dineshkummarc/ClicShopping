@@ -727,7 +727,7 @@ class ValidationAgent
   }
 
   /**
-   * Obtient les statistiques
+   * statistics
    */
   public function getStats(): array
   {
@@ -739,26 +739,5 @@ class ValidationAgent
     return array_merge($this->stats, [
       'success_rate' => $successRate . '%',
     ]);
-  }
-
-
-//**************************
-// Not Used
-//**************************
-
-
-  /**
-   * Configuration
-   */
-  public function setMaxExecutionTimeMs(int $ms): void {
-    $this->maxExecutionTimeMs = max(100, $ms);
-  }
-
-  public function setMaxRowsWarning(int $rows): void {
-    $this->maxRowsWarning = max(100, $rows);
-  }
-
-  public function setSecurityScoreThreshold(float $threshold): void {
-    $this->securityScoreThreshold = max(0.0, min(1.0, $threshold));
   }
 }

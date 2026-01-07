@@ -25,7 +25,6 @@ class CorrectionPatterns
   private string $userId;
   private int $languageId;
 
-  private float $similarityThreshold = 0.6;
 
   public function __construct(string $userId = 'system', ?int $languageId = null, string $tableName = 'rag_correction_patterns_embedding')
   {
@@ -204,61 +203,6 @@ class CorrectionPatterns
         'error'
       );
       return false;
-    }
-  }
-
-  //*********************
-  // Not used
-  //*********************
-
-
-  /**
-   * Retrieve relevant correction patterns based on a user query.
-   *
-   * @param string $query The user query to find corrections for.
-   * @param int $limit The maximum number of corrections to retrieve.
-   * @return array An array of relevant correction patterns.
-   */
-  public function getRelevantCorrections(string $query, int $limit = 3): array
-  {
-    try {
-      $filter = function($metadata) {
-        return isset($metadata['user_id'])
-          && $metadata['user_id'] === $this->userId;
-      };
-
-      $results = $this->vectorStore->similaritySearch(
-        $query,
-        $limit * 2,
-        $this->similarityThreshold,
-        $filter
-      );
-
-      $corrections = [];
-
-      foreach ($results as $doc) {
-        if (count($corrections) >= $limit) {
-          break;
-        }
-
-        $corrections[] = [
-          'pattern_id' => $doc->metadata['pattern_id'] ?? null,
-          'original_query' => $doc->metadata['original_query'] ?? '',
-          'incorrect_response' => $doc->metadata['incorrect_response'] ?? '',
-          'corrected_response' => $doc->metadata['corrected_response'] ?? '',
-          'similarity_score' => $doc->metadata['score'] ?? 0,
-          'timestamp' => $doc->metadata['timestamp'] ?? 0,
-        ];
-      }
-
-      return $corrections;
-
-    } catch (\Exception $e) {
-      $this->securityLogger->logSecurityEvent(
-        "Error retrieving corrections: " . $e->getMessage(),
-        'error'
-      );
-      return [];
     }
   }
 }

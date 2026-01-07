@@ -755,7 +755,6 @@ class WorkingMemory
     }
   }
 
-
   /**
    * Magic method for easy read access: $memory->key.
    * Returns the value from the current scope or null if not found.
@@ -790,40 +789,5 @@ class WorkingMemory
   public function __unset(string $key): void
   {
     $this->delete($key);
-  }
-
-  //**************************
-  // Not used
-  //**************************
-  /**
-   * Enables or disables history tracking.
-   *
-   * @param bool $enable True to enable, false to disable and clear existing history
-   */
-  public function setTrackHistory(bool $enable): void
-  {
-    $this->trackHistory = $enable;
-
-    if (!$enable) {
-      $this->history = [];
-    }
-  }
-
-  /**
-   * Configuration method to set the maximum number of entries.
-   *
-   */
-  public function setMaxStorageSize(int $size): void
-  {
-    $this->maxStorageSize = max(10, $size); // Minimum of 10 for safety
-  }
-
-  /**
-   * Configuration method to set the maximum size of a single value.
-   *
-   */
-  public function setMaxValueSize(int $size): void
-  {
-    $this->maxValueSize = max(100, $size); // Minimum of 100 for safety
   }
 }

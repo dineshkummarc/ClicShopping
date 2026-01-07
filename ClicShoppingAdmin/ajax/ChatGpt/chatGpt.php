@@ -571,7 +571,7 @@ try {
     ->setApiInfo('openai', CLICSHOPPING_APP_CHATGPT_CH_MODEL ?? 'gpt-4');
   
   // Récupérer les tokens depuis Gpt::getLastTokenUsage()
-  $tokenUsage = \ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt::getLastTokenUsage();
+  $tokenUsage = Gpt::getLastTokenUsage();
   if ($tokenUsage !== null) {
     // setTokens() calcule automatiquement le coût via calculateCost()
     $statsTracker->setTokens($tokenUsage['prompt_tokens'], $tokenUsage['completion_tokens']);

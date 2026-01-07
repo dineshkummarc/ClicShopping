@@ -637,19 +637,6 @@ class PlanExecutor
     return $failedStep;
   }
 
-  //*****************
-  // not used
-  //*****************
-
-
-  /**
-   * Configure le nombre max de retries
-   */
-  public function setMaxRetries(int $max): void
-  {
-    $this->maxRetries = max(0, $max);
-  }
-
   /**
    * Active/désactive l'exécution parallèle
    */

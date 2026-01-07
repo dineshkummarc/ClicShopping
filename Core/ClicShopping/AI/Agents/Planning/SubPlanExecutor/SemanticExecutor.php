@@ -473,7 +473,8 @@ class SemanticExecutor
   {
     // Initialize entity registry if needed (lazy loading)
     if ($this->entityRegistry === null) {
-      $this->entityRegistry = new EntityTypeRegistry($this->debug);
+      $this->entityRegistry = EntityTypeRegistry::getInstance();
+      $this->entityRegistry->initialize(); // Ensure registry is initialized
     }
 
     // Remove table prefix if present

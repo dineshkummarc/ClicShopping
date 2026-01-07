@@ -577,19 +577,4 @@ class TaskPlanner
     {
         $this->planningStats['failed_executions']++;
     }
-
-    //*********
-    // Not used
-    //*********
-  /**
-   * 🔧 Obtient la liste des SubTaskPlanners disponibles
-   */
-  public function getAvailableSubTaskPlanners(): array
-  {
-    $planners = [];
-    foreach ($this->subTaskPlanners as $name => $planner) {
-      $planners[$name] = $planner->getMetadata();
-    }
-    return $planners;
-  }
 }

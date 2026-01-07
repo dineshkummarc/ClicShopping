@@ -69,7 +69,7 @@ class WebSearchResultFormatter
   private static function formatHeader(string $query, int $count): string
   {
     $html = '<div class="alert alert-info mb-3" role="alert">';
-    $html .= '<i class="fas fa-globe me-2"></i>';
+    $html .= '<i class="bi bi-globe me-2"></i>';
     $html .= '<strong>Résultats de recherche web</strong> pour : <em>' . htmlspecialchars($query) . '</em>';
     $html .= '<span class="badge bg-primary ms-2">' . $count . ' résultat' . ($count > 1 ? 's' : '') . '</span>';
     $html .= '</div>';
@@ -147,7 +147,7 @@ class WebSearchResultFormatter
     if (!empty($link)) {
       $html .= '<a href="' . htmlspecialchars($link) . '" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-primary" style="word-wrap: break-word; overflow-wrap: break-word;">';
       $html .= $title;
-      $html .= ' <i class="fas fa-external-link-alt fa-xs text-muted"></i>';
+      $html .= ' <i class="bi bi-box-arrow-up-right text-muted" style="font-size: 0.75rem;"></i>';
       $html .= '</a>';
     } else {
       $html .= $title;
@@ -169,7 +169,7 @@ class WebSearchResultFormatter
   private static function formatSource(string $source, string $link): string
   {
     $html = '<p class="text-muted small mb-2">';
-    $html .= '<i class="fas fa-link me-1"></i>';
+    $html .= '<i class="bi bi-link-45deg me-1"></i>';
     
     if (!empty($link)) {
       $html .= '<a href="' . htmlspecialchars($link) . '" target="_blank" rel="noopener noreferrer" class="text-muted text-decoration-none">';
@@ -193,7 +193,7 @@ class WebSearchResultFormatter
   private static function formatPrice(string $price): string
   {
     $html = '<div class="alert alert-success py-2 mb-0 mt-2">';
-    $html .= '<i class="fas fa-tag me-2"></i>';
+    $html .= '<i class="bi bi-tag me-2"></i>';
     $html .= '<strong>Prix :</strong> ' . htmlspecialchars($price);
     $html .= '</div>';
     
@@ -209,7 +209,7 @@ class WebSearchResultFormatter
   private static function formatEmptyResults(string $query): string
   {
     $html = '<div class="alert alert-warning" role="alert">';
-    $html .= '<i class="fas fa-exclamation-triangle me-2"></i>';
+    $html .= '<i class="bi bi-exclamation-triangle me-2"></i>';
     $html .= '<strong>Aucun résultat trouvé</strong> pour : <em>' . htmlspecialchars($query) . '</em>';
     $html .= '</div>';
     

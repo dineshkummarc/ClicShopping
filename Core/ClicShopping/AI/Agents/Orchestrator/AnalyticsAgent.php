@@ -12,7 +12,6 @@ namespace ClicShopping\AI\Agents\Orchestrator;
 
 use AllowDynamicProperties;
 
-use ClicShopping\AI\Tools\BIexecution\QueryExecutor;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Cache as OMCache;
@@ -31,7 +30,8 @@ use ClicShopping\AI\Helper\Detection\AmbiguousQueryDetector;
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\PromptBuilder;
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\AmbiguityHandler;
 use ClicShopping\AI\Handler\Error\AnalyticsErrorHandler;
-
+use ClicShopping\AI\Agents\Query\QueryClassifier;
+use ClicShopping\AI\Tools\BIexecution\QueryExecutor;
 use ClicShopping\AI\Tools\BIexecution\SqlQueryProcessor;
 use ClicShopping\AI\Helper\AgentResponseHelper;
 
@@ -196,92 +196,6 @@ class AnalyticsAgent
     }
   }
 
-
-
-  /**
-   * Resolves placeholders in SQL queries with their actual values
-   * Replaces [placeholder] syntax with corresponding values
-   * Handles common placeholders like language_id
-   *
-   * @param string $sqlQuery SQL query with placeholders
-   * @return string SQL query with resolved placeholders
-   */
-  private function resolvePlaceholders(string $sqlQuery): string
-  {
-    // Validate input
-    $safeSqlQuery = InputValidator::validateParameter($sqlQuery, 'string');
-
-    if ($safeSqlQuery !== $sqlQuery) {
-      $this->securityLogger->logSecurityEvent("SQL query sanitized in resolvePlaceholders", 'warning');
-
-      $sqlQuery = $safeSqlQuery;
-    }
-
-    // Detect placeholders in the format [placeholder_name]
-    preg_match_all('/\[([^\]]+)\]/', $sqlQuery, $matches);
-
-    if (empty($matches[1])) {
-      return $sqlQuery;
-    }
-
-    $placeholders = array_unique($matches[1]);
-    $resolvedQuery = $sqlQuery;
-
-    foreach ($placeholders as $placeholder) {
-      $value = $this->getPlaceholderValue($placeholder);
-
-      if ($value === null) {
-        $this->securityLogger->logSecurityEvent(
-          "Unknown placeholder encountered: [{$placeholder}]",
-          'warning'
-        );
-        $value = "'UNKNOWN_PLACEHOLDER_{$placeholder}'"; // Descriptive default value
-      }
-
-      $resolvedQuery = str_replace("[$placeholder]", $value, $resolvedQuery);
-    }
-
-    return $resolvedQuery;
-  }
-
-  /**
-   * Gets the value for a specific placeholder
-   * Maps common placeholders to their corresponding values
-   * Provides fallback value for unknown placeholders
-   * Logs unknown placeholders when debug mode is enabled
-   *
-   * @param string $placeholder Name of the placeholder to resolve
-   * @return string Value to replace the placeholder
-   */
-  private function getPlaceholderValue(string $placeholder): string
-  {
-    // Map common placeholders to their values
-    $placeholderMap = [
-      'language_id' => $this->languageId,
-      // Add other mappings as needed
-    ];
-
-    if (isset($placeholderMap[$placeholder])) {
-      return $placeholderMap[$placeholder];
-    }
-
-    // Log unknown placeholders
-    $this->securityLogger->logSecurityEvent(
-      "Unknown placeholder encountered: [{$placeholder}]",
-      'info'
-    );
-
-    if ($this->debug == 'True') {
-      $this->securityLogger->logSecurityEvent("Placeholder unknown: [$placeholder]", 'error');
-    }
-
-    // Default value for unknown placeholders
-    return '1'; // Safe default value
-  }
-
-
-
-
   /**
    * Executes the generated SQL query and handles errors
    * Implements error recovery mechanisms
@@ -344,51 +258,6 @@ class AnalyticsAgent
   }
 
   /**
-   * Validates SQL syntax using SqlSecurity class
-   * Logs security events for invalid syntax
-   *
-   * @param array $validation
-   * @param string $query
-   * @return bool True if valid, false otherwise
-   */
-  private function isSqlSyntaxValid(array $validation, string $query): bool
-  {
-    if (!$validation['valid']) {
-      $this->securityLogger->logSecurityEvent(
-        "Rejected query due to invalid SQL syntax (parse failure)",
-        'warning',
-        ['query' => $query]
-      );
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Deduplicates rows in a result set
-   * Uses a hash function to identify unique rows
-   * Returns an array of unique rows
-   *
-   * @param array $rows Array of rows to deduplicate
-   * @return array Array of unique rows
-   */
-  private function deduplicateRows(array $rows): array
-  {
-    $seen = [];
-    $unique = [];
-
-    foreach ($rows as $r) {
-      $h = md5(json_encode($r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-      if (!isset($seen[$h])) {
-        $seen[$h] = true;
-        $unique[] = $r;
-      }
-    }
-
-    return $unique;
-  }
-
-  /**
    * Executes a query with error recovery mechanisms
    * Implements caching, query generation, validation, and error handling
    * Supports multiple query execution and result aggregation
@@ -429,9 +298,9 @@ class AnalyticsAgent
       $classificationConfidence = 0.0;
       
       // Re-classify to get confidence (cached, so very fast)
-      $translatedForClassification = \ClicShopping\AI\Domain\Semantics\Semantics::translateToEnglish($question, 80);
+      $translatedForClassification = Semantics::translateToEnglish($question, 80);
       $cleanTranslation = $this->resultInterpreter->extractCleanTranslation($translatedForClassification);
-      $classifier = new \ClicShopping\AI\Agents\Query\QueryClassifier($this->debug);
+      $classifier = new QueryClassifier($this->debug);
       $classificationResult = $classifier->classify($cleanTranslation, $cleanTranslation);
       
       $classificationConfidence = $classificationResult['confidence'] ?? 0.0;
@@ -726,65 +595,6 @@ class AnalyticsAgent
     }
   }
 
-
-  /**
-   * Gets the schema for a specific table
-   * Uses caching to improve performance
-   * Handles table name validation and error logging
-   *
-   * @param string $table Table name to get schema for
-   * @return array Associative array where keys are column names and values are column types
-   */
-  private function getTableSchema(string $table): array
-  {
-    // Validate table name
-    $safeTable = InputValidator::sanitizeIdentifier($table);
-
-    if ($safeTable !== $table) {
-      $this->securityLogger->logSecurityEvent(
-        "Suspicious table name sanitized in getTableSchema: {$table} -> {$safeTable}",
-        'warning'
-      );
-      $table = $safeTable;
-    }
-
-    // Check cache first
-    if (isset($this->tableSchemaCache[$table])) {
-      return $this->tableSchemaCache[$table];
-    }
-
-    try {
-      // Retrieve the table schema
-      $query = $this->db->prepare("DESCRIBE " . $table);
-      $query->execute();
-      $columns = $query->fetchAll(\PDO::FETCH_ASSOC);
-
-      $schema = [];
-      foreach ($columns as $column) {
-        $schema[$column['Field']] = $column['Type'];
-      }
-
-      // Cache the schema
-      $this->tableSchemaCache[$table] = $schema;
-
-      return $schema;
-    } catch (\Exception $e) {
-      $this->securityLogger->logSecurityEvent(
-        "Error getting schema for table {$table}: " . $e->getMessage(),
-        'error'
-      );
-
-      if ($this->debug) {
-        $this->securityLogger->logSecurityEvent(
-          "Error getting schema for table {$table}: " . $e->getMessage(),
-          'error'
-        );
-      }
-
-      return [];
-    }
-  }
-
   /**
    * Processes a complete business query including SQL generation, execution, and interpretation
    * Handles multiple query results and provides natural language interpretation
@@ -1003,7 +813,7 @@ class AnalyticsAgent
     error_log("Clean translation: '{$cleanTranslation}'");
 
     // NOW classify the translated query using centralized QueryClassifier
-    $classifier = new \ClicShopping\AI\Agents\Query\QueryClassifier($this->debug);
+    $classifier = new QueryClassifier($this->debug);
     $classificationResult = $classifier->classify($cleanTranslation, $cleanTranslation);
     
     error_log("Classification result: '{$classificationResult['type']}' (confidence: {$classificationResult['confidence']})");
@@ -1122,7 +932,7 @@ class AnalyticsAgent
     
     // Use Semantics::translateToEnglish for actual translation
     try {
-      $translated = \ClicShopping\AI\Domain\Semantics\Semantics::translateToEnglish($question, 50);
+      $translated = Semantics::translateToEnglish($question, 50);
       
       // Extract clean translation (remove descriptive text)
       $cleanTranslation = $this->resultInterpreter->extractCleanTranslation($translated);
@@ -1179,12 +989,6 @@ class AnalyticsAgent
   {
     return $this->promptBuilder->enrichWithLastSQL($question, $lastSQL);
   }
-
-
-
-  /*------------------------------------------
-  not used
-  ---------------------------------------------*/
 
   /**
    * @return bool Flushes the SQL query cache
@@ -1271,5 +1075,4 @@ class AnalyticsAgent
     
     error_log($logMessage);
   }
-
 }

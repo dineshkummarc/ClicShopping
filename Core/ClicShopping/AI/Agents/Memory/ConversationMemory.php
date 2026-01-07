@@ -34,12 +34,58 @@ use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
  * ConversationMemory Class
  *
  * Manages the multi-agent system's conversational memory using LLPhant components.
+ * This class has been refactored to use SubConversationMemory components for better
+ * separation of concerns and maintainability.
+ *
  * Responsibilities include:
  * - Storing user-system interactions in both short-term (History) and long-term (Vector Store) memory.
  * - Maintaining a coherent conversational context.
  * - Retrieving relevant historical interactions via vector embeddings.
  * - Resolving contextual references ("it," "the last one," etc.) within user queries.
  * - Learning from successful interaction patterns.
+ * - Tracking entities mentioned in conversations for contextual follow-up queries.
+ *
+ * Architecture:
+ * This class delegates specialized responsibilities to SubConversationMemory components:
+ * - ShortTermMemoryManager: Manages conversation history and message retention
+ * - LongTermMemoryManager: Manages vector store and semantic search
+ * - ContextResolver: Resolves contextual references in queries
+ * - EntityTracker: Tracks last mentioned entities for implicit context
+ * - MemoryStatistics: Records operation statistics and performance metrics
+ * - FeedbackManager: Manages user feedback and learning from corrections
+ *
+ * Configuration:
+ * Configuration should be done through the SubConversationMemory components directly,
+ * not through setter methods on this class. For example:
+ * 
+ * ```php
+ * // Configure through constructor
+ * $memory = new ConversationMemory(
+ *   userId: 'user123',
+ *   languageId: 1,
+ *   tableName: 'rag_conversation_memory_embedding',
+ *   entityId: 0
+ * );
+ * 
+ * // Or configure SubComponents directly if needed
+ * $memory->shortTermManager->setMaxHistorySize(20);
+ * $memory->longTermManager->setSimilarityThreshold(0.8);
+ * ```
+ *
+ * Migration Notes:
+ * The following methods have been removed as part of the SubConversationMemory refactoring:
+ * - setMaxHistorySize() - Use $memory->shortTermManager->setMaxHistorySize() instead
+ * - setSimilarityThreshold() - Use $memory->longTermManager->setSimilarityThreshold() instead
+ * - cleanOrphanedChunks() - Use $memory->longTermManager->cleanDuplicates() instead
+ *
+ * These methods are no longer needed because configuration is now handled through
+ * the SubConversationMemory components, which provide better encapsulation and
+ * more flexible configuration options.
+ *
+ * @see ShortTermMemoryManager For short-term memory configuration
+ * @see LongTermMemoryManager For long-term memory and vector store configuration
+ * @see ContextResolver For contextual reference resolution
+ * @see EntityTracker For entity tracking and implicit context
  */
 #[AllowDynamicProperties]
 class ConversationMemory
@@ -1033,9 +1079,7 @@ class ConversationMemory
   }
 
 
-//***************************
-// Not used
-//**************************
+
 
 
 
@@ -1044,7 +1088,21 @@ class ConversationMemory
   /**
    * Gets the complete LLPhant ConversationHistory object.
    *
-   * @return ConversationHistory
+   * This method provides backward compatibility by exposing the underlying
+   * ConversationHistory object managed by ShortTermMemoryManager. It allows
+   * code that expects direct access to the ConversationHistory to continue
+   * working after the SubConversationMemory refactoring.
+   *
+   * Purpose:
+   * - Provides access to the LLPhant ConversationHistory for backward compatibility
+   * - Used internally to maintain consistency after delegating to ShortTermMemoryManager
+   * - Allows external code to access conversation history without breaking changes
+   *
+   * Note: This method is kept for backward compatibility. New code should prefer
+   * using the higher-level methods like getRelevantContext() or getRecentInteractions()
+   * which provide more structured access to conversation data.
+   *
+   * @return ConversationHistory The LLPhant ConversationHistory object
    */
 
   public function getConversationHistory(): ConversationHistory
@@ -1053,84 +1111,31 @@ class ConversationMemory
   }
 
   /**
-   * Configures the maximum size of the short-term history.
+   * Retrieves the last successfully executed SQL query from conversation history.
    *
-   * @param int $size New size
-   */
-  public function setMaxHistorySize(int $size): void
-  {
-    $this->maxHistorySize = max(1, $size);
-  }
-
-  /**
-   * Configures the similarity threshold for searches.
+   * This method is critical for the "modify last query" functionality in AnalyticsAgent,
+   * allowing users to request modifications to their previous SQL queries without
+   * having to repeat the entire query.
    *
-   * @param float $threshold New threshold (0-1)
-   */
-  public function setSimilarityThreshold(float $threshold): void
-  {
-    $this->similarityThreshold = max(0.0, min(1.0, $threshold));
-  }
-  /**
-   * Cleans up old orphaned chunks from the vector store.
+   * Purpose:
+   * - Enables SQL query modification requests (e.g., "add column X to the last query")
+   * - Used by AnalyticsAgent to detect and handle modification requests
+   * - Searches conversation history for the most recent SQL query response
+   * - Extracts SQL from markdown-formatted responses (```sql ... ```)
    *
-   * @param int $daysOld Chunks older than this number of days will be deleted.
-   * @return int The number of deleted chunks.
-   */
-  public function cleanOrphanedChunks(int $daysOld = 30): int
-  {
-    // NOTE: $this->db must be initialized in the constructor (e.g., PDO or similar connection).
-    // The implementation below is conceptual and depends on the specific MariaDBVectorStore/DB connection setup.
-
-    if (!$this->db) {
-      $this->securityLogger->logSecurityEvent(
-        "DB connection not initialized for cleanOrphanedChunks.",
-        'warning'
-      );
-      return 0;
-    }
-
-    try {
-      // Conceptual Query: Adapt this to your actual database interface and JSON/metadata handling
-      $tableName = $this->vectorStore->getTableName();
-
-      // Using a placeholder for direct SQL execution (assumes a standard SQL library)
-      $sql = "DELETE FROM {$tableName} 
-              WHERE JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.is_chunked')) = 'true'
-              AND JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.timestamp')) < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL :days DAY))";
-
-      // The actual execution logic for a prepared statement:
-      // $stmt = $this->db->prepare($sql);
-      // $stmt->bindValue(':days', $daysOld, \PDO::PARAM_INT);
-      // $stmt->execute();
-      // $deleted = $stmt->rowCount();
-
-      // Since we don't know the exact DB setup, we'll simulate the execution:
-      $deleted = 0; // Replace with actual $stmt->rowCount()
-
-      if ($this->debug && $deleted > 0) {
-        $this->securityLogger->logSecurityEvent(
-          "Cleaned {$deleted} orphaned chunks older than {$daysOld} days from table {$tableName}",
-          'info'
-        );
-      }
-
-      return $deleted;
-
-    } catch (\Exception $e) {
-      $this->securityLogger->logSecurityEvent(
-        "Error cleaning orphaned chunks: " . $e->getMessage(),
-        'error'
-      );
-      return 0;
-    }
-  }
-
-  /**
-   * Récupère la dernière requête SQL exécutée avec succès
-   * Utile pour les requêtes de modification ("ajoute la colonne X")
+   * Usage Example:
+   * User: "Show me all products"
+   * System: [Returns SQL query in response]
+   * User: "Add the price column to that query"
+   * System: [Uses getLastSQLQuery() to retrieve and modify the previous query]
    *
-   * @return string|null La dernière requête SQL ou null si aucune trouvée
+   * Implementation Details:
+   * - Searches rag_interactions table for recent SQL responses
+   * - Filters by user_id and language_id for context isolation
+   * - Extracts SQL from markdown code blocks (```sql ... ```)
+   * - Returns null if no SQL query found in recent history
+   *
+   * @return string|null The last SQL query or null if none found
    */
   public function getLastSQLQuery(): ?string
   {

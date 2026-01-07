@@ -13,6 +13,9 @@ namespace ClicShopping\AI\Agents\Query;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Helper\LanguageHelper;
+use ClicShopping\AI\Domain\Patterns\EntityDetectionPattern;
+use ClicShopping\AI\Domain\Patterns\ContinuationPattern;
+use ClicShopping\AI\Domain\Patterns\OperatorPattern;
 
 /**
  * QueryAnalyzer Class
@@ -115,23 +118,8 @@ class QueryAnalyzer
     $commonKeywords = array_intersect($analysis['query_keywords'], $contextKeywords);
     $keywordSimilarity = count($contextKeywords) > 0 ? count($commonKeywords) / count($contextKeywords) : 0;
 
-    // Detect continuation/modification patterns
-    $continuationPatterns = [
-      '/with\s+(their|its|the)/',            // "with their sku"
-      '/and\s+(also|additionally|too)/',     // "and also"
-      '/but\s+(with|without|including)/',    // "but with"
-      '/more\s+(detailed|complete|specific)/',// "more detailed"
-      '/add\s+(also|too)/',                  // "add also"
-      '/include\s+(also|too)/',              // "include also"
-    ];
-
-    $isContinuation = false;
-    foreach ($continuationPatterns as $pattern) {
-      if (preg_match($pattern, strtolower($query))) {
-        $isContinuation = true;
-        break;
-      }
-    }
+    // Detect continuation/modification patterns using ContinuationPattern
+    $isContinuation = ContinuationPattern::matches($query);
 
     // Detect common entities (products, categories, etc.)
     $queryEntities = $this->extractEntitiesFromMessage($query);
@@ -173,39 +161,14 @@ class QueryAnalyzer
    * Extract entities from message
    *
    * Identifies e-commerce entities (products, categories, customers, orders, etc.)
-   * using inline pattern definitions (Pure LLM mode - patterns disabled).
+   * using EntityDetectionPattern class.
    *
    * @param string $message Message text
    * @return array Extracted entities (unique list)
    */
   public function extractEntitiesFromMessage(string $message): array
   {
-    $message = mb_strtolower($message);
-    $entities = [];
-
-    // Define entity patterns inline (Pure LLM mode - pattern classes disabled)
-    // These are basic patterns for entity detection
-    $entityPatterns = [
-      'product' => ['product', 'products', 'item', 'items', 'article', 'articles'],
-      'category' => ['category', 'categories', 'section', 'sections'],
-      'customer' => ['customer', 'customers', 'client', 'clients', 'user', 'users'],
-      'order' => ['order', 'orders', 'purchase', 'purchases', 'sale', 'sales'],
-      'manufacturer' => ['manufacturer', 'manufacturers', 'brand', 'brands', 'supplier', 'suppliers'],
-      'review' => ['review', 'reviews', 'rating', 'ratings', 'comment', 'comments'],
-    ];
-
-    foreach ($entityPatterns as $entityType => $patterns) {
-      foreach ($patterns as $pattern) {
-        // Escape pattern for regex and match as whole word
-        $patternEscaped = preg_quote($pattern, '/');
-        if (preg_match('/\b' . $patternEscaped . '\b/i', $message)) {
-          $entities[] = $entityType;
-          break; // Stop after first match for this entity type
-        }
-      }
-    }
-
-    return array_unique($entities);
+    return EntityDetectionPattern::detect($message);
   }
 
   /**
@@ -249,16 +212,8 @@ class QueryAnalyzer
       }
     }
 
-    // 3. Handle advanced numeric comparisons
-    // Maps synonyms to standard operators
-    $operatorsMap = [
-      'greater than' => '>', 'more than' => '>', 'over' => '>', 'above' => '>', '>' => '>',
-      'less than' => '<', 'lower than' => '<', 'under' => '<', 'below' => '<', '<' => '<',
-      'equal to' => '=', 'is' => '=', '=' => '='
-    ];
-
-    // Dynamic Regex: looks for "{field} {synonym} {number}"
-    $opsPattern = implode('|', array_map(fn($k) => preg_quote($k, '/'), array_keys($operatorsMap)));
+    // 3. Handle advanced numeric comparisons using OperatorPattern
+    $opsPattern = OperatorPattern::getOperatorRegexPattern();
     $regex = "/($fieldPattern)\s+(?:is\s+)?($opsPattern)\s+(\d+(?:\.\d+)?)/";
 
     if (preg_match_all($regex, $query, $matches, PREG_SET_ORDER)) {
@@ -269,7 +224,7 @@ class QueryAnalyzer
 
         $result['filters'][] = [
           'field'    => $field,
-          'operator' => $operatorsMap[$rawOp] ?? '=', // Translate to standard operator
+          'operator' => OperatorPattern::translate($rawOp), // Translate to standard operator
           'value'    => (float)$value
         ];
       }
@@ -407,9 +362,8 @@ class QueryAnalyzer
       } elseif ($operator === 'not_exists') {
         $parts[] = "absence of field `{$field}`";
       } else {
-        // Replace symbols with words for the LLM
-        $opMap = ['>' => 'greater than', '<' => 'less than', '=' => 'equal to'];
-        $opText = $opMap[$operator] ?? $operator;
+        // Replace symbols with words for the LLM using OperatorPattern
+        $opText = OperatorPattern::getReverseMap()[$operator] ?? $operator;
 
         $parts[] = "`{$field}` is {$opText} {$value}";
       }
