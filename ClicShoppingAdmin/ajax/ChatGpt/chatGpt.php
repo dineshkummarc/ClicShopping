@@ -17,10 +17,11 @@ use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\Adm
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Agents\Orchestrator\OrchestratorAgent;
 use ClicShopping\AI\Agents\Memory\MemoryRetentionService;
-  use ClicShopping\AI\Infrastructure\Metrics\StatisticsTracker;
+use ClicShopping\AI\Infrastructure\Metrics\StatisticsTracker;
 use ClicShopping\AI\Helper\Formatter\ResultFormatter;
 use ClicShopping\AI\Helper\ClarificationHelper;
 use ClicShopping\AI\Helper\AgentResponseHelper;
+use ClicShopping\AI\Security\SecurityOrchestrator;
 
 define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/') . DIRECTORY_SEPARATOR);
 
@@ -192,6 +193,48 @@ try {
     error_log('User Query: ' . substr($userQuery, 0, 100));
     error_log('User ID: ' . $userId);
     error_log('Language ID: ' . $languageId);
+  }
+
+  // ============================================
+  // 1.5 SECURITY CHECK (NEW - Prompt Injection Protection)
+  // ============================================
+  // ⚠️ CRITICAL: Check for malicious queries BEFORE processing
+  // Uses LLM-based semantic analysis to detect:
+  // - Instruction override attempts
+  // - Data exfiltration attempts  
+  // - Hallucination injection attempts
+  
+  $securityCheck = SecurityOrchestrator::validateQuery($userQuery, null); // auto-detect language
+  
+  if ($securityCheck['blocked']) {
+    error_log('🛡️ SECURITY: Blocked malicious query');
+    error_log('   - Threat Type: ' . $securityCheck['threat_type']);
+    error_log('   - Threat Score: ' . $securityCheck['threat_score']);
+    error_log('   - Detection Method: ' . $securityCheck['detection_method']);
+    error_log('   - Reasoning: ' . substr($securityCheck['reasoning'], 0, 200));
+    
+    if (ob_get_length()) ob_clean();
+    
+    echo json_encode([
+      'success' => false,
+      'error' => 'Cette requête a été bloquée pour des raisons de sécurité. Veuillez reformuler votre question.',
+      'error_code' => 'SECURITY_THREAT_DETECTED',
+      'threat_type' => $securityCheck['threat_type'],
+      'threat_score' => $securityCheck['threat_score'],
+      'detection_method' => $securityCheck['detection_method'],
+      'interaction_id' => null,
+      'security_error' => true
+    ], JSON_UNESCAPED_UNICODE);
+    
+    exit;
+  }
+  
+  // Log security check passed (if debug enabled)
+  if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+    error_log('✅ SECURITY: Query passed security check');
+    error_log('   - Threat Score: ' . $securityCheck['threat_score']);
+    error_log('   - Detection Method: ' . $securityCheck['detection_method']);
+    error_log('   - Latency: ' . $securityCheck['latency_ms'] . 'ms');
   }
 
   // ============================================

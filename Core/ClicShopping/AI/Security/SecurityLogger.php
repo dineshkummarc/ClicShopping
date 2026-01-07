@@ -12,11 +12,15 @@
 namespace ClicShopping\AI\Security;
 
 use ClicShopping\AI\Infrastructure\Cache\Cache;
+use ClicShopping\OM\Registry;
+use ClicShopping\OM\CLICSHOPPING;
 
 /**
  * Class SecurityLogger
- * Provides comprehensive security event logging
- * Supports multiple log levels and formats
+ * Provides comprehensive security event logging with database integration
+ * Supports multiple log levels, formats, and database persistence
+ * 
+ * Requirements: 8.1, 8.2, 8.3
  */
 class SecurityLogger
 {
@@ -24,6 +28,7 @@ class SecurityLogger
     private $maxLogSize;
     private $logRotations;
     private $logLevel;
+    private $db;
     
     // Performance optimization: Cache log level numeric values
     private static $levelCache = [
@@ -59,6 +64,11 @@ class SecurityLogger
         
         // Cache numeric level for performance
         $this->minimumLevelNumeric = self::$levelCache[$logLevel] ?? self::$levelCache['info'];
+        
+        // Initialize database connection
+        if (Registry::exists('Db')) {
+            $this->db = Registry::get('Db');
+        }
         
         // Register shutdown function to flush buffer
         if ($bufferEnabled) {
@@ -334,5 +344,675 @@ class SecurityLogger
         }
         
         return $success;
+    }
+    
+    /**
+     * Log a security query (non-threatening)
+     * 
+     * @param string $query The query
+     * @param float $threatScore Threat score (0.0-1.0)
+     * @param string $threatType Type detected
+     * @param array $context Additional context
+     * @return bool True if logged successfully
+     */
+    public function logQuery(string $query, float $threatScore, string $threatType, array $context = []): bool
+    {
+        $message = "Query analyzed: {$threatType} (score: {$threatScore})";
+        
+        $logContext = array_merge([
+            'query_preview' => substr($query, 0, 100),
+            'threat_type' => $threatType,
+            'threat_score' => $threatScore
+        ], $context);
+        
+        return $this->logSecurityEvent($message, 'info', $logContext);
+    }
+    
+    /**
+     * Log an error
+     * 
+     * @param string $message Error message
+     * @param array $context Additional context
+     * @return bool True if logged successfully
+     */
+    public function logError(string $message, array $context = []): bool
+    {
+        return $this->logSecurityEvent($message, 'error', $context);
+    }
+    
+    /**
+     * Log a security event to database
+     * Comprehensive event logging with all security-related details
+     * Also checks threat rates and triggers alerts if needed
+     * 
+     * @param string $eventType Event type (threat_detected, threat_blocked, etc.)
+     * @param array $details Event details including query, threat info, detection details
+     * @return bool True if logged successfully
+     * 
+     * Requirements: 8.1, 8.2
+     */
+    public function logEvent(string $eventType, array $details): bool
+    {
+        // Log to file first (always)
+        $fileLogged = $this->logSecurityEvent(
+            "Security Event: {$eventType}",
+            $details['severity'] ?? 'info',
+            $details
+        );
+        
+        // Log to database if available
+        if (!$this->db) {
+            return $fileLogged;
+        }
+        
+        try {
+            // Use table name without prefix - save() method adds it automatically
+            $table = 'rag_security_events';
+            
+            // Generate unique event ID
+            $eventId = $this->generateEventId();
+            
+            // Calculate expiration date (90 days default)
+            $retentionDays = $details['retention_days'] ?? 90;
+            $expiresAt = date('Y-m-d H:i:s', strtotime("+{$retentionDays} days"));
+            
+            // Prepare data for insertion
+            $data = [
+                'event_id' => $eventId,
+                'event_type' => $eventType,
+                'severity' => $details['severity'] ?? 'medium',
+                'threat_type' => $details['threat_type'] ?? null,
+                'threat_score' => $details['threat_score'] ?? null,
+                'confidence' => $details['confidence'] ?? null,
+                'user_query' => $details['query'] ?? '',
+                'query_language' => $details['language'] ?? 'en',
+                'query_hash' => $details['query_hash'] ?? ($details['query'] ? md5($details['query']) : null),
+                'detection_method' => $details['detection_method'] ?? 'unknown',
+                'detection_layer' => $details['detection_layer'] ?? null,
+                'matched_patterns' => isset($details['matched_patterns']) ? json_encode($details['matched_patterns']) : null,
+                'llm_reasoning' => $details['reasoning'] ?? null,
+                'action_taken' => $details['action_taken'] ?? 'logged_only',
+                'blocked' => $details['blocked'] ?? 0,
+                'response_generated' => $details['response'] ?? null,
+                'response_blocked' => $details['response_blocked'] ?? 0,
+                'user_id' => $details['user_id'] ?? null,
+                'session_id' => $details['session_id'] ?? null,
+                'ip_address' => $details['ip_address'] ?? null,
+                'user_agent' => $details['user_agent'] ?? null,
+                'interaction_id' => $details['interaction_id'] ?? null,
+                'request_type' => $details['request_type'] ?? null,
+                'agent_used' => $details['agent_used'] ?? null,
+                'detection_time_ms' => $details['detection_time_ms'] ?? null,
+                'total_processing_time_ms' => $details['total_processing_time_ms'] ?? null,
+                'metadata' => isset($details['metadata']) ? json_encode($details['metadata']) : null,
+                'context' => isset($details['context']) ? json_encode($details['context']) : null,
+                'error_message' => $details['error_message'] ?? null,
+                'expires_at' => $expiresAt,
+                'archived' => 0
+            ];
+            
+            // Insert into database
+            $this->db->save($table, $data);
+            
+            // Check if we should trigger alerts (for threat events)
+            if (in_array($eventType, ['threat_detected', 'threat_blocked']) && isset($details['blocked']) && $details['blocked']) {
+                $this->checkAndTriggerAlerts();
+            }
+            
+            return true;
+        } catch (\Exception $e) {
+            // Log error to file if database insert fails
+            $this->logSecurityEvent(
+                "Failed to log event to database: " . $e->getMessage(),
+                'error',
+                ['event_type' => $eventType, 'original_details' => $details]
+            );
+            
+            return $fileLogged;
+        }
+    }
+    
+    /**
+     * Log a threat detection event
+     * Convenience method for logging threats with proper structure
+     * 
+     * @param string $query The malicious query
+     * @param string $threatType Type of threat (instruction_override, exfiltration, hallucination)
+     * @param float $threatScore Threat score (0.0-1.0)
+     * @param string $reasoning Human-readable reasoning
+     * @param array $context Additional context
+     * @return bool True if logged successfully
+     * 
+     * Requirements: 8.1, 8.2
+     */
+    public function logThreat(string $query, string $threatType, float $threatScore, string $reasoning, array $context = []): bool
+    {
+        // Determine severity based on threat score
+        $severity = 'low';
+        if ($threatScore >= 0.9) {
+            $severity = 'critical';
+        } elseif ($threatScore >= 0.7) {
+            $severity = 'high';
+        } elseif ($threatScore >= 0.5) {
+            $severity = 'medium';
+        }
+        
+        // Prepare event details
+        $details = array_merge([
+            'query' => $query,
+            'threat_type' => $threatType,
+            'threat_score' => $threatScore,
+            'reasoning' => $reasoning,
+            'severity' => $severity,
+            'blocked' => $threatScore >= 0.7 ? 1 : 0,
+            'action_taken' => $threatScore >= 0.7 ? 'blocked' : 'flagged'
+        ], $context);
+        
+        // Log as threat_detected or threat_blocked based on score
+        $eventType = $threatScore >= 0.7 ? 'threat_blocked' : 'threat_detected';
+        
+        return $this->logEvent($eventType, $details);
+    }
+    
+    /**
+     * Generate security report for specified period
+     * Aggregates security events and provides statistics
+     * 
+     * @param string $period Report period ('daily', 'weekly', 'monthly')
+     * @param string|null $startDate Optional start date (Y-m-d format)
+     * @param string|null $endDate Optional end date (Y-m-d format)
+     * @return array Report data with statistics and event summaries
+     * 
+     * Requirements: 8.3
+     */
+    public function generateReport(string $period = 'daily', ?string $startDate = null, ?string $endDate = null): array
+    {
+        // Use SecurityStatistics for comprehensive reporting
+        $stats = new \ClicShopping\AI\Infrastructure\Metrics\SecurityStatistics();
+        
+        switch ($period) {
+            case 'daily':
+                return $stats->generateDailyReport($startDate);
+            case 'weekly':
+                return $stats->generateWeeklyReport($startDate);
+            case 'monthly':
+                // Monthly is 30 days
+                $start = $startDate ?? date('Y-m-d', strtotime('-30 days'));
+                $end = $endDate ?? date('Y-m-d');
+                return $stats->generateWeeklyReport($start); // Use weekly format for monthly
+            default:
+                return $stats->generateDailyReport($startDate);
+        }
+    }
+    
+    /**
+     * Calculate detection rates
+     * 
+     * @param string $startDate Start date (Y-m-d H:i:s)
+     * @param string $endDate End date (Y-m-d H:i:s)
+     * @return array Detection rate statistics
+     * 
+     * Requirements: 8.3
+     */
+    public function calculateDetectionRates(string $startDate, string $endDate): array
+    {
+        $stats = new \ClicShopping\AI\Infrastructure\Metrics\SecurityStatistics();
+        return $stats->calculateDetectionRates($startDate, $endDate);
+    }
+    
+    /**
+     * Calculate false positive rates
+     * 
+     * @param string $startDate Start date (Y-m-d H:i:s)
+     * @param string $endDate End date (Y-m-d H:i:s)
+     * @return array False positive rate statistics
+     * 
+     * Requirements: 8.3
+     */
+    public function calculateFalsePositiveRates(string $startDate, string $endDate): array
+    {
+        $stats = new \ClicShopping\AI\Infrastructure\Metrics\SecurityStatistics();
+        return $stats->calculateFalsePositiveRates($startDate, $endDate);
+    }
+    
+    /**
+     * Generate trend analysis
+     * 
+     * @param int $days Number of days to analyze (default: 30)
+     * @return array Trend analysis data
+     * 
+     * Requirements: 8.3
+     */
+    public function generateTrendAnalysis(int $days = 30): array
+    {
+        $stats = new \ClicShopping\AI\Infrastructure\Metrics\SecurityStatistics();
+        return $stats->generateTrendAnalysis($days);
+    }
+    
+    /**
+     * Get comprehensive security metrics
+     * 
+     * @param int $days Number of days to analyze (default: 7)
+     * @return array Comprehensive metrics
+     * 
+     * Requirements: 8.3
+     */
+    public function getComprehensiveMetrics(int $days = 7): array
+    {
+        $stats = new \ClicShopping\AI\Infrastructure\Metrics\SecurityStatistics();
+        return $stats->getComprehensiveMetrics($days);
+    }
+    
+    /**
+     * Get security health score
+     * 
+     * @param int $days Number of days to analyze (default: 7)
+     * @return array Health score and breakdown
+     * 
+     * Requirements: 8.3
+     */
+    public function getSecurityHealthScore(int $days = 7): array
+    {
+        $stats = new \ClicShopping\AI\Infrastructure\Metrics\SecurityStatistics();
+        return $stats->getSecurityHealthScore($days);
+    }
+    
+    /**
+     * Generate unique event ID (UUID v4)
+     * 
+     * @return string UUID
+     */
+    private function generateEventId(): string
+    {
+        return sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff)
+        );
+    }
+    
+    /**
+     * Get security statistics for dashboard
+     * Provides quick overview of security metrics
+     * 
+     * @param int $hours Number of hours to look back (default: 24)
+     * @return array Statistics data
+     */
+    public function getStatistics(int $hours = 24): array
+    {
+        if (!$this->db) {
+            return ['error' => 'Database connection not available'];
+        }
+        
+        try {
+            $prefix = CLICSHOPPING::getConfig('db_table_prefix');
+            $table = ':table_rag_security_events';  // Use :table_ prefix for queries
+            
+            $startTime = date('Y-m-d H:i:s', strtotime("-{$hours} hours"));
+            
+            // Get counts by severity
+            $query = "SELECT 
+                        COUNT(*) as total_events,
+                        SUM(CASE WHEN severity = 'critical' THEN 1 ELSE 0 END) as critical_count,
+                        SUM(CASE WHEN severity = 'high' THEN 1 ELSE 0 END) as high_count,
+                        SUM(CASE WHEN severity = 'medium' THEN 1 ELSE 0 END) as medium_count,
+                        SUM(CASE WHEN severity = 'low' THEN 1 ELSE 0 END) as low_count,
+                        SUM(CASE WHEN blocked = 1 THEN 1 ELSE 0 END) as blocked_count
+                     FROM {$table}
+                     WHERE created_at >= :start_time";
+            
+            $result = $this->db->prepare($query);
+            $result->bindValue(':start_time', $startTime);
+            $result->execute();
+            $stats = $result->fetch();
+            
+            return [
+                'period_hours' => $hours,
+                'total_events' => $stats['total_events'] ?? 0,
+                'critical_count' => $stats['critical_count'] ?? 0,
+                'high_count' => $stats['high_count'] ?? 0,
+                'medium_count' => $stats['medium_count'] ?? 0,
+                'low_count' => $stats['low_count'] ?? 0,
+                'blocked_count' => $stats['blocked_count'] ?? 0,
+                'generated_at' => date('Y-m-d H:i:s')
+            ];
+        } catch (\Exception $e) {
+            $this->logSecurityEvent(
+                "Failed to get security statistics: " . $e->getMessage(),
+                'error'
+            );
+            
+            return ['error' => 'Failed to get statistics: ' . $e->getMessage()];
+        }
+    }
+    
+    /**
+     * Log a security decision (allow or block)
+     * Logs all security decisions made by the orchestrator
+     * 
+     * @param string $query User query
+     * @param bool $blocked Whether the query was blocked
+     * @param float $threatScore Threat score (0.0-1.0)
+     * @param string $threatType Type of threat detected
+     * @param string $reasoning Decision reasoning
+     * @param array $context Additional context
+     * @return bool True if logged successfully
+     * 
+     * Requirements: 8.1, 8.2
+     */
+    public function logSecurityDecision(
+        string $query,
+        bool $blocked,
+        float $threatScore,
+        string $threatType,
+        string $reasoning,
+        array $context = []
+    ): bool {
+        // Determine event type
+        $eventType = $blocked ? 'query_blocked' : 'query_allowed';
+        
+        // Determine severity
+        $severity = 'low';
+        if ($threatScore >= 0.9) {
+            $severity = 'critical';
+        } elseif ($threatScore >= 0.7) {
+            $severity = 'high';
+        } elseif ($threatScore >= 0.5) {
+            $severity = 'medium';
+        }
+        
+        // Map detection_method to valid ENUM value
+        $detectionMethod = $context['detection_method'] ?? 'llm_semantic';
+        if (!in_array($detectionMethod, ['llm_semantic', 'pattern_based', 'response_validation', 'hybrid'])) {
+            $detectionMethod = 'llm_semantic'; // default
+        }
+        
+        // Prepare event details
+        $details = [
+            'query' => $query,
+            'blocked' => $blocked ? 1 : 0,
+            'threat_score' => $threatScore,
+            'threat_type' => $threatType,
+            'reasoning' => $reasoning,
+            'severity' => $severity,
+            'action_taken' => $blocked ? 'blocked' : 'allowed',
+            'detection_method' => $detectionMethod,
+            ...$context
+        ];
+        
+        // Log to database
+        return $this->logEvent($eventType, $details);
+    }
+    
+    /**
+     * Log fallback usage (LLM to pattern)
+     * Logs when the system falls back from LLM to pattern-based detection
+     * 
+     * @param string $query User query
+     * @param string $reason Reason for fallback (e.g., 'llm_unavailable', 'llm_timeout', 'llm_error')
+     * @param array $context Additional context
+     * @return bool True if logged successfully
+     * 
+     * Requirements: 8.1, 8.2
+     */
+    public function logFallbackUsage(string $query, string $reason, array $context = []): bool
+    {
+        // Log to file
+        $this->logSecurityEvent(
+            "Security fallback triggered: {$reason}",
+            'warning',
+            [
+                'query_preview' => substr($query, 0, 100),
+                'fallback_reason' => $reason,
+                ...$context
+            ]
+        );
+        
+        // Map detection_method to valid ENUM value
+        $detectionMethod = $context['detection_method'] ?? 'pattern_based';
+        if (!in_array($detectionMethod, ['llm_semantic', 'pattern_based', 'response_validation', 'hybrid'])) {
+            $detectionMethod = 'pattern_based'; // default for fallback
+        }
+        
+        // Log to database
+        $details = [
+            'query' => $query,
+            'severity' => 'medium',
+            'action_taken' => 'fallback_triggered',
+            'detection_method' => $detectionMethod,
+            'metadata' => [
+                'fallback_reason' => $reason,
+                'from_layer' => 'llm',
+                'to_layer' => 'pattern',
+                ...$context
+            ],
+            ...$context
+        ];
+        
+        return $this->logEvent('security_fallback', $details);
+    }
+    
+    /**
+     * Log layer performance metrics
+     * Logs performance metrics for security layers (LLM, pattern, response validation)
+     * 
+     * @param string $layer Layer name ('llm', 'pattern', 'response_validation')
+     * @param float $latencyMs Latency in milliseconds
+     * @param bool $success Whether the layer executed successfully
+     * @param array $metrics Additional performance metrics
+     * @return bool True if logged successfully
+     * 
+     * Requirements: 8.1, 8.2
+     */
+    public function logLayerPerformance(
+        string $layer,
+        float $latencyMs,
+        bool $success,
+        array $metrics = []
+    ): bool {
+        // Log to file
+        $this->logSecurityEvent(
+            "Security layer performance: {$layer}",
+            'info',
+            [
+                'layer' => $layer,
+                'latency_ms' => $latencyMs,
+                'success' => $success,
+                ...$metrics
+            ]
+        );
+        
+        // Map layer to detection_method ENUM value
+        $detectionMethod = 'llm_semantic'; // default
+        if ($layer === 'pattern') {
+            $detectionMethod = 'pattern_based';
+        } elseif ($layer === 'response_validation') {
+            $detectionMethod = 'response_validation';
+        } elseif ($layer === 'hybrid') {
+            $detectionMethod = 'hybrid';
+        }
+        
+        // Log to database
+        $details = [
+            'severity' => 'low',
+            'detection_layer' => $layer,
+            'detection_time_ms' => $latencyMs,
+            'detection_method' => $detectionMethod,
+            'action_taken' => $success ? 'layer_executed' : 'layer_failed',
+            'metadata' => [
+                'layer' => $layer,
+                'success' => $success,
+                'performance_metrics' => $metrics
+            ]
+        ];
+        
+        return $this->logEvent('layer_performance', $details);
+    }
+    
+    /**
+     * Log blocked query with full details
+     * Convenience method for logging blocked queries with comprehensive information
+     * 
+     * @param string $query User query
+     * @param string $threatType Type of threat detected
+     * @param float $threatScore Threat score (0.0-1.0)
+     * @param string $reasoning Human-readable reasoning
+     * @param string $detectionMethod Detection method used ('llm', 'pattern', 'hybrid')
+     * @param array $context Additional context
+     * @return bool True if logged successfully
+     * 
+     * Requirements: 8.1, 8.2
+     */
+    public function logBlockedQuery(
+        string $query,
+        string $threatType,
+        float $threatScore,
+        string $reasoning,
+        string $detectionMethod,
+        array $context = []
+    ): bool {
+        // Determine severity based on threat score
+        $severity = 'low';
+        if ($threatScore >= 0.9) {
+            $severity = 'critical';
+        } elseif ($threatScore >= 0.7) {
+            $severity = 'high';
+        } elseif ($threatScore >= 0.5) {
+            $severity = 'medium';
+        }
+        
+        // Log to file
+        $this->logSecurityEvent(
+            "Query blocked: {$threatType} (score: {$threatScore})",
+            'warning',
+            [
+                'query_preview' => substr($query, 0, 100),
+                'threat_type' => $threatType,
+                'threat_score' => $threatScore,
+                'detection_method' => $detectionMethod,
+                ...$context
+            ]
+        );
+        
+        // Map detection_method to valid ENUM value
+        $detectionMethodEnum = 'llm_semantic'; // default
+        if ($detectionMethod === 'pattern') {
+            $detectionMethodEnum = 'pattern_based';
+        } elseif ($detectionMethod === 'hybrid') {
+            $detectionMethodEnum = 'hybrid';
+        } elseif ($detectionMethod === 'response_validation') {
+            $detectionMethodEnum = 'response_validation';
+        }
+        
+        // Prepare event details
+        $details = [
+            'query' => $query,
+            'threat_type' => $threatType,
+            'threat_score' => $threatScore,
+            'reasoning' => $reasoning,
+            'severity' => $severity,
+            'blocked' => 1,
+            'action_taken' => 'blocked',
+            'detection_method' => $detectionMethodEnum,
+            ...$context
+        ];
+        
+        // Log to database
+        return $this->logEvent('threat_blocked', $details);
+    }
+    
+    /**
+     * Check threat rates and trigger alerts if needed
+     * Called after logging threat events
+     * 
+     * @return void
+     */
+    private function checkAndTriggerAlerts(): void
+    {
+        try {
+            $alerter = new SecurityAlerter();
+            $alerter->checkThreatRate();
+        } catch (\Exception $e) {
+            // Don't let alerting errors break the system
+            $this->logSecurityEvent(
+                "Failed to check threat rate for alerting: " . $e->getMessage(),
+                'error'
+            );
+        }
+    }
+    
+    /**
+     * Trigger system failure alert
+     * Public method to allow other components to trigger failure alerts
+     * 
+     * @param string $failureType Type of failure
+     * @param string $errorMessage Error message
+     * @param array $context Additional context
+     * @return bool True if alert sent
+     * 
+     * Requirements: 8.4
+     */
+    public function triggerSystemFailureAlert(string $failureType, string $errorMessage, array $context = []): bool
+    {
+        try {
+            $alerter = new SecurityAlerter();
+            return $alerter->sendSystemFailureAlert($failureType, $errorMessage, $context);
+        } catch (\Exception $e) {
+            $this->logSecurityEvent(
+                "Failed to send system failure alert: " . $e->getMessage(),
+                'error',
+                ['failure_type' => $failureType, 'original_error' => $errorMessage]
+            );
+            return false;
+        }
+    }
+    
+    /**
+     * Send hourly digest
+     * Should be called by cron job or scheduled task
+     * 
+     * @return bool True if digest sent
+     * 
+     * Requirements: 8.4
+     */
+    public function sendHourlyDigest(): bool
+    {
+        try {
+            $alerter = new SecurityAlerter();
+            return $alerter->sendHourlyDigest();
+        } catch (\Exception $e) {
+            $this->logSecurityEvent(
+                "Failed to send hourly digest: " . $e->getMessage(),
+                'error'
+            );
+            return false;
+        }
+    }
+    
+    /**
+     * Test alert configuration
+     * Sends a test email to verify alerting is working
+     * 
+     * @return array Result with success status and message
+     * 
+     * Requirements: 8.4
+     */
+    public function testAlertConfiguration(): array
+    {
+        try {
+            $alerter = new SecurityAlerter();
+            return $alerter->sendTestAlert();
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to test alert configuration: ' . $e->getMessage()
+            ];
+        }
     }
 }

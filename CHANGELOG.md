@@ -12,6 +12,7 @@ version4.11
    -  **Memory System** (Working + Conversation + Entity tracking)
    -  **Self-Correction** (Error detection, SQL fixing, retry)
    -  **Tool Execution** (Calculator, Web Search, Custom tools)
+   -  **Security** Check what's happen inside the prompt 
    -  **No micro service**
    -  **Simple installation one click**
 - Mcp server connector improvment

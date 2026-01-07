@@ -42,6 +42,7 @@ class DashboardStatsCollector
         return [
             'classification' => $this->getClassificationStats($days),
             'security' => $this->getSecurityStats($days),
+            'security_monitoring' => $this->getSecurityMonitoringStats($days),
             'agents' => $this->getAgentsStats($days),
             'memory' => $this->getMemoryStats($days),
             'feedback' => $this->getFeedbackStats($days)
@@ -332,6 +333,148 @@ class DashboardStatsCollector
         }
     }
     
+    /**
+     * Security Monitoring Statistics (Prompt Injection Detection)
+     * Collects real-time threat metrics from rag_security_events table
+     * 
+     * Requirements: 8.3
+     * Task: 5.2.1
+     * 
+     * @param int $days Number of days to analyze (default: 7)
+     * @return array Security monitoring statistics
+     * 
+     * 🔧 MIGRATED TO DOCTRINEORM
+     */
+    public function getSecurityMonitoringStats(int $days = 7): array
+    {
+        try {
+            // Get overall statistics from rag_security_events
+            $overallResults = DoctrineOrm::select("
+                SELECT 
+                    COUNT(*) as total_events,
+                    SUM(CASE WHEN blocked = 1 THEN 1 ELSE 0 END) as blocked_count,
+                    SUM(CASE WHEN severity = 'critical' THEN 1 ELSE 0 END) as critical_count,
+                    SUM(CASE WHEN severity = 'high' THEN 1 ELSE 0 END) as high_count,
+                    SUM(CASE WHEN severity = 'medium' THEN 1 ELSE 0 END) as medium_count,
+                    SUM(CASE WHEN severity = 'low' THEN 1 ELSE 0 END) as low_count,
+                    AVG(threat_score) as avg_threat_score,
+                    AVG(detection_time_ms) as avg_detection_time
+                FROM {$this->prefix}rag_security_events 
+                WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+            ", [$days]);
+            
+            if (empty($overallResults)) {
+                return $this->getEmptySecurityMonitoringStats($days);
+            }
+            
+            $totalEvents = $overallResults[0]['total_events'] ?? 0;
+            
+            if ($totalEvents == 0) {
+                return $this->getEmptySecurityMonitoringStats($days);
+            }
+            
+            // Get threat type distribution
+            $threatTypeResults = DoctrineOrm::select("
+                SELECT 
+                    threat_type,
+                    COUNT(*) as count,
+                    AVG(threat_score) as avg_score
+                FROM {$this->prefix}rag_security_events 
+                WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+                    AND threat_type IS NOT NULL
+                GROUP BY threat_type
+                ORDER BY count DESC
+            ", [$days]);
+            
+            $threatTypes = [];
+            foreach ($threatTypeResults as $row) {
+                $threatTypes[] = [
+                    'type' => $row['threat_type'],
+                    'count' => (int)($row['count'] ?? 0),
+                    'avg_score' => round($row['avg_score'] ?? 0, 3)
+                ];
+            }
+            
+            // Get detection method distribution
+            $detectionMethodResults = DoctrineOrm::select("
+                SELECT 
+                    detection_method,
+                    COUNT(*) as count
+                FROM {$this->prefix}rag_security_events 
+                WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+                GROUP BY detection_method
+                ORDER BY count DESC
+            ", [$days]);
+            
+            $detectionMethods = [];
+            foreach ($detectionMethodResults as $row) {
+                $detectionMethods[] = [
+                    'method' => $row['detection_method'],
+                    'count' => (int)($row['count'] ?? 0)
+                ];
+            }
+            
+            // Get language distribution
+            $languageResults = DoctrineOrm::select("
+                SELECT 
+                    query_language,
+                    COUNT(*) as count
+                FROM {$this->prefix}rag_security_events 
+                WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+                    AND query_language IS NOT NULL
+                GROUP BY query_language
+                ORDER BY count DESC
+            ", [$days]);
+            
+            $languages = [];
+            foreach ($languageResults as $row) {
+                $languages[] = [
+                    'language' => $row['query_language'],
+                    'count' => (int)($row['count'] ?? 0)
+                ];
+            }
+            
+            // Calculate detection and block rates
+            $detectedThreats = array_sum(array_column($threatTypes, 'count'));
+            $blockedCount = (int)($overallResults[0]['blocked_count'] ?? 0);
+            
+            $detectionRate = $totalEvents > 0 ? round(($detectedThreats / $totalEvents) * 100, 2) : 0;
+            $blockRate = $detectedThreats > 0 ? round(($blockedCount / $detectedThreats) * 100, 2) : 0;
+            
+            // Calculate health score (0-100)
+            $healthScore = $this->calculateSecurityHealthScore(
+                $detectionRate,
+                $blockRate,
+                (int)($overallResults[0]['critical_count'] ?? 0),
+                $totalEvents
+            );
+            
+            return [
+                'period_days' => $days,
+                'total_events' => $totalEvents,
+                'blocked_count' => $blockedCount,
+                'critical_count' => (int)($overallResults[0]['critical_count'] ?? 0),
+                'high_count' => (int)($overallResults[0]['high_count'] ?? 0),
+                'medium_count' => (int)($overallResults[0]['medium_count'] ?? 0),
+                'low_count' => (int)($overallResults[0]['low_count'] ?? 0),
+                'avg_threat_score' => round($overallResults[0]['avg_threat_score'] ?? 0, 3),
+                'avg_detection_time_ms' => round($overallResults[0]['avg_detection_time'] ?? 0, 2),
+                'detection_rate' => $detectionRate,
+                'block_rate' => $blockRate,
+                'health_score' => $healthScore,
+                'health_status' => $this->getHealthStatus($healthScore),
+                'threat_types' => $threatTypes,
+                'detection_methods' => $detectionMethods,
+                'languages' => $languages,
+                'detected_threats' => $detectedThreats
+            ];
+            
+        } catch (\Exception $e) {
+            error_log("DashboardStatsCollector: Error getting security monitoring stats: " . $e->getMessage());
+            return $this->getEmptySecurityMonitoringStats($days);
+        }
+    }
+    
     // Méthodes utilitaires privées
     
     private function getEmptyClassificationStats(int $days): array
@@ -416,6 +559,59 @@ class DashboardStatsCollector
         if ($rate >= 90) return 'excellent';
         if ($rate >= 75) return 'good';
         if ($rate >= 60) return 'fair';
+        return 'poor';
+    }
+    
+    private function getEmptySecurityMonitoringStats(int $days): array
+    {
+        return [
+            'period_days' => $days,
+            'total_events' => 0,
+            'blocked_count' => 0,
+            'critical_count' => 0,
+            'high_count' => 0,
+            'medium_count' => 0,
+            'low_count' => 0,
+            'avg_threat_score' => 0,
+            'avg_detection_time_ms' => 0,
+            'detection_rate' => 0,
+            'block_rate' => 0,
+            'health_score' => 0,
+            'health_status' => 'unknown',
+            'threat_types' => [],
+            'detection_methods' => [],
+            'languages' => [],
+            'detected_threats' => 0
+        ];
+    }
+    
+    private function calculateSecurityHealthScore(
+        float $detectionRate,
+        float $blockRate,
+        int $criticalCount,
+        int $totalEvents
+    ): float {
+        // Detection score (40% weight)
+        $detectionScore = min(100, $detectionRate);
+        
+        // Block rate score (40% weight) - inverted for false positives
+        $blockScore = min(100, $blockRate);
+        
+        // Critical threat penalty (20% weight)
+        $criticalPenalty = $totalEvents > 0 ? ($criticalCount / $totalEvents) * 100 : 0;
+        $criticalScore = max(0, 100 - ($criticalPenalty * 10));
+        
+        // Weighted average
+        $healthScore = ($detectionScore * 0.4) + ($blockScore * 0.2) + ($criticalScore * 0.4);
+        
+        return round($healthScore, 2);
+    }
+    
+    private function getHealthStatus(float $score): string
+    {
+        if ($score >= 90) return 'excellent';
+        if ($score >= 75) return 'good';
+        if ($score >= 60) return 'fair';
         return 'poor';
     }
 }
