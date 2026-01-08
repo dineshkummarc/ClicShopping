@@ -2747,6 +2747,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_classification_desc'); ?></small>
               </label>
             </div>
+            
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_hybrid" name="cache_types[]" value="hybrid" checked>
+              <label class="form-check-label" for="cache_hybrid">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_hybrid') ?? 'Hybrid Query Cache'; ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_hybrid_desc') ?? 'Multi-temporal query results cache'; ?></small>
+              </label>
+            </div>
           </div>
         </div>
         

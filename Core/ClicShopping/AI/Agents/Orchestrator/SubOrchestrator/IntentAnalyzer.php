@@ -219,6 +219,17 @@ class IntentAnalyzer
       error_log("Translated query: '{$translatedQuery}'");
       error_log("Intent type: '{$queryType}' (confidence: " . round($confidence, 3) . ")");
       error_log("Unified analysis time: " . round($unifiedTime, 2) . "ms");
+      
+      // ✅ Log temporal metadata for debugging
+      if (!empty($unifiedResult['is_multi_temporal']) && $unifiedResult['is_multi_temporal']) {
+        error_log("🕐 TEMPORAL METADATA DETECTED:");
+        error_log("  is_multi_temporal: true");
+        error_log("  temporal_periods: " . implode(', ', $unifiedResult['temporal_periods'] ?? []));
+        error_log("  temporal_connectors: " . implode(', ', $unifiedResult['temporal_connectors'] ?? []));
+        error_log("  base_metric: " . ($unifiedResult['base_metric'] ?? 'none'));
+        error_log("  time_range: " . ($unifiedResult['time_range'] ?? 'none'));
+        error_log("  temporal_period_count: " . ($unifiedResult['temporal_period_count'] ?? 0));
+      }
     }
 
     // 4. Extract additional metadata (entities, context, etc.)
@@ -227,6 +238,9 @@ class IntentAnalyzer
     $timings['metadata_extraction'] = (microtime(true) - $metadataStart) * 1000;
 
     // 5. Build final result
+    // ✅ CRITICAL FIX (2026-01-08): Include temporal metadata from UnifiedQueryAnalyzer
+    // This ensures temporal_periods, temporal_connectors, base_metric, time_range are passed
+    // to HybridQueryProcessor for proper temporal splitting
     $result = [
       'original_query' => $query,
       'translated_query' => $translatedQuery,
@@ -238,6 +252,13 @@ class IntentAnalyzer
       'is_hybrid' => $intentResult['is_hybrid'] ?? false, // Add is_hybrid flag
       'from_cache' => false,
       'performance_timings' => $timings,
+      // ✅ TEMPORAL METADATA (from UnifiedQueryAnalyzer via MultiTemporalPostFilter)
+      'is_multi_temporal' => $unifiedResult['is_multi_temporal'] ?? false,
+      'temporal_periods' => $unifiedResult['temporal_periods'] ?? [],
+      'temporal_connectors' => $unifiedResult['temporal_connectors'] ?? [],
+      'base_metric' => $unifiedResult['base_metric'] ?? null,
+      'time_range' => $unifiedResult['time_range'] ?? null,
+      'temporal_period_count' => $unifiedResult['temporal_period_count'] ?? 0,
     ];
 
     // 6. Cache result

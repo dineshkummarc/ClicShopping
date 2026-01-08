@@ -19,6 +19,8 @@ use ClicShopping\AI\Tools\ExternalAccess\WebSearchQueryExecutor;
 use ClicShopping\AI\Tools\BIexecution\AnalyticsQueryExecutor;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\FeedbackImpactDetector;
 use ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor\HybridQueryProcessorFactory;
+use ClicShopping\AI\Infrastructure\Cache\HybridQueryCache;
+use ClicShopping\AI\Domain\Patterns\QuerySplitterPatterns;
 
 /**
  * HybridQueryProcessor Class
@@ -106,6 +108,9 @@ class HybridQueryProcessor
 
   // Component factory
   private HybridQueryProcessorFactory $factory;
+  
+  // TASK 8: Hybrid query cache for multi-temporal queries
+  private ?HybridQueryCache $hybridCache = null;
 
   /**
    * Constructor
@@ -152,6 +157,10 @@ class HybridQueryProcessor
     $this->semanticExecutor = new SemanticQueryExecutor($this->debug, $this->conversationMemory);
     $this->analyticsExecutor = new AnalyticsQueryExecutor($this->debug, $this->conversationMemory);
     $this->webSearchExecutor = new WebSearchQueryExecutor($this->debug, $this->conversationMemory);
+    
+    // TASK 8: Initialize hybrid query cache for multi-temporal queries
+    // Cache TTL: 60 minutes (configurable)
+    $this->hybridCache = new HybridQueryCache(60, $this->debug);
 
     if ($this->debug) {
       $this->logger->logSecurityEvent("HybridQueryProcessor initialized", 'info');
@@ -317,6 +326,7 @@ class HybridQueryProcessor
    * sub-queries that can be processed independently.
    *
    * The QuerySplitter handles:
+   * - **Temporal splitting** (NEW): Multi-temporal queries split by temporal periods
    * - Report/analysis query splitting (analytics + semantic + web_search)
    * - Comma-separated intent splitting
    * - "and then" pattern splitting (sequential)
@@ -324,20 +334,51 @@ class HybridQueryProcessor
    * - Analytics + analytics combinations
    * - LLM-based intelligent splitting with fallback
    *
+   * **Temporal Splitting (Requirements 4.1, 4.2, 4.3, 4.4)**:
+   * When the intent contains temporal metadata (temporal_periods, temporal_connectors),
+   * the QuerySplitter creates one sub-query per temporal period, preserving:
+   * - Base metric (revenue, sales, etc.)
+   * - Time range (year 2025, this year, etc.)
+   * - Assigns correct temporal period to each sub-query
+   *
+   * **Error Handling (Requirement 8.2)**:
+   * - Detects > 5 temporal periods and warns user
+   * - Suggests simplification for complex queries
+   * - Allows user to proceed or modify
+   *
    * @param string $query Original query to split
-   * @param array $intent Intent analysis from QueryClassifier with keys:
+   * @param array $intent Intent analysis from QueryClassifier/UnifiedQueryAnalyzer with keys:
    *   - type: string (query type)
    *   - confidence: float (classification confidence)
    *   - is_hybrid: bool (multiple intents detected)
+   *   - is_multi_temporal: bool (multiple temporal periods detected)
+   *   - temporal_periods: array (list of temporal periods: month, quarter, etc.)
+   *   - temporal_connectors: array (list of connectors: then, and, etc.)
+   *   - base_metric: string|null (revenue, sales, etc.)
+   *   - time_range: string|null (year 2025, this year, etc.)
    *   - patterns_matched: array (matched patterns)
    * @return array Array of sub-queries with structure:
    *   [
-   *     ['query' => string, 'type' => string, 'confidence' => float, 'priority' => int],
+   *     ['query' => string, 'type' => string, 'confidence' => float, 'priority' => int, 
+   *      'temporal_period' => string|null, 'base_metric' => string|null, 'time_range' => string|null],
    *     ...
+   *   ]
+   *   OR if too many temporal periods:
+   *   [
+   *     'warning' => true,
+   *     'warning_type' => 'too_many_temporal_periods',
+   *     'message' => string,
+   *     'temporal_period_count' => int,
+   *     'max_allowed' => int,
+   *     'suggested_action' => string,
+   *     'sub_queries' => array (limited to max_allowed)
    *   ]
    * 
    * @see QuerySplitter::process() for implementation details
+   * @see QuerySplitter::splitByTemporalPeriods() for temporal splitting
    * @see REQ-3.1, REQ-3.2, REQ-3.3, REQ-3.4, REQ-3.5, REQ-3.6
+   * @see REQ-4.1, REQ-4.2, REQ-4.3, REQ-4.4 (temporal splitting)
+   * @see REQ-8.2 (too many temporal aggregations)
    */
   public function splitHybridQuery(string $query, array $intent): array
   {
@@ -346,6 +387,58 @@ class HybridQueryProcessor
         "Delegating query splitting to QuerySplitter",
         'info'
       );
+      
+      // Log temporal metadata if present
+      if (!empty($intent['temporal_periods'])) {
+        $this->logger->logSecurityEvent(
+          "Temporal metadata detected: periods=" . implode(',', $intent['temporal_periods']) . 
+          ", connectors=" . implode(',', $intent['temporal_connectors'] ?? []) .
+          ", base_metric=" . ($intent['base_metric'] ?? 'none') .
+          ", time_range=" . ($intent['time_range'] ?? 'none'),
+          'info'
+        );
+      }
+    }
+
+    // **Requirement 8.2**: Check for too many temporal aggregations (> 5)
+    $temporalPeriods = $intent['temporal_periods'] ?? [];
+    $temporalPeriodCount = count($temporalPeriods);
+    $maxAllowedPeriods = 5;
+
+    if ($temporalPeriodCount > $maxAllowedPeriods) {
+      $this->logger->logSecurityEvent(
+        "Too many temporal aggregations detected: {$temporalPeriodCount} (max: {$maxAllowedPeriods})",
+        'warning',
+        [
+          'query' => $query,
+          'temporal_periods' => $temporalPeriods,
+          'count' => $temporalPeriodCount,
+        ]
+      );
+
+      // Return warning with limited sub-queries
+      $limitedIntent = $intent;
+      $limitedIntent['temporal_periods'] = array_slice($temporalPeriods, 0, $maxAllowedPeriods);
+      $limitedIntent['temporal_period_count'] = $maxAllowedPeriods;
+
+      $limitedSubQueries = $this->factory->getQuerySplitter()->process([
+        'query' => $query,
+        'intent' => $limitedIntent
+      ]);
+
+      return [
+        'warning' => true,
+        'warning_type' => 'too_many_temporal_periods',
+        'message' => "Your query contains {$temporalPeriodCount} temporal aggregations, which exceeds the maximum of {$maxAllowedPeriods}. " .
+                     "For better performance and clarity, consider splitting this into multiple queries. " .
+                     "Proceeding with the first {$maxAllowedPeriods} temporal periods: " . 
+                     implode(', ', array_slice($temporalPeriods, 0, $maxAllowedPeriods)) . ".",
+        'temporal_period_count' => $temporalPeriodCount,
+        'max_allowed' => $maxAllowedPeriods,
+        'suggested_action' => 'Consider breaking your query into smaller parts, each with fewer temporal aggregations.',
+        'skipped_periods' => array_slice($temporalPeriods, $maxAllowedPeriods),
+        'sub_queries' => $limitedSubQueries,
+      ];
     }
 
     return $this->factory->getQuerySplitter()->process([
@@ -652,6 +745,7 @@ class HybridQueryProcessor
       // ✅ TASK 5.2.1.1: Generate text_response from result
       // The ResultSynthesizer expects text_response for synthesis
       $textResponse = '';
+      
       if (isset($executionResult['result'])) {
         $formatter = new \ClicShopping\AI\Helper\Formatter\ResultFormatter();
         
@@ -1099,12 +1193,44 @@ class HybridQueryProcessor
         $this->logger->logStructured('info', 'HybridQueryProcessor', 'processHybridQuery_start', [
           'query' => substr($query, 0, 100),
           'intent_type' => $intent['type'] ?? 'unknown',
-          'is_hybrid' => $intent['is_hybrid'] ?? false
+          'is_hybrid' => $intent['is_hybrid'] ?? false,
+          // ✅ Log temporal metadata for debugging
+          'is_multi_temporal' => $intent['is_multi_temporal'] ?? false,
+          'temporal_periods' => $intent['temporal_periods'] ?? [],
+          'temporal_connectors' => $intent['temporal_connectors'] ?? [],
+          'base_metric' => $intent['base_metric'] ?? null,
+          'time_range' => $intent['time_range'] ?? null,
         ]);
       }
 
       // 1. Split query into sub-queries
       $subQueries = $this->splitHybridQuery($query, $intent);
+
+      // **Requirement 8.2**: Handle too many temporal aggregations warning
+      if (isset($subQueries['warning']) && $subQueries['warning'] === true) {
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "Too many temporal periods warning: " . $subQueries['message'],
+            'warning'
+          );
+        }
+
+        // Extract the limited sub-queries and proceed with warning metadata
+        $warningMetadata = [
+          'warning_type' => $subQueries['warning_type'],
+          'warning_message' => $subQueries['message'],
+          'temporal_period_count' => $subQueries['temporal_period_count'],
+          'max_allowed' => $subQueries['max_allowed'],
+          'skipped_periods' => $subQueries['skipped_periods'] ?? [],
+          'suggested_action' => $subQueries['suggested_action'],
+        ];
+
+        // Use the limited sub-queries
+        $subQueries = $subQueries['sub_queries'];
+
+        // Store warning for later inclusion in response
+        $intent['_temporal_warning'] = $warningMetadata;
+      }
 
       if (empty($subQueries)) {
         if ($this->debug) {
@@ -1132,11 +1258,86 @@ class HybridQueryProcessor
         ]);
       }
 
-      // 2. Execute each sub-query
+      // TASK 8: Check cache for multi-temporal queries (Requirements 9.1, 9.2, 9.3)
+      $cacheContext = [
+        'base_metric' => $intent['base_metric'] ?? null,
+        'time_range' => $intent['time_range'] ?? null,
+        'language_id' => $languageId,
+      ];
+      
+      $cacheResult = null;
+      $cachedSubResults = [];
+      $uncachedSubQueries = $subQueries;
+      
+      if ($this->hybridCache !== null && $this->hybridCache->isEnabled()) {
+        $cacheResult = $this->hybridCache->getMultipleSubQueryResults($subQueries, $cacheContext);
+        
+        if ($cacheResult['all_cached']) {
+          // All sub-queries are cached - use cached results
+          if ($this->debug) {
+            $this->logger->logSecurityEvent(
+              "TASK 8: All sub-queries found in cache - using cached results",
+              'info'
+            );
+          }
+          $subResults = array_values($cacheResult['cached']);
+        } else {
+          // Partial cache hit or complete miss
+          $cachedSubResults = $cacheResult['cached'];
+          $uncachedSubQueries = $cacheResult['uncached'];
+          
+          if ($this->debug) {
+            $this->logger->logSecurityEvent(
+              "TASK 8: Partial cache - cached: " . count($cachedSubResults) . ", uncached: " . count($uncachedSubQueries),
+              'info'
+            );
+          }
+        }
+      }
+
+      // 2. Execute uncached sub-queries only
       $subResults = [];
-      foreach ($subQueries as $subQuery) {
+      
+      if (!empty($cachedSubResults)) {
+        // Start with cached results
+        foreach ($cachedSubResults as $index => $cachedResult) {
+          $subResults[$index] = $cachedResult;
+        }
+      }
+      
+      // Execute uncached sub-queries
+      $newResults = [];
+      foreach ($uncachedSubQueries as $index => $subQuery) {
         $result = $this->executeSubQuery($subQuery, $context, $taskPlanner, $planExecutor);
-        $subResults[] = $result;
+        $subResults[$index] = $result;
+        
+        // TASK 8: Cache the new result (Requirements 9.1, 9.2)
+        if ($this->hybridCache !== null && $this->hybridCache->isEnabled() && ($result['success'] ?? false)) {
+          $temporalPeriod = $subQuery['temporal_period'] ?? 'unknown';
+          $this->hybridCache->cacheSubQueryResult(
+            $subQuery['query'],
+            $temporalPeriod,
+            $result,
+            $cacheContext
+          );
+          
+          $newResults[] = [
+            'query' => $subQuery['query'],
+            'temporal_period' => $temporalPeriod,
+            'result' => $result
+          ];
+        }
+      }
+      
+      // Sort results by index to maintain order
+      ksort($subResults);
+      $subResults = array_values($subResults);
+      
+      if ($this->debug && !empty($newResults)) {
+        $this->logger->logSecurityEvent(
+          "TASK 8: Cached " . count($newResults) . " new sub-query results",
+          'info'
+        );
       }
 
       // 3. Synthesize results
@@ -1162,6 +1363,27 @@ class HybridQueryProcessor
       $response['metadata']['query_type'] = 'hybrid';
       $response['metadata']['sub_query_count'] = count($subQueries);
       $response['metadata']['successful_sub_queries'] = count(array_filter($subResults, fn($r) => $r['success'] ?? false));
+      
+      // **Requirement 8.2**: Include temporal warning in metadata if present
+      if (isset($intent['_temporal_warning'])) {
+        $response['metadata']['temporal_warning'] = $intent['_temporal_warning'];
+        
+        // Prepend warning message to text_response
+        if (isset($response['text_response'])) {
+          $warningHtml = '<div class="alert alert-warning" role="alert">' .
+                         '<strong>⚠️ Note:</strong> ' . htmlspecialchars($intent['_temporal_warning']['warning_message']) .
+                         '</div>';
+          $response['text_response'] = $warningHtml . $response['text_response'];
+        }
+      }
+      
+      // TASK 8: Add cache statistics to metadata (Requirements 9.1, 9.2, 9.3)
+      if ($cacheResult !== null) {
+        $response['metadata']['cache_hits'] = count($cachedSubResults);
+        $response['metadata']['cache_misses'] = count($uncachedSubQueries);
+        $response['metadata']['all_from_cache'] = $cacheResult['all_cached'] ?? false;
+        $response['metadata']['partial_cache_hit'] = $cacheResult['partial_hit'] ?? false;
+      }
 
       // 6. Store in memory
       $memoryManager->storeOrchestrationResult(
@@ -1202,5 +1424,384 @@ class HybridQueryProcessor
         'metadata' => ['query_type' => 'hybrid']
       ];
     }
+  }
+  
+  /**
+   * TASK 8: Get hybrid query cache statistics
+   * 
+   * @return array Cache statistics
+   */
+  public function getHybridCacheStats(): array
+  {
+    if ($this->hybridCache === null) {
+      return ['enabled' => false, 'message' => 'Hybrid cache not initialized'];
+    }
+    
+    return $this->hybridCache->getStatistics();
+  }
+  
+  /**
+   * TASK 8: Clear all hybrid query cache
+   * 
+   * @return int Number of cache entries deleted
+   */
+  public function clearHybridCache(): int
+  {
+    if ($this->hybridCache === null) {
+      return 0;
+    }
+    
+    return $this->hybridCache->clearAll();
+  }
+  
+  /**
+   * TASK 8: Invalidate cache for a specific multi-temporal query
+   * 
+   * @param string $query Original query
+   * @param array $temporalPeriods List of temporal periods
+   * @param array $context Additional context
+   * @return bool Success
+   */
+  public function invalidateHybridCache(string $query, array $temporalPeriods, array $context = []): bool
+  {
+    if ($this->hybridCache === null) {
+      return false;
+    }
+    
+    return $this->hybridCache->invalidateMultiTemporalQuery($query, $temporalPeriods, $context);
+  }
+
+  /**
+   * Detect mixed temporal and non-temporal aggregations
+   *
+   * **Requirement 8.6**: Handle mixed temporal and non-temporal aggregations
+   *
+   * Detects when a query contains both temporal aggregations (by month, by quarter)
+   * AND non-temporal aggregations (by product, by category, by region).
+   *
+   * Examples:
+   * - "revenue by month and by product category" → mixed
+   * - "sales by quarter and by region" → mixed
+   * - "orders by week and by customer type" → mixed
+   *
+   * @param string $query The query to analyze
+   * @param array $intent Intent analysis with temporal metadata
+   * @return array Detection result with structure:
+   *   - is_mixed: bool (true if mixed aggregations detected)
+   *   - temporal_dimensions: array (temporal aggregation dimensions)
+   *   - non_temporal_dimensions: array (non-temporal aggregation dimensions)
+   *   - aggregation_count: int (total number of aggregation dimensions)
+   *   - suggested_approach: string (how to handle the query)
+   */
+  public function detectMixedAggregations(string $query, array $intent = []): array
+  {
+    $defaultResult = [
+      'is_mixed' => false,
+      'temporal_dimensions' => [],
+      'non_temporal_dimensions' => [],
+      'aggregation_count' => 0,
+      'suggested_approach' => 'standard',
+    ];
+
+    $queryLower = strtolower($query);
+
+    // Extract temporal dimensions from intent or detect from query
+    $temporalDimensions = $intent['temporal_periods'] ?? [];
+    
+    // If no temporal periods in intent, try to detect from query
+    if (empty($temporalDimensions)) {
+      $temporalDimensions = $this->detectTemporalDimensionsFromQuery($queryLower);
+    }
+
+    // Detect non-temporal aggregation dimensions
+    $nonTemporalDimensions = $this->detectNonTemporalDimensionsFromQuery($queryLower);
+
+    // Determine if mixed
+    $isMixed = !empty($temporalDimensions) && !empty($nonTemporalDimensions);
+    $totalDimensions = count($temporalDimensions) + count($nonTemporalDimensions);
+
+    // Determine suggested approach
+    $suggestedApproach = $this->determineMixedAggregationApproach(
+      $temporalDimensions,
+      $nonTemporalDimensions,
+      $totalDimensions
+    );
+
+    // Log detection
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "Mixed aggregation detection: " . ($isMixed ? 'MIXED' : 'NOT MIXED'),
+        'info',
+        [
+          'query' => $query,
+          'temporal_dimensions' => $temporalDimensions,
+          'non_temporal_dimensions' => $nonTemporalDimensions,
+          'total_dimensions' => $totalDimensions,
+          'suggested_approach' => $suggestedApproach,
+        ]
+      );
+    }
+
+    return [
+      'is_mixed' => $isMixed,
+      'temporal_dimensions' => $temporalDimensions,
+      'non_temporal_dimensions' => $nonTemporalDimensions,
+      'aggregation_count' => $totalDimensions,
+      'suggested_approach' => $suggestedApproach,
+    ];
+  }
+
+  /**
+   * Detect temporal dimensions from query text
+   *
+   * @param string $query Lowercase query
+   * @return array List of temporal dimensions
+   */
+  private function detectTemporalDimensionsFromQuery(string $query): array
+  {
+    $temporalPatterns = [
+      'month' => '/\b(by\s+)?month(ly)?\b/i',
+      'quarter' => '/\b(by\s+)?quarter(ly)?\b/i',
+      'semester' => '/\b(by\s+)?semester\b/i',
+      'year' => '/\b(by\s+)?year(ly)?\b/i',
+      'week' => '/\b(by\s+)?week(ly)?\b/i',
+      'day' => '/\b(by\s+)?day|daily\b/i',
+    ];
+
+    $detected = [];
+    foreach ($temporalPatterns as $period => $pattern) {
+      if (preg_match($pattern, $query)) {
+        $detected[] = $period;
+      }
+    }
+
+    return $detected;
+  }
+
+  /**
+   * Detect non-temporal aggregation dimensions from query text
+   *
+   * @param string $query Lowercase query
+   * @return array List of non-temporal dimensions
+   */
+  private function detectNonTemporalDimensionsFromQuery(string $query): array
+  {
+    $nonTemporalPatterns = [
+      'product' => '/\b(by\s+)?product(s)?\b/i',
+      'category' => '/\b(by\s+)?categor(y|ies)\b/i',
+      'product_category' => '/\b(by\s+)?product\s+categor(y|ies)\b/i',
+      'region' => '/\b(by\s+)?region(s)?\b/i',
+      'country' => '/\b(by\s+)?countr(y|ies)\b/i',
+      'customer' => '/\b(by\s+)?customer(s)?\b/i',
+      'customer_type' => '/\b(by\s+)?customer\s+type(s)?\b/i',
+      'supplier' => '/\b(by\s+)?supplier(s)?\b/i',
+      'manufacturer' => '/\b(by\s+)?manufacturer(s)?\b/i',
+      'brand' => '/\b(by\s+)?brand(s)?\b/i',
+      'channel' => '/\b(by\s+)?channel(s)?\b/i',
+      'sales_channel' => '/\b(by\s+)?sales\s+channel(s)?\b/i',
+      'store' => '/\b(by\s+)?store(s)?\b/i',
+      'department' => '/\b(by\s+)?department(s)?\b/i',
+      'status' => '/\b(by\s+)?status\b/i',
+      'order_status' => '/\b(by\s+)?order\s+status\b/i',
+    ];
+
+    $detected = [];
+    foreach ($nonTemporalPatterns as $dimension => $pattern) {
+      if (preg_match($pattern, $query)) {
+        $detected[] = $dimension;
+      }
+    }
+
+    // Remove duplicates (e.g., if both 'product' and 'product_category' match)
+    return array_unique($detected);
+  }
+
+  /**
+   * Determine approach for handling mixed aggregations
+   *
+   * @param array $temporalDimensions Temporal dimensions
+   * @param array $nonTemporalDimensions Non-temporal dimensions
+   * @param int $totalDimensions Total dimension count
+   * @return string Suggested approach
+   */
+  private function determineMixedAggregationApproach(
+    array $temporalDimensions,
+    array $nonTemporalDimensions,
+    int $totalDimensions
+  ): string {
+    // If only temporal or only non-temporal, use standard approach
+    if (empty($temporalDimensions) || empty($nonTemporalDimensions)) {
+      return 'standard';
+    }
+
+    // If too many dimensions, suggest simplification
+    if ($totalDimensions > 4) {
+      return 'simplify';
+    }
+
+    // If 2-4 dimensions, use nested approach (temporal first, then non-temporal)
+    if ($totalDimensions <= 4) {
+      return 'nested';
+    }
+
+    return 'standard';
+  }
+
+  /**
+   * Handle mixed temporal and non-temporal aggregations
+   *
+   * **Requirement 8.6**: Handle mixed temporal and non-temporal aggregations
+   *
+   * Creates sub-queries for each dimension combination:
+   * - For each temporal period, create a sub-query
+   * - For each non-temporal dimension, create a sub-query
+   * - Optionally create combined sub-queries (temporal + non-temporal)
+   *
+   * @param string $query Original query
+   * @param array $intent Intent analysis
+   * @param array $mixedDetection Result from detectMixedAggregations()
+   * @return array Array of sub-queries for all dimensions
+   */
+  public function handleMixedAggregations(
+    string $query,
+    array $intent,
+    array $mixedDetection
+  ): array {
+    if (!$mixedDetection['is_mixed']) {
+      // Not mixed, use standard splitting
+      return $this->splitHybridQuery($query, $intent);
+    }
+
+    $temporalDimensions = $mixedDetection['temporal_dimensions'];
+    $nonTemporalDimensions = $mixedDetection['non_temporal_dimensions'];
+    $approach = $mixedDetection['suggested_approach'];
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "Handling mixed aggregations with approach: {$approach}",
+        'info',
+        [
+          'temporal' => $temporalDimensions,
+          'non_temporal' => $nonTemporalDimensions,
+        ]
+      );
+    }
+
+    $subQueries = [];
+    $baseMetric = $intent['base_metric'] ?? $this->extractBaseMetricFromQuery($query);
+    $timeRange = $intent['time_range'] ?? $this->extractTimeRangeFromQuery($query);
+    $priority = 1;
+
+    switch ($approach) {
+      case 'nested':
+        // Create nested sub-queries: temporal first, then non-temporal within each
+        foreach ($temporalDimensions as $temporal) {
+          // First, create temporal-only sub-query
+          $subQueries[] = [
+            'query' => "{$baseMetric} for {$timeRange} by {$temporal}",
+            'type' => 'analytics',
+            'confidence' => 0.9,
+            'priority' => $priority++,
+            'temporal_period' => $temporal,
+            'base_metric' => $baseMetric,
+            'time_range' => $timeRange,
+            'aggregation_type' => 'temporal',
+          ];
+
+          // Then, create combined sub-queries for each non-temporal dimension
+          foreach ($nonTemporalDimensions as $nonTemporal) {
+            $subQueries[] = [
+              'query' => "{$baseMetric} for {$timeRange} by {$temporal} and by {$nonTemporal}",
+              'type' => 'analytics',
+              'confidence' => 0.85,
+              'priority' => $priority++,
+              'temporal_period' => $temporal,
+              'non_temporal_dimension' => $nonTemporal,
+              'base_metric' => $baseMetric,
+              'time_range' => $timeRange,
+              'aggregation_type' => 'mixed',
+            ];
+          }
+        }
+        break;
+
+      case 'simplify':
+        // Too many dimensions - create separate sub-queries and warn user
+        // Temporal sub-queries
+        foreach ($temporalDimensions as $temporal) {
+          $subQueries[] = [
+            'query' => "{$baseMetric} for {$timeRange} by {$temporal}",
+            'type' => 'analytics',
+            'confidence' => 0.9,
+            'priority' => $priority++,
+            'temporal_period' => $temporal,
+            'base_metric' => $baseMetric,
+            'time_range' => $timeRange,
+            'aggregation_type' => 'temporal',
+          ];
+        }
+
+        // Non-temporal sub-queries
+        foreach ($nonTemporalDimensions as $nonTemporal) {
+          $subQueries[] = [
+            'query' => "{$baseMetric} for {$timeRange} by {$nonTemporal}",
+            'type' => 'analytics',
+            'confidence' => 0.85,
+            'priority' => $priority++,
+            'non_temporal_dimension' => $nonTemporal,
+            'base_metric' => $baseMetric,
+            'time_range' => $timeRange,
+            'aggregation_type' => 'non_temporal',
+          ];
+        }
+
+        // Add warning to first sub-query
+        if (!empty($subQueries)) {
+          $subQueries[0]['warning'] = 'Query contains many aggregation dimensions. Results are shown separately for clarity.';
+        }
+        break;
+
+      default:
+        // Standard approach - use regular splitting
+        return $this->splitHybridQuery($query, $intent);
+    }
+
+    // Log the result
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "Mixed aggregation handling complete",
+        'info',
+        [
+          'sub_query_count' => count($subQueries),
+          'approach' => $approach,
+        ]
+      );
+    }
+
+    return $subQueries;
+  }
+
+  /**
+   * Extract base metric from query (helper method)
+   *
+   * @param string $query Query text
+   * @return string Base metric or 'revenue' as default
+   */
+  private function extractBaseMetricFromQuery(string $query): string
+  {
+    return QuerySplitterPatterns::extractBaseMetricWithRegex($query, 'revenue');
+  }
+
+  /**
+   * Extract time range from query (helper method)
+   * 
+   * NOTE: Pattern logic moved to QuerySplitterPatterns class.
+   *
+   * @param string $query Query text
+   * @return string Time range or 'this year' as default
+   */
+  private function extractTimeRangeFromQuery(string $query): string
+  {
+    return QuerySplitterPatterns::extractTimeRangeWithRegex($query, 'this year');
   }
 }

@@ -109,6 +109,20 @@ class QuerySplitter extends BaseQueryProcessor
       $intent = $context['intent'] ?? [];
     }
 
+    // ✅ TASK 3: Check for multi-temporal query first (Requirements 4.1, 4.2, 4.3, 4.4)
+    // If the intent contains temporal metadata, use temporal splitting
+    if ($this->isMultiTemporalQuery($intent)) {
+      if ($this->debug) {
+        $this->logInfo("Detected multi-temporal query, using temporal splitting", [
+          'temporal_periods' => $intent['temporal_periods'] ?? [],
+          'temporal_connectors' => $intent['temporal_connectors'] ?? [],
+          'base_metric' => $intent['base_metric'] ?? null,
+          'time_range' => $intent['time_range'] ?? null,
+        ]);
+      }
+      return $this->splitByTemporalPeriods($query, $intent);
+    }
+
     // Check if query is hybrid
     if ($this->detectMultipleIntents($query, $intent)) {
       return $this->splitHybridQuery($query, $intent);
@@ -135,6 +149,178 @@ class QuerySplitter extends BaseQueryProcessor
     }
     
     return false;
+  }
+
+  /**
+   * Check if intent indicates a multi-temporal query
+   *
+   * A multi-temporal query has:
+   * - is_multi_temporal flag set to true, OR
+   * - Multiple temporal periods (>= 2) AND temporal connectors
+   *
+   * @param array $intent Intent analysis from UnifiedQueryAnalyzer
+   * @return bool True if multi-temporal query detected
+   */
+  private function isMultiTemporalQuery(array $intent): bool
+  {
+    // Check explicit flag
+    if (isset($intent['is_multi_temporal']) && $intent['is_multi_temporal'] === true) {
+      return true;
+    }
+    
+    // Check temporal metadata
+    $temporalPeriods = $intent['temporal_periods'] ?? [];
+    $temporalConnectors = $intent['temporal_connectors'] ?? [];
+    $periodCount = $intent['temporal_period_count'] ?? count($temporalPeriods);
+    
+    // Multi-temporal if >= 2 periods AND has connectors
+    return $periodCount >= 2 && !empty($temporalConnectors);
+  }
+
+  /**
+   * Split query by temporal periods
+   *
+   * Creates one sub-query per temporal period, preserving:
+   * - Base metric (revenue, sales, etc.)
+   * - Time range (year 2025, this year, etc.)
+   * - Assigns correct temporal period to each sub-query
+   *
+   * **Validates: Requirements 4.1, 4.2, 4.3, 4.4**
+   *
+   * @param string $query Original query
+   * @param array $intent Intent analysis with temporal metadata
+   * @return array Array of sub-queries with temporal periods
+   */
+  public function splitByTemporalPeriods(string $query, array $intent): array
+  {
+    try {
+      $temporalPeriods = $intent['temporal_periods'] ?? [];
+      $baseMetric = $intent['base_metric'] ?? $this->extractBaseMetricFromQuery($query);
+      $timeRange = $intent['time_range'] ?? $this->extractTimeRangeFromQuery($query);
+      
+      if (empty($temporalPeriods)) {
+        if ($this->debug) {
+          $this->logWarning("No temporal periods found, falling back to hybrid split");
+        }
+        return $this->splitHybridQuery($query, $intent);
+      }
+      
+      if ($this->debug) {
+        $this->logInfo("Splitting by temporal periods", [
+          'period_count' => count($temporalPeriods),
+          'periods' => $temporalPeriods,
+          'base_metric' => $baseMetric,
+          'time_range' => $timeRange,
+        ]);
+      }
+      
+      $subQueries = [];
+      
+      foreach ($temporalPeriods as $index => $period) {
+        // Build sub-query for this temporal period
+        $subQueryText = $this->buildTemporalSubQuery($baseMetric, $timeRange, $period);
+        
+        $subQuery = [
+          'query' => $subQueryText,
+          'type' => 'analytics', // Temporal aggregations are always analytics
+          'confidence' => 0.95,
+          'priority' => $index + 1,
+          'temporal_period' => $period,
+          'base_metric' => $baseMetric,
+          'time_range' => $timeRange,
+          'original_query' => $query,
+          'is_temporal_split' => true,
+        ];
+        
+        $subQueries[] = $subQuery;
+        
+        if ($this->debug) {
+          $this->logInfo("Created temporal sub-query", [
+            'index' => $index + 1,
+            'period' => $period,
+            'sub_query' => $subQueryText,
+          ]);
+        }
+      }
+      
+      // Log temporal splitting event
+      if ($this->debug) {
+        $this->logInfo("Temporal splitting complete", [
+          'original_query' => $query,
+          'sub_query_count' => count($subQueries),
+          'temporal_periods' => $temporalPeriods,
+          'base_metric' => $baseMetric,
+          'time_range' => $timeRange,
+        ]);
+      }
+      
+      return $subQueries;
+      
+    } catch (\Exception $e) {
+      $this->logError("Error in splitByTemporalPeriods", $e, ['query' => $query]);
+      // Fallback to hybrid split
+      return $this->splitHybridQuery($query, $intent);
+    }
+  }
+
+  /**
+   * Build a sub-query for a specific temporal period
+   *
+   * @param string|null $baseMetric Base metric (revenue, sales, etc.)
+   * @param string|null $timeRange Time range (year 2025, this year, etc.)
+   * @param string $temporalPeriod Temporal period (month, quarter, semester, etc.)
+   * @return string Sub-query text
+   */
+  private function buildTemporalSubQuery(?string $baseMetric, ?string $timeRange, string $temporalPeriod): string
+  {
+    // Default metric if not detected
+    $metric = $baseMetric ?? 'revenue';
+    
+    // Build query parts
+    $parts = [];
+    
+    // Add metric
+    $parts[] = $metric;
+    
+    // Add time range if present
+    if (!empty($timeRange)) {
+      $parts[] = "for {$timeRange}";
+    }
+    
+    // Add temporal aggregation
+    $parts[] = "by {$temporalPeriod}";
+    
+    return implode(' ', $parts);
+  }
+
+  /**
+   * Extract base metric from query text
+   * 
+   * NOTE: Pure LLM mode - Query is already translated to English at this point.
+   * Only English patterns are needed. Non-English patterns removed per tech.md guidelines.
+   * Pattern logic moved to QuerySplitterPatterns class.
+   *
+   * @param string $query Query text (already translated to English)
+   * @return string|null Base metric or null if not found
+   */
+  private function extractBaseMetricFromQuery(string $query): ?string
+  {
+    return QuerySplitterPatterns::extractBaseMetric($query);
+  }
+
+  /**
+   * Extract time range from query text
+   * 
+   * NOTE: Pure LLM mode - Query is already translated to English at this point.
+   * Only English patterns are needed. Non-English patterns removed per tech.md guidelines.
+   * Pattern logic moved to QuerySplitterPatterns class.
+   *
+   * @param string $query Query text (already translated to English)
+   * @return string|null Time range or null if not found
+   */
+  private function extractTimeRangeFromQuery(string $query): ?string
+  {
+    return QuerySplitterPatterns::extractTimeRange($query);
   }
 
   /**

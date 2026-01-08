@@ -42,6 +42,7 @@ Output: A single string of characters in professional English.
 # UNIVERSAL TERMINOLOGY MAPPING (Mandatory)
 Regardless of the source language (Chinese, French, etc.) or synonymous English terms, you MUST map these concepts to these exact keywords:
 
+## FINANCIAL TERMS
 - CONCEPT: TOP-LINE TOTALS (The total monetary value of goods/services sold)
   -> ALWAYS use: "revenue"
   -> FORBIDDEN: "sales", "turnover", "income", "chiffre d'affaires", "营业额", "Umsatz", etc.
@@ -53,6 +54,44 @@ Regardless of the source language (Chinese, French, etc.) or synonymous English 
 - CONCEPT: OPERATIONAL OUTFLOWS (The money spent to generate revenue)
   -> ALWAYS use: "expenses"
   -> FORBIDDEN: "costs", "charges", "fees", "depenses", "支出", "Kosten", etc.
+
+## TEMPORAL TERMS (CRITICAL - DO NOT CONFUSE)
+- CONCEPT: SEMESTER (6-month period, half-year)
+  -> ALWAYS use: "semester"
+  -> French: "semestre", "par semestre", "divisé par semestre", "semestriel"
+  -> Spanish: "semestre", "por semestre", "semestral"
+  -> German: "Semester", "Halbjahr", "pro Semester"
+  -> NEVER translate "semestre" to "quarter" - they are DIFFERENT periods!
+
+- CONCEPT: QUARTER (3-month period)
+  -> ALWAYS use: "quarter"
+  -> French: "trimestre", "par trimestre", "trimestriel"
+  -> Spanish: "trimestre", "por trimestre", "trimestral"
+  -> German: "Quartal", "Vierteljahr", "pro Quartal"
+
+- CONCEPT: MONTH (1-month period)
+  -> ALWAYS use: "month"
+  -> French: "mois", "par mois", "mensuel", "mensuellement"
+  -> Spanish: "mes", "por mes", "mensual"
+  -> German: "Monat", "pro Monat", "monatlich"
+
+- CONCEPT: WEEK (7-day period)
+  -> ALWAYS use: "week"
+  -> French: "semaine", "par semaine", "hebdomadaire"
+  -> Spanish: "semana", "por semana", "semanal"
+  -> German: "Woche", "pro Woche", "wöchentlich"
+
+- CONCEPT: YEAR (12-month period)
+  -> ALWAYS use: "year"
+  -> French: "année", "an", "par an", "annuel"
+  -> Spanish: "año", "por año", "anual"
+  -> German: "Jahr", "pro Jahr", "jährlich"
+
+- CONCEPT: DAY (24-hour period)
+  -> ALWAYS use: "day"
+  -> French: "jour", "par jour", "quotidien"
+  -> Spanish: "día", "por día", "diario"
+  -> German: "Tag", "pro Tag", "täglich"
 
 # EXAMPLES OF SMART REDUNDANCY DETECTION
 
@@ -107,6 +146,23 @@ Analysis:
   Comparison: entity SAME, aggregation DIFFERENT (count ≠ list)
   Decision: NOT REDUNDANT → Preserve both
 Output: "Count the products and list the products"
+
+## Example 7: SEMESTER vs QUARTER (CRITICAL - Different periods)
+Input: "donne moi le chiffre d'affaires de l'année 2025 par mois puis donne moi le chiffre d'affaires de l'année 2025 divisé par semestre"
+Analysis:
+  Part 1: metric=revenue, period=month, year=2025
+  Part 2: metric=revenue, period=semester (6 months = half-year, NOT quarter), year=2025
+  Sequence indicator: "puis" (then)
+  CRITICAL: "semestre" = semester (6 months), NOT "trimestre" = quarter (3 months)
+  Decision: SEQUENTIAL → Preserve both with "then"
+Output: "Give me the revenue for 2025 by month then give me the revenue for 2025 by semester"
+
+## Example 8: QUARTER (trimestre) - Different from semester
+Input: "donne moi le chiffre d'affaires par trimestre"
+Analysis:
+  metric=revenue, period=quarter (3 months)
+  "trimestre" = quarter (3 months), NOT semester
+Output: "Give me the revenue by quarter"
 
 # FINAL CHECK
 Any output containing non-English characters (except for original Codes/EAN) or forbidden synonyms is a failure.

@@ -448,6 +448,428 @@ class AmbiguityOptimizer
   }
 
   /**
+   * Detect conflicting temporal periods in a query
+   *
+   * **Requirement 8.1**: Detect conflicts in AmbiguityOptimizer
+   *
+   * Conflicting temporal periods occur when:
+   * 1. A query specifies both a specific period AND a different aggregation level
+   *    (e.g., "monthly revenue for Q1" - Q1 is a quarter, but asking for monthly)
+   * 2. A query specifies incompatible time ranges
+   *    (e.g., "weekly data for January 15" - a single day can't have weekly data)
+   * 3. A query has overlapping temporal specifications
+   *    (e.g., "by month and by week for the same period")
+   *
+   * @param string $translatedQuery Query in ENGLISH (already translated)
+   * @param array $temporalPeriods Array of detected temporal periods
+   * @param string|null $timeRange Detected time range
+   * @return array Conflict detection result with structure:
+   *   - has_conflict: bool (true if conflict detected)
+   *   - conflict_type: string|null (type of conflict)
+   *   - conflict_details: string|null (human-readable explanation)
+   *   - suggested_clarification: string|null (question to ask user)
+   *   - conflicting_elements: array (elements that conflict)
+   */
+  public function detectTemporalConflicts(
+    string $translatedQuery,
+    array $temporalPeriods,
+    ?string $timeRange
+  ): array {
+    $defaultResult = [
+      'has_conflict' => false,
+      'conflict_type' => null,
+      'conflict_details' => null,
+      'suggested_clarification' => null,
+      'conflicting_elements' => [],
+    ];
+
+    // No conflict possible with 0 or 1 temporal periods
+    if (count($temporalPeriods) < 1) {
+      return $defaultResult;
+    }
+
+    $query = strtolower($translatedQuery);
+    $conflicts = [];
+
+    // 1. Check for specific period + different aggregation conflict
+    // e.g., "monthly revenue for Q1" or "weekly sales for January"
+    $specificPeriodConflicts = $this->detectSpecificPeriodConflict($query, $temporalPeriods, $timeRange);
+    if ($specificPeriodConflicts['has_conflict']) {
+      $conflicts[] = $specificPeriodConflicts;
+    }
+
+    // 2. Check for incompatible granularity conflict
+    // e.g., "weekly data for a single day"
+    $granularityConflicts = $this->detectGranularityConflict($query, $temporalPeriods, $timeRange);
+    if ($granularityConflicts['has_conflict']) {
+      $conflicts[] = $granularityConflicts;
+    }
+
+    // 3. Check for overlapping temporal specifications
+    // e.g., "by month and by week for the same period" without clear separation
+    $overlapConflicts = $this->detectOverlapConflict($query, $temporalPeriods);
+    if ($overlapConflicts['has_conflict']) {
+      $conflicts[] = $overlapConflicts;
+    }
+
+    // If no conflicts found, return default
+    if (empty($conflicts)) {
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "AmbiguityOptimizer: No temporal conflicts detected",
+          'info',
+          ['query' => $translatedQuery, 'temporal_periods' => $temporalPeriods]
+        );
+      }
+      return $defaultResult;
+    }
+
+    // Return the most significant conflict (first one found)
+    $primaryConflict = $conflicts[0];
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "AmbiguityOptimizer: Temporal conflict detected - " . $primaryConflict['conflict_type'],
+        'warning',
+        [
+          'query' => $translatedQuery,
+          'temporal_periods' => $temporalPeriods,
+          'time_range' => $timeRange,
+          'conflict_details' => $primaryConflict['conflict_details']
+        ]
+      );
+    }
+
+    return $primaryConflict;
+  }
+
+  /**
+   * Detect conflict between specific period and aggregation level
+   *
+   * @param string $query Lowercase query
+   * @param array $temporalPeriods Detected temporal periods
+   * @param string|null $timeRange Detected time range
+   * @return array Conflict result
+   */
+  private function detectSpecificPeriodConflict(string $query, array $temporalPeriods, ?string $timeRange): array
+  {
+    $defaultResult = [
+      'has_conflict' => false,
+      'conflict_type' => null,
+      'conflict_details' => null,
+      'suggested_clarification' => null,
+      'conflicting_elements' => [],
+    ];
+
+    if ($timeRange === null) {
+      return $defaultResult;
+    }
+
+    // Define period hierarchy (smaller to larger)
+    $periodHierarchy = [
+      'day' => 1,
+      'week' => 2,
+      'month' => 3,
+      'quarter' => 4,
+      'semester' => 5,
+      'year' => 6,
+    ];
+
+    // Detect time range granularity
+    $timeRangeGranularity = $this->detectTimeRangeGranularity($timeRange);
+
+    // Check if any requested aggregation is finer than the time range allows
+    foreach ($temporalPeriods as $period) {
+      $periodLevel = $periodHierarchy[strtolower($period)] ?? 3;
+      $rangeLevel = $periodHierarchy[$timeRangeGranularity] ?? 6;
+
+      // Conflict: asking for aggregation finer than the time range
+      // e.g., "monthly data for a specific day" or "weekly data for Q1" (Q1 is quarter level)
+      if ($periodLevel > $rangeLevel) {
+        return [
+          'has_conflict' => true,
+          'conflict_type' => 'specific_period_aggregation_mismatch',
+          'conflict_details' => "Cannot aggregate by '{$period}' for a time range of '{$timeRange}' (granularity: {$timeRangeGranularity}). The aggregation period is larger than the time range.",
+          'suggested_clarification' => "Did you mean to get {$period}ly data for a longer period, or did you want a different aggregation for '{$timeRange}'?",
+          'conflicting_elements' => [
+            'requested_aggregation' => $period,
+            'time_range' => $timeRange,
+            'time_range_granularity' => $timeRangeGranularity,
+          ],
+        ];
+      }
+    }
+
+    return $defaultResult;
+  }
+
+  /**
+   * Detect granularity conflict (aggregation too fine for time range)
+   *
+   * @param string $query Lowercase query
+   * @param array $temporalPeriods Detected temporal periods
+   * @param string|null $timeRange Detected time range
+   * @return array Conflict result
+   */
+  private function detectGranularityConflict(string $query, array $temporalPeriods, ?string $timeRange): array
+  {
+    $defaultResult = [
+      'has_conflict' => false,
+      'conflict_type' => null,
+      'conflict_details' => null,
+      'suggested_clarification' => null,
+      'conflicting_elements' => [],
+    ];
+
+    if ($timeRange === null) {
+      return $defaultResult;
+    }
+
+    // Check for single day + weekly/monthly aggregation
+    if ($this->isSingleDayRange($timeRange)) {
+      foreach ($temporalPeriods as $period) {
+        if (in_array(strtolower($period), ['week', 'month', 'quarter', 'semester', 'year'])) {
+          return [
+            'has_conflict' => true,
+            'conflict_type' => 'granularity_too_coarse',
+            'conflict_details' => "Cannot aggregate by '{$period}' for a single day ('{$timeRange}'). A single day cannot be broken down into {$period}s.",
+            'suggested_clarification' => "Did you want daily data for '{$timeRange}', or did you mean to specify a longer time range for {$period}ly aggregation?",
+            'conflicting_elements' => [
+              'requested_aggregation' => $period,
+              'time_range' => $timeRange,
+              'issue' => 'single_day_with_coarse_aggregation',
+            ],
+          ];
+        }
+      }
+    }
+
+    return $defaultResult;
+  }
+
+  /**
+   * Detect overlapping temporal specifications without clear separation
+   *
+   * @param string $query Lowercase query
+   * @param array $temporalPeriods Detected temporal periods
+   * @return array Conflict result
+   */
+  private function detectOverlapConflict(string $query, array $temporalPeriods): array
+  {
+    $defaultResult = [
+      'has_conflict' => false,
+      'conflict_type' => null,
+      'conflict_details' => null,
+      'suggested_clarification' => null,
+      'conflicting_elements' => [],
+    ];
+
+    // Check for potentially confusing combinations without clear connectors
+    // e.g., "by month week" without "and" or "then"
+    $hasConnector = preg_match('/\b(then|and|puis|et|ensuite|after that|followed by)\b/i', $query);
+
+    if (count($temporalPeriods) >= 2 && !$hasConnector) {
+      // Check if periods are adjacent in the query without clear separation
+      $periodsPattern = implode('|', array_map('preg_quote', $temporalPeriods));
+      if (preg_match('/\b(' . $periodsPattern . ')\s+(' . $periodsPattern . ')\b/i', $query)) {
+        return [
+          'has_conflict' => true,
+          'conflict_type' => 'ambiguous_temporal_combination',
+          'conflict_details' => "Multiple temporal periods detected without clear separation: " . implode(', ', $temporalPeriods) . ". It's unclear if you want separate aggregations or a combined view.",
+          'suggested_clarification' => "Do you want to see data aggregated by " . implode(' AND THEN by ', $temporalPeriods) . " (separate views), or did you mean something else?",
+          'conflicting_elements' => [
+            'temporal_periods' => $temporalPeriods,
+            'issue' => 'missing_connector',
+          ],
+        ];
+      }
+    }
+
+    return $defaultResult;
+  }
+
+  /**
+   * Detect the granularity of a time range
+   *
+   * @param string $timeRange Time range string
+   * @return string Granularity level (day, week, month, quarter, semester, year)
+   */
+  private function detectTimeRangeGranularity(string $timeRange): string
+  {
+    $range = strtolower($timeRange);
+
+    // Single day patterns
+    if (preg_match('/\b(today|yesterday|\d{4}-\d{2}-\d{2}|january \d+|february \d+|march \d+|april \d+|may \d+|june \d+|july \d+|august \d+|september \d+|october \d+|november \d+|december \d+)\b/', $range)) {
+      return 'day';
+    }
+
+    // Week patterns
+    if (preg_match('/\b(this week|last week|week \d+)\b/', $range)) {
+      return 'week';
+    }
+
+    // Month patterns
+    if (preg_match('/\b(this month|last month|january|february|march|april|may|june|july|august|september|october|november|december)\b/', $range) && !preg_match('/\d+/', $range)) {
+      return 'month';
+    }
+
+    // Quarter patterns
+    if (preg_match('/\b(q[1-4]|quarter [1-4]|this quarter|last quarter)\b/', $range)) {
+      return 'quarter';
+    }
+
+    // Semester patterns
+    if (preg_match('/\b(semester [1-2]|first semester|second semester|h[1-2])\b/', $range)) {
+      return 'semester';
+    }
+
+    // Year patterns (default for year XXXX)
+    if (preg_match('/\b(year \d{4}|\d{4}|this year|last year)\b/', $range)) {
+      return 'year';
+    }
+
+    // Default to year if unknown
+    return 'year';
+  }
+
+  /**
+   * Check if time range represents a single day
+   *
+   * @param string $timeRange Time range string
+   * @return bool True if single day
+   */
+  private function isSingleDayRange(string $timeRange): bool
+  {
+    $range = strtolower($timeRange);
+
+    // Explicit single day patterns
+    $singleDayPatterns = [
+      '/\btoday\b/',
+      '/\byesterday\b/',
+      '/\b\d{4}-\d{2}-\d{2}\b/',  // ISO date format
+      '/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}(st|nd|rd|th)?\b/',  // Month day
+      '/\b\d{1,2}(st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december)\b/',  // Day month
+    ];
+
+    foreach ($singleDayPatterns as $pattern) {
+      if (preg_match($pattern, $range)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Request clarification from user for temporal conflicts
+   *
+   * **Requirement 8.1**: Request clarification from user
+   *
+   * @param array $conflictResult Result from detectTemporalConflicts()
+   * @return array Clarification request with structure:
+   *   - needs_clarification: bool
+   *   - clarification_type: string
+   *   - message: string (user-facing message)
+   *   - options: array (possible interpretations)
+   */
+  public function requestTemporalClarification(array $conflictResult): array
+  {
+    if (!$conflictResult['has_conflict']) {
+      return [
+        'needs_clarification' => false,
+        'clarification_type' => null,
+        'message' => null,
+        'options' => [],
+      ];
+    }
+
+    $options = [];
+    $conflictType = $conflictResult['conflict_type'];
+    $elements = $conflictResult['conflicting_elements'];
+
+    switch ($conflictType) {
+      case 'specific_period_aggregation_mismatch':
+        $options = [
+          [
+            'id' => 'extend_range',
+            'label' => "Extend time range to allow {$elements['requested_aggregation']} aggregation",
+            'action' => 'modify_time_range',
+          ],
+          [
+            'id' => 'change_aggregation',
+            'label' => "Use {$elements['time_range_granularity']} aggregation instead",
+            'action' => 'modify_aggregation',
+          ],
+        ];
+        break;
+
+      case 'granularity_too_coarse':
+        $options = [
+          [
+            'id' => 'use_daily',
+            'label' => "Show daily data for {$elements['time_range']}",
+            'action' => 'use_daily_aggregation',
+          ],
+          [
+            'id' => 'extend_range',
+            'label' => "Extend time range to allow {$elements['requested_aggregation']} aggregation",
+            'action' => 'modify_time_range',
+          ],
+        ];
+        break;
+
+      case 'ambiguous_temporal_combination':
+        $periods = $elements['temporal_periods'] ?? [];
+        $options = [
+          [
+            'id' => 'separate_views',
+            'label' => "Show separate views: first by " . ($periods[0] ?? 'period1') . ", then by " . ($periods[1] ?? 'period2'),
+            'action' => 'split_queries',
+          ],
+          [
+            'id' => 'primary_only',
+            'label' => "Show only " . ($periods[0] ?? 'primary') . " aggregation",
+            'action' => 'use_primary_period',
+          ],
+        ];
+        break;
+
+      default:
+        $options = [
+          [
+            'id' => 'proceed_anyway',
+            'label' => "Proceed with best interpretation",
+            'action' => 'auto_resolve',
+          ],
+          [
+            'id' => 'rephrase',
+            'label' => "Let me rephrase my question",
+            'action' => 'user_rephrase',
+          ],
+        ];
+    }
+
+    // Log clarification request
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "AmbiguityOptimizer: Requesting temporal clarification",
+        'info',
+        [
+          'conflict_type' => $conflictType,
+          'options_count' => count($options),
+        ]
+      );
+    }
+
+    return [
+      'needs_clarification' => true,
+      'clarification_type' => $conflictType,
+      'message' => $conflictResult['suggested_clarification'],
+      'options' => $options,
+    ];
+  }
+
+  /**
    * Check if query should use confidence threshold optimization
    *
    * If the first interpretation has high confidence, we can skip

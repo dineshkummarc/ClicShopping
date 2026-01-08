@@ -13,6 +13,7 @@ namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Orchestrator\AnalyticsAgent;
+use ClicShopping\AI\Domain\Patterns\AnalyticsExecutorPatterns;
 
 /**
  * AnalyticsExecutor Class
@@ -129,22 +130,15 @@ class AnalyticsExecutor
 
   /**
    * Extract table name from SQL query for source attribution
+   * 
+   * Pattern logic moved to AnalyticsExecutorPatterns class.
    *
    * @param string|null $sql SQL query
    * @return string Table name or 'database'
    */
   private function extractTableNameFromSql(?string $sql): string
   {
-    if (empty($sql)) {
-      return 'database';
-    }
-
-    // Extract table name from FROM clause
-    if (preg_match('/FROM\s+([a-zA-Z0-9_]+)/i', $sql, $matches)) {
-      return $matches[1];
-    }
-
-    return 'database';
+    return AnalyticsExecutorPatterns::extractTableName($sql);
   }
 
   /**
@@ -210,7 +204,7 @@ class AnalyticsExecutor
           $interpretation = $bestInterpretation['interpretation'] ?? null;
           
           // If interpretation is empty or generic, generate a better one
-          if (empty($interpretation) || $interpretation === 'Résultats trouvés') {
+          if (empty($interpretation) || $interpretation === 'Résultats trouvés' || $interpretation === 'Results found') {
             error_log("  Interpretation is empty/generic, generating from results...");
             $interpretation = $this->generateInterpretationFromResults(
               $bestInterpretation['results'],
@@ -320,15 +314,18 @@ class AnalyticsExecutor
 
   /**
    * Generate interpretation from results
+   * 
+   * NOTE: All messages in English per tech.md guidelines.
+   * UI layer handles translation to user's language.
    *
    * @param array $results Results array
    * @param string $question Original question
-   * @return string Interpretation
+   * @return string Interpretation in English
    */
   private function generateInterpretationFromResults(array $results, string $question): string
   {
     if (empty($results)) {
-      return "Aucun résultat trouvé pour : {$question}";
+      return "No results found for: {$question}";
     }
     
     $count = count($results);
@@ -339,28 +336,28 @@ class AnalyticsExecutor
     
     // Check for product name
     if (isset($firstResult['products_name'])) {
-      $parts[] = "Produit : {$firstResult['products_name']}";
+      $parts[] = "Product: {$firstResult['products_name']}";
     }
     
     // Check for price
     if (isset($firstResult['catalog_price'])) {
-      $parts[] = "Prix : {$firstResult['catalog_price']}€";
+      $parts[] = "Price: {$firstResult['catalog_price']}€";
     } elseif (isset($firstResult['products_price'])) {
-      $parts[] = "Prix : {$firstResult['products_price']}€";
+      $parts[] = "Price: {$firstResult['products_price']}€";
     }
     
     // Check for quantity
     if (isset($firstResult['products_quantity'])) {
-      $parts[] = "Quantité en stock : {$firstResult['products_quantity']}";
+      $parts[] = "Stock quantity: {$firstResult['products_quantity']}";
     } elseif (isset($firstResult['total_quantity'])) {
-      $parts[] = "Quantité totale : {$firstResult['total_quantity']}";
+      $parts[] = "Total quantity: {$firstResult['total_quantity']}";
     }
     
     // Check for SKU/model
     if (isset($firstResult['products_model'])) {
-      $parts[] = "Modèle : {$firstResult['products_model']}";
+      $parts[] = "Model: {$firstResult['products_model']}";
     } elseif (isset($firstResult['sku'])) {
-      $parts[] = "SKU : {$firstResult['sku']}";
+      $parts[] = "SKU: {$firstResult['sku']}";
     }
     
     if (!empty($parts)) {
@@ -368,18 +365,21 @@ class AnalyticsExecutor
     }
     
     // Fallback
-    return "{$count} résultat" . ($count > 1 ? 's' : '') . " trouvé" . ($count > 1 ? 's' : '');
+    return "{$count} result" . ($count > 1 ? 's' : '') . " found";
   }
 
   /**
    * Generate default interpretation when none is provided
+   * 
+   * NOTE: All messages in English per tech.md guidelines.
+   * UI layer handles translation to user's language.
    *
    * @param array $rawResult Raw result from AnalyticsAgent
-   * @return string Default interpretation
+   * @return string Default interpretation in English
    */
   private function generateDefaultInterpretation(array $rawResult): string
   {
-    // 🔍 DEBUG: Trace why "Aucun résultat trouvé" is generated
+    // 🔍 DEBUG: Trace why "No results found" is generated
     error_log("\n" . str_repeat("=", 100));
     error_log("DEBUG: generateDefaultInterpretation() CALLED");
     error_log(str_repeat("=", 100));
@@ -391,17 +391,17 @@ class AnalyticsExecutor
     error_log("results count: " . count($results));
     
     $count = count($results);
-    $question = $rawResult['question'] ?? 'votre requête';
+    $question = $rawResult['question'] ?? 'your query';
     
     error_log("count: {$count}");
     error_log("question: {$question}");
     
     // No results
     if ($count === 0) {
-      error_log("❌ RETURNING: Aucun résultat trouvé (count === 0)");
+      error_log("❌ RETURNING: No results found (count === 0)");
       error_log("This is the message user sees!");
       error_log(str_repeat("=", 100) . "\n");
-      return "Aucun résultat trouvé pour : {$question}";
+      return "No results found for: {$question}";
     }
     
     error_log("✅ Has results, generating interpretation");
@@ -409,11 +409,11 @@ class AnalyticsExecutor
     
     // Single result
     if ($count === 1) {
-      return "1 résultat trouvé pour : {$question}";
+      return "1 result found for: {$question}";
     }
     
     // Multiple results - try to add more context
-    $interpretation = "{$count} résultats trouvés pour : {$question}";
+    $interpretation = "{$count} results found for: {$question}";
     
     // Try to add a summary of the first result
     if (!empty($results[0]) && is_array($results[0])) {
@@ -424,7 +424,7 @@ class AnalyticsExecutor
       $nameFields = ['name', 'manufacturers_name', 'products_name', 'categories_name', 'title'];
       foreach ($nameFields as $field) {
         if (isset($firstResult[$field])) {
-          $interpretation .= " (ex: {$firstResult[$field]})";
+          $interpretation .= " (e.g.: {$firstResult[$field]})";
           break;
         }
       }
@@ -459,6 +459,331 @@ class AnalyticsExecutor
   }
 
   /**
+   * Handle SQL generation failure for temporal period
+   *
+   * **Requirement 8.4**: Handle SQL generation failures
+   *
+   * When SQL generation fails for a temporal period:
+   * 1. Log error with details
+   * 2. Continue with other sub-queries
+   * 3. Return partial results with error message
+   *
+   * @param string $query The query that failed
+   * @param string $temporalPeriod The temporal period that failed
+   * @param \Exception|null $exception The exception if any
+   * @param string|null $errorMessage Custom error message
+   * @return array Error result with structure:
+   *   - type: string ('analytics_response')
+   *   - success: bool (false)
+   *   - error: string (error message)
+   *   - error_type: string ('sql_generation_failure')
+   *   - temporal_period: string (the failed period)
+   *   - question: string (original query)
+   *   - interpretation: string (error explanation)
+   *   - results: array (empty)
+   *   - sql_query: string (empty or partial)
+   *   - can_continue: bool (true - other sub-queries can proceed)
+   *   - suggested_action: string (what user can do)
+   */
+  public function handleSqlGenerationFailure(
+    string $query,
+    string $temporalPeriod,
+    ?\Exception $exception = null,
+    ?string $errorMessage = null
+  ): array {
+    $errorMsg = $errorMessage ?? ($exception ? $exception->getMessage() : 'Unknown SQL generation error');
+    
+    // Log detailed error for debugging
+    $this->logger->logSecurityEvent(
+      "SQL generation failed for temporal period '{$temporalPeriod}': {$errorMsg}",
+      'error',
+      [
+        'query' => $query,
+        'temporal_period' => $temporalPeriod,
+        'error' => $errorMsg,
+        'exception_class' => $exception ? get_class($exception) : null,
+        'trace' => $exception ? $exception->getTraceAsString() : null,
+      ]
+    );
+
+    // Determine suggested action based on error type
+    $suggestedAction = $this->determineSuggestedActionForSqlError($errorMsg, $temporalPeriod);
+
+    return [
+      'type' => 'analytics_response',
+      'success' => false,
+      'error' => $errorMsg,
+      'error_type' => 'sql_generation_failure',
+      'temporal_period' => $temporalPeriod,
+      'question' => $query,
+      'interpretation' => "Unable to generate SQL for {$temporalPeriod} aggregation: {$errorMsg}",
+      'results' => [],
+      'sql_query' => '',
+      'can_continue' => true, // Other sub-queries can still proceed
+      'suggested_action' => $suggestedAction,
+      'source_attribution' => [
+        'source_type' => 'Analytics Database',
+        'source_icon' => '⚠️',
+        'source_details' => "SQL generation failed for {$temporalPeriod} period",
+        'table_name' => 'unknown',
+      ],
+    ];
+  }
+
+  /**
+   * Determine suggested action for SQL generation error
+   *
+   * @param string $errorMessage The error message
+   * @param string $temporalPeriod The temporal period
+   * @return string Suggested action for user
+   */
+  private function determineSuggestedActionForSqlError(string $errorMessage, string $temporalPeriod): string
+  {
+    $errorLower = strtolower($errorMessage);
+
+    // Check for common error patterns
+    if (strpos($errorLower, 'column') !== false || strpos($errorLower, 'field') !== false) {
+      return "The database may not have the required columns for {$temporalPeriod} aggregation. Try a different time period or check your data schema.";
+    }
+
+    if (strpos($errorLower, 'table') !== false) {
+      return "The required table for {$temporalPeriod} aggregation may not exist. Verify your database structure.";
+    }
+
+    if (strpos($errorLower, 'syntax') !== false) {
+      return "There was a SQL syntax error. Try rephrasing your query or using a simpler time period.";
+    }
+
+    if (strpos($errorLower, 'permission') !== false || strpos($errorLower, 'access') !== false) {
+      return "You may not have permission to access the required data. Contact your administrator.";
+    }
+
+    if (strpos($errorLower, 'timeout') !== false) {
+      return "The query took too long. Try a shorter time range or simpler aggregation.";
+    }
+
+    // Default suggestion
+    return "Try rephrasing your query or using a different temporal period. If the problem persists, contact support.";
+  }
+
+  /**
+   * Execute analytics query with temporal error handling
+   *
+   * **Requirement 8.4**: Execute query with proper error handling for temporal periods
+   *
+   * This method wraps executeAnalyticsQuery with additional error handling
+   * specific to temporal aggregations. It ensures that failures in one
+   * temporal period don't prevent other periods from being processed.
+   *
+   * @param string $query Query to execute
+   * @param array $context Context information including temporal_period
+   * @return array Result with success status and error handling
+   */
+  public function executeTemporalAnalyticsQuery(string $query, array $context = []): array
+  {
+    $temporalPeriod = $context['temporal_period'] ?? 'unknown';
+    
+    try {
+      // Log the temporal query execution
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "Executing temporal analytics query for period: {$temporalPeriod}",
+          'info',
+          ['query' => substr($query, 0, 100), 'temporal_period' => $temporalPeriod]
+        );
+      }
+
+      // Execute the query
+      $result = $this->executeAnalyticsQuery($query, $context);
+
+      // Check if execution was successful
+      if (!isset($result['success']) || $result['success'] === false) {
+        // If there's an error but it's not a complete failure, still return partial result
+        if (!empty($result['results'])) {
+          $result['partial_success'] = true;
+          $result['temporal_period'] = $temporalPeriod;
+          return $result;
+        }
+
+        // Complete failure - use error handler
+        return $this->handleSqlGenerationFailure(
+          $query,
+          $temporalPeriod,
+          null,
+          $result['error'] ?? 'Query execution failed'
+        );
+      }
+
+      // **Requirement 8.5**: Check for no data and handle gracefully
+      if (empty($result['results'])) {
+        return $this->handleNoDataForTemporalPeriod($query, $temporalPeriod, $context);
+      }
+
+      // Add temporal period to successful result
+      $result['temporal_period'] = $temporalPeriod;
+      return $result;
+
+    } catch (\Exception $e) {
+      // Handle exception with temporal-specific error handling
+      return $this->handleSqlGenerationFailure($query, $temporalPeriod, $e);
+    }
+  }
+
+  /**
+   * Handle no data for temporal period
+   *
+   * **Requirement 8.5**: Handle no data for temporal period
+   *
+   * When no data exists for a temporal period:
+   * 1. Return empty result set
+   * 2. Display clear message
+   * 3. Continue with other periods
+   *
+   * @param string $query The query that returned no data
+   * @param string $temporalPeriod The temporal period with no data
+   * @param array $context Additional context (time_range, base_metric, etc.)
+   * @return array Result with empty data and clear message
+   */
+  public function handleNoDataForTemporalPeriod(
+    string $query,
+    string $temporalPeriod,
+    array $context = []
+  ): array {
+    $timeRange = $context['time_range'] ?? 'the specified period';
+    $baseMetric = $context['base_metric'] ?? 'data';
+
+    // Log the no-data situation
+    $this->logger->logSecurityEvent(
+      "No data found for temporal period '{$temporalPeriod}'",
+      'info',
+      [
+        'query' => $query,
+        'temporal_period' => $temporalPeriod,
+        'time_range' => $timeRange,
+        'base_metric' => $baseMetric,
+      ]
+    );
+
+    // Generate user-friendly message based on context
+    $message = $this->generateNoDataMessage($temporalPeriod, $timeRange, $baseMetric);
+
+    return [
+      'type' => 'analytics_response',
+      'success' => true, // Query succeeded, just no data
+      'no_data' => true,
+      'temporal_period' => $temporalPeriod,
+      'question' => $query,
+      'interpretation' => $message,
+      'results' => [],
+      'sql_query' => '', // SQL was executed but returned no rows
+      'can_continue' => true, // Other temporal periods can still have data
+      'message' => $message,
+      'source_attribution' => [
+        'source_type' => 'Analytics Database',
+        'source_icon' => 'ℹ️',
+        'source_details' => "No {$baseMetric} data available for {$temporalPeriod} aggregation",
+        'table_name' => 'orders', // Default table for analytics
+      ],
+    ];
+  }
+
+  /**
+   * Generate user-friendly message for no data situation
+   *
+   * @param string $temporalPeriod The temporal period
+   * @param string $timeRange The time range
+   * @param string $baseMetric The base metric
+   * @return string User-friendly message
+   */
+  private function generateNoDataMessage(string $temporalPeriod, string $timeRange, string $baseMetric): string
+  {
+    // Format temporal period for display
+    $periodDisplay = ucfirst($temporalPeriod);
+    
+    // Build message based on available context
+    $message = "No {$baseMetric} data available";
+    
+    if ($temporalPeriod !== 'unknown') {
+      $message .= " for {$periodDisplay} aggregation";
+    }
+    
+    if ($timeRange !== 'the specified period') {
+      $message .= " during {$timeRange}";
+    }
+    
+    $message .= ".";
+    
+    // Add helpful suggestion
+    $suggestions = [
+      'day' => "Try a longer time range or check if there were any transactions on this day.",
+      'week' => "Try a different week or check if there were any transactions during this period.",
+      'month' => "Try a different month or verify that data exists for this period.",
+      'quarter' => "Try a different quarter or check if data has been recorded for this period.",
+      'semester' => "Try a different semester or verify that data exists for this 6-month period.",
+      'year' => "Try a different year or check if data has been recorded for this period.",
+    ];
+    
+    $suggestion = $suggestions[strtolower($temporalPeriod)] ?? "Try a different time period or verify that data exists.";
+    $message .= " " . $suggestion;
+    
+    return $message;
+  }
+
+  /**
+   * Check if result has data
+   *
+   * Helper method to determine if a query result contains actual data.
+   *
+   * @param array $result The query result
+   * @return bool True if result has data
+   */
+  public function hasData(array $result): bool
+  {
+    // Check for explicit no_data flag
+    if (isset($result['no_data']) && $result['no_data'] === true) {
+      return false;
+    }
+
+    // Check for empty results array
+    if (!isset($result['results']) || empty($result['results'])) {
+      return false;
+    }
+
+    // Check if results is an array with actual data
+    if (is_array($result['results']) && count($result['results']) > 0) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Format empty result for display
+   *
+   * Creates a formatted empty result that can be displayed alongside
+   * other temporal period results.
+   *
+   * @param string $temporalPeriod The temporal period
+   * @param string $message The message to display
+   * @return array Formatted empty result
+   */
+  public function formatEmptyResult(string $temporalPeriod, string $message): array
+  {
+    return [
+      'type' => 'analytics_response',
+      'success' => true,
+      'no_data' => true,
+      'temporal_period' => $temporalPeriod,
+      'interpretation' => $message,
+      'results' => [],
+      'formatted_html' => '<div class="alert alert-info" role="alert">' .
+                          '<i class="bi bi-info-circle"></i> ' .
+                          htmlspecialchars($message) .
+                          '</div>',
+    ];
+  }
+
+  /**
    * Get analytics agent instance
    *
    * @return AnalyticsAgent|null
@@ -466,5 +791,271 @@ class AnalyticsExecutor
   public function getAnalyticsAgent(): ?AnalyticsAgent
   {
     return $this->analyticsAgent;
+  }
+
+  /**
+   * Generate GROUP BY clause for temporal aggregation
+   * 
+   * This method generates the correct SQL GROUP BY clause based on the temporal period.
+   * It supports all standard temporal periods (month, quarter, semester, year, week, day)
+   * and custom periods (e.g., every 4 months).
+   * 
+   * **Requirements: 4.5, 4.6, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6**
+   * 
+   * @param string $temporalPeriod The temporal period (month, quarter, semester, year, week, day, custom)
+   * @param string $dateColumn The date column to use for grouping (default: 'orders_date')
+   * @param int|null $customMonths For custom periods, the number of months per period (e.g., 4 for quarterly-like)
+   * @return string The GROUP BY clause (e.g., "GROUP BY YEAR(orders_date), MONTH(orders_date)")
+   */
+  public function generateGroupByClause(
+    string $temporalPeriod,
+    string $dateColumn = 'orders_date',
+    ?int $customMonths = null
+  ): string {
+    // Sanitize date column to prevent SQL injection
+    $safeColumn = preg_replace('/[^a-zA-Z0-9_]/', '', $dateColumn);
+    
+    // Log temporal GROUP BY generation
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "Generating GROUP BY clause for temporal period: {$temporalPeriod}, column: {$safeColumn}",
+        'info'
+      );
+    }
+    
+    $groupByClause = match (strtolower($temporalPeriod)) {
+      'month' => $this->generateMonthGroupBy($safeColumn),
+      'quarter' => $this->generateQuarterGroupBy($safeColumn),
+      'semester' => $this->generateSemesterGroupBy($safeColumn),
+      'year' => $this->generateYearGroupBy($safeColumn),
+      'week' => $this->generateWeekGroupBy($safeColumn),
+      'day' => $this->generateDayGroupBy($safeColumn),
+      'custom' => $this->generateCustomGroupBy($safeColumn, $customMonths ?? 4),
+      default => $this->generateMonthGroupBy($safeColumn), // Default to month
+    };
+    
+    // Log the generated clause
+    error_log("[AnalyticsExecutor] Generated temporal GROUP BY: {$groupByClause}");
+    
+    return $groupByClause;
+  }
+
+  /**
+   * Generate GROUP BY clause for monthly aggregation
+   * 
+   * **Requirement 6.1**: GROUP BY YEAR(date_column), MONTH(date_column)
+   * 
+   * @param string $dateColumn The date column name
+   * @return string GROUP BY clause for monthly aggregation
+   */
+  private function generateMonthGroupBy(string $dateColumn): string
+  {
+    return "GROUP BY YEAR({$dateColumn}), MONTH({$dateColumn})";
+  }
+
+  /**
+   * Generate GROUP BY clause for quarterly aggregation
+   * 
+   * **Requirement 6.2**: GROUP BY YEAR(date_column), QUARTER(date_column)
+   * 
+   * @param string $dateColumn The date column name
+   * @return string GROUP BY clause for quarterly aggregation
+   */
+  private function generateQuarterGroupBy(string $dateColumn): string
+  {
+    return "GROUP BY YEAR({$dateColumn}), QUARTER({$dateColumn})";
+  }
+
+  /**
+   * Generate GROUP BY clause for semester aggregation
+   * 
+   * **Requirement 6.3**: GROUP BY YEAR(date_column), CASE WHEN MONTH(date_column) <= 6 THEN 1 ELSE 2 END
+   * 
+   * @param string $dateColumn The date column name
+   * @return string GROUP BY clause for semester aggregation
+   */
+  private function generateSemesterGroupBy(string $dateColumn): string
+  {
+    return "GROUP BY YEAR({$dateColumn}), CASE WHEN MONTH({$dateColumn}) <= 6 THEN 1 ELSE 2 END";
+  }
+
+  /**
+   * Generate GROUP BY clause for yearly aggregation
+   * 
+   * **Requirement 6.4**: GROUP BY YEAR(date_column)
+   * 
+   * @param string $dateColumn The date column name
+   * @return string GROUP BY clause for yearly aggregation
+   */
+  private function generateYearGroupBy(string $dateColumn): string
+  {
+    return "GROUP BY YEAR({$dateColumn})";
+  }
+
+  /**
+   * Generate GROUP BY clause for weekly aggregation
+   * 
+   * **Requirement 6.5**: GROUP BY YEAR(date_column), WEEK(date_column)
+   * 
+   * @param string $dateColumn The date column name
+   * @return string GROUP BY clause for weekly aggregation
+   */
+  private function generateWeekGroupBy(string $dateColumn): string
+  {
+    return "GROUP BY YEAR({$dateColumn}), WEEK({$dateColumn})";
+  }
+
+  /**
+   * Generate GROUP BY clause for daily aggregation
+   * 
+   * **Requirement 6.6**: GROUP BY DATE(date_column)
+   * 
+   * @param string $dateColumn The date column name
+   * @return string GROUP BY clause for daily aggregation
+   */
+  private function generateDayGroupBy(string $dateColumn): string
+  {
+    return "GROUP BY DATE({$dateColumn})";
+  }
+
+  /**
+   * Generate GROUP BY clause for custom period aggregation
+   * 
+   * **Requirement 6.6**: GROUP BY YEAR(date_column), FLOOR((MONTH(date_column)-1)/N)
+   * 
+   * This allows grouping by custom periods like "every 4 months" or "every 2 months"
+   * 
+   * @param string $dateColumn The date column name
+   * @param int $monthsPerPeriod Number of months per period (e.g., 4 for every 4 months)
+   * @return string GROUP BY clause for custom period aggregation
+   */
+  private function generateCustomGroupBy(string $dateColumn, int $monthsPerPeriod): string
+  {
+    // Ensure monthsPerPeriod is valid (1-12)
+    $monthsPerPeriod = max(1, min(12, $monthsPerPeriod));
+    
+    return "GROUP BY YEAR({$dateColumn}), FLOOR((MONTH({$dateColumn})-1)/{$monthsPerPeriod})";
+  }
+
+  /**
+   * Detect temporal period from sub-query metadata
+   * 
+   * This method extracts the temporal period from the sub-query context array.
+   * It's used to determine which GROUP BY clause to generate.
+   * 
+   * @param array $context The sub-query context containing temporal metadata
+   * @return string|null The temporal period or null if not found
+   */
+  public function detectTemporalPeriod(array $context): ?string
+  {
+    // Check for explicit temporal_period in context
+    if (isset($context['temporal_period']) && !empty($context['temporal_period'])) {
+      return strtolower($context['temporal_period']);
+    }
+    
+    // Check for temporal_periods array (from multi-temporal queries)
+    if (isset($context['temporal_periods']) && is_array($context['temporal_periods']) && !empty($context['temporal_periods'])) {
+      return strtolower($context['temporal_periods'][0]);
+    }
+    
+    // Check for period in intent metadata
+    if (isset($context['intent']['temporal_period'])) {
+      return strtolower($context['intent']['temporal_period']);
+    }
+    
+    return null;
+  }
+
+  /**
+   * Detect custom period months from sub-query metadata
+   * 
+   * This method extracts the custom period months (e.g., 4 for "every 4 months")
+   * from the sub-query context array.
+   * 
+   * @param array $context The sub-query context containing temporal metadata
+   * @return int|null The number of months per period or null if not a custom period
+   */
+  public function detectCustomPeriodMonths(array $context): ?int
+  {
+    // Check for explicit custom_months in context
+    if (isset($context['custom_months']) && is_numeric($context['custom_months'])) {
+      return (int)$context['custom_months'];
+    }
+    
+    // Check for custom_period_months in intent metadata
+    if (isset($context['intent']['custom_period_months']) && is_numeric($context['intent']['custom_period_months'])) {
+      return (int)$context['intent']['custom_period_months'];
+    }
+    
+    return null;
+  }
+
+  /**
+   * Apply temporal GROUP BY to an existing SQL query
+   * 
+   * This method modifies an existing SQL query to add or replace the GROUP BY clause
+   * based on the temporal period specified in the context.
+   * 
+   * @param string $sql The original SQL query
+   * @param array $context The sub-query context containing temporal metadata
+   * @return string The modified SQL query with temporal GROUP BY
+   */
+  public function applyTemporalGroupBy(string $sql, array $context): string
+  {
+    // Detect temporal period from context
+    $temporalPeriod = $this->detectTemporalPeriod($context);
+    
+    if ($temporalPeriod === null) {
+      // No temporal period specified, return original SQL
+      return $sql;
+    }
+    
+    // Detect date column from SQL or use default
+    $dateColumn = $this->detectDateColumnFromSql($sql) ?? 'orders_date';
+    
+    // Detect custom months if applicable
+    $customMonths = $temporalPeriod === 'custom' ? $this->detectCustomPeriodMonths($context) : null;
+    
+    // Generate the GROUP BY clause
+    $groupByClause = $this->generateGroupByClause($temporalPeriod, $dateColumn, $customMonths);
+    
+    // Check if SQL already has a GROUP BY clause
+    if (preg_match('/\bGROUP\s+BY\b/i', $sql)) {
+      // Replace existing GROUP BY clause
+      $sql = preg_replace('/\bGROUP\s+BY\s+[^;]+/i', $groupByClause, $sql);
+    } else {
+      // Add GROUP BY clause before ORDER BY or at the end
+      if (preg_match('/\bORDER\s+BY\b/i', $sql)) {
+        $sql = preg_replace('/(\bORDER\s+BY\b)/i', "{$groupByClause} $1", $sql);
+      } else {
+        // Add at the end (before semicolon if present)
+        $sql = rtrim($sql, ';') . " {$groupByClause}";
+      }
+    }
+    
+    // Log the modification
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "Applied temporal GROUP BY: period={$temporalPeriod}, clause={$groupByClause}",
+        'info'
+      );
+    }
+    
+    return $sql;
+  }
+
+  /**
+   * Detect date column from SQL query
+   * 
+   * This method attempts to identify the date column used in the SQL query
+   * by looking for common date column patterns.
+   * Pattern logic moved to AnalyticsExecutorPatterns class.
+   * 
+   * @param string $sql The SQL query
+   * @return string|null The detected date column or null if not found
+   */
+  private function detectDateColumnFromSql(string $sql): ?string
+  {
+    return AnalyticsExecutorPatterns::detectDateColumn($sql);
   }
 }

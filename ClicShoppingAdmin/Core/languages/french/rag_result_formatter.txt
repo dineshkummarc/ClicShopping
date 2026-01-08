@@ -24,3 +24,36 @@ price_comparison_competitive_status = Statut concurrentiel:
 price_comparison_recommendation = RECOMMANDATION:
 price_comparison_no_competitors = Aucun prix concurrent trouvé pour comparaison
 price_comparison_recommendation_label = Recommandation:
+
+# Temporal Labels
+temporal_month_january = Janvier
+temporal_month_february = Février
+temporal_month_march = Mars
+temporal_month_april = Avril
+temporal_month_may = Mai
+temporal_month_june = Juin
+temporal_month_july = Juillet
+temporal_month_august = Août
+temporal_month_september = Septembre
+temporal_month_october = Octobre
+temporal_month_november = Novembre
+temporal_month_december = Décembre
+
+temporal_quarter_1 = T1
+temporal_quarter_2 = T2
+temporal_quarter_3 = T3
+temporal_quarter_4 = T4
+
+temporal_semester_1 = Semestre 1
+temporal_semester_2 = Semestre 2
+
+temporal_week_label = Semaine
+temporal_day_label = Jour
+
+temporal_section_monthly = Résultats mensuels
+temporal_section_quarterly = Résultats trimestriels
+temporal_section_semester = Résultats semestriels
+temporal_section_yearly = Résultats annuels
+temporal_section_weekly = Résultats hebdomadaires
+temporal_section_daily = Résultats quotidiens
+temporal_section_custom = Résultats par période personnalisée

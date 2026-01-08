@@ -69,6 +69,189 @@ class QuerySplitterPatterns
   public const SIMPLE_SPLIT_PATTERN = '/\b(and|then|also)\b/i';
 
   /**
+   * Financial metrics patterns (English only - query is already translated)
+   * 
+   * Order by specificity (more specific patterns first)
+   * Used for extracting base metric from query text.
+   *
+   * @var array<string, string> Pattern => normalized metric name
+   */
+  public const FINANCIAL_METRICS = [
+    'total revenue' => 'revenue',
+    'gross revenue' => 'revenue',
+    'net revenue' => 'revenue',
+    'total sales' => 'sales',
+    'gross sales' => 'sales',
+    'net sales' => 'sales',
+    'revenue' => 'revenue',
+    'sales' => 'sales',
+    'turnover' => 'turnover',
+    'profit' => 'profit',
+    'margin' => 'margin',
+    'income' => 'income',
+    'earnings' => 'earnings',
+    'expenses' => 'expenses',
+    'costs' => 'costs',
+    'orders' => 'orders',
+  ];
+
+  /**
+   * Financial metrics regex patterns (for more complex matching)
+   * 
+   * Used when simple string matching is not sufficient.
+   *
+   * @var array<string, string> Metric name => regex pattern
+   */
+  public const FINANCIAL_METRICS_REGEX = [
+    'revenue' => '/\b(revenue|turnover|sales\s+revenue)\b/i',
+    'sales' => '/\b(sales|total\s+sales)\b/i',
+    'orders' => '/\b(orders|order\s+count)\b/i',
+    'profit' => '/\b(profit|margin|earnings)\b/i',
+    'quantity' => '/\b(quantity|units|items)\b/i',
+    'customers' => '/\b(customers|customer\s+count)\b/i',
+  ];
+
+  /**
+   * Relative time patterns (English only - query is already translated)
+   * 
+   * Used for extracting time range from query text.
+   *
+   * @var array<string, string> Pattern => normalized time range
+   */
+  public const RELATIVE_TIME_PATTERNS = [
+    'this year' => 'this year',
+    'last year' => 'last year',
+    'current year' => 'current year',
+    'previous year' => 'last year',
+    'next year' => 'next year',
+    'this month' => 'this month',
+    'last month' => 'last month',
+    'this quarter' => 'this quarter',
+    'last quarter' => 'last quarter',
+  ];
+
+  /**
+   * Relative time regex patterns (for more complex matching)
+   * 
+   * Used when simple string matching is not sufficient.
+   *
+   * @var array<string, string> Time range => regex pattern
+   */
+  public const RELATIVE_TIME_PATTERNS_REGEX = [
+    'this year' => '/\bthis\s+year\b/i',
+    'last year' => '/\blast\s+year\b/i',
+    'this month' => '/\bthis\s+month\b/i',
+    'last month' => '/\blast\s+month\b/i',
+    'this quarter' => '/\bthis\s+quarter\b/i',
+    'last quarter' => '/\blast\s+quarter\b/i',
+  ];
+
+  /**
+   * Year extraction pattern
+   * 
+   * Matches patterns like "year 2025" or just "2025"
+   *
+   * @var string
+   */
+  public const YEAR_PATTERN = '/\b(year\s+)?(\d{4})\b/i';
+
+  /**
+   * Extract base metric from query
+   * 
+   * @param string $query Query text (already translated to English)
+   * @return string|null Base metric or null if not found
+   */
+  public static function extractBaseMetric(string $query): ?string
+  {
+    $query = strtolower($query);
+    
+    foreach (self::FINANCIAL_METRICS as $pattern => $metric) {
+      if (strpos($query, $pattern) !== false) {
+        return $metric;
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Extract base metric from query using regex patterns
+   * 
+   * More powerful matching using regex patterns.
+   * Returns default value if not found.
+   * 
+   * @param string $query Query text (already translated to English)
+   * @param string $default Default value if not found
+   * @return string Base metric or default
+   */
+  public static function extractBaseMetricWithRegex(string $query, string $default = 'revenue'): string
+  {
+    $query = strtolower($query);
+    
+    foreach (self::FINANCIAL_METRICS_REGEX as $metric => $pattern) {
+      if (preg_match($pattern, $query)) {
+        return $metric;
+      }
+    }
+    
+    return $default;
+  }
+
+  /**
+   * Extract time range from query
+   * 
+   * @param string $query Query text (already translated to English)
+   * @return string|null Time range or null if not found
+   */
+  public static function extractTimeRange(string $query): ?string
+  {
+    $query = strtolower($query);
+    
+    // Check for specific year patterns first
+    if (preg_match(self::YEAR_PATTERN, $query, $matches)) {
+      return "year {$matches[2]}";
+    }
+    
+    // Check for relative time patterns
+    foreach (self::RELATIVE_TIME_PATTERNS as $pattern => $range) {
+      if (strpos($query, $pattern) !== false) {
+        return $range;
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Extract time range from query using regex patterns
+   * 
+   * More powerful matching using regex patterns.
+   * Returns default value if not found.
+   * 
+   * @param string $query Query text (already translated to English)
+   * @param string $default Default value if not found
+   * @return string Time range or default
+   */
+  public static function extractTimeRangeWithRegex(string $query, string $default = 'this year'): string
+  {
+    $query = strtolower($query);
+    
+    // Check for specific year patterns first
+    if (preg_match(self::YEAR_PATTERN, $query, $matches)) {
+      return 'year ' . $matches[2];
+    }
+    
+    // Check for relative time patterns using regex
+    foreach (self::RELATIVE_TIME_PATTERNS_REGEX as $range => $pattern) {
+      if (preg_match($pattern, $query)) {
+        return $range;
+      }
+    }
+    
+    return $default;
+  }
+
+  /**
    * Get all patterns as an array
    *
    * @return array<string, mixed> All patterns

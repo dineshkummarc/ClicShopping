@@ -467,6 +467,8 @@ cache_type_translations = 🌐 Cache Traductions
 cache_type_translations_desc = Traductions en cache dans Work/Cache/Rag/Translation/
 cache_type_classification = 🎯 Cache Classification
 cache_type_classification_desc = Classifications de requêtes en cache dans Work/Cache/Rag/Classification/
+cache_type_hybrid = 🔀 Cache Requêtes Hybrides
+cache_type_hybrid_desc = Résultats de requêtes multi-temporelles en cache dans Work/Cache/Rag/Hybrid/
 
 # Caches Fichiers
 file_caches_statistics = Statistiques des Caches Fichiers
