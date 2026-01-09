@@ -114,7 +114,13 @@ class WebSearchPatterns
     'our', 
     'my', 
     'the', 
-    'it'
+    'it',
+    'promotion',
+    'sale',
+    'special',
+    'discount',
+    'offer',
+    'deal'
   ];
   
   /**

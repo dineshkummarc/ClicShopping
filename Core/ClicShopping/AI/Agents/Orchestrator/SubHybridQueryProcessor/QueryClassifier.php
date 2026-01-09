@@ -99,8 +99,7 @@ class QueryClassifier extends BaseQueryProcessor
     }
 
     // Check if HybridPreFilter is enabled
-    $useHybridPreFilter = (defined('USE_HYBRID_PRE_FILTER') 
-        && USE_HYBRID_PRE_FILTER === 'True');
+    $useHybridPreFilter = (defined('USE_HYBRID_PRE_FILTER')  && USE_HYBRID_PRE_FILTER === 'True');
     
     // Try HybridPreFilter if enabled
     if ($useHybridPreFilter) {

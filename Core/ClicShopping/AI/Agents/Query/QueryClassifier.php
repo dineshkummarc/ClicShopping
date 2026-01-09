@@ -88,8 +88,7 @@ class QueryClassifier
   public function classify(string $query, ?string $translatedQuery = null): array
   {
     // Check if HybridPreFilter is enabled
-    $useHybridPreFilter = (defined('USE_HYBRID_PRE_FILTER') 
-        && USE_HYBRID_PRE_FILTER === 'True');
+    $useHybridPreFilter = (defined('USE_HYBRID_PRE_FILTER') && USE_HYBRID_PRE_FILTER === 'True');
     
     // Try HybridPreFilter if enabled and translated query available
     if ($useHybridPreFilter && $translatedQuery !== null) {

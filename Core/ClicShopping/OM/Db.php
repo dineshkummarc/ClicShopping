@@ -275,23 +275,16 @@ class Db extends PDO
   }
 
   /**
-   * Executes a SQL query with optional parameters and returns the prepared statement.
+   * Executes a SQL query and returns the prepared statement.
    *
    * @param string $statement The SQL query to execute.
-   * @param mixed ...$params Optional parameters to bind to the query.
    * @return PDOStatement|false Returns the PDOStatement object if the query was successful, or false on failure.
    */
-  public function query(string $statement, ?int $fetchMode = null, ...$fetchModeArgs): PDOStatement|false
+  public function query(mixed $statement, ?int $fetchMode = null, ...$fetchModeArgs): PDOStatement|false
   {
     $statement = $this->autoPrefixTables($statement);
 
-    $args = func_get_args();
-
-    if (count($args) > 1) {
-      $DbStatement = call_user_func_array(parent::query(...), $args);
-    } else {
-      $DbStatement = parent::query($statement);
-    }
+    $DbStatement = parent::query($statement);
 
     if ($DbStatement !== false) {
       $DbStatement->setQueryCall('query');
@@ -765,6 +758,11 @@ class Db extends PDO
       $row = trim($row);
 
       if (!empty($row)) {
+        // Skip comment lines starting with #
+        if (str_starts_with($row, '#')) {
+          continue;
+        }
+
         if ($row == '--') {
           $is_index = true;
           $is_foreign = $is_property = false;
@@ -848,6 +846,14 @@ class Db extends PDO
               }
 
               $schema['property']['collate'] = implode(' ', $details);
+              break;
+
+            case 'comment':
+              if (!isset($schema['property']) || !is_array($schema['property'])) {
+                $schema['property'] = [];
+              }
+
+              $schema['property']['comment'] = implode(' ', $details);
               break;
           }
 
@@ -954,6 +960,15 @@ class Db extends PDO
         $row .= ' auto_increment';
       }
 
+      // Add COMMENT clause if comment exists
+      if (isset($fields['comment']) && !empty($fields['comment'])) {
+        $comment = self::formatComment($fields['comment']);
+        if (self::validateComment($comment)) {
+          $escaped_comment = self::escapeComment($comment);
+          $row .= " COMMENT '" . $escaped_comment . "'";
+        }
+      }
+
       $rows[] = $row;
     }
 
@@ -1000,6 +1015,15 @@ class Db extends PDO
 
       if (isset($schema['property']['collate'])) {
         $sql .= ' COLLATE ' . $schema['property']['collate'];
+      }
+
+      // Add table-level COMMENT if present
+      if (isset($schema['property']['comment']) && !empty($schema['property']['comment'])) {
+        $comment = self::formatComment($schema['property']['comment']);
+        if (self::validateComment($comment)) {
+          $escaped_comment = self::escapeComment($comment);
+          $sql .= " COMMENT='" . $escaped_comment . "'";
+        }
       }
     }
 
@@ -1126,6 +1150,67 @@ class Db extends PDO
     $size_db = round(($size / 1024) / 1024, 1);
 
     return $size_db;
+  }
+
+  /**
+   * Validate comment text for SQL safety and length
+   *
+   * @param string $comment Comment text to validate
+   * @return bool True if valid, false otherwise
+   */
+  private static function validateComment(string $comment): bool
+  {
+    // Check comment length (max 1024 characters for MariaDB)
+    if (strlen($comment) > 1024) {
+      return false;
+    }
+
+    // Empty comments are valid (will be skipped)
+    if (empty(trim($comment))) {
+      return true;
+    }
+
+    // Comments are valid - escaping will handle SQL safety
+    return true;
+  }
+
+  /**
+   * Format comment text for consistency
+   *
+   * @param string $comment Raw comment text
+   * @return string Formatted comment text
+   */
+  private static function formatComment(string $comment): string
+  {
+    // Trim whitespace
+    $comment = trim($comment);
+
+    // Remove redundant spaces
+    $comment = preg_replace('/\s+/', ' ', $comment);
+
+    // Capitalize first letter if not already
+    if (!empty($comment)) {
+      $comment = ucfirst($comment);
+    }
+
+    return $comment;
+  }
+
+  /**
+   * Escape comment text for SQL safety
+   *
+   * @param string $comment Comment text to escape
+   * @return string Escaped comment text
+   */
+  private static function escapeComment(string $comment): string
+  {
+    // Escape single quotes by doubling them (SQL standard)
+    $comment = str_replace("'", "''", $comment);
+
+    // Escape backslashes
+    $comment = str_replace("\\", "\\\\", $comment);
+
+    return $comment;
   }
 
   /**
