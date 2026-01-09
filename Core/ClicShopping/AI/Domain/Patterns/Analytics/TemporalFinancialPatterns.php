@@ -9,7 +9,7 @@
  * @since 2026-01-03
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Analytics;
 
 class TemporalFinancialPatterns
 {

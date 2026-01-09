@@ -8,7 +8,7 @@
  *
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Analytics;
 
 /**
  * AnalyticsExecutorPatterns - Regex patterns for analytics query execution

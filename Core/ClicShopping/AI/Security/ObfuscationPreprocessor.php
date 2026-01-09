@@ -20,7 +20,7 @@
 namespace ClicShopping\AI\Security;
 
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\AI\Domain\Patterns\ObfuscationPatterns;
+use ClicShopping\AI\Domain\Patterns\Security\ObfuscationPatterns;
 
 class ObfuscationPreprocessor
 {
@@ -127,7 +127,12 @@ class ObfuscationPreprocessor
   private static function containsHtmlEntities(string $query): bool
   {
     // Detect numeric entities (&#123;) or named entities (&nbsp;)
-    return preg_match('/&#\d+;|&[a-z]+;/i', $query) === 1;
+    foreach (ObfuscationPatterns::$htmlEntityPatterns as $pattern) {
+      if (preg_match($pattern, $query) === 1) {
+        return true;
+      }
+    }
+    return false;
   }
   
   /**
@@ -138,10 +143,9 @@ class ObfuscationPreprocessor
   {
     // ROT13 creates unusual letter patterns
     // Check for multiple uncommon bigrams
-    $uncommonBigrams = ['vt', 'vf', 'va', 'ny', 'pr', 'ce', 'iv', 'bh'];
     $matches = 0;
     
-    foreach ($uncommonBigrams as $bigram) {
+    foreach (ObfuscationPatterns::$rot13Bigrams as $bigram) {
       if (stripos($query, $bigram) !== false) {
         $matches++;
       }
@@ -156,14 +160,8 @@ class ObfuscationPreprocessor
    */
   private static function containsMaliciousPatterns(string $text): bool
   {
-    $maliciousKeywords = [
-      'ignore', 'forget', 'instructions', 'prompt', 'system',
-      'database', 'schema', 'configuration', 'credentials',
-      'reveal', 'show', 'display', 'tell me', 'what is'
-    ];
-    
     $lowerText = strtolower($text);
-    foreach ($maliciousKeywords as $keyword) {
+    foreach (ObfuscationPatterns::$maliciousKeywords as $keyword) {
       if (strpos($lowerText, $keyword) !== false) {
         return true;
       }
@@ -181,12 +179,12 @@ class ObfuscationPreprocessor
     // Must be at least 8 characters and match pattern
     $trimmed = trim($query);
     
-    if (strlen($trimmed) < 8) {
+    if (strlen($trimmed) < ObfuscationPatterns::$minLengths['base64']) {
       return false;
     }
     
     // Check if it matches Base64 pattern
-    return preg_match('/^[A-Za-z0-9+\/]+=*$/', $trimmed) === 1;
+    return preg_match(ObfuscationPatterns::$base64Pattern, $trimmed) === 1;
   }
   
   /**
@@ -197,13 +195,18 @@ class ObfuscationPreprocessor
     // Hex pattern: 0x followed by hex digits, or just hex digits
     $trimmed = trim($query);
     
-    if (strlen($trimmed) < 8) {
+    if (strlen($trimmed) < ObfuscationPatterns::$minLengths['hex']) {
       return false;
     }
     
     // Check for 0x prefix or pure hex
-    return preg_match('/^0x[0-9a-f]+$/i', $trimmed) === 1 ||
-           preg_match('/^[0-9a-f]+$/i', $trimmed) === 1;
+    foreach (ObfuscationPatterns::$hexPatterns as $pattern) {
+      if (preg_match($pattern, $trimmed) === 1) {
+        return true;
+      }
+    }
+    
+    return false;
   }
   
   /**
@@ -226,7 +229,7 @@ class ObfuscationPreprocessor
   private static function containsUrlEncoding(string $query): bool
   {
     // Detect %XX patterns
-    return preg_match('/%[0-9A-F]{2}/i', $query) === 1;
+    return preg_match(ObfuscationPatterns::$urlEncodingPattern, $query) === 1;
   }
   
   /**
@@ -289,15 +292,8 @@ class ObfuscationPreprocessor
   private static function containsLeetspeak(string $query): bool
   {
     // Common leetspeak patterns
-    $leetspeakPatterns = [
-      '/[0-9].*[a-z].*[0-9]/i',  // Numbers mixed with letters
-      '/[13470]/',                // Common leet numbers (1=i, 3=e, 4=a, 7=t, 0=o)
-      '/\$/',                     // $ for s
-      '/@/',                      // @ for a
-    ];
-    
     $matches = 0;
-    foreach ($leetspeakPatterns as $pattern) {
+    foreach (ObfuscationPatterns::$leetspeakPatterns as $pattern) {
       if (preg_match($pattern, $query)) {
         $matches++;
       }

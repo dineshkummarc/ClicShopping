@@ -25,13 +25,16 @@
  * - Complements semantic domain detection for context management
  * - Helps determine when to clear conversation memory
  * 
- * @package ClicShopping
+ * RESTRUCTURATION: Relocated to Ecommerce domain (2026-01-09)
+ * TASK: patterns-restructuration - Task 7.4
+ * 
+ * @package ClicShopping\AI\Domain\Patterns\Ecommerce
  * @subpackage AI\Domain\Patterns
  * @date 2026-01-02
  * @author ClicShopping Team
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Ecommerce;
 
 class ContextResetPattern
 {

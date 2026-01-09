@@ -10,7 +10,7 @@
  * @Info : https://www.clicshopping.org/forum/trademark/
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Semantic;
 
 /**
  * PatternAnalysisPattern Class
@@ -29,6 +29,8 @@ namespace ClicShopping\AI\Domain\Patterns;
  * NOTE: According to Pure LLM Mode guidelines, these patterns are
  * for FUTURE USE only. Current implementation should use LLM-based
  * detection instead of pattern matching.
+ * 
+ * @moved 2026-01-09 from Domain\Patterns to Domain\Patterns\Semantic
  */
 class PatternAnalysisPattern
 {

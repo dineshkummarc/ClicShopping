@@ -41,7 +41,7 @@ use ClicShopping\AI\Infrastructure\Cache\QueryCache;
 
 use ClicShopping\AI\Tools\BIexecution;
 use ClicShopping\AI\Agents\Orchestrator\CorrectionAgent;
-use ClicShopping\AI\Domain\Patterns\ModificationKeywordsPattern;
+use ClicShopping\AI\Domain\Patterns\Ecommerce\ModificationKeywordsPattern;
 /**
  * Class AnalyticsAgent
  * Handles database analytics and query processing with AI assistance

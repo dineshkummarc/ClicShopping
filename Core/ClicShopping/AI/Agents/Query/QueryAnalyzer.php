@@ -13,9 +13,10 @@ namespace ClicShopping\AI\Agents\Query;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Helper\LanguageHelper;
-use ClicShopping\AI\Domain\Patterns\EntityDetectionPattern;
-use ClicShopping\AI\Domain\Patterns\ContinuationPattern;
-use ClicShopping\AI\Domain\Patterns\OperatorPattern;
+use ClicShopping\AI\Domain\Patterns\Ecommerce\EntityDetectionPattern;
+use ClicShopping\AI\Domain\Patterns\Ecommerce\ContinuationPattern;
+use ClicShopping\AI\Domain\Patterns\Analytics\OperatorPattern;
+use ClicShopping\AI\Domain\Patterns\Analytics\QueryCriteriaPattern;
 
 /**
  * QueryAnalyzer Class
@@ -192,12 +193,8 @@ class QueryAnalyzer
       'ranges'   => []
     ];
 
-    // 1. Define allowed fields inline (Pure LLM mode - pattern classes disabled)
-    $allowedFields = [
-      'price', 'stock', 'quantity', 'sku', 'model', 'weight', 'status',
-      'date', 'name', 'description', 'category', 'manufacturer', 'rating'
-    ];
-    $fieldPattern = implode('|', $allowedFields);
+    // 1. Get allowed fields from QueryCriteriaPattern
+    $fieldPattern = QueryCriteriaPattern::getFieldPattern();
 
     // 2. Handle boolean filters (with/without)
     // Captures: "with stock", "without price", "no sku"

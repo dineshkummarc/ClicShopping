@@ -11,7 +11,7 @@ namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
 use ClicShopping\AI\Agents\Planning\TaskStep;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Domain\Semantics\Semantics;
-use ClicShopping\AI\Domain\Patterns\PatternAnalysisPattern;
+use ClicShopping\AI\Domain\Patterns\Semantic\PatternAnalysisPattern;
 
 class SubTaskPlannerPatternAnalysis
 {

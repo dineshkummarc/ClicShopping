@@ -31,14 +31,13 @@
  * ARCHITECTURE:
  * User Query (any language) → Translation → English Query → AmbiguityPreFilter
  * 
- * @package ClicShopping
- * @subpackage AI\Domain\Patterns
+ * @package ClicShopping\AI\Domain\Patterns\Hybrid
  * @date 2025-12-21
  * @updated 2025-12-23 (Simplified: removed multilingual patterns)
  * @author ClicShopping Team
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Hybrid;
 
 class AmbiguityPreFilter
 {

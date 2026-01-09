@@ -9,7 +9,7 @@
 namespace ClicShopping\AI\Helper\Detection;
 
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domain\Patterns\ContextResetPattern;
+use ClicShopping\AI\Domain\Patterns\Ecommerce\ContextResetPattern;
 
 class ContextSwitchDetector
 {

@@ -13,7 +13,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Domain\Semantics\Semantics;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\AI\Domain\Patterns\QuerySplitterPatterns;
+use ClicShopping\AI\Domain\Patterns\Analytics\QuerySplitterPatterns;
 
 /**
  * QuerySplitter - Splits complex queries into sub-queries

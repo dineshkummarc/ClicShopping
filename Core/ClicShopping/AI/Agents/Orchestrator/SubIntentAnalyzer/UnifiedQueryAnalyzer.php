@@ -14,10 +14,13 @@ use ClicShopping\OM\Registry;
 use ClicShopping\AI\Domain\Semantics\Semantics;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\AI\Domain\Patterns\TemporalFinancialPreFilter;
-use ClicShopping\AI\Domain\Patterns\WebSearchPostFilter;
-use ClicShopping\AI\Domain\Patterns\SuperlativePostFilter;
-use ClicShopping\AI\Domain\Patterns\MultiTemporalPostFilter;
+use ClicShopping\AI\Domain\Patterns\Analytics\TemporalFinancialPreFilter;
+use ClicShopping\AI\Domain\Patterns\WebSearch\WebSearchPostFilter;
+use ClicShopping\AI\Domain\Patterns\Analytics\SuperlativePostFilter;
+use ClicShopping\AI\Domain\Patterns\Analytics\MultiTemporalPostFilter;
+use ClicShopping\AI\Domain\Patterns\Analytics\FinancialMetricsPattern;
+use ClicShopping\AI\Domain\Patterns\Analytics\TimeRangePattern;
+use ClicShopping\AI\Domain\Patterns\Analytics\TemporalPeriodMappingPattern;
 
 /**
  * UnifiedQueryAnalyzer
@@ -668,8 +671,8 @@ class UnifiedQueryAnalyzer
       // Ensure all fields are present
       $analysis['temporal_periods'] = $analysis['temporal_periods'] ?? [];
       $analysis['temporal_connectors'] = $analysis['temporal_connectors'] ?? [];
-      $analysis['base_metric'] = $analysis['base_metric'] ?? $this->extractBaseMetric($analysis['translated_query'] ?? '');
-      $analysis['time_range'] = $analysis['time_range'] ?? $this->extractTimeRange($analysis['translated_query'] ?? '');
+      $analysis['base_metric'] = $analysis['base_metric'] ?? FinancialMetricsPattern::extractBaseMetric($analysis['translated_query'] ?? '');
+      $analysis['time_range'] = $analysis['time_range'] ?? TimeRangePattern::extractTimeRange($analysis['translated_query'] ?? '');
       $analysis['temporal_period_count'] = count($analysis['temporal_periods']);
       return $analysis;
     }
@@ -684,9 +687,9 @@ class UnifiedQueryAnalyzer
     // Determine if this is a multi-temporal query
     $isMultiTemporal = count($temporalPeriods) >= 2 && !empty($temporalConnectors);
     
-    // Extract base metric and time range
-    $baseMetric = $this->extractBaseMetric($translatedQuery);
-    $timeRange = $this->extractTimeRange($translatedQuery);
+    // Extract base metric and time range using pattern classes
+    $baseMetric = FinancialMetricsPattern::extractBaseMetric($translatedQuery);
+    $timeRange = TimeRangePattern::extractTimeRange($translatedQuery);
     
     // Populate temporal metadata fields
     $analysis['is_multi_temporal'] = $isMultiTemporal;
@@ -707,104 +710,6 @@ class UnifiedQueryAnalyzer
     }
     
     return $analysis;
-  }
-  
-  /**
-   * Extract base metric from query
-   *
-   * Identifies the financial metric being queried (revenue, sales, profit, etc.)
-   *
-   * @param string $query The translated query (English)
-   * @return string|null The base metric or null if not found
-   */
-  private function extractBaseMetric(string $query): ?string
-  {
-    $query = strtolower($query);
-    
-    // Financial metrics to detect (in order of specificity)
-    $metrics = [
-      'total revenue' => 'revenue',
-      'gross revenue' => 'revenue',
-      'net revenue' => 'revenue',
-      'total sales' => 'sales',
-      'gross sales' => 'sales',
-      'net sales' => 'sales',
-      'revenue' => 'revenue',
-      'sales' => 'sales',
-      'turnover' => 'turnover',
-      'profit' => 'profit',
-      'margin' => 'margin',
-      'income' => 'income',
-      'earnings' => 'earnings',
-      'expenses' => 'expenses',
-      'costs' => 'costs',
-      'orders' => 'orders',
-      'order count' => 'orders',
-      'order total' => 'orders',
-    ];
-    
-    foreach ($metrics as $pattern => $metric) {
-      if (strpos($query, $pattern) !== false) {
-        return $metric;
-      }
-    }
-    
-    return null;
-  }
-  
-  /**
-   * Extract time range from query
-   *
-   * Identifies the time range being queried (year 2025, this year, last month, etc.)
-   *
-   * @param string $query The translated query (English)
-   * @return string|null The time range or null if not found
-   */
-  private function extractTimeRange(string $query): ?string
-  {
-    $query = strtolower($query);
-    
-    // Check for specific year patterns
-    if (preg_match('/\b(year\s+)?(\d{4})\b/i', $query, $matches)) {
-      return 'year ' . $matches[2];
-    }
-    
-    // Check for relative time patterns
-    $relativePatterns = [
-      'this year' => 'this year',
-      'last year' => 'last year',
-      'current year' => 'current year',
-      'this month' => 'this month',
-      'last month' => 'last month',
-      'this quarter' => 'this quarter',
-      'last quarter' => 'last quarter',
-      'this week' => 'this week',
-      'last week' => 'last week',
-      'today' => 'today',
-      'yesterday' => 'yesterday',
-    ];
-    
-    foreach ($relativePatterns as $pattern => $range) {
-      if (strpos($query, $pattern) !== false) {
-        return $range;
-      }
-    }
-    
-    // Check for date range patterns (e.g., "from January to March")
-    if (preg_match('/from\s+(\w+)\s+to\s+(\w+)/i', $query, $matches)) {
-      return 'from ' . $matches[1] . ' to ' . $matches[2];
-    }
-    
-    // Check for specific month patterns
-    $months = ['january', 'february', 'march', 'april', 'may', 'june', 
-               'july', 'august', 'september', 'october', 'november', 'december'];
-    foreach ($months as $month) {
-      if (preg_match('/\b' . $month . '\s*(\d{4})?\b/i', $query, $matches)) {
-        return isset($matches[1]) ? $month . ' ' . $matches[1] : $month;
-      }
-    }
-    
-    return null;
   }
 
   /**
@@ -847,7 +752,7 @@ class UnifiedQueryAnalyzer
     ];
 
     // First, try pattern-based mapping for common variations
-    $patternMapping = $this->mapUnrecognizedPeriodByPattern($unrecognizedPeriod);
+    $patternMapping = TemporalPeriodMappingPattern::mapPeriod($unrecognizedPeriod);
     if ($patternMapping['recognized']) {
       $this->logger->logStructured(
         'info',
@@ -905,105 +810,6 @@ class UnifiedQueryAnalyzer
     );
 
     return $defaultResult;
-  }
-
-  /**
-   * Map unrecognized temporal period using pattern matching
-   *
-   * @param string $period The unrecognized period
-   * @return array Mapping result
-   */
-  private function mapUnrecognizedPeriodByPattern(string $period): array
-  {
-    $period = strtolower(trim($period));
-
-    // Common variations and their standard mappings
-    $mappings = [
-      // Week variations
-      'biweekly' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'weeks', 'interval' => 2], 'interpretation' => 'Every 2 weeks'],
-      'bi-weekly' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'weeks', 'interval' => 2], 'interpretation' => 'Every 2 weeks'],
-      'fortnightly' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'weeks', 'interval' => 2], 'interpretation' => 'Every 2 weeks'],
-      'fortnight' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'weeks', 'interval' => 2], 'interpretation' => 'Every 2 weeks'],
-      'weekly' => ['standard_period' => 'week', 'custom_period' => null, 'interpretation' => 'Weekly'],
-      
-      // Month variations
-      'bimonthly' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'months', 'interval' => 2], 'interpretation' => 'Every 2 months'],
-      'bi-monthly' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'months', 'interval' => 2], 'interpretation' => 'Every 2 months'],
-      'monthly' => ['standard_period' => 'month', 'custom_period' => null, 'interpretation' => 'Monthly'],
-      
-      // Quarter variations
-      'quarterly' => ['standard_period' => 'quarter', 'custom_period' => null, 'interpretation' => 'Quarterly'],
-      'trimester' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'months', 'interval' => 3], 'interpretation' => 'Every 3 months (trimester)'],
-      'tri-monthly' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'months', 'interval' => 3], 'interpretation' => 'Every 3 months'],
-      
-      // Semester variations
-      'semiannual' => ['standard_period' => 'semester', 'custom_period' => null, 'interpretation' => 'Semi-annual (every 6 months)'],
-      'semi-annual' => ['standard_period' => 'semester', 'custom_period' => null, 'interpretation' => 'Semi-annual (every 6 months)'],
-      'biannual' => ['standard_period' => 'semester', 'custom_period' => null, 'interpretation' => 'Bi-annual (every 6 months)'],
-      'bi-annual' => ['standard_period' => 'semester', 'custom_period' => null, 'interpretation' => 'Bi-annual (every 6 months)'],
-      'half-yearly' => ['standard_period' => 'semester', 'custom_period' => null, 'interpretation' => 'Half-yearly'],
-      'half yearly' => ['standard_period' => 'semester', 'custom_period' => null, 'interpretation' => 'Half-yearly'],
-      
-      // Year variations
-      'yearly' => ['standard_period' => 'year', 'custom_period' => null, 'interpretation' => 'Yearly'],
-      'annual' => ['standard_period' => 'year', 'custom_period' => null, 'interpretation' => 'Annual'],
-      'annually' => ['standard_period' => 'year', 'custom_period' => null, 'interpretation' => 'Annually'],
-      'fiscal year' => ['standard_period' => 'year', 'custom_period' => ['type' => 'fiscal_year'], 'interpretation' => 'Fiscal year'],
-      'fy' => ['standard_period' => 'year', 'custom_period' => ['type' => 'fiscal_year'], 'interpretation' => 'Fiscal year'],
-      
-      // Day variations
-      'daily' => ['standard_period' => 'day', 'custom_period' => null, 'interpretation' => 'Daily'],
-      
-      // Rolling periods
-      'rolling 12 months' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'rolling', 'months' => 12], 'interpretation' => 'Rolling 12 months'],
-      'rolling year' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'rolling', 'months' => 12], 'interpretation' => 'Rolling 12 months'],
-      'trailing 12 months' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'rolling', 'months' => 12], 'interpretation' => 'Trailing 12 months'],
-      'ttm' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'rolling', 'months' => 12], 'interpretation' => 'Trailing twelve months'],
-      'ytd' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'ytd'], 'interpretation' => 'Year to date'],
-      'year to date' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'ytd'], 'interpretation' => 'Year to date'],
-      'mtd' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'mtd'], 'interpretation' => 'Month to date'],
-      'month to date' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'mtd'], 'interpretation' => 'Month to date'],
-      'qtd' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'qtd'], 'interpretation' => 'Quarter to date'],
-      'quarter to date' => ['standard_period' => 'custom', 'custom_period' => ['type' => 'qtd'], 'interpretation' => 'Quarter to date'],
-    ];
-
-    if (isset($mappings[$period])) {
-      $mapping = $mappings[$period];
-      return [
-        'recognized' => true,
-        'standard_period' => $mapping['standard_period'],
-        'custom_period' => $mapping['custom_period'],
-        'interpretation' => $mapping['interpretation'],
-        'confidence' => 0.95,
-        'needs_clarification' => false,
-        'clarification_message' => null,
-      ];
-    }
-
-    // Check for "every X months/weeks/days" pattern
-    if (preg_match('/every\s+(\d+)\s+(month|week|day|year)s?/i', $period, $matches)) {
-      $interval = (int)$matches[1];
-      $unit = strtolower($matches[2]) . 's';
-      return [
-        'recognized' => true,
-        'standard_period' => 'custom',
-        'custom_period' => ['type' => $unit, 'interval' => $interval],
-        'interpretation' => "Every {$interval} {$unit}",
-        'confidence' => 0.9,
-        'needs_clarification' => false,
-        'clarification_message' => null,
-      ];
-    }
-
-    return [
-      'recognized' => false,
-      'standard_period' => null,
-      'custom_period' => null,
-      'interpretation' => null,
-      'confidence' => 0.0,
-      'needs_clarification' => true,
-      'clarification_message' => null,
-    ];
   }
 
   /**

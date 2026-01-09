@@ -8,7 +8,7 @@
  *
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Analytics;
 
 /**
  * QuerySplitterPatterns - Regex patterns for query splitting

@@ -6,12 +6,14 @@
  * Used by AnalyticsAgent and other components to detect modification requests.
  * 
  * TASK 5.1.1: Extracted from AnalyticsAgent::getModificationKeywords()
+ * RESTRUCTURATION: Relocated to Ecommerce domain (2026-01-09)
+ * TASK: patterns-restructuration - Task 7.2
  * 
- * @package ClicShopping\AI\Domain\Patterns
+ * @package ClicShopping\AI\Domain\Patterns\Ecommerce
  * @since 2025-12-28
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Ecommerce;
 
 class ModificationKeywordsPattern
 {

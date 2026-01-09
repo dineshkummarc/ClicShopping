@@ -12,9 +12,13 @@
  *
  * REFACTORING: Extracted from QueryAnalyzer (2026-01-05)
  * TASK: Session 15 - Pattern extraction cleanup
+ * RESTRUCTURATION: Relocated to Ecommerce domain (2026-01-09)
+ * TASK: patterns-restructuration - Task 7.1
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Ecommerce;
+
+use ClicShopping\AI\Domain\Patterns\Common\EntityKeywordsPattern;
 
 class EntityDetectionPattern
 {
@@ -24,18 +28,13 @@ class EntityDetectionPattern
    * Returns patterns for detecting e-commerce entities (products, categories, etc.)
    * in user queries.
    *
+   * Uses centralized EntityKeywordsPattern from Common domain to avoid duplication.
+   *
    * @return array Entity patterns mapped by entity type
    */
   public static function getPatterns(): array
   {
-    return [
-      'product' => ['product', 'products', 'item', 'items', 'article', 'articles'],
-      'category' => ['category', 'categories', 'section', 'sections'],
-      'customer' => ['customer', 'customers', 'client', 'clients', 'user', 'users'],
-      'order' => ['order', 'orders', 'purchase', 'purchases', 'sale', 'sales'],
-      'manufacturer' => ['manufacturer', 'manufacturers', 'brand', 'brands', 'supplier', 'suppliers'],
-      'review' => ['review', 'reviews', 'rating', 'ratings', 'comment', 'comments'],
-    ];
+    return EntityKeywordsPattern::getPatterns();
   }
 
   /**
@@ -79,6 +78,8 @@ class EntityDetectionPattern
       'entity_types' => array_keys(self::getPatterns()),
       'total_keywords' => array_sum(array_map('count', self::getPatterns())),
       'usage' => 'QueryAnalyzer::extractEntitiesFromMessage()',
+      'domain' => 'Ecommerce',
+      'uses_common' => 'EntityKeywordsPattern',
     ];
   }
 }

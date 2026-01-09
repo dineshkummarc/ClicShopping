@@ -11,7 +11,6 @@
 namespace ClicShopping\AI\Infrastructure\Schema;
 
 use ClicShopping\AI\Domain\Embedding\NewVector;
-use ClicShopping\AI\Domain\Patterns\SchemaSynonymPatterns;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Cache as OMCache;
 
@@ -20,6 +19,8 @@ use ClicShopping\OM\Cache as OMCache;
  * 
  * Retrieves relevant database schema portions based on user query
  * Uses embedding-based similarity search with fallback mechanisms
+ * 
+ * Pure LLM Mode - pattern-based fallbacks removed
  * 
  * Responsibilities:
  * - Find relevant tables based on query similarity
@@ -284,8 +285,9 @@ class SchemaRetriever
    */
   private function applyDynamicScoring(string $query, array $embeddingScores): array
   {
-    // Extract query keywords
-    $queryKeywords = $this->extractQueryKeywords($query);
+    // Pure LLM Mode - pattern-based fallbacks removed
+    // Extract query keywords using simple word extraction
+    $queryKeywords = $this->extractSimpleKeywords($query);
     
     // Find column matches
     $columnMatchScores = [];
@@ -326,34 +328,24 @@ class SchemaRetriever
   }
   
   /**
-   * Extract keywords from query
+   * Extract simple keywords from query (Pure LLM mode)
    * 
    * @param string $query User query
    * @return array Array of keywords
    */
-  private function extractQueryKeywords(string $query): array
+  private function extractSimpleKeywords(string $query): array
   {
     $query = strtolower($query);
-    
-    // Load synonyms from pattern configuration
-    static $synonyms = null;
-    if ($synonyms === null) {
-      $synonyms = SchemaSynonymPatterns::getSynonyms();
-    }
     
     // Remove special chars and split
     $query = preg_replace('/[^a-z0-9\s]/', ' ', $query);
     $words = preg_split('/\s+/', $query);
     
-    // Filter and expand with synonyms
+    // Filter words longer than 3 characters
     $keywords = [];
     foreach ($words as $word) {
       if (strlen($word) > 3) {
         $keywords[] = $word;
-        // Add synonyms
-        if (isset($synonyms[$word])) {
-          $keywords = array_merge($keywords, $synonyms[$word]);
-        }
       }
     }
     
@@ -416,39 +408,36 @@ class SchemaRetriever
   }
   
   /**
-   * Fallback keyword matching
+   * Fallback keyword matching (Pure LLM mode - simplified)
    * 
-   * Uses regex patterns to match query keywords to relevant tables
+   * Uses column index to match query keywords to relevant tables
    * 
    * @param string $query User query
    * @return array Array of table names
    */
   private function fallbackKeywordMatching(string $query): array
   {
-    // Load patterns from configuration
-    static $keywords = null;
-    if ($keywords === null) {
-      $keywords = require CLICSHOPPING_BASE_DIR . 'AI/Domain/Patterns/SchemaFallbackKeywordPatterns.php';
-    }
+    // Pure LLM Mode - pattern-based fallbacks removed
+    // Use column index for keyword matching
+    $keywords = $this->extractSimpleKeywords($query);
     
     $matchedTables = [];
-    $queryLower = strtolower($query);
-    
-    foreach ($keywords as $pattern => $tables) {
-      if (preg_match("/$pattern/i", $queryLower)) {
-        $matchedTables = array_merge($matchedTables, $tables);
-        
-        if ($this->debug) {
-          error_log("[SchemaRetriever] Keyword match: '{$pattern}' → " . implode(', ', $tables));
-        }
+    foreach ($keywords as $keyword) {
+      $matches = $this->columnIndex->find($keyword);
+      foreach ($matches as $match) {
+        $matchedTables[] = $match['table'];
       }
+    }
+    
+    if ($this->debug && !empty($matchedTables)) {
+      error_log("[SchemaRetriever] Column index matches: " . implode(', ', array_unique($matchedTables)));
     }
     
     return array_unique($matchedTables);
   }
   
   /**
-   * Get common tables (final fallback)
+   * Get common tables (final fallback) - Pure LLM mode
    * 
    * Returns the most frequently used tables
    * 
@@ -456,13 +445,14 @@ class SchemaRetriever
    */
   private function getCommonTables(): array
   {
-    // Load common tables from pattern configuration
-    static $commonTables = null;
-    if ($commonTables === null) {
-      $commonTables = require CLICSHOPPING_BASE_DIR . 'AI/Domain/Patterns/SchemaCommonTablesPattern.php';
-    }
-    
-    return $commonTables;
+    // Pure LLM Mode - return hardcoded common tables instead of pattern file
+    return [
+      'clic_products',
+      'clic_products_description',
+      'clic_orders',
+      'clic_orders_products',
+      'clic_customers'
+    ];
   }
   
   /**
@@ -547,25 +537,25 @@ class SchemaRetriever
   }
   
   /**
-   * Get context limit for a model
+   * Get context limit for a model (Pure LLM mode - simplified)
    * 
    * @param string $modelName Model name
    * @return int Context limit in tokens
    */
   private function getContextLimit(string $modelName): int
   {
-    // Load model limits from pattern configuration
-    static $limits = null;
-    if ($limits === null) {
-      $limits = require CLICSHOPPING_BASE_DIR . 'AI/Domain/Patterns/SchemaModelContextLimitsPattern.php';
-    }
+    // Pure LLM Mode - hardcoded limits instead of pattern file
+    $limits = [
+      'qwen3-4b' => 1500,
+      'qwen3-8b' => 2000,
+      'llama3-8b' => 2000,
+      'mistral-7b' => 2000,
+      'gpt-3.5' => 3000,
+      'gpt-4' => 4000,
+      'default' => 1500
+    ];
     
-    // Check for exact match
-    if (isset($limits[$modelName])) {
-      return $limits[$modelName];
-    }
-    
-    // Check for partial match (e.g., "qwen/qwen3-4b-instruct" matches "qwen3-4b")
+    // Check for partial match
     foreach ($limits as $pattern => $limit) {
       if ($pattern === 'default') continue;
       if (stripos($modelName, $pattern) !== false) {

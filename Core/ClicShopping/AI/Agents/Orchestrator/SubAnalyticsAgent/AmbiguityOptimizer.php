@@ -11,7 +11,8 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent;
 
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domain\Patterns\AmbiguityPreFilter;
+use ClicShopping\AI\Domain\Patterns\Hybrid\AmbiguityPreFilter;
+use ClicShopping\AI\Domain\Patterns\Analytics\TemporalConflictPattern;
 use ClicShopping\OM\Cache as OMCache;
 
 /**
@@ -20,7 +21,7 @@ use ClicShopping\OM\Cache as OMCache;
  * Optimizes ambiguity detection and SQL generation performance by:
  * 1. Using English pattern matching before expensive LLM calls
  * 2. Reducing number of interpretations from 3 to 2 (or 1 if clear)
- * 3. Using Memcached/Redis cache if available, otherwise traditional cache
+ * 3. Using OM\Cache for caching (supports file, memory, and session-based caching)
  * 4. Implementing confidence threshold to skip unnecessary interpretations
  *
  * Performance Impact:
@@ -34,68 +35,21 @@ class AmbiguityOptimizer
   private SecurityLogger $logger;
   private bool $debug;
   private bool $useCache;
-  private string $cacheType;
 
   public function __construct(bool $debug = false)
   {
     $this->logger = new SecurityLogger();
     $this->debug = $debug;
     
-    // Determine cache type based on configuration
-    // MariaDB uses Memcached/Redis if enabled, otherwise traditional cache
-    $this->useCache = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
-    
-    $this->cacheType = $this->detectCacheType();
+    // Use OM\Cache system (configured via CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER)
+    $this->useCache = \defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
     
     if ($this->debug) {
       $this->logger->logSecurityEvent(
-        "AmbiguityOptimizer initialized with cache: {$this->cacheType}",
+        "AmbiguityOptimizer initialized with cache: " . ($this->useCache ? 'enabled' : 'disabled'),
         'info'
       );
     }
-  }
-
-  /**
-   * Detect which cache system is available
-   * Priority: Memcached > Redis > Traditional
-   *
-   * @return string Cache type: 'memcached', 'redis', or 'traditional'
-   */
-  private function detectCacheType(): string
-  {
-    if (!$this->useCache) {
-      return 'none';
-    }
-
-    // Check for Memcached
-    if (class_exists('Memcached') && extension_loaded('memcached')) {
-      try {
-        $memcached = new \Memcached();
-        $memcached->addServer('localhost', 11211);
-        $stats = $memcached->getStats();
-        if (!empty($stats)) {
-          return 'memcached';
-        }
-      } catch (\Exception $e) {
-        // Memcached not available
-      }
-    }
-
-    // Check for Redis
-    if (class_exists('Redis') && extension_loaded('redis')) {
-      try {
-        $redis = new \Redis();
-        if ($redis->connect('localhost', 6379)) {
-          $redis->close();
-          return 'redis';
-        }
-      } catch (\Exception $e) {
-        // Redis not available
-      }
-    }
-
-    // Fall back to traditional cache
-    return 'traditional';
   }
 
   /**
@@ -271,7 +225,7 @@ class AmbiguityOptimizer
  /**
    * Get cached ambiguity analysis
    *
-   * Uses Memcached/Redis if available, otherwise traditional cache.
+   * Uses OM\Cache system (file-based with in-memory caching).
    *
    * @param string $query Query to check
    * @return array|null Cached analysis or null if not found
@@ -285,19 +239,13 @@ class AmbiguityOptimizer
     $cacheKey = 'ambiguity_' . md5($query);
 
     try {
-      switch ($this->cacheType) {
-        case 'memcached':
-          return $this->getFromMemcached($cacheKey);
-        
-        case 'redis':
-          return $this->getFromRedis($cacheKey);
-        
-        case 'traditional':
-          return $this->getFromTraditionalCache($cacheKey);
-        
-        default:
-          return null;
+      $cache = new OMCache($cacheKey, 'Rag/Ambiguity');
+      
+      if ($cache->exists()) {
+        return $cache->get();
       }
+      
+      return null;
     } catch (\Exception $e) {
       if ($this->debug) {
         $this->logger->logSecurityEvent(
@@ -312,9 +260,11 @@ class AmbiguityOptimizer
   /**
    * Cache ambiguity analysis
    *
+   * Uses OM\Cache system (file-based with in-memory caching).
+   *
    * @param string $query Query
    * @param array $analysis Analysis to cache
-   * @param int $ttl Time to live in seconds (default: 1 hour)
+   * @param int $ttl Time to live in seconds (default: 1 hour) - Note: OM\Cache uses file timestamps
    */
   public function cacheAmbiguityAnalysis(string $query, array $analysis, int $ttl = 3600): void
   {
@@ -325,106 +275,12 @@ class AmbiguityOptimizer
     $cacheKey = 'ambiguity_' . md5($query);
 
     try {
-      switch ($this->cacheType) {
-        case 'memcached':
-          $this->setInMemcached($cacheKey, $analysis, $ttl);
-          break;
-        
-        case 'redis':
-          $this->setInRedis($cacheKey, $analysis, $ttl);
-          break;
-        
-        case 'traditional':
-          $this->setInTraditionalCache($cacheKey, $analysis, $ttl);
-          break;
-      }
+      $cache = new OMCache($cacheKey, 'Rag/Ambiguity');
+      $cache->save($analysis, ['ttl' => $ttl]);
     } catch (\Exception $e) {
       if ($this->debug) {
         $this->logger->logSecurityEvent(
           "AmbiguityOptimizer: Cache write error: " . $e->getMessage(),
-          'warning'
-        );
-      }
-    }
-  }
-
-  /**
-   * Get from Memcached
-   */
-  private function getFromMemcached(string $key): ?array
-  {
-    $memcached = new \Memcached();
-    $memcached->addServer('localhost', 11211);
-    $value = $memcached->get($key);
-    return $value !== false ? $value : null;
-  }
-
-  /**
-   * Set in Memcached
-   */
-  private function setInMemcached(string $key, array $value, int $ttl): void
-  {
-    $memcached = new \Memcached();
-    $memcached->addServer('localhost', 11211);
-    $memcached->set($key, $value, $ttl);
-  }
-
-  /**
-   * Get from Redis
-   */
-  private function getFromRedis(string $key): ?array
-  {
-    $redis = new \Redis();
-    $redis->connect('localhost', 6379);
-    $value = $redis->get($key);
-    $redis->close();
-    return $value !== false ? json_decode($value, true) : null;
-  }
-
-  /**
-   * Set in Redis
-   */
-  private function setInRedis(string $key, array $value, int $ttl): void
-  {
-    $redis = new \Redis();
-    $redis->connect('localhost', 6379);
-    $redis->setex($key, $ttl, json_encode($value));
-    $redis->close();
-  }
-
-  /**
-   * Get from traditional cache (OM\Cache)
-   */
-  private function getFromTraditionalCache(string $key): ?array
-  {
-    try {
-      $cache = new OMCache($key, 'Rag/Ambiguity');
-      if ($cache->exists()) {
-        return $cache->get();
-      }
-    } catch (\Exception $e) {
-      if ($this->debug) {
-        $this->logger->logSecurityEvent(
-          "Traditional cache get error: {$e->getMessage()}",
-          'warning'
-        );
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Set in traditional cache (OM\Cache)
-   */
-  private function setInTraditionalCache(string $key, array $value, int $ttl): void
-  {
-    try {
-      $cache = new OMCache($key, 'Rag/Ambiguity');
-      $cache->save($value);
-    } catch (\Exception $e) {
-      if ($this->debug) {
-        $this->logger->logSecurityEvent(
-          "Traditional cache set error: {$e->getMessage()}",
           'warning'
         );
       }
@@ -440,7 +296,7 @@ class AmbiguityOptimizer
   {
     return [
       'cache_enabled' => $this->useCache,
-      'cache_type' => $this->cacheType,
+      'cache_system' => 'OM\\Cache', // Uses ClicShopping's unified caching system
       'default_interpretation_count' => 2,
       'confidence_threshold' => 0.85,
       'prefilter_enabled' => true, // AmbiguityPreFilter is always enabled (EXCEPTION to Pure LLM)
@@ -565,18 +421,11 @@ class AmbiguityOptimizer
       return $defaultResult;
     }
 
-    // Define period hierarchy (smaller to larger)
-    $periodHierarchy = [
-      'day' => 1,
-      'week' => 2,
-      'month' => 3,
-      'quarter' => 4,
-      'semester' => 5,
-      'year' => 6,
-    ];
+    // Get period hierarchy from pattern class
+    $periodHierarchy = TemporalConflictPattern::getPeriodHierarchy();
 
     // Detect time range granularity
-    $timeRangeGranularity = $this->detectTimeRangeGranularity($timeRange);
+    $timeRangeGranularity = TemporalConflictPattern::detectTimeRangeGranularity($timeRange);
 
     // Check if any requested aggregation is finer than the time range allows
     foreach ($temporalPeriods as $period) {
@@ -626,9 +475,10 @@ class AmbiguityOptimizer
     }
 
     // Check for single day + weekly/monthly aggregation
-    if ($this->isSingleDayRange($timeRange)) {
+    if (TemporalConflictPattern::isSingleDayRange($timeRange)) {
+      $coarseAggregationPeriods = TemporalConflictPattern::getCoarseAggregationPeriods();
       foreach ($temporalPeriods as $period) {
-        if (in_array(strtolower($period), ['week', 'month', 'quarter', 'semester', 'year'])) {
+        if (in_array(strtolower($period), $coarseAggregationPeriods)) {
           return [
             'has_conflict' => true,
             'conflict_type' => 'granularity_too_coarse',
@@ -666,7 +516,7 @@ class AmbiguityOptimizer
 
     // Check for potentially confusing combinations without clear connectors
     // e.g., "by month week" without "and" or "then"
-    $hasConnector = preg_match('/\b(then|and|puis|et|ensuite|after that|followed by)\b/i', $query);
+    $hasConnector = TemporalConflictPattern::hasTemporalConnector($query);
 
     if (count($temporalPeriods) >= 2 && !$hasConnector) {
       // Check if periods are adjacent in the query without clear separation
@@ -686,78 +536,6 @@ class AmbiguityOptimizer
     }
 
     return $defaultResult;
-  }
-
-  /**
-   * Detect the granularity of a time range
-   *
-   * @param string $timeRange Time range string
-   * @return string Granularity level (day, week, month, quarter, semester, year)
-   */
-  private function detectTimeRangeGranularity(string $timeRange): string
-  {
-    $range = strtolower($timeRange);
-
-    // Single day patterns
-    if (preg_match('/\b(today|yesterday|\d{4}-\d{2}-\d{2}|january \d+|february \d+|march \d+|april \d+|may \d+|june \d+|july \d+|august \d+|september \d+|october \d+|november \d+|december \d+)\b/', $range)) {
-      return 'day';
-    }
-
-    // Week patterns
-    if (preg_match('/\b(this week|last week|week \d+)\b/', $range)) {
-      return 'week';
-    }
-
-    // Month patterns
-    if (preg_match('/\b(this month|last month|january|february|march|april|may|june|july|august|september|october|november|december)\b/', $range) && !preg_match('/\d+/', $range)) {
-      return 'month';
-    }
-
-    // Quarter patterns
-    if (preg_match('/\b(q[1-4]|quarter [1-4]|this quarter|last quarter)\b/', $range)) {
-      return 'quarter';
-    }
-
-    // Semester patterns
-    if (preg_match('/\b(semester [1-2]|first semester|second semester|h[1-2])\b/', $range)) {
-      return 'semester';
-    }
-
-    // Year patterns (default for year XXXX)
-    if (preg_match('/\b(year \d{4}|\d{4}|this year|last year)\b/', $range)) {
-      return 'year';
-    }
-
-    // Default to year if unknown
-    return 'year';
-  }
-
-  /**
-   * Check if time range represents a single day
-   *
-   * @param string $timeRange Time range string
-   * @return bool True if single day
-   */
-  private function isSingleDayRange(string $timeRange): bool
-  {
-    $range = strtolower($timeRange);
-
-    // Explicit single day patterns
-    $singleDayPatterns = [
-      '/\btoday\b/',
-      '/\byesterday\b/',
-      '/\b\d{4}-\d{2}-\d{2}\b/',  // ISO date format
-      '/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}(st|nd|rd|th)?\b/',  // Month day
-      '/\b\d{1,2}(st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december)\b/',  // Day month
-    ];
-
-    foreach ($singleDayPatterns as $pattern) {
-      if (preg_match($pattern, $range)) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   /**

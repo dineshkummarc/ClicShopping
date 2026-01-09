@@ -20,7 +20,7 @@ use ClicShopping\AI\Tools\BIexecution\AnalyticsQueryExecutor;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\FeedbackImpactDetector;
 use ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor\HybridQueryProcessorFactory;
 use ClicShopping\AI\Infrastructure\Cache\HybridQueryCache;
-use ClicShopping\AI\Domain\Patterns\QuerySplitterPatterns;
+use ClicShopping\AI\Domain\Patterns\Analytics\QuerySplitterPatterns;
 
 /**
  * HybridQueryProcessor Class

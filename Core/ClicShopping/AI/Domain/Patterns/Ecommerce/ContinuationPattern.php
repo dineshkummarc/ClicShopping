@@ -12,9 +12,11 @@
  *
  * REFACTORING: Extracted from QueryAnalyzer (2026-01-05)
  * TASK: Session 15 - Pattern extraction cleanup
+ * RESTRUCTURATION: Relocated to Ecommerce domain (2026-01-09)
+ * TASK: patterns-restructuration - Task 7.3
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Ecommerce;
 
 class ContinuationPattern
 {
@@ -73,6 +75,7 @@ class ContinuationPattern
       'description' => 'Detects query continuation indicators (with their, and also, but with, etc.)',
       'pattern_count' => count(self::getPatterns()),
       'usage' => 'QueryAnalyzer::analyzeQueryContextRelation()',
+      'domain' => 'Ecommerce',
       'examples' => [
         'with their sku',
         'and also show prices',

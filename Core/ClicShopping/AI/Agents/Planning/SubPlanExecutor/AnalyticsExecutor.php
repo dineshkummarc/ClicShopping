@@ -13,7 +13,7 @@ namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Orchestrator\AnalyticsAgent;
-use ClicShopping\AI\Domain\Patterns\AnalyticsExecutorPatterns;
+use ClicShopping\AI\Domain\Patterns\Analytics\AnalyticsExecutorPatterns;
 
 /**
  * AnalyticsExecutor Class

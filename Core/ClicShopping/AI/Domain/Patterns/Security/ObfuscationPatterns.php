@@ -7,11 +7,11 @@
  * 
  * Used by ObfuscationPreprocessor to detect encoding and obfuscation attempts.
  * 
- * @package ClicShopping\AI\Domain\Patterns
+ * @package ClicShopping\AI\Domain\Patterns\Security
  * @since 2026-01-07
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Security;
 
 class ObfuscationPatterns
 {

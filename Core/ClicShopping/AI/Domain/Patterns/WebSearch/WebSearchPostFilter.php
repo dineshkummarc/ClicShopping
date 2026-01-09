@@ -8,7 +8,7 @@
  *
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\WebSearch;
 
 use ClicShopping\OM\Registry;
 
@@ -29,8 +29,12 @@ use ClicShopping\OM\Registry;
  *
  * Pattern definitions are loaded from WebSearchPatterns.php
  *
- * @package ClicShopping\AI\Domain\Patterns
+ * @package ClicShopping\AI\Domain\Patterns\WebSearch
  * @since 2025-12-28
+ * 
+ * REFACTORING: Relocated from Patterns/ to Patterns/WebSearch/
+ * - Namespace updated: ClicShopping\AI\Domain\Patterns → ClicShopping\AI\Domain\Patterns\WebSearch
+ * - Internal reference to WebSearchPatterns updated to same namespace
  */
 class WebSearchPostFilter
 {

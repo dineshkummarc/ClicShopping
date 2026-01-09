@@ -96,6 +96,11 @@ class ContextResolver
    * Solution: In Pure LLM mode, let the LLM decide if a query needs context based on
    * actual pronouns and conversation history, not broad patterns like "and".
    *
+   * @deprecated Pattern-based detection will be removed in Q2 2026. See LLM-based alternative
+   *             in kiro_documentation/2025_12_22/implicit_context_pattern_removal.md
+   * @see kiro_documentation/2025_12_22/implicit_context_pattern_removal.md
+   * @see kiro_documentation/2026_01_02/pattern_removal_roadmap.md (Phase 4.5)
+   *
    * @param string $query Query to analyze
    * @return bool True if references detected
    */
@@ -159,6 +164,12 @@ class ContextResolver
    * 
    * ENGLISH ONLY: All patterns are in English as per design.
    * Query must be translated to English before calling this method.
+   *
+   * @deprecated Pattern-based detection will be removed in Q2 2026. See LLM-based alternative
+   *             in kiro_documentation/2025_12_22/implicit_context_pattern_removal.md
+   * @see kiro_documentation/2025_12_22/IMPLICIT_CONTEXT_PATTERN_ISSUE.md
+   * @see kiro_documentation/2025_12_22/implicit_context_pattern_removal.md
+   * @see kiro_documentation/2026_01_02/pattern_removal_roadmap.md (Phase 4.5)
    *
    * @param string $query Query to analyze (MUST BE IN ENGLISH)
    * @return bool True if implicit context needed

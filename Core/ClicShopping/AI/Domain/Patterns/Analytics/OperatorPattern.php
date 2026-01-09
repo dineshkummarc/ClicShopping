@@ -14,7 +14,7 @@
  * TASK: Session 15 - Pattern extraction cleanup
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Analytics;
 
 class OperatorPattern
 {

@@ -10,7 +10,6 @@
 
 namespace ClicShopping\AI\Infrastructure\Schema;
 
-use ClicShopping\AI\Domain\Patterns\SchemaSynonymPatterns;
 use ClicShopping\OM\Registry;
 
 /**
@@ -18,6 +17,8 @@ use ClicShopping\OM\Registry;
  * 
  * Builds and maintains an inverted index of column names and comments
  * for dynamic table selection based on query keywords
+ * 
+ * Pure LLM Mode - synonym expansion removed
  * 
  * @package ClicShopping\AI\Infrastructure\Schema
  */
@@ -114,34 +115,25 @@ class ColumnIndex
   }
   
   /**
-   * Extract keywords from text with synonyms
+   * Extract keywords from text (Pure LLM mode - simplified)
    * 
    * @param string $text Text to extract keywords from
    * @return array Array of keywords
    */
   private function extractKeywords(string $text): array
   {
+    // Pure LLM Mode - synonym expansion removed
     $text = strtolower($text);
-    
-    // Load synonyms from pattern configuration
-    static $synonyms = null;
-    if ($synonyms === null) {
-      $synonyms = SchemaSynonymPatterns::getSynonyms();
-    }
     
     // Remove special chars and split
     $text = preg_replace('/[^a-z0-9\s]/', ' ', $text);
     $words = preg_split('/\s+/', $text);
     
-    // Filter and expand with synonyms
+    // Filter words longer than 3 characters
     $keywords = [];
     foreach ($words as $word) {
       if (strlen($word) > 3) {
         $keywords[] = $word;
-        // Add synonyms
-        if (isset($synonyms[$word])) {
-          $keywords = array_merge($keywords, $synonyms[$word]);
-        }
       }
     }
     

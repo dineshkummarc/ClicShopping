@@ -11,8 +11,8 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor;
 
 use ClicShopping\AI\Domain\Semantics\Semantics;
-use ClicShopping\AI\Domain\Patterns\WebSearchPostFilter;
-use ClicShopping\AI\Domain\Patterns\HybridPreFilter;
+use ClicShopping\AI\Domain\Patterns\WebSearch\WebSearchPostFilter;
+use ClicShopping\AI\Domain\Patterns\Hybrid\HybridPreFilter;
 
 /**
  * QueryClassifier - Classifies queries into analytics, semantic, web_search, or hybrid types
@@ -212,9 +212,7 @@ class QueryClassifier extends BaseQueryProcessor
       
     } catch (\Exception $e) {
       if ($this->debug) {
-        $this->logError("LLM classification failed", [
-          'error' => $e->getMessage()
-        ]);
+        $this->logError("LLM classification failed", $e);
       }
       
       // Fallback: semantic

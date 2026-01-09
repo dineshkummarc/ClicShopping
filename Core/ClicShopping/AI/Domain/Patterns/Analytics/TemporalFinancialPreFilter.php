@@ -36,7 +36,7 @@
  * @author ClicShopping Team
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Analytics;
 
 class TemporalFinancialPreFilter
 {

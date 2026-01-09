@@ -8,7 +8,7 @@
  *
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Semantic;
 
 /**
  * ClassificationEnginePatterns - Regex patterns for JSON cleaning and validation
@@ -16,9 +16,10 @@ namespace ClicShopping\AI\Domain\Patterns;
  * NOTE: These patterns are for JSON response cleaning from LLMs.
  * They handle common malformations in LLM-generated JSON.
  *
- * @package ClicShopping\AI\Domain\Patterns
+ * @package ClicShopping\AI\Domain\Patterns\Semantic
  * @since 2025-12-30
  * @moved 2025-12-31 from SubSemantics\Patterns to Domain\Patterns
+ * @moved 2026-01-09 from Domain\Patterns to Domain\Patterns\Semantic
  */
 class ClassificationEnginePatterns
 {

@@ -8,7 +8,7 @@
  *
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Hybrid;
 
 /**
  * HybridPreFilter
@@ -29,7 +29,7 @@ namespace ClicShopping\AI\Domain\Patterns;
  * 3. If yes, return hybrid classification
  * 4. If no, return null (let LLM classify)
  *
- * @package ClicShopping\AI\Domain\Patterns
+ * @package ClicShopping\AI\Domain\Patterns\Hybrid
  * @since 2025-01-02
  * @updated 2025-01-02 - Simplified to English-only keywords
  */

@@ -11,7 +11,7 @@
 namespace ClicShopping\AI\Domain\Semantics\SubSemantics;
 
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domain\Patterns\ClassificationEnginePatterns;
+use ClicShopping\AI\Domain\Patterns\Semantic\ClassificationEnginePatterns;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\OM\CLICSHOPPING;
@@ -333,9 +333,9 @@ class ClassificationEngine
       $response = Gpt::getGptResponse($prompt, 20);
       $type = trim(strtolower($response));
       
-      // Validate old prompt response
+      // Validate old prompt response - default to 'semantic' if invalid
       if (!in_array($type, ['analytics', 'semantic'])) {
-        $type = self::getFallbackClassification($text);
+        $type = 'semantic'; // Default fallback
       }
       
       // Return in new format with default values

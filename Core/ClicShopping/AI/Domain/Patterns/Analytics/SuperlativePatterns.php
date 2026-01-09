@@ -9,7 +9,9 @@
  * @since 2026-01-03
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\Analytics;
+
+use ClicShopping\AI\Domain\Patterns\Common\EntityKeywordsPattern;
 
 class SuperlativePatterns
 {
@@ -46,11 +48,19 @@ class SuperlativePatterns
   
   /**
    * Entity keywords that indicate database queries
+   * 
+   * @deprecated Use EntityKeywordsPattern::$entityKeywords instead
+   * @see \ClicShopping\AI\Domain\Patterns\Common\EntityKeywordsPattern
    */
-  public static array $entityKeywords = [
-    'product', 'products', 'item', 'items', 'article', 'articles',
-    'order', 'orders', 'sale', 'sales', 'purchase', 'purchases',
-    'customer', 'customers', 'client', 'clients', 'user', 'users',
-    'supplier', 'suppliers', 'vendor', 'vendors', 'manufacturer', 'manufacturers',
-  ];
+  public static array $entityKeywords = [];
+  
+  /**
+   * Get entity keywords from centralized pattern
+   * 
+   * @return array Entity keywords
+   */
+  public static function getEntityKeywords(): array
+  {
+    return EntityKeywordsPattern::$entityKeywords;
+  }
 }

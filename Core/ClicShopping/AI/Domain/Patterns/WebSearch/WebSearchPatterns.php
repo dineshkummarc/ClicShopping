@@ -5,11 +5,17 @@
  * Pattern definitions for web search detection.
  * Contains ONLY pattern arrays - no logic.
  * 
- * @package ClicShopping\AI\Domain\Patterns
+ * @package ClicShopping\AI\Domain\Patterns\WebSearch
  * @since 2026-01-03
+ * 
+ * REFACTORING: Relocated from Patterns/ to Patterns/WebSearch/
+ * - Namespace updated: ClicShopping\AI\Domain\Patterns → ClicShopping\AI\Domain\Patterns\WebSearch
+ * - $entityKeywords replaced with reference to Common\EntityKeywordsPattern
  */
 
-namespace ClicShopping\AI\Domain\Patterns;
+namespace ClicShopping\AI\Domain\Patterns\WebSearch;
+
+use ClicShopping\AI\Domain\Patterns\Common\EntityKeywordsPattern;
 
 class WebSearchPatterns
 {
@@ -37,6 +43,9 @@ class WebSearchPatterns
   
   /**
    * Entity keywords that indicate database queries (not web search)
+   * 
+   * @deprecated Use Common\EntityKeywordsPattern::$entityKeywords instead
+   * @see EntityKeywordsPattern::$entityKeywords
    */
   public static array $entityKeywords = [
     'product', 'products', 'item', 'items', 'article', 'articles',
@@ -45,6 +54,16 @@ class WebSearchPatterns
     'supplier', 'suppliers', 'vendor', 'vendors', 'manufacturer', 'manufacturers',
     'invoice', 'invoices', 'payment', 'payments', 'transaction', 'transactions'
   ];
+  
+  /**
+   * Get entity keywords from centralized Common pattern
+   * 
+   * @return array<string> Entity keywords
+   */
+  public static function getEntityKeywords(): array
+  {
+    return EntityKeywordsPattern::getKeywords();
+  }
   
   /**
    * Competitor keywords (English-only)
