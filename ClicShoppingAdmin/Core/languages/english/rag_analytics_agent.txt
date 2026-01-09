@@ -610,6 +610,8 @@ REVIEWS & SENTIMENT:
 
 MARKETING & PRICING (for Statistical Analysis):
 - specials: Special prices/discounts (products_id, specials_new_products_price, specials_date_added, expires_date, status)
+  **CRITICAL**: For promotional/discount queries, use clic_specials table (NOT products_percentage field)
+  **IMPORTANT**: Count promotional products with: SELECT COUNT(*) FROM clic_specials WHERE status = 1
 - products_featured: Featured products (products_id, date_added, expires_date, status)
 - products_favorites: Customer favorites (products_id, customers_id, date_added, status)
 - dynamic_pricing_history: Price change history (id, products_id, old_price, new_price, price_change_percentage, date_applied, reason)
@@ -815,6 +817,10 @@ COUNT QUERIES WITH FILTERS:
 - 'number of orders this month' → SELECT COUNT(*) AS total FROM clic_orders WHERE MONTH(date_purchased) = MONTH(CURDATE()) AND YEAR(date_purchased) = YEAR(CURDATE())
 
 - 'how many products in stock' → SELECT COUNT(*) AS total FROM clic_products WHERE products_quantity > 0
+
+- 'how many products on promotion' → SELECT COUNT(*) AS total FROM clic_specials WHERE status = 1
+
+- 'count promotional products' → SELECT COUNT(*) AS total FROM clic_specials WHERE status = 1
 
 STATUS QUERIES (Most Common):
 - 'pending order' → SELECT o.orders_id, o.customers_name, o.date_purchased, os.orders_status_name FROM clic_orders o JOIN clic_orders_status os ON o.orders_status = os.orders_status_id WHERE o.orders_status = 1 AND os.language_id = {{language_id}}

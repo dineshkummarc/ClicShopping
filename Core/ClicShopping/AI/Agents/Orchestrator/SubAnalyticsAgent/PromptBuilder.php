@@ -59,10 +59,10 @@ class PromptBuilder
     $this->useCache = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True' ? 'True' : 'False';
     
     // Initialize SchemaRetriever if Schema RAG is enabled
-    $useSchemaRAG = defined('CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG') && CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG === 'True';
+    $useSchemaRAG = CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG;
     if ($useSchemaRAG) {
       // Check if embeddings should be used
-      $useEmbeddings = defined('CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_USE_EMBEDDINGS') && CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_USE_EMBEDDINGS === 'True';
+      $useEmbeddings = CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_USE_EMBEDDINGS;
       
       $this->schemaRetriever = new SchemaRetriever($debug, $useEmbeddings);
       
@@ -93,7 +93,7 @@ class PromptBuilder
     $this->modelName = $modelName;
     
     // If Schema RAG is enabled and we have a query, skip caching
-    $useSchemaRAG = defined('CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG') && CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG === 'True';
+    $useSchemaRAG = CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG;
     
     if ($useSchemaRAG && !empty($query)) {
       // Build query-specific system message (no caching)
@@ -358,10 +358,10 @@ class PromptBuilder
   private function getTableStructureInstructions(): string
   {
     // Check if Schema RAG is enabled
-    $useSchemaRAG = defined('CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG') && CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG === 'True';
+    $useSchemaRAG = CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG;
     
     // Get max tables configuration
-    $maxTables = defined('CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_MAX_TABLES') ? (int)CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_MAX_TABLES : 5;
+    $maxTables = CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_MAX_TABLES;
     
     if ($useSchemaRAG && !empty($this->currentQuery) && $this->schemaRetriever !== null) {
       // Use Schema RAG (relevant tables only)

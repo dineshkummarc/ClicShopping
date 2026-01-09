@@ -46,8 +46,8 @@ class QueryCache
     $this->enabled = !defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') || CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
 
-    // 🆕 Configurer le TTL depuis une constante (défaut: 1 mois = 2592000 secondes)
-    $this->defaultTTL = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_TTL')? (int)CLICSHOPPING_APP_CHATGPT_RA_CACHE_TTL  : 2592000; // 30 jours par défaut
+    // 🆕 Use TechnicalConfig for cache TTL (default: 30 days = 2592000 seconds)
+    $this->defaultTTL = CLICSHOPPING_APP_CHATGPT_RA_CACHE_TTL;
 
     // Toujours initialiser $db (nécessaire même si cache désactivé)
     try {

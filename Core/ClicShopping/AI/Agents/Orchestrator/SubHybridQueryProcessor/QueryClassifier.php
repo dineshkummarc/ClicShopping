@@ -37,6 +37,18 @@ use ClicShopping\AI\Domain\Patterns\Hybrid\HybridPreFilter;
 class QueryClassifier extends BaseQueryProcessor
 {
   /**
+   * PURE LLM MODE (2026-01-09)
+   * 
+   * Philosophy: Use LLM for all classification, patterns only as fallback if LLM fails
+   * 
+   * Set to 'False' to disable pattern fallback (pure LLM only)
+   * Set to 'True' to enable HybridPreFilter as fallback (pattern-based hybrid detection)
+   * 
+   * Note: This is a local constant, not a global config. Each classifier decides independently.
+   */
+  private const USE_HYBRID_PATTERN_FALLBACK = false;
+
+  /**
    * Constructor
    *
    * @param bool $debug Enable debug logging
@@ -46,7 +58,8 @@ class QueryClassifier extends BaseQueryProcessor
     parent::__construct($debug, 'QueryClassifier');
     
     if ($this->debug) {
-      $this->logInfo("Pure LLM mode active - all classification via LLM");
+      $mode = self::USE_HYBRID_PATTERN_FALLBACK ? 'Pure LLM with pattern fallback' : 'Pure LLM only';
+      $this->logInfo("Classification mode: $mode");
     }
   }
 
@@ -81,7 +94,8 @@ class QueryClassifier extends BaseQueryProcessor
   /**
    * Classify query type: analytic, semantic, web, or hybrid
    *
-   * Pure LLM mode: Always uses LLM for classification.
+   * Pure LLM mode (2026-01-09): Uses LLM for all classification by default.
+   * Pattern fallback available via USE_HYBRID_PATTERN_FALLBACK constant if needed.
    *
    * @param string $query Query to classify
    * @return array Classification result with type, confidence, and reasoning
@@ -98,21 +112,19 @@ class QueryClassifier extends BaseQueryProcessor
       ]);
     }
 
-    // Check if HybridPreFilter is enabled
-    $useHybridPreFilter = (defined('USE_HYBRID_PRE_FILTER')  && USE_HYBRID_PRE_FILTER === 'True');
-    
-    // Try HybridPreFilter if enabled
-    if ($useHybridPreFilter) {
-      // ✅ CRITICAL FIX (2025-01-02): Check HybridPreFilter FIRST
+    // Try HybridPreFilter fallback if enabled
+    if (self::USE_HYBRID_PATTERN_FALLBACK) {
+      // Pattern-based fallback for hybrid detection
       // LLM tends to focus on first intent and ignore second intent in hybrid queries
-      // Pattern-based pre-filter provides deterministic detection for hybrid queries
+      // Pattern fallback provides deterministic detection when LLM struggles
       $hybridCheck = HybridPreFilter::preFilter($translatedQuery);
       
       if ($hybridCheck !== null) {
         if ($this->debug) {
-          $this->logInfo("HybridPreFilter detected hybrid query", [
+          $this->logInfo("Pattern fallback detected hybrid query", [
             'query' => $translatedQuery,
-            'sub_types' => $hybridCheck['sub_types'] ?? []
+            'sub_types' => $hybridCheck['sub_types'] ?? [],
+            'detection_method' => 'pattern_fallback'
           ]);
         }
         return $hybridCheck;

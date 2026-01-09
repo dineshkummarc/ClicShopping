@@ -56,25 +56,15 @@ class SecurityAlerter
             ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_EMAIL 
             : '';
             
-        $this->alertThreshold = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_THRESHOLD') 
-            ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_THRESHOLD 
-            : 10;
+        $this->alertThreshold = CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_THRESHOLD;
             
-        $this->highThreatThreshold = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_HIGH_THREAT_THRESHOLD') 
-            ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_HIGH_THREAT_THRESHOLD 
-            : 20;
+        $this->highThreatThreshold = CLICSHOPPING_APP_CHATGPT_RA_SECURITY_HIGH_THREAT_THRESHOLD;
             
-        $this->failureAlertsEnabled = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_FAILURE_ALERTS') 
-            ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_FAILURE_ALERTS 
-            : true;
+        $this->failureAlertsEnabled = CLICSHOPPING_APP_CHATGPT_RA_SECURITY_FAILURE_ALERTS;
             
-        $this->alertCooldown = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_COOLDOWN') 
-            ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_COOLDOWN 
-            : 60;
+        $this->alertCooldown = CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_COOLDOWN;
             
-        $this->digestMode = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_DIGEST_MODE') 
-            ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_DIGEST_MODE 
-            : true;
+        $this->digestMode = CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_DIGEST_MODE;
         
         // Cache directory for tracking last alert times
         $this->cacheDir = CLICSHOPPING::BASE_DIR . 'Work/Cache/Security/';

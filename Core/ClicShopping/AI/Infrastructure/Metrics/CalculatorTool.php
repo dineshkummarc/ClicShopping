@@ -45,6 +45,22 @@ class CalculatorTool
   private bool $enableLogging = false;
   private int $cacheTTL = 3600;
 
+  /**
+   * Calculator Configuration Constants (2026-01-09)
+   * 
+   * These are internal configuration values that rarely need to be changed.
+   * They are defined as class constants rather than global config to:
+   * - Reduce global config pollution
+   * - Keep technical details close to implementation
+   * - Simplify configuration for administrators
+   * 
+   * Only CALCULATOR_ENABLED should be in global config for admin control.
+   */
+  private const MAX_HISTORY_SIZE = 100;           // Maximum calculation history entries
+  private const STRICT_VALIDATION = true;         // Enable strict expression validation
+  private const MAX_EXECUTION_TIME = 5;           // Max calculation time (seconds)
+  private const CACHE_TTL = 3600;                 // Cache TTL (1 hour)
+
   // Variables définies par l'utilisateur
   private array $variables = [];
 
@@ -109,6 +125,12 @@ class CalculatorTool
 
   /**
    * Constructor
+   * 
+   * Uses global RAG configuration:
+   * - Cache: CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER
+   * - Debug/Logging: CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER
+   * 
+   * Technical settings (history size, validation, timeouts) are defined as class constants.
    */
   public function __construct()
   {
@@ -120,31 +142,27 @@ class CalculatorTool
       $this->db = Registry::get('Db');
     }
 
-    // Activer le cache si configuré
-    if (defined('CLICSHOPPING_APP_CHATGPT_CALCULATOR_ENABLE_CACHE')
-      && CLICSHOPPING_APP_CHATGPT_CALCULATOR_ENABLE_CACHE === 'True') {
+    // Activer le cache si configuré (utilise la config RAG globale)
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER')
+      && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True') {
       $this->enableCache = true;
     }
 
-    // Activer le logging si configuré
-    if (defined('CLICSHOPPING_APP_CHATGPT_CALCULATOR_LOG_LEVEL')) {
+    // Activer le logging si configuré (utilise la config RAG globale)
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER')
+      && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
       $this->enableLogging = true;
     }
 
-    // Durée de vie du cache
-    if (defined('CLICSHOPPING_APP_CHATGPT_CALCULATOR_CACHE_TTL')) {
-      $this->cacheTTL = (int)CLICSHOPPING_APP_CHATGPT_CALCULATOR_CACHE_TTL;
-    }
-
-    // Taille de l'historique
-    if (defined('CLICSHOPPING_APP_CHATGPT_CALCULATOR_HISTORY_SIZE')) {
-      $this->maxHistorySize = (int)CLICSHOPPING_APP_CHATGPT_CALCULATOR_HISTORY_SIZE;
-    }
+    // Use class constants for technical settings
+    $this->cacheTTL = self::CACHE_TTL;
+    $this->maxHistorySize = self::MAX_HISTORY_SIZE;
 
     if ($this->debug) {
       $this->securityLogger->logSecurityEvent(
         "CalculatorTool initialized (cache: " . ($this->enableCache ? 'ON' : 'OFF') .
-        ", logging: " . ($this->enableLogging ? 'ON' : 'OFF') . ")",
+        ", logging: " . ($this->enableLogging ? 'ON' : 'OFF') . 
+        ", history: {$this->maxHistorySize}, cacheTTL: {$this->cacheTTL}s)",
         'info'
       );
     }

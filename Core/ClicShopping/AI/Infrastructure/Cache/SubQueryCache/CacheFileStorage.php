@@ -26,9 +26,7 @@ class CacheFileStorage
   public function __construct(bool $debug = false)
   {
     // Check if cache is globally enabled
-    $this->enabled = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') 
-        && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
-    
+    $this->enabled = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER')   && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
     $this->cachePath = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/';
     $this->debug = $debug;
     

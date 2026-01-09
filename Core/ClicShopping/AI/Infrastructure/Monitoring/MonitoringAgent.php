@@ -634,7 +634,7 @@ class MonitoringAgent
   {
     try {
       // Vérifier que l'email du propriétaire est configuré
-      if (!defined('STORE_OWNER_EMAIL_ADDRESS') || empty(STORE_OWNER_EMAIL_ADDRESS)) {
+      if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_EMAIL') || empty(CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_EMAIL)) {
         $this->logger->logSecurityEvent(
           "Cannot send escalation email: STORE_OWNER_EMAIL_ADDRESS not configured",
           'warning'
@@ -679,16 +679,16 @@ class MonitoringAgent
       $message .= "This is an automated notification from the RAG Monitoring System.\n";
       
       // Envoyer l'email
-      $headers = "From: " . (defined('STORE_OWNER_EMAIL_ADDRESS') ? STORE_OWNER_EMAIL_ADDRESS : 'noreply@clicshopping.org') . "\r\n";
-      $headers .= "Reply-To: " . STORE_OWNER_EMAIL_ADDRESS . "\r\n";
+      $headers = "From: " . (defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_EMAIL') ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_EMAIL : 'noreply@clicshopping.org') . "\r\n";
+      $headers .= "Reply-To: " . CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_EMAIL . "\r\n";
       $headers .= "X-Mailer: ClicShopping RAG Monitoring\r\n";
       $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
       
-      $emailSent = mail(STORE_OWNER_EMAIL_ADDRESS, $subject, $message, $headers);
+      $emailSent = mail(CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_EMAIL, $subject, $message, $headers);
       
       if ($emailSent) {
         $this->logger->logSecurityEvent(
-          "Escalation email sent to " . STORE_OWNER_EMAIL_ADDRESS,
+          "Escalation email sent to " . CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_EMAIL,
           'info'
         );
       } else {

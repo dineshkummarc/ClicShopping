@@ -58,14 +58,18 @@ cp calculator_config.php \
 Ajouter dans `Apps/Configuration/ChatGpt/configure.php` :
 
 ```php
-// CalculatorTool Configuration
+// CalculatorTool Configuration (Admin-level only)
 define('CLICSHOPPING_APP_CHATGPT_CALCULATOR_ENABLED', 'True');
-define('CLICSHOPPING_APP_CHATGPT_CALCULATOR_LOG_LEVEL', 'info');
-define('CLICSHOPPING_APP_CHATGPT_CALCULATOR_HISTORY_SIZE', '100');
-define('CLICSHOPPING_APP_CHATGPT_CALCULATOR_STRICT_VALIDATION', 'True');
-define('CLICSHOPPING_APP_CHATGPT_CALCULATOR_MAX_EXECUTION_TIME', '5');
-define('CLICSHOPPING_APP_CHATGPT_CALCULATOR_ENABLE_CACHE', 'True');
-define('CLICSHOPPING_APP_CHATGPT_CALCULATOR_CACHE_TTL', '3600');
+
+// Technical settings are defined as class constants in CalculatorTool.php:
+// - MAX_HISTORY_SIZE = 100
+// - STRICT_VALIDATION = true
+// - MAX_EXECUTION_TIME = 5 seconds
+// - CACHE_TTL = 3600 seconds (1 hour)
+
+// CalculatorTool uses global RAG configuration for cache and logging:
+// - Cache: CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER
+// - Debug/Logging: CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER
 ```
 
 ### Étape 3 : Exécuter l'installation

@@ -678,8 +678,8 @@ class QuerySplitter extends BaseQueryProcessor
       }
 
       // Modern LLMs support up to 128K tokens (~400K+ characters)
-      // Use configurable limit or default to 100K characters
-      $maxLength = defined('CLICSHOPPING_APP_CHATGPT_MAX_PROMPT_LENGTH') ? (int)CLICSHOPPING_APP_CHATGPT_MAX_PROMPT_LENGTH : 100000; // Default: 100K characters (~25K tokens)
+      // Use TechnicalConfig for max prompt length
+      $maxLength = CLICSHOPPING_APP_CHATGPT_RA_MAX_PROMPT_LENGTH;
       
       if (strlen($prompt) > $maxLength) {
         if ($this->debug) {

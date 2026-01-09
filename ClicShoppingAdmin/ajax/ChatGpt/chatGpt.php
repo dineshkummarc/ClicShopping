@@ -42,23 +42,27 @@ try {
 
 try {
   // ============================================
-  // 0. CONFIGURE TIMEOUT (Test 5.6)
+  // 0. CONFIGURE TIMEOUT (2026-01-09)
   // ============================================
+  // Enable timeout handling for RAG queries to prevent blocking
+  // Set to false to disable timeout (useful for debugging long queries)
+   $enable_timeout = true;
+  
   // Set maximum execution time for RAG queries to prevent blocking
-  $maxExecutionTime = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME') ? (int)CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME : 30;
+  // Default: 60 seconds (increased while testing Unified Analyzer)
+  // TODO: Reduce to 30 seconds once analytics queries use SQL instead of web search
+   $max_execution_time = 60; // seconds
   
-  $timeoutEnabled = defined('CLICSHOPPING_APP_CHATGPT_RA_ENABLE_TIMEOUT') && CLICSHOPPING_APP_CHATGPT_RA_ENABLE_TIMEOUT === 'True';
-  
-  if ($timeoutEnabled) {
-    set_time_limit($maxExecutionTime);
+  if ($enable_timeout) {
+    set_time_limit($max_execution_time);
     
     // Register shutdown function to handle timeout gracefully
-    register_shutdown_function(function() use ($maxExecutionTime) {
+    register_shutdown_function(function() use ($max_execution_time) {
       $error = error_get_last();
       if ($error && ($error['type'] === E_ERROR || $error['type'] === E_USER_ERROR)) {
         // Check if it's a timeout error
         if (strpos($error['message'], 'Maximum execution time') !== false) {
-          error_log('⏱️ TIMEOUT ERROR: Query exceeded ' . $maxExecutionTime . ' seconds');
+          error_log('⏱️ TIMEOUT ERROR: Query exceeded ' . $max_execution_time . ' seconds');
           
           // Clean output buffer
           if (ob_get_length()) ob_clean();
@@ -69,7 +73,7 @@ try {
             'success' => false,
             'error' => 'La requête prend trop de temps, veuillez réessayer',
             'error_code' => 'QUERY_TIMEOUT',
-            'timeout_seconds' => $maxExecutionTime,
+            'timeout_seconds' => $max_execution_time,
             'interaction_id' => null,
             'timeout_error' => true
           ], JSON_UNESCAPED_UNICODE);
@@ -79,7 +83,7 @@ try {
     });
     
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('⏱️ TIMEOUT CONFIGURED: ' . $maxExecutionTime . ' seconds');
+      error_log('⏱️ TIMEOUT CONFIGURED: ' . $max_execution_time . ' seconds');
     }
   }
   
@@ -275,11 +279,11 @@ try {
   // ============================================
   // 5.1 CHECK TIMEOUT (Test 5.6)
   // ============================================
-  if ($timeoutEnabled) {
+  if ($enable_timeout) {
     $elapsedTime = microtime(true) - $queryStartTime;
     
-    if ($elapsedTime >= $maxExecutionTime) {
-      error_log('⏱️ TIMEOUT WARNING: Query took ' . round($elapsedTime, 2) . ' seconds (max: ' . $maxExecutionTime . ')');
+    if ($elapsedTime >= $max_execution_time) {
+      error_log('⏱️ TIMEOUT WARNING: Query took ' . round($elapsedTime, 2) . ' seconds (max: ' . $max_execution_time . ')');
       
       if (ob_get_length()) ob_clean();
       
@@ -287,7 +291,7 @@ try {
         'success' => false,
         'error' => 'La requête prend trop de temps, veuillez réessayer',
         'error_code' => 'QUERY_TIMEOUT',
-        'timeout_seconds' => $maxExecutionTime,
+        'timeout_seconds' => $max_execution_time,
         'elapsed_seconds' => round($elapsedTime, 2),
         'interaction_id' => null,
         'timeout_error' => true
@@ -297,7 +301,7 @@ try {
     }
     
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('⏱️ TIMEOUT CHECK: Query took ' . round($elapsedTime, 2) . ' seconds (max: ' . $maxExecutionTime . ')');
+      error_log('⏱️ TIMEOUT CHECK: Query took ' . round($elapsedTime, 2) . ' seconds (max: ' . $max_execution_time . ')');
     }
   }
 

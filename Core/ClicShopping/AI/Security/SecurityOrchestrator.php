@@ -248,23 +248,15 @@ class SecurityOrchestrator
         : true, // default: enabled
       
       // Pattern fallback (OPTIONAL - disabled by default)
-      'pattern_fallback_enabled' => defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_PATTERN_FALLBACK')
-        ? (CLICSHOPPING_APP_CHATGPT_RA_SECURITY_PATTERN_FALLBACK === true || CLICSHOPPING_APP_CHATGPT_RA_SECURITY_PATTERN_FALLBACK === 'True')
-        : false, // default: disabled
+      'pattern_fallback_enabled' => CLICSHOPPING_APP_CHATGPT_RA_SECURITY_PATTERN_FALLBACK,
       
       // Threat threshold for blocking
-      'threat_threshold' => defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_THREAT_THRESHOLD')
-        ? (float)CLICSHOPPING_APP_CHATGPT_RA_SECURITY_THREAT_THRESHOLD
-        : 0.7, // default: 0.7
+      'threat_threshold' => CLICSHOPPING_APP_CHATGPT_RA_SECURITY_THREAT_THRESHOLD,
       
       // Logging configuration
-      'log_all_queries' => defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_ALL_QUERIES')
-        ? (CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_ALL_QUERIES === true || CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_ALL_QUERIES === 'True')
-        : false, // default: log blocked only
+      'log_all_queries' => CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_ALL_QUERIES,
       
-      'log_blocked_only' => defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_BLOCKED_ONLY')
-        ? (CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_BLOCKED_ONLY === true || CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_BLOCKED_ONLY === 'True')
-        : true, // default: log blocked only
+      'log_blocked_only' => CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_BLOCKED_ONLY,
     ];
   }
   

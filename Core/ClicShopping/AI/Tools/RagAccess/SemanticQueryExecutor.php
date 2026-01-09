@@ -138,14 +138,13 @@ class SemanticQueryExecutor
       $entityType = $context['entity_type'] ?? null;
       $entityId = $context['entity_id'] ?? null;
       
-      // Use configuration constants instead of hardcoded values
+      // Use global constants (loaded from TechnicalConfig in config_clicshopping.php)
       $minScore = defined('CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE') 
                   ? (float)CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE 
-                  : 0.25; // Default for multilingual
-      
+                  : 0.25;
       $limit = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_RESULTS_PER_STORE')
                ? (int)CLICSHOPPING_APP_CHATGPT_RA_MAX_RESULTS_PER_STORE
-               : 5; // Default
+               : 5;
       
       // Override with context if provided
       $minScore = $context['min_score'] ?? $minScore;

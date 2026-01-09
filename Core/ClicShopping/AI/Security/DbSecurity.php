@@ -126,6 +126,33 @@ class DbSecurity
             ];
         }
         
+        // ============================================================================
+        // SAFETY LIMIT: Add automatic LIMIT clause to prevent memory exhaustion
+        // ============================================================================
+        if (stripos($query, 'SELECT') === 0 && stripos($query, 'LIMIT') === false) {
+            // Define safety limit from TechnicalConfig
+            $safetyLimit = defined('CLICSHOPPING_APP_CHATGPT_RA_SQL_SAFETY_LIMIT') 
+                ? (int) CLICSHOPPING_APP_CHATGPT_RA_SQL_SAFETY_LIMIT 
+                : 10000;
+            
+            // Add LIMIT clause
+            $originalQuery = $query;
+            $query = rtrim($query, ';') . ' LIMIT ' . $safetyLimit;
+            
+            // Log the automatic limit addition
+            $this->logger->logSecurityEvent(
+                "Automatic LIMIT clause added to query for safety. Original query had no LIMIT. Safety limit: {$safetyLimit} rows.",
+                'info',
+                [
+                    'user_id' => $userId,
+                    'original_query' => substr($originalQuery, 0, 200),
+                    'modified_query' => substr($query, 0, 200),
+                    'safety_limit' => $safetyLimit,
+                    'reason' => 'Memory protection - prevents fetching unlimited rows'
+                ]
+            );
+        }
+        
         // Execute query with proper error handling
         try {
             $stmt = $this->db->prepare($query);

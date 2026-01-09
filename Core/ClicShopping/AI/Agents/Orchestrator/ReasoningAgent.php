@@ -102,14 +102,14 @@ class ReasoningAgent
 
     // Load configuration from various sources (priority order):
     // 1. Constructor parameter (highest priority)
-    // 2. Constants from config_clicshopping.php
+    // 2. Constants from config_clicshopping.php (already loaded)
     // 3. Default values (already set in property declarations)
     
     if ($config !== null) {
       $this->loadConfigurationFromArray($config);
-    } else {
-      $this->loadConfigurationFromConstants();
     }
+    // Note: Constants are already loaded from config_clicshopping.php
+    // No need to call loadConfigurationFromConstants()
 
     if ($this->debug) {
       $this->logConfiguration();
@@ -163,63 +163,6 @@ class ReasoningAgent
       } catch (\InvalidArgumentException $e) {
         $this->securityLogger->logSecurityEvent(
           "Invalid tree_of_thought_paths in config: " . $e->getMessage(),
-          'warning'
-        );
-      }
-    }
-  }
-
-  /**
-   * Load configuration from config_clicshopping.php constants
-   * This method is kept for backward compatibility but will be deprecated
-   * when configuration moves to database/JSON
-   */
-  private function loadConfigurationFromConstants(): void
-  {
-    // Load reasoning mode
-    if (defined('CLICSHOPPING_APP_CHATGPT_RA_REASONING_MODE')) {
-      try {
-        $this->setReasoningMode(CLICSHOPPING_APP_CHATGPT_RA_REASONING_MODE);
-      } catch (\InvalidArgumentException $e) {
-        // Log error but continue with default
-        $this->securityLogger->logSecurityEvent(
-          "Invalid CLICSHOPPING_APP_CHATGPT_RA_REASONING_MODE constant: " . $e->getMessage(),
-          'warning'
-        );
-      }
-    }
-
-    // Load max steps
-    if (defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_REASONING_STEPS')) {
-      try {
-        $this->setMaxReasoningSteps((int)CLICSHOPPING_APP_CHATGPT_RA_MAX_REASONING_STEPS);
-      } catch (\InvalidArgumentException $e) {
-        $this->securityLogger->logSecurityEvent(
-          "Invalid CLICSHOPPING_APP_CHATGPT_RA_MAX_REASONING_STEPS constant: " . $e->getMessage(),
-          'warning'
-        );
-      }
-    }
-
-    // Load consistency paths
-    if (defined('CLICSHOPPING_APP_CHATGPT_RA_CONSISTENCY_PATHS')) {
-      try {
-        $this->setSelfConsistencyPaths((int)CLICSHOPPING_APP_CHATGPT_RA_CONSISTENCY_PATHS);
-      } catch (\InvalidArgumentException $e) {
-        $this->securityLogger->logSecurityEvent(
-          "Invalid CLICSHOPPING_APP_CHATGPT_RA_CONSISTENCY_PATHS constant: " . $e->getMessage(),
-          'warning'
-        );
-      }
-    }
-
-    // Load tree paths
-    if (defined('CLICSHOPPING_APP_CHATGPT_RA_TREE_PATHS')) {
-      try {
-        $this->setTreeOfThoughtPaths((int)CLICSHOPPING_APP_CHATGPT_RA_TREE_PATHS);
-      } catch (\InvalidArgumentException $e) {
-        $this->securityLogger->logSecurityEvent(
-          "Invalid CLICSHOPPING_APP_CHATGPT_RA_TREE_PATHS constant: " . $e->getMessage(),
           'warning'
         );
       }

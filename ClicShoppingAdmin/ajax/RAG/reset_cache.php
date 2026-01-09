@@ -583,6 +583,42 @@ try {
   }
   
   // ============================================================================
+  // 11. Reset Hybrid Query Cache (TASK 8: Multi-temporal query caching)
+  // ============================================================================
+  if (in_array('hybrid', $cacheTypes)) {
+    try {
+      // Count hybrid cache files before
+      $hybridCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Hybrid/';
+      $filesBefore = 0;
+      
+      if (is_dir($hybridCacheDir)) {
+        $files = glob($hybridCacheDir . '*.cache');
+        $filesBefore = count($files);
+        
+        // Delete all hybrid cache files
+        foreach ($files as $file) {
+          @unlink($file);
+        }
+      }
+      
+      // Count files after
+      $filesAfter = 0;
+      if (is_dir($hybridCacheDir)) {
+        $files = glob($hybridCacheDir . '*.cache');
+        $filesAfter = count($files);
+      }
+      
+      $results['hybrid'] = $filesBefore - $filesAfter;
+      
+      error_log("Cache Reset: Hybrid query cache flushed - {$results['hybrid']} files deleted");
+      
+    } catch (Exception $e) {
+      $errors[] = "Hybrid cache: " . $e->getMessage();
+      error_log("Cache Reset Error (hybrid): " . $e->getMessage());
+    }
+  }
+  
+  // ============================================================================
   // Return Response
   // ============================================================================
   if (empty($errors)) {

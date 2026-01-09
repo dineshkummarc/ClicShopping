@@ -129,7 +129,7 @@ class AnalyticsAgent
     $this->promptBuilder = new PromptBuilder($this->language, $this->languageId, $this->debug);
     $this->chat->setSystemMessage($this->promptBuilder->getSystemMessage());
 
-    $this->maxRowsForInterpretation = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_ROWS_PROMPT') ? (int) CLICSHOPPING_APP_CHATGPT_RA_MAX_ROWS_PROMPT : 100;
+    $this->maxRowsForInterpretation = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_ROWS_FOR_LLM_INTERPRETATION') ? (int) CLICSHOPPING_APP_CHATGPT_RA_MAX_ROWS_FOR_LLM_INTERPRETATION : 150;
 
     // Initialize delegated components
     $this->schemaManager = new DatabaseSchemaManager(
@@ -1009,7 +1009,7 @@ class AnalyticsAgent
    */
   private function updateSystemMessageForQuery(string $query): void
   {
-    $useSchemaRAG = defined('CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG') && CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG === 'True';
+    $useSchemaRAG = CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG;
     
     if (!$useSchemaRAG) {
       return; // Schema RAG disabled, use cached system message

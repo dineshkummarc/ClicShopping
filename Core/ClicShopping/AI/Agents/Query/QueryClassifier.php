@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Query;
 
+use ClicShopping\AI\Domain\Patterns\Hybrid\HybridPreFilter;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Domain\Semantics\SubSemantics\ClassificationEngine;
 use ClicShopping\AI\Infrastructure\Cache\ClassificationCache;
@@ -36,6 +37,17 @@ class QueryClassifier
   private ?ClassificationCache $classificationCache = null;
 
   /**
+   * PURE LLM MODE (2026-01-09)
+   * 
+   * Philosophy: Use LLM for all classification, patterns only as fallback if LLM fails
+   * 
+   * Set to 'False' to disable pattern fallback (pure LLM only)
+   * Set to 'True' to enable HybridPreFilter as fallback (pattern-based hybrid detection)
+   * Note: This is a local constant, not a global config. Each classifier decides independently.
+   */
+  private const USE_HYBRID_PATTERN_FALLBACK = false;
+
+  /**
    * Constructor
    *
    * @param bool $debug Enable debug logging
@@ -53,7 +65,8 @@ class QueryClassifier
     
     if ($this->debug) {
       $this->logger->logSecurityEvent('ClassificationCache initialized', 'info');
-      $this->logger->logSecurityEvent('Pure LLM mode active - all classification via LLM', 'info');
+      $mode = self::USE_HYBRID_PATTERN_FALLBACK ? 'Pure LLM with pattern fallback' : 'Pure LLM only';
+      $this->logger->logSecurityEvent("Classification mode: $mode", 'info');
     }
   }
 
@@ -61,25 +74,25 @@ class QueryClassifier
    * Classify a query into one of: analytics, semantic, web_search, hybrid
    * 
    * 🔧 TASK 4.3 (2025-12-11): Enhanced fallback logic
-   * 🔧 TASK 2026-01-02: Added optional HybridPreFilter for hybrid query detection
+   * 🔧 TASK 2026-01-09: Pure LLM mode with optional pattern fallback
    * 
-   * CLASSIFICATION FLOW:
-   * 1. If USE_HYBRID_PRE_FILTER='True' and translatedQuery provided:
-   *    - Try HybridPreFilter (pattern-based, English-only)
+   * CLASSIFICATION FLOW (Pure LLM Mode):
+   * 1. Use LLM classification for all queries (default)
+   * 2. If USE_HYBRID_PATTERN_FALLBACK=true and translatedQuery provided:
+   *    - Try HybridPreFilter as fallback (pattern-based, English-only)
    *    - If hybrid detected: Return hybrid classification (90% confidence)
-   *    - If no match: Fall through to LLM classification
-   * 2. Use LLM classification for all other cases
+   *    - If no match: Use LLM classification
    * 
    * FALLBACK STRATEGY:
    * - Default type: 'semantic' (safer than 'analytics')
-   * - If no patterns match with high confidence, use LLM fallback
    * - If LLM fails, default to 'semantic'
+   * - Pattern fallback is optional and disabled by default
    * 
    * RATIONALE:
+   * - Pure LLM provides maximum flexibility and context understanding
    * - Semantic queries are safer to misclassify (RAG search is more forgiving)
    * - Analytics queries require precise SQL generation (higher risk if wrong)
-   * - Web search queries are rare and have very specific patterns
-   * - HybridPreFilter solves LLM weakness (ignoring second intent in hybrid queries)
+   * - Pattern fallback available if LLM struggles with hybrid detection
    *
    * @param string $query Query to classify (can be in any language)
    * @param string|null $translatedQuery Optional pre-translated query (English)
@@ -87,20 +100,17 @@ class QueryClassifier
    */
   public function classify(string $query, ?string $translatedQuery = null): array
   {
-    // Check if HybridPreFilter is enabled
-    $useHybridPreFilter = (defined('USE_HYBRID_PRE_FILTER') && USE_HYBRID_PRE_FILTER === 'True');
-    
-    // Try HybridPreFilter if enabled and translated query available
-    if ($useHybridPreFilter && $translatedQuery !== null) {
+    // Try HybridPreFilter fallback if enabled and translated query available
+    if (self::USE_HYBRID_PATTERN_FALLBACK && $translatedQuery !== null) {
       if ($this->debug) {
         $this->logger->logSecurityEvent(
-          'Trying HybridPreFilter for hybrid detection',
+          'Pattern fallback enabled - trying HybridPreFilter',
           'info'
         );
       }
       
       // Use HybridPreFilter (pattern-based, English-only)
-      $hybridCheck = \ClicShopping\AI\Domain\Patterns\HybridPreFilter::preFilter($translatedQuery);
+      $hybridCheck = HybridPreFilter::preFilter($translatedQuery);
       
       if ($hybridCheck !== null) {
         // Pattern detected hybrid query
@@ -108,14 +118,14 @@ class QueryClassifier
           $this->logger->logStructured(
             'info',
             'QueryClassifier',
-            'hybrid_pre_filter_match',
+            'hybrid_pattern_fallback_match',
             [
               'query' => substr($translatedQuery, 0, 50),
               'type' => 'hybrid',
               'sub_types' => $hybridCheck['sub_types'] ?? [],
               'confidence' => $hybridCheck['confidence'] ?? 0.90,
-              'detection_method' => 'pattern_pre_filter',
-              'note' => 'HybridPreFilter detected hybrid query (no LLM call)'
+              'detection_method' => 'pattern_fallback',
+              'note' => 'Pattern fallback detected hybrid query (no LLM call)'
             ]
           );
         }
@@ -126,16 +136,15 @@ class QueryClassifier
       // Pattern didn't match - fall through to LLM
       if ($this->debug) {
         $this->logger->logSecurityEvent(
-          'HybridPreFilter no match - falling back to LLM',
+          'Pattern fallback no match - using LLM',
           'info'
         );
       }
     }
     
-    // Pure LLM mode or HybridPreFilter didn't match
+    // Pure LLM mode (default)
     if ($this->debug) {
-      $mode = $useHybridPreFilter ? 'LLM fallback (HybridPreFilter no match)' : 'Pure LLM mode';
-      $this->logger->logSecurityEvent("$mode - using LLM for classification", 'info');
+      $this->logger->logSecurityEvent('Pure LLM mode - using LLM for classification', 'info');
     }
     
     $result = $this->classifyWithLLM($query, $translatedQuery);

@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Get AJAX URL for resetting context
     const ajaxUrl = window.CHAT_CONFIG && window.CHAT_CONFIG.resetContextUrl 
       ? window.CHAT_CONFIG.resetContextUrl 
-      : '/ClicShoppingAdmin/ajax/ChatGpt/reset_context.php';
+      : '/ClicShoppingAdmin/ajax/RAG/reset_context.php';
     
     console.log('ChatResetContext: Sending request to:', ajaxUrl);
     

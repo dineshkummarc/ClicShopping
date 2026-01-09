@@ -377,7 +377,7 @@ class SemanticSearchOrchestrator
       // Conversation memory should only match VERY similar queries (0.85+), not loosely related ones
       // This prevents "où est Paris" from matching "refund policy" (similarity 0.63)
       // Conversation memory is a FALLBACK, not primary source - it should only match near-exact repeats
-      $configuredMinScore = defined('CLICSHOPPING_APP_CHATGPT_RA_MEMORY_MIN_SCORE') ? (float) CLICSHOPPING_APP_CHATGPT_RA_MEMORY_MIN_SCORE : 0.85;
+      $configuredMinScore = CLICSHOPPING_APP_CHATGPT_RA_MEMORY_MIN_SCORE;
       $minScore = isset($options['minScore']) ? (float)$options['minScore'] : $configuredMinScore;
 
       if ($this->debug) {
@@ -439,8 +439,8 @@ class SemanticSearchOrchestrator
       }
 
       $limit = $options['limit'] ?? 5;
-      // 🔧 TASK 4.4: Use configured RAG similarity threshold (0.25 for multilingual support)
-      $configuredMinScore = defined('CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE') ? (float) CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE : 0.25;
+      // 🔧 TASK 4.4: Use TechnicalConfig for RAG similarity threshold (0.25 for multilingual support)
+      $configuredMinScore = CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE;
       $minScore = $options['minScore'] ?? $configuredMinScore;
 
       // Get document store names (all except conversation_memory)
@@ -663,7 +663,7 @@ class SemanticSearchOrchestrator
    */
   private function isLLMFallbackEnabled(): bool
   {
-    return defined('CLICSHOPPING_APP_CHATGPT_RA_ENABLE_LLM_FALLBACK') && CLICSHOPPING_APP_CHATGPT_RA_ENABLE_LLM_FALLBACK === 'True';
+    return CLICSHOPPING_APP_CHATGPT_RA_ENABLE_LLM_FALLBACK;
   }
 
   /**
@@ -673,7 +673,8 @@ class SemanticSearchOrchestrator
    */
   private function isWebSearchEnabled(): bool
   {
-    return defined('CLICSHOPPING_APP_CHATGPT_RA_ENABLE_WEB_FALLBACK') && CLICSHOPPING_APP_CHATGPT_RA_ENABLE_WEB_FALLBACK === 'True';
+    return defined('CLICSHOPPING_APP_CHATGPT_RA_ENABLE_WEB_FALLBACK') 
+           && CLICSHOPPING_APP_CHATGPT_RA_ENABLE_WEB_FALLBACK === 'True';
   }
 
   /**
@@ -728,9 +729,10 @@ class SemanticSearchOrchestrator
     if ($this->cache !== null && $cacheStatus !== 'hit' && $cacheStatus !== 'disabled' && !empty($query)) {
       try {
         // Cache the formatted result as JSON
+        // Use global constant (loaded from TechnicalConfig in config_clicshopping.php)
         $cacheTTL = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_TTL') 
                     ? (int)CLICSHOPPING_APP_CHATGPT_RA_CACHE_TTL 
-                    : 2592000; // 30 days default
+                    : 2592000;
         
         $this->cache->cacheResponse($query, json_encode($formattedResult), $cacheTTL);
         

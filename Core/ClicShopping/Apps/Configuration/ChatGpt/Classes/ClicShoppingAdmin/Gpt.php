@@ -947,8 +947,8 @@ class Gpt
     }
     
     // Limiter la longueur (GPT-4o-mini accepte 128k tokens ≈ 512k caractères)
-    // Utiliser la limite configurable ou défaut à 100k caractères
-    $maxPromptLength = defined('CLICSHOPPING_APP_CHATGPT_MAX_PROMPT_LENGTH') ? (int)CLICSHOPPING_APP_CHATGPT_MAX_PROMPT_LENGTH : 100000; // Default: 100K characters (~25K tokens)
+    // Use TechnicalConfig for max prompt length
+    $maxPromptLength = CLICSHOPPING_APP_CHATGPT_RA_MAX_PROMPT_LENGTH;
     
     if (strlen($prompt) > $maxPromptLength) {
       $prompt = substr($prompt, 0, $maxPromptLength);

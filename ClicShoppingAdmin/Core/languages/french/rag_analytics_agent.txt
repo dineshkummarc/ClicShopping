@@ -590,6 +590,8 @@ AVIS & SENTIMENT:
 
 MARKETING & TARIFICATION (pour Analyse Statistique):
 - specials: Prix spéciaux/remises (products_id, specials_new_products_price, specials_date_added, expires_date, status)
+  **CRITIQUE**: Pour les requêtes de promotion/remise, utiliser la table clic_specials (PAS le champ products_percentage)
+  **IMPORTANT**: Compter les produits en promotion avec: SELECT COUNT(*) FROM clic_specials WHERE status = 1
 - products_featured: Produits mis en avant (products_id, date_added, expires_date, status)
 - products_favorites: Favoris clients (products_id, customers_id, date_added, status)
 - dynamic_pricing_history: Historique changements de prix (id, products_id, old_price, new_price, price_change_percentage, date_applied, reason)
@@ -798,6 +800,10 @@ REQUÊTES COUNT AVEC FILTRES:
 - 'nombre de commandes ce mois' → SELECT COUNT(*) AS total FROM clic_orders WHERE MONTH(date_purchased) = MONTH(CURDATE()) AND YEAR(date_purchased) = YEAR(CURDATE())
 
 - 'combien de produits en stock' → SELECT COUNT(*) AS total FROM clic_products WHERE products_quantity > 0
+
+- 'combien de produits en promotion' → SELECT COUNT(*) AS total FROM clic_specials WHERE status = 1
+
+- 'nombre de produits promotionnels' → SELECT COUNT(*) AS total FROM clic_specials WHERE status = 1
 
 REQUÊTES DE STATUT (Les plus courantes):
 - 'commande en instance' → SELECT o.orders_id, o.customers_name, o.date_purchased, os.orders_status_name FROM clic_orders o JOIN clic_orders_status os ON o.orders_status = os.orders_status_id WHERE o.orders_status = 1 AND os.language_id = {{language_id}}

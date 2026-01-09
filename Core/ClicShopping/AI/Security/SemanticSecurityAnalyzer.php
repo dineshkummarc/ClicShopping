@@ -485,8 +485,7 @@ class SemanticSecurityAnalyzer
       }
       
       // Check if response exceeds timeout threshold
-      $timeout = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LLM_TIMEOUT') ?
-        (int)CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LLM_TIMEOUT : self::LLM_TIMEOUT;
+      $timeout = CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LLM_TIMEOUT;
       
       if ($latency > $timeout) {
         self::$logger->logSecurityEvent(
@@ -723,12 +722,7 @@ class SemanticSecurityAnalyzer
    */
   private static function getThreatThreshold(): float
   {
-    if (defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_THREAT_THRESHOLD')) {
-      $threshold = (float)CLICSHOPPING_APP_CHATGPT_RA_SECURITY_THREAT_THRESHOLD;
-      return min(1.0, max(0.0, $threshold));
-    }
-    
-    return self::DEFAULT_THREAT_THRESHOLD;
+    return CLICSHOPPING_APP_CHATGPT_RA_SECURITY_THREAT_THRESHOLD;
   }
 
   /**

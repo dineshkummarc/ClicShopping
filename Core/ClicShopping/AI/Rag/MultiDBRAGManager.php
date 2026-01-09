@@ -166,7 +166,7 @@ class MultiDBRAGManager
         $chat = new OpenAIChat($config);
         
         // Number of documents to return after reranking
-        $nrOfOutputDocuments = defined('CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT')  ? (int)CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT  : 5;
+        $nrOfOutputDocuments = CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT;
         
         $this->reranker = new LLMReranker($chat, $nrOfOutputDocuments);
         
@@ -710,9 +710,7 @@ class MultiDBRAGManager
           
           // Get the configured number of output documents for reranking
           // We send 2-3x more documents than we want back to give the LLM options
-          $rerankingOutputCount = defined('CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT') 
-                                   ? (int)CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT 
-                                   : 5;
+          $rerankingOutputCount = CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT;
           
           // Send 2x the output count to the reranker (but not more than available)
           $initialLimit = min(count($allResults), $rerankingOutputCount * 2);
