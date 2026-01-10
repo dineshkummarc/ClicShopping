@@ -24,6 +24,7 @@ use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
 use ClicShopping\AI\Helper\Formatter\ResultFormatter;
+use ClicShopping\AI\Agents\Orchestrator\AnalyticsAgent;
 
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
@@ -63,7 +64,6 @@ class MultiDBRAGManager
 
   private mixed $resultFormatter;
   private int $userId;
-  private mixed $metadata;
   
   // Reranking properties (Task 2.14.3 - LLPhant reranking integration)
   private ?LLMReranker $reranker = null;
@@ -344,7 +344,7 @@ class MultiDBRAGManager
        */
       public function embedDocument(Document $document): Document
       {
-        $document->embedding = NewVector::createEmbedding(null, $document);
+        $document->embedding = NewVector::createEmbedding(null, $document->content);
 
         return $document;
       }

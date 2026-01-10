@@ -50,10 +50,6 @@ class ExecutionPlan
   private string $userId;
   private int $languageId;
 
-  // Configuration
-  private int $maxRetries = 2;
-  private bool $enableParallelExecution = false; // Pour future implémentation
-
   private ?CalculatorTool $calculatorTool = null;
   private ?WebSearchTool $webSearchTool = null; // 🆕 Outil de recherche web
 

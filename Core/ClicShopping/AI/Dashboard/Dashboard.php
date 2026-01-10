@@ -23,14 +23,12 @@ use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
  */
 class Dashboard
 {
-  private $db; // Kept for backward compatibility but not used
   private $statsCollector;
   private ?MonitoringAgent $monitoringAgent = null;
   private string $prefix;
 
   public function __construct()
   {
-    $this->db = Registry::get('Db'); // Kept for backward compatibility
     $this->prefix = CLICSHOPPING::getConfig('db_table_prefix');
     $this->statsCollector = new DashboardStatsCollector();
 

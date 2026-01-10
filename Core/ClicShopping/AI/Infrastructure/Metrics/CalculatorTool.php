@@ -57,8 +57,6 @@ class CalculatorTool
    * Only CALCULATOR_ENABLED should be in global config for admin control.
    */
   private const MAX_HISTORY_SIZE = 100;           // Maximum calculation history entries
-  private const STRICT_VALIDATION = true;         // Enable strict expression validation
-  private const MAX_EXECUTION_TIME = 5;           // Max calculation time (seconds)
   private const CACHE_TTL = 3600;                 // Cache TTL (1 hour)
 
   // Variables définies par l'utilisateur

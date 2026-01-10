@@ -29,8 +29,6 @@ class LLMFallbackHandler
 {
   private SecurityLogger $logger;
   private bool $debug;
-  private string $userId;
-  private int $languageId;
 
   /**
    * Constructor
@@ -42,8 +40,6 @@ class LLMFallbackHandler
   public function __construct(string $userId = 'system', int $languageId = 1, bool $debug = false)
   {
     $this->logger = new SecurityLogger();
-    $this->userId = $userId;
-    $this->languageId = $languageId;
     $this->debug = $debug;
 
     if ($this->debug) {

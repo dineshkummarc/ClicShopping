@@ -369,7 +369,8 @@ class ContextResolver
 
       // Extract time ranges (ENGLISH ONLY)
       if (preg_match_all('/\b(last|past|previous)\s+(\d+)\s+(day|week|month|year)s?\b/i', $content, $matches)) {
-        for ($i = 0; $i < count($matches[0]); $i++) {
+        $matchCount = count($matches[0]);
+        for ($i = 0; $i < $matchCount; $i++) {
           $entities['time_ranges'][] = [
             'quantity' => (int)($matches[2][$i] ?? 1),
             'unit' => $matches[3][$i] ?? 'day',

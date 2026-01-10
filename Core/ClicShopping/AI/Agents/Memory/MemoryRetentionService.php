@@ -38,9 +38,7 @@ class MemoryRetentionService
   private int $languageId;
 
   // Configuration de rétention (en secondes)
-  private const TTL_WORKING_MEMORY = 300; // 5 minutes
   private const TTL_SHORT_TERM = 3600; // 1 heure
-  private const TTL_LONG_TERM = 2592000; // 30 jours avant suppression
 
   public function __construct(
     string $userId = 'system',

@@ -336,7 +336,8 @@ class SearchResultProcessor
       return 0.0;
     }
 
-    for ($i = 1; $i < count($positions); $i++) {
+    $positionsCount = count($positions);
+    for ($i = 1; $i < $positionsCount; $i++) {
       if ($positions[$i] < $positions[$i - 1]) {
         return 0.3;
       }

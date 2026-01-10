@@ -65,7 +65,6 @@ class MonitoringAgent
 
   // Configuration
   private int $historyRetention = 86400; // 24h
-  private int $snapshotInterval = 300;   // 5 minutes
   private int $alertCooldown = 1800;     // 30 minutes
 
   /**

@@ -105,9 +105,7 @@ class OrchestratorAgent
   private ?ErrorHandlerComponent $errorHandler = null;
   private ?MemoryManagerComponent $memoryManager = null;
 
-  // Diagnostics
-  private array $recentErrors = [];
-  private int $maxErrors = 50;
+  // Diagnostics - delegated to DiagnosticManager
 
   /**
    * Constructor
@@ -179,10 +177,6 @@ class OrchestratorAgent
 
     // Response processor
     $this->responseProcessor = new LlmResponseProcessor();
-
-    // Diagnostic properties
-    $this->recentErrors = [];
-    $this->maxErrors = 50;
   }
 
   /**

@@ -39,7 +39,6 @@ class ValidationAgent
   private array $schemaCache = [];
 
   // Configuration
-  private int $maxExecutionTimeMs = 5000; // 5 secondes max
   private int $maxRowsWarning = 10000;
   private float $securityScoreThreshold = 0.4; // Lowered from 0.7 to reduce false positives
 

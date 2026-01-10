@@ -61,12 +61,10 @@ class CorrectionAgent
   ];
 
   // Configuration
-  private int $maxCorrectionAttempts = 3;
   private float $confidenceThreshold = 0.7;
   private int $maxSimilarCases = 5;
 
   private mixed $db;
-  private ?array $entityTypeConfig = null;
 
   /**
    * Constructor
@@ -628,7 +626,8 @@ class CorrectionAgent
     $origWords = explode(' ', $original);
     $corrWords = explode(' ', $corrected);
 
-    for ($i = 0; $i < min(count($origWords), count($corrWords)); $i++) {
+    $minCount = min(count($origWords), count($corrWords));
+    for ($i = 0; $i < $minCount; $i++) {
       if (
         $origWords[$i] !== $corrWords[$i] &&
         preg_match('/^[a-z_]+$/i', $origWords[$i]) &&
@@ -1492,16 +1491,6 @@ class CorrectionAgent
     ];
 
     $this->saveLearningStats();
-  }
-
-  /**
-   * Configure le nombre maximum de tentatives de correction
-   *
-   * @param int $max Nombre maximum
-   */
-  public function setMaxCorrectionAttempts(int $max): void
-  {
-    $this->maxCorrectionAttempts = max(1, $max);
   }
 
   /**

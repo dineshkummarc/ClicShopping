@@ -31,7 +31,6 @@ class QueryExecutor
   private SecurityLogger $securityLogger;
   private DbSecurity $dbSecurity;
   private bool $debug;
-  private int $queryTimeout;
   private ?QueryPerformanceMonitor $performanceMonitor;
 
   /**
@@ -44,7 +43,7 @@ class QueryExecutor
    * @param SecurityLogger $securityLogger Security logger instance
    * @param DbSecurity $dbSecurity Database security handler
    * @param bool $debug Enable debug mode
-   * @param int $queryTimeout Query timeout in seconds (default: 30)
+   * @param int $queryTimeout Query timeout in seconds (deprecated, not used)
    * @param bool $enablePerformanceMonitoring Enable query performance monitoring (default: true)
    */
   public function __construct(
@@ -59,7 +58,6 @@ class QueryExecutor
     $this->securityLogger = $securityLogger ?? new SecurityLogger();
     $this->dbSecurity = $dbSecurity ?? new DbSecurity();
     $this->debug = $debug;
-    $this->queryTimeout = $queryTimeout;
     
     // 🔧 TASK 6.8: Initialize performance monitor
     if ($enablePerformanceMonitoring) {
@@ -371,33 +369,6 @@ class QueryExecutor
       'return_id' => 'return_orders',
       'id' => 'generic',
     ];
-  }
-
-  /**
-   * Logs the EXPLAIN plan for a SQL query
-   * Used for debugging and performance analysis
-   *
-   * @param string $sql SQL query to explain
-   * @return void
-   */
-  private function logExplainPlan(string $sql): void
-  {
-    try {
-      $stmt = $this->db->prepare('EXPLAIN ' . $sql);
-      $stmt->execute();
-      $plan = $stmt->fetchAll();
-      
-      $this->securityLogger->logSecurityEvent("EXPLAIN PLAN for SQL:\n" . $sql, 'info');
-
-      foreach ($plan as $row) {
-        $this->securityLogger->logSecurityEvent(print_r($row, true), 'info');
-      }
-    } catch (\Exception $e) {
-      $this->securityLogger->logSecurityEvent(
-        "Failed to EXPLAIN query: " . $e->getMessage(),
-        'error'
-      );
-    }
   }
 
   /**

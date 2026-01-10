@@ -30,23 +30,14 @@ class DocumentationGenerator
   private string $projectName = 'ClicShopping AI';
   private string $projectVersion = '1.0.0';
   private array $analyzedClasses = [];
-  private mixed $monitoring;
-  private mixed $collector;
 
-  private mixed $alertManager;
-
-  private mixed $aggregator;
-    /**
+  /**
    * Constructor
    */
   public function __construct(string $projectName = 'ClicShopping AI', string $version = '1.0.0')
   {
     $this->projectName = $projectName;
     $this->projectVersion = $version;
-    $this->monitoring = new MonitoringAgent();
-    $this->collector = new MetricsCollector();
-    $this->alertManager = new AlertManager();
-    $this->aggregator = new StatsAggregator();
   }
 
   /**

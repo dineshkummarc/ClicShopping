@@ -28,9 +28,8 @@ use ClicShopping\AI\Security\SecurityLogger;
 class LlmGuardrails
 {
   private const CONFIDENCE_THRESHOLD = 0.75;
-  private const HALLUCINATION_THRESHOLD = 0.8; // a implementer
   private const MAX_RESPONSE_LENGTH = 8192;
-  private const MIN_CONFIDENCE_SCORE = 0.6; // a implementer
+  private const MIN_CONFIDENCE_SCORE = 0.6;
 
   protected static ?SecurityLogger $securityLogger = null;
   private static mixed $language = null;
@@ -569,7 +568,7 @@ class LlmGuardrails
       private mixed $language;
       
       public function __construct() {
-        $this->language = \ClicShopping\OM\Registry::get('Language');
+        $this->language = Registry::get('Language');
       }
       
       public function getEvaluationPromptForQuestion(string $question, string $result): string
@@ -1138,7 +1137,7 @@ class LlmGuardrails
       $groundingRisk = 1.0 - $groundingScore;
       
       if (self::$debug) {
-        self::initializeLogger();
+        self::initLogger();
         self::$securityLogger->logSecurityEvent(
           "Using grounding_score for hallucination risk: score={$groundingScore}, risk={$groundingRisk}",
           'info'

@@ -223,7 +223,8 @@ class FeedbackImpactDetector
     $magnitude1 = 0.0;
     $magnitude2 = 0.0;
 
-    for ($i = 0; $i < count($vector1); $i++) {
+    $vectorLength = count($vector1);
+    for ($i = 0; $i < $vectorLength; $i++) {
       $dotProduct += $vector1[$i] * $vector2[$i];
       $magnitude1 += $vector1[$i] * $vector1[$i];
       $magnitude2 += $vector2[$i] * $vector2[$i];

@@ -33,8 +33,6 @@ class WebSearchHandler
   private SecurityLogger $logger;
   private ?WebSearchTool $webSearchTool;
   private mixed $db;
-  private int $languageId;
-  private string $userId;
   private bool $debug;
 
   /**
@@ -47,8 +45,6 @@ class WebSearchHandler
   public function __construct(string $userId = 'system', int $languageId = 1, bool $debug = false)
   {
     $this->logger = new SecurityLogger();
-    $this->userId = $userId;
-    $this->languageId = $languageId;
     $this->debug = $debug;
     $this->db = Registry::get('Db');
 

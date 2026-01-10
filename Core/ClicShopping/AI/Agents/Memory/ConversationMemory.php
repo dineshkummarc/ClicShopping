@@ -108,8 +108,6 @@ class ConversationMemory
   // Statistics
   private array $stats = [];
 
-  private ?int $lastEntityId = null;
-  private ?string $lastEntityType = null;
   private mixed $db;
 
   // 🆕 Refactored components

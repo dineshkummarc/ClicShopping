@@ -39,9 +39,6 @@ class SemanticSecurityAnalyzer
   // Threat score threshold for blocking (configurable)
   private const DEFAULT_THREAT_THRESHOLD = 0.7;
   
-  // LLM timeout for security analysis (ms)
-  private const LLM_TIMEOUT = 5000;
-  
   // Cache namespace for security analysis
   // This creates cache files in: Work/Cache/Rag/Security/
   private const CACHE_NAMESPACE = 'Rag/Security';

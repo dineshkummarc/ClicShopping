@@ -77,12 +77,7 @@ class AnalyticsAgent
   private AmbiguityHandler $ambiguityHandler;
   private AnalyticsErrorHandler $errorHandler;
   private mixed $app;
-  private mixed $lang;
   
-  // Cache properties
-  private array $tableSchemaCache = [];
-  private array $promptCache = [];
-  private array $columnIndex = [];
   private mixed $conversationMemory = null;
   private string $Usecache;
 
