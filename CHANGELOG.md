@@ -1,5 +1,9 @@
+version4.12
+
+----------------
 version4.11
 - Libraries updated
+- 
 - small fix
 - Include LmStudio, Ollama, private llm updated
 - New RAG BI (Monolitic to Agentic) refactoring allowing Agentiec & reasonning & planification approach
