@@ -1,15 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="MessDetectorOptionsConfiguration">
-    <option name="transferred" value="true" />
-  </component>
-  <component name="PHPCSFixerOptionsConfiguration">
-    <option name="transferred" value="true" />
-  </component>
-  <component name="PHPCodeSnifferOptionsConfiguration">
-    <option name="highlightLevel" value="WARNING" />
-    <option name="transferred" value="true" />
-  </component>
   <component name="PhpIncludePathManager">
     <include_path>
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/stymiee/email-validator" />
@@ -66,15 +56,7 @@
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/mattketmo/email-checker" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/http-client" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/http-client-contracts" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-php83" />
     </include_path>
-  </component>
-  <component name="PhpProjectSharedConfiguration" php_language_level="8.1">
-    <option name="suggestChangeDefaultLanguageLevel" value="false" />
-  </component>
-  <component name="PhpStanOptionsConfiguration">
-    <option name="transferred" value="true" />
-  </component>
-  <component name="PsalmOptionsConfiguration">
-    <option name="transferred" value="true" />
   </component>
 </project>
