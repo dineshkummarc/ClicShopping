@@ -369,7 +369,7 @@ class MariaDb
           type text DEFAULT NULL COMMENT 'Type of content (conversation, message, etc.)',
           sourcetype text DEFAULT NULL COMMENT 'Source type of the conversation',
           sourcename text DEFAULT NULL COMMENT 'Name of the source system or module',
-          embedding vector(3072) NULL COMMENT 'Embedding vector (NULL if not yet generated)',
+          embedding vector(3072) NOT NULL COMMENT 'Embedding vector (NULL if not yet generated)',
           user_message TEXT COMMENT 'User message from conversation',
           assistant_response TEXT COMMENT 'Assistant response from conversation',
           chunknumber int(11) DEFAULT 128 COMMENT 'Chunk size used for embedding generation',

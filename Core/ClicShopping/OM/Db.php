@@ -758,11 +758,7 @@ class Db extends PDO
       $row = trim($row);
 
       if (!empty($row)) {
-        // Skip comment lines starting with #
-        if (str_starts_with($row, '#')) {
-          continue;
-        }
-
+        // Check section delimiters first, before comment check
         if ($row == '--') {
           $is_index = true;
           $is_foreign = $is_property = false;
@@ -777,6 +773,11 @@ class Db extends PDO
           $is_property = true;
           $is_index = $is_foreign = false;
 
+          continue;
+        }
+        
+        // Skip comment lines starting with # (but not ## which is a delimiter)
+        if (str_starts_with($row, '#')) {
           continue;
         }
 
@@ -874,11 +875,25 @@ class Db extends PDO
            $schema['col'][$field_name]['type'] = $field_type;
         }
 
-        if (preg_match('/default\((.*)\)/', implode(' ', $details), $type_default)) {
+        // Parse default() - look for default(value) pattern
+        $details_string = implode(' ', $details);
+        if (preg_match('/default\(([^)]+)\)/', $details_string, $type_default)) {
           $schema['col'][$field_name]['default'] = $type_default[1];
+          
+          // Remove default() from details string
+          $details_string = preg_replace('/default\([^)]+\)/', '', $details_string);
+          $details = array_filter(explode(' ', $details_string), fn($v) => $v !== null && $v !== '');
+          $details = array_values($details);
+        }
 
-          $default_pos = array_search('default(' . $type_default[1] . ')', $details);
-          array_splice($details, $default_pos, 1);
+        // Parse comment() - look for comment(value) pattern, may contain spaces
+        if (preg_match('/comment\((.+)\)$/', $details_string, $type_comment)) {
+          $schema['col'][$field_name]['comment'] = $type_comment[1];
+          
+          // Remove comment() from details string
+          $details_string = preg_replace('/comment\(.+\)$/', '', $details_string);
+          $details = array_filter(explode(' ', $details_string), fn($v) => $v !== null && $v !== '');
+          $details = array_values($details);
         }
 
         $is_binary = array_search('binary', $details);

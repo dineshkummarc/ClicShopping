@@ -29,13 +29,10 @@ $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
 $config = [
     'chatgpt_installed' => defined('CLICSHOPPING_APP_CHATGPT_CH_STATUS'),
-    'chatgpt_enabled' => defined('CLICSHOPPING_APP_CHATGPT_CH_STATUS') && 
-                         CLICSHOPPING_APP_CHATGPT_CH_STATUS == 'True',
+    'chatgpt_enabled' => defined('CLICSHOPPING_APP_CHATGPT_CH_STATUS') &&  CLICSHOPPING_APP_CHATGPT_CH_STATUS == 'True',
     'rag_installed' => defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS'),
-    'rag_enabled' => defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') && 
-                     CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True',
-    'rag_cache_enabled' => defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') && 
-                           CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER == 'True'
+    'rag_enabled' => defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') &&  CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True',
+    'rag_cache_enabled' => defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') &&  CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER == 'True'
 ];
 
 // ============================================================================
@@ -166,12 +163,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Help button
                 echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_help'), null, $CLICSHOPPING_ChatGpt->link('Help'),'info') . ' ';
                 // Competitor Configuration button - links to RagWebSearch page
-                echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_rag_websearch_config'),  null, $CLICSHOPPING_ChatGpt->link('RagWebSearch'),'success') . ' ';
-                // Reset Cache button - opens modal
-                echo HTML::button($CLICSHOPPING_ChatGpt->getDef('text_ĥeading_remove_cache'), null,null, 'warning', ['params' => 'data-bs-toggle="modal" data-bs-target="#resetCacheModal"']) . ' ';
-                echo '&nbsp;';
-                // Reset All Stats button - opens modal
-                echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_reset_all_stats'), null, null,'danger', ['params' => 'data-bs-toggle="modal" data-bs-target="#resetStatsModal"']) . ' ';
+                if (defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
+                  echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_rag_websearch_config'),  null, $CLICSHOPPING_ChatGpt->link('RagWebSearch'),'success') . ' ';
+
+                  // Reset Cache button - opens modal
+                  echo HTML::button($CLICSHOPPING_ChatGpt->getDef('text_ĥeading_remove_cache'), null,null, 'warning', ['params' => 'data-bs-toggle="modal" data-bs-target="#resetCacheModal"']) . ' ';
+                  echo '&nbsp;';
+                  // Reset All Stats button - opens modal
+                  echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_reset_all_stats'), null, null,'danger', ['params' => 'data-bs-toggle="modal" data-bs-target="#resetStatsModal"']) . ' ';
+                }
               }
               
               // Back button - ALWAYS visible

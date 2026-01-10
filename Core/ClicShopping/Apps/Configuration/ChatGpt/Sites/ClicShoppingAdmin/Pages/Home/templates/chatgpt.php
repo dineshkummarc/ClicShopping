@@ -8,13 +8,13 @@
  *
  */
 
-use ClicShopping\AI\Insfrastructure\Metrics\Statistics;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\AI\Infrastructure\Metrics\Statistics;
 
 $CLICSHOPPING_ChatGpt = Registry::get('ChatGpt');
 $CLICSHOPPING_Page = Registry::get('Site')->getPage();
@@ -39,7 +39,7 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
             echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_configure'), null, $CLICSHOPPING_ChatGpt->link('Configure'), 'primary') . ' ';
           }
 
-          if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+          if (defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS === 'True') {
             echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_rag_dashboard'), null, $CLICSHOPPING_ChatGpt->link('DashBoard'), 'danger') . ' ';
             echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_rag_websearch'), null, $CLICSHOPPING_ChatGpt->link('RagWebSearch'), 'success') . ' ';
           }
