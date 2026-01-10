@@ -409,33 +409,168 @@ class CalculatorTool
 
   /**
    * Évalue l'expression mathématique de manière sécurisée
+   * Uses a safe token-based parser instead of eval()
    */
   private function evaluateExpression(string $expression): float|int
   {
-    // Créer une sandbox pour l'évaluation
-    $sandbox = function ($expr) {
-      // Créer un contexte isolé
-      $result = null;
+    try {
+      // Parse and evaluate using a safe recursive descent parser
+      $result = $this->parseExpression($expression);
 
-      try {
-        // Utiliser eval() de manière contrôlée
-        // L'expression a déjà été validée
-        $code = '$result = ' . $expr . ';';
-        eval($code);
-
-        return $result;
-      } catch (\Throwable $e) {
-        throw new \Exception('Evaluation error: ' . $e->getMessage());
+      // Vérifier que le résultat est valide
+      if (!is_numeric($result)) {
+        throw new \Exception('Result is not a number');
       }
+
+      return $result;
+    } catch (\Throwable $e) {
+      throw new \Exception('Evaluation error: ' . $e->getMessage());
+    }
+  }
+
+  /**
+   * Safe expression parser using recursive descent
+   */
+  private function parseExpression(string $expr): float|int
+  {
+    $expr = str_replace(' ', '', $expr);
+    $pos = 0;
+    
+    $parseNumber = function() use ($expr, &$pos) {
+      $start = $pos;
+      if ($pos < strlen($expr) && ($expr[$pos] === '-' || $expr[$pos] === '+')) {
+        $pos++;
+      }
+      while ($pos < strlen($expr) && (ctype_digit($expr[$pos]) || $expr[$pos] === '.')) {
+        $pos++;
+      }
+      if ($start === $pos) {
+        throw new \Exception('Expected number at position ' . $pos);
+      }
+      return (float)substr($expr, $start, $pos - $start);
     };
 
-    $result = $sandbox($expression);
+    $parseFunction = function() use ($expr, &$pos, &$parseAddSub) {
+      $funcStart = $pos;
+      while ($pos < strlen($expr) && ctype_alpha($expr[$pos])) {
+        $pos++;
+      }
+      $funcName = substr($expr, $funcStart, $pos - $funcStart);
+      
+      if ($pos >= strlen($expr) || $expr[$pos] !== '(') {
+        throw new \Exception('Expected ( after function name');
+      }
+      $pos++; // skip (
+      
+      $args = [];
+      while (true) {
+        $args[] = $parseAddSub();
+        if ($pos >= strlen($expr)) {
+          throw new \Exception('Unexpected end of expression');
+        }
+        if ($expr[$pos] === ')') {
+          $pos++;
+          break;
+        }
+        if ($expr[$pos] === ',') {
+          $pos++;
+          continue;
+        }
+        throw new \Exception('Expected , or ) in function arguments');
+      }
+      
+      return match($funcName) {
+        'sin' => sin($args[0]),
+        'cos' => cos($args[0]),
+        'tan' => tan($args[0]),
+        'asin' => asin($args[0]),
+        'acos' => acos($args[0]),
+        'atan' => atan($args[0]),
+        'sinh' => sinh($args[0]),
+        'cosh' => cosh($args[0]),
+        'tanh' => tanh($args[0]),
+        'sqrt' => sqrt($args[0]),
+        'abs' => abs($args[0]),
+        'ceil' => ceil($args[0]),
+        'floor' => floor($args[0]),
+        'round' => round($args[0]),
+        'exp' => exp($args[0]),
+        'log' => log($args[0]),
+        'log10' => log10($args[0]),
+        'pow' => pow($args[0], $args[1] ?? 1),
+        'min' => min(...$args),
+        'max' => max(...$args),
+        'atan2' => atan2($args[0], $args[1] ?? 0),
+        'hypot' => hypot($args[0], $args[1] ?? 0),
+        default => throw new \Exception('Unknown function: ' . $funcName)
+      };
+    };
 
-    // Vérifier que le résultat est valide
-    if (!is_numeric($result)) {
-      throw new \Exception('Result is not a number');
+    $parsePrimary = function() use ($expr, &$pos, $parseNumber, $parseFunction, &$parseAddSub) {
+      if ($pos >= strlen($expr)) {
+        throw new \Exception('Unexpected end of expression');
+      }
+      
+      // Check for function
+      if (ctype_alpha($expr[$pos])) {
+        return $parseFunction();
+      }
+      
+      // Check for parentheses
+      if ($expr[$pos] === '(') {
+        $pos++;
+        $result = $parseAddSub();
+        if ($pos >= strlen($expr) || $expr[$pos] !== ')') {
+          throw new \Exception('Expected closing parenthesis');
+        }
+        $pos++;
+        return $result;
+      }
+      
+      // Parse number
+      return $parseNumber();
+    };
+
+    $parsePower = function() use (&$parsePrimary, $expr, &$pos) {
+      $left = $parsePrimary();
+      while ($pos < strlen($expr) && substr($expr, $pos, 2) === '**') {
+        $pos += 2;
+        $right = $parsePrimary();
+        $left = pow($left, $right);
+      }
+      return $left;
+    };
+
+    $parseMulDiv = function() use (&$parsePower, $expr, &$pos) {
+      $left = $parsePower();
+      while ($pos < strlen($expr) && in_array($expr[$pos], ['*', '/', '%'])) {
+        $op = $expr[$pos++];
+        $right = $parsePower();
+        $left = match($op) {
+          '*' => $left * $right,
+          '/' => $right != 0 ? $left / $right : throw new \Exception('Division by zero'),
+          '%' => $left % $right,
+        };
+      }
+      return $left;
+    };
+
+    $parseAddSub = function() use (&$parseMulDiv, $expr, &$pos) {
+      $left = $parseMulDiv();
+      while ($pos < strlen($expr) && in_array($expr[$pos], ['+', '-'])) {
+        $op = $expr[$pos++];
+        $right = $parseMulDiv();
+        $left = $op === '+' ? $left + $right : $left - $right;
+      }
+      return $left;
+    };
+
+    $result = $parseAddSub();
+    
+    if ($pos < strlen($expr)) {
+      throw new \Exception('Unexpected characters at position ' . $pos);
     }
-
+    
     return $result;
   }
 
