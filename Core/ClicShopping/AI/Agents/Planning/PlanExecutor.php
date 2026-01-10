@@ -102,8 +102,8 @@ class PlanExecutor
       error_log("🔑 PlanExecutor: Clé trouvée dans variable d'environnement");
     }
     // 2. Constante ClicShopping
-    elseif (defined('CLICSHOPPING_APP_CHATGPT_RA_API_KEY_SERPAPI')) {
-      $constKey = CLICSHOPPING_APP_CHATGPT_RA_API_KEY_SERPAPI;
+    elseif (defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI')) {
+      $constKey = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI;
       if (!empty($constKey)) {
         $serpApiKey = $constKey;
         error_log("🔑 PlanExecutor: Clé trouvée dans constante");

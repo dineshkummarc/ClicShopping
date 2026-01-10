@@ -12,8 +12,8 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Confi
 
 class max_rows_for_llm_interpretation extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Config\ConfigParamAbstract
 {
-  public $default = '150';
-  public int|null $sort_order = 80;
+  public $default = '170';
+  public int|null $sort_order = 100;
 
   protected function init()
   {

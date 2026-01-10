@@ -15,7 +15,7 @@ use ClicShopping\OM\HTML;
 class display_sql extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Config\ConfigParamAbstract
 {
   public $default = 'True';
-  public int|null $sort_order = 90;
+  public int|null $sort_order = 160;
 
   protected function init()
   {

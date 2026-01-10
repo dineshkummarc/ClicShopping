@@ -196,8 +196,8 @@ class ToolExecutor
     // Check for SerpApi key
     $serpApiKey = getenv('SERP_API_KEY');
     
-    if (empty($serpApiKey) && defined('CLICSHOPPING_APP_CHATGPT_RA_API_KEY_SERPAPI')) {
-      $serpApiKey = CLICSHOPPING_APP_CHATGPT_RA_API_KEY_SERPAPI;
+    if (empty($serpApiKey) && defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI')) {
+      $serpApiKey = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI;
     }
 
     if (!empty($serpApiKey)) {
