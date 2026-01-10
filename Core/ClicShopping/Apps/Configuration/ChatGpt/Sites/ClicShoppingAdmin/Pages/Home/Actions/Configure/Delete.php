@@ -32,7 +32,7 @@ class Delete extends \ClicShopping\OM\ConfigureActionsAbstract
     
     // Remove menu if method exists
     if (method_exists($this, 'removeMenu')) {
-      $this->removeMenu();
+    //  $this->removeMenu();
     }
     
     $this->clearMenuCache();

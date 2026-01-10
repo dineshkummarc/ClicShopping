@@ -315,7 +315,8 @@ class DynamicPricingRules {
     // Parser sécurisé pour les opérateurs logiques
     $tokens = $this->tokenizeCondition($condition);
 
-    if (count($tokens) > self::MAX_CLAUSES * 2 - 1) {
+    $tokenCount = count($tokens);
+    if ($tokenCount > self::MAX_CLAUSES * 2 - 1) {
       throw new InvalidArgumentException('Too many clauses in condition');
     }
 
@@ -323,8 +324,8 @@ class DynamicPricingRules {
     $result = $this->evaluateClause($tokens[0], $variables);
 
     // Traiter les opérateurs et clauses suivants
-    for ($i = 1; $i < count($tokens); $i += 2) {
-      if ($i + 1 >= count($tokens)) {
+    for ($i = 1; $i < $tokenCount; $i += 2) {
+      if ($i + 1 >= $tokenCount) {
         throw new InvalidArgumentException('Invalid condition structure');
       }
 

@@ -484,8 +484,9 @@ class HybridQueryCache
   private function formatBytes(int $bytes, int $precision = 2): string
   {
     $units = ['B', 'KB', 'MB', 'GB'];
+    $unitCount = count($units);
     
-    for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+    for ($i = 0; $bytes > 1024 && $i < $unitCount - 1; $i++) {
       $bytes /= 1024;
     }
     
