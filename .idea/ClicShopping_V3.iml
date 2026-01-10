@@ -50,7 +50,6 @@
       <excludeFolder url="file://$MODULE_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-intl-grapheme" />
       <excludeFolder url="file://$MODULE_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-intl-normalizer" />
       <excludeFolder url="file://$MODULE_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-mbstring" />
-      <excludeFolder url="file://$MODULE_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-php83" />
       <excludeFolder url="file://$MODULE_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-php84" />
       <excludeFolder url="file://$MODULE_DIR$/Core/ClicShopping/External/vendor/symfony/service-contracts" />
       <excludeFolder url="file://$MODULE_DIR$/Core/ClicShopping/External/vendor/symfony/stopwatch" />
