@@ -14,9 +14,6 @@
     <include_path>
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/stymiee/email-validator" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/php-http/discovery" />
-      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/php-http/multipart-stream-builder" />
-      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/phpoffice/phpword" />
-      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/phpoffice/math" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/ralouphie/getallheaders" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/daveearley/daves-email-validation-tool" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/setasign/fpdf" />
@@ -25,7 +22,6 @@
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/nyholm/psr7" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/console" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/deprecation-contracts" />
-      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/openai-php/client" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/string" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/service-contracts" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-intl-normalizer" />
@@ -35,12 +31,10 @@
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/stopwatch" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/composer" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/var-exporter" />
-      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/smalot/pdfparser" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/guzzlehttp/guzzle" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/guzzlehttp/psr7" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/guzzlehttp/promises" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/phpxmlrpc/phpxmlrpc" />
-      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/yethee/tiktoken" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/migrations" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/psr/container" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/psr/http-message" />
@@ -51,7 +45,6 @@
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/psr/cache" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/psr/log" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/deprecations" />
-      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/theodo-group/llphant" />
       <path value="$PROJECT_DIR$/ext/elFinder-master/vendor/composer" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/stripe/stripe-php" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-php84" />
@@ -66,6 +59,13 @@
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/mattketmo/email-checker" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/http-client" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/http-client-contracts" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/yethee/tiktoken" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/php-http/multipart-stream-builder" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/openai-php/client" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/theodo-group/llphant" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/phpoffice/math" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/phpoffice/phpword" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/smalot/pdfparser" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.1">
@@ -73,6 +73,11 @@
   </component>
   <component name="PhpStanOptionsConfiguration">
     <option name="transferred" value="true" />
+  </component>
+  <component name="PhpUnit">
+    <phpunit_settings>
+      <PhpUnitSettings custom_loader_path="$PROJECT_DIR$/Core/ClicShopping/External/vendor/autoload.php" />
+    </phpunit_settings>
   </component>
   <component name="PsalmOptionsConfiguration">
     <option name="transferred" value="true" />
