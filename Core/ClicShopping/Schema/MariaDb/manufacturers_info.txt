@@ -1,12 +1,12 @@
-manufacturers_id int not_null
-languages_id int not_null
-manufacturers_url varchar(255) not_null
-url_clicked int(5) default(0) not_null
-date_last_click datetime
-manufacturer_description text
-manufacturer_seo_title text null
-manufacturer_seo_description text null
-manufacturer_seo_keyword text null
+manufacturers_id int not_null comment(FK to manufacturers table - manufacturer identifier)
+languages_id int not_null comment(FK to languages table - language for this translation)
+manufacturers_url varchar(255) not_null comment(Manufacturer website URL for this language)
+url_clicked int(5) default(0) not_null comment(Click count for manufacturer URL tracking)
+date_last_click datetime comment(Timestamp of last click on manufacturer URL)
+manufacturer_description text comment(Translated description of the manufacturer)
+manufacturer_seo_title text null comment(SEO meta title tag for manufacturer page)
+manufacturer_seo_description text null comment(SEO meta description tag for manufacturer page)
+manufacturer_seo_keyword text null comment(SEO meta keywords tag for manufacturer page)
 --
 primary manufacturers_id languages_id
 ##

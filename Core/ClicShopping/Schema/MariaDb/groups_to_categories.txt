@@ -1,6 +1,6 @@
-customers_group_id int default(0) not_null
-categories_id int default(0) not_null
-discount decimal(11,2) default(0.00) not_null
+customers_group_id int default(0) not_null comment(FK to customers_groups table - customer group identifier)
+categories_id int default(0) not_null comment(FK to categories table - category identifier)
+discount decimal(11,2) default(0.00) not_null comment(Discount percentage for this customer group on this category - e.g. 10.00 for 10% off)
 --
 primary customers_group_id categories_id
 ##

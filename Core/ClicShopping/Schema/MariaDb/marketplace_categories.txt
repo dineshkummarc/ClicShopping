@@ -1,11 +1,11 @@
-id int not_null auto_increment
-categories_id int not_null
-parent_id int not_null default(0)
-categories_name text default null
-url text default null
-date_added date default null
-date_modified date default null
-sort_order int(3) default(0)
+id int not_null auto_increment comment(Primary key - unique identifier for each marketplace category)
+categories_id int not_null comment(Marketplace category identifier from external marketplace)
+parent_id int not_null default(0) comment(FK to marketplace_categories.id - parent category for hierarchical structure, 0 for top-level)
+categories_name text default null comment(Name of the marketplace category)
+url text default null comment(URL to the marketplace category page)
+date_added date default null comment(Date when category was added to local database)
+date_modified date default null comment(Date when category was last modified)
+sort_order int(3) default(0) comment(Display order of categories within same parent level)
 
 --
 primary id

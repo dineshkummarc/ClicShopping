@@ -28,6 +28,7 @@ class RestoreNow extends \ClicShopping\OM\PagesActionsAbstract
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 
     set_time_limit(0);
+    ini_set('memory_limit', '512M');
 
     $backup_directory = CLICSHOPPING::BASE_DIR . 'Work/Backups/';
     $read_from = $_GET['file'];
@@ -36,7 +37,7 @@ class RestoreNow extends \ClicShopping\OM\PagesActionsAbstract
       $restore_file = $backup_directory . $_GET['file'];
       $extension = substr($_GET['file'], -3);
 
-      if (($extension == 'sql') || ($extension == '.gz') || ($extension == 'zip')) {
+      if ($extension == 'sql' || $extension == '.gz' || $extension == 'zip') {
         switch ($extension) {
           case 'sql':
             $restore_from = $restore_file;
@@ -53,12 +54,24 @@ class RestoreNow extends \ClicShopping\OM\PagesActionsAbstract
             $remove_raw = true;
         }
 
-        if (isset($restore_from) && is_file($restore_from) && (filesize($restore_from) > 15000)) {
+        if (isset($restore_from) && is_file($restore_from) && filesize($restore_from) > 15000) {
           $fd = fopen($restore_from, 'rb');
           $restore_query = fread($fd, filesize($restore_from));
           fclose($fd);
+        } else {
+          $CLICSHOPPING_MessageStack->add('Restore file not found or invalid', 'error');
+          $this->app->redirect('Backup');
+          return;
         }
+      } else {
+        $CLICSHOPPING_MessageStack->add('Invalid backup file format', 'error');
+        $this->app->redirect('Backup');
+        return;
       }
+    } else {
+      $CLICSHOPPING_MessageStack->add('Backup file not found', 'error');
+      $this->app->redirect('Backup');
+      return;
     }
 
     if (isset($restore_query)) {
@@ -66,6 +79,12 @@ class RestoreNow extends \ClicShopping\OM\PagesActionsAbstract
       $drop_table_names = [];
       $sql_length = \strlen($restore_query);
       $pos = strpos($restore_query, ';');
+
+      if ($pos === false) {
+        $CLICSHOPPING_MessageStack->add('Invalid backup file format - no SQL statements found', 'error');
+        $this->app->redirect('Backup');
+        return;
+      }
 
       for ($i = $pos; $i < $sql_length; $i++) {
         if ($restore_query[0] == '#') {
@@ -75,20 +94,25 @@ class RestoreNow extends \ClicShopping\OM\PagesActionsAbstract
           continue;
         }
 
-        if ($restore_query[($i + 1)] == "\n") {
-          for ($j = ($i + 2); $j < $sql_length; $j++) {
+        // Bounds check to prevent "Uninitialized string offset" warning
+        if ($i + 1 >= $sql_length) {
+          break;
+        }
+
+        if ($restore_query[$i + 1] == "\n") {
+          for ($j = $i + 2; $j < $sql_length; $j++) {
             if (trim($restore_query[$j]) != '') {
               $next = substr($restore_query, $j, 6);
               if ($next[0] == '#') {
-// find out where the break position is so we can remove this line (#comment line)
+                // find out where the break position is so we can remove this line (#comment line)
                 for ($k = $j; $k < $sql_length; $k++) {
                   if ($restore_query[$k] == "\n") break;
                 }
 
                 $query = substr($restore_query, 0, $i + 1);
                 $restore_query = substr($restore_query, $k);
-// join the query before the comment appeared, with the rest of the dump
-                $restore_query = $query . $restore_query;
+                // join the query before the comment appeared, with the rest of the dump
+                $restore_query = "{$query}{$restore_query}";
                 $sql_length = \strlen($restore_query);
                 $i = strpos($restore_query, ';') - 1;
                 continue 2;
@@ -97,11 +121,11 @@ class RestoreNow extends \ClicShopping\OM\PagesActionsAbstract
             }
           }
 
-          if (empty($next)) { // get the last insert query
+          if (empty($next)) {
             $next = 'insert';
           }
 
-          if ((preg_match('/create/i', $next)) || (preg_match('/insert/i', $next)) || (preg_match('/drop t/i', $next))) {
+          if (preg_match('/create/i', $next) || preg_match('/insert/i', $next) || preg_match('/drop t/i', $next)) {
             $query = substr($restore_query, 0, $i);
 
             $next = '';
@@ -123,7 +147,13 @@ class RestoreNow extends \ClicShopping\OM\PagesActionsAbstract
       $this->app->db->exec('drop table if exists ' . implode(', ', $drop_table_names));
 
       for ($i = 0, $n = \count($sql_array); $i < $n; $i++) {
-        $this->app->db->exec($sql_array[$i]);
+        try {
+          $this->app->db->exec($sql_array[$i]);
+        } catch (\Exception $e) {
+          $CLICSHOPPING_MessageStack->add('Restore failed: ' . $e->getMessage(), 'error');
+          $this->app->redirect('Backup');
+          return;
+        }
       }
 
       session_write_close();
@@ -143,7 +173,7 @@ class RestoreNow extends \ClicShopping\OM\PagesActionsAbstract
         ]
       );
 
-      if (isset($remove_raw) && ($remove_raw === true)) {
+      if (isset($remove_raw) && $remove_raw === true) {
         unlink($restore_from);
       }
 

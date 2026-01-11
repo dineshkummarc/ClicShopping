@@ -1,6 +1,6 @@
-id INT(11) not_null auto_increment
-products_id INT(11) not_null
-categories_id INT(11) not_null
+id INT(11) not_null auto_increment comment(Primary key - unique identifier for each product-category recommendation link)
+products_id INT(11) not_null comment(FK to products table - recommended product)
+categories_id INT(11) not_null comment(FK to categories table - category where product is recommended)
 
 --
 primary id

@@ -1,6 +1,6 @@
-id int not_null
-language_id int not_null
-description text not_null
+id int not_null comment(FK to reviews_sentiment table - sentiment analysis identifier)
+language_id int not_null comment(FK to languages table - language for this translation)
+description text not_null comment(Translated description or summary of the sentiment analysis)
 --
 primary id language_id
 ##

@@ -1,11 +1,11 @@
-orders_products_attributes_id int not_null auto_increment
-orders_id int not_null
-orders_products_id int not_null
-products_options varchar(255) not_null
-products_options_values varchar(255) not_null
-options_values_price decimal(15,4) not_null
-price_prefix char(1) not_null
-products_attributes_reference varchar(255) not_null
+orders_products_attributes_id int not_null auto_increment comment(Primary key - unique identifier for each order product attribute)
+orders_id int not_null comment(FK to orders table - order this attribute belongs to)
+orders_products_id int not_null comment(FK to orders_products table - order line item with this attribute)
+products_options varchar(255) not_null comment(Option name at time of order - e.g. Size, Color)
+products_options_values varchar(255) not_null comment(Option value at time of order - e.g. Large, Red)
+options_values_price decimal(15,4) not_null comment(Price adjustment for this attribute at time of order)
+price_prefix char(1) not_null comment(Price modifier - + to add, - to subtract from base price)
+products_attributes_reference varchar(255) not_null comment(Attribute reference code or SKU suffix at time of order)
 --
 primary orders_products_attributes_id
 idx_orders_products_att_orders_id orders_id

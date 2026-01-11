@@ -1,10 +1,10 @@
-manufacturers_id int not_null auto_increment
-manufacturers_name varchar(64) not_null
-manufacturers_image varchar(255)
-date_added datetime
-last_modified datetime
-manufacturers_status tinyint(1) default(0) not_null
-suppliers_id int not_null default(0)
+manufacturers_id int not_null auto_increment comment(Primary key - unique identifier for each manufacturer)
+manufacturers_name varchar(64) not_null comment(Manufacturer name or brand name)
+manufacturers_image varchar(255) comment(Path to manufacturer logo or image file)
+date_added datetime comment(Timestamp when manufacturer was created)
+last_modified datetime comment(Timestamp of last modification to manufacturer)
+manufacturers_status tinyint(1) default(0) not_null comment(Manufacturer status - 0: inactive, 1: active and visible)
+suppliers_id int not_null default(0) comment(FK to suppliers table - primary supplier for this manufacturer, 0: no supplier)
 --
 primary manufacturers_id
 idx_manufacturers_name manufacturers_name

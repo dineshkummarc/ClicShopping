@@ -151,6 +151,12 @@ switch ($action) {
 
       while ($Qcols->fetch()) {
         if ($Qcols->hasValue('Collation') && !\is_null($Qcols->value('Collation'))) {
+          // Skip VECTOR columns - they are binary data and cannot be converted to UTF8
+          $columnType = strtolower($Qcols->value('Type'));
+          if (strpos($columnType, 'vector') !== false) {
+            continue;
+          }
+          
           if ($_POST['from_charset'] == 'auto') {
             $old_charset = substr($Qcols->value('Collation'), 0, strpos($Qcols->value('Collation'), '_'));
           } else {

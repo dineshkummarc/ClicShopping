@@ -40,6 +40,7 @@ text_display_number_of_link = Display <strong>{{listing_from}}</strong> to <stro
 table_heading_title = Title
 table_heading_file_date = Date
 table_heading_file_size = Size
+table_heading_statistics = Statistics
 table_heading_action = Action
 table_heading_info_compression = Compression
 

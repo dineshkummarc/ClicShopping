@@ -1,12 +1,12 @@
-products_favorites_id int not_null auto_increment
-products_id int not_null default(0)
-products_favorites_date_added datetime
-products_favorites_last_modified datetime
-scheduled_date datetime
-expires_date datetime
-date_status_change datetime
-status int(1) not_null default(1)
-customers_group_id int not_null default(0)
+products_favorites_id int not_null auto_increment comment(Primary key - unique identifier for each favorite/wishlist product)
+products_id int not_null default(0) comment(FK to products table - product in favorites/wishlist)
+products_favorites_date_added datetime comment(Timestamp when product was added to favorites)
+products_favorites_last_modified datetime comment(Timestamp of last modification)
+scheduled_date datetime comment(Future date for scheduled favorites display - null for immediate)
+expires_date datetime comment(Expiration date for favorites promotion - null for no expiration)
+date_status_change datetime comment(Timestamp when status was last changed)
+status int(1) not_null default(1) comment(Favorites status - 0: inactive, 1: active)
+customers_group_id int not_null default(0) comment(FK to customers_groups table - customer group, 0: all groups)
 --
 primary products_favorites_id
 idx_specials_products_id products_id

@@ -925,7 +925,7 @@ class Db extends PDO
         }
 
         if (!empty($details)) {
-          $schema['col'][$field_name]['other'] = implode(' ', $details);
+          $schema['col'][$field_name]['other'] = trim(implode(' ', $details));
         }
       }
     }
@@ -1264,4 +1264,434 @@ class Db extends PDO
       Cache::clear('configuration');
     }
   }
+
+  /**
+   * Update table-level comment
+   *
+   * @param string $table_name Table name (without prefix)
+   * @param string $comment Comment text to apply
+   * @param string|null $prefix Table prefix (uses default if null)
+   * @return bool True on success, false on failure
+   */
+  public function updateTableComment(string $table_name, string $comment, ?string $prefix = null): bool
+  {
+    try {
+      if ($prefix === null) {
+        $prefix = CLICSHOPPING::getConfig('db_table_prefix', '');
+      }
+
+      $full_table_name = $prefix . $table_name;
+
+      // Validate table exists
+      $check_query = "SHOW TABLES LIKE :table";
+      $stmt = $this->prepare($check_query);
+      $stmt->execute(['table' => $full_table_name]);
+
+      if ($stmt->rowCount() === 0) {
+        error_log("Table does not exist: {$full_table_name}");
+        return false;
+      }
+
+      // Escape comment for SQL
+      $escaped_comment = $this->quote($comment);
+
+      // Update table comment
+      $sql = "ALTER TABLE {$full_table_name} COMMENT = {$escaped_comment}";
+      $this->exec($sql);
+
+      error_log("Successfully updated table comment for: {$full_table_name}");
+      return true;
+
+    } catch (Exception $e) {
+      error_log("Error updating table comment for {$table_name}: " . $e->getMessage());
+      return false;
+    }
+  }
+
+  /**
+   * Update column comment
+   *
+   * @param string $table_name Table name (without prefix)
+   * @param string $column_name Column name
+   * @param string $comment Comment text to apply
+   * @param string|null $prefix Table prefix (uses default if null)
+   * @return bool True on success, false on failure
+   */
+  public function updateColumnComment(string $table_name, string $column_name, string $comment, ?string $prefix = null): bool
+  {
+    try {
+      if ($prefix === null) {
+        $prefix = CLICSHOPPING::getConfig('db_table_prefix', '');
+      }
+
+      $full_table_name = $prefix . $table_name;
+
+      // Validate table exists
+      $check_table_query = "SHOW TABLES LIKE :table";
+      $stmt = $this->prepare($check_table_query);
+      $stmt->execute(['table' => $full_table_name]);
+
+      if ($stmt->rowCount() === 0) {
+        error_log("Table does not exist: {$full_table_name}");
+        return false;
+      }
+
+      // Get current column definition
+      $column_query = "
+        SELECT COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, EXTRA, CHARACTER_SET_NAME, COLLATION_NAME
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = :table
+          AND COLUMN_NAME = :column
+      ";
+
+      $stmt = $this->prepare($column_query);
+      $stmt->execute([
+        'table' => $full_table_name,
+        'column' => $column_name
+      ]);
+
+      $column_info = $stmt->fetch(PDO::FETCH_ASSOC);
+
+      if (!$column_info) {
+        error_log("Column does not exist: {$full_table_name}.{$column_name}");
+        return false;
+      }
+
+      // Build column definition
+      $column_def = $column_info['COLUMN_TYPE'];
+
+      // Add character set if applicable
+      if ($column_info['CHARACTER_SET_NAME']) {
+        $column_def .= ' CHARACTER SET ' . $column_info['CHARACTER_SET_NAME'];
+      }
+
+      // Add collation if applicable
+      if ($column_info['COLLATION_NAME']) {
+        $column_def .= ' COLLATE ' . $column_info['COLLATION_NAME'];
+      }
+
+      // Add NULL/NOT NULL
+      if ($column_info['IS_NULLABLE'] === 'NO') {
+        $column_def .= ' NOT NULL';
+      } else {
+        $column_def .= ' NULL';
+      }
+
+      // Add DEFAULT if applicable
+      // Note: INFORMATION_SCHEMA returns string 'NULL' for DEFAULT NULL columns
+      if ($column_info['COLUMN_DEFAULT'] !== null && $column_info['COLUMN_DEFAULT'] !== 'NULL') {
+        if ($column_info['COLUMN_DEFAULT'] === 'CURRENT_TIMESTAMP') {
+          $column_def .= ' DEFAULT CURRENT_TIMESTAMP';
+        } else {
+          $column_def .= ' DEFAULT ' . $this->quote($column_info['COLUMN_DEFAULT']);
+        }
+      } elseif ($column_info['IS_NULLABLE'] === 'YES') {
+        // Explicitly add DEFAULT NULL for nullable columns
+        $column_def .= ' DEFAULT NULL';
+      }
+
+      // Add EXTRA (auto_increment, on update, etc.)
+      if ($column_info['EXTRA']) {
+        $column_def .= ' ' . $column_info['EXTRA'];
+      }
+
+      // Escape comment for SQL
+      $escaped_comment = $this->quote($comment);
+
+      // Update column with comment
+      $sql = "ALTER TABLE {$full_table_name} MODIFY COLUMN {$column_name} {$column_def} COMMENT {$escaped_comment}";
+      $this->exec($sql);
+
+      error_log("Successfully updated column comment for: {$full_table_name}.{$column_name}");
+      return true;
+
+    } catch (Exception $e) {
+      error_log("Error updating column comment for {$table_name}.{$column_name}: " . $e->getMessage());
+      return false;
+    }
+  }
+
+  /**
+   * Apply multiple column comments to a table
+   *
+   * @param string $table_name Table name (without prefix)
+   * @param array $comments Associative array of column_name => comment
+   * @param string|null $prefix Table prefix (uses default if null)
+   * @return array Results array with 'success' and 'failed' keys
+   */
+  public function applyColumnComments(string $table_name, array $comments, ?string $prefix = null): array
+  {
+    $results = [
+      'success' => [],
+      'failed' => []
+    ];
+
+    foreach ($comments as $column_name => $comment) {
+      $success = $this->updateColumnComment($table_name, $column_name, $comment, $prefix);
+
+      if ($success) {
+        $results['success'][] = $column_name;
+        error_log("Applied comment to {$table_name}.{$column_name}");
+      } else {
+        $results['failed'][] = $column_name;
+        error_log("Failed to apply comment to {$table_name}.{$column_name}");
+      }
+    }
+
+    $total = count($comments);
+    $success_count = count($results['success']);
+    $failed_count = count($results['failed']);
+
+    error_log("Applied comments to {$table_name}: {$success_count}/{$total} successful, {$failed_count} failed");
+
+    return $results;
+  }
+
+  /**
+   * Retrieve comments for all tables or specific tables
+   *
+   * @param array $table_names Optional array of table names (without prefix)
+   * @param string|null $prefix Table prefix (uses default if null)
+   * @return array Associative array [table_name => comment]
+   */
+  public function getTableComments(array $table_names = [], ?string $prefix = null): array
+  {
+    try {
+      if ($prefix === null) {
+        $prefix = CLICSHOPPING::getConfig('db_table_prefix', '');
+      }
+
+      $database = CLICSHOPPING::getConfig('db_database');
+
+      // Build query to get table comments
+      $query = "
+        SELECT TABLE_NAME, TABLE_COMMENT
+        FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_SCHEMA = :database
+      ";
+
+      $params = [
+        'database' => $database
+      ];
+
+      // If specific table names provided, filter by them
+      // NOTE: Use 'tbl_' prefix instead of 'table_' to avoid conflict with autoPrefixTables
+      if (!empty($table_names)) {
+        $placeholders = [];
+        foreach ($table_names as $index => $table_name) {
+          $placeholder = 'tbl_' . $index;
+          $placeholders[] = ':' . $placeholder;
+          $params[$placeholder] = $prefix . $table_name;
+        }
+        $query .= " AND TABLE_NAME IN (" . implode(', ', $placeholders) . ")";
+      } else {
+        // Get all tables with the prefix
+        $query .= " AND TABLE_NAME LIKE :prefix";
+        $params['prefix'] = $prefix . '%';
+      }
+
+      $stmt = $this->prepare($query);
+      $stmt->execute($params);
+
+      $comments = [];
+      while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        // Remove prefix from table name for the result
+        $table_name = substr($row['TABLE_NAME'], strlen($prefix));
+        $comments[$table_name] = $row['TABLE_COMMENT'] ?? '';
+      }
+
+      return $comments;
+
+    } catch (Exception $e) {
+      error_log("Error retrieving table comments: " . $e->getMessage());
+      return [];
+    }
+  }
+
+  /**
+   * Retrieve comments for all columns in a table
+   *
+   * @param string $table_name Table name (without prefix)
+   * @param string|null $prefix Table prefix (uses default if null)
+   * @return array Associative array [column_name => comment]
+   */
+  public function getColumnComments(string $table_name, ?string $prefix = null): array
+  {
+    try {
+      if ($prefix === null) {
+        $prefix = CLICSHOPPING::getConfig('db_table_prefix', '');
+      }
+
+      $full_table_name = $prefix . $table_name;
+      $database = CLICSHOPPING::getConfig('db_database');
+
+      // Check if table exists first
+      $check_query = "SHOW TABLES LIKE :table";
+      $stmt = $this->prepare($check_query);
+      $stmt->execute(['table' => $full_table_name]);
+
+      if ($stmt->rowCount() === 0) {
+        error_log("Table does not exist: {$full_table_name}");
+        return [];
+      }
+
+      // Get column comments
+      $query = "
+        SELECT COLUMN_NAME, COLUMN_COMMENT
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = :database
+          AND TABLE_NAME = :table
+        ORDER BY ORDINAL_POSITION
+      ";
+
+      $stmt = $this->prepare($query);
+      $stmt->execute([
+        'database' => $database,
+        'table' => $full_table_name
+      ]);
+
+      $comments = [];
+      while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $comments[$row['COLUMN_NAME']] = $row['COLUMN_COMMENT'] ?? '';
+      }
+
+      return $comments;
+
+    } catch (Exception $e) {
+      error_log("Error retrieving column comments for {$table_name}: " . $e->getMessage());
+      return [];
+    }
+  }
+
+  /**
+   * Generate comprehensive schema documentation for AI context
+   *
+   * @param array $table_names Optional array of table names (without prefix)
+   * @param string|null $prefix Table prefix (uses default if null)
+   * @return array Structured documentation with tables, columns, and relationships
+   */
+  public function generateSchemaDocumentation(array $table_names = [], ?string $prefix = null): array
+  {
+    try {
+      if ($prefix === null) {
+        $prefix = CLICSHOPPING::getConfig('db_table_prefix', '');
+      }
+
+      $database = CLICSHOPPING::getConfig('db_database');
+
+      // Get table comments
+      $table_comments = $this->getTableComments($table_names, $prefix);
+
+      $documentation = [
+        'tables' => [],
+        'relationships' => []
+      ];
+
+      // For each table, get detailed information
+      foreach ($table_comments as $table_name => $table_comment) {
+        $full_table_name = $prefix . $table_name;
+
+        // Get column information
+        $column_query = "
+          SELECT 
+            COLUMN_NAME,
+            COLUMN_TYPE,
+            IS_NULLABLE,
+            COLUMN_DEFAULT,
+            COLUMN_COMMENT
+          FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = :database
+            AND TABLE_NAME = :table
+          ORDER BY ORDINAL_POSITION
+        ";
+
+        $stmt = $this->prepare($column_query);
+        $stmt->execute([
+          'database' => $database,
+          'table' => $full_table_name
+        ]);
+
+        $columns = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+          $columns[$row['COLUMN_NAME']] = [
+            'type' => $row['COLUMN_TYPE'],
+            'null' => $row['IS_NULLABLE'],
+            'default' => $row['COLUMN_DEFAULT'],
+            'comment' => $row['COLUMN_COMMENT'] ?? ''
+          ];
+
+          // Parse foreign key relationships from comments
+          if (!empty($row['COLUMN_COMMENT'])) {
+            $comment = $row['COLUMN_COMMENT'];
+            
+            // Look for "FK to table_name" or "FK to table_name.column_name" patterns
+            if (preg_match('/FK to ([a-zA-Z0-9_]+)(?:\.([a-zA-Z0-9_]+))?/i', $comment, $matches)) {
+              $ref_table = $matches[1];
+              $ref_column = $matches[2] ?? 'id'; // Default to 'id' if not specified
+
+              $documentation['relationships'][] = [
+                'from_table' => $table_name,
+                'from_column' => $row['COLUMN_NAME'],
+                'to_table' => $ref_table,
+                'to_column' => $ref_column,
+                'type' => 'many_to_one'
+              ];
+            }
+          }
+        }
+
+        // Get index information
+        $index_query = "
+          SELECT 
+            INDEX_NAME,
+            COLUMN_NAME,
+            NON_UNIQUE,
+            INDEX_TYPE
+          FROM INFORMATION_SCHEMA.STATISTICS
+          WHERE TABLE_SCHEMA = :database
+            AND TABLE_NAME = :table
+          ORDER BY INDEX_NAME, SEQ_IN_INDEX
+        ";
+
+        $stmt = $this->prepare($index_query);
+        $stmt->execute([
+          'database' => $database,
+          'table' => $full_table_name
+        ]);
+
+        $indexes = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+          $index_name = $row['INDEX_NAME'];
+          
+          if (!isset($indexes[$index_name])) {
+            $indexes[$index_name] = [
+              'columns' => [],
+              'type' => $row['INDEX_TYPE'],
+              'unique' => $row['NON_UNIQUE'] == 0
+            ];
+          }
+          
+          $indexes[$index_name]['columns'][] = $row['COLUMN_NAME'];
+        }
+
+        // Add table to documentation
+        $documentation['tables'][$table_name] = [
+          'comment' => $table_comment,
+          'columns' => $columns,
+          'indexes' => $indexes
+        ];
+      }
+
+      return $documentation;
+
+    } catch (Exception $e) {
+      error_log("Error generating schema documentation: " . $e->getMessage());
+      return [
+        'tables' => [],
+        'relationships' => []
+      ];
+    }
+  }
 }
+

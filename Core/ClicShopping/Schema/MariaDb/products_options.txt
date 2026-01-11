@@ -1,8 +1,8 @@
-products_options_id int default(0) not_null
-language_id int default(1) not_null
-products_options_name varchar(255) default('') not_null
-products_options_sort_order int(3) default(1) not_null
-products_options_type varchar(255) not_null
+products_options_id int default(0) not_null comment(Primary key - unique identifier for each product option type)
+language_id int default(1) not_null comment(FK to languages table - language for this option name)
+products_options_name varchar(255) default('') not_null comment(Option name - e.g. Size, Color, Material)
+products_options_sort_order int(3) default(1) not_null comment(Display order for option presentation)
+products_options_type varchar(255) not_null comment(Option input type - select, radio, checkbox, text, textarea)
 --
 primary products_options_id language_id
 ##

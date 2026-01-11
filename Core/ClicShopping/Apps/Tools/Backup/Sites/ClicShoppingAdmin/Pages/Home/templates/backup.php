@@ -69,6 +69,8 @@ if (is_dir($backup_directory)) {
           <th
             class="dataTableHeadingContent text-end"><?php echo $CLICSHOPPING_Backup->getDef('table_heading_file_size'); ?></th>
           <th
+            class="dataTableHeadingContent text-center"><?php echo $CLICSHOPPING_Backup->getDef('table_heading_statistics'); ?></th>
+          <th
             class="dataTableHeadingContent text-end"><?php echo $CLICSHOPPING_Backup->getDef('table_heading_info_compression'); ?></th>
           <th
             class="dataTableHeadingContent text-end"><?php echo $CLICSHOPPING_Backup->getDef('table_heading_action'); ?>
@@ -126,6 +128,30 @@ if (is_dir($backup_directory)) {
             <td class="text-center"><?php echo date("m/d/Y", filemtime($backup_directory . $entry)); ?></td>
             <td class="text-end"><?php echo number_format(filesize($backup_directory . $entry)); ?>
               bytes
+            </td>
+            <td class="text-center">
+              <?php
+              // Get backup statistics
+              $stats = \ClicShopping\Apps\Tools\Backup\Classes\ClicShoppingAdmin\Backup::getBackupStatistics($backup_directory . $entry);
+              if ($stats && $stats['tables_backed_up'] > 0) {
+                echo '<small>';
+                echo 'Tables: ' . $stats['tables_backed_up'];
+                if ($stats['tables_with_comments'] > 0) {
+                  echo ' (' . $stats['tables_with_comments'] . ' with comments)';
+                }
+                echo '<br>';
+                if ($stats['columns_with_comments'] > 0) {
+                  echo 'Columns with comments: ' . $stats['columns_with_comments'] . '<br>';
+                }
+                if ($stats['vector_columns'] > 0) {
+                  echo 'VECTOR columns: ' . $stats['vector_columns'] . '<br>';
+                }
+                echo 'Rows: ' . number_format($stats['total_rows']);
+                echo '</small>';
+              } else {
+                echo '<small>No stats</small>';
+              }
+              ?>
             </td>
             <td class="text-center" onclick="document.location.href='<?php $compression; ?>'"></td>
             <td class="text-end">

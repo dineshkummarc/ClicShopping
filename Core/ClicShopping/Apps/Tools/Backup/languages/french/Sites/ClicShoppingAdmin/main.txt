@@ -39,6 +39,7 @@ text_display_number_of_link = Affiche <strong>{{listing_from}}</strong> à <stro
 table_heading_title = Titre
 table_heading_file_date = Date
 table_heading_file_size = Taille
+table_heading_statistics = Statistiques
 table_heading_action = Action
 table_heading_info_compression = Compression
 

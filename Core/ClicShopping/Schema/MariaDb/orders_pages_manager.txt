@@ -1,7 +1,7 @@
-orders_page_manager_id int not_null auto_increment
-orders_id int not_null
-customers_id int not_null
-page_manager_general_condition longtext not_null
+orders_page_manager_id int not_null auto_increment comment(Primary key - unique identifier for each order-page association)
+orders_id int not_null comment(FK to orders table - order identifier)
+customers_id int not_null comment(FK to customers table - customer who accepted the terms)
+page_manager_general_condition longtext not_null comment(Copy of general conditions/terms that customer accepted with this order)
 --
 primary orders_page_manager_id orders_id
 ##

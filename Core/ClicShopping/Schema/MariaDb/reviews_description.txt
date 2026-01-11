@@ -1,6 +1,6 @@
-reviews_id int not_null
-languages_id int not_null
-reviews_text text not_null
+reviews_id int not_null comment(FK to reviews table - review this text belongs to)
+languages_id int not_null comment(FK to languages table - language of review text)
+reviews_text text not_null comment(Detailed review text written by customer)
 --
 primary reviews_id languages_id
 ##

@@ -98,30 +98,30 @@ class MariaDb
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
           CREATE TABLE :table_gpt (
-            gpt_id int(11) NOT NULL,
-            question text NOT NULL,
-            response text NOT NULL,
-            date_added date DEFAULT NULL,
+            gpt_id int(11) NOT NULL COMMENT 'Primary key - unique identifier for each GPT interaction',
+            question text NOT NULL COMMENT 'User question or prompt submitted to GPT',
+            response text NOT NULL COMMENT 'GPT generated response text',
+            date_added date DEFAULT NULL COMMENT 'Date when the interaction was recorded',
             KEY idx_date_added (date_added)
-          ) CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+          ) CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='GPT interaction history with questions and responses';
 
           ALTER TABLE :table_gpt  ADD PRIMARY KEY (gpt_id);
           ALTER TABLE :table_gpt  MODIFY gpt_id int(11) NOT NULL AUTO_INCREMENT;
 
           CREATE TABLE :table_gpt_usage (
-            usage_id int(11) NOT NULL,
-            gpt_id int(11) NOT NULL,
-            promptTokens int(11) DEFAULT NULL,
-            completionTokens int(11) DEFAULT NULL,
-            totalTokens int(11) DEFAULT NULL,
-            ia_type varchar(255) DEFAULT NULL,
-            model varchar(255) DEFAULT NULL,
-            date_added date DEFAULT NULL,
+            usage_id int(11) NOT NULL COMMENT 'Primary key - unique identifier for each usage record',
+            gpt_id int(11) NOT NULL COMMENT 'FK to gpt table - links to the GPT interaction',
+            promptTokens int(11) DEFAULT NULL COMMENT 'Number of tokens used in the prompt/input',
+            completionTokens int(11) DEFAULT NULL COMMENT 'Number of tokens used in the completion/output',
+            totalTokens int(11) DEFAULT NULL COMMENT 'Total tokens used (prompt + completion)',
+            ia_type varchar(255) DEFAULT NULL COMMENT 'AI provider type - openai, ollama, anthropic, etc.',
+            model varchar(255) DEFAULT NULL COMMENT 'Model name used - gpt-4, gpt-3.5-turbo, claude-3, etc.',
+            date_added date DEFAULT NULL COMMENT 'Date when the usage was recorded',
             KEY idx_gpt_id (gpt_id),
             KEY idx_date_added (date_added),
             KEY idx_model (model),
             KEY idx_ia_type (ia_type)
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='Token usage tracking for GPT API calls and cost analysis';
           ALTER TABLE :table_gpt_usage  ADD PRIMARY KEY (usage_id);
           ALTER TABLE :table_gpt_usage  MODIFY usage_id int(11) NOT NULL AUTO_INCREMENT;
           EOD;
@@ -133,164 +133,164 @@ class MariaDb
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
       CREATE TABLE IF NOT EXISTS :table_categories_embedding (
-        id SERIAL PRIMARY KEY,
-          content longtext DEFAULT NULL,
-          type text DEFAULT NULL,
-          sourcetype text default 'manual',
-          sourcename text default 'manual',
-          embedding vector(3072) NOT NULL,
-          chunknumber int default 128,
-          date_modified datetime DEFAULT NULL,
-          entity_id INT,
-          language_id INT,
+        id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each category embedding',
+          content longtext DEFAULT NULL COMMENT 'Category content for embedding generation - description, metadata, etc.',
+          type text DEFAULT NULL COMMENT 'Type of content - description, metadata, full_text',
+          sourcetype text default 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename text default 'manual' COMMENT 'Name of the source system or process',
+          embedding vector(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber int default 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified datetime DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to categories table - category ID',
+          language_id INT COMMENT 'FK to languages table - language identifier',
           KEY idx_entity_id (entity_id),
           KEY idx_language_id (language_id),
           KEY idx_entity_lang (entity_id, language_id),
           KEY idx_date_modified (date_modified)
-      );
+      ) COMMENT='Vector embeddings for categories - enables semantic category search and recommendations';
 
       CREATE VECTOR INDEX embedding_index ON :table_categories_embedding (embedding);
 
        CREATE TABLE IF NOT EXISTS :table_products_embedding (
-              id SERIAL PRIMARY KEY,
-                content longtext DEFAULT NULL,
-                type text DEFAULT NULL,
-                sourcetype text default 'manual',
-                sourcename text default 'manual',
-                embedding vector(3072) NOT NULL,
-                chunknumber int default 128,
-                date_modified datetime DEFAULT NULL,
-                entity_id INT,
-                language_id INT,
+              id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each product embedding',
+                content longtext DEFAULT NULL COMMENT 'Product content for embedding generation - name, description, specifications, etc.',
+                type text DEFAULT NULL COMMENT 'Type of content - description, specifications, reviews, full_text',
+                sourcetype text default 'manual' COMMENT 'Source type - manual, automated, imported',
+                sourcename text default 'manual' COMMENT 'Name of the source system or process',
+                embedding vector(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+                chunknumber int default 128 COMMENT 'Chunk size used for embedding generation',
+                date_modified datetime DEFAULT NULL COMMENT 'Last modification timestamp',
+                entity_id INT COMMENT 'FK to products table - product ID',
+                language_id INT COMMENT 'FK to languages table - language identifier',
                 KEY idx_entity_id (entity_id),
                 KEY idx_language_id (language_id),
                 KEY idx_entity_lang (entity_id, language_id),
                 KEY idx_date_modified (date_modified)
-              );
+              ) COMMENT='Vector embeddings for products - enables semantic product search and recommendations';
 
       CREATE VECTOR INDEX embedding_index ON :table_products_embedding (embedding);
       
       CREATE TABLE IF NOT EXISTS :table_pages_manager_embedding (
-              id SERIAL PRIMARY KEY,
-          content longtext DEFAULT NULL,
-          type TEXT DEFAULT NULL,
-          sourcetype TEXT DEFAULT 'manual',
-          sourcename TEXT DEFAULT 'manual',
-          embedding VECTOR(3072) NOT NULL,
-          chunknumber INT DEFAULT 128,
-          date_modified DATETIME DEFAULT NULL,
-          entity_id INT,
-          language_id INT,
+              id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each page embedding',
+          content longtext DEFAULT NULL COMMENT 'Page content for embedding generation - title, body, metadata, etc.',
+          type TEXT DEFAULT NULL COMMENT 'Type of content - page_content, metadata, full_text',
+          sourcetype TEXT DEFAULT 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename TEXT DEFAULT 'manual' COMMENT 'Name of the source system or process',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to pages_manager table - page ID',
+          language_id INT COMMENT 'FK to languages table - language identifier',
           KEY idx_entity_id (entity_id),
           KEY idx_language_id (language_id),
           KEY idx_entity_lang (entity_id, language_id),
           KEY idx_date_modified (date_modified)
-      );
+      ) COMMENT='Vector embeddings for CMS pages - enables semantic page search and content discovery';
 
       CREATE VECTOR INDEX embedding_index ON :table_pages_manager_embedding (embedding);
 
       CREATE TABLE IF NOT EXISTS :table_manufacturers_embedding (
-              id SERIAL PRIMARY KEY,
-          content longtext DEFAULT NULL,
-          type TEXT DEFAULT NULL,
-          sourcetype TEXT DEFAULT 'manual',
-          sourcename TEXT DEFAULT 'manual',
-          embedding VECTOR(3072) NOT NULL,
-          chunknumber INT DEFAULT 128,
-          date_modified DATETIME DEFAULT NULL,
-          entity_id INT,
-          language_id INT,
+              id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each manufacturer embedding',
+          content longtext DEFAULT NULL COMMENT 'Manufacturer content for embedding generation - name, description, history, etc.',
+          type TEXT DEFAULT NULL COMMENT 'Type of content - description, history, metadata, full_text',
+          sourcetype TEXT DEFAULT 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename TEXT DEFAULT 'manual' COMMENT 'Name of the source system or process',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to manufacturers table - manufacturer ID',
+          language_id INT COMMENT 'FK to languages table - language identifier',
           KEY idx_entity_id (entity_id),
           KEY idx_language_id (language_id),
           KEY idx_entity_lang (entity_id, language_id),
           KEY idx_date_modified (date_modified)
-      );
+      ) COMMENT='Vector embeddings for manufacturers - enables semantic manufacturer search and brand discovery';
 
       CREATE VECTOR INDEX embedding_index ON :table_manufacturers_embedding (embedding);
 
       CREATE TABLE IF NOT EXISTS :table_suppliers_embedding (
-              id SERIAL PRIMARY KEY,
-          content longtext DEFAULT NULL,
-          type TEXT DEFAULT NULL,
-          sourcetype TEXT DEFAULT 'manual',
-          sourcename TEXT DEFAULT 'manual',
-          embedding VECTOR(3072) NOT NULL,
-          chunknumber INT DEFAULT 128,
-          date_modified DATETIME DEFAULT NULL,
-          entity_id INT,
+              id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each supplier embedding',
+          content longtext DEFAULT NULL COMMENT 'Supplier content for embedding generation - name, description, capabilities, etc.',
+          type TEXT DEFAULT NULL COMMENT 'Type of content - description, capabilities, metadata, full_text',
+          sourcetype TEXT DEFAULT 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename TEXT DEFAULT 'manual' COMMENT 'Name of the source system or process',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to suppliers table - supplier ID',
           KEY idx_entity_id (entity_id),
           KEY idx_date_modified (date_modified)
-      );
+      ) COMMENT='Vector embeddings for suppliers - enables semantic supplier search and sourcing recommendations';
 
       CREATE VECTOR INDEX embedding_index ON :table_suppliers_embedding (embedding);
 
       CREATE TABLE IF NOT EXISTS :table_reviews_embedding (
-              id SERIAL PRIMARY KEY,
-          content longtext DEFAULT NULL,
-          type TEXT DEFAULT NULL,
-          sourcetype TEXT DEFAULT 'manual',
-          sourcename TEXT DEFAULT 'manual',
-          embedding VECTOR(3072) NOT NULL,
-          chunknumber INT DEFAULT 128,
-          date_modified DATETIME DEFAULT NULL,
-          entity_id INT,
-          language_id INT,
+              id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each review embedding',
+          content longtext DEFAULT NULL COMMENT 'Review content for embedding generation - review text, title, etc.',
+          type TEXT DEFAULT NULL COMMENT 'Type of content - review_text, summary, full_text',
+          sourcetype TEXT DEFAULT 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename TEXT DEFAULT 'manual' COMMENT 'Name of the source system or process',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to reviews table - review ID',
+          language_id INT COMMENT 'FK to languages table - language identifier',
           KEY idx_entity_id (entity_id),
           KEY idx_language_id (language_id),
           KEY idx_entity_lang (entity_id, language_id),
           KEY idx_date_modified (date_modified)
-      );
+      ) COMMENT='Vector embeddings for product reviews - enables semantic review search and sentiment analysis';
 
       CREATE VECTOR INDEX embedding_index ON :table_reviews_embedding (embedding);
 
       CREATE TABLE IF NOT EXISTS :table_reviews_sentiment_embedding (
-              id SERIAL PRIMARY KEY,
-          content longtext DEFAULT NULL,
-          type TEXT DEFAULT NULL,
-          sourcetype TEXT DEFAULT 'manual',
-          sourcename TEXT DEFAULT 'manual',
-          embedding VECTOR(3072) NOT NULL,
-          chunknumber INT DEFAULT 128,
-          date_modified DATETIME DEFAULT NULL,
-          entity_id INT,
-          language_id INT,
+              id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each sentiment embedding',
+          content longtext DEFAULT NULL COMMENT 'Sentiment-analyzed review content with emotional context',
+          type TEXT DEFAULT NULL COMMENT 'Type of content - sentiment_analysis, emotional_context, full_text',
+          sourcetype TEXT DEFAULT 'manual' COMMENT 'Source type - manual, automated, ai_analyzed',
+          sourcename TEXT DEFAULT 'manual' COMMENT 'Name of the source system or AI model',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for sentiment-aware semantic search',
+          chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to reviews table - review ID',
+          language_id INT COMMENT 'FK to languages table - language identifier',
           KEY idx_entity_id (entity_id),
           KEY idx_language_id (language_id),
           KEY idx_entity_lang (entity_id, language_id),
           KEY idx_date_modified (date_modified)
-      );
+      ) COMMENT='Vector embeddings for review sentiment analysis - enables emotion-aware search and trend detection';
 
       CREATE VECTOR INDEX embedding_index ON :table_reviews_sentiment_embedding (embedding);
 
       CREATE TABLE IF NOT EXISTS :table_return_orders_embedding (
-              id SERIAL PRIMARY KEY,
-          content longtext DEFAULT NULL,
-          type TEXT DEFAULT NULL,
-          sourcetype TEXT DEFAULT 'manual',
-          sourcename TEXT DEFAULT 'manual',
-          embedding VECTOR(3072) NOT NULL,
-          chunknumber INT DEFAULT 128,
-          date_modified DATETIME DEFAULT NULL,
-          entity_id INT,
+              id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each return order embedding',
+          content longtext DEFAULT NULL COMMENT 'Return order content for embedding generation - reason, description, notes, etc.',
+          type TEXT DEFAULT NULL COMMENT 'Type of content - return_reason, customer_notes, full_text',
+          sourcetype TEXT DEFAULT 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename TEXT DEFAULT 'manual' COMMENT 'Name of the source system or process',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to return_orders table - return order ID',
           KEY idx_entity_id (entity_id),
           KEY idx_date_modified (date_modified)
-      );
+      ) COMMENT='Vector embeddings for return orders - enables semantic return analysis and pattern detection';
 
       CREATE VECTOR INDEX embedding_index ON :table_return_orders_embedding (embedding);
 
       CREATE TABLE IF NOT EXISTS :table_orders_embedding (
-          id SERIAL PRIMARY KEY,
-          content longtext DEFAULT NULL,
-          type TEXT DEFAULT NULL,
-          sourcetype TEXT DEFAULT 'manual',
-          sourcename TEXT DEFAULT 'manual',
-          embedding VECTOR(3072) NOT NULL,
-          chunknumber INT DEFAULT 128,
-          date_modified DATETIME DEFAULT NULL,
-          entity_id INT,
+          id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each order embedding',
+          content longtext DEFAULT NULL COMMENT 'Order content for embedding generation - items, notes, customer info, etc.',
+          type TEXT DEFAULT NULL COMMENT 'Type of content - order_details, customer_notes, full_text',
+          sourcetype TEXT DEFAULT 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename TEXT DEFAULT 'manual' COMMENT 'Name of the source system or process',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to orders table - order ID',
           KEY idx_entity_id (entity_id),
           KEY idx_date_modified (date_modified)
-      );
+      ) COMMENT='Vector embeddings for orders - enables semantic order search and pattern analysis';
 
       CREATE VECTOR INDEX embedding_index ON :table_orders_embedding (embedding);    
     EOD;
@@ -340,19 +340,19 @@ class MariaDb
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
         CREATE TABLE IF NOT EXISTS :table_rag_memory_retention_log (
-          id BIGINT AUTO_INCREMENT PRIMARY KEY,
-          user_id VARCHAR(255) NOT NULL,
-          interaction_id VARCHAR(255) NOT NULL UNIQUE,
-          timestamp_recorded TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          timestamp_migrated TIMESTAMP NULL,
-          level ENUM('working', 'short_term', 'long_term') DEFAULT 'short_term',
-          status ENUM('pending', 'short_term_stored', 'long_term_stored', 'archived') DEFAULT 'pending',
+          id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Primary key - unique identifier for each memory retention record',
+          user_id VARCHAR(255) NOT NULL COMMENT 'User identifier for memory tracking',
+          interaction_id VARCHAR(255) NOT NULL UNIQUE COMMENT 'Unique interaction identifier - prevents duplicates',
+          timestamp_recorded TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'When the memory was first recorded',
+          timestamp_migrated TIMESTAMP NULL COMMENT 'When the memory was migrated to a different level',
+          level ENUM('working', 'short_term', 'long_term') DEFAULT 'short_term' COMMENT 'Memory retention level - working: active session, short_term: recent history, long_term: permanent storage',
+          status ENUM('pending', 'short_term_stored', 'long_term_stored', 'archived') DEFAULT 'pending' COMMENT 'Processing status - pending: awaiting storage, short_term_stored: in short-term memory, long_term_stored: in long-term memory, archived: moved to archive',
           KEY idx_user_id (user_id),
           KEY idx_status (status),
           KEY idx_status_level (status, level),
           KEY idx_user_status (user_id, status),
           KEY idx_timestamp_recorded (timestamp_recorded)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Memory retention tracking for RAG system - manages working, short-term, and long-term memory lifecycle';
 
         EOD;
       $CLICSHOPPING_Db->exec($sql);
@@ -429,34 +429,35 @@ class MariaDb
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
         CREATE TABLE :table_rag_calculator_cache (
-          cache_id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-          expression VARCHAR(500) NOT NULL,
-          expression_hash VARCHAR(64) NOT NULL,
-          result DOUBLE NOT NULL,
-          result_type VARCHAR(50) NOT NULL,
-          variables JSON DEFAULT NULL,
-          execution_time FLOAT NOT NULL,
-          created_at DATETIME NOT NULL,
-          last_accessed DATETIME NOT NULL,
-          access_count INT(11) UNSIGNED DEFAULT 0,
+          cache_id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key - unique identifier for each cached calculation',
+          expression VARCHAR(500) NOT NULL COMMENT 'Mathematical expression that was calculated',
+          expression_hash VARCHAR(64) NOT NULL COMMENT 'MD5 hash of expression for fast lookup and deduplication',
+          result DOUBLE NOT NULL COMMENT 'Calculated result value',
+          result_type VARCHAR(50) NOT NULL COMMENT 'Type of result - number, percentage, currency, etc.',
+          variables JSON DEFAULT NULL COMMENT 'Variables used in the calculation (JSON format)',
+          execution_time FLOAT NOT NULL COMMENT 'Time taken to execute calculation in milliseconds',
+          created_at DATETIME NOT NULL COMMENT 'When the calculation was first cached',
+          last_accessed DATETIME NOT NULL COMMENT 'Last time this cached result was accessed',
+          access_count INT(11) UNSIGNED DEFAULT 0 COMMENT 'Number of times this cached result has been reused',
           PRIMARY KEY (cache_id),
           UNIQUE KEY idx_expression_hash (expression_hash),
           KEY idx_created_at (created_at),
           KEY idx_last_accessed (last_accessed)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Cache for mathematical calculations to improve performance and reduce redundant computations';
+
 
         CREATE TABLE IF NOT EXISTS  :table_rag_calculator_logs (
-          log_id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-          user_id VARCHAR(100) NOT NULL,
-          expression TEXT NOT NULL,
-          result DOUBLE DEFAULT NULL,
-          success TINYINT(1) NOT NULL DEFAULT 0,
-          error_message TEXT DEFAULT NULL,
-          execution_time FLOAT NOT NULL,
-          step_id VARCHAR(100) DEFAULT NULL,
-          plan_id VARCHAR(100) DEFAULT NULL,
-          metadata JSON DEFAULT NULL,
-          created_at DATETIME NOT NULL,
+          log_id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key - unique identifier for each calculation log entry',
+          user_id VARCHAR(100) NOT NULL COMMENT 'User who initiated the calculation',
+          expression TEXT NOT NULL COMMENT 'Mathematical expression that was evaluated',
+          result DOUBLE DEFAULT NULL COMMENT 'Calculated result (NULL if calculation failed)',
+          success TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Success flag - 0: failed, 1: succeeded',
+          error_message TEXT DEFAULT NULL COMMENT 'Error message if calculation failed',
+          execution_time FLOAT NOT NULL COMMENT 'Time taken to execute calculation in milliseconds',
+          step_id VARCHAR(100) DEFAULT NULL COMMENT 'Step identifier in multi-step calculations',
+          plan_id VARCHAR(100) DEFAULT NULL COMMENT 'Plan identifier for grouped calculations',
+          metadata JSON DEFAULT NULL COMMENT 'Additional metadata in JSON format',
+          created_at DATETIME NOT NULL COMMENT 'When the calculation was logged',
           PRIMARY KEY (log_id),
           KEY idx_user_id (user_id),
           KEY idx_created_at (created_at),
@@ -464,7 +465,8 @@ class MariaDb
           KEY idx_plan_id (plan_id),
           KEY idx_user_success_date (user_id, success, created_at),
           KEY idx_plan_step (plan_id, step_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Audit log for all calculator operations - tracks success, failures, and performance metrics';
+
     EOD;
       $CLICSHOPPING_Db->exec($sql);
     }
@@ -616,16 +618,16 @@ class MariaDb
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
       CREATE TABLE :table_rag_websearch (
-      `id` int(11) NOT NULL AUTO_INCREMENT,
-      `site_domain` varchar(255) NOT NULL,
-      `authority_score` float(15,4) NOT NULL,
-      `status` tinyint(1) NOT NULL,
-      `description` text NOT NULL,
-      `search_pattern` varchar(255),
+      `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Primary key - unique identifier for each web search source',
+      `site_domain` varchar(255) NOT NULL COMMENT 'Domain name of the web search source - e.g., wikipedia.org, stackoverflow.com',
+      `authority_score` float(15,4) NOT NULL COMMENT 'Authority/trust score for this source (0.0000-1.0000) - higher is more authoritative',
+      `status` tinyint(1) NOT NULL COMMENT 'Source status - 0: disabled, 1: enabled',
+      `description` text NOT NULL COMMENT 'Description of the source and its content focus',
+      `search_pattern` varchar(255) COMMENT 'URL pattern for constructing search queries on this source',
       PRIMARY KEY (`id`),
       INDEX `idx_site_domain` (`site_domain`),
       INDEX `idx_status_authority` (`status`, `authority_score`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Trusted web search sources with authority scores for RAG system';
     EOD;
       $CLICSHOPPING_Db->exec($sql);
     }
@@ -704,42 +706,42 @@ class MariaDb
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
         CREATE TABLE IF NOT EXISTS :table_rag_statistics (
-          id INT NOT NULL AUTO_INCREMENT,
-          interaction_id INT DEFAULT NULL COMMENT 'FK vers clic_chatgpt_interactions géré par le système',
+          id INT NOT NULL AUTO_INCREMENT COMMENT 'Primary key - unique identifier for each statistics record',
+          interaction_id INT DEFAULT NULL COMMENT 'FK to rag_interactions table - links to the interaction (managed by code)',
           -- Performance
-          response_time_ms INT DEFAULT NULL,
-          cache_hit BOOLEAN DEFAULT FALSE,
+          response_time_ms INT DEFAULT NULL COMMENT 'Response time in milliseconds',
+          cache_hit BOOLEAN DEFAULT FALSE COMMENT 'Cache hit flag - TRUE: result from cache, FALSE: fresh computation',
 
-          -- API & Coûts
-          api_provider VARCHAR(50) DEFAULT NULL,
-          model_used VARCHAR(100) DEFAULT NULL,
-          tokens_prompt INT DEFAULT NULL,
-          tokens_completion INT DEFAULT NULL,
-          tokens_total INT DEFAULT NULL,
-          api_cost_usd DECIMAL(10,6) DEFAULT NULL,
+          -- API & Costs
+          api_provider VARCHAR(50) DEFAULT NULL COMMENT 'API provider - openai, anthropic, ollama, etc.',
+          model_used VARCHAR(100) DEFAULT NULL COMMENT 'Model name used - gpt-4, claude-3, llama2, etc.',
+          tokens_prompt INT DEFAULT NULL COMMENT 'Number of tokens in the prompt/input',
+          tokens_completion INT DEFAULT NULL COMMENT 'Number of tokens in the completion/output',
+          tokens_total INT DEFAULT NULL COMMENT 'Total tokens used (prompt + completion)',
+          api_cost_usd DECIMAL(10,6) DEFAULT NULL COMMENT 'API cost in USD for this interaction',
       
           -- Classification & Agents
-          agent_type VARCHAR(50) DEFAULT NULL,
-          classification_type VARCHAR(50) DEFAULT NULL,
-          confidence_score DECIMAL(5,2) DEFAULT NULL,
+          agent_type VARCHAR(50) DEFAULT NULL COMMENT 'Agent type that processed the request - orchestrator, analytics_agent, semantic_agent, etc.',
+          classification_type VARCHAR(50) DEFAULT NULL COMMENT 'Classification type - analytics, semantic, hybrid, web_search',
+          confidence_score DECIMAL(5,2) DEFAULT NULL COMMENT 'Confidence score of the classification (0.00-100.00)',
       
-          -- Qualité & Sécurité
-          security_score DECIMAL(5,2) DEFAULT NULL,
-          response_quality DECIMAL(5,2) DEFAULT NULL,
-          guardrails_triggered BOOLEAN DEFAULT FALSE,
+          -- Quality & Security
+          security_score DECIMAL(5,2) DEFAULT NULL COMMENT 'Security score (0.00-100.00) - higher is safer',
+          response_quality DECIMAL(5,2) DEFAULT NULL COMMENT 'Response quality score (0.00-100.00)',
+          guardrails_triggered BOOLEAN DEFAULT FALSE COMMENT 'Guardrails triggered flag - TRUE: safety measures activated, FALSE: normal processing',
       
-          -- Erreurs
-          error_occurred BOOLEAN DEFAULT FALSE,
-          error_type VARCHAR(100) DEFAULT NULL,
-          error_message TEXT DEFAULT NULL,
+          -- Errors
+          error_occurred BOOLEAN DEFAULT FALSE COMMENT 'Error flag - TRUE: error occurred, FALSE: successful',
+          error_type VARCHAR(100) DEFAULT NULL COMMENT 'Type of error - timeout, api_error, validation_error, etc.',
+          error_message TEXT DEFAULT NULL COMMENT 'Detailed error message',
       
-          -- Métadonnées
-          user_id INT DEFAULT NULL,
-          session_id VARCHAR(255) DEFAULT NULL,
-          language_id INT DEFAULT 1,
+          -- Metadata
+          user_id INT DEFAULT NULL COMMENT 'User identifier',
+          session_id VARCHAR(255) DEFAULT NULL COMMENT 'Session identifier',
+          language_id INT DEFAULT 1 COMMENT 'Language identifier',
       
           -- Timestamps
-          date_added DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          date_added DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When the statistics record was created',
       
           PRIMARY KEY (id),
           KEY idx_interaction_id (interaction_id),
@@ -754,7 +756,7 @@ class MariaDb
       ENGINE=InnoDB
       DEFAULT CHARSET=utf8mb4
       COLLATE=utf8mb4_unicode_ci
-      COMMENT='Statistiques détaillées pour dashboard RAG, intégrité gérée par le système';
+      COMMENT='Detailed statistics for RAG dashboard - performance, costs, quality, and error tracking';
 
       EOD;
       $CLICSHOPPING_Db->exec($sql);
@@ -889,16 +891,16 @@ class MariaDb
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
       CREATE TABLE IF NOT EXISTS :table_rag_schema_embeddings (
-        id SERIAL PRIMARY KEY,
-        table_name VARCHAR(255) NOT NULL UNIQUE,
-        schema_text TEXT NOT NULL,
-        embedding_vector VECTOR(3072) NOT NULL,
-        token_count INT DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each schema embedding',
+        table_name VARCHAR(255) NOT NULL UNIQUE COMMENT 'Database table name - unique identifier for the schema',
+        schema_text TEXT NOT NULL COMMENT 'Complete schema definition including columns, types, and comments',
+        embedding_vector VECTOR(3072) NOT NULL COMMENT 'Vector embedding of the schema for semantic search',
+        token_count INT DEFAULT 0 COMMENT 'Number of tokens in the schema text',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT 'When the schema embedding was created',
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Last time the schema embedding was updated',
         KEY idx_table_name (table_name),
         KEY idx_updated_at (updated_at)
-      );
+      ) COMMENT='Vector embeddings of database schemas for semantic schema discovery and natural language to SQL';
       
       CREATE VECTOR INDEX embedding_index ON :table_rag_schema_embeddings (embedding_vector);
     EOD;

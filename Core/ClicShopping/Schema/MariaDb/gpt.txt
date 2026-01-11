@@ -1,9 +1,9 @@
-gpt_id int not_null auto_increment
-question text not_null
-response text not_null
-date_added date default null
-user_admin varchar(255) default null
-audit_data json default null
+gpt_id int not_null auto_increment comment(Primary key - unique identifier for each GPT interaction)
+question text not_null comment(User question or prompt sent to GPT model)
+response text not_null comment(GPT model response text)
+date_added date default null comment(Timestamp when the interaction was recorded)
+user_admin varchar(255) default null comment(Administrator username who initiated the interaction - null for system-generated)
+audit_data json default null comment(Audit trail data - may include model, temperature, tokens, execution time)
 
 --
 primary gpt_id

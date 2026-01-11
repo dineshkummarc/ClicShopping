@@ -1,10 +1,10 @@
-orders_status_id int default(0) not_null
-language_id int default(1) not_null
-orders_status_name varchar(255) not_null
-public_flag tinyint(1) default(1)
-downloads_flag tinyint(1) default(0)
-support_orders_flag tinyint(1) default(0)
-authorize_to_delete_order tinyint(1) default(1)
+orders_status_id int default(0) not_null comment(Primary key - unique identifier for each order status)
+language_id int default(1) not_null comment(FK to languages table - language for this status name)
+orders_status_name varchar(255) not_null comment(Status name - e.g. Pending, Processing, Shipped, Delivered, Cancelled)
+public_flag tinyint(1) default(1) comment(Public visibility - 0: admin only, 1: visible to customers)
+downloads_flag tinyint(1) default(0) comment(Enable downloads - 0: no downloads, 1: allow digital product downloads)
+support_orders_flag tinyint(1) default(0) comment(Support ticket flag - 0: no support, 1: enable support tickets for this status)
+authorize_to_delete_order tinyint(1) default(1) comment(Deletion permission - 0: cannot delete, 1: can delete orders with this status)
 --
 primary orders_status_id language_id
 idx_orders_status_name orders_status_name

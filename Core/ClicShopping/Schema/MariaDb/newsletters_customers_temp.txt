@@ -1,6 +1,6 @@
-customers_firstname varchar(255) not_null
-customers_lastname varchar(255) not_null
-customers_email_address varchar(255) not_null
+customers_firstname varchar(255) not_null comment(First name of temporary newsletter subscriber)
+customers_lastname varchar(255) not_null comment(Last name of temporary newsletter subscriber)
+customers_email_address varchar(255) not_null comment(Email address for newsletter subscription - temporary storage before confirmation)
 --
 ##
 engine innodb

@@ -1,57 +1,57 @@
-orders_id int not_null auto_increment
-customers_id int not_null
-customers_name text not_null
-customers_company varchar(255)
-customers_siret varchar(255)
-customers_ape varchar(255)
-customers_tva_intracom varchar(255)
-customers_street_address varchar(255) not_null
-customers_suburb varchar(255)
-customers_city varchar(255) not_null
-customers_postcode varchar(255) not_null
-customers_state varchar(255)
-customers_country varchar(255) not_null
-customers_telephone varchar(255)
-customers_email_address varchar(255) not_null
-customers_address_format_id int(5) not_null
-delivery_name text
-delivery_company varchar(255)
-delivery_street_address varchar(255)
-delivery_suburb varchar(255)
-delivery_city varchar(255)
-delivery_postcode varchar(255)
-delivery_state varchar(255)
-delivery_country varchar(255)
-delivery_address_format_id int(5)
-billing_name text not_null
-billing_company varchar(255)
-billing_cf varchar(255)
-billing_piva varchar(255)
-billing_street_address varchar(255) not_null
-billing_suburb varchar(255)
-billing_city varchar(255) not_null
-billing_postcode varchar(255) not_null
-billing_state varchar(255)
-billing_country varchar(255) not_null
-billing_address_format_id int(5) not_null
-payment_method varchar(255) not_null
-cc_type varchar(20)
-cc_owner varchar(255)
-cc_number varchar(32)
-cc_expires varchar(4)
-last_modified datetime
-date_purchased datetime
-orders_status int(5) not_null
-orders_status_invoice int(5) defaukt(1)  not_null
-orders_date_finished datetime
-currency char(3)
-currency_value decimal(14,6)
-customers_group_id int default(0) not_null
-client_computer_ip varchar(45)
-provider_name_client varchar(255)
-customers_cellular_phone varchar(255)
-orders_archive int(1) default(0) not_null
-erp_invoice int(1) default(0) not_null
+orders_id int not_null auto_increment comment(Primary key - unique identifier for each order)
+customers_id int not_null comment(FK to customers table - customer who placed the order)
+customers_name text not_null comment(Customer full name at time of order)
+customers_company varchar(255) comment(Customer company name for B2B orders)
+customers_siret varchar(255) comment(French SIRET business registration number)
+customers_ape varchar(255) comment(French APE business activity code)
+customers_tva_intracom varchar(255) comment(Intra-community VAT number for EU businesses)
+customers_street_address varchar(255) not_null comment(Customer billing street address)
+customers_suburb varchar(255) comment(Customer billing suburb or district)
+customers_city varchar(255) not_null comment(Customer billing city)
+customers_postcode varchar(255) not_null comment(Customer billing postal code)
+customers_state varchar(255) comment(Customer billing state or province)
+customers_country varchar(255) not_null comment(Customer billing country)
+customers_telephone varchar(255) comment(Customer contact phone number)
+customers_email_address varchar(255) not_null comment(Customer email address for order communication)
+customers_address_format_id int(5) not_null comment(FK to address_format table - format for displaying customer address)
+delivery_name text comment(Delivery recipient name - may differ from customer name)
+delivery_company varchar(255) comment(Delivery company name)
+delivery_street_address varchar(255) comment(Delivery street address)
+delivery_suburb varchar(255) comment(Delivery suburb or district)
+delivery_city varchar(255) comment(Delivery city)
+delivery_postcode varchar(255) comment(Delivery postal code)
+delivery_state varchar(255) comment(Delivery state or province)
+delivery_country varchar(255) comment(Delivery country)
+delivery_address_format_id int(5) comment(FK to address_format table - format for displaying delivery address)
+billing_name text not_null comment(Billing recipient name)
+billing_company varchar(255) comment(Billing company name)
+billing_cf varchar(255) comment(Italian Codice Fiscale tax code)
+billing_piva varchar(255) comment(Italian Partita IVA VAT number)
+billing_street_address varchar(255) not_null comment(Billing street address)
+billing_suburb varchar(255) comment(Billing suburb or district)
+billing_city varchar(255) not_null comment(Billing city)
+billing_postcode varchar(255) not_null comment(Billing postal code)
+billing_state varchar(255) comment(Billing state or province)
+billing_country varchar(255) not_null comment(Billing country)
+billing_address_format_id int(5) not_null comment(FK to address_format table - format for displaying billing address)
+payment_method varchar(255) not_null comment(Payment method used - credit_card, paypal, bank_transfer, etc)
+cc_type varchar(20) comment(Credit card type - visa, mastercard, amex, etc)
+cc_owner varchar(255) comment(Credit card owner name)
+cc_number varchar(32) comment(Encrypted credit card number - last 4 digits only)
+cc_expires varchar(4) comment(Credit card expiration date - MMYY format)
+last_modified datetime comment(Timestamp of last order modification)
+date_purchased datetime comment(Timestamp when order was placed)
+orders_status int(5) not_null comment(FK to orders_status table - current order status)
+orders_status_invoice int(5) defaukt(1)  not_null comment(FK to orders_status_invoice table - invoice status)
+orders_date_finished datetime comment(Timestamp when order was completed or delivered)
+currency char(3) comment(Currency code used for order - ISO 4217 format USD, EUR, GBP)
+currency_value decimal(14,6) comment(Exchange rate at time of order for currency conversion)
+customers_group_id int default(0) not_null comment(FK to customers_groups table - customer group at time of order)
+client_computer_ip varchar(45) comment(IP address of customer when order was placed - IPv4 or IPv6)
+provider_name_client varchar(255) comment(Internet service provider of customer)
+customers_cellular_phone varchar(255) comment(Customer mobile phone number)
+orders_archive int(1) default(0) not_null comment(Archive status - 0: active, 1: archived)
+erp_invoice int(1) default(0) not_null comment(ERP invoice status - 0: not invoiced, 1: invoiced in ERP system)
 --
 primary orders_id
 idx_orders_customers_id customers_id
