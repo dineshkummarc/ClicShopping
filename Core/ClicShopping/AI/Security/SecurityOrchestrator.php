@@ -241,11 +241,17 @@ class SecurityOrchestrator
    */
   private static function loadConfiguration(): array
   {
+    // Handle both boolean and string 'True'/'False' formats (DB compatibility)
+    $llmEnabled = true; // default
+    
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_USE_LLM_PRIMARY_SECURITY')) {
+      $configValue = CLICSHOPPING_APP_CHATGPT_RA_USE_LLM_PRIMARY_SECURITY;
+      $llmEnabled = ($configValue === true || $configValue == 'True' || $configValue === 'true' || $configValue === '1');
+    }
+    
     return [
       // LLM-based security (PRIMARY)
-      'llm_enabled' => defined('CLICSHOPPING_APP_CHATGPT_RA_USE_LLM_PRIMARY_SECURITY') 
-        ? (CLICSHOPPING_APP_CHATGPT_RA_USE_LLM_PRIMARY_SECURITY === true || CLICSHOPPING_APP_CHATGPT_RA_USE_LLM_PRIMARY_SECURITY === 'True')
-        : true, // default: enabled
+      'llm_enabled' => $llmEnabled,
       
       // Pattern fallback (OPTIONAL - disabled by default)
       'pattern_fallback_enabled' => CLICSHOPPING_APP_CHATGPT_RA_SECURITY_PATTERN_FALLBACK,

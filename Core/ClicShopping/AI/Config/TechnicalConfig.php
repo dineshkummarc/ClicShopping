@@ -130,3 +130,19 @@ if (!defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_FAILURE_ALERTS'))
 
 if (!defined('CLICSHOPPING_APP_CHATGPT_CALCULATOR_ENABLED'))
   define('CLICSHOPPING_APP_CHATGPT_CALCULATOR_ENABLED', 'True');
+
+// ============================================================================
+// PARALLEL LLM EXECUTOR (2 constants)
+// ============================================================================
+
+// Timeout for parallel LLM calls (in seconds)
+// Each individual call will timeout after this duration
+// Default: 30 seconds
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_TIMEOUT'))
+  define('CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_TIMEOUT', 30);
+
+// Maximum concurrent LLM calls
+// Limits the number of simultaneous requests to avoid overloading the API
+// Default: 5 concurrent calls
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_MAX_CONCURRENT'))
+  define('CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_MAX_CONCURRENT', 5);

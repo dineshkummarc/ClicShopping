@@ -298,7 +298,7 @@ class Gpt
    * @param int $maxtoken The maximum number of tokens
    * @return array The model-specific parameters
    */
-  private static function getModelApiParameters(string $model, int $maxtoken): array
+  public static function getModelApiParameters(string $model, int $maxtoken): array
   {
     $params = [];
 
@@ -349,12 +349,7 @@ class Gpt
    * @return array Normalized response with consistent structure
    * @throws \Exception If all models fail or prompt is invalid
    */
-  public static function callWithModel(
-    string $prompt,
-    string $model,
-    ?int $maxtoken = null,
-    ?float $temperature = null,
-    ?int $max = 1
+  public static function callWithModel(string $prompt, string $model, ?int $maxtoken = null, ?float $temperature = null, ?int $max = 1
   ): array {
     $securityLogger = new SecurityLogger();
     $debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True';
@@ -563,6 +558,43 @@ class Gpt
   }
 
   /**
+   * Check if model uses reasoning API approach (GPT-5 style)
+   * 
+   * GPT-5 models use reasoning_effort and verbosity parameters instead of
+   * temperature, top_p, frequency_penalty, presence_penalty.
+   * 
+   * This method checks the model list dynamically so when models are added/removed,
+   * the logic automatically adapts.
+   *
+   * @param string $model Model name
+   * @return bool True if model uses reasoning API approach
+   */
+  public static function isReasoningApiModel(string $model): bool
+  {
+    // Get all models from the list
+    $models = self::getGptModel();
+    
+    foreach ($models as $modelInfo) {
+      if ($modelInfo['id'] === $model) {
+        // Check if this is a GPT-5 series model (uses reasoning API)
+        // GPT-5 series models are identified by their ID starting with 'gpt-5'
+        // and their description mentioning specific GPT-5 features
+        if (strpos($modelInfo['id'], 'gpt-5') === 0) {
+          return true;
+        }
+        
+        // Future: Could also check for specific markers in the text description
+        // e.g., if (str_contains($modelInfo['text'], 'reasoning API'))
+        
+        return false;
+      }
+    }
+    
+    // Model not found in list - check by prefix as fallback
+    return strpos($model, 'gpt-5') === 0;
+  }
+
+  /**
    * Check if model supports analytics queries
    *
    * All current models support analytics (SQL generation).
@@ -637,7 +669,7 @@ class Gpt
       $tokenParams = self::getModelApiParameters($model, $maxtoken);
 
       // Build parameters based on model type
-      if (strpos($model, 'gpt-5') === 0) {
+      if (self::isReasoningApiModel($model)) {
         // GPT-5 models: use specific parameters only
         $parameters = array_merge([
           'reasoning_effort' => CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT,
@@ -721,7 +753,7 @@ class Gpt
     // Configurer l'URL si fournie, sinon utiliser la valeur par défaut ou depuis les constantes
     if ($url !== null) {
       $config->url = $url;
-    } elseif (defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL')) {
+    } elseif (defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL') && !empty(CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL)) {
       $config->url = CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL;
     } else {
       // LM Studio uses OpenAI-compatible API
@@ -761,13 +793,11 @@ class Gpt
     return new LmStudioChat($config);
   }
 
-
-
   /**
    * Creates an instance of the AnthropicChat class based on the specified model and configuration options.
    *
    * @param string $model The specific model identifier to use for the AnthropicChat instance.
-   *                      Supported values are 'anth-sonnet', 'anth-opus', and others.
+   * Supported values are 'anth-sonnet', 'anth-opus', 'anth-haiku'.
    * @param int|null $maxtoken The maximum number of tokens the model can output.
    *                           Defaults to the configured max token if not provided.
    * @param array|null $modelOptions Additional configuration options for the model.
@@ -789,6 +819,7 @@ class Gpt
         ];
       }
 
+      // LLPhant AnthropicConfig handles the API model name mapping internally
       if ($model === 'anth-sonnet') {
         $result = new AnthropicChat(
           new AnthropicConfig(AnthropicConfig::CLAUDE_3_5_SONNET, $maxtoken, $modelOptions, $api_key)
@@ -798,6 +829,7 @@ class Gpt
           new AnthropicConfig(AnthropicConfig::CLAUDE_3_OPUS, $maxtoken, $modelOptions, $api_key)
         );
       } else {
+        // Default to Haiku
         $result = new AnthropicChat(
           new AnthropicConfig(AnthropicConfig::CLAUDE_3_HAIKU, $maxtoken, $modelOptions, $api_key)
         );
@@ -1400,5 +1432,218 @@ class Gpt
   public static function isSerpApiAvailable(): bool
   {
     return !empty(self::getSerpApiKey());
+  }
+  
+//*******************************************
+// Parallel Execution functions
+// Adapter ParalLLMExecutor parseResponse
+// Adapter les versions de Anthropic
+//*******************************************
+
+
+  /**
+   * Build API request body for direct HTTP calls (used by ParallelLLMExecutor)
+   * 
+   * This method centralizes the request body building logic for all providers.
+   * Used when making direct HTTP requests for parallel execution.
+   * 
+   * GPT-5 models use reasoning approach (reasoning_effort, verbosity) instead of
+   * standard parameters (temperature, top_p, frequency_penalty, presence_penalty).
+   *
+   * @param string $prompt The prompt text
+   * @param string $provider Provider name (openai, ollama, lmstudio, anthropic, mistral)
+   * @param string|null $model Model name (uses config default if null)
+   * @param float|null $temperature Temperature (uses config default if null, ignored for GPT-5)
+   * @param int|null $maxTokens Max tokens (uses config default if null)
+   * @return array Request body array ready for JSON encoding
+   */
+  public static function buildApiRequestBody(string $prompt, string $provider, ?string $model = null, ?float $temperature = null, ?int $maxTokens = null): array 
+  {
+    // Get defaults from config
+    $model = $model ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : 'gpt-4o-mini');
+    $temperature = $temperature ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE') ? (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE : 0.5);
+    $maxTokens = $maxTokens ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN') ? (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN : 4000);
+
+    switch ($provider) {
+      case 'ollama':
+        // Ollama uses /api/generate endpoint with prompt field
+        return [
+          'model' => $model,
+          'prompt' => $prompt,
+          'stream' => false,
+        ];
+
+      case 'anthropic':
+        // Anthropic uses messages array format
+        // Map internal model name (anth-sonnet) to API name (claude-3-5-sonnet-20241022)
+        return [
+          'model' => self::mapAnthropicModelName($model),
+          'messages' => [
+            ['role' => 'user', 'content' => $prompt]
+          ],
+          'max_tokens' => $maxTokens,
+        ];
+
+      case 'lmstudio':
+        // LM Studio uses OpenAI-compatible format
+        // Always uses max_tokens (not max_completion_tokens)
+        // Multiply tokens by 3 for reasoning space with <think> tags
+        $lmStudioMaxTokens = defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_MAX_TOKEN')? (int)CLICSHOPPING_APP_CHATGPT_LMSTUDIO_MAX_TOKEN : $maxTokens * 3;
+        
+        return [
+          'model' => $model,
+          'messages' => [
+            ['role' => 'user', 'content' => $prompt]
+          ],
+          'temperature' => $temperature,
+          'max_tokens' => $lmStudioMaxTokens,
+          'stream' => false,
+        ];
+
+      case 'mistral':
+        // Mistral uses OpenAI-compatible format
+        return [
+          'model' => $model,
+          'messages' => [
+            ['role' => 'user', 'content' => $prompt]
+          ],
+          'temperature' => $temperature,
+          'max_tokens' => $maxTokens,
+        ];
+
+      case 'openai':
+      default:
+        // Check if this is a reasoning API model (GPT-5 style)
+        if (self::isReasoningApiModel($model)) {
+          // GPT-5 models: use reasoning_effort and verbosity instead of temperature
+          $body = [
+            'model' => $model,
+            'messages' => [
+              ['role' => 'user', 'content' => $prompt]
+            ],
+            'reasoning_effort' => defined('CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT')  ? CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT : 'medium',
+            'verbosity' => defined('CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY') ? CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY : 'normal',
+          ];
+        } else {
+          // Standard OpenAI models: use temperature and other standard parameters
+          $body = [
+            'model' => $model,
+            'messages' => [
+              ['role' => 'user', 'content' => $prompt]
+            ],
+            'temperature' => $temperature,
+          ];
+        }
+
+        // Add correct token parameter (max_tokens vs max_completion_tokens)
+        $tokenParams = self::getModelApiParameters($model, $maxTokens);
+        return array_merge($body, $tokenParams);
+    }
+  }
+
+  /**
+   * Map internal Anthropic model names to API model names
+   * Used for direct HTTP calls (ParallelLLMExecutor)
+   * getAnthropicChat() uses LLPhant AnthropicConfig which handles this internally
+   * 
+   * @param string $model Internal model name (e.g., 'anth-sonnet')
+   * @return string API model name (e.g., 'claude-3-5-sonnet-20241022')
+   */
+  public static function mapAnthropicModelName(string $model): string
+  {
+    return match ($model) {
+      'anth-sonnet' => 'claude-3-5-sonnet-20241022',
+      'anth-opus' => 'claude-3-opus-20240229',
+      'anth-haiku' => 'claude-3-haiku-20240307',
+      default => $model // Return as-is if already API format
+    };
+  }
+  
+  /**
+   * Build API configuration for a specific provider
+   * Reuses existing get*Chat() methods configuration logic
+   * Uses getGptModel() for dynamic model validation
+   * 
+   * @param string $provider Provider name (openai, ollama, lmstudio, anthropic, mistral)
+   * @param string|null $model Model name (uses config default if null)
+   * @return array Configuration array with url, headers, model, provider, temperature, max_tokens
+   */
+  public static function buildConfigForProvider(string $provider, ?string $model = null): array
+  {
+    // Get model from parameter or config - validate against getGptModel()
+    $configModel = \defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : 'gpt-4o-mini';
+    
+    $model = $model ?? $configModel;
+    
+    // Validate model exists in getGptModel() list
+    $availableModels = self::getGptModel();
+    $modelExists = false;
+    foreach ($availableModels as $modelInfo) {
+      if ($modelInfo['id'] === $model) {
+        $modelExists = true;
+        break;
+      }
+    }
+    
+    // If model not in list, use config default
+    if (!$modelExists) {
+      $model = $configModel;
+    }
+
+    // Temperature 0 for deterministic responses (SQL generation, analytics)
+    // buildConfigForProvider is used by ParallelLLMExecutor for analytical tasks
+    $temperature = \defined('CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE') ? (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE : 0.0;
+
+    $maxTokens = \defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN') ? (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN : 4000;
+
+    // Build config based on provider - reuses same URLs/settings as get*Chat() methods
+    return match ($provider) {
+      'ollama' => [
+        'provider' => 'ollama',
+        'url' => (\defined('CLICSHOPPING_APP_CHATGPT_OLLAMA_URL') ? \rtrim(CLICSHOPPING_APP_CHATGPT_OLLAMA_URL, '/') : 'http://localhost:11434') . '/api/generate',
+        'headers' => [],
+        'model' => $model,
+        'temperature' => $temperature,
+        'max_tokens' => $maxTokens,
+      ],
+      'lmstudio' => [
+        'provider' => 'lmstudio',
+        'url' => (\defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL') ? \rtrim(CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL, '/') : 'http://localhost:1234') . '/v1/chat/completions',
+        'headers' => [],
+        'model' => $model,
+        'temperature' => $temperature,
+        'max_tokens' => \defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_MAX_TOKEN') ? (int)CLICSHOPPING_APP_CHATGPT_LMSTUDIO_MAX_TOKEN : $maxTokens * 3,
+      ],
+      'anthropic' => [
+        'provider' => 'anthropic',
+        'url' => 'https://api.anthropic.com/v1/messages',
+        'headers' => [
+          'x-api-key' => \defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_ANTHROPIC') ? CLICSHOPPING_APP_CHATGPT_CH_API_KEY_ANTHROPIC : '', 'anthropic-version' => '2023-06-01',
+        ],
+        'model' => self::mapAnthropicModelName($model),
+        'temperature' => $temperature,
+        'max_tokens' => $maxTokens,
+      ],
+      'mistral' => [
+        'provider' => 'mistral',
+        'url' => 'https://api.mistral.ai/v1/chat/completions',
+        'headers' => [
+          'Authorization' => 'Bearer ' . (\defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL') ? CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL : ''),
+        ],
+        'model' => $model,
+        'temperature' => $temperature,
+        'max_tokens' => $maxTokens,
+      ],
+      default => [
+        'provider' => 'openai',
+        'url' => 'https://api.openai.com/v1/chat/completions',
+        'headers' => [
+          'Authorization' => 'Bearer ' . (\defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY') ? CLICSHOPPING_APP_CHATGPT_CH_API_KEY : ''),
+        ],
+        'model' => $model,
+        'temperature' => $temperature,
+        'max_tokens' => $maxTokens,
+      ],
+    };
   }
 }

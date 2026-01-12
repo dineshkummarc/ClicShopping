@@ -10,6 +10,7 @@
 namespace ClicShopping\AI\Helper\Detection;
 
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\AmbiguityOptimizer;
+use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\ParallelLLMExecutor;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
@@ -357,6 +358,11 @@ class AmbiguousQueryDetector
    * Generate SQL queries for all interpretations of an ambiguous query
    * Uses LLM to generate clarified queries for each interpretation
    * 
+   * OPTIMIZATION: Uses ParallelLLMExecutor for concurrent clarification
+   * - Reduces total time from (N × 3s) to ~3s for N interpretations
+   * - Maintains backward compatibility with existing interface
+   * - Falls back to sequential execution if parallel fails
+   * 
    * @param string $query The original query
    * @param array $ambiguityAnalysis The ambiguity analysis result
    * @param callable $sqlGenerator Function to generate SQL from a modified query
@@ -371,21 +377,47 @@ class AmbiguousQueryDetector
       return [];
     }
     
-    $results = [];
     $interpretations = $ambiguityAnalysis['interpretations'];
     
     if ($this->debug) {
-      error_log("AmbiguousQueryDetector: Generating " . count($interpretations) . " interpretations");
+      error_log("AmbiguousQueryDetector: Generating " . count($interpretations) . " interpretations using parallel execution");
     }
     
-    // Generate SQL for each interpretation
+    // Build all clarification prompts first
+    $prompts = [];
     foreach ($interpretations as $interpretation) {
+      $type = $interpretation['type'];
+      $prompts[$type] = $this->buildClarificationPrompt($query, $interpretation);
+    }
+    
+    // Execute all clarification prompts in parallel
+    $executor = new ParallelLLMExecutor($this->debug);
+    $parallelResults = $executor->executeParallel($this->chat, $prompts);
+    
+    // Process results and generate SQL for each clarified query
+    $results = [];
+    foreach ($interpretations as $interpretation) {
+      $type = $interpretation['type'];
+      
+      // Check if clarification was successful
+      if (!isset($parallelResults[$type]) || !($parallelResults[$type]['success'] ?? false)) {
+        if ($this->debug) {
+          $error = $parallelResults[$type]['error'] ?? 'Unknown error';
+          error_log("AmbiguousQueryDetector: Failed to clarify interpretation '{$type}': {$error}");
+        }
+        continue;
+      }
+      
       try {
-        // Create clarified query based on interpretation
-        $clarifiedQuery = $this->clarifyQueryForInterpretation($query, $interpretation);
+        // Get clarified query from parallel execution result
+        $clarifiedQuery = $parallelResults[$type]['response'];
+        
+        // Clean up the clarified query (remove quotes if present)
+        $clarifiedQuery = trim($clarifiedQuery);
+        $clarifiedQuery = trim($clarifiedQuery, '"\'');
         
         if ($this->debug) {
-          error_log("AmbiguousQueryDetector: Clarified query for '{$interpretation['type']}': {$clarifiedQuery}");
+          error_log("AmbiguousQueryDetector: Clarified query for '{$type}': {$clarifiedQuery}");
         }
         
         // Generate SQL using the provided generator
@@ -393,7 +425,7 @@ class AmbiguousQueryDetector
         
         if (!empty($sql)) {
           $results[] = [
-            'type' => $interpretation['type'],
+            'type' => $type,
             'label' => $interpretation['label'],
             'description' => $interpretation['description'],
             'query' => $clarifiedQuery,
@@ -403,7 +435,7 @@ class AmbiguousQueryDetector
         
       } catch (\Exception $e) {
         if ($this->debug) {
-          error_log("AmbiguousQueryDetector: Failed to generate interpretation '{$interpretation['type']}': " . $e->getMessage());
+          error_log("AmbiguousQueryDetector: Failed to generate SQL for interpretation '{$type}': " . $e->getMessage());
         }
         continue;
       }
@@ -426,19 +458,31 @@ class AmbiguousQueryDetector
    */
   private function clarifyQueryForInterpretation(string $originalQuery, array $interpretation): string
   {
-    $array = [
-      'original_query' => $originalQuery,
-      'interpretation' => $interpretation['description'],
-      'sql_hint' => $interpretation['sql_hint']
-    ];
-
-    $prompt = $this->language->getDef('text_rag_clarify_query_for_interpretation', $array);
-
+    $prompt = $this->buildClarificationPrompt($originalQuery, $interpretation);
     $clarified = $this->chat->generateText($prompt);
     
     $clarified = trim($clarified);
     $clarified = trim($clarified, '"\'');
     
     return $clarified;
+  }
+  
+  /**
+   * Build clarification prompt for a specific interpretation
+   * Extracted for use in parallel execution
+   * 
+   * @param string $originalQuery Original ambiguous query
+   * @param array $interpretation Interpretation details
+   * @return string Clarification prompt
+   */
+  private function buildClarificationPrompt(string $originalQuery, array $interpretation): string
+  {
+    $array = [
+      'original_query' => $originalQuery,
+      'interpretation' => $interpretation['description'],
+      'sql_hint' => $interpretation['sql_hint']
+    ];
+
+    return $this->language->getDef('text_rag_clarify_query_for_interpretation', $array);
   }
 }

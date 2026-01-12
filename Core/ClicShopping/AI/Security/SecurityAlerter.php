@@ -48,9 +48,11 @@ class SecurityAlerter
         $this->prefix = CLICSHOPPING::getConfig('db_table_prefix');
         
         // Load configuration from constants
-        $this->alertsEnabled = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERTS_ENABLED') 
+        // Handle both boolean and string 'True'/'False' formats (DB compatibility)
+        $alertsEnabledConfig = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERTS_ENABLED') 
             ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERTS_ENABLED 
             : false;
+        $this->alertsEnabled = ($alertsEnabledConfig === true || $alertsEnabledConfig == 'True' || $alertsEnabledConfig == 'true' || $alertsEnabledConfig === '1');
             
         $this->alertEmail = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_EMAIL') 
             ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_ALERT_EMAIL 
