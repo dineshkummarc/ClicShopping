@@ -14,6 +14,12 @@
  * - Production requires 95%+ consistency
  * - Pattern-based pre-filter provides deterministic results
  * 
+ * TEMPORAL AMBIGUITY HANDLING (Updated 2026-01-11):
+ * - EXPLICIT temporal ("this month", "by month", "last year") → NOT AMBIGUOUS
+ * - IMPLICIT temporal ("monthly", "weekly", "yearly" alone) → AMBIGUOUS (temporal_period_scope)
+ *   - Could mean "current period" (this month's data)
+ *   - Could mean "breakdown" (data grouped by month)
+ * 
  * WHEN TO DELETE THIS FILE:
  * - When LLM ambiguity detection achieves 95%+ consistency
  * - When LLM temperature is reduced to 0.0 and tested
@@ -34,6 +40,7 @@
  * @package ClicShopping\AI\Domain\Patterns\Hybrid
  * @date 2025-12-21
  * @updated 2025-12-23 (Simplified: removed multilingual patterns)
+ * @updated 2026-01-11 (Added temporal_period_scope ambiguity for implicit temporal expressions)
  * @author ClicShopping Team
  */
 
@@ -42,40 +49,102 @@ namespace ClicShopping\AI\Domain\Patterns\Hybrid;
 class AmbiguityPreFilter
 {
   /**
-   * Check if query contains temporal expressions (NOT ambiguous)
+   * Check if query contains EXPLICIT temporal expressions (NOT ambiguous)
    * 
    * ⚠️ IMPORTANT: This method is called AFTER translation to English.
    * All queries are translated before reaching this pattern, so only
    * English patterns are needed.
    * 
-   * Temporal expressions are CLEAR time specifications:
-   * - "this month", "this year", "today", "yesterday"
-   * - "last month", "last year", "last week"
-   * - "monthly", "yearly", "weekly", "daily"
+   * EXPLICIT temporal expressions are CLEAR time specifications:
+   * - "this month", "this year", "today", "yesterday" → NOT AMBIGUOUS
+   * - "last month", "last year", "last week" → NOT AMBIGUOUS
+   * - "by month", "by year", "by week" → NOT AMBIGUOUS (explicit GROUP BY)
+   * 
+   * IMPLICIT temporal expressions are AMBIGUOUS (temporal_period_scope):
+   * - "monthly", "yearly", "weekly" WITHOUT explicit time reference
+   *   → Could mean "current period" OR "breakdown by period"
    * 
    * @param string $query The query to check (already translated to English)
-   * @return bool True if temporal expression found (NOT ambiguous)
+   * @return bool True if EXPLICIT temporal expression found (NOT ambiguous)
    */
   public static function hasTemporalExpression(string $query): bool
   {
     $query = strtolower($query);
     
-    // English temporal expressions (post-translation)
-    $temporalPatterns = [
-      // "this X" patterns
+    // English EXPLICIT temporal expressions (post-translation)
+    // These are NOT ambiguous because they specify a clear time reference
+    $explicitTemporalPatterns = [
+      // "this X" patterns - explicit current period
       '/\bthis\s+(month|year|week|quarter|day)\b/i',
       
-      // "last X" patterns
+      // "last X" patterns - explicit past period
       '/\blast\s+(month|year|week|quarter|day|\d+\s+days?)\b/i',
       
-      // Single word temporal
+      // "next X" patterns - explicit future period
+      '/\bnext\s+(month|year|week|quarter|day)\b/i',
+      
+      // Single word temporal - explicit time reference
       '/\b(today|yesterday|tomorrow|tonight)\b/i',
       
-      // Frequency adverbs (monthly, yearly, etc.)
+      // "by X" patterns - explicit GROUP BY intent
+      '/\bby\s+(month|year|week|quarter|day|hour)\b/i',
+      
+      // "per X" patterns - explicit GROUP BY intent
+      '/\bper\s+(month|year|week|quarter|day|hour)\b/i',
+      
+      // "for X" patterns with specific period - explicit time range
+      '/\bfor\s+(this|last|next)\s+(month|year|week|quarter)\b/i',
+      
+      // Date ranges - explicit time specification
+      '/\bfrom\s+\w+\s+to\s+\w+\b/i',
+      '/\bbetween\s+\w+\s+and\s+\w+\b/i',
+      
+      // Specific date patterns
+      '/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}\b/i',
+      '/\bq[1-4]\s+\d{4}\b/i',
+      '/\b\d{4}\b/i', // Year alone (e.g., "2024")
+    ];
+    
+    foreach ($explicitTemporalPatterns as $pattern) {
+      if (preg_match($pattern, $query)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Check if query contains IMPLICIT temporal expressions (AMBIGUOUS)
+   * 
+   * IMPLICIT temporal expressions like "monthly", "weekly", "yearly" WITHOUT
+   * explicit time reference are AMBIGUOUS because they could mean:
+   * - "current_period": Show data for the current month/week/year
+   * - "breakdown": Show data broken down by month/week/year
+   * 
+   * This is the "temporal_period_scope" ambiguity type.
+   * 
+   * @param string $query The query to check (already translated to English)
+   * @return bool True if IMPLICIT temporal expression found (AMBIGUOUS)
+   */
+  public static function hasImplicitTemporalExpression(string $query): bool
+  {
+    $query = strtolower($query);
+    
+    // First check if there's an EXPLICIT temporal expression
+    // If yes, the implicit one is clarified by context
+    if (self::hasTemporalExpression($query)) {
+      return false;
+    }
+    
+    // IMPLICIT temporal expressions (frequency adverbs without context)
+    // These are AMBIGUOUS because they don't specify a clear time reference
+    $implicitTemporalPatterns = [
+      // Frequency adverbs alone - AMBIGUOUS
       '/\b(monthly|yearly|weekly|daily|quarterly|annually)\b/i',
     ];
     
-    foreach ($temporalPatterns as $pattern) {
+    foreach ($implicitTemporalPatterns as $pattern) {
       if (preg_match($pattern, $query)) {
         return true;
       }
@@ -145,12 +214,44 @@ class AmbiguityPreFilter
    * Returns NULL if pre-filter cannot determine (use LLM)
    * Returns array if pre-filter can determine (skip LLM)
    * 
+   * TEMPORAL AMBIGUITY HANDLING:
+   * - EXPLICIT temporal ("this month", "by month") → NOT AMBIGUOUS
+   * - IMPLICIT temporal ("monthly" alone) → AMBIGUOUS (temporal_period_scope)
+   * 
    * @param string $query The query to check
    * @return array|null Ambiguity result or null if LLM needed
    */
   public static function preFilter(string $query): ?array
   {
-    // Check for temporal expressions
+    // Check for IMPLICIT temporal expressions FIRST (these are AMBIGUOUS)
+    // "monthly", "weekly", "yearly" without explicit time reference
+    if (self::hasImplicitTemporalExpression($query)) {
+      return [
+        'is_ambiguous' => true,
+        'ambiguity_type' => 'temporal_period_scope',
+        'confidence' => 0.95,
+        'interpretations' => [
+          [
+            'type' => 'current_period',
+            'label' => 'Current period data',
+            'description' => 'Show data for the current period (this month/week/year)',
+            'sql_hint' => 'Filter by current period date range'
+          ],
+          [
+            'type' => 'breakdown',
+            'label' => 'Breakdown by period',
+            'description' => 'Show data broken down by period (GROUP BY month/week/year)',
+            'sql_hint' => 'GROUP BY period with aggregation'
+          ]
+        ],
+        'recommendation' => 'generate_both',
+        'default_interpretation' => 'breakdown',
+        'reasoning' => 'Implicit temporal expression detected (e.g., "monthly" without explicit time reference). Could mean current period OR breakdown by period.',
+        'detection_method' => 'pattern_prefilter'
+      ];
+    }
+    
+    // Check for EXPLICIT temporal expressions (these are NOT ambiguous)
     if (self::hasTemporalExpression($query)) {
       return [
         'is_ambiguous' => false,
@@ -159,7 +260,7 @@ class AmbiguityPreFilter
         'interpretations' => [],
         'recommendation' => 'use_default',
         'default_interpretation' => null,
-        'reasoning' => 'Clear temporal expression detected (pattern-based pre-filter)',
+        'reasoning' => 'Explicit temporal expression detected (pattern-based pre-filter)',
         'detection_method' => 'pattern_prefilter'
       ];
     }

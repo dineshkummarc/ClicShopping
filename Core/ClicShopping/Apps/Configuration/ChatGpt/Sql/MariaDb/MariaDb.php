@@ -758,6 +758,12 @@ class MariaDb
       COLLATE=utf8mb4_unicode_ci
       COMMENT='Detailed statistics for RAG dashboard - performance, costs, quality, and error tracking';
 
+      ALTER TABLE :table_rag_statistics ADD COLUMN IF NOT EXISTS metadata JSON DEFAULT NULL;
+      ALTER TABLE :table_rag_statistics ADD COLUMN IF NOT EXISTS query_type VARCHAR(50) DEFAULT NULL;
+      ALTER TABLE :table_rag_statistics ADD COLUMN IF NOT EXISTS success BOOLEAN DEFAULT TRUE;
+      ALTER TABLE :table_rag_statistics ADD COLUMN IF NOT EXISTS response_time INT DEFAULT NULL;
+      ALTER TABLE :table_rag_statistics ADD COLUMN IF NOT EXISTS created_at DATETIME DEFAULT NULL;
+
       EOD;
       $CLICSHOPPING_Db->exec($sql);
     }
@@ -783,6 +789,11 @@ class MariaDb
         KEY `idx_expires` (`expires_at`),
         KEY `idx_hits` (`hit_count`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+      ALTER TABLE :table_rag_query_cache ADD COLUMN IF NOT EXISTS entity_id INT UNSIGNED NULL AFTER interpretation;
+      ALTER TABLE :table_rag_query_cache ADD COLUMN IF NOT EXISTS entity_type VARCHAR(50) NULL AFTER entity_id;
+      ALTER TABLE :table_rag_query_cache ADD INDEX IF NOT EXISTS idx_entity (entity_type, entity_id);
+
       EOD;
       $CLICSHOPPING_Db->exec($sql);
     }

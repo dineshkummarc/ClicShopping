@@ -218,7 +218,7 @@ class PromptOptimizer
    * @param string $model Model name (e.g., 'gpt-4o', 'anth-sonnet')
    * @return int Token limit with safety margin (defaults to 96000 if not found)
    */
-  private function getModelLimit(string $model): int
+  public function getModelLimit(string $model): int
   {
     // Get model list from Gpt.php
     $models = Gpt::getGptModel();

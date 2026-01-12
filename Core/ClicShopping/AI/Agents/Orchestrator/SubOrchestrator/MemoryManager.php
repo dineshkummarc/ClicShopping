@@ -238,10 +238,10 @@ class MemoryManager
       'keywords' => $queryAnalyzer !== null ? $queryAnalyzer->extractKeywords($query) : [], // Handle null queryAnalyzer
       'original_query' => $query,
       'processed_query' => $queryToProcess,
-      'is_related_to_context' => $contextAnalysis['is_related_to_context'],
-      'relation_type' => $contextAnalysis['relation_type'],
-      'context_confidence' => $contextAnalysis['confidence'],
-      'related_entities' => $contextAnalysis['related_entities'],
+      'is_related_to_context' => $contextAnalysis['is_related_to_context'] ?? false,
+      'relation_type' => $contextAnalysis['relation_type'] ?? 'none',
+      'context_confidence' => $contextAnalysis['confidence'] ?? 0.0,
+      'related_entities' => $contextAnalysis['related_entities'] ?? [],
     ];
 
     // 🔧 FIX: Skip memory storage for web_search to avoid embedding timeout

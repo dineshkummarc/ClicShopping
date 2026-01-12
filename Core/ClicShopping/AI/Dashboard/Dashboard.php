@@ -567,6 +567,20 @@ class Dashboard
       // 🔧 MIGRATED TO DOCTRINEORM
       $prefix = CLICSHOPPING::getConfig('db_table_prefix');
       
+      // First check if metadata column exists
+      $hasMetadataColumn = $this->checkColumnExists($prefix . 'rag_statistics', 'metadata');
+      
+      if (!$hasMetadataColumn) {
+        // Return empty stats if metadata column doesn't exist
+        // User needs to run migration: sql/2025_12_15_add_query_type_metadata_to_rag_statistics.sql
+        return [
+          'sources' => [],
+          'total_queries' => 0,
+          'period_days' => $periodDays,
+          'note' => 'metadata column not found - run migration sql/2025_12_15_add_query_type_metadata_to_rag_statistics.sql'
+        ];
+      }
+      
       // Get source breakdown
       $sourceResults = DoctrineOrm::select("
         SELECT 
@@ -623,6 +637,30 @@ class Dashboard
         'total_queries' => 0,
         'period_days' => $periodDays
       ];
+    }
+  }
+  
+  /**
+   * Check if a column exists in a table
+   * 
+   * @param string $tableName Table name
+   * @param string $columnName Column name
+   * @return bool True if column exists
+   */
+  private function checkColumnExists(string $tableName, string $columnName): bool
+  {
+    try {
+      $result = DoctrineOrm::select("
+        SELECT COUNT(*) as cnt 
+        FROM information_schema.COLUMNS 
+        WHERE TABLE_SCHEMA = DATABASE() 
+        AND TABLE_NAME = ? 
+        AND COLUMN_NAME = ?
+      ", [$tableName, $columnName]);
+      
+      return isset($result[0]['cnt']) && (int)$result[0]['cnt'] > 0;
+    } catch (\Exception $e) {
+      return false;
     }
   }
 

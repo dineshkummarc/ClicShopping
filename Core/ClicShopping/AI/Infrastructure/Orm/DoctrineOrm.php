@@ -371,8 +371,13 @@ class DoctrineOrm
    * 
    * @return array Static list of common tables
    */
-  private static function getFallbackRelevantTables(): array
+  public static function getFallbackRelevantTables(): array
   {
+    // Ensure prefix is initialized (may be called before constructor)
+    if (empty(self::$prefixDb)) {
+      self::$prefixDb = CLICSHOPPING::getConfig('db_table_prefix');
+    }
+    
     $prefix = self::$prefixDb;
     
     return [
@@ -386,6 +391,7 @@ class DoctrineOrm
       $prefix . 'orders_total',
       $prefix . 'orders_status',
       $prefix . 'orders_status_history',
+      $prefix . 'orders_status_invoice',
       $prefix . 'customers',
       $prefix . 'customers_info',
       $prefix . 'customers_groups',
@@ -400,7 +406,8 @@ class DoctrineOrm
       $prefix . 'products_options',
       $prefix . 'products_options_values',
       $prefix . 'specials',
-      $prefix . 'featured',
+      $prefix . 'products_featured',
+      $prefix . 'products_favorites',
     ];
   }
 

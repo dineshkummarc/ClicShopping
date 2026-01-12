@@ -75,8 +75,21 @@ class WebSearchPostFilter
     
     // Queries about trends, news, latest info require external web search
     // BUT: Exclude if query contains database entity keywords (product, order, customer)
+    // BUT: Also exclude if query contains financial metric keywords (revenue, turnover, sales)
     // Example: "latest trends" → web_search ✅
     // Example: "most recent order" → analytics ✅ (has entity keyword "order")
+    // Example: "revenue this month" → analytics ✅ (has financial keyword "revenue")
+    
+    // Financial metric keywords that indicate analytics queries (not web search)
+    // These are metrics that require database aggregation, not external search
+    $financialMetricKeywords = [
+      'revenue', 'turnover', 'sales', 'profit', 'margin', 'income',
+      'cost', 'expense', 'spending', 'budget', 'forecast',
+      'average', 'total', 'sum', 'count', 'number of', 'how many',
+      'stock', 'inventory', 'quantity', 'units',
+      'pending', 'delivered', 'cancelled', 'processing', 'shipped',
+      'orders', 'customers', 'products', 'categories'
+    ];
     
     // Check if query has entity keywords (database query, not web search)
     $hasEntityKeyword = false;
@@ -87,13 +100,22 @@ class WebSearchPostFilter
       }
     }
     
-    // Only apply trends/news override if NO entity keywords present
-    if (!$hasEntityKeyword) {
+    // Check if query has financial metric keywords (analytics query, not web search)
+    $hasFinancialKeyword = false;
+    foreach ($financialMetricKeywords as $keyword) {
+      if (strpos($query, $keyword) !== false) {
+        $hasFinancialKeyword = true;
+        break;
+      }
+    }
+    
+    // Only apply trends/news override if NO entity keywords AND NO financial keywords present
+    if (!$hasEntityKeyword && !$hasFinancialKeyword) {
       foreach (WebSearchPatterns::$trendsNewsKeywords as $keyword) {
         if (strpos($query, $keyword) !== false) {
           $analysis['intent_type'] = 'web_search';
           $analysis['confidence'] = 0.95;
-          $analysis['override_reason'] = "Trends/news keyword detected: $keyword (no entity keywords)";
+          $analysis['override_reason'] = "Trends/news keyword detected: $keyword (no entity/financial keywords)";
           $analysis['detection_method'] = 'pattern_post_filter';
           return $analysis;
         }

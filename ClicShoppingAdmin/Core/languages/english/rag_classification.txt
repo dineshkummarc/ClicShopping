@@ -34,14 +34,19 @@ You are a query classifier for an e-commerce database system.
 Query to classify: {{QUERY}}
 
 🚨 ABSOLUTE RULE #0 - HYBRID DETECTION (CHECK THIS FIRST, BEFORE ALL OTHER RULES):
-If the query contains conjunctions (and, et, y, und, or) connecting TWO DIFFERENT intent types, classify as "hybrid":
+If the query contains conjunctions (and, et, y, und, or) connecting TWO DISTINCT QUESTIONS/REQUESTS, classify as "hybrid":
 - "price" (analytics) + "and" + "trends" (web_search) → HYBRID
 - "stock" (analytics) + "and" + "policy" (semantic) → HYBRID  
 - "policy" (semantic) + "and" + "news" (web_search) → HYBRID
+- "pending orders" (analytics) + "and" + "monthly revenue" (analytics) → HYBRID (two separate analytics queries)
+- "stock levels" (analytics) + "and" + "sales figures" (analytics) → HYBRID (two separate analytics queries)
 - Look for: "and", "et", "y", "und", "also", "également", "también", "auch"
-- If found, check if the parts have DIFFERENT intents → classify as "hybrid"
+- If found, check if the parts are TWO DISTINCT QUESTIONS → classify as "hybrid"
+- CRITICAL: Even if BOTH parts are analytics, if they are TWO SEPARATE QUESTIONS, classify as "hybrid"
 - Example: "What is the price AND what are the latest trends" → hybrid (analytics + web_search)
 - Example: "Quel est le prix ET quelles sont les dernières tendances" → hybrid (analytics + web_search)
+- Example: "pending orders AND monthly revenue" → hybrid (analytics + analytics) - TWO SEPARATE QUESTIONS
+- Example: "commandes en attente ET chiffre d'affaires mensuel" → hybrid (analytics + analytics) - TWO SEPARATE QUESTIONS
 
 🚨 CRITICAL RULE FOR ORDER STATUS (VERSION 2025-12-22):
 "pending orders", "orders in progress", "cancelled orders", "commande en instance", "commandes en instance" → ALWAYS "analytics"
@@ -156,6 +161,9 @@ NO line breaks inside JSON (single line)
 {"type":"hybrid","confidence":0.90,"reasoning":"Query contains price (analytics) AND latest trends (web_search) connected by conjunction","sub_types":["analytics","web_search"]}  // For "What is the price AND what are the latest trends"
 {"type":"hybrid","confidence":0.90,"reasoning":"Query contains stock (analytics) AND policy (semantic) connected by conjunction","sub_types":["analytics","semantic"]}  // For "stock AND return policy"
 {"type":"hybrid","confidence":0.90,"reasoning":"Query contains policy (semantic) AND news (web_search) connected by conjunction","sub_types":["semantic","web_search"]}  // For "return policy AND recent news"
+{"type":"hybrid","confidence":0.90,"reasoning":"Query contains TWO SEPARATE analytics questions: pending orders AND monthly revenue","sub_types":["analytics","analytics"]}  // For "pending orders AND monthly revenue"
+{"type":"hybrid","confidence":0.90,"reasoning":"Query contains TWO SEPARATE analytics questions: commandes en attente AND chiffre d'affaires","sub_types":["analytics","analytics"]}  // For "commandes en attente ET chiffre d'affaires"
+{"type":"hybrid","confidence":0.90,"reasoning":"Query contains TWO SEPARATE analytics questions: stock levels AND sales figures","sub_types":["analytics","analytics"]}  // For "stock levels AND sales figures"
 
 Example valid responses:
 {"type":"analytics","confidence":0.9,"reasoning":"Clear request for quantitative inventory data","sub_types":[]}

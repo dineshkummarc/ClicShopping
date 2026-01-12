@@ -1,5 +1,4 @@
-text_rag_decomposition_prompt = <<<PROMPT
-Vous êtes un expert en analyse de requêtes complexes. Décomposez la requête suivante en sous-requêtes atomiques.
+text_rag_decomposition_prompt = Vous êtes un expert en analyse de requêtes complexes. Décomposez la requête suivante en sous-requêtes atomiques.
 
 Requête : "{{query}}"
 
@@ -25,4 +24,4 @@ Format de réponse (JSON) :
 ]
 
 Répondez UNIQUEMENT avec le JSON, sans texte supplémentaire.
-PROMPT;
+

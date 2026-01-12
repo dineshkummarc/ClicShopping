@@ -55,43 +55,27 @@ Regardless of the source language (Chinese, French, etc.) or synonymous English 
   -> ALWAYS use: "expenses"
   -> FORBIDDEN: "costs", "charges", "fees", "depenses", "支出", "Kosten", etc.
 
+## E-COMMERCE CONTEXT (CRITICAL)
+This is an e-commerce system. Use e-commerce terminology:
+- Purchase transaction → "order" (NOT "command")
+- Person who buys → "customer" 
+- Item for sale → "product"
+- Shopping basket → "cart"
+- Available quantity → "stock"
+- Product transport → "shipping"
+- Money transaction → "payment"
+- Bill document → "invoice"
+- Product classification → "category"
+- Product maker → "manufacturer"
+- Product provider → "supplier"
+
 ## TEMPORAL TERMS (CRITICAL - DO NOT CONFUSE)
-- CONCEPT: SEMESTER (6-month period, half-year)
-  -> ALWAYS use: "semester"
-  -> French: "semestre", "par semestre", "divisé par semestre", "semestriel"
-  -> Spanish: "semestre", "por semestre", "semestral"
-  -> German: "Semester", "Halbjahr", "pro Semester"
-  -> NEVER translate "semestre" to "quarter" - they are DIFFERENT periods!
-
-- CONCEPT: QUARTER (3-month period)
-  -> ALWAYS use: "quarter"
-  -> French: "trimestre", "par trimestre", "trimestriel"
-  -> Spanish: "trimestre", "por trimestre", "trimestral"
-  -> German: "Quartal", "Vierteljahr", "pro Quartal"
-
-- CONCEPT: MONTH (1-month period)
-  -> ALWAYS use: "month"
-  -> French: "mois", "par mois", "mensuel", "mensuellement"
-  -> Spanish: "mes", "por mes", "mensual"
-  -> German: "Monat", "pro Monat", "monatlich"
-
-- CONCEPT: WEEK (7-day period)
-  -> ALWAYS use: "week"
-  -> French: "semaine", "par semaine", "hebdomadaire"
-  -> Spanish: "semana", "por semana", "semanal"
-  -> German: "Woche", "pro Woche", "wöchentlich"
-
-- CONCEPT: YEAR (12-month period)
-  -> ALWAYS use: "year"
-  -> French: "année", "an", "par an", "annuel"
-  -> Spanish: "año", "por año", "anual"
-  -> German: "Jahr", "pro Jahr", "jährlich"
-
-- CONCEPT: DAY (24-hour period)
-  -> ALWAYS use: "day"
-  -> French: "jour", "par jour", "quotidien"
-  -> Spanish: "día", "por día", "diario"
-  -> German: "Tag", "pro Tag", "täglich"
+- 6-month period → "semester" (NOT "quarter")
+- 3-month period → "quarter" (NOT "semester")
+- 1-month period → "month"
+- 7-day period → "week"
+- 12-month period → "year"
+- 24-hour period → "day"
 
 # EXAMPLES OF SMART REDUNDANCY DETECTION
 

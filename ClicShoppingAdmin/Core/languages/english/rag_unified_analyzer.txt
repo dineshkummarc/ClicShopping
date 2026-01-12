@@ -59,15 +59,55 @@ This rule has HIGHEST PRIORITY. Even if the query looks like a simple analytics 
 
 The word "and" connecting two different temporal periods (month, quarter) makes it multi-temporal = hybrid!
 
-# CLASSIFICATION PRIORITY (AFTER MULTI-TEMPORAL CHECK)
+# CRITICAL: COMPOUND ANALYTICS DETECTION (CHECK SECOND!) ⚠️⚠️⚠️
+
+**AFTER MULTI-TEMPORAL CHECK**, you MUST check for compound analytics queries.
+
+## WHAT IS A COMPOUND ANALYTICS QUERY?
+
+A compound analytics query contains 2+ DISTINCT data requests connected by "and", "et", "also", "give me also", etc.
+
+**Key indicators**:
+- Connector words: "and", "et", "also", "as well as", "give me also", "show me also"
+- Two different data fields requested (e.g., "cheapest product" + "EAN codes")
+- Two different questions in one query
+
+## COMPOUND ANALYTICS EXAMPLES (ALL ARE HYBRID!)
+
+✅ "cheapest product and give me the EAN of products" → **hybrid** (2 distinct requests)
+✅ "most expensive product and show me the stock levels" → **hybrid** (2 distinct requests)
+✅ "pending orders and revenue this month" → **hybrid** (2 distinct requests)
+✅ "product price and also the quantity in stock" → **hybrid** (2 distinct requests)
+✅ "show me the best seller and give me customer count" → **hybrid** (2 distinct requests)
+
+## SINGLE ANALYTICS EXAMPLES (NOT COMPOUND!)
+
+❌ "cheapest product with its EAN" → **analytics** (single request, EAN is attribute of product)
+❌ "product price and quantity" → **analytics** (single request, multiple fields of same entity)
+❌ "pending orders" → **analytics** (single request)
+
+## RULE FOR COMPOUND DETECTION
+
+🚨 **RULE**: If query has "and" + "give me" / "show me" / "donne moi" → likely compound = **hybrid**
+
+When compound detected, generate sub_queries:
+```json
+"sub_queries": [
+  {"query": "cheapest product", "intent_type": "analytics"},
+  {"query": "EAN of products", "intent_type": "analytics"}
+]
+```
+
+# CLASSIFICATION PRIORITY (AFTER MULTI-TEMPORAL AND COMPOUND CHECKS)
 
 1. **MULTI-TEMPORAL (HIGHEST)**: 2+ temporal periods → hybrid (ALREADY CHECKED ABOVE)
-2. SUPERLATIVE: MIN/MAX/BEST/WORST → analytics
-3. WEB_SEARCH: competitors OR external sites → web_search
-4. SINGLE TEMPORAL: financial metric + ONE time period → analytics
-5. SEMANTIC: documentation/policy/explanation → semantic
-6. ANALYTICS: internal data query → analytics
-7. HYBRID: multiple different intents → hybrid
+2. **COMPOUND ANALYTICS**: 2+ distinct data requests → hybrid (ALREADY CHECKED ABOVE)
+3. SUPERLATIVE: MIN/MAX/BEST/WORST → analytics
+4. WEB_SEARCH: competitors OR external sites → web_search
+5. SINGLE TEMPORAL: financial metric + ONE time period → analytics
+6. SEMANTIC: documentation/policy/explanation → semantic
+7. ANALYTICS: internal data query → analytics
+8. HYBRID: multiple different intents → hybrid
 
 **SUPERLATIVE = ANALYTICS**:
 Keywords: most, least, best, worst, highest, lowest, cheapest
@@ -116,11 +156,23 @@ Policies, procedures, explanations
 - time_range: "year 2025", "this year", "last month", etc.
 
 **SUB-QUERIES FOR HYBRID**:
-When intent_type = "hybrid" and is_multi_temporal = true, generate sub_queries:
+When intent_type = "hybrid", generate sub_queries for:
+1. Multi-temporal queries (2+ temporal periods)
+2. Compound analytics queries (2+ distinct data requests)
+
+Example for multi-temporal:
 ```json
 "sub_queries": [
   {"query": "revenue for 2025 by month", "intent_type": "analytics"},
   {"query": "revenue for 2025 by quarter", "intent_type": "analytics"}
+]
+```
+
+Example for compound analytics:
+```json
+"sub_queries": [
+  {"query": "cheapest product", "intent_type": "analytics"},
+  {"query": "EAN of products", "intent_type": "analytics"}
 ]
 ```
 

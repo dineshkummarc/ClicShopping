@@ -201,6 +201,11 @@ class TemporalFinancialPreFilter
    * - LLM: analytics, confidence 0.7 → Pattern: analytics, confidence 1.0 (override)
    * - LLM: analytics, confidence 0.95 → Pattern: no change (LLM correct)
    * - LLM: semantic, no temporal financial → Pattern: no change (LLM correct)
+   * - LLM: hybrid, any confidence → Pattern: no change (PRESERVE hybrid for compound queries)
+   * 
+   * ⚠️ CRITICAL (2026-01-11): NEVER override hybrid classification!
+   * Hybrid queries contain multiple distinct parts (e.g., "pending orders AND revenue")
+   * that must be processed separately by HybridQueryProcessor.
    * 
    * @param string $translatedQuery The translated query (must be in English)
    * @param array $llmAnalysis The LLM classification result
@@ -211,6 +216,16 @@ class TemporalFinancialPreFilter
     // Check if pattern detects temporal financial query
     if (!self::isTemporalFinancialQuery($translatedQuery)) {
       // Pattern does not detect - return LLM analysis unchanged
+      return $llmAnalysis;
+    }
+    
+    // CRITICAL FIX (2026-01-11): NEVER override hybrid classification
+    // If LLM classified as hybrid, it means the query has multiple distinct parts
+    // (e.g., "pending orders AND monthly revenue" = 2 separate analytics queries)
+    // Overriding to analytics would break compound query handling
+    
+    if (isset($llmAnalysis['intent_type']) && $llmAnalysis['intent_type'] === 'hybrid') {
+      error_log("[TemporalFinancialPreFilter] PRESERVING hybrid classification for compound query: {$translatedQuery}");
       return $llmAnalysis;
     }
     

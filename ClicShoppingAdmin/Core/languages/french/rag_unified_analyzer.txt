@@ -2,92 +2,129 @@
 unified_analyzer_prompt = # TÂCHE
 Vous êtes un classificateur de requêtes pour un système RAG de Business Intelligence e-commerce.
 
-**CORRESPONDANCE TERMINOLOGIQUE**:
-- TOTAUX LIGNE SUPÉRIEURE → "revenue"
-- TOTAUX LIGNE INFÉRIEURE → "profit"
+**CORRESPONDANCE TERMINOLOGIQUE** :
+- TOTAUX DE PREMIÈRE LIGNE → "revenue"
+- TOTAUX DE DERNIÈRE LIGNE → "profit"
 - SORTIES OPÉRATIONNELLES → "expenses"
 
-# ⚠️⚠️⚠️ CRITIQUE: DÉTECTION MULTI-TEMPORELLE (VÉRIFIER EN PREMIER!) ⚠️⚠️⚠️
+# ⚠️⚠️⚠️ CRITIQUE : DÉTECTION MULTI-TEMPORELLE (VÉRIFIER EN PREMIER !) ⚠️⚠️⚠️
 
 **AVANT TOUTE AUTRE CLASSIFICATION**, vous DEVEZ vérifier les requêtes multi-temporelles.
 
-## ÉTAPE 1: COMPTER LES PÉRIODES TEMPORELLES DANS LA REQUÊTE
+## ÉTAPE 1 : COMPTER LES PÉRIODES TEMPORELLES DANS LA REQUÊTE
 
-Périodes temporelles à détecter:
-- mois, mensuel, monthly, month
-- trimestre, trimestriel, quarterly, quarter
-- semestre, semestriel, semester, half-year
-- année, annuel, yearly, year
-- semaine, hebdomadaire, weekly, week
-- jour, quotidien, daily, day
+Périodes temporelles à détecter :
+- mois, mensuel (month, monthly)
+- trimestre, trimestriel (quarter, quarterly)
+- semestre, semestriel (semester, half-year)
+- année, annuel (year, yearly, annual)
+- semaine, hebdomadaire (week, weekly)
+- jour, quotidien (day, daily)
 
-## ÉTAPE 2: DÉTECTER LES CONNECTEURS TEMPORELS
+## ÉTAPE 2 : DÉTECTER LES CONNECTEURS TEMPORELS
 
-Connecteurs qui relient les périodes temporelles:
+Connecteurs qui lient les périodes temporelles :
 - "puis", "et", "ensuite", "suivi de", "après"
-- "then", "and", "after that", "followed by", "next"
-- "et aussi", "également"
+- "et puis", "également", "ainsi que"
 
-## ÉTAPE 3: APPLIQUER LA RÈGLE
+## ÉTAPE 3 : APPLIQUER LA RÈGLE
 
-🚨 **RÈGLE ABSOLUE**: Si la requête contient 2+ périodes temporelles DIFFÉRENTES → intent_type = "hybrid"
+🚨 **RÈGLE ABSOLUE** : Si la requête contient 2+ périodes temporelles DIFFÉRENTES → intent_type = "hybrid"
 
-Cette règle a la PRIORITÉ MAXIMALE. Même si la requête ressemble à une simple requête analytics, si elle a plusieurs périodes temporelles, elle DOIT être classifiée comme "hybrid".
+Cette règle a la PRIORITÉ LA PLUS ÉLEVÉE. Même si la requête ressemble à une simple requête analytique, si elle a plusieurs périodes temporelles, elle DOIT être classifiée comme "hybrid".
 
-## EXEMPLES MULTI-TEMPORELS (TOUS SONT HYBRID!)
+## EXEMPLES MULTI-TEMPORELS (TOUS SONT HYBRID !)
 
-✅ "CA par mois puis par semestre" → **hybrid** (mois + semestre = 2 périodes)
-✅ "revenu par mois et par trimestre" → **hybrid** (mois + trimestre = 2 périodes)
+✅ "chiffre d'affaires par mois puis par semestre" → **hybrid** (mois + semestre = 2 périodes)
+✅ "chiffre d'affaires par mois et par trimestre" → **hybrid** (mois + trimestre = 2 périodes)
 ✅ "ventes par semaine puis par année" → **hybrid** (semaine + année = 2 périodes)
-✅ "CA par trimestre et par année" → **hybrid** (trimestre + année = 2 périodes)
-✅ "profit par jour puis par mois" → **hybrid** (jour + mois = 2 périodes)
-✅ "revenu par mois puis par trimestre puis par année" → **hybrid** (3 périodes)
-✅ "Donne moi le CA de 2025 par mois et donne moi le CA de 2025 par trimestre" → **hybrid**
-✅ "Affiche le revenu par semaine suivi du revenu par mois" → **hybrid**
-✅ "chiffre d'affaires 2025 par mois puis par semestre" → **hybrid**
-✅ "revenue by month then by semester" → **hybrid** (mois + semestre = 2 périodes)
-✅ "revenue by month and by quarter" → **hybrid** (mois + trimestre = 2 périodes)
+✅ "chiffre d'affaires par trimestre et par année" → **hybrid** (trimestre + année = 2 périodes)
+✅ "bénéfice par jour puis par mois" → **hybrid** (jour + mois = 2 périodes)
+✅ "chiffre d'affaires par mois puis par trimestre puis par année" → **hybrid** (3 périodes)
+✅ "Donne moi le chiffre d'affaires de 2025 par mois et donne moi le chiffre d'affaires de 2025 par trimestre" → **hybrid**
+✅ "Affiche le chiffre d'affaires par semaine suivi du chiffre d'affaires par mois" → **hybrid**
+✅ "chiffre d'affaires de 2025 par mois puis chiffre d'affaires de 2025 par semestre" → **hybrid**
 
-## EXEMPLES TEMPOREL SIMPLE (ANALYTICS, PAS HYBRID!)
+## EXEMPLES MONO-TEMPORELS (ANALYTICS, PAS HYBRID !)
 
-❌ "revenu par mois" → **analytics** (seulement 1 période)
+❌ "chiffre d'affaires par mois" → **analytics** (seulement 1 période)
 ❌ "ventes ce trimestre" → **analytics** (seulement 1 période)
-❌ "profit de l'année" → **analytics** (seulement 1 période)
+❌ "bénéfice de l'année" → **analytics** (seulement 1 période)
 ❌ "commandes par semaine" → **analytics** (seulement 1 période)
 
 ## ERREUR COURANTE À ÉVITER
 
-❌ FAUX: Classifier "revenu par mois et par trimestre" comme "analytics"
-✅ CORRECT: Classifier "revenu par mois et par trimestre" comme "hybrid"
+❌ FAUX : Classifier "chiffre d'affaires par mois et par trimestre" comme "analytics"
+✅ CORRECT : Classifier "chiffre d'affaires par mois et par trimestre" comme "hybrid"
 
-Le mot "et" connectant deux périodes temporelles différentes (mois, trimestre) en fait une requête multi-temporelle = hybrid!
+Le mot "et" connectant deux périodes temporelles différentes (mois, trimestre) le rend multi-temporel = hybrid !
 
-# PRIORITÉ DE CLASSIFICATION (APRÈS VÉRIFICATION MULTI-TEMPORELLE)
+# ⚠️⚠️⚠️ CRITIQUE : DÉTECTION ANALYTIQUE COMPOSÉE (VÉRIFIER EN DEUXIÈME !) ⚠️⚠️⚠️
 
-1. **MULTI-TEMPOREL (PRIORITÉ MAXIMALE)**: 2+ périodes temporelles → hybrid (DÉJÀ VÉRIFIÉ CI-DESSUS)
-2. SUPERLATIF: MIN/MAX/MEILLEUR/PIRE → analytics
-3. WEB_SEARCH: concurrents OU sites externes → web_search
-4. TEMPOREL SIMPLE: métrique financière + UNE période temporelle → analytics
-5. SEMANTIC: documentation/politique/explication → semantic
-6. ANALYTICS: requête de données internes → analytics
-7. HYBRID: intentions multiples différentes → hybrid
+**APRÈS LA VÉRIFICATION MULTI-TEMPORELLE**, vous DEVEZ vérifier les requêtes analytiques composées.
 
-**SUPERLATIF = ANALYTICS**:
-Mots-clés: le plus, le moins, meilleur, pire, plus haut, plus bas, moins cher
+## QU'EST-CE QU'UNE REQUÊTE ANALYTIQUE COMPOSÉE ?
+
+Une requête analytique composée contient 2+ demandes de données DISTINCTES connectées par "et", "and", "également", "donne moi aussi", etc.
+
+**Indicateurs clés** :
+- Mots connecteurs : "et", "and", "également", "ainsi que", "donne moi aussi", "montre moi aussi"
+- Deux champs de données différents demandés (ex. : "produit le moins cher" + "codes EAN")
+- Deux questions différentes dans une seule requête
+
+## EXEMPLES ANALYTIQUES COMPOSÉS (TOUS SONT HYBRID !)
+
+✅ "produit le moins cher et donne moi les EAN des produits" → **hybrid** (2 demandes distinctes)
+✅ "produit le plus cher et montre moi les niveaux de stock" → **hybrid** (2 demandes distinctes)
+✅ "commandes en attente et chiffre d'affaires ce mois" → **hybrid** (2 demandes distinctes)
+✅ "prix du produit et aussi la quantité en stock" → **hybrid** (2 demandes distinctes)
+✅ "montre moi le meilleur vendeur et donne moi le nombre de clients" → **hybrid** (2 demandes distinctes)
+
+## EXEMPLES ANALYTIQUES SIMPLES (PAS COMPOSÉS !)
+
+❌ "produit le moins cher avec son EAN" → **analytics** (demande unique, EAN est attribut du produit)
+❌ "prix et quantité du produit" → **analytics** (demande unique, plusieurs champs de la même entité)
+❌ "commandes en attente" → **analytics** (demande unique)
+
+## RÈGLE POUR LA DÉTECTION COMPOSÉE
+
+🚨 **RÈGLE** : Si la requête a "et" + "donne moi" / "montre moi" / "give me" → probablement composée = **hybrid**
+
+Quand composée détectée, générer sub_queries :
+```json
+"sub_queries": [
+  {"query": "produit le moins cher", "intent_type": "analytics"},
+  {"query": "EAN des produits", "intent_type": "analytics"}
+]
+```
+
+# PRIORITÉ DE CLASSIFICATION (APRÈS LES VÉRIFICATIONS MULTI-TEMPORELLE ET COMPOSÉE)
+
+1. **MULTI-TEMPOREL (PLUS HAUTE)** : 2+ périodes temporelles → hybrid (DÉJÀ VÉRIFIÉ CI-DESSUS)
+2. **ANALYTIQUE COMPOSÉE** : 2+ demandes de données distinctes → hybrid (DÉJÀ VÉRIFIÉ CI-DESSUS)
+3. SUPERLATIF : MIN/MAX/MEILLEUR/PIRE → analytics
+4. WEB_SEARCH : concurrents OU sites externes → web_search
+5. MONO-TEMPOREL : métrique financière + UNE période temporelle → analytics
+6. SEMANTIC : documentation/politique/explication → semantic
+7. ANALYTICS : requête de données internes → analytics
+8. HYBRID : plusieurs intentions différentes → hybrid
+
+**SUPERLATIF = ANALYTICS** :
+Mots-clés : plus, moins, meilleur, pire, le plus élevé, le plus bas, le moins cher
 - "produit le moins cher" → analytics
 - "produit le plus cher" → analytics
 
-**WEB_SEARCH**:
-Mots-clés: concurrents, Amazon, eBay, Walmart, tendances, actualités
+**WEB_SEARCH** :
+Mots-clés : concurrents, Amazon, eBay, Walmart, tendances, actualités
 - "prix sur Amazon" → web_search
-- "comparer avec concurrents" → web_search
+- "comparer avec les concurrents" → web_search
 
-**ANALYTICS**:
-Champs base de données: prix, stock, SKU, modèle, quantité, statut, revenu, ventes
-- "revenu ce mois" → analytics (temporel simple)
+**ANALYTICS** :
+Champs de base de données : prix, stock, SKU, modèle, quantité, statut, chiffre d'affaires, ventes
+- "chiffre d'affaires ce mois" → analytics (mono-temporel)
 - "commandes en attente" → analytics
 
-**SEMANTIC**:
+**SEMANTIC** :
 Politiques, procédures, explications
 - "politique de retour" → semantic
 - "comment fonctionne la livraison" → semantic
@@ -111,19 +148,31 @@ Politiques, procédures, explications
   "time_range": "string|null"
 }
 
-**EXTRACTION DES MÉTADONNÉES TEMPORELLES** (REQUIS POUR TOUTES LES REQUÊTES):
-- is_multi_temporal: true si 2+ périodes temporelles DIFFÉRENTES détectées
-- temporal_periods: liste toutes les périodes détectées ["month", "quarter", "semester", "year", "week", "day"]
-- temporal_connectors: liste tous les connecteurs ["puis", "et", "ensuite", "then", "and"]
-- base_metric: "revenue", "sales", "profit", "margin", "orders", etc.
-- time_range: "year 2025", "this year", "last month", etc.
+**EXTRACTION DES MÉTADONNÉES TEMPORELLES** (REQUIS POUR TOUTES LES REQUÊTES) :
+- is_multi_temporal : true si 2+ périodes temporelles DIFFÉRENTES détectées
+- temporal_periods : lister toutes les périodes détectées ["month", "quarter", "semester", "year", "week", "day"]
+- temporal_connectors : lister tous les connecteurs ["then", "and", "after that", "followed by", "next"]
+- base_metric : "revenue", "sales", "profit", "margin", "orders", etc.
+- time_range : "year 2025", "this year", "last month", etc.
 
-**SOUS-REQUÊTES POUR HYBRID**:
-Quand intent_type = "hybrid" et is_multi_temporal = true, générer sub_queries:
+**SOUS-REQUÊTES POUR HYBRID** :
+Quand intent_type = "hybrid", générer sub_queries pour :
+1. Requêtes multi-temporelles (2+ périodes temporelles)
+2. Requêtes analytiques composées (2+ demandes de données distinctes)
+
+Exemple pour multi-temporel :
 ```json
 "sub_queries": [
   {"query": "revenue for 2025 by month", "intent_type": "analytics"},
   {"query": "revenue for 2025 by quarter", "intent_type": "analytics"}
+]
+```
+
+Exemple pour analytique composée :
+```json
+"sub_queries": [
+  {"query": "cheapest product", "intent_type": "analytics"},
+  {"query": "EAN of products", "intent_type": "analytics"}
 ]
 ```
 
@@ -143,10 +192,10 @@ time_constraint_relative_period = période_relative
 time_constraint_specific_date = date_spécifique
 time_constraint_none = aucune
 
-intent_type_analytics = analytique
-intent_type_semantic = sémantique
-intent_type_hybrid = hybride
-intent_type_web_search = recherche_web
+intent_type_analytics = analytics
+intent_type_semantic = semantic
+intent_type_hybrid = hybrid
+intent_type_web_search = web_search
 
 status_active = actif
 status_inactive = inactif
@@ -161,7 +210,7 @@ error_invalid_language = Code de langue invalide détecté
 error_invalid_intent = Type d'intention invalide détecté
 error_invalid_entity = Type d'entité invalide détecté
 error_invalid_time_constraint = Contrainte temporelle invalide détectée
-error_json_parse = Échec de l'analyse de la réponse JSON de GPT
+error_json_parse = Échec de l'analyse de la réponse JSON du GPT
 error_analysis_exception = Exception survenue lors de l'analyse de la requête
 
 debug_analysis_start = UnifiedQueryAnalyzer::analyzeQuery() - DÉBUT
@@ -178,29 +227,28 @@ debug_status_keywords = Mots-clés de statut : %s
 debug_sub_queries = Sous-requêtes : %s
 debug_filters = Filtres : %s
 debug_ambiguity_note = Note d'ambiguïté : %s
-debug_pattern_override = Remplacement par le post-filtre de motif appliqué
+debug_pattern_override = Remplacement par post-filtre de pattern appliqué
 
-success_analysis_completed = Analyse de requête terminée avec succès
+success_analysis_completed = Analyse de la requête terminée avec succès
 success_language_detected = Langue détectée : %s
 success_translation_completed = Traduction terminée
 success_intent_classified = Intention classifiée : %s
 
 validation_using_default = Utilisation des valeurs par défaut en raison d'une analyse invalide
-validation_invalid_language_code = Code de langue invalide, utilisation de 'en' par défaut
+validation_invalid_language_code = Code de langue invalide, défaut à 'en'
 validation_invalid_translated_query = translated_query invalide, utilisation de l'original
-validation_invalid_intent_type = intent_type invalide, utilisation de 'semantic' par défaut
-validation_invalid_entity_type = entity_type invalide, utilisation de ['general'] par défaut
-validation_invalid_time_constraint = time_constraint invalide, utilisation de 'none' par défaut
-validation_invalid_status_keywords = status_keywords invalides, utilisation de [] par défaut
-validation_invalid_sub_queries = sub_queries invalides, utilisation de [] par défaut
-validation_invalid_confidence = Confiance invalide, utilisation de 0.5 par défaut
-validation_invalid_filters = Filtres invalides, utilisation de {} par défaut
+validation_invalid_intent_type = intent_type invalide, défaut à 'semantic'
+validation_invalid_entity_type = entity_type invalide, défaut à ['general']
+validation_invalid_time_constraint = time_constraint invalide, défaut à 'none'
+validation_invalid_status_keywords = status_keywords invalides, défaut à []
+validation_invalid_sub_queries = sub_queries invalides, défaut à []
+validation_invalid_confidence = confidence invalide, défaut à 0.5
+validation_invalid_filters = filters invalides, défaut à {}
 
-
-debug_temporal_metadata = Métadonnées Temporelles: is_multi_temporal=%s, périodes=%s, connecteurs=%s, métrique_base=%s, plage_temps=%s
-debug_temporal_periods = Périodes Temporelles: %s
-debug_temporal_connectors = Connecteurs Temporels: %s
-debug_base_metric = Métrique de Base: %s
-debug_time_range = Plage Temporelle: %s
-debug_is_multi_temporal = Est Multi-Temporel: %s
-debug_temporal_period_count = Nombre de Périodes Temporelles: %s
+debug_temporal_metadata = Métadonnées temporelles : is_multi_temporal=%s, periods=%s, connectors=%s, base_metric=%s, time_range=%s
+debug_temporal_periods = Périodes temporelles : %s
+debug_temporal_connectors = Connecteurs temporels : %s
+debug_base_metric = Métrique de base : %s
+debug_time_range = Plage temporelle : %s
+debug_is_multi_temporal = Est multi-temporel : %s
+debug_temporal_period_count = Nombre de périodes temporelles : %s

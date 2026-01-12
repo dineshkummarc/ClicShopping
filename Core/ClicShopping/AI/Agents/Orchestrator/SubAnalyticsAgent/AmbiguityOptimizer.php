@@ -63,7 +63,7 @@ class AmbiguityOptimizer
    * for production consistency.
    *
    * @param string $translatedQuery Query in ENGLISH (already translated)
-   * @return array ['is_clear' => bool, 'pattern_type' => string|null]
+   * @return array ['is_clear' => bool, 'pattern_type' => string|null, 'prefilter_result' => array|null]
    */
   public function isClearlyNonAmbiguous(string $translatedQuery): array
   {
@@ -74,7 +74,30 @@ class AmbiguityOptimizer
     $preFilterResult = AmbiguityPreFilter::preFilter($translatedQuery);
     
     if ($preFilterResult !== null) {
-      // Pre-filter determined result - query is clearly NOT ambiguous
+      // Pre-filter determined result
+      // Check if the result is ambiguous or not
+      $isAmbiguous = $preFilterResult['is_ambiguous'] ?? false;
+      
+      if ($isAmbiguous) {
+        // Pre-filter determined query IS ambiguous (e.g., temporal_period_scope)
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "AmbiguityOptimizer: Pre-filter determined query IS ambiguous: {$preFilterResult['reasoning']}",
+            'info',
+            ['query' => $translatedQuery, 'ambiguity_type' => $preFilterResult['ambiguity_type']]
+          );
+        }
+        
+        return [
+          'is_clear' => false,
+          'pattern_type' => 'prefilter_ambiguous',
+          'matched_text' => $translatedQuery,
+          'reason' => $preFilterResult['reasoning'],
+          'prefilter_result' => $preFilterResult
+        ];
+      }
+      
+      // Pre-filter determined query is NOT ambiguous
       if ($this->debug) {
         $this->logger->logSecurityEvent(
           "AmbiguityOptimizer: Pre-filter determined query is NOT ambiguous: {$preFilterResult['reasoning']}",

@@ -114,6 +114,28 @@ class AmbiguousQueryDetector
         return $result;
       }
       
+      // OPTIMIZATION 3.1: Check if prefilter determined query IS ambiguous
+      if (isset($clearCheck['prefilter_result']) && $clearCheck['prefilter_result']['is_ambiguous']) {
+        if ($this->debug) {
+          error_log("AmbiguousQueryDetector: Prefilter detected ambiguity ({$clearCheck['prefilter_result']['ambiguity_type']}), using prefilter result");
+        }
+        
+        $result = $clearCheck['prefilter_result'];
+        $result['optimization'] = 'prefilter_ambiguous';
+        
+        // Log ambiguous query for future improvements
+        $this->logAmbiguousQuery(
+          $query, 
+          $result['ambiguity_type'], 
+          $result['interpretations']
+        );
+        
+        // Cache the result
+        $optimizer->cacheAmbiguityAnalysis($query, $result);
+        
+        return $result;
+      }
+      
       // OPTIMIZATION 4: Use LLM for ambiguity detection
       if ($this->debug) {
         error_log("AmbiguousQueryDetector: No clear pattern, using LLM detection");

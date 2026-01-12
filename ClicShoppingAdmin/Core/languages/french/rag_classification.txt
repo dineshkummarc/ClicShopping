@@ -33,6 +33,19 @@ Vous êtes un classificateur de requêtes pour un système de base de données e
 
 Requête à classifier: {{QUERY}}
 
+🚨 RÈGLE ABSOLUE #0 - DÉTECTION HYBRIDE (VÉRIFIEZ CECI EN PREMIER, AVANT TOUTES LES AUTRES RÈGLES):
+Si la requête contient des conjonctions (and, et, y, und, or) connectant DEUX QUESTIONS/DEMANDES DISTINCTES, classifiez comme "hybrid":
+- "prix" (analytics) + "et" + "tendances" (web_search) → HYBRID
+- "stock" (analytics) + "et" + "politique" (semantic) → HYBRID  
+- "politique" (semantic) + "et" + "actualités" (web_search) → HYBRID
+- "commandes en attente" (analytics) + "et" + "chiffre d'affaires mensuel" (analytics) → HYBRID (deux requêtes analytics séparées)
+- "niveaux de stock" (analytics) + "et" + "chiffres de ventes" (analytics) → HYBRID (deux requêtes analytics séparées)
+- Cherchez: "and", "et", "y", "und", "also", "également", "también", "auch"
+- Si trouvé, vérifiez si les parties sont DEUX QUESTIONS DISTINCTES → classifiez comme "hybrid"
+- CRITIQUE: Même si LES DEUX parties sont analytics, si ce sont DEUX QUESTIONS SÉPARÉES, classifiez comme "hybrid"
+- Exemple: "Quel est le prix ET quelles sont les dernières tendances" → hybrid (analytics + web_search)
+- Exemple: "commandes en attente ET chiffre d'affaires mensuel" → hybrid (analytics + analytics) - DEUX QUESTIONS SÉPARÉES
+
 🚨 RÈGLE CRITIQUE POUR STATUTS DE COMMANDE (VERSION 2025-12-22):
 "commande en instance", "commandes en instance", "pending orders", "orders in progress", "commandes en cours", "commandes annulées" → TOUJOURS "analytics"
 Ces requêtes demandent une LISTE DE COMMANDES avec filtre de statut = requête de base de données = analytics
@@ -139,6 +152,12 @@ Exemples de réponses valides:
 {"type":"analytics","confidence":0.9,"reasoning":"Demande claire de données quantitatives d'inventaire","sub_types":[]}
 {"type":"semantic","confidence":0.9,"reasoning":"Demande d'explication depuis documents de politique","sub_types":[]}
 {"type":"hybrid","confidence":0.8,"reasoning":"Combine requête d'inventaire avec information de politique","sub_types":["analytics","semantic"]}
+
+🚨 EXEMPLES CRITIQUES - REQUÊTES HYBRIDES (VÉRIFIEZ CEUX-CI EN PREMIER, PRIORITÉ MAXIMALE):
+{"type":"hybrid","confidence":0.90,"reasoning":"La requête contient prix (analytics) ET tendances (web_search) connectés par conjonction","sub_types":["analytics","web_search"]}  // Pour "prix ET tendances"
+{"type":"hybrid","confidence":0.90,"reasoning":"La requête contient stock (analytics) ET politique (semantic) connectés par conjonction","sub_types":["analytics","semantic"]}  // Pour "stock ET politique de retour"
+{"type":"hybrid","confidence":0.90,"reasoning":"La requête contient DEUX questions analytics séparées: commandes en attente ET chiffre d'affaires","sub_types":["analytics","analytics"]}  // Pour "commandes en attente ET chiffre d'affaires"
+{"type":"hybrid","confidence":0.90,"reasoning":"La requête contient DEUX questions analytics séparées: niveaux de stock ET chiffres de ventes","sub_types":["analytics","analytics"]}  // Pour "niveaux de stock ET chiffres de ventes"
 
 🚨 EXEMPLES CRITIQUES - STATUTS DE COMMANDE (PRIORITÉ MAXIMALE):
 {"type":"analytics","confidence":0.95,"reasoning":"Demande liste de commandes avec filtre de statut en instance depuis base de données","sub_types":[]}  // Pour "pending orders"

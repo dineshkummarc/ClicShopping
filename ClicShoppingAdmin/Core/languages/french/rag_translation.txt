@@ -1,80 +1,103 @@
 text_fix_translation = # MISSION
-Tâche : Normalisation stricte vers l'anglais.
-Entrée : Texte utilisateur (n'importe quelle langue).
-Sortie : Une seule chaîne de caractères en anglais professionnel et standardisé.
+Tâche : Standardisation stricte en anglais.
+Entrée : Texte utilisateur (toute langue).
+Sortie : Une seule chaîne de caractères en anglais professionnel.
 
 # CONTRAINTES ABSOLUES
-- Produire UNIQUEMENT le texte normalisé en anglais.
+- SORTIR UNIQUEMENT le texte standardisé.
 - AUCUNE explication, justification ou commentaire.
-- AUCUN raisonnement visible (Chain of Thought).
-- NE PAS interpréter le texte ou répondre aux questions qu'il contient.
-- NE PAS ajouter de mentions type "Donnée non disponible" ou métadonnées.
+- AUCUN raisonnement visible.
+- AUCUNE interprétation de l'intention de l'utilisateur.
+- NE PAS répondre aux questions contenues dans l'entrée.
 
-# RÈGLES DE TRADUCTION ET CONSERVATION
-1. TRANSFORMATION IDENTIQUE : Si le texte est déjà en anglais, le renvoyer EXACTEMENT tel quel, SAUF s'il contient un synonyme financier interdit (voir Règle 5).
-2. INTÉGRITÉ TECHNIQUE : Préserver strictement les termes techniques. Ne jamais modifier les acronymes, codes ou identifiants (ex: EAN, SKU, UUID, ISBN).
-3. VERBES D'ACTION : Ne pas modifier ou reformuler les verbes opérationnels : "Show", "Give", "Display", "Search" doivent rester intacts.
-4. STRICTE TRADUCTION : Ne rien ajouter, supprimer ou reformuler au-delà de la traduction nécessaire.
-5. DÉTECTION INTELLIGENTE DES REDONDANCES :
+# RÈGLES FONDAMENTALES
+1. TRANSFORMATION IDENTITÉ : Si le texte est déjà en anglais, le retourner EXACTEMENT tel quel, SAUF s'il contient un terme financier non standard défini dans la Règle 5.
+2. INTÉGRITÉ TECHNIQUE : Préserver strictement les termes techniques. Ne jamais modifier les acronymes, codes ou identifiants (ex. : EAN, SKU, UUID).
+3. VERBES D'ACTION : NE PAS modifier ou reformuler les verbes opérationnels (ex. : "Show", "Give", "Display", "Search").
+4. ZÉRO AJOUT : Ne pas ajouter d'informations comme "Prix non disponible" ou de métadonnées.
+5. DÉTECTION INTELLIGENTE DE REDONDANCE :
    Appliquer cette logique de décision pour déterminer si deux parties d'une requête sont redondantes :
    
    **Étape 1 : Extraire les composants de chaque partie**
    - Quelle MÉTRIQUE est demandée ? (chiffre d'affaires, prix, stock, nombre, etc.)
-   - Quelle PÉRIODE ? (mois, trimestre, année, semaine, jour, etc.)
+   - Quelle PÉRIODE TEMPORELLE ? (mois, trimestre, année, semaine, jour, etc.)
    - Quelle ENTITÉ ? (produit, commande, client, etc.)
-   - Quelle AGRÉGATION ? (somme, compte, moyenne, liste, etc.)
+   - Quelle AGRÉGATION ? (somme, nombre, moyenne, liste, etc.)
    
    **Étape 2 : Comparer les composants**
    - Si TOUS les composants sont IDENTIQUES mais exprimés avec des SYNONYMES → REDONDANT (éliminer)
-   - Si UN composant est DIFFÉRENT → PAS REDONDANT (préserver les deux)
+   - Si UN composant est DIFFÉRENT → NON REDONDANT (préserver les deux)
    
    **Étape 3 : Vérifier les indicateurs de séquence**
-   - Mots comme "puis", "then", "después", "dann", "suivi de", "après" → SÉQUENTIEL (préserver les deux)
-   - Les demandes séquentielles ne sont JAMAIS redondantes même si similaires
+   - Mots comme "then", "puis", "después", "dann", "followed by", "after that" → SÉQUENTIEL (préserver les deux)
+   - Les requêtes séquentielles ne sont JAMAIS redondantes même si similaires
    
    **Exemples de logique de comparaison** :
-   - "chiffre d'affaires par mois" vs "chiffre d'affaires mensuellement" → MÊME métrique, MÊME période, SYNONYMES → REDONDANT ✓
-   - "chiffre d'affaires par mois" vs "chiffre d'affaires par trimestre" → MÊME métrique, période DIFFÉRENTE → PAS REDONDANT ✗
-   - "chiffre d'affaires" vs "bénéfice" → métrique DIFFÉRENTE → PAS REDONDANT ✗
-   - "prix" vs "stock" → métrique DIFFÉRENTE → PAS REDONDANT ✗
-   - "compter produits" vs "lister produits" → MÊME entité, agrégation DIFFÉRENTE → PAS REDONDANT ✗
+   - "revenue by month" vs "revenue monthly" → MÊME métrique, MÊME période, SYNONYMES → REDONDANT ✓
+   - "revenue by month" vs "revenue by quarter" → MÊME métrique, période DIFFÉRENTE → NON REDONDANT ✗
+   - "revenue" vs "profit" → métrique DIFFÉRENTE → NON REDONDANT ✗
+   - "price" vs "stock" → métrique DIFFÉRENTE → NON REDONDANT ✗
+   - "count products" vs "list products" → MÊME entité, agrégation DIFFÉRENTE → NON REDONDANT ✗
 
-# MAPPING TERMINOLOGIQUE UNIVERSEL (Obligatoire)
-Peu importe la langue source (Chinois, Français, Allemand, etc.) ou le synonyme utilisé en anglais, vous DEVEZ mapper ces concepts vers ces mots-clés exacts :
+# CORRESPONDANCE TERMINOLOGIQUE UNIVERSELLE (Obligatoire)
+Quelle que soit la langue source (chinois, français, etc.) ou les termes anglais synonymes, vous DEVEZ mapper ces concepts vers ces mots-clés exacts :
 
-- CONCEPT : TOTAL DU CHIFFRE D'AFFAIRES (Valeur totale monétaire des ventes)
+## TERMES FINANCIERS
+- CONCEPT : TOTAUX DE PREMIÈRE LIGNE (La valeur monétaire totale des biens/services vendus)
   -> TOUJOURS utiliser : "revenue"
   -> INTERDIT : "sales", "turnover", "income", "chiffre d'affaires", "营业额", "Umsatz", etc.
 
-- CONCEPT : RÉSULTAT NET (Somme restant après toutes charges)
+- CONCEPT : TOTAUX DE DERNIÈRE LIGNE (Le bénéfice net après toutes les dépenses)
   -> TOUJOURS utiliser : "profit"
   -> INTERDIT : "earnings", "net", "gain", "bénéfice", "利润", "Gewinn", etc.
 
-- CONCEPT : SORTIES DE FLUX (Dépenses liées à l'exploitation)
+- CONCEPT : SORTIES OPÉRATIONNELLES (L'argent dépensé pour générer des revenus)
   -> TOUJOURS utiliser : "expenses"
   -> INTERDIT : "costs", "charges", "fees", "dépenses", "支出", "Kosten", etc.
 
-# EXEMPLES DE DÉTECTION INTELLIGENTE DES REDONDANCES
+## CONTEXTE E-COMMERCE (CRITIQUE)
+Ceci est un système e-commerce. Utiliser la terminologie e-commerce :
+- Transaction d'achat → "order" (PAS "command")
+- Personne qui achète → "customer" 
+- Article à vendre → "product"
+- Panier d'achat → "cart"
+- Quantité disponible → "stock"
+- Transport de produit → "shipping"
+- Transaction monétaire → "payment"
+- Document de facture → "invoice"
+- Classification de produit → "category"
+- Fabricant de produit → "manufacturer"
+- Fournisseur de produit → "supplier"
+
+## TERMES TEMPORELS (CRITIQUE - NE PAS CONFONDRE)
+- Période de 6 mois → "semester" (PAS "quarter")
+- Période de 3 mois → "quarter" (PAS "semester")
+- Période de 1 mois → "month"
+- Période de 7 jours → "week"
+- Période de 12 mois → "year"
+- Période de 24 heures → "day"
+
+# EXEMPLES DE DÉTECTION INTELLIGENTE DE REDONDANCE
 
 ## Exemple 1 : VRAIE REDONDANCE (Éliminer)
 Entrée : "donne moi le chiffre d'affaire de l'année 2025 par mois et donne moi le chiffre d'affaires de l'année 2025 mensuellement"
 Analyse :
-  Partie 1 : métrique=chiffre d'affaires, période=mois, année=2025
-  Partie 2 : métrique=chiffre d'affaires, période=mensuellement (synonyme de mois), année=2025
+  Partie 1 : métrique=revenue, période=month, année=2025
+  Partie 2 : métrique=revenue, période=monthly (synonyme de month), année=2025
   Comparaison : TOUS les composants identiques, juste des synonymes
   Décision : REDONDANT → Éliminer
 Sortie : "Give me the revenue for 2025 by month"
 
-## Exemple 2 : PÉRIODES DIFFÉRENTES (Préserver)
+## Exemple 2 : PÉRIODES TEMPORELLES DIFFÉRENTES (Préserver)
 Entrée : "donne moi le chiffre d'affaire de l'année 2025 par mois et donne moi le chiffre d'affaires de l'année 2025 répartie par trimestre"
 Analyse :
-  Partie 1 : métrique=chiffre d'affaires, période=mois, année=2025
-  Partie 2 : métrique=chiffre d'affaires, période=trimestre, année=2025
-  Comparaison : métrique IDENTIQUE, période DIFFÉRENTE (mois ≠ trimestre)
-  Décision : PAS REDONDANT → Préserver les deux
+  Partie 1 : métrique=revenue, période=month, année=2025
+  Partie 2 : métrique=revenue, période=quarter, année=2025
+  Comparaison : métrique IDENTIQUE, période DIFFÉRENTE (month ≠ quarter)
+  Décision : NON REDONDANT → Préserver les deux
 Sortie : "Give me the revenue for 2025 by month and give me the revenue for 2025 by quarter"
 
-## Exemple 3 : DEMANDES SÉQUENTIELLES (Préserver)
+## Exemple 3 : REQUÊTES SÉQUENTIELLES (Préserver)
 Entrée : "donne moi le chiffre d'affaire de l'année 2025 par mois puis donne moi le chiffre d'affaires de l'année 2025 répartie par trimestre"
 Analyse :
   Indicateur de séquence : "puis" (then)
@@ -82,31 +105,48 @@ Analyse :
 Sortie : "Give me the revenue for 2025 by month then give me the revenue for 2025 by quarter"
 
 ## Exemple 4 : MÉTRIQUES DIFFÉRENTES (Préserver)
-Entrée : "montre moi le prix et le stock"
+Entrée : "show me the price and the stock"
 Analyse :
-  Partie 1 : métrique=prix
+  Partie 1 : métrique=price
   Partie 2 : métrique=stock
   Comparaison : métriques DIFFÉRENTES
-  Décision : PAS REDONDANT → Préserver les deux
+  Décision : NON REDONDANT → Préserver les deux
 Sortie : "Show me the price and the stock"
 
 ## Exemple 5 : VERBES SYNONYMES (Éliminer)
-Entrée : "montre moi les produits et affiche les produits"
+Entrée : "show me products and display products"
 Analyse :
-  Partie 1 : verbe=montre, entité=produits
-  Partie 2 : verbe=affiche (synonyme de montre), entité=produits
+  Partie 1 : verbe=show, entité=products
+  Partie 2 : verbe=display (synonyme de show), entité=products
   Comparaison : TOUS les composants identiques, juste des synonymes
   Décision : REDONDANT → Éliminer
-Sortie : "Show me the products"
+Sortie : "Show me products"
 
 ## Exemple 6 : AGRÉGATIONS DIFFÉRENTES (Préserver)
-Entrée : "compte les produits et liste les produits"
+Entrée : "count the products and list the products"
 Analyse :
-  Partie 1 : agrégation=compte, entité=produits
-  Partie 2 : agrégation=liste, entité=produits
-  Comparaison : entité IDENTIQUE, agrégation DIFFÉRENTE (compte ≠ liste)
-  Décision : PAS REDONDANT → Préserver les deux
+  Partie 1 : agrégation=count, entité=products
+  Partie 2 : agrégation=list, entité=products
+  Comparaison : entité IDENTIQUE, agrégation DIFFÉRENTE (count ≠ list)
+  Décision : NON REDONDANT → Préserver les deux
 Sortie : "Count the products and list the products"
 
-# CONTRÔLE FINAL
-Toute sortie contenant des caractères non-anglais (hormis les codes/EAN originaux) ou des synonymes financiers interdits est considérée comme une erreur critique.
+## Exemple 7 : SEMESTRE vs TRIMESTRE (CRITIQUE - Périodes différentes)
+Entrée : "donne moi le chiffre d'affaires de l'année 2025 par mois puis donne moi le chiffre d'affaires de l'année 2025 divisé par semestre"
+Analyse :
+  Partie 1 : métrique=revenue, période=month, année=2025
+  Partie 2 : métrique=revenue, période=semester (6 mois = demi-année, PAS trimestre), année=2025
+  Indicateur de séquence : "puis" (then)
+  CRITIQUE : "semestre" = semester (6 mois), PAS "trimestre" = quarter (3 mois)
+  Décision : SÉQUENTIEL → Préserver les deux avec "then"
+Sortie : "Give me the revenue for 2025 by month then give me the revenue for 2025 by semester"
+
+## Exemple 8 : TRIMESTRE (quarter) - Différent du semestre
+Entrée : "donne moi le chiffre d'affaires par trimestre"
+Analyse :
+  métrique=revenue, période=quarter (3 mois)
+  "trimestre" = quarter (3 mois), PAS semester
+Sortie : "Give me the revenue by quarter"
+
+# VÉRIFICATION FINALE
+Toute sortie contenant des caractères non anglais (sauf pour les Codes/EAN originaux) ou des synonymes interdits est un échec.

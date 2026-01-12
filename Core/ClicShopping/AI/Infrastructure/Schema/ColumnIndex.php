@@ -18,7 +18,8 @@ use ClicShopping\OM\Registry;
  * Builds and maintains an inverted index of column names and comments
  * for dynamic table selection based on query keywords
  * 
- * Pure LLM Mode - synonym expansion removed
+ * Pure LLM Mode - NO synonym expansion, NO pattern matching
+ * The LLM handles understanding - this class only provides raw data
  * 
  * @package ClicShopping\AI\Infrastructure\Schema
  */
@@ -27,6 +28,11 @@ class ColumnIndex
   private mixed $db;
   private array $columnToTables = [];
   private bool $debug;
+  
+  // Statistics
+  private int $totalTables = 0;
+  private int $totalColumns = 0;
+  private int $columnsWithComments = 0;
   
   /**
    * Constructor
@@ -53,6 +59,9 @@ class ColumnIndex
     }
     
     $this->columnToTables = [];
+    $this->totalTables = 0;
+    $this->totalColumns = 0;
+    $this->columnsWithComments = 0;
     
     // Get all clic_ tables
     $Qtables = $this->db->query("SHOW TABLES LIKE 'clic_%'");
@@ -72,12 +81,19 @@ class ColumnIndex
         continue;
       }
       
+      $this->totalTables++;
+      
       // Get columns with comments
       $Qcolumns = $this->db->query("SHOW FULL COLUMNS FROM {$tableName}");
       
       while ($Qcolumns->fetch()) {
+        $this->totalColumns++;
         $columnName = $Qcolumns->value('Field');
         $comment = $Qcolumns->value('Comment');
+        
+        if (!empty($comment)) {
+          $this->columnsWithComments++;
+        }
         
         // Extract keywords from column name and comment
         $text = $columnName . ' ' . $comment;
@@ -122,7 +138,7 @@ class ColumnIndex
    */
   private function extractKeywords(string $text): array
   {
-    // Pure LLM Mode - synonym expansion removed
+    // Pure LLM Mode - NO synonym expansion
     $text = strtolower($text);
     
     // Remove special chars and split
@@ -163,7 +179,10 @@ class ColumnIndex
     }
     
     return [
-      'keywords' => count($this->columnToTables),
+      'total_tables' => $this->totalTables,
+      'total_columns' => $this->totalColumns,
+      'columns_with_comments' => $this->columnsWithComments,
+      'total_keywords' => count($this->columnToTables),
       'total_matches' => $totalMatches
     ];
   }

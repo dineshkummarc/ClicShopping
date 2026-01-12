@@ -2,6 +2,8 @@ version4.12
 - Libraries updated
 - small fix
 IA improvment :
+Add comment to sql schema
+Promtps refactoring
 
 ----------------
 version4.11

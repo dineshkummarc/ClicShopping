@@ -11,6 +11,8 @@
 namespace ClicShopping\AI\Infrastructure\Schema;
 
 use ClicShopping\AI\Domain\Embedding\NewVector;
+use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
+use ClicShopping\AI\Infrastructure\Prompt\PromptOptimizer;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Cache as OMCache;
 
@@ -36,6 +38,7 @@ class SchemaRetriever
   private mixed $db;
   private SchemaEmbedder $schemaEmbedder;
   private ColumnIndex $columnIndex;
+  private PromptOptimizer $promptOptimizer;
   private bool $debug;
   private string $useCache;
   private bool $useEmbeddings;
@@ -51,6 +54,7 @@ class SchemaRetriever
     $this->db = Registry::get('Db');
     $this->schemaEmbedder = new SchemaEmbedder($debug);
     $this->columnIndex = new ColumnIndex($debug);
+    $this->promptOptimizer = new PromptOptimizer();
     $this->debug = $debug;
     $this->useCache = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True' ? 'True' : 'False';
     $this->useEmbeddings = $useEmbeddings;
@@ -84,7 +88,7 @@ class SchemaRetriever
     }
     
     // Get context limit for this model
-    $contextLimit = $this->getContextLimit($modelName);
+    $contextLimit = $this->promptOptimizer->getModelLimit($modelName);
     
     // Get relevant tables
     $tables = $this->getRelevantTables($query, $maxTables);
@@ -93,18 +97,18 @@ class SchemaRetriever
       if ($this->debug) {
         error_log("[SchemaRetriever] No tables found, using common tables");
       }
-      $tables = $this->getCommonTables();
+      $tables = DoctrineOrm::getFallbackRelevantTables();
     }
     
     // Build schema from tables
     $schema = $this->buildSchemaFromTables($tables);
     
     // If schema exceeds limit, reduce table count
-    $tokenCount = $this->estimateTokenCount($schema);
+    $tokenCount = $this->promptOptimizer->estimateTokenCount($schema);
     while ($tokenCount > $contextLimit && count($tables) > 1) {
       array_pop($tables);
       $schema = $this->buildSchemaFromTables($tables);
-      $tokenCount = $this->estimateTokenCount($schema);
+      $tokenCount = $this->promptOptimizer->estimateTokenCount($schema);
       
       if ($this->debug) {
         error_log("[SchemaRetriever] Schema too large ({$tokenCount} tokens), reduced to " . count($tables) . " tables");
@@ -177,7 +181,7 @@ class SchemaRetriever
         error_log("[SchemaRetriever] Keyword matching returned no results, using common tables");
       }
       
-      return $this->getCommonTables();
+      return DoctrineOrm::getFallbackRelevantTables();
     }
     
     // Embedding mode: try embeddings first, then fallback
@@ -215,7 +219,7 @@ class SchemaRetriever
       error_log("[SchemaRetriever] Falling back to common tables");
     }
     
-    return $this->getCommonTables();
+    return DoctrineOrm::getFallbackRelevantTables();
   }
   
   /**
@@ -437,25 +441,6 @@ class SchemaRetriever
   }
   
   /**
-   * Get common tables (final fallback) - Pure LLM mode
-   * 
-   * Returns the most frequently used tables
-   * 
-   * @return array Array of table names
-   */
-  private function getCommonTables(): array
-  {
-    // Pure LLM Mode - return hardcoded common tables instead of pattern file
-    return [
-      'clic_products',
-      'clic_products_description',
-      'clic_orders',
-      'clic_orders_products',
-      'clic_customers'
-    ];
-  }
-  
-  /**
    * Build schema text from table names
    * 
    * Reads schema directly from database using SHOW FULL COLUMNS
@@ -534,53 +519,5 @@ class SchemaRetriever
     }
     
     return $schemaText;
-  }
-  
-  /**
-   * Get context limit for a model (Pure LLM mode - simplified)
-   * 
-   * @param string $modelName Model name
-   * @return int Context limit in tokens
-   */
-  private function getContextLimit(string $modelName): int
-  {
-    // Pure LLM Mode - hardcoded limits instead of pattern file
-    $limits = [
-      'qwen3-4b' => 1500,
-      'qwen3-8b' => 2000,
-      'llama3-8b' => 2000,
-      'mistral-7b' => 2000,
-      'gpt-3.5' => 3000,
-      'gpt-4' => 4000,
-      'default' => 1500
-    ];
-    
-    // Check for partial match
-    foreach ($limits as $pattern => $limit) {
-      if ($pattern === 'default') continue;
-      if (stripos($modelName, $pattern) !== false) {
-        return $limit;
-      }
-    }
-    
-    // Default to conservative limit for unknown models
-    if ($this->debug) {
-      error_log("[SchemaRetriever] Unknown model '{$modelName}', using default limit");
-    }
-    
-    return $limits['default'];
-  }
-  
-  /**
-   * Estimate token count for text
-   * 
-   * Rough estimate: 4 characters per token
-   * 
-   * @param string $text Text to estimate
-   * @return int Estimated token count
-   */
-  private function estimateTokenCount(string $text): int
-  {
-    return (int)ceil(strlen($text) / 4);
   }
 }

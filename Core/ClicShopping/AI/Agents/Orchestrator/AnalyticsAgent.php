@@ -29,6 +29,7 @@ use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\ResultInterpreter;
 use ClicShopping\AI\Helper\Detection\AmbiguousQueryDetector;
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\PromptBuilder;
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\AmbiguityHandler;
+use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\CompoundQueryHandler;
 use ClicShopping\AI\Handler\Error\AnalyticsErrorHandler;
 use ClicShopping\AI\Agents\Query\QueryClassifier;
 use ClicShopping\AI\Tools\BIexecution\QueryExecutor;
@@ -75,6 +76,7 @@ class AnalyticsAgent
   private AmbiguousQueryDetector $ambiguityDetector;
   private PromptBuilder $promptBuilder;
   private AmbiguityHandler $ambiguityHandler;
+  private CompoundQueryHandler $compoundQueryHandler;
   private AnalyticsErrorHandler $errorHandler;
   private mixed $app;
   
@@ -168,6 +170,13 @@ class AnalyticsAgent
       $this->ambiguityDetector,
       $this->queryProcessor,
       $this->queryExecutor,
+      $this->debug
+    );
+    
+    // Initialize CompoundQueryHandler for handling compound queries (multiple questions)
+    $this->compoundQueryHandler = new CompoundQueryHandler(
+      $this->chat,
+      $this->securityLogger,
       $this->debug
     );
     
@@ -283,6 +292,14 @@ class AnalyticsAgent
       $queryForAmbiguity = $this->translateQueryForAmbiguity($question);
       $this->debugLog("Original query: {$question}", "TRANSLATION");
       $this->debugLog("Translated for ambiguity: {$queryForAmbiguity}", "TRANSLATION");
+      
+      // STEP 0.25: DISABLED - Compound query detection
+      // Compound queries (e.g., "pending orders and revenue") are now classified as 'hybrid'
+      // and routed to HybridQueryProcessor which has proper handling and formatting.
+      // The CompoundQueryHandler produced incorrect output format not compatible with formatters.
+      // See: HybridQueryProcessor.splitHybridQuery() and HybridQueryProcessor.handleComplexQuery()
+      $this->debugLog("--- STEP 0.25: Compound query detection DISABLED ---", "COMPOUND");
+      $this->debugLog("Hybrid queries are handled by HybridQueryProcessor", "COMPOUND");
       
       $this->debugLog("--- STEP 0.5: Check for ambiguous query ---", "AMBIGUITY");
       
@@ -816,6 +833,10 @@ class AnalyticsAgent
       error_log("Reasoning: " . implode('; ', $classificationResult['reasoning']));
     }
 
+    // REVERTED: Only accept 'analytics' type, NOT 'hybrid'
+    // Hybrid queries should be handled by HybridQueryProcessor, not AnalyticsAgent
+    // The CompoundQueryHandler in AnalyticsAgent produces incorrect output format
+    // HybridQueryProcessor has proper handling for multi-intent queries
     $isAnalytics = $classificationResult['type'] === 'analytics';
     error_log("Is analytics? " . ($isAnalytics ? 'YES' : 'NO'));
     error_log("=== END isAnalyticsQuery() ===\n");
@@ -1039,6 +1060,44 @@ class AnalyticsAgent
       
       // Fallback: system message remains unchanged (uses cached full schema)
       $this->debugLog("Schema RAG failed, using cached system message", "SCHEMA_RAG");
+    }
+  }
+  
+  /**
+   * Execute a sub-query from a compound query
+   * 
+   * This method executes a single sub-query through the normal analytics flow
+   * but skips compound query detection to prevent infinite recursion.
+   * 
+   * @param string $subQuery The sub-query to execute
+   * @param array $feedbackContext Feedback context for learning
+   * @return array Query results
+   */
+  private function executeSubQuery(string $subQuery, array $feedbackContext = []): array
+  {
+    $this->debugLog("Executing sub-query: " . substr($subQuery, 0, 80), "COMPOUND_SUB");
+    
+    try {
+      // Use executeQuery which will go through the normal flow
+      // The sub-query will be processed individually
+      $result = $this->executeQuery($subQuery, $feedbackContext);
+      
+      // If successful, try to get interpretation
+      if ($result['type'] !== 'error' && !empty($result['results'])) {
+        $interpretation = $this->resultInterpreter->interpretResults($subQuery, $result['results']);
+        $result['interpretation'] = $interpretation;
+      }
+      
+      return $result;
+      
+    } catch (\Exception $e) {
+      $this->debugLog("Sub-query execution failed: " . $e->getMessage(), "COMPOUND_SUB");
+      
+      return [
+        'type' => 'error',
+        'error' => $e->getMessage(),
+        'query' => $subQuery
+      ];
     }
   }
   

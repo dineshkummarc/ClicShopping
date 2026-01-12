@@ -426,7 +426,7 @@ class SecurityLogger
                 'confidence' => $details['confidence'] ?? null,
                 'user_query' => $details['query'] ?? '',
                 'query_language' => $details['language'] ?? 'en',
-                'query_hash' => $details['query_hash'] ?? ($details['query'] ? md5($details['query']) : null),
+                'query_hash' => $details['query_hash'] ?? (isset($details['query']) && $details['query'] ? md5($details['query']) : null),
                 'detection_method' => $details['detection_method'] ?? 'unknown',
                 'detection_layer' => $details['detection_layer'] ?? null,
                 'matched_patterns' => isset($details['matched_patterns']) ? json_encode($details['matched_patterns']) : null,
