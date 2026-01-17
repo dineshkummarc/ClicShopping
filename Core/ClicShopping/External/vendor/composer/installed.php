@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'f13c63e4b225d81f26a35da11817ec3ccb5b9d5e',
+        'reference' => '623df1a188c5c5df3c68dff4fb52e25de34b5061',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'f13c63e4b225d81f26a35da11817ec3ccb5b9d5e',
+            'reference' => '623df1a188c5c5df3c68dff4fb52e25de34b5061',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -38,9 +38,9 @@
             'dev_requirement' => false,
         ),
         'doctrine/collections' => array(
-            'pretty_version' => '2.5.0',
-            'version' => '2.5.0.0',
-            'reference' => '6108e0cd57d7ef125fb84696346a68860403a25d',
+            'pretty_version' => '2.6.0',
+            'version' => '2.6.0.0',
+            'reference' => '7713da39d8e237f28411d6a616a3dce5e20d5de2',
             'type' => 'library',
             'install_path' => __DIR__ . '/../doctrine/collections',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => 'ccfd723dc03e9864008d011603c412910180d7a6',
+            'reference' => '57ac71b06405e32e77d960bb8490683138573f04',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
@@ -385,9 +385,9 @@
             'dev_requirement' => false,
         ),
         'stripe/stripe-php' => array(
-            'pretty_version' => 'v19.1.0',
-            'version' => '19.1.0.0',
-            'reference' => '4e3de7211645699b1f5b5f1f1b45bd9faf369426',
+            'pretty_version' => 'v19.2.0',
+            'version' => '19.2.0.0',
+            'reference' => 'e444fbc524cd3d6583dde2c5b375d26174c54d96',
             'type' => 'library',
             'install_path' => __DIR__ . '/../stripe/stripe-php',
             'aliases' => array(),
