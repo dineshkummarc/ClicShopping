@@ -36,8 +36,15 @@ use ClicShopping\OM\Registry;
  * REFACTORING: Relocated from Patterns/ to Patterns/WebSearch/
  * - Namespace updated: ClicShopping\AI\Domain\Patterns → ClicShopping\AI\Domain\Patterns\WebSearch
  * - Internal reference to WebSearchPatterns updated to same namespace
- */
+  *
+ * @deprecated Pattern-based logic superseded by Pure LLM Mode
+ *             Scheduled for removal in Q3 2026
+ *             Use UnifiedQueryAnalyzer for intent classification instead
+ *             See Domain/Patterns/DEPRECATED.md for migration guide
+ **/
 #[AllowDynamicProperties]
+// DEPRECATED: Pattern-based logic superseded by Pure LLM Mode. Scheduled for removal in Q3 2026.
+
 class WebSearchPostFilter
 {
   /**

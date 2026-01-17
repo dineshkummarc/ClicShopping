@@ -18,13 +18,13 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
-use ClicShopping\AI\Domain\Embedding\NewVector;
+use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
 use ClicShopping\AI\Helper\Formatter\ResultFormatter;
-use ClicShopping\AI\Agents\Orchestrator\AnalyticsAgent;
+use ClicShopping\AI\Domains\Analytics\Agent\AnalyticsAgent;
 
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 

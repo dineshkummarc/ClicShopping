@@ -20,7 +20,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\Driver\SimplifiedXmlDriver;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\DBAL\Types\Type;
-use ClicShopping\AI\Domain\Embedding\VectorType;
+use ClicShopping\AI\Domains\CoreAI\Embedding\VectorType;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Security\SecurityLogger;
 

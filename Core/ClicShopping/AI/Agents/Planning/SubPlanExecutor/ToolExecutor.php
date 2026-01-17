@@ -13,8 +13,8 @@ namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Metrics\CalculatorTool;
-use ClicShopping\AI\Infrastructure\Cache\SearchCacheManager;
-use ClicShopping\AI\Domain\Search\WebSearchTool;
+use ClicShopping\AI\Domains\WebSearch\Cache\SearchCacheManager;
+use ClicShopping\AI\Domains\WebSearch\Tool\WebSearchTool;
 
 /**
  * ToolExecutor Class

@@ -273,6 +273,12 @@ class QueryCache
 
       // Extraire les données du contexte
       $interpretation = $context['interpretation'] ?? null;
+      
+      // 🔧 FIX: Ensure interpretation is always a string (not an array)
+      if (is_array($interpretation)) {
+        $interpretation = json_encode($interpretation, JSON_UNESCAPED_UNICODE);
+      }
+      
       $entityId = $context['entity_id'] ?? null;
       $entityType = $context['entity_type'] ?? null;
 

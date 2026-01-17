@@ -29,7 +29,7 @@ use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerSemanticSearch
 use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerWebSearch;
 use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerStandard;
 use ClicShopping\AI\Agents\Planning\TaskPlannerPrompts;
-use ClicShopping\AI\Domain\Semantics\Semantics;
+use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
 use ClicShopping\OM\Registry;
 
 // Import des SubTaskPlanners
@@ -355,7 +355,7 @@ class TaskPlanner
 
         // Traduire la requête en anglais pour analyse multilingue
         // not used : Delete ?
-        $translatedQuery = Semantics::translateToEnglish($query, 80);
+        $translatedQuery = SemanticAgent::translateToEnglish($query, 80);
 
         // Facteur 1 : Requête hybride
         if ($intent['is_hybrid'] ?? false) {

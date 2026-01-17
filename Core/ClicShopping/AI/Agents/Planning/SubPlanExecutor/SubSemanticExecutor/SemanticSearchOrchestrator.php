@@ -22,11 +22,11 @@ namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor\SubSemanticExecutor;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
-use ClicShopping\AI\Domain\Semantics\Semantics;
+use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
 use ClicShopping\AI\Infrastructure\Cache\Cache;
 use ClicShopping\AI\Helper\InsufficientInformationDetector;
 use ClicShopping\AI\Handler\Fallback\LLMFallbackHandler;
-use ClicShopping\AI\Handler\Fallback\WebSearchHandler;
+use ClicShopping\AI\Domains\WebSearch\Handler\WebSearchHandler;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
@@ -455,7 +455,7 @@ class SemanticSearchOrchestrator
 
       // Translate query to English before embedding/search to ensure consistent processing
       try {
-        $normalizedQuery = Semantics::translateToEnglish($query, 120);
+        $normalizedQuery = SemanticAgent::translateToEnglish($query, 120);
       } catch (\Throwable $e) {
         $normalizedQuery = $query;
       }

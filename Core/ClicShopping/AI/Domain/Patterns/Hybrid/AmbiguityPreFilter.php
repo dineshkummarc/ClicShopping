@@ -42,9 +42,16 @@
  * @updated 2025-12-23 (Simplified: removed multilingual patterns)
  * @updated 2026-01-11 (Added temporal_period_scope ambiguity for implicit temporal expressions)
  * @author ClicShopping Team
- */
+  *
+ * @deprecated Pattern-based logic superseded by Pure LLM Mode
+ *             Scheduled for removal in Q3 2026
+ *             Use UnifiedQueryAnalyzer for intent classification instead
+ *             See Domain/Patterns/DEPRECATED.md for migration guide
+ **/
 
 namespace ClicShopping\AI\Domain\Patterns\Hybrid;
+
+// DEPRECATED: Pattern-based logic superseded by Pure LLM Mode. Scheduled for removal in Q3 2026.
 
 class AmbiguityPreFilter
 {

@@ -22,8 +22,15 @@ use AllowDynamicProperties;
  * @since 2025-12-30
  * @moved 2025-12-31 from SubSemantics\Patterns to Domain\Patterns
  * @moved 2026-01-09 from Domain\Patterns to Domain\Patterns\Semantic
- */
+  *
+ * @deprecated Pattern-based logic superseded by Pure LLM Mode
+ *             Scheduled for removal in Q3 2026
+ *             Use UnifiedQueryAnalyzer for intent classification instead
+ *             See Domain/Patterns/DEPRECATED.md for migration guide
+ **/
 #[AllowDynamicProperties]
+// DEPRECATED: Pattern-based logic superseded by Pure LLM Mode. Scheduled for removal in Q3 2026.
+
 class ClassificationEnginePatterns
 {
   /**

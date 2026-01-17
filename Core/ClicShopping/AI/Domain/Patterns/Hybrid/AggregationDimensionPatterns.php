@@ -6,7 +6,12 @@
  * @Licence GPL 2 & MIT
  * @Info : https://www.clicshopping.org/forum/trademark/
  *
- */
+  *
+ * @deprecated Pattern-based logic superseded by Pure LLM Mode
+ *             Scheduled for removal in Q3 2026
+ *             Use UnifiedQueryAnalyzer for intent classification instead
+ *             See Domain/Patterns/DEPRECATED.md for migration guide
+ **/
 
 namespace ClicShopping\AI\Domain\Patterns\Hybrid;
 
@@ -35,6 +40,8 @@ namespace ClicShopping\AI\Domain\Patterns\Hybrid;
  * @since 2026-01-14
  * @version 1.0.0
  */
+// DEPRECATED: Pattern-based logic superseded by Pure LLM Mode. Scheduled for removal in Q3 2026.
+
 class AggregationDimensionPatterns
 {
   /**

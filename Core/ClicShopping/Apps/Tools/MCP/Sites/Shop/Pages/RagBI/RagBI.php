@@ -16,7 +16,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Insfrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Insfrastructure\Storage\MariaDBVectorStore;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
-use ClicShopping\AI\Domain\old_SemanticSearch\Semantics;
+use ClicShopping\AI\Domains\Semantics\Agents\SemanticsAgent;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\EndPoint\RagBIPermissions;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Authentification;
@@ -262,7 +262,7 @@ class RagBI extends \ClicShopping\OM\PagesAbstract
         //$queryType = 'analytics'; // test
 
         if ($queryType === 'semantic') {
-          $queryType = Semantics::classifyQuery($prompt);
+          $queryType = SemanticAgent::classifyQuery($prompt);
         }
 
         if ($queryType === 'analytics') {

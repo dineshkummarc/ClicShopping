@@ -137,7 +137,14 @@ class LMStudioProvider extends AbstractLLMProvider
   {
     $config = new LmStudioConfig();
     $config->model = $this->model;
-    $config->url = $this->apiUrl;
+    
+    // LmStudioChat adds '/v1/chat/completions' to the base URL automatically
+    // So we need to strip it if it's already present in our apiUrl
+    $baseUrl = $this->apiUrl;
+    if (str_ends_with($baseUrl, '/v1/chat/completions')) {
+      $baseUrl = substr($baseUrl, 0, -strlen('/v1/chat/completions'));
+    }
+    $config->url = $baseUrl;
 
     return new LmStudioChat($config);
   }

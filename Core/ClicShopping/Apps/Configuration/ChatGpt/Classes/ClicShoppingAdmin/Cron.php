@@ -14,8 +14,8 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\AI\Domain\Embedding\NewVector;
-use ClicShopping\AI\Domain\Semantics\Semantics;
+use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
+use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
 
 #[AllowDynamicProperties]
 class Cron {
@@ -108,7 +108,7 @@ class Cron {
         // Generate taxonomy separately (NOT added to embedding_data)
         $tags = [];
         if (!empty($categories_description)) {
-          $taxonomy = Semantics::createTaxonomy($categories_description, $language_code);
+          $taxonomy = SemanticAgent::createTaxonomy($categories_description, $language_code);
 
           if (!empty($taxonomy)) {
             $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
@@ -223,7 +223,7 @@ class Cron {
 
         if (!empty($manufacturers_description)) {
           $embedding_data .= $this->app->getDef('text_manufacturer_description') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($manufacturers_description) . "\n";
-          $embedding_data .= $this->app->getDef('text_manufacturer_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($manufacturers_description, $language_code) . "\n";
+          $embedding_data .= $this->app->getDef('text_manufacturer_taxonomy') . ' : ' . "\n" . SemanticAgent::createTaxonomy($manufacturers_description, $language_code) . "\n";
         }
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
@@ -321,7 +321,7 @@ class Cron {
 
         if (!empty($page_manager_description)) {
           $embedding_data .= $this->app->getDef('text_page_manager_description', ['page_title' => $page_manager_name]) . ' : ' . $page_manager_description . "\n";
-          $embedding_data .= $this->app->getDef('text_page_manager_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($page_manager_description, $language_code) . "\n";
+          $embedding_data .= $this->app->getDef('text_page_manager_taxonomy') . ' : ' . "\n" . SemanticAgent::createTaxonomy($page_manager_description, $language_code) . "\n";
         }
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
@@ -525,7 +525,7 @@ class Cron {
 
         if (!empty($products_description)) {
           $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
-          $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . Semantics::createTaxonomy($products_description, $language_code) . "\n";
+          $embedding_data .= $this->app->getDef('text_product_taxonomy') . ' : ' . "\n" . SemanticAgent::createTaxonomy($products_description, $language_code) . "\n";
         }
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);

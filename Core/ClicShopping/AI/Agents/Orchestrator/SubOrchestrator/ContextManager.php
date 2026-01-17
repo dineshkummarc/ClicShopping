@@ -20,7 +20,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Helper\Detection\ContextSwitchDetector;
-use ClicShopping\AI\Helper\Detection\SemanticDomainDetector;
+use ClicShopping\AI\Domains\Semantic\Helper\SemanticDomainDetector;
 
 #[AllowDynamicProperties]
 class ContextManager

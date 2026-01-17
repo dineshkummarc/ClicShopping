@@ -10,8 +10,8 @@
 namespace ClicShopping\AI\Helper\Detection;
 
 use AllowDynamicProperties;
-use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\AmbiguityOptimizer;
-use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\ParallelLLMExecutor;
+use ClicShopping\AI\Domains\Analytics\Agent\AmbiguityOptimizer;
+use ClicShopping\AI\Domains\Analytics\Agent\ParallelLLMExecutor;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;

@@ -36,7 +36,7 @@ use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\EntityExtractor;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\DiagnosticManager;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ContextManager;
 use ClicShopping\AI\Handler\Query\ComplexQueryHandler;
-use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\HybridQueryProcessor;
+use ClicShopping\AI\Domains\Hybrid\Processor\HybridQueryProcessor;
 use ClicShopping\AI\Security\Validation\HallucinationDetector;
 
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ResponseProcessor as ResponseProcessorComponent;
@@ -45,7 +45,8 @@ use ClicShopping\AI\Handler\Error\ErrorHandler as ErrorHandlerComponent;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\MemoryManager as MemoryManagerComponent;
 use ClicShopping\AI\Helper\OrchestratorHelper;
 
-use ClicShopping\AI\Domain\Semantics\Semantics;
+use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\Interfaces\QueryTypeDomainInterface;
 
 /**
  * OrchestratorAgent Class
@@ -383,7 +384,7 @@ class OrchestratorAgent
       // This early translation is kept for backward compatibility with logging
       $translatedQuery = '';
       try {
-        $translatedQuery = Semantics::translateToEnglish($queryToProcess, 80);
+        $translatedQuery = SemanticAgent::translateToEnglish($queryToProcess, 80);
       } catch (\Exception $e) {
         // Non-blocking error: log and continue
         if ($this->debug) {
@@ -1047,6 +1048,46 @@ class OrchestratorAgent
       );
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // DOMAIN-BASED ROUTING (PHASE 8: AI Architecture Domain Reorganization)
+    // ═══════════════════════════════════════════════════════════════════════════
+    //
+    // Current Implementation: Query Type Domains (Domains/)
+    // -------------------------------------------------------
+    // Routes queries to appropriate query type domain based on intent:
+    // - Semantic: Vector embeddings, similarity search (Domains/Semantic/)
+    // - Analytics: SQL generation, BI queries (Domains/Analytics/)
+    // - Hybrid: Combined semantic + analytics (Domains/Hybrid/)
+    // - WebSearch: External web search (Domains/WebSearch/)
+    //
+    // Query Type Domains define HOW queries are processed.
+    //
+    // Future Enhancement: Business Domains (Apps/ - rag-multi-domain-evolution)
+    // --------------------------------------------------------------------------
+    // Will also route to business domains that define WHAT data is queried:
+    // - Ecommerce: Products, orders, customers (Apps/Ecommerce/)
+    // - Finance: Transactions, invoices, payments (Apps/Finance/)
+    // - HR: Employees, payroll, benefits (Apps/HR/)
+    // - Trading: Stocks, portfolios, market data (Apps/Trading/)
+    //
+    // Business Domains define WHAT data is queried.
+    //
+    // Future Orchestration Flow:
+    // --------------------------
+    // User Query → OrchestratorAgent
+    //   ├─ Identifies Query Type (HOW): Analytics
+    //   ├─ Identifies Business Domain (WHAT): Ecommerce
+    //   ├─ Routes to: Domains/Analytics/Agent/AnalyticsAgent (HOW to generate SQL)
+    //   └─ Coordinates with: Apps/Ecommerce/Entities/ProductEntity (WHAT data to query)
+    //
+    // This separation enables:
+    // - Same query type across multiple business domains
+    // - Clear separation of concerns (HOW vs WHAT)
+    // - Easy addition of new business domains
+    // - Scalable multi-domain architecture
+    //
+    // ═══════════════════════════════════════════════════════════════════════════
+
     // ✅ TASK 5.2.1.1: Route hybrid queries to HybridQueryProcessor BEFORE TaskPlanner
     // Hybrid queries need to be split into sub-queries and executed by multiple agents
     // NOTE: Check intent_type ONLY (is_hybrid flag can be inconsistent)
@@ -1067,6 +1108,14 @@ class OrchestratorAgent
         ]
       );
     }
+    
+    // PHASE 8: Domain-based routing (transitional implementation)
+    // Get domain for intent type (for logging and future use)
+    $domainClass = $this->getDomainForIntent($intentType);
+    
+    // NOTE: Current implementation still uses direct routing for backward compatibility
+    // Future implementation will use: $domain->getAgent()->processQuery($query)
+    // when all domains implement QueryTypeDomainInterface
     
     if ($intentType === 'hybrid') {
       if ($this->debug) {
@@ -1308,6 +1357,79 @@ class OrchestratorAgent
     }
 
     return $response;
+  }
+
+  /**
+   * Get domain for intent (domain-based routing)
+   * 
+   * PHASE 8: Domain-Based Routing
+   * 
+   * This method routes queries to the appropriate query type domain based on intent.
+   * 
+   * IMPORTANT DISTINCTION:
+   * - Query Type Domains (Domains/): Define HOW queries are processed
+   *   Examples: Semantic search, SQL generation, hybrid processing, web search
+   *   Location: Core/ClicShopping/AI/Domains/
+   * 
+   * - Business Domains (Apps/ - FUTURE): Define WHAT data is queried
+   *   Examples: Ecommerce (products, orders), Finance (transactions), HR (employees)
+   *   Location: Core/ClicShopping/AI/Apps/ (future spec: rag-multi-domain-evolution)
+   * 
+   * Current Implementation:
+   * - Routes to query type domains (Semantic, Analytics, Hybrid, WebSearch)
+   * - Uses QueryTypeDomainInterface for standardized domain access
+   * 
+   * Future Enhancement (rag-multi-domain-evolution):
+   * - Will also route to business domains (Ecommerce, Finance, HR, Trading)
+   * - Orchestrator will coordinate BOTH query types AND business domains
+   * - Example: Analytics query (HOW) + Ecommerce domain (WHAT)
+   * 
+   * @param string $intentType Intent type from UnifiedQueryAnalyzer
+   * @return mixed Domain class name (transitional) or QueryTypeDomainInterface (future)
+   */
+  private function getDomainForIntent(string $intentType): mixed
+  {
+    // Map intent types to domain classes
+    // NOTE: This mapping will be enhanced in future specs to include business domains
+    $domainMap = [
+      'semantic' => \ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent::class,
+      'analytics' => \ClicShopping\AI\Domains\Analytics\Agent\AnalyticsAgent::class,
+      'hybrid' => \ClicShopping\AI\Domains\Hybrid\Processor\HybridQueryProcessor::class,
+      'web_search' => \ClicShopping\AI\Domains\WebSearch\Tool\WebSearchTool::class,
+    ];
+    
+    // Get domain class for intent type
+    $domainClass = $domainMap[$intentType] ?? null;
+    
+    if ($domainClass === null) {
+      if ($this->debug) {
+        $this->securityLogger->logStructured('warning', 'OrchestratorAgent', 'domain_not_found', [
+          'intent_type' => $intentType,
+          'available_domains' => array_keys($domainMap),
+          'fallback' => 'semantic'
+        ]);
+      }
+      
+      // Fallback to semantic domain (safer than analytics)
+      $domainClass = $domainMap['semantic'];
+    }
+    
+    // NOTE: Current implementation returns class name, not QueryTypeDomainInterface instance
+    // This is a transitional implementation. Full interface implementation will be added
+    // when domains are refactored to implement QueryTypeDomainInterface (future task).
+    // For now, we return the domain class name for backward compatibility.
+    
+    if ($this->debug) {
+      $this->securityLogger->logStructured('info', 'OrchestratorAgent', 'domain_routing', [
+        'intent_type' => $intentType,
+        'domain_class' => $domainClass,
+        'routing_method' => 'domain_based'
+      ]);
+    }
+    
+    // Return domain class name (transitional implementation)
+    // TODO: Return QueryTypeDomainInterface instance when domains implement interface
+    return $domainClass;
   }
 
   /**

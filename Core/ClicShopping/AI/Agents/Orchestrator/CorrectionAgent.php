@@ -11,14 +11,14 @@
 namespace ClicShopping\AI\Agents\Orchestrator;
 
 use AllowDynamicProperties;
-use ClicShopping\AI\Helper\EntityRegistry;
+use ClicShopping\AI\Domains\CoreAI\Entity\EntityRegistry;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Security\InputValidator;
 use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
-use ClicShopping\AI\Domain\Embedding\NewVector;
+use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Infrastructure\Cache\Cache;
 

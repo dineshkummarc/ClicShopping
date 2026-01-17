@@ -11,7 +11,7 @@ namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
 use AllowDynamicProperties;
 use ClicShopping\AI\Agents\Planning\TaskStep;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domain\Semantics\Semantics;
+use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
 use ClicShopping\AI\Domain\Patterns\Semantic\PatternAnalysisPattern;
 
 #[AllowDynamicProperties]
@@ -35,7 +35,7 @@ class SubTaskPlannerPatternAnalysis
     public function canHandle(string $query): bool
     {
         // 🌍 Traduire en anglais pour analyse multilingue cohérente
-        $translatedQuery = Semantics::translateToEnglish($query, 80);
+        $translatedQuery = SemanticAgent::translateToEnglish($query, 80);
         
         if ($this->debug) {
             $this->logDebug("Pattern analysis detection - Original: " . substr($query, 0, 50) . 

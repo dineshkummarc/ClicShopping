@@ -11,7 +11,7 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
 use AllowDynamicProperties;
-use ClicShopping\AI\Domain\Semantics\Semantics;
+use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
@@ -97,7 +97,7 @@ class TranslationService
     }
 
     // Query is not in English, translate it
-    $translatedQuery = Semantics::translateToEnglish($query, 80);
+    $translatedQuery = SemanticAgent::translateToEnglish($query, 80);
     $translationTime = (microtime(true) - $startTime) * 1000;
 
     $this->logger->logStructured(

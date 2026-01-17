@@ -11,7 +11,7 @@
 namespace ClicShopping\AI\Helper;
 
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domain\Semantics\Semantics;
+use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
 
 /**
  * ClarificationHelper Class

@@ -13,7 +13,7 @@ namespace ClicShopping\AI\Agents\Query;
 use AllowDynamicProperties;
 use ClicShopping\AI\Domain\Patterns\Hybrid\HybridPreFilter;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domain\Semantics\SubSemantics\ClassificationEngine;
+use ClicShopping\AI\Domains\Semantic\Processor\ClassificationEngine;
 use ClicShopping\AI\Infrastructure\Cache\ClassificationCache;
 use ClicShopping\OM\Registry;
 

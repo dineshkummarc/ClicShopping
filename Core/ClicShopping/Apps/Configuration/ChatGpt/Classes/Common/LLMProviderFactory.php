@@ -212,7 +212,14 @@ class LLMProviderFactory
         $config['model'] = defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_MODEL') ? CLICSHOPPING_APP_CHATGPT_LMSTUDIO_MODEL : 'local-model';
         $config['temperature'] = defined('CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE') ? (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE : 0.7;
         $config['max_tokens'] = defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN') ? (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN : 4000;
-        $config['api_url'] = defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL') ? CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL . '/v1/chat/completions' : 'http://localhost:1234/v1/chat/completions';
+        // Check if URL already includes the endpoint path
+        if (defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL')) {
+          $baseUrl = CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL;
+          // Only append /v1/chat/completions if not already present
+          $config['api_url'] = str_ends_with($baseUrl, '/v1/chat/completions') ? $baseUrl : $baseUrl . '/v1/chat/completions';
+        } else {
+          $config['api_url'] = 'http://localhost:1234/v1/chat/completions';
+        }
         break;
 
       case 'mistral':

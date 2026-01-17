@@ -11,13 +11,20 @@
  * 
  * @package ClicShopping\AI\Domain\Patterns\Ecommerce
  * @since 2025-12-28
- */
+  *
+ * @deprecated Pattern-based logic superseded by Pure LLM Mode
+ *             Scheduled for removal in Q3 2026
+ *             Use UnifiedQueryAnalyzer for intent classification instead
+ *             See Domain/Patterns/DEPRECATED.md for migration guide
+ **/
 
 namespace ClicShopping\AI\Domain\Patterns\Ecommerce;
 
 use AllowDynamicProperties;
 
 #[AllowDynamicProperties]
+// DEPRECATED: Pattern-based logic superseded by Pure LLM Mode. Scheduled for removal in Q3 2026.
+
 class ModificationKeywordsPattern
 {
   /**

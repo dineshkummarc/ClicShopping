@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Config\RA\Params;
 
-use ClicShopping\AI\Domain\Embedding\NewVector;
+use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
 use ClicShopping\OM\HTML;
 
 class embedding_model extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Config\ConfigParamAbstract

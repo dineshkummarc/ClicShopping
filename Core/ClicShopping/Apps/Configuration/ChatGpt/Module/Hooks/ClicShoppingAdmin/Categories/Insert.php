@@ -15,9 +15,9 @@ use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\AI\Domain\Embedding\NewVector;
+use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\AI\Domain\Semantics\Semantics;
+use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
 
 #[AllowDynamicProperties]
 class Insert implements \ClicShopping\OM\Modules\HooksInterface

@@ -11,10 +11,10 @@
 namespace ClicShopping\AI\Agents\Planning;
 
 use AllowDynamicProperties;
-use ClicShopping\AI\Agents\Orchestrator\AnalyticsAgent;
+use ClicShopping\AI\Domains\Analytics\Agent\AnalyticsAgent;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Infrastructure\Metrics\CalculatorTool;
-use ClicShopping\AI\Domain\Search\WebSearchTool;
+use ClicShopping\AI\Domains\WebSearch\Tool\WebSearchTool;
 
 /**
  * ExecutionPlan Class

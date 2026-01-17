@@ -20,18 +20,16 @@ FINAL ANSWER: [Your conclusion]
 CONFIDENCE: [0.0 to 1.0]
 PROMPT;
 
-text_reasoning_tot_prompt = <<<PROMPT
-Solve this problem using a specific approach.
+text_reasoning_tot_prompt = Solve this problem using a specific approach.
 
 Problem: {{problem}}
 
 Your approach: {{approach}}
 
 Provide your reasoning and conclusion.
-PROMPT;
 
-text_reasoning_decompose_prompt = <<<PROMPT
-Analyze this problem and determine if it can be broken down into simpler subproblems.
+
+text_reasoning_decompose_prompt = Analyze this problem and determine if it can be broken down into simpler subproblems.
 
 Problem: {{problem}}
 
@@ -43,10 +41,9 @@ If not atomic:
 SUBPROBLEM 1: [Description]
 SUBPROBLEM 2: [Description]
 ...
-PROMPT;
 
-text_reasoning_verification_prompt = <<<PROMPT
-Verify if this solution correctly solves the problem.
+
+text_reasoning_verification_prompt = Verify if this solution correctly solves the problem.
 
 Problem: {{problem}}
 

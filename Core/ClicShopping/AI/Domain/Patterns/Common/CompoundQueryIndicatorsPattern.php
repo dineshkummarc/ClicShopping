@@ -13,13 +13,20 @@
  * 
  * NOTE: Pattern classes contain English keywords only.
  * All processing is done in English after translation.
- */
+  *
+ * @deprecated Pattern-based logic superseded by Pure LLM Mode
+ *             Scheduled for removal in Q3 2026
+ *             Use UnifiedQueryAnalyzer for intent classification instead
+ *             See Domain/Patterns/DEPRECATED.md for migration guide
+ **/
 
 namespace ClicShopping\AI\Domain\Patterns\Common;
 
 use AllowDynamicProperties;
 
 #[AllowDynamicProperties]
+// DEPRECATED: Pattern-based logic superseded by Pure LLM Mode. Scheduled for removal in Q3 2026.
+
 class CompoundQueryIndicatorsPattern
 {
   /**

@@ -14,6 +14,11 @@
  * TASK: Session 15 - Pattern extraction cleanup
  * RESTRUCTURATION: Relocated to Ecommerce domain (2026-01-09)
  * TASK: patterns-restructuration - Task 7.1
+ * 
+ * @deprecated Pattern-based logic superseded by Pure LLM Mode
+ *             Scheduled for removal in Q3 2026
+ *             Use UnifiedQueryAnalyzer for intent classification instead
+ *             See Domain/Patterns/DEPRECATED.md for migration guide
  */
 
 namespace ClicShopping\AI\Domain\Patterns\Ecommerce;
@@ -21,7 +26,9 @@ namespace ClicShopping\AI\Domain\Patterns\Ecommerce;
 use AllowDynamicProperties;
 use ClicShopping\AI\Domain\Patterns\Common\EntityKeywordsPattern;
 
+// DEPRECATED: Pattern-based logic superseded by Pure LLM Mode. Scheduled for removal in Q3 2026.
 #[AllowDynamicProperties]
+
 class EntityDetectionPattern
 {
   /**

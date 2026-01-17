@@ -12,7 +12,7 @@ namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor;
 
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Agents\Orchestrator\AnalyticsAgent;
+use ClicShopping\AI\Domains\Analytics\Agent\AnalyticsAgent;
 use ClicShopping\AI\Domain\Patterns\Analytics\AnalyticsExecutorPatterns;
 
 /**
@@ -111,7 +111,15 @@ class AnalyticsExecutor
       error_log("processBusinessQuery() returned:");
       error_log("  SQL query: " . ($rawResult['sql_query'] ?? 'EMPTY'));
       error_log("  Results count: " . count($rawResult['results'] ?? []));
-      error_log("  Interpretation: " . substr($rawResult['interpretation'] ?? 'N/A', 0, 100));
+      
+      // 🔧 FIX: Handle interpretation being an array or string
+      $interpretation = $rawResult['interpretation'] ?? 'N/A';
+      if (is_array($interpretation)) {
+        $interpretationStr = json_encode($interpretation, JSON_UNESCAPED_UNICODE);
+      } else {
+        $interpretationStr = (string)$interpretation;
+      }
+      error_log("  Interpretation: " . substr($interpretationStr, 0, 100));
 
       // Format result
       $formattedResult = $this->formatAnalyticsResult($rawResult);

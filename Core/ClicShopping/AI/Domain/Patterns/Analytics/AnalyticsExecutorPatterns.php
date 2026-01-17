@@ -24,7 +24,14 @@ namespace ClicShopping\AI\Domain\Patterns\Analytics;
  *
  * @package ClicShopping\AI\Domain\Patterns
  * @since 2026-01-08
- */
+  *
+ * @deprecated Pattern-based logic superseded by Pure LLM Mode
+ *             Scheduled for removal in Q3 2026
+ *             Use UnifiedQueryAnalyzer for intent classification instead
+ *             See Domain/Patterns/DEPRECATED.md for migration guide
+ **/
+// DEPRECATED: Pattern-based logic superseded by Pure LLM Mode. Scheduled for removal in Q3 2026.
+
 class AnalyticsExecutorPatterns
 {
   /**

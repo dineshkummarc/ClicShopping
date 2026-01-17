@@ -11,7 +11,7 @@
 namespace ClicShopping\AI\Infrastructure\Cache\SubQueryCache;
 
 use AllowDynamicProperties;
-use ClicShopping\AI\Domain\Semantics\Semantics;
+use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
 
 /**
  * Génère des clés de cache MD5 uniques basées sur la requête et le contexte
@@ -30,7 +30,7 @@ class CacheKeyGenerator
   {
     // Normalize query to English for consistent cache keys
     try {
-      $normalized = Semantics::translateToEnglish($userQuery, 120);
+      $normalized = SemanticAgent::translateToEnglish($userQuery, 120);
     } catch (\Throwable $e) {
       $normalized = $userQuery;
     }

@@ -321,9 +321,13 @@ RÈGLE 2.5: STATUT DE COMMANDE - LIMITATION CHAMP UNIQUE
 
 FONDAMENTAL: orders_status est un CHAMP UNIQUE avec UNE valeur à la fois.
 
-IMPOSSIBLE: Une commande NE PEUT PAS avoir DEUX statuts simultanément
+❌ REQUÊTE IMPOSSIBLE (FAUSSE):
+Une commande NE PEUT PAS avoir DEUX statuts simultanément. Cette requête retournera TOUJOURS 0 résultats:
+```sql
 WHERE (os.orders_status_name LIKE '%payé%' OR os.orders_status_name LIKE '%paid%')
   AND (os.orders_status_name LIKE '%livré%' OR os.orders_status_name LIKE '%delivered%')
+```
+**POURQUOI FAUX**: Un seul nom de statut ne peut pas contenir À LA FOIS "payé" ET "livré"
 
 SCHÉMA DE BASE DE DONNÉES:
 - orders_status (INT): État de réalisation de la commande (1=En attente, 2=Traitement, 3=Livré, 4=Annulé)
@@ -332,10 +336,20 @@ SCHÉMA DE BASE DE DONNÉES:
 
 INSIGHT CLÉ: "Livré" implique généralement "Payé"
 
-APPROCHES CORRECTES:
-- Commandes livrées (implique payé): WHERE orders_status = 3
-- Livré + A une facture: WHERE orders_status = 3 AND orders_status_invoice > 0
-- Par méthode de paiement: WHERE orders_status = 3 AND payment_method = 'PayPal'
+✅ APPROCHES CORRECTES:
+
+1. **Commandes livrées (implique payé):**
+   WHERE orders_status = 3
+
+2. **Livré + A une facture:**
+   WHERE orders_status = 3 AND orders_status_invoice > 0
+
+3. **Par méthode de paiement:**
+   WHERE orders_status = 3 AND payment_method = 'PayPal'
+
+4. **Payé OU Livré (l'un ou l'autre statut):**
+   WHERE (os.orders_status_name LIKE '%payé%' OR os.orders_status_name LIKE '%paid%'
+          OR os.orders_status_name LIKE '%livré%' OR os.orders_status_name LIKE '%delivered%')
 
 
 RÈGLE 2.6: DÉTECTION DE CONFLIT D'AGRÉGATION TEMPORELLE (CRITIQUE)
@@ -507,8 +521,8 @@ COMMANDES:
   Classes: 'ST' = Sous-total, 'SH' = Expédition, 'TX' = Taxe, 'TO' = Total, 'OT' = Total commande
 
 CLIENTS:
-- customers: Infos client (customers_id, customers_name, customers_email_address)
-- customers_status: Table de statut (customers_status_id, language_id, customers_status_name)
+- customers: Infos client (customers_id, customers_name, customers_email_address, customers_status)
+  **NOTE**: customers_status est un champ INT (0=inactif, 1=actif), PAS une clé étrangère
 
 MARQUES & FOURNISSEURS:
 - manufacturers: Infos marque (manufacturers_id, manufacturers_name, suppliers_id)
@@ -627,13 +641,93 @@ text_sql_generation_rules = RÈGLES DE GÉNÉRATION SQL:
    
    Cela garantit que les utilisateurs peuvent identifier à quel produit appartiennent les données ET obtenir TOUS les produits au même prix min/max.
 
-12. COMPARAISONS TEMPORELLES: Lors de la comparaison de métriques entre périodes (ex: "mai vs février"):
+12. RELATIONS ENTRE TABLES & PATTERNS DE JOIN (CRITIQUE - APPROCHE PROGRESSIVE):
+
+   NIVEAU 1 - COMPRENDRE LES RELATIONS:
+   La base de données utilise des clés étrangères pour lier les tables. Identifiez les relations en cherchant les colonnes avec des noms correspondants:
+   
+   RELATIONS PRINCIPALES:
+   - products_id: Lie clic_products → clic_products_description, clic_orders_products, clic_reviews, clic_products_notifications, clic_specials, clic_products_viewed
+   - customers_id: Lie clic_customers → clic_orders, clic_reviews, clic_products_notifications
+   - orders_id: Lie clic_orders → clic_orders_products, clic_orders_total
+   - categories_id: Lie clic_categories → clic_categories_description, clic_products_to_categories
+   - manufacturers_id: Lie clic_manufacturers → clic_manufacturers_info, clic_products
+   - suppliers_id: Lie clic_suppliers → clic_suppliers_info, clic_manufacturers
+   
+   NIVEAU 2 - PATTERNS DE RELATIONS COURANTS:
+   
+   A. UN-À-PLUSIEURS (Le plus courant):
+      - Un produit → Plusieurs descriptions (multilingue)
+      - Un produit → Plusieurs commandes (via orders_products)
+      - Un client → Plusieurs commandes
+      - Une commande → Plusieurs produits (via orders_products)
+      
+      Stratégie JOIN: Utiliser INNER JOIN ou LEFT JOIN selon que vous voulez seulement les enregistrements correspondants ou tous les enregistrements
+   
+   B. PLUSIEURS-À-PLUSIEURS (Nécessite une table de liaison):
+      - Produits ↔ Commandes: Utiliser clic_orders_products comme table de liaison
+      - Produits ↔ Catégories: Utiliser clic_products_to_categories comme table de liaison
+      
+      Stratégie JOIN: JOIN à travers la table de liaison (2 JOINs requis)
+   
+   C. TROUVER LES RELATIONS MANQUANTES (Avancé):
+      - "Produits jamais achetés" → LEFT JOIN avec orders_products WHERE orders_products.products_id IS NULL
+      - "Clients sans commandes" → LEFT JOIN avec orders WHERE orders.customers_id IS NULL
+      
+      Stratégie JOIN: Utiliser LEFT JOIN + vérification IS NULL pour trouver les enregistrements sans correspondance
+   
+   NIVEAU 3 - PATTERNS DE LOGIQUE MÉTIER:
+   
+   Quand vous voyez ces types de requêtes, appliquez le pattern de JOIN correspondant:
+   
+   - "meilleurs produits" / "produits les plus vendus" / "top ventes"
+     → JOIN avec clic_orders_products, utiliser SUM(products_quantity), GROUP BY products_id
+   
+   - "avis clients" / "commentaires produits" / "évaluations"
+     → JOIN avec la table clic_reviews
+   
+   - "jamais achetés" / "produits non achetés" / "sans ventes"
+     → LEFT JOIN avec clic_orders_products WHERE products_id IS NULL
+   
+   - "notifications produits" / "alertes de stock" / "alertes clients"
+     → JOIN avec clic_products_notifications et clic_customers
+   
+   - "produits vus" / "plus consultés" / "consultations produits"
+     → Utiliser la table clic_products_viewed (table de suivi spéciale)
+   
+   - "marge bénéficiaire" / "calcul de marge"
+     → Calculer: (products_price - products_cost) / products_price * 100
+   
+   NIVEAU 4 - TERMES MÉTIER FRANÇAIS-ANGLAIS:
+   
+   Traduisez ces termes français vers leurs équivalents en base de données:
+   - "arrivage" / "nouveaux arrivages" → new arrivals (utiliser products_date_added récent OU products_date_available futur)
+   - "marge financière" / "marge bénéficiaire" → profit margin (calculer à partir de price et cost)
+   - "hors stock" / "rupture de stock" → out of stock (products_quantity = 0)
+   - "en stock" / "disponible" → in stock (products_quantity > 0)
+   - "produits vus" / "consultations" → viewed products (utiliser la table clic_products_viewed)
+   - "meilleurs produits" / "produits les plus vendus" → best selling (JOIN avec orders_products, SUM quantity)
+   - "produits non achetés" / "jamais achetés" → unpurchased products (LEFT JOIN orders_products WHERE NULL)
+   - "avis clients" / "commentaires" → customer reviews (utiliser la table clic_reviews)
+   - "surveillance" / "notifications" → product notifications (utiliser la table clic_products_notifications)
+   
+   RÈGLES CLÉS POUR GÉNÉRER LES JOINS:
+   1. Toujours utiliser des alias de table (p, pd, op, r, c, etc.) pour la clarté
+   2. Inclure le filtre language_id lors de la jointure avec les tables de description (products_description, categories_description, etc.)
+   3. Utiliser LEFT JOIN quand vous voulez inclure les enregistrements sans correspondance (ex: produits jamais achetés)
+   4. Utiliser INNER JOIN (ou juste JOIN) quand vous voulez seulement les enregistrements avec correspondance
+   5. Toujours inclure l'ID et le nom de l'entité pour l'identification
+   6. Pour les agrégations avec JOINs, inclure toutes les colonnes non agrégées dans GROUP BY
+   7. Laissez le schéma de base de données vous guider - cherchez les noms de colonnes correspondants pour identifier les relations
+   8. En cas de doute, vérifiez les commentaires du schéma pour des indices sur les relations
+
+13. COMPARAISONS TEMPORELLES: Lors de la comparaison de métriques entre périodes (ex: "mai vs février"):
     - Utiliser CASE WHEN avec SUM() pour créer des colonnes séparées
     - Exemple: SUM(CASE WHEN MONTH(date) = 5 THEN value ELSE 0 END) AS mai_revenue
     - Inclure un filtre YEAR pour éviter de mélanger les données d'années différentes
     - Retourner les résultats en une seule ligne avec plusieurs colonnes
 
-13. EXPRESSIONS TEMPORELLES DYNAMIQUES: Convertir en SQL en utilisant NOW() - INTERVAL X DAY
+14. EXPRESSIONS TEMPORELLES DYNAMIQUES: Convertir en SQL en utilisant NOW() - INTERVAL X DAY
     
     RÈGLE CRITIQUE - GESTION DES LIMITES D'ANNÉE:
     Lors de l'utilisation d'INTERVAL avec QUARTER() ou MONTH(), TOUJOURS appliquer le même INTERVAL à YEAR().
@@ -667,11 +761,8 @@ text_sql_generation_rules = RÈGLES DE GÉNÉRATION SQL:
              AND YEAR(date) = YEAR(CURDATE())
              → Cherche Q4 2026 (n'existe pas encore!)
 
-14. Assurer la correction de la requête et prévenir les injections SQL
-15. Alerter l'utilisateur si des incohérences sont détectées (doublons, sommes incorrectes, données manquantes)
-
-12. Assurer la correction de la requête et prévenir les injections SQL
-13. Alerter l'utilisateur si des incohérences sont détectées (doublons, sommes incorrectes, données manquantes)
+15. Assurer la correction de la requête et prévenir les injections SQL
+16. Alerter l'utilisateur si des incohérences sont détectées (doublons, sommes incorrectes, données manquantes)
 
 
 text_query_examples = EXEMPLES DE REQUÊTES COURANTES:
@@ -740,31 +831,20 @@ REQUÊTES COUNT AVEC FILTRES:
 
 - 'nombre de produits promotionnels' → SELECT COUNT(*) AS total FROM clic_specials WHERE status = 1
 
-REQUÊTES VALEUR COMMANDE (Complexité progressive):
+REQUÊTES VALEUR COMMANDE:
+**PATTERN**: Utiliser clic_orders_total avec class='TO' pour la valeur totale de commande
 
-NIVEAU 1 - Simple (ORDER BY + LIMIT):
 - 'commande la plus importante' / 'plus grosse commande' → 
   SELECT o.orders_id, o.customers_name, ot.value AS total
   FROM clic_orders o
   JOIN clic_orders_total ot ON o.orders_id = ot.orders_id AND ot.class = 'TO'
   ORDER BY ot.value DESC LIMIT 1
 
-NIVEAU 2 - Avec filtre date:
-- 'plus grosse commande ce mois' → 
-  SELECT o.orders_id, o.customers_name, ot.value AS total
-  FROM clic_orders o
-  JOIN clic_orders_total ot ON o.orders_id = ot.orders_id AND ot.class = 'TO'
-  WHERE MONTH(o.date_purchased) = MONTH(CURDATE())
-  ORDER BY ot.value DESC LIMIT 1
+- 'plus grosse commande ce mois' → Ajouter: WHERE MONTH(o.date_purchased) = MONTH(CURDATE())
+- 'top 5 plus grosses commandes' → Changer: LIMIT 5
+- 'top 10 plus grosses commandes' → Changer: LIMIT 10
 
-NIVEAU 3 - Résultats multiples (top N):
-- 'top 5 plus grosses commandes' → 
-  SELECT o.orders_id, o.customers_name, ot.value AS total
-  FROM clic_orders o
-  JOIN clic_orders_total ot ON o.orders_id = ot.orders_id AND ot.class = 'TO'
-  ORDER BY ot.value DESC LIMIT 5
-
-CLÉ: "importante/grosse/grande commande" = valeur monétaire la plus élevée (ot.class = 'TO')
+**CLÉ**: "importante/grosse/grande commande" = valeur monétaire la plus élevée (ot.class = 'TO')
 
 REQUÊTES DE STATUT (Les plus courantes):
 - 'commande en instance' → SELECT o.orders_id, o.customers_name, o.date_purchased, os.orders_status_name FROM clic_orders o JOIN clic_orders_status os ON o.orders_status = os.orders_status_id WHERE o.orders_status = 1 AND os.language_id = {{language_id}}
@@ -777,7 +857,7 @@ REQUÊTES DE STATUT (Les plus courantes):
 
 - 'commandes de cette semaine' → SELECT o.orders_id, o.customers_name, o.date_purchased FROM clic_orders o WHERE YEARWEEK(o.date_purchased, 1) = YEARWEEK(CURDATE(), 1)
 
-- 'clients actifs' → SELECT c.customers_id, c.customers_name, c.customers_email_address, cs.customers_status_name FROM clic_customers c JOIN clic_customers_status cs ON c.customers_status = cs.customers_status_id WHERE (cs.customers_status_name LIKE '%actif%' OR cs.customers_status_name LIKE '%active%') AND cs.language_id = {{language_id}}
+- 'clients actifs' → SELECT c.customers_id, c.customers_name, c.customers_email_address FROM clic_customers c WHERE c.customers_status = 1
 
 REQUÊTES D'AGRÉGATION:
 - 'nombre de produits par catégorie' → SELECT cd.categories_name, COUNT(p.products_id) AS product_count FROM clic_products p JOIN clic_products_to_categories ptc ON p.products_id = ptc.products_id JOIN clic_categories_description cd ON ptc.categories_id = cd.categories_id WHERE cd.language_id = {{language_id}} GROUP BY cd.categories_name ORDER BY product_count DESC
@@ -1002,3 +1082,389 @@ text_order_calculation = Calcul de commande
 text_multi_query_warning = Attention: Cette requête contient plusieurs sous-requêtes
 multi_token_rules = Règles multi-tokens
 text_response_format = Format de réponse
+
+
+text_statistical_analysis_rules = RÈGLES D'ANALYSE STATISTIQUE AVANCÉE
+
+🔬 CALCULS STATISTIQUES - MÉTHODOLOGIE ET PATTERNS SQL
+
+Lorsque les utilisateurs demandent des analyses statistiques avancées (coefficients saisonniers, moyennes mobiles, ratios, tendances), suivez ces patterns :
+
+═══════════════════════════════════════════════════════════════════════════════
+1. COEFFICIENTS SAISONNIERS (Seasonal Coefficients)
+═══════════════════════════════════════════════════════════════════════════════
+
+**Définition** : Ratio de la valeur de période à la valeur moyenne de période sur toutes les périodes.
+**Formule** : Coefficient Saisonnier = Valeur Période / Valeur Moyenne Période
+
+**Cas d'usage** : Identifier quelles périodes (mois, trimestres) performent au-dessus/en-dessous de la moyenne.
+
+**EXEMPLE RÉEL DE L'UTILISATEUR** :
+Requête : "Calcule les coefficients saisonniers, analyse les données de ventes sur tous les trimestres, puis calculer la moyenne trimestrielle et le ratio des valeurs individuelles à cette moyenne"
+
+**Pattern SQL** (Recommandé - Utilisant les Window Functions) :
+SELECT 
+    year,
+    quarter,
+    revenue,
+    AVG(revenue) OVER () AS avg_quarterly_revenue,
+    ROUND(revenue / AVG(revenue) OVER (), 4) AS seasonal_coefficient,
+    ROUND((revenue / AVG(revenue) OVER () - 1) * 100, 2) AS percent_vs_average,
+    CASE 
+        WHEN revenue / AVG(revenue) OVER () > 1.2 THEN 'Forte Saisonnalité Positive'
+        WHEN revenue / AVG(revenue) OVER () > 1.0 THEN 'Saisonnalité Positive'
+        WHEN revenue / AVG(revenue) OVER () < 0.8 THEN 'Forte Saisonnalité Négative'
+        WHEN revenue / AVG(revenue) OVER () < 1.0 THEN 'Saisonnalité Négative'
+        ELSE 'Moyenne'
+    END AS seasonality_category
+FROM (
+    SELECT 
+        YEAR(o.date_purchased) AS year,
+        QUARTER(o.date_purchased) AS quarter,
+        SUM(ot.value) AS revenue
+    FROM clic_orders o
+    JOIN clic_orders_total ot ON o.orders_id = ot.orders_id AND ot.class = 'ST'
+    WHERE o.orders_status >= 3
+    AND o.date_purchased >= DATE_SUB(CURDATE(), INTERVAL 8 QUARTER)
+    GROUP BY YEAR(o.date_purchased), QUARTER(o.date_purchased)
+) AS quarterly_data
+ORDER BY year DESC, quarter DESC
+
+**Guide d'Interprétation** :
+- Coefficient = 1.0 → Période exactement dans la moyenne
+- Coefficient > 1.0 → Période au-dessus de la moyenne (ex: 1.5 = 50% au-dessus)
+- Coefficient < 1.0 → Période en-dessous de la moyenne (ex: 0.8 = 20% en-dessous)
+- Coefficient > 1.2 → Forte saisonnalité positive (>20% au-dessus)
+- Coefficient < 0.8 → Forte saisonnalité négative (>20% en-dessous)
+
+**Pourquoi les Window Functions ?** :
+✅ Plus efficace (un seul passage sur les données)
+✅ Plus facile à lire et maintenir
+✅ Meilleures performances sur grands datasets
+✅ Évite les requêtes imbriquées complexes et CROSS JOINs
+
+**À ÉVITER** : Sous-requêtes imbriquées complexes avec CROSS JOIN comme :
+CROSS JOIN (
+    SELECT AVG(quarterly_revenue) AS average_quarterly_revenue
+    FROM (SELECT ...) AS quarterly_data
+) AS avg_data
+
+═══════════════════════════════════════════════════════════════════════════════
+2. MOYENNES MOBILES (Moving Averages)
+═══════════════════════════════════════════════════════════════════════════════
+
+**Définition** : Moyenne des valeurs sur une fenêtre temporelle glissante.
+**Cas d'usage** : Lisser les fluctuations court-terme, identifier les tendances.
+
+**EXEMPLE RÉEL DE L'UTILISATEUR** :
+Requête : "Analyse la tendance des ventes avec moyenne mobile sur 3 mois"
+
+**Pattern SQL** (moyenne mobile 3 mois) :
+SELECT 
+    year,
+    month,
+    revenue,
+    AVG(revenue) OVER (
+        ORDER BY year, month 
+        ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+    ) AS moving_avg_3_months,
+    revenue - AVG(revenue) OVER (
+        ORDER BY year, month 
+        ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+    ) AS deviation_from_ma,
+    CASE 
+        WHEN revenue > AVG(revenue) OVER (
+            ORDER BY year, month 
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ) * 1.1 THEN 'Au-dessus Tendance'
+        WHEN revenue < AVG(revenue) OVER (
+            ORDER BY year, month 
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ) * 0.9 THEN 'En-dessous Tendance'
+        ELSE 'Dans la Tendance'
+    END AS trend_status
+FROM (
+    SELECT 
+        YEAR(o.date_purchased) AS year,
+        MONTH(o.date_purchased) AS month,
+        SUM(ot.value) AS revenue
+    FROM clic_orders o
+    JOIN clic_orders_total ot ON o.orders_id = ot.orders_id AND ot.class = 'ST'
+    WHERE o.orders_status >= 3
+    AND o.date_purchased >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+    GROUP BY YEAR(o.date_purchased), MONTH(o.date_purchased)
+) AS monthly_data
+ORDER BY year DESC, month DESC
+
+**Fenêtres Courantes** :
+- MM 3 mois : Tendances court-terme (ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)
+- MM 6 mois : Tendances moyen-terme (ROWS BETWEEN 5 PRECEDING AND CURRENT ROW)
+- MM 12 mois : Tendances long-terme (ROWS BETWEEN 11 PRECEDING AND CURRENT ROW)
+
+═══════════════════════════════════════════════════════════════════════════════
+3. COMPARAISON ANNÉE PAR ANNÉE (Year-over-Year Comparison)
+═══════════════════════════════════════════════════════════════════════════════
+
+**Définition** : Comparer la même période sur différentes années.
+**Cas d'usage** : Identifier les tendances de croissance, patterns saisonniers entre années.
+
+**EXEMPLE RÉEL DE L'UTILISATEUR** :
+Requête : "Compare les ventes année par année par trimestre"
+
+**Pattern SQL** :
+SELECT 
+    year,
+    quarter,
+    revenue,
+    LAG(revenue, 4) OVER (ORDER BY year, quarter) AS same_quarter_last_year,
+    revenue - LAG(revenue, 4) OVER (ORDER BY year, quarter) AS yoy_change,
+    ROUND(
+        (revenue - LAG(revenue, 4) OVER (ORDER BY year, quarter)) / 
+        NULLIF(LAG(revenue, 4) OVER (ORDER BY year, quarter), 0) * 100, 
+        2
+    ) AS yoy_growth_percent,
+    CASE 
+        WHEN LAG(revenue, 4) OVER (ORDER BY year, quarter) IS NULL THEN 'Pas de Données Antérieures'
+        WHEN revenue > LAG(revenue, 4) OVER (ORDER BY year, quarter) * 1.1 THEN 'Forte Croissance'
+        WHEN revenue > LAG(revenue, 4) OVER (ORDER BY year, quarter) THEN 'Croissance'
+        WHEN revenue < LAG(revenue, 4) OVER (ORDER BY year, quarter) * 0.9 THEN 'Déclin'
+        ELSE 'Stable'
+    END AS yoy_trend
+FROM (
+    SELECT 
+        YEAR(o.date_purchased) AS year,
+        QUARTER(o.date_purchased) AS quarter,
+        SUM(ot.value) AS revenue
+    FROM clic_orders o
+    JOIN clic_orders_total ot ON o.orders_id = ot.orders_id AND ot.class = 'ST'
+    WHERE o.orders_status >= 3
+    AND o.date_purchased >= DATE_SUB(CURDATE(), INTERVAL 8 QUARTER)
+    GROUP BY YEAR(o.date_purchased), QUARTER(o.date_purchased)
+) AS quarterly_data
+ORDER BY year DESC, quarter DESC
+
+**Note** : 
+- LAG(revenue, 4) pour données trimestrielles (4 trimestres = 1 an)
+- LAG(revenue, 12) pour données mensuelles (12 mois = 1 an)
+- Utiliser NULLIF pour éviter division par zéro
+
+═══════════════════════════════════════════════════════════════════════════════
+4. ANALYSE DE VARIANCE ET OUTLIERS (Variance and Outlier Analysis)
+═══════════════════════════════════════════════════════════════════════════════
+
+**Définition** : Mesure de la dispersion des données autour de la moyenne.
+**Cas d'usage** : Évaluer la cohérence, identifier les outliers, mesurer la volatilité.
+
+**EXEMPLE RÉEL DE L'UTILISATEUR** :
+Requête : "Identifie les périodes avec forte variance dans les ventes"
+
+**Pattern SQL** :
+SELECT 
+    year,
+    quarter,
+    revenue,
+    AVG(revenue) OVER () AS mean_revenue,
+    STDDEV(revenue) OVER () AS stddev_revenue,
+    ROUND((revenue - AVG(revenue) OVER ()) / NULLIF(STDDEV(revenue) OVER (), 0), 2) AS z_score,
+    CASE 
+        WHEN ABS((revenue - AVG(revenue) OVER ()) / NULLIF(STDDEV(revenue) OVER (), 0)) > 2 
+        THEN 'Outlier (>2σ)'
+        WHEN ABS((revenue - AVG(revenue) OVER ()) / NULLIF(STDDEV(revenue) OVER (), 0)) > 1 
+        THEN 'Inhabituel (>1σ)'
+        ELSE 'Normal'
+    END AS outlier_status,
+    ROUND(
+        (revenue - AVG(revenue) OVER ()) / NULLIF(AVG(revenue) OVER (), 0) * 100, 
+        2
+    ) AS percent_deviation
+FROM (
+    SELECT 
+        YEAR(o.date_purchased) AS year,
+        QUARTER(o.date_purchased) AS quarter,
+        SUM(ot.value) AS revenue
+    FROM clic_orders o
+    JOIN clic_orders_total ot ON o.orders_id = ot.orders_id AND ot.class = 'ST'
+    WHERE o.orders_status >= 3
+    AND o.date_purchased >= DATE_SUB(CURDATE(), INTERVAL 8 QUARTER)
+    GROUP BY YEAR(o.date_purchased), QUARTER(o.date_purchased)
+) AS quarterly_data
+ORDER BY ABS((revenue - AVG(revenue) OVER ()) / NULLIF(STDDEV(revenue) OVER (), 0)) DESC
+
+**Interprétation Z-Score** :
+- |z| < 1 : Dans 1 écart-type (68% des données) - Normal
+- |z| < 2 : Dans 2 écarts-types (95% des données) - Acceptable
+- |z| > 2 : Outlier (valeur inhabituelle) - À investiguer
+- |z| > 3 : Outlier extrême - Vérifier qualité des données
+
+═══════════════════════════════════════════════════════════════════════════════
+5. CLASSEMENT ET ANALYSE DE PERFORMANCE (Ranking and Performance Analysis)
+═══════════════════════════════════════════════════════════════════════════════
+
+**Définition** : Classer les périodes par performance, identifier top/bottom performers.
+**Cas d'usage** : Identifier meilleures/pires périodes, définir benchmarks de performance.
+
+**EXEMPLE RÉEL DE L'UTILISATEUR** :
+Requête : "Quels sont les meilleurs trimestres de vente et leur classement"
+
+**Pattern SQL** :
+SELECT 
+    year,
+    quarter,
+    revenue,
+    RANK() OVER (ORDER BY revenue DESC) AS revenue_rank,
+    ROUND(PERCENT_RANK() OVER (ORDER BY revenue) * 100, 2) AS percentile,
+    NTILE(4) OVER (ORDER BY revenue) AS quartile,
+    CASE 
+        WHEN PERCENT_RANK() OVER (ORDER BY revenue) >= 0.75 THEN 'Top 25%'
+        WHEN PERCENT_RANK() OVER (ORDER BY revenue) >= 0.50 THEN 'Au-dessus Moyenne'
+        WHEN PERCENT_RANK() OVER (ORDER BY revenue) >= 0.25 THEN 'En-dessous Moyenne'
+        ELSE 'Bottom 25%'
+    END AS performance_category,
+    ROUND(revenue / SUM(revenue) OVER () * 100, 2) AS percent_of_total
+FROM (
+    SELECT 
+        YEAR(o.date_purchased) AS year,
+        QUARTER(o.date_purchased) AS quarter,
+        SUM(ot.value) AS revenue
+    FROM clic_orders o
+    JOIN clic_orders_total ot ON o.orders_id = ot.orders_id AND ot.class = 'ST'
+    WHERE o.orders_status >= 3
+    AND o.date_purchased >= DATE_SUB(CURDATE(), INTERVAL 8 QUARTER)
+    GROUP BY YEAR(o.date_purchased), QUARTER(o.date_purchased)
+) AS quarterly_data
+ORDER BY revenue DESC
+
+═══════════════════════════════════════════════════════════════════════════════
+6. BONNES PRATIQUES GÉNÉRALES POUR REQUÊTES STATISTIQUES
+═══════════════════════════════════════════════════════════════════════════════
+
+**1. Utiliser Window Functions au lieu de Sous-requêtes** :
+   ✅ BON : AVG(revenue) OVER ()
+   ❌ À ÉVITER : (SELECT AVG(revenue) FROM ...) AS avg_revenue
+   
+   **Pourquoi** : Les window functions sont plus efficaces et plus lisibles.
+
+**2. Toujours Inclure Colonnes de Contexte** :
+   - Inclure la valeur brute avec les métriques calculées
+   - Inclure identifiants de période (année, trimestre, mois)
+   - Inclure taille échantillon (COUNT) si pertinent
+
+**3. Arrondir Valeurs Décimales Appropriément** :
+   - Pourcentages : ROUND(value, 2) → 2 décimales
+   - Ratios/Coefficients : ROUND(value, 4) → 4 décimales
+   - Monnaie : ROUND(value, 2) → 2 décimales
+
+**4. Gérer Division par Zéro** :
+   - Toujours utiliser NULLIF(denominator, 0) dans divisions
+   - Exemple : revenue / NULLIF(avg_revenue, 0)
+
+**5. Fournir Guide d'Interprétation** :
+   - Toujours expliquer ce que la métrique calculée signifie
+   - Fournir seuils pour interprétation
+   - Inclure contexte sur qualité et limitations des données
+
+**6. Utiliser Fenêtres Temporelles Appropriées** :
+   - Analyse saisonnière : Minimum 2 ans (8 trimestres) pour patterns fiables
+   - Analyse tendance : Minimum 12 mois pour tendances significatives
+   - Moyennes mobiles : Taille fenêtre dépend fréquence données
+
+**7. Ajouter Indicateurs Catégoriels** :
+   - Utiliser CASE pour catégoriser résultats
+   - Exemples : 'Forte Croissance', 'Outlier', 'Top 25%'
+   - Facilite interprétation pour utilisateurs
+
+═══════════════════════════════════════════════════════════════════════════════
+7. DÉTECTION MOTS-CLÉS POUR ANALYSES STATISTIQUES
+═══════════════════════════════════════════════════════════════════════════════
+
+Quand requête utilisateur contient ces mots-clés, appliquer pattern statistique correspondant :
+
+**Analyse Saisonnière** :
+- "coefficient saisonnier" / "seasonal coefficient"
+- "saisonnalité" / "seasonality"
+- "variation saisonnière" / "seasonal variation"
+- "ratio à la moyenne" / "ratio to average"
+→ Utiliser Pattern 1 (Coefficients Saisonniers avec window functions)
+
+**Analyse Tendance** :
+- "tendance" / "trend"
+- "évolution" / "evolution"
+- "croissance" / "growth"
+- "moyenne mobile" / "moving average"
+→ Utiliser Pattern 2 (Moyennes Mobiles)
+
+**Comparaison** :
+- "comparaison annuelle" / "year-over-year"
+- "vs année précédente" / "vs previous year"
+- "année par année" / "year by year"
+→ Utiliser Pattern 3 (Comparaison YoY avec LAG)
+
+**Volatilité/Cohérence** :
+- "variance" / "variance"
+- "volatilité" / "volatility"
+- "écart-type" / "standard deviation"
+- "forte variance" / "high variance"
+→ Utiliser Pattern 4 (Analyse Variance et Outliers)
+
+**Classement Performance** :
+- "classement" / "ranking"
+- "meilleur" / "best"
+- "top" / "top"
+- "performance" / "performance"
+→ Utiliser Pattern 5 (Classement et Performance)
+
+═══════════════════════════════════════════════════════════════════════════════
+8. CONSIDÉRATIONS QUALITÉ DES DONNÉES
+═══════════════════════════════════════════════════════════════════════════════
+
+Avant analyse statistique, considérer :
+
+1. **Données Suffisantes** : Minimum 8 trimestres (2 ans) pour analyse saisonnière
+2. **Pas de Périodes Manquantes** : Vérifier gaps dans séries temporelles
+3. **Impact Outliers** : Valeurs extrêmes peuvent fausser moyennes et coefficients
+4. **Taille Échantillon** : Assurer suffisamment transactions par période
+
+**Quand mentionner qualité données** :
+- Si seulement 3 trimestres disponibles → "Données limitées, résultats peuvent être peu fiables"
+- Si une période a valeur très basse (comme 12 EUR) → "T1 2025 semble être outlier ou données incomplètes"
+- Si grande variance → "Forte volatilité données, considérer périodes plus longues"
+
+═══════════════════════════════════════════════════════════════════════════════
+9. TEMPLATES D'INTERPRÉTATION
+═══════════════════════════════════════════════════════════════════════════════
+
+**Pour Coefficients Saisonniers** :
+"L'analyse des coefficients saisonniers montre :
+- T[X] [ANNÉE] : Chiffre d'affaires de [MONTANT] avec coefficient [COEF] ([POURCENT]% vs moyenne)
+  → Cela représente une saisonnalité [FORTE/MODÉRÉE/FAIBLE] [positive/négative]
+- Chiffre d'affaires trimestriel moyen : [MONTANT_MOY]
+- Trimestre le plus fort : T[X] [ANNÉE] (coefficient : [MAX_COEF], [POURCENT]% au-dessus moyenne)
+- Trimestre le plus faible : T[X] [ANNÉE] (coefficient : [MIN_COEF], [POURCENT]% en-dessous moyenne)
+
+Cela indique des patterns saisonniers [FORTS/MODÉRÉS/FAIBLES], avec [DESCRIPTION]."
+
+**Pour Comparaison Année par Année** :
+"La comparaison année par année révèle :
+- T[X] [ANNÉE] : [MONTANT] ([+/-][POURCENT]% vs T[X] [ANNÉE_PRÉC])
+- Tendance globale : [CROISSANCE/DÉCLIN/STABLE]
+- Plus forte croissance : T[X] [ANNÉE] ([POURCENT]% augmentation)
+- [Insights additionnels sur patterns]"
+
+**Pour Analyse Variance** :
+"L'analyse de variance identifie :
+- Chiffre d'affaires moyen : [MONTANT_MOY]
+- Écart-type : [MONTANT_ÉCART]
+- Outliers détectés : [NOMBRE] périodes avec |z-score| > 2
+- Période la plus volatile : T[X] [ANNÉE] (z-score : [Z])
+- Cohérence données : [HAUTE/MODÉRÉE/FAIBLE] basée sur coefficient de variation"
+
+═══════════════════════════════════════════════════════════════════════════════
+
+**À RETENIR** : 
+- Toujours utiliser window functions pour efficacité (AVG() OVER (), LAG(), RANK(), etc.)
+- Fournir guide d'interprétation avec résultats
+- Utiliser NULLIF pour éviter division par zéro
+- Arrondir valeurs appropriément
+- Inclure indicateurs catégoriels (CASE statements)
+- Mentionner préoccupations qualité données si pertinent
+- Baser exemples sur vraies requêtes utilisateurs pour pertinence

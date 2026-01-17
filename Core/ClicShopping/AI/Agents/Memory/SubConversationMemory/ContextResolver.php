@@ -13,7 +13,7 @@ namespace ClicShopping\AI\Agents\Memory\SubConversationMemory;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Memory\EntityTypeRegistry;
-use ClicShopping\AI\Helper\EntityHelper;
+use ClicShopping\AI\Domains\CoreAI\Entity\EntityHelper;
 use LLPhant\Chat\Message;
 
 /**

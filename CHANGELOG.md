@@ -8,6 +8,7 @@ version4.12
       - Add parallel execution for multiple tasks
       - Parallel analysis optimized inside agent
       - Cache optimized et intelligent timeout management
+      - AI directory structure refactored
 
 ---------------
 version4.11

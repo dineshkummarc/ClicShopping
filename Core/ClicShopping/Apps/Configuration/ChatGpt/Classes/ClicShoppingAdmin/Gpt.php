@@ -101,32 +101,7 @@ class Gpt
    * Initialise les constantes nécessaires si elles n'existent pas
    */
   private static function initializeConstants(): void
-  {
-      /*
-    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL')) {
-      define('CLICSHOPPING_APP_CHATGPT_CH_MODEL', 'gpt-4');
-    }
-
-    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY')) {
-      define('CLICSHOPPING_APP_CHATGPT_CH_API_KEY', '');
-    }
-
-    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN')) {
-      define('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN', '4000');
-    }
-
-    if (!defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER')) {
-      define('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER', 'True');
-    }
-
-    if (!defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_API_KEY')) {
-      define('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_API_KEY', '');
-    }
-
-    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI')) {
-      define('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI', '');
-    }
-    */
+  {   
   }
 
   /**
@@ -184,50 +159,50 @@ class Gpt
       // GPT-5 SERIES (Future - Best Performance)
       // ============================================
       // Context: 200K+ | Embeddings: Yes | Reasoning: Yes | Analytics: Yes | Web Search: Yes
-      ['id' => 'gpt-5', 'text' => 'OpenAI GPT-5 (200K context, embeddings, reasoning, web search)'],
-      ['id' => 'gpt-5-mini', 'text' => 'OpenAI GPT-5-mini (200K context, embeddings, reasoning)'],
-      ['id' => 'gpt-5-nano', 'text' => 'OpenAI GPT-5-nano (128K context, no embeddings, reasoning)'],
+      ['id' => 'gpt-5', 'text' => 'OpenAI GPT-5 (200K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
+      ['id' => 'gpt-5-mini', 'text' => 'OpenAI GPT-5-mini (200K context, embeddings, reasoning)', 'provider' => 'openai'],
+      ['id' => 'gpt-5-nano', 'text' => 'OpenAI GPT-5-nano (128K context, no embeddings, reasoning)', 'provider' => 'openai'],
       
       // ============================================
       // GPT-4.1 SERIES (Latest Stable)
       // ============================================
       // Context: 128K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
-      ['id' => 'gpt-4.1-mini', 'text' => 'OpenAI GPT-4.1-mini (128K context, embeddings, reasoning)'],
-      ['id' => 'gpt-4.1-nano', 'text' => 'OpenAI GPT-4.1-nano (128K context, embeddings, reasoning)'],
+      ['id' => 'gpt-4.1-mini', 'text' => 'OpenAI GPT-4.1-mini (128K context, embeddings, reasoning)', 'provider' => 'openai'],
+      ['id' => 'gpt-4.1-nano', 'text' => 'OpenAI GPT-4.1-nano (128K context, embeddings, reasoning)', 'provider' => 'openai'],
       
       // ============================================
       // GPT-4o SERIES (Recommended - Production Ready)
       // ============================================
       // Context: 128K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
       // NOTE: gpt-4o is the REFERENCE MODEL - all features tested with this model
-      ['id' => 'gpt-4o', 'text' => 'OpenAI GPT-4o (128K context, embeddings, reasoning) ⭐ RECOMMENDED'],
-      ['id' => 'gpt-4o-mini', 'text' => 'OpenAI GPT-4o-mini (128K context, embeddings, reasoning, cost-effective)'],
+      ['id' => 'gpt-4o', 'text' => 'OpenAI GPT-4o (128K context, embeddings, reasoning) ⭐ RECOMMENDED', 'provider' => 'openai'],
+      ['id' => 'gpt-4o-mini', 'text' => 'OpenAI GPT-4o-mini (128K context, embeddings, reasoning, cost-effective)', 'provider' => 'openai'],
       
       // ============================================
       // ANTHROPIC MODELS (Alternative Provider)
       // ============================================
       // Context: 200K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
-      ['id' => 'anth-sonnet', 'text' => 'Anthropic Claude Sonnet 3.5 (200K context, embeddings, reasoning)'],
-      ['id' => 'anth-opus', 'text' => 'Anthropic Claude Opus (200K context, embeddings, reasoning)'],
-      ['id' => 'anth-haiku', 'text' => 'Anthropic Claude Haiku (200K context, embeddings, fast)'],
+      ['id' => 'anth-sonnet', 'text' => 'Anthropic Claude Sonnet 3.5 (200K context, embeddings, reasoning)', 'provider' => 'anthropic'],
+      ['id' => 'anth-opus', 'text' => 'Anthropic Claude Opus (200K context, embeddings, reasoning)', 'provider' => 'anthropic'],
+      ['id' => 'anth-haiku', 'text' => 'Anthropic Claude Haiku (200K context, embeddings, fast)', 'provider' => 'anthropic'],
       
       // ============================================
       // MISTRAL MODELS (Alternative Provider)
       // ============================================
       // Context: 128K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
-      ['id' => 'mistral-large-latest', 'text' => 'Mistral Large Latest (128K context, embeddings, reasoning)'],
+      ['id' => 'mistral-large-latest', 'text' => 'Mistral Large Latest (128K context, embeddings, reasoning)', 'provider' => 'mistral'],
       
       // ============================================
       // LM STUDIO MODELS (Local Deployment)
       // ============================================
       // Context: 16K | Embeddings: No | Reasoning: Yes | Analytics: Limited
       // NOTE: Local models have limited capabilities but provide privacy and cost benefits
-      ['id' => 'openai/gpt-oss-20b', 'text' => 'LM Studio openai/gpt-oss-20b (16K context, reasoning, local)'],
-      ['id' => 'openai/gpt-oss-120b', 'text' => 'LM Studio openai/gpt-oss-120b (120K context, reasoning, local)'],
+      ['id' => 'openai/gpt-oss-20b', 'text' => 'LM Studio openai/gpt-oss-20b (16K context, reasoning, local)', 'provider' => 'lmstudio'],
+      ['id' => 'openai/gpt-oss-120b', 'text' => 'LM Studio openai/gpt-oss-120b (120K context, reasoning, local)', 'provider' => 'lmstudio'],
 
 
-      ['id' => 'qwen/qwen3-4b', 'text' => 'LM Studio qwen3-4b (16K context, no reasoning, local)'],
-      ['id' => 'microsoft/phi-4', 'text' => 'LM Studio phi 4 (16K context, no reasoning, local)'],
+      ['id' => 'qwen/qwen3-4b', 'text' => 'LM Studio qwen3-4b (16K context, no reasoning, local)', 'provider' => 'lmstudio'],
+      ['id' => 'microsoft/phi-4', 'text' => 'LM Studio phi 4 (16K context, no reasoning, local)', 'provider' => 'lmstudio'],
     ];
 
     return $array;
@@ -245,6 +220,62 @@ class Gpt
     $menu = HTML::selectField('engine', $array, null, 'id="engine"');
 
     return $menu;
+  }
+
+  /**
+   * Get complete model-to-provider mapping
+   * 
+   * Generates a mapping from model IDs to provider names based on
+   * the model configurations in getGptModel().
+   * 
+   * This provides a single source of truth for model-provider relationships
+   * and makes it easy to verify all models have valid provider mappings.
+   * 
+   * @return array Associative array [model_id => provider_name]
+   * 
+   * Example:
+   * [
+   *   'gpt-4o' => 'openai',
+   *   'gpt-4o-mini' => 'openai',
+   *   'anth-sonnet' => 'anthropic',
+   *   'mistral-large-latest' => 'mistral',
+   *   'openai/gpt-oss-20b' => 'lmstudio',
+   * ]
+   */
+  private static function getModelProviderMap(): array
+  {
+    static $cache = null;
+
+    // Use cached mapping if available
+    if ($cache !== null) {
+      return $cache;
+    }
+
+    $models = self::getGptModel();
+    $mapping = [];
+
+    // Valid providers list
+    $validProviders = ['openai', 'anthropic', 'ollama', 'lmstudio', 'mistral', 'gemini'];
+
+    foreach ($models as $model) {
+      $modelId = $model['id'];
+      $provider = $model['provider'] ?? 'openai'; // Default to openai if missing
+
+      // Validate provider name
+      if (!in_array($provider, $validProviders)) {
+        if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True') {
+          error_log("WARNING: Invalid provider '$provider' for model '$modelId'. Using 'openai' as default.");
+        }
+        $provider = 'openai';
+      }
+
+      $mapping[$modelId] = $provider;
+    }
+
+    // Cache the mapping
+    $cache = $mapping;
+
+    return $mapping;
   }
 
   /**
@@ -1223,25 +1254,48 @@ class Gpt
   }
 
   /**
-   * Detect provider from engine/model name (INTERNAL HELPER)
+   * Detect LLM provider from model/engine name
    * 
-   * @param string|null $engine Model/engine name
-   * @return string Provider name (openai, anthropic, ollama, lmstudio, mistral)
+   * Uses model configuration data to determine which provider serves the model.
+   * Falls back to 'openai' for unknown models.
+   * 
+   * This method uses the model-to-provider mapping from getGptModel() configuration
+   * instead of hardcoded pattern matching, making it data-driven and easily extensible.
+   * 
+   * Valid provider names: openai, anthropic, ollama, lmstudio, mistral, gemini
+   * 
+   * Examples:
+   * - detectProviderFromEngine('gpt-4o') => 'openai'
+   * - detectProviderFromEngine('anth-sonnet') => 'anthropic'
+   * - detectProviderFromEngine('mistral-large-latest') => 'mistral'
+   * - detectProviderFromEngine('openai/gpt-oss-20b') => 'lmstudio'
+   * - detectProviderFromEngine('unknown-model') => 'openai' (fallback)
+   * - detectProviderFromEngine(null) => 'openai' (fallback)
+   * 
+   * @param string|null $engine Model/engine name (e.g., 'gpt-4o', 'anth-sonnet')
+   * @return string Provider name (openai, anthropic, ollama, lmstudio, mistral, gemini)
    */
   private static function detectProviderFromEngine(?string $engine): string
   {
-    if ($engine === null) {
-      return 'openai'; // Default
+    // Handle null or empty engine
+    if ($engine === null || trim($engine) === '') {
+      return 'openai'; // Default provider
     }
 
-    // Detect provider based on model name patterns
-    return match (true) {
-      str_contains($engine, 'claude') || str_contains($engine, 'anth-') => 'anthropic',
-      str_contains($engine, 'llama') || str_contains($engine, 'mistral:') => 'ollama',
-      str_contains($engine, 'gpt-oss') || str_contains($engine, 'openai/') => 'lmstudio',
-      str_contains($engine, 'mistral-') || str_contains($engine, 'pixtral') || str_contains($engine, 'ministral') || str_contains($engine, 'codestral') => 'mistral',
-      default => 'openai'
-    };
+    // Get model-provider mapping
+    $modelProviderMap = self::getModelProviderMap();
+
+    // Lookup provider for this model
+    if (isset($modelProviderMap[$engine])) {
+      return $modelProviderMap[$engine];
+    }
+
+    // Model not found - log warning and return default
+    if (defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True') {
+      error_log("WARNING: Unknown model '$engine' in detectProviderFromEngine(). Using default provider 'openai'.");
+    }
+
+    return 'openai'; // Default fallback
   }
 
   /**

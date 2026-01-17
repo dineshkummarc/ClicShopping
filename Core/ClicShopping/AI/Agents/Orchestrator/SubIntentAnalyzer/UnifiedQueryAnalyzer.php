@@ -12,7 +12,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
 use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
-use ClicShopping\AI\Domain\Semantics\Semantics;
+use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Domain\Patterns\Analytics\TemporalFinancialPreFilter;
@@ -53,7 +53,7 @@ use ClicShopping\AI\Domain\Patterns\Analytics\TemporalPeriodMappingPattern;
 #[AllowDynamicProperties]
 class UnifiedQueryAnalyzer
 {
-  private Semantics $semantics;
+  private SemanticAgent $semantics;
   private SecurityLogger $logger;
   private mixed $language;
   private bool $debug;
@@ -65,7 +65,7 @@ class UnifiedQueryAnalyzer
    */
   public function __construct(bool $debug = false)
   {
-    $this->semantics = new Semantics();
+    $this->semantics = new SemanticAgent();
     $this->logger = new SecurityLogger();
     $this->debug = $debug;
     

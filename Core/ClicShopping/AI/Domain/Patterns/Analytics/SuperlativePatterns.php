@@ -13,6 +13,8 @@ namespace ClicShopping\AI\Domain\Patterns\Analytics;
 
 use ClicShopping\AI\Domain\Patterns\Common\EntityKeywordsPattern;
 
+// DEPRECATED: Pattern-based logic superseded by Pure LLM Mode. Scheduled for removal in Q3 2026.
+
 class SuperlativePatterns
 {
   /**

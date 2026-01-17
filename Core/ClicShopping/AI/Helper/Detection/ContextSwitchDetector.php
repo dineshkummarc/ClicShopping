@@ -11,6 +11,7 @@ namespace ClicShopping\AI\Helper\Detection;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Domain\Patterns\Ecommerce\ContextResetPattern;
+use ClicShopping\AI\Domains\Semantic\Helper\SemanticDomainDetector;
 
 #[AllowDynamicProperties]
 class ContextSwitchDetector
