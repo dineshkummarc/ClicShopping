@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Domain\Semantics\Semantics;
 use ClicShopping\AI\Security\SecurityLogger;
@@ -49,6 +50,7 @@ use ClicShopping\AI\Domain\Patterns\Analytics\TemporalPeriodMappingPattern;
  * @since 2025-12-14
  * @version 2.0 (Pure LLM Mode)
  */
+#[AllowDynamicProperties]
 class UnifiedQueryAnalyzer
 {
   private Semantics $semantics;
@@ -140,24 +142,71 @@ class UnifiedQueryAnalyzer
       
       // Build unified prompt with (potentially pre-translated) query
       $prompt = $this->buildUnifiedPrompt($query);
+      
+      // 🔍 DEBUG: Log prompt loading verification
+      if ($this->debug) {
+        error_log("\n🔍 [UnifiedQueryAnalyzer] Prompt Loading Verification:");
+        error_log("  Prompt length: " . strlen($prompt) . " characters");
+        error_log("  Prompt preview (first 200 chars): " . substr($prompt, 0, 200) . "...");
+        error_log("  Query in prompt: " . (strpos($prompt, $query) !== false ? 'YES' : 'NO'));
+      }
 
       // Single GPT call for everything
       // Use Gpt::getGptResponse() instead of non-existent complete() method
+      
+      // 🔍 DEBUG: Log before GPT call
+      if ($this->debug) {
+        error_log("\n🔍 [UnifiedQueryAnalyzer] Calling Gpt::getGptResponse():");
+        error_log("  Max tokens: 300");
+        error_log("  Temperature: 0.0");
+        error_log("  Timestamp: " . date('Y-m-d H:i:s'));
+      }
+      
       $response = Gpt::getGptResponse(
         $prompt,
         300, // max_tokens
         0.0  // temperature (deterministic for consistency)
       );
 
+      // 🔍 DEBUG: Log GPT response
       if ($this->debug) {
+        error_log("\n🔍 [UnifiedQueryAnalyzer] GPT Response Received:");
+        error_log("  Response length: " . strlen($response) . " characters");
+        error_log("  Response type: " . gettype($response));
+        error_log("  Response preview (first 500 chars): " . substr($response, 0, 500));
+        error_log("  Full response: " . $response);
         error_log(sprintf($this->language->getDef('debug_gpt_response'), $response));
       }
 
       // Clean response (remove markdown code blocks if present)
       $cleanedResponse = $this->cleanJsonResponse($response);
+      
+      // 🔍 DEBUG: Log JSON cleaning
+      if ($this->debug) {
+        error_log("\n🔍 [UnifiedQueryAnalyzer] JSON Response Cleaning:");
+        error_log("  Original response length: " . strlen($response));
+        error_log("  Cleaned response length: " . strlen($cleanedResponse));
+        error_log("  Was cleaned: " . ($response !== $cleanedResponse ? 'YES' : 'NO'));
+        error_log("  Cleaned response: " . $cleanedResponse);
+      }
 
       // Parse JSON response
       $analysis = json_decode($cleanedResponse, true);
+      
+      // 🔍 DEBUG: Log JSON parsing
+      if ($this->debug) {
+        error_log("\n🔍 [UnifiedQueryAnalyzer] JSON Parsing:");
+        error_log("  JSON decode success: " . (json_last_error() === JSON_ERROR_NONE ? 'YES' : 'NO'));
+        if (json_last_error() !== JSON_ERROR_NONE) {
+          error_log("  JSON error: " . json_last_error_msg());
+          error_log("  JSON error code: " . json_last_error());
+        } else {
+          error_log("  Parsed array keys: " . implode(', ', array_keys($analysis ?? [])));
+          error_log("  Intent type in response: " . ($analysis['intent_type'] ?? 'NOT SET'));
+          error_log("  Language in response: " . ($analysis['language'] ?? 'NOT SET'));
+          error_log("  Confidence in response: " . ($analysis['confidence'] ?? 'NOT SET'));
+        }
+      }
 
       if (json_last_error() !== JSON_ERROR_NONE) {
         $this->logger->logStructured(
@@ -178,6 +227,18 @@ class UnifiedQueryAnalyzer
 
       // Validate and sanitize
       $analysis = $this->validateAnalysis($analysis, $query);
+      
+      // 🔍 DEBUG: Log intent_type detection after validation
+      if ($this->debug) {
+        error_log("\n🔍 [UnifiedQueryAnalyzer] Intent Type Detection (After Validation):");
+        error_log("  Detected intent_type: " . ($analysis['intent_type'] ?? 'NOT SET'));
+        error_log("  Confidence: " . ($analysis['confidence'] ?? 'NOT SET'));
+        error_log("  Detection method: " . ($analysis['detection_method'] ?? 'NOT SET'));
+        error_log("  Language: " . ($analysis['language'] ?? 'NOT SET'));
+        error_log("  Translated query: " . ($analysis['translated_query'] ?? 'NOT SET'));
+        error_log("  Entity types: " . implode(', ', $analysis['entity_type'] ?? []));
+        error_log("  Time constraint: " . ($analysis['time_constraint'] ?? 'NOT SET'));
+      }
 
       // ⚠️ CRITICAL: Apply TemporalFinancialPreFilter post-filter (EXCEPTION to Pure LLM)
       // This pattern-based post-filter overrides LLM classification for temporal financial queries
@@ -193,6 +254,15 @@ class UnifiedQueryAnalyzer
       
       // Log when pattern overrides LLM classification
       if ($analysis['intent_type'] !== $originalIntentType || $analysis['confidence'] !== $originalConfidence) {
+        // 🔍 DEBUG: Enhanced logging for pattern override
+        if ($this->debug) {
+          error_log("\n🔍 [UnifiedQueryAnalyzer] TemporalFinancialPreFilter Override:");
+          error_log("  BEFORE - Intent: {$originalIntentType}, Confidence: {$originalConfidence}");
+          error_log("  AFTER  - Intent: {$analysis['intent_type']}, Confidence: {$analysis['confidence']}");
+          error_log("  Override reason: " . ($analysis['override_reason'] ?? 'unknown'));
+          error_log("  Detection method: " . ($analysis['detection_method'] ?? 'unknown'));
+        }
+        
         $this->logger->logStructured(
           'info',
           'UnifiedQueryAnalyzer',
@@ -231,6 +301,15 @@ class UnifiedQueryAnalyzer
       
       // Log when pattern overrides LLM classification
       if ($analysis['intent_type'] !== $originalIntentType || $analysis['confidence'] !== $originalConfidence) {
+        // 🔍 DEBUG: Enhanced logging for pattern override
+        if ($this->debug) {
+          error_log("\n🔍 [UnifiedQueryAnalyzer] WebSearchPostFilter Override:");
+          error_log("  BEFORE - Intent: {$originalIntentType}, Confidence: {$originalConfidence}");
+          error_log("  AFTER  - Intent: {$analysis['intent_type']}, Confidence: {$analysis['confidence']}");
+          error_log("  Override reason: " . ($analysis['override_reason'] ?? 'unknown'));
+          error_log("  Detection method: " . ($analysis['detection_method'] ?? 'unknown'));
+        }
+        
         $this->logger->logStructured(
           'info',
           'UnifiedQueryAnalyzer',
@@ -269,6 +348,15 @@ class UnifiedQueryAnalyzer
       
       // Log when pattern overrides LLM classification
       if ($analysis['intent_type'] !== $originalIntentType || $analysis['confidence'] !== $originalConfidence) {
+        // 🔍 DEBUG: Enhanced logging for pattern override
+        if ($this->debug) {
+          error_log("\n🔍 [UnifiedQueryAnalyzer] SuperlativePostFilter Override:");
+          error_log("  BEFORE - Intent: {$originalIntentType}, Confidence: {$originalConfidence}");
+          error_log("  AFTER  - Intent: {$analysis['intent_type']}, Confidence: {$analysis['confidence']}");
+          error_log("  Override reason: " . ($analysis['override_reason'] ?? 'unknown'));
+          error_log("  Detection method: " . ($analysis['detection_method'] ?? 'unknown'));
+        }
+        
         $this->logger->logStructured(
           'info',
           'UnifiedQueryAnalyzer',
@@ -307,6 +395,17 @@ class UnifiedQueryAnalyzer
       
       // Log when pattern overrides LLM classification
       if ($analysis['intent_type'] !== $originalIntentType || $analysis['confidence'] !== $originalConfidence) {
+        // 🔍 DEBUG: Enhanced logging for pattern override
+        if ($this->debug) {
+          error_log("\n🔍 [UnifiedQueryAnalyzer] MultiTemporalPostFilter Override:");
+          error_log("  BEFORE - Intent: {$originalIntentType}, Confidence: {$originalConfidence}");
+          error_log("  AFTER  - Intent: {$analysis['intent_type']}, Confidence: {$analysis['confidence']}");
+          error_log("  Override reason: " . ($analysis['override_reason'] ?? 'unknown'));
+          error_log("  Detection method: " . ($analysis['detection_method'] ?? 'unknown'));
+          error_log("  Temporal periods: " . implode(', ', $analysis['temporal_periods'] ?? []));
+          error_log("  Temporal connectors: " . implode(', ', $analysis['temporal_connectors'] ?? []));
+        }
+        
         $this->logger->logStructured(
           'info',
           'UnifiedQueryAnalyzer',
@@ -344,6 +443,27 @@ class UnifiedQueryAnalyzer
       $analysis['original_query'] = $originalQuery;
       $analysis['was_translated'] = ($analysis['language'] !== 'en') || ($originalQuery !== $query);
       $analysis['analysis_time_ms'] = (microtime(true) - $startTime) * 1000;
+      
+      // 🔍 DEBUG: Final analysis summary
+      if ($this->debug) {
+        error_log("\n🔍 [UnifiedQueryAnalyzer] FINAL ANALYSIS SUMMARY:");
+        error_log("  ========================================");
+        error_log("  Original query: " . $originalQuery);
+        error_log("  Translated query: " . $analysis['translated_query']);
+        error_log("  Language: " . $analysis['language']);
+        error_log("  Was translated: " . ($analysis['was_translated'] ? 'YES' : 'NO'));
+        error_log("  ========================================");
+        error_log("  🎯 FINAL INTENT TYPE: " . $analysis['intent_type']);
+        error_log("  🎯 FINAL CONFIDENCE: " . $analysis['confidence']);
+        error_log("  🎯 DETECTION METHOD: " . ($analysis['detection_method'] ?? 'unknown'));
+        error_log("  ========================================");
+        error_log("  Entity types: " . implode(', ', $analysis['entity_type'] ?? []));
+        error_log("  Time constraint: " . $analysis['time_constraint']);
+        error_log("  Status keywords: " . implode(', ', $analysis['status_keywords'] ?? []));
+        error_log("  Sub-queries count: " . count($analysis['sub_queries'] ?? []));
+        error_log("  Analysis time: " . round($analysis['analysis_time_ms'], 2) . " ms");
+        error_log("  ========================================\n");
+      }
 
       $this->logger->logStructured(
         'info',
@@ -483,11 +603,26 @@ class UnifiedQueryAnalyzer
    */
   private function buildUnifiedPrompt(string $query): string
   {
-    // Get prompt template from language file with query parameter
-    $prompt = $this->language->getDef('unified_analyzer_prompt', ['query' => $query]);
+    // Build prompt by concatenating sections from language file
+    // This approach allows better maintainability and avoids placeholder issues
+    
+    $prompt = '';
+    $prompt .= $this->language->getDef('unified_analyzer_prompt_header') . "\n\n";
+    $prompt .= $this->language->getDef('unified_analyzer_prompt_anti_hallucination') . "\n\n";
+    $prompt .= $this->language->getDef('unified_analyzer_prompt_multi_temporal') . "\n\n";
+    $prompt .= $this->language->getDef('unified_analyzer_prompt_compound') . "\n\n";
+    $prompt .= $this->language->getDef('unified_analyzer_prompt_basic_analytics') . "\n\n";
+    $prompt .= $this->language->getDef('unified_analyzer_prompt_classification') . "\n\n";
+    $prompt .= $this->language->getDef('unified_analyzer_prompt_output_format') . "\n\n";
+    $prompt .= $this->language->getDef('unified_analyzer_prompt_query_section') . "\n";
+    $prompt .= $query . "\n\n";  // Insert the actual query here
+    $prompt .= $this->language->getDef('unified_analyzer_prompt_final_instructions') . "\n";
     
     if ($this->debug) {
-      error_log("UnifiedQueryAnalyzer: Using prompt from language file with template substitution");
+      error_log("UnifiedQueryAnalyzer: Built prompt from language file sections");
+      error_log("UnifiedQueryAnalyzer: Query to analyze: {$query}");
+      error_log("UnifiedQueryAnalyzer: Total prompt length: " . strlen($prompt) . " characters");
+      error_log("UnifiedQueryAnalyzer: Prompt contains query: " . (strpos($prompt, $query) !== false ? 'YES' : 'NO'));
     }
     
     return $prompt;

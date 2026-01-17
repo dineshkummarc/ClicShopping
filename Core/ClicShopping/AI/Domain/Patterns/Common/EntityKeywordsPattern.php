@@ -17,6 +17,9 @@
 
 namespace ClicShopping\AI\Domain\Patterns\Common;
 
+use AllowDynamicProperties;
+
+#[AllowDynamicProperties]
 class EntityKeywordsPattern
 {
   /**

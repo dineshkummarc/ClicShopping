@@ -17,11 +17,12 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Helper\Detection\ContextSwitchDetector;
 use ClicShopping\AI\Helper\Detection\SemanticDomainDetector;
 
-
+#[AllowDynamicProperties]
 class ContextManager
 {
   private SecurityLogger $securityLogger;

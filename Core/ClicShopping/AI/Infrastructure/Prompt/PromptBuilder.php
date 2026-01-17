@@ -8,8 +8,9 @@
  *
  */
 
-namespace ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent;
+namespace ClicShopping\AI\Infrastructure\Prompt;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Cache as OMCache;
 use ClicShopping\AI\Infrastructure\Schema\SchemaRetriever;
@@ -17,18 +18,20 @@ use ClicShopping\AI\Infrastructure\Schema\SchemaRetriever;
 /**
  * PromptBuilder
  * 
- * Centralizes all prompt construction logic for AnalyticsAgent
+ * Centralizes all prompt construction logic for multiple agent types
+ * Supports: Analytics, Semantic, WebSearch, Hybrid agents
  * Handles system message loading, caching, and enrichment
  * 
  * Responsibilities:
- * - System message construction from language definitions
- * - Static caching of system message (shared across instances)
+ * - System message construction from language definitions (per agent type)
+ * - Static caching of system message (shared across instances, per agent type)
  * - Question enrichment with feedback context
  * - Question enrichment with last SQL query
  * - Template management and placeholder replacement
  * 
- * @package ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent
+ * @package ClicShopping\AI\Infrastructure\Prompt
  */
+#[AllowDynamicProperties]
 class PromptBuilder
 {
   private mixed $language;
@@ -38,9 +41,13 @@ class PromptBuilder
   private ?SchemaRetriever $schemaRetriever = null;
   private string $currentQuery = '';
   private string $modelName = 'gpt-4o';
+  private string $agentType = 'analytics';
   
-  // Static cache for system message (shared across instances)
-  private static ?string $systemMessageCache = null;
+  // Supported agent types
+  private const AGENT_TYPES = ['analytics', 'semantic', 'websearch', 'hybrid'];
+  
+  // Static cache for system messages (per agent type)
+  private static array $systemMessageCache = [];
   
   /**
    * Constructor
@@ -75,32 +82,40 @@ class PromptBuilder
   /**
    * Get system message (with static and OM caching)
    * 
-   * Loads system message once per PHP process using static cache
+   * Loads system message once per PHP process using static cache (per agent type)
    * Also checks OM cache for persistence across requests
    * Subsequent calls return cached version
    * 
    * NOTE: When Schema RAG is enabled, caching is disabled because
    * the system message is query-specific
    * 
+   * @param string $agentType Agent type (analytics, semantic, websearch, hybrid)
    * @param string $query User query (optional, for Schema RAG)
    * @param string $modelName Model name (optional, for Schema RAG)
    * @return string Complete system message
+   * @throws \InvalidArgumentException If agent type is invalid
    */
-  public function getSystemMessage(string $query = '', string $modelName = 'gpt-4o'): string
+  public function getSystemMessage(string $agentType = 'analytics', string $query = '', string $modelName = 'gpt-4o'): string
   {
-    // Store query and model for buildSystemMessage()
+    // Validate agent type
+    if (!in_array($agentType, self::AGENT_TYPES)) {
+      throw new \InvalidArgumentException("Invalid agent type: {$agentType}. Supported types: " . implode(', ', self::AGENT_TYPES));
+    }
+    
+    // Store parameters for buildSystemMessage()
+    $this->agentType = $agentType;
     $this->currentQuery = $query;
     $this->modelName = $modelName;
     
-    // If Schema RAG is enabled and we have a query, skip caching
+    // If Schema RAG is enabled and we have a query, skip caching (analytics only)
     $useSchemaRAG = CLICSHOPPING_APP_CHATGPT_RA_SCHEMA_RAG;
     
-    if ($useSchemaRAG && !empty($query)) {
+    if ($agentType === 'analytics' && $useSchemaRAG && !empty($query)) {
       // Build query-specific system message (no caching)
-      $systemMessage = $this->buildSystemMessage();
+      $systemMessage = $this->buildSystemMessage($agentType);
       
       if ($this->debug) {
-        error_log("[PromptBuilder] Built query-specific system message with Schema RAG (" . strlen($systemMessage) . " chars)");
+        error_log("[PromptBuilder] Built query-specific system message for {$agentType} with Schema RAG (" . strlen($systemMessage) . " chars)");
       }
       
       return $systemMessage;
@@ -109,45 +124,45 @@ class PromptBuilder
     // Standard caching flow (for full schema or when no query provided)
     
     // Check static cache first (fastest)
-    if (self::$systemMessageCache !== null) {
+    if (isset(self::$systemMessageCache[$agentType])) {
       if ($this->debug) {
-        error_log("[PromptBuilder] Using static cached system message");
+        error_log("[PromptBuilder] Using static cached system message for {$agentType}");
       }
-      return self::$systemMessageCache;
+      return self::$systemMessageCache[$agentType];
     }
     
     // Check OM cache if enabled
     if ($this->useCache === 'True') {
-      $cacheKey = 'analytics_system_prompt_en_' . $this->languageId;
+      $cacheKey = "{$agentType}_system_prompt_en_{$this->languageId}";
       $cache = new OMCache($cacheKey);
       $cached = $cache->get();
       
       if (!empty($cached)) {
         if ($this->debug) {
-          error_log("[PromptBuilder] Using OM cached system message (length: " . strlen($cached) . ")");
+          error_log("[PromptBuilder] Using OM cached system message for {$agentType} (length: " . strlen($cached) . ")");
         }
         
         // Store in static cache for subsequent calls
-        self::$systemMessageCache = $cached;
+        self::$systemMessageCache[$agentType] = $cached;
         return $cached;
       }
     }
     
     // Build system message
-    $systemMessage = $this->buildSystemMessage();
+    $systemMessage = $this->buildSystemMessage($agentType);
     
     // Store in static cache
-    self::$systemMessageCache = $systemMessage;
+    self::$systemMessageCache[$agentType] = $systemMessage;
     
     // Store in OM cache if enabled
     if ($this->useCache === 'True') {
-      $cacheKey = 'analytics_system_prompt_en_' . $this->languageId;
+      $cacheKey = "{$agentType}_system_prompt_en_{$this->languageId}";
       $cache = new OMCache($cacheKey);
       $cache->save($systemMessage);
     }
     
     if ($this->debug) {
-      error_log("[PromptBuilder] Built new system message (" . strlen($systemMessage) . " chars)");
+      error_log("[PromptBuilder] Built new system message for {$agentType} (" . strlen($systemMessage) . " chars)");
     }
     
     return $systemMessage;
@@ -156,13 +171,38 @@ class PromptBuilder
   /**
    * Build complete system message
    * 
+   * Routes to agent-specific builder based on agent type
+   * 
+   * @param string $agentType Agent type (analytics, semantic, websearch, hybrid)
+   * @return string Complete system message with placeholders replaced
+   * @throws \InvalidArgumentException If agent type is invalid
+   */
+  private function buildSystemMessage(string $agentType): string
+  {
+    switch ($agentType) {
+      case 'analytics':
+        return $this->buildSystemMessageAnalytics();
+      case 'semantic':
+        return $this->buildSystemMessageSemantics();
+      case 'websearch':
+        return $this->buildSystemMessageWebSearch();
+      case 'hybrid':
+        return $this->buildSystemMessageHybrid();
+      default:
+        throw new \InvalidArgumentException("Invalid agent type: {$agentType}");
+    }
+  }
+  
+  /**
+   * Build Analytics agent system message
+   * 
    * Loads all language definitions and constructs the complete prompt
    * Combines multiple prompt components in the correct order
    * Replaces placeholders with actual values
    * 
    * @return string Complete system message with placeholders replaced
    */
-  private function buildSystemMessage(): string
+  private function buildSystemMessageAnalytics(): string
   {
     // Load language definitions from ClicShoppingAdmin/Core/languages/main.txt
     // This loads the AnalyticsAgent prompt definitions in English
@@ -244,6 +284,167 @@ class PromptBuilder
       error_log("Contains 'products_quantity': " . (strpos($finalMessage, 'products_quantity') !== false ? 'YES' : 'NO'));
       error_log("First 500 chars: " . substr($finalMessage, 0, 500));
       error_log("================================================================================");
+    }
+    
+    return $finalMessage;
+  }
+  
+  /**
+   * Build Semantic agent system message
+   * 
+   * Loads semantic-specific language definitions and constructs the prompt
+   * Includes: embedding search rules, similarity thresholds, vector matching
+   * 
+   * @return string Complete system message with placeholders replaced
+   */
+  private function buildSystemMessageSemantics(): string
+  {
+    // Load language definitions for Semantic agent
+    $this->language->loadDefinitions('rag_semantic_agent', 'en', null, 'ClicShoppingAdmin');
+    
+    // Get semantic-specific components
+    $baseSystemMessage = $this->language->getDef('text_system_message');
+    $embeddingSearchRules = $this->language->getDef('text_embedding_search_rules');
+    $similarityThresholds = $this->language->getDef('text_similarity_thresholds');
+    $vectorMatching = $this->language->getDef('text_vector_matching');
+    
+    // Get shared components
+    $securityGuidelines = $this->language->getDef('text_security_guidelines');
+    $entityMetadataGuidelines = $this->language->getDef('text_entity_metadata_guidelines');
+    $multiTokenRules = $this->language->getDef('multi_token_rules');
+    $responseFormat = $this->language->getDef('text_response_format');
+    $text_rag_system_message_template = $this->language->getDef('text_rag_system_message_template');
+    
+    // Construct complete message
+    $completeSystemMessage = $baseSystemMessage . "\n\n" .
+      $securityGuidelines . "\n\n" .
+      $embeddingSearchRules . "\n\n" .
+      $similarityThresholds . "\n\n" .
+      $vectorMatching . "\n\n" .
+      $entityMetadataGuidelines . "\n\n" .
+      $responseFormat . "\n\n" .
+      $text_rag_system_message_template . "\n\n" .
+      $multiTokenRules . "\n\n";
+    
+    // Replace placeholders
+    $finalMessage = str_replace('{{language_id}}', (string)$this->languageId, $completeSystemMessage);
+    
+    if ($this->debug) {
+      error_log("[PromptBuilder] Built Semantic agent message (" . strlen($finalMessage) . " chars)");
+    }
+    
+    return $finalMessage;
+  }
+  
+  /**
+   * Build WebSearch agent system message
+   * 
+   * Loads websearch-specific language definitions and constructs the prompt
+   * Includes: external search rules, citation rules, source validation
+   * 
+   * @return string Complete system message with placeholders replaced
+   */
+  private function buildSystemMessageWebSearch(): string
+  {
+    // Load language definitions for WebSearch agent
+    $this->language->loadDefinitions('rag_websearch_agent', 'en', null, 'ClicShoppingAdmin');
+    
+    // Get websearch-specific components
+    $baseSystemMessage = $this->language->getDef('text_system_message');
+    $externalSearchRules = $this->language->getDef('text_external_search_rules');
+    $citationRules = $this->language->getDef('text_citation_rules');
+    $sourceValidation = $this->language->getDef('text_source_validation');
+    
+    // Get shared components
+    $securityGuidelines = $this->language->getDef('text_security_guidelines');
+    $entityMetadataGuidelines = $this->language->getDef('text_entity_metadata_guidelines');
+    $multiTokenRules = $this->language->getDef('multi_token_rules');
+    $responseFormat = $this->language->getDef('text_response_format');
+    $text_rag_system_message_template = $this->language->getDef('text_rag_system_message_template');
+    
+    // Construct complete message
+    $completeSystemMessage = $baseSystemMessage . "\n\n" .
+      $securityGuidelines . "\n\n" .
+      $externalSearchRules . "\n\n" .
+      $citationRules . "\n\n" .
+      $sourceValidation . "\n\n" .
+      $entityMetadataGuidelines . "\n\n" .
+      $responseFormat . "\n\n" .
+      $text_rag_system_message_template . "\n\n" .
+      $multiTokenRules . "\n\n";
+    
+    // Replace placeholders
+    $finalMessage = str_replace('{{language_id}}', (string)$this->languageId, $completeSystemMessage);
+    
+    if ($this->debug) {
+      error_log("[PromptBuilder] Built WebSearch agent message (" . strlen($finalMessage) . " chars)");
+    }
+    
+    return $finalMessage;
+  }
+  
+  /**
+   * Build Hybrid agent system message
+   * 
+   * Loads hybrid-specific language definitions and constructs the prompt
+   * Includes: query splitting, mode selection, result aggregation, plus analytics rules
+   * 
+   * @return string Complete system message with placeholders replaced
+   */
+  private function buildSystemMessageHybrid(): string
+  {
+    // Load language definitions for Hybrid agent
+    $this->language->loadDefinitions('rag_hybrid_agent', 'en', null, 'ClicShoppingAdmin');
+    
+    // Get hybrid-specific components
+    $baseSystemMessage = $this->language->getDef('text_system_message');
+    $querySplittingRules = $this->language->getDef('text_query_splitting_rules');
+    $modeSelection = $this->language->getDef('text_mode_selection');
+    $resultAggregation = $this->language->getDef('text_result_aggregation');
+    
+    // Get analytics components (hybrid needs SQL generation)
+    $orderCalculation = $this->language->getDef('text_order_calculation');
+    $queryExamples = $this->language->getDef('text_query_examples');
+    $sqlGenerationRules = $this->language->getDef('text_sql_generation_rules');
+    $aggregationRules = $this->language->getDef('text_aggregation_rules');
+    $sqlFormatInstructions = $this->language->getDef('text_sql_format_instructions');
+    $text_multi_query_warning = $this->language->getDef('text_multi_query_warning');
+    $text_rag_system_analytics_rules = $this->language->getDef('text_rag_system_analytics_rules');
+    
+    // Get shared components
+    $securityGuidelines = $this->language->getDef('text_security_guidelines');
+    $entityMetadataGuidelines = $this->language->getDef('text_entity_metadata_guidelines');
+    $multiTokenRules = $this->language->getDef('multi_token_rules');
+    $responseFormat = $this->language->getDef('text_response_format');
+    $text_rag_system_message_template = $this->language->getDef('text_rag_system_message_template');
+    
+    // Get table structure (hybrid needs schema for SQL)
+    $tableStructureInstructions = $this->getTableStructureInstructions();
+    
+    // Construct complete message
+    $completeSystemMessage = $baseSystemMessage . "\n\n" .
+      $securityGuidelines . "\n\n" .
+      $text_rag_system_analytics_rules . "\n\n" .
+      $querySplittingRules . "\n\n" .
+      $modeSelection . "\n\n" .
+      $resultAggregation . "\n\n" .
+      $tableStructureInstructions . "\n\n" .
+      $entityMetadataGuidelines . "\n\n" .
+      $aggregationRules . "\n\n" .
+      $sqlGenerationRules . "\n\n" .
+      $orderCalculation . "\n\n" .
+      $queryExamples . "\n\n" .
+      $sqlFormatInstructions . "\n\n" .
+      $text_multi_query_warning . "\n\n" .
+      $responseFormat . "\n\n" .
+      $text_rag_system_message_template . "\n\n" .
+      $multiTokenRules . "\n\n";
+    
+    // Replace placeholders
+    $finalMessage = str_replace('{{language_id}}', (string)$this->languageId, $completeSystemMessage);
+    
+    if ($this->debug) {
+      error_log("[PromptBuilder] Built Hybrid agent message (" . strlen($finalMessage) . " chars)");
     }
     
     return $finalMessage;
@@ -466,13 +667,20 @@ class PromptBuilder
   /**
    * Clear static cache (for testing)
    * 
-   * Clears the static system message cache
+   * Clears the static system message cache for one or all agent types
    * Used primarily for testing to ensure fresh builds
    * 
+   * @param string|null $agentType Agent type to clear, or null to clear all
    * @return void
    */
-  public static function clearCache(): void
+  public static function clearCache(?string $agentType = null): void
   {
-    self::$systemMessageCache = null;
+    if ($agentType === null) {
+      // Clear all caches
+      self::$systemMessageCache = [];
+    } else {
+      // Clear specific agent cache
+      unset(self::$systemMessageCache[$agentType]);
+    }
   }
 }

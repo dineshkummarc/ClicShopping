@@ -10,10 +10,13 @@
 
 namespace ClicShopping\AI\Helper\Formatter\SubResultFormatters;
 
+use AllowDynamicProperties;
+
 /**
  * FormatterRouter - Intelligent routing system to select the appropriate formatter
  * based on query complexity and result type
  */
+#[AllowDynamicProperties]
 class FormatterRouter
 {
   private array $formatters = [];

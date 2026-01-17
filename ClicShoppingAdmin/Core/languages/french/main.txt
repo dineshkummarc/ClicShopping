@@ -663,3 +663,7 @@ text_query_too_ambiguous = Votre requête est trop ambiguë. Veuillez être plus
 text_rag_insufficient_information = Je n'ai pas suffisamment d'informations fiables pour répondre à cette question avec précision. Les informations disponibles dans ma base de connaissances sont insuffisantes ou pas directement pertinentes à votre requête.
 text_rag_source_insufficient_information = Informations Insuffisantes - Réponse rejetée en raison d'un score de fiabilité faible
 
+
+
+# Missing prompts added 2026-01-13
+text_analyze_sql_error = Analyser l'erreur SQL: {{error}} pour la requête: {{query}}

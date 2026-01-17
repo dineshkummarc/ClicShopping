@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Security\Validation;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 
 /**
@@ -30,6 +31,8 @@ use ClicShopping\AI\Security\SecurityLogger;
  * @see .kiro/specs/current/pattern-removal-and-performance/tasks.md
  * @see kiro_documentation/2025_12_27/hallucination_detection_system_design.md
  */
+
+#[AllowDynamicProperties]
 class ConfidenceScoreCalculator
 {
   private SecurityLogger $logger;

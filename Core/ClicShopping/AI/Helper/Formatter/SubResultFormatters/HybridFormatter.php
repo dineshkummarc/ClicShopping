@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Helper\Formatter\SubResultFormatters;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\LlmGuardrails;
@@ -24,6 +25,7 @@ use ClicShopping\AI\Security\LlmGuardrails;
  * @since 2025-12-30
  * @version 2.0 - Internationalized 2025-12-30
  */
+#[AllowDynamicProperties]
 class HybridFormatter extends AbstractFormatter
 {
   private $language;

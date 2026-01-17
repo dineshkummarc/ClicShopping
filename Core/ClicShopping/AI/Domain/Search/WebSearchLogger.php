@@ -8,6 +8,7 @@
 
 namespace ClicShopping\AI\Domain\Search;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTTP;
@@ -23,6 +24,7 @@ use DateTimeImmutable;
  * Gère la sauvegarde des requêtes de recherche web et de leurs résultats.
  * Sépare les données web_search des données RAG internes (table gpt).
  */
+#[AllowDynamicProperties]
 class WebSearchLogger
 {
   private $db;

@@ -8,8 +8,10 @@
 
 namespace ClicShopping\AI\Domain\Search;
 
+use AllowDynamicProperties;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Infrastructure\Cache\Cache;
+use ClicShopping\AI\Infrastructure\Cache\SearchCacheManager;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Domain\Search\WebSearchLogger;
 use ClicShopping\OM\Registry;
@@ -24,6 +26,7 @@ use ClicShopping\OM\Registry;
  * - Intégration avec SearchCacheManager (Learning RAG)
  * - Support multi-moteurs (Google, Bing, DuckDuckGo)
  */
+#[AllowDynamicProperties]
 class WebSearchTool
 {
   private string $apiKey;

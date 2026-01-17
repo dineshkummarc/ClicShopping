@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Helper\Formatter\SubResultFormatters;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\LlmGuardrails;
@@ -24,6 +25,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
  * - Comparative tables
  * - Source attribution with web search icon
  */
+#[AllowDynamicProperties]
 class WebSearchFormatter extends AbstractFormatter
 {
   /**

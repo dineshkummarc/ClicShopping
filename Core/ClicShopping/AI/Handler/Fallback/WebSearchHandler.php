@@ -28,6 +28,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
  * 3. If found, use exact name for web search
  * 4. Compare prices and format results
  */
+#[AllowDynamicProperties]
 class WebSearchHandler
 {
   private SecurityLogger $logger;

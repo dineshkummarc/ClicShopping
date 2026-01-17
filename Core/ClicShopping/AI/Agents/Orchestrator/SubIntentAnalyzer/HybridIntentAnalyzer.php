@@ -10,6 +10,8 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
+use AllowDynamicProperties;
+
 /**
  * HybridIntentAnalyzer
  *
@@ -24,6 +26,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
  * @package ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer
  * @since 2025-12-14
  */
+#[AllowDynamicProperties]
 class HybridIntentAnalyzer extends BaseIntentAnalyzer
 {
   private SemanticIntentAnalyzer $semanticAnalyzer;

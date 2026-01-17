@@ -25,7 +25,12 @@ class CorrectionPatterns
   private string $userId;
   private int $languageId;
 
-
+  /**
+   * @param string $userId
+   * @param int|null $languageId
+   * @param string $tableName
+   * @throws \Exception
+   */
   public function __construct(string $userId = 'system', ?int $languageId = null, string $tableName = 'rag_correction_patterns_embedding')
   {
     $this->userId = $userId;

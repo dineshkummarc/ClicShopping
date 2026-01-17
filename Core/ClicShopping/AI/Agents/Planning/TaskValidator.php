@@ -8,6 +8,9 @@
 
 namespace ClicShopping\AI\Agents\Planning;
 
+use AllowDynamicProperties;
+
+#[AllowDynamicProperties]
 class TaskValidator
 {
     /**

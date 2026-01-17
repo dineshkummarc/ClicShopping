@@ -8,7 +8,9 @@
  *
  */
 
-namespace ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor;
+namespace ClicShopping\AI\Interfaces;
+
+use AllowDynamicProperties;
 
 /**
  * QueryProcessorInterface
@@ -23,7 +25,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor;
  * - REQ-1.4: Component organization with common interface
  * - REQ-10.1: Comprehensive architecture documentation
  *
- * @package ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor
+ * @package ClicShopping\AI\Interfaces
  * @since 2025-12-14
  */
 interface QueryProcessorInterface

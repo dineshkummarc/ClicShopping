@@ -10,6 +10,8 @@
 
 namespace ClicShopping\AI\Infrastructure\Async;
 
+use AllowDynamicProperties;
+
 /**
  * AsyncOperationManager Class
  *
@@ -29,6 +31,7 @@ namespace ClicShopping\AI\Infrastructure\Async;
  * Note: This is a simplified implementation for PHP without true async support.
  * For production with high concurrency, consider using ReactPHP, Amp, or Swoole.
  */
+#[AllowDynamicProperties]
 class AsyncOperationManager
 {
   /**

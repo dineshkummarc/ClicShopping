@@ -8,7 +8,7 @@
  *
  */
 
-namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
+namespace ClicShopping\AI\Interfaces;
 
 /**
  * IntentAnalyzerInterface
@@ -16,7 +16,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
  * Common interface for all specialized intent analyzers.
  * Each analyzer is responsible for detecting and analyzing a specific type of query intent.
  *
- * @package ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer
+ * @package ClicShopping\AI\Interfaces
  * @since 2025-12-14
  */
 interface IntentAnalyzerInterface

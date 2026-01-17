@@ -10,6 +10,8 @@
 
 namespace ClicShopping\AI\Helper\Formatter;
 
+use AllowDynamicProperties;
+
 /**
  * WebSearchResultFormatter
  *
@@ -30,6 +32,7 @@ namespace ClicShopping\AI\Helper\Formatter;
  * @package ClicShopping\AI\Helper\Formatter
  * @since 2025-12-28
  */
+#[AllowDynamicProperties]
 class WebSearchResultFormatter
 {
   /**

@@ -13,6 +13,9 @@
 
 namespace ClicShopping\AI\Domain\Patterns\Security;
 
+use AllowDynamicProperties;
+
+#[AllowDynamicProperties]
 class ObfuscationPatterns
 {
   /**

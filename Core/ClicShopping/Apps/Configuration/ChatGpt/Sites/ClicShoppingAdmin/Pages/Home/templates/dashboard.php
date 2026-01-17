@@ -2348,6 +2348,355 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php
               }
               ?>
+
+              <!-- Cold Cache & Timeout Metrics Section -->
+              <?php if (!empty($data['cold_cache_metrics'])): 
+                $coldCacheMetrics = $data['cold_cache_metrics'];
+              ?>
+              <div class="mt-4">
+                <h5><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_metrics_title'); ?></h5>
+
+                <!-- Cache State Distribution -->
+                <div class="row mb-4">
+                  <div class="col-md-12">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_state_title'); ?></h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="row">
+                          <div class="col-md-4">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['cache_state_distribution']['cold']; ?></h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_cold_count'); ?></p>
+                                <small><?php echo $coldCacheMetrics['cache_state_distribution']['cold_percentage']; ?>% <?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_cold_percentage'); ?></small>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #c8e6c9 0%, #66bb6a 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['cache_state_distribution']['warm']; ?></h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_warm_count'); ?></p>
+                                <small><?php echo $coldCacheMetrics['cache_state_distribution']['warm_percentage']; ?>% <?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_warm_percentage'); ?></small>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #fff3e0 0%, #ffb74d 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['cache_state_distribution']['expired']; ?></h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_expired_count'); ?></p>
+                                <small><?php echo $coldCacheMetrics['cache_state_distribution']['expired_percentage']; ?>%</small>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Cold vs Warm Performance -->
+                <div class="row mb-4">
+                  <div class="col-md-12">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_performance_title'); ?></h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="row">
+                          <div class="col-md-3">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #ffebee 0%, #ef5350 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['cold_vs_warm_performance']['cold_avg_time']; ?>s</h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_cold_avg'); ?></p>
+                                <small><?php echo $coldCacheMetrics['cold_vs_warm_performance']['cold_count']; ?> queries</small>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #e8f5e9 0%, #66bb6a 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['cold_vs_warm_performance']['warm_avg_time']; ?>s</h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_warm_avg'); ?></p>
+                                <small><?php echo $coldCacheMetrics['cold_vs_warm_performance']['warm_count']; ?> queries</small>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #e1f5fe 0%, #29b6f6 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['cold_vs_warm_performance']['speedup_factor']; ?>x</h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_speedup'); ?></p>
+                                <small><?php echo isset($coldCacheMetrics['cold_vs_warm_performance']['percentage_faster']) ? $coldCacheMetrics['cold_vs_warm_performance']['percentage_faster'] . '% faster' : ''; ?></small>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #f3e5f5 0%, #ab47bc 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['cold_vs_warm_performance']['time_saved_per_query']; ?>s</h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_time_saved'); ?></p>
+                                <small>per query</small>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Parallel Execution Performance -->
+                <?php if ($coldCacheMetrics['parallel_execution']['total_parallel_queries'] > 0): ?>
+                <div class="row mb-4">
+                  <div class="col-md-12">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_title'); ?></h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="row mb-3">
+                          <div class="col-md-4">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #fff9c4 0%, #fdd835 100%);">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['parallel_execution']['total_parallel_queries']; ?></h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_total_queries'); ?></p>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #c5e1a5 0%, #7cb342 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['parallel_execution']['total_time_saved']; ?>s</h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_time_saved'); ?></p>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #b2dfdb 0%, #26a69a 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['parallel_execution']['avg_speedup_factor']; ?>x</h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_avg_speedup'); ?></p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Analytics and Hybrid Breakdown -->
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="card">
+                              <div class="card-header">
+                                <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_analytics_title'); ?></h6>
+                              </div>
+                              <div class="card-body">
+                                <table class="table table-sm">
+                                  <tr>
+                                    <td><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_analytics_count'); ?>:</td>
+                                    <td class="text-end"><strong><?php echo $coldCacheMetrics['parallel_execution']['analytics']['count']; ?></strong></td>
+                                  </tr>
+                                  <tr>
+                                    <td><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_analytics_speedup'); ?>:</td>
+                                    <td class="text-end"><strong><?php echo $coldCacheMetrics['parallel_execution']['analytics']['avg_speedup']; ?>x</strong></td>
+                                  </tr>
+                                  <tr>
+                                    <td><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_analytics_time_saved'); ?>:</td>
+                                    <td class="text-end"><strong><?php echo $coldCacheMetrics['parallel_execution']['analytics']['time_saved']; ?>s</strong></td>
+                                  </tr>
+                                  <tr>
+                                    <td><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_percentage_faster'); ?>:</td>
+                                    <td class="text-end"><strong><?php echo $coldCacheMetrics['parallel_execution']['analytics']['percentage_faster']; ?>%</strong></td>
+                                  </tr>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="card">
+                              <div class="card-header">
+                                <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_hybrid_title'); ?></h6>
+                              </div>
+                              <div class="card-body">
+                                <table class="table table-sm">
+                                  <tr>
+                                    <td><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_hybrid_count'); ?>:</td>
+                                    <td class="text-end"><strong><?php echo $coldCacheMetrics['parallel_execution']['hybrid']['count']; ?></strong></td>
+                                  </tr>
+                                  <tr>
+                                    <td><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_hybrid_speedup'); ?>:</td>
+                                    <td class="text-end"><strong><?php echo $coldCacheMetrics['parallel_execution']['hybrid']['avg_speedup']; ?>x</strong></td>
+                                  </tr>
+                                  <tr>
+                                    <td><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_hybrid_time_saved'); ?>:</td>
+                                    <td class="text-end"><strong><?php echo $coldCacheMetrics['parallel_execution']['hybrid']['time_saved']; ?>s</strong></td>
+                                  </tr>
+                                  <tr>
+                                    <td><?php echo $CLICSHOPPING_ChatGpt->getDef('parallel_execution_percentage_faster'); ?>:</td>
+                                    <td class="text-end"><strong><?php echo $coldCacheMetrics['parallel_execution']['hybrid']['percentage_faster']; ?>%</strong></td>
+                                  </tr>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- Hybrid Query Metrics -->
+                <?php if ($coldCacheMetrics['hybrid_query_metrics']['total_count'] > 0): ?>
+                <div class="row mb-4">
+                  <div class="col-md-12">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('hybrid_query_metrics_title'); ?></h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="row mb-3">
+                          <div class="col-md-3">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #e1bee7 0%, #ba68c8 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['hybrid_query_metrics']['total_count']; ?></h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('hybrid_query_total_count'); ?></p>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #b2dfdb 0%, #4db6ac 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['hybrid_query_metrics']['avg_subqueries']; ?></h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('hybrid_query_avg_subqueries'); ?></p>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #ffccbc 0%, #ff8a65 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['hybrid_query_metrics']['avg_execution_time']; ?>s</h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('hybrid_query_avg_execution_time'); ?></p>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #c5e1a5 0%, #9ccc65 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['hybrid_query_metrics']['success_rate']; ?>%</h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('hybrid_query_success_rate'); ?></p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Time Distribution -->
+                        <div class="row">
+                          <div class="col-md-12">
+                            <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('hybrid_query_time_distribution'); ?></h6>
+                            <div class="row">
+                              <div class="col-md-3">
+                                <div class="card text-center">
+                                  <div class="card-body">
+                                    <h4><?php echo $coldCacheMetrics['hybrid_query_metrics']['time_distribution']['under_5s']; ?></h4>
+                                    <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('hybrid_query_under_5s'); ?></p>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="col-md-3">
+                                <div class="card text-center">
+                                  <div class="card-body">
+                                    <h4><?php echo $coldCacheMetrics['hybrid_query_metrics']['time_distribution']['between_5_15s']; ?></h4>
+                                    <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('hybrid_query_5_to_15s'); ?></p>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="col-md-3">
+                                <div class="card text-center">
+                                  <div class="card-body">
+                                    <h4><?php echo $coldCacheMetrics['hybrid_query_metrics']['time_distribution']['between_15_30s']; ?></h4>
+                                    <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('hybrid_query_15_to_30s'); ?></p>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="col-md-3">
+                                <div class="card text-center">
+                                  <div class="card-body">
+                                    <h4><?php echo $coldCacheMetrics['hybrid_query_metrics']['time_distribution']['over_30s']; ?></h4>
+                                    <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('hybrid_query_over_30s'); ?></p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- Timeout Events -->
+                <?php if ($coldCacheMetrics['timeout_events']['total_timeouts'] > 0): ?>
+                <div class="row mb-4">
+                  <div class="col-md-12">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_timeout_events_title'); ?></h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="row">
+                          <div class="col-md-3">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #ffcdd2 0%, #e57373 100%); color: white;">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['timeout_events']['total_timeouts']; ?></h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_total_timeouts'); ?></p>
+                                <small><?php echo $coldCacheMetrics['timeout_events']['timeout_rate']; ?>% rate</small>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #e1f5fe 0%, #81d4fa 100%);">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['timeout_events']['cold_timeouts']; ?></h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_cold_timeouts'); ?></p>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #c8e6c9 0%, #81c784 100%);">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['timeout_events']['warm_timeouts']; ?></h3>
+                                <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('cold_cache_warm_timeouts'); ?></p>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="card text-center" style="background: linear-gradient(135deg, #fff9c4 0%, #fff176 100%);">
+                              <div class="card-body">
+                                <h3><?php echo $coldCacheMetrics['timeout_events']['expired_timeouts']; ?></h3>
+                                <p class="mb-0">Expired Cache Timeouts</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- No Data Message -->
+                <?php if ($coldCacheMetrics['cache_state_distribution']['total'] == 0): ?>
+                <div class="alert alert-info">
+                  <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('no_cold_cache_data'); ?></h6>
+                  <p><?php echo $CLICSHOPPING_ChatGpt->getDef('data_will_be_collected'); ?></p>
+                </div>
+                <?php endif; ?>
+              </div>
+              <?php endif; ?>
             </div>
           </div>
 

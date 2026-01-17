@@ -106,7 +106,7 @@ class SemanticExecutor
       }
 
       $this->logger->logSecurityEvent(
-        "➡️  Delegating to SemanticSearchOrchestrator for query: {$query}",
+        " Delegating to SemanticSearchOrchestrator for query: {$query}",
         'info'
       );
 

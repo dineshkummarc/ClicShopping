@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Helper\Formatter\SubResultFormatters;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\LlmGuardrails;
@@ -18,6 +19,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 /**
  * AnalyticsFormatter - Formats analytics query results
  */
+#[AllowDynamicProperties]
 class AnalyticsFormatter extends AbstractFormatter
 {
   /**

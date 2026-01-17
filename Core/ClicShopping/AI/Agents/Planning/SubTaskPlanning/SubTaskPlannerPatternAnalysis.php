@@ -8,11 +8,13 @@
 
 namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Agents\Planning\TaskStep;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Domain\Semantics\Semantics;
 use ClicShopping\AI\Domain\Patterns\Semantic\PatternAnalysisPattern;
 
+#[AllowDynamicProperties]
 class SubTaskPlannerPatternAnalysis
 {
     private bool $debug;

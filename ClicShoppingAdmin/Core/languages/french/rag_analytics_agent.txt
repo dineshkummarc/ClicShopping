@@ -995,3 +995,10 @@ IMPORTANT: Ne PAS créer une nouvelle requête à partir de zéro.
 Modifier la requête existante ci-dessus en ajoutant/modifiant/supprimant les éléments demandés.
 
 
+
+
+# Missing prompts added 2026-01-13
+text_order_calculation = Calcul de commande
+text_multi_query_warning = Attention: Cette requête contient plusieurs sous-requêtes
+multi_token_rules = Règles multi-tokens
+text_response_format = Format de réponse

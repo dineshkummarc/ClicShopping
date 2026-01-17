@@ -9,6 +9,7 @@
 
 namespace ClicShopping\AI\Helper\Detection;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\AmbiguityOptimizer;
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\ParallelLLMExecutor;
 use ClicShopping\AI\Security\SecurityLogger;
@@ -26,6 +27,7 @@ use ClicShopping\OM\Registry;
  * - "Show me customer orders" -> All vs Recent vs Active
  * - "What is the price?" -> Average vs Min vs Max vs List
  */
+#[AllowDynamicProperties]
 class AmbiguousQueryDetector
 {
   private SecurityLogger $securityLogger;
@@ -391,8 +393,8 @@ class AmbiguousQueryDetector
     }
     
     // Execute all clarification prompts in parallel
-    $executor = new ParallelLLMExecutor($this->debug);
-    $parallelResults = $executor->executeParallel($this->chat, $prompts);
+    $executor = new ParallelLLMExecutor(null, $this->debug);
+    $parallelResults = $executor->executeParallel($prompts);
     
     // Process results and generate SQL for each clarified query
     $results = [];

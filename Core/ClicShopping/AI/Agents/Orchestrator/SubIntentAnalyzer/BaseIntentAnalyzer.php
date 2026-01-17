@@ -11,6 +11,7 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
 use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\AI\Interfaces\IntentAnalyzerInterface;
 
 /**
  * BaseIntentAnalyzer

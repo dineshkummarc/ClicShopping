@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Domain\Semantics\SubSemantics;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
@@ -20,6 +21,7 @@ use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
  * Analyzes user feedback to identify classification errors and improvement opportunities.
  * Works with ThresholdManager to enable auto-adjustment.
  */
+#[AllowDynamicProperties]
 class FeedbackAnalyzer
 {
   private static ?SecurityLogger $logger = null;

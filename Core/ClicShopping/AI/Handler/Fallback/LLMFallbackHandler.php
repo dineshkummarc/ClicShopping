@@ -63,26 +63,11 @@ class LLMFallbackHandler
         $this->logger->logSecurityEvent("LLMFallbackHandler: Querying LLM with: \"{$query}\"", 'info');
       }
 
-      // Initialize Gpt if needed
-      $parameters = [];
-      if (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL')) {
-        $parameters['model'] = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
-      }
-
-      Gpt::getOpenAiGpt($parameters);
-
       // Format prompt for LLM
       $prompt = $this->formatPromptForLLM($query, $context);
 
-      // Call LLM API - getOpenAIChat returns OpenAIChat object
-      $chatInstance = Gpt::getOpenAIChat($prompt);
-      
-      if ($chatInstance === false) {
-        throw new \Exception("Failed to initialize OpenAI Chat");
-      }
-      
-      // Generate the actual text response using generateText()
-      $response = $chatInstance->generateText($prompt);
+      // Call LLM API using getGptResponse
+      $response = Gpt::getGptResponse($prompt);
 
       $executionTime = microtime(true) - $startTime;
 

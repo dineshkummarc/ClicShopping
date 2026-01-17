@@ -15,8 +15,10 @@
 
 namespace ClicShopping\AI\Domain\Patterns\WebSearch;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Domain\Patterns\Common\EntityKeywordsPattern;
 
+#[AllowDynamicProperties]
 class WebSearchPatterns
 {
   /**

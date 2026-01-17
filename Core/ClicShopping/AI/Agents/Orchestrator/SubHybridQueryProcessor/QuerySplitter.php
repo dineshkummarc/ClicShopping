@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Domain\Semantics\Semantics;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
@@ -38,6 +39,7 @@ use ClicShopping\AI\Domain\Patterns\Analytics\QuerySplitterPatterns;
  * @since 2025-12-14
  * @version 2.0 - Internationalized 2025-12-30
  */
+#[AllowDynamicProperties]
 class QuerySplitter extends BaseQueryProcessor
 {
   /**

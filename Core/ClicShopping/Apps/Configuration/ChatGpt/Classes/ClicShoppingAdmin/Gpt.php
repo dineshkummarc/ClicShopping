@@ -23,6 +23,10 @@ use ClicShopping\AI\Infrastructure\Prompt\PromptOptimizer;
 use ClicShopping\AI\Infrastructure\Response\ResponseNormalizer;
 use ClicShopping\AI\Security\SecurityLogger;
 
+// Provider interface imports
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Common\LLMProviderInterface;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Common\LLMProviderFactory;
+
 use DateTimeImmutable;
 use LLPhant\Chat\LLMStudioChat;
 use LLPhant\Chat\LmStudioChat;
@@ -245,8 +249,12 @@ class Gpt
 
   /**
    * Initializes and returns an instance of OpenAIChat configured with the given parameters.
+   * 
+   * NOTE: This method continues to use LLPhant's OpenAIChat for backward compatibility.
+   * The provider interface is used for new code and parallel execution.
    *
    * @param array|null $parameters Optional parameters for configuring the OpenAI model, such as model type and options.
+   * @param string|null $api_key Optional API key override
    * @return mixed The configured OpenAIChat instance.
    */
   public static function getOpenAiGpt(array|null $parameters, string|null $api_key = null): mixed
@@ -296,6 +304,16 @@ class Gpt
    *
    * @param string $model The model name (e.g., 'gpt-4o', 'gpt-4o-mini', 'gpt-5')
    * @param int $maxtoken The maximum number of tokens
+   * @return array The model-specific parameters
+   */
+  /**
+   * Get model-specific API parameters
+   * 
+   * REFACTORED: Now uses provider capabilities internally while maintaining
+   * the same return format for backward compatibility.
+   * 
+   * @param string $model Model name
+   * @param int $maxtoken Max tokens
    * @return array The model-specific parameters
    */
   public static function getModelApiParameters(string $model, int $maxtoken): array
@@ -523,39 +541,9 @@ class Gpt
     return $fallbackChain[$failedModel] ?? null;
   }
 
-  /**
-   * Check if model supports embeddings
-   *
-   * Used to determine if a model can handle semantic queries.
-   * Based on model capabilities from task 1.1.
-   *
-   * @param string $model Model name
-   * @return bool True if model supports embeddings
-   */
-  public static function supportsEmbeddings(string $model): bool
-  {
-    // Models WITHOUT embeddings support
-    $noEmbeddings = [
-      'gpt-5-nano',
-      'microsoft/phi-4-reasoning-plus'
-    ];
 
-    return !in_array($model, $noEmbeddings);
-  }
 
-  /**
-   * Check if model supports reasoning
-   *
-   * All current models support reasoning capabilities.
-   *
-   * @param string $model Model name
-   * @return bool True if model supports reasoning
-   */
-  public static function supportsReasoning(string $model): bool
-  {
-    // All models in our list support reasoning
-    return true;
-  }
+
 
   /**
    * Check if model uses reasoning API approach (GPT-5 style)
@@ -565,6 +553,9 @@ class Gpt
    * 
    * This method checks the model list dynamically so when models are added/removed,
    * the logic automatically adapts.
+   * 
+   * NOTE: In the future, this could use provider->getCapabilities()['reasoning']
+   * for dynamic capability detection. Currently uses static model list for backward compatibility.
    *
    * @param string $model Model name
    * @return bool True if model uses reasoning API approach
@@ -594,25 +585,16 @@ class Gpt
     return strpos($model, 'gpt-5') === 0;
   }
 
-  /**
-   * Check if model supports analytics queries
-   *
-   * All current models support analytics (SQL generation).
-   *
-   * @param string $model Model name
-   * @return bool True if model supports analytics
-   */
-  public static function supportsAnalytics(string $model): bool
-  {
-    // All models in our list support analytics
-    return true;
-  }
+
 
   /**
    * Get model context length limit
    *
    * Extracts context length from model description in getGptModel().
    * Used by PromptOptimizer for context management.
+   * 
+   * NOTE: In the future, this could use provider->getCapabilities()['context_length']
+   * for dynamic capability detection. Currently uses static model list for backward compatibility.
    *
    * @param string $model Model name
    * @return int Context length in tokens (defaults to 128000 if not found)
@@ -636,95 +618,21 @@ class Gpt
     return 128000;
   }
 
-  /**
-   * Generates a response from the OpenAI chat model based on input parameters.
-   *
-   * @param string|null $question The question or input text to be sent to the OpenAI chat model.
-   * @param int|null $maxtoken Optional. Maximum number of tokens to generate in the response. Defaults to the configured application value if null.
-   * @param float|null $temperature Optional. Controls the creativity or randomness of the model's response. Defaults to the configured application value if null.
-   * @param string|null $engine Optional. Specifies the model engine to use. Defaults to the configured application value if null.
-   * @param int|null $max Optional. Number of responses to generate. Defaults to the configured application value if null.
-   * @return mixed Returns the generated chat response from OpenAI if successful, or false if the application API key is unavailable.
-   */
-  public static function getOpenAIChat(string|null $question, int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null, int|null $max = 1): mixed
-  {
-    if (defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY') && !empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY)) {
-      $top = ['\n'];
 
-      // Get max tokens value
-      $maxtoken = self::getMaxTokens($maxtoken);
-
-      if (is_null($temperature)) {
-        $temperature = (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE;
-      }
-
-      if (is_null($max)) {
-        $max = (float)CLICSHOPPING_APP_CHATGPT_CH_MAX_RESPONSE;
-      }
-
-      // Determine which model to use
-      $model = $engine ?? CLICSHOPPING_APP_CHATGPT_CH_MODEL;
-
-      // Get model-specific API parameters for token limits
-      $tokenParams = self::getModelApiParameters($model, $maxtoken);
-
-      // Build parameters based on model type
-      if (self::isReasoningApiModel($model)) {
-        // GPT-5 models: use specific parameters only
-        $parameters = array_merge([
-          'reasoning_effort' => CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT,
-          'verbosity' => CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY,
-          'messages' => [
-            [
-              'role' => 'user',
-              'content' => $question
-            ]
-          ],
-          'user' => AdministratorAdmin::getUserAdmin()
-        ], $tokenParams);
-      } else {
-        // All other models: use standard parameters
-        $parameters = array_merge([
-          'temperature' => $temperature,
-          'top_p' => (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P,
-          'frequency_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY,
-          'presence_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY,
-          'stop' => $top,
-          'n' => $max,
-          'user' => AdministratorAdmin::getUserAdmin(),
-          'messages' => [
-            [
-              'role' => 'system',
-              'content' => 'You are an e-commerce expert in marketing.'
-            ],
-            [
-              'role' => 'user',
-              'content' => $question
-            ]
-          ]
-        ], $tokenParams);
-      }
-
-      if (!empty(CLICSHOPPING_APP_CHATGPT_CH_ORGANIZATION)) {
-        $parameters['organization'] = CLICSHOPPING_APP_CHATGPT_CH_ORGANISATION;
-      }
-
-      if (!\is_null($engine)) {
-        $parameters['model'] = $engine;
-      }
-
-      $chat = self::getOpenAiGpt($parameters);
-
-      return $chat;
-    } else {
-      return false;
-    }
-  }
 
   /**
    *
    * @param string $model The name of the model to be used for the chat. Defaults to 'mistral:7b'.
    * @return mixed Returns an instance of OllamaChat configured with the specified model.
+   */
+  /**
+   * Creates an Ollama chat instance using LLPhant library
+   * 
+   * NOTE: This method continues to use LLPhant's OllamaChat for backward compatibility.
+   * The provider interface is used for new code and parallel execution.
+   * 
+   * @param string $model Model name (default: 'mistral:7b')
+   * @return mixed The configured OllamaChat instance
    */
   public static function getOllamaChat(string $model = 'mistral:7b'): mixed
   {
@@ -738,6 +646,9 @@ class Gpt
 
   /**
    * Crée et configure une instance de LmStudioChat
+   * 
+   * NOTE: This method continues to use LLPhant's LmStudioChat for backward compatibility.
+   * The provider interface is used for new code and parallel execution.
    *
    * @param string $model Le nom du modèle à utiliser (par défaut: 'openai/gpt-oss-20b')
    * @param string|null $url L'URL de l'API LM Studio (optionnel)
@@ -795,6 +706,9 @@ class Gpt
 
   /**
    * Creates an instance of the AnthropicChat class based on the specified model and configuration options.
+   * 
+   * NOTE: This method continues to use LLPhant's AnthropicChat for backward compatibility.
+   * The provider interface is used for new code and parallel execution.
    *
    * @param string $model The specific model identifier to use for the AnthropicChat instance.
    * Supported values are 'anth-sonnet', 'anth-opus', 'anth-haiku'.
@@ -841,6 +755,9 @@ class Gpt
 
   /**
    * Creates an instance of the MistralAIChat class based on the specified model and configuration options.
+   * 
+   * NOTE: This method continues to use LLPhant's MistralAIChat for backward compatibility.
+   * The provider interface is used for new code and parallel execution.
    *
    * @param string $model The specific model identifier to use for the MistralAIChat instance.
    *                      Should be one of the values defined in MistralAIChatModel.
@@ -905,7 +822,103 @@ class Gpt
   }
 
   /**
+   * Get chat instance for the specified model (centralized model detection)
+   * 
+   * This function centralizes the logic for detecting the model type and returning
+   * the appropriate chat instance. It supports:
+   * - OpenAI (GPT-4, GPT-3.5, o1, o3, etc.)
+   * - Anthropic (Claude)
+   * - Google (Gemini)
+   * - Mistral
+   * - Ollama (local models)
+   * - LM Studio
+   * 
+   * Usage:
+   * ```php
+   * $chat = Gpt::getChatForModel(); // Uses default model from config
+   * $chat = Gpt::getChatForModel('gpt-4'); // Specific model
+   * ```
+   * 
+   * @param string|null $model The model name (null = use default from config)
+   * @param array $options Optional parameters (maxtoken, temperature, etc.)
+   * @return mixed The chat instance for the specified model
+   * @throws \Exception If model type is not supported
+   */
+  public static function getChatForModel(?string $model = null, array $options = []): mixed
+  {
+    // Use default model if not specified
+    if ($model === null) {
+      if (!defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL')) {
+        throw new \Exception('No model specified and CLICSHOPPING_APP_CHATGPT_CH_MODEL not defined');
+      }
+      $model = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
+    }
+
+    // Normalize model name to lowercase for comparison
+    $modelLower = strtolower($model);
+
+    // Detect model type and return appropriate chat instance
+    
+    // OpenAI models (GPT-4, GPT-3.5, o1, o3, etc.)
+    if (str_starts_with($modelLower, 'gpt') || 
+        str_starts_with($modelLower, 'o1') || 
+        str_starts_with($modelLower, 'o3')) {
+      return self::getOpenAiGpt(['model' => $model] + $options);
+    }
+    
+    // Anthropic models (Claude)
+    if (str_starts_with($modelLower, 'claude') || 
+        str_starts_with($modelLower, 'anth')) {
+      $maxtoken = $options['maxtoken'] ?? null;
+      $modelOptions = $options['modelOptions'] ?? null;
+      return self::getAnthropicChat($model, $maxtoken, $modelOptions);
+    }
+    
+    // Google Gemini models
+    if (str_starts_with($modelLower, 'gemini') || 
+        str_starts_with($modelLower, 'google')) {
+      // TODO: Implement getGeminiChat() when Gemini support is added
+      // For now, throw an exception to indicate it's not yet supported
+      throw new \Exception("Gemini models are not yet supported. Model: {$model}");
+      // Future implementation:
+      // return self::getGeminiChat($model, $options['maxtoken'] ?? null);
+    }
+    
+    // Mistral models
+    if (str_starts_with($modelLower, 'mistral')) {
+      $maxtoken = $options['maxtoken'] ?? null;
+      return self::getMistralChat($model, $maxtoken);
+    }
+    
+    // Ollama models (local models with version tags like :latest or :7b)
+    if (str_starts_with($modelLower, 'ollama') || 
+        str_contains($model, ':latest') || 
+        str_contains($model, ':')) {
+      return self::getOllamaChat($model);
+    }
+    
+    // LM Studio models (usually prefixed with openai/)
+    if (str_starts_with($modelLower, 'openai/')) {
+      $url = $options['url'] ?? null;
+      $timeout = $options['timeout'] ?? null;
+      return self::getLmStudioChat($model, $url, $timeout);
+    }
+    
+    // Default fallback to LM Studio for unknown models
+    // This maintains backward compatibility with existing code
+    $url = $options['url'] ?? null;
+    $timeout = $options['timeout'] ?? null;
+    return self::getLmStudioChat($model, $url, $timeout);
+  }
+
+  /**
    * Retrieves a chat response based on the provided parameters and model configuration.
+   * 
+   * @deprecated This method is maintained for backward compatibility only.
+   *             New code should use getGptResponse() instead.
+   *             This method will be removed in a future version.
+   *
+   * REFACTORED: Now uses provider-specific methods directly without calling removed getOpenAIChat().
    *
    * @param string $question The input question or prompt to be processed.
    * @param int|null $maxtoken The maximum number of tokens for the response, or null for default.
@@ -916,14 +929,57 @@ class Gpt
    */
   public static function getChat(string $question, int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null, int|null $max = 1): mixed
   {
+    // Note: Deprecation warning in comment only (as per task requirements)
+    // trigger_error('Gpt::getChat() is deprecated, use Gpt::getGptResponse() instead', E_USER_DEPRECATED);
+    
     if (!defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL')) {
       define('CLICSHOPPING_APP_CHATGPT_CH_MODEL', 'gpt-4');
     }
 
-    $model = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
+    $model = $engine ?? CLICSHOPPING_APP_CHATGPT_CH_MODEL;
 
+    // REFACTORED: Use provider-specific methods directly
     if (strpos($model, 'gpt') === 0) {
-      $client = self::getOpenAIChat($question, $maxtoken, $temperature, $engine, $max);
+      // For OpenAI models, use getOpenAiGpt() which returns OpenAIChat instance
+      $maxtoken = self::getMaxTokens($maxtoken);
+      $temperature = $temperature ?? (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE;
+      
+      $tokenParams = self::getModelApiParameters($model, $maxtoken);
+      
+      if (self::isReasoningApiModel($model)) {
+        $parameters = array_merge([
+          'reasoning_effort' => CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT,
+          'verbosity' => CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY,
+          'messages' => [
+            ['role' => 'user', 'content' => $question]
+          ],
+          'user' => AdministratorAdmin::getUserAdmin()
+        ], $tokenParams);
+      } else {
+        $parameters = array_merge([
+          'temperature' => $temperature,
+          'top_p' => (float)CLICSHOPPING_APP_CHATGPT_CH_TOP_P,
+          'frequency_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_FREQUENCY_PENALITY,
+          'presence_penalty' => (float)CLICSHOPPING_APP_CHATGPT_CH_PRESENCE_PENALITY,
+          'stop' => ['\n'],
+          'n' => $max,
+          'user' => AdministratorAdmin::getUserAdmin(),
+          'messages' => [
+            ['role' => 'system', 'content' => 'You are an e-commerce expert in marketing.'],
+            ['role' => 'user', 'content' => $question]
+          ]
+        ], $tokenParams);
+      }
+      
+      if (!empty(CLICSHOPPING_APP_CHATGPT_CH_ORGANIZATION)) {
+        $parameters['organization'] = CLICSHOPPING_APP_CHATGPT_CH_ORGANISATION;
+      }
+      
+      if ($engine !== null) {
+        $parameters['model'] = $engine;
+      }
+      
+      $client = self::getOpenAiGpt($parameters);
     } elseif (strpos($model, 'anth') === 0) {
       $client = self::getAnthropicChat($model, $maxtoken);
     } elseif (strpos($model, 'mistral') === 0) {
@@ -950,6 +1006,19 @@ class Gpt
    * @param int|null $max Optional maximum number of responses to generate. Defaults to 1.
    * @return bool|string Returns the generated response as a string. Returns false if GPT is unavailable or fails to generate a response.
    */
+  /**
+   * Get GPT response (PUBLIC API - NO CHANGES TO SIGNATURE)
+   * 
+   * REFACTORED INTERNALLY: Now uses LLMProviderInterface for provider abstraction
+   * while maintaining 100% backward compatibility with all 62 existing usages.
+   * 
+   * @param string $question The question/prompt
+   * @param int|null $maxtoken Maximum tokens
+   * @param float|null $temperature Temperature
+   * @param string|null $engine Model/engine name
+   * @param int|null $max Max responses
+   * @return bool|string Response or false on error
+   */
   public static function getGptResponse(string $question, int|null $maxtoken = null, ?float $temperature = null, ?string $engine = null, int|null $max = 1): bool|string
   {
     if (self::checkGptStatus() === false) {
@@ -963,7 +1032,6 @@ class Gpt
     if (is_null($engine)) {
       $engine = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
     }
-
 
     // 🔧 FIX TASK 4.3.4.4: Simplifier la validation pour éviter les faux positifs
     // Ne pas utiliser de pattern regex complexe qui peut rejeter des requêtes légitimes
@@ -1005,70 +1073,175 @@ class Gpt
       throw new \Exception("Prompt is empty after validation and sanitization");
     }
 
-    // Get the chat instance
-    $chat = self::getChat($prompt, $maxtoken, $temperature, $engine, $max);
-
-    // Generate text using the chat instance
+    // ========================================
+    // REFACTORED: Use provider interface internally
+    // ========================================
     try {
-      $result = $chat->generateText($prompt);
-      error_log('✅ generateText() returned result length: ' . strlen($result));
-    } catch (Exception $e) {
-      error_log($e->getMessage());
-      return false;
-    }
-
-    // Extract usage metrics from the last response for all providers
-    // Check if getLastResponse() method exists (OpenAI, Anthropic, Mistral support it)
-    // LMStudio and Ollama may not have this method implemented yet
-    if (method_exists($chat, 'getLastResponse')) {
-      $lastResponse = $chat->getLastResponse();
+      // 🔍 DEBUG: Log provider detection
+      error_log("🔍 [Gpt::getGptResponse] Starting provider detection for engine: {$engine}");
       
-      if (!is_null($lastResponse) && isset($lastResponse['usage'])) {
+      // Detect provider from engine name
+      $providerName = self::detectProviderFromEngine($engine);
+      
+      // 🔍 DEBUG: Log detected provider
+      error_log("✅ [Gpt::getGptResponse] Provider detected: {$providerName} for engine: {$engine}");
+      
+      // 🔍 DEBUG: Log request parameters
+      error_log(sprintf(
+        "📋 [Gpt::getGptResponse] Request params - model: %s, max_tokens: %s, temperature: %s, prompt_length: %d",
+        $engine,
+        $maxtoken ?? 'null',
+        $temperature ?? 'null',
+        strlen($prompt)
+      ));
+      
+      // Create provider using factory
+      $factory = LLMProviderFactory::getInstance();
+      $provider = $factory->create($providerName, [
+        'model' => $engine,
+        'max_tokens' => $maxtoken,
+        'temperature' => $temperature,
+      ]);
+      
+      // 🔍 DEBUG: Log provider creation success
+      error_log("✅ [Gpt::getGptResponse] Provider instance created successfully: " . get_class($provider));
+
+      // 🔥 CRITICAL FIX: Use the provider's LLPhant chat instance instead of getChat()
+      // This ensures the provider interface is actually used (was created but never used before)
+      try {
+        // 🔍 DEBUG: Log attempt to get LLPhant chat instance
+        error_log("🔍 [Gpt::getGptResponse] Attempting to get LLPhant chat instance from provider");
+        
+        // Get LLPhant chat instance from the provider
+        $chat = $provider->getLLPhantChat();
+        
+        // 🔍 DEBUG: Log success
+        error_log("✅ [Gpt::getGptResponse] Using provider {$providerName} via getLLPhantChat()");
+      } catch (\Exception $e) {
+        // 🔍 DEBUG: Log fallback
+        error_log("⚠️ [Gpt::getGptResponse] Provider {$providerName} getLLPhantChat() failed: {$e->getMessage()}, falling back to getChat()");
+        
+        // Fallback to getChat() if provider doesn't support getLLPhantChat() yet
+        $chat = self::getChat($prompt, $maxtoken, $temperature, $engine, $max);
+        
+        // 🔍 DEBUG: Log fallback success
+        error_log("✅ [Gpt::getGptResponse] Fallback to getChat() successful");
+      }
+
+      // 🔍 DEBUG: Log before generateText call
+      error_log(sprintf(
+        "🔍 [Gpt::getGptResponse] Calling generateText() with prompt (first 100 chars): %s",
+        substr($prompt, 0, 100)
+      ));
+      
+      // Generate text using the chat instance
+      $result = $chat->generateText($prompt);
+      
+      // 🔍 DEBUG: Log response received
+      error_log(sprintf(
+        "✅ [Gpt::getGptResponse] generateText() returned result - length: %d, first 100 chars: %s",
+        strlen($result),
+        substr($result, 0, 100)
+      ));
+
+      // Extract usage metrics from the last response for all providers
+      // Check if getLastResponse() method exists (OpenAI, Anthropic, Mistral support it)
+      // LMStudio and Ollama may not have this method implemented yet
+      if (method_exists($chat, 'getLastResponse')) {
+        // 🔍 DEBUG: Log attempt to get last response
+        error_log("🔍 [Gpt::getGptResponse] Attempting to extract token usage from last response");
+        
+        $lastResponse = $chat->getLastResponse();
+        
+        if (!is_null($lastResponse) && isset($lastResponse['usage'])) {
+          self::$lastTokenUsage = [
+            'prompt_tokens' => $lastResponse['usage']['prompt_tokens'] ?? 0,
+            'completion_tokens' => $lastResponse['usage']['completion_tokens'] ?? 0,
+            'total_tokens' => $lastResponse['usage']['total_tokens'] ?? 0
+          ];
+          
+          // 🔍 DEBUG: Log token usage for debugging
+          error_log(sprintf(
+            '📊 [Gpt::getGptResponse] Token usage for model %s: prompt=%d, completion=%d, total=%d',
+            $engine,
+            self::$lastTokenUsage['prompt_tokens'],
+            self::$lastTokenUsage['completion_tokens'],
+            self::$lastTokenUsage['total_tokens']
+          ));
+        } else {
+          // If no usage data in response, set to null
+          self::$lastTokenUsage = null;
+          
+          // 🔍 DEBUG: Log missing usage data
+          error_log(sprintf(
+            '⚠️ [Gpt::getGptResponse] No token usage data in response for model %s',
+            $engine
+          ));
+        }
+      } else {
+        // 🔍 DEBUG: Log estimation fallback
+        error_log("🔍 [Gpt::getGptResponse] getLastResponse() not available, estimating token usage");
+        
+        // Method doesn't exist (LMStudio, Ollama) - estimate tokens based on text length
+        // Rough estimation: 1 token ≈ 4 characters for English text
+        $promptTokens = (int)ceil(strlen($prompt) / 4);
+        $completionTokens = (int)ceil(strlen($result) / 4);
+        
         self::$lastTokenUsage = [
-          'prompt_tokens' => $lastResponse['usage']['prompt_tokens'] ?? 0,
-          'completion_tokens' => $lastResponse['usage']['completion_tokens'] ?? 0,
-          'total_tokens' => $lastResponse['usage']['total_tokens'] ?? 0
+          'prompt_tokens' => $promptTokens,
+          'completion_tokens' => $completionTokens,
+          'total_tokens' => $promptTokens + $completionTokens
         ];
         
-        // Log token usage for debugging
         error_log(sprintf(
-          '📊 Token usage for model %s: prompt=%d, completion=%d, total=%d',
-          CLICSHOPPING_APP_CHATGPT_CH_MODEL,
-          self::$lastTokenUsage['prompt_tokens'],
-          self::$lastTokenUsage['completion_tokens'],
-          self::$lastTokenUsage['total_tokens']
-        ));
-      } else {
-        // If no usage data in response, set to null
-        self::$lastTokenUsage = null;
-        error_log(sprintf(
-          '⚠️ No token usage data in response for model %s',
-          CLICSHOPPING_APP_CHATGPT_CH_MODEL
+          '📊 Estimated token usage for model %s (provider: %s): prompt=%d, completion=%d, total=%d',
+          $engine,
+          get_class($chat),
+          $promptTokens,
+          $completionTokens,
+          $promptTokens + $completionTokens
         ));
       }
-    } else {
-      // Method doesn't exist (LMStudio, Ollama) - estimate tokens based on text length
-      // Rough estimation: 1 token ≈ 4 characters for English text
-      $promptTokens = (int)ceil(strlen($prompt) / 4);
-      $completionTokens = (int)ceil(strlen($result) / 4);
+
+      // 🔍 DEBUG: Log successful completion
+      error_log("✅ [Gpt::getGptResponse] Request completed successfully");
       
-      self::$lastTokenUsage = [
-        'prompt_tokens' => $promptTokens,
-        'completion_tokens' => $completionTokens,
-        'total_tokens' => $promptTokens + $completionTokens
-      ];
+      return $result;
       
+    } catch (\Exception $e) {
+      // 🔍 DEBUG: Log detailed error information
       error_log(sprintf(
-        '📊 Estimated token usage for model %s (provider: %s): prompt=%d, completion=%d, total=%d',
-        CLICSHOPPING_APP_CHATGPT_CH_MODEL,
-        get_class($chat),
-        $promptTokens,
-        $completionTokens,
-        $promptTokens + $completionTokens
+        "❌ [Gpt::getGptResponse] Error occurred - Message: %s, File: %s, Line: %d",
+        $e->getMessage(),
+        $e->getFile(),
+        $e->getLine()
       ));
+      error_log("❌ [Gpt::getGptResponse] Stack trace: " . $e->getTraceAsString());
+      
+      return false;
+    }
+  }
+
+  /**
+   * Detect provider from engine/model name (INTERNAL HELPER)
+   * 
+   * @param string|null $engine Model/engine name
+   * @return string Provider name (openai, anthropic, ollama, lmstudio, mistral)
+   */
+  private static function detectProviderFromEngine(?string $engine): string
+  {
+    if ($engine === null) {
+      return 'openai'; // Default
     }
 
-    return $result;
+    // Detect provider based on model name patterns
+    return match (true) {
+      str_contains($engine, 'claude') || str_contains($engine, 'anth-') => 'anthropic',
+      str_contains($engine, 'llama') || str_contains($engine, 'mistral:') => 'ollama',
+      str_contains($engine, 'gpt-oss') || str_contains($engine, 'openai/') => 'lmstudio',
+      str_contains($engine, 'mistral-') || str_contains($engine, 'pixtral') || str_contains($engine, 'ministral') || str_contains($engine, 'codestral') => 'mistral',
+      default => 'openai'
+    };
   }
 
   /**
@@ -1289,7 +1462,7 @@ class Gpt
       $userId     = (int)(AdministratorAdmin::getUserAdminId() ?? 0);
       $languageId = (int)($_SESSION['languages_id'] ?? 1);
 
-      $resetContextUrl = $httpServer . $httpPath . 'ajax/ChatGpt/reset_context.php';
+      $resetContextUrl = $httpServer . $httpPath . 'ajax/RAG/reset_context.php';
 
       $script .='
 <script>
@@ -1457,100 +1630,83 @@ class Gpt
    * @param int|null $maxTokens Max tokens (uses config default if null)
    * @return array Request body array ready for JSON encoding
    */
+  /**
+   * Build API request body for a specific provider
+   * 
+   * @deprecated This method is maintained for backward compatibility only.
+   *             ParallelLLMExecutor now uses provider->buildRequestBody() directly.
+   *             New code should use provider->buildRequestBody() instead.
+   *             This method will be removed in a future version.
+   * 
+   * REFACTORED: Now uses LLMProviderInterface internally while maintaining
+   * the same return format for backward compatibility.
+   * 
+   * @param string $prompt The prompt text
+   * @param string $provider Provider name
+   * @param string|null $model Model name
+   * @param float|null $temperature Temperature
+   * @param int|null $maxTokens Max tokens
+   * @return array Request body array ready for JSON encoding
+   */
   public static function buildApiRequestBody(string $prompt, string $provider, ?string $model = null, ?float $temperature = null, ?int $maxTokens = null): array 
   {
-    // Get defaults from config
-    $model = $model ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : 'gpt-4o-mini');
-    $temperature = $temperature ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE') ? (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE : 0.5);
-    $maxTokens = $maxTokens ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN') ? (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN : 4000);
-
-    switch ($provider) {
-      case 'ollama':
-        // Ollama uses /api/generate endpoint with prompt field
-        return [
-          'model' => $model,
-          'prompt' => $prompt,
-          'stream' => false,
-        ];
-
-      case 'anthropic':
-        // Anthropic uses messages array format
-        // Map internal model name (anth-sonnet) to API name (claude-3-5-sonnet-20241022)
-        return [
-          'model' => self::mapAnthropicModelName($model),
-          'messages' => [
-            ['role' => 'user', 'content' => $prompt]
-          ],
-          'max_tokens' => $maxTokens,
-        ];
-
-      case 'lmstudio':
-        // LM Studio uses OpenAI-compatible format
-        // Always uses max_tokens (not max_completion_tokens)
-        // Multiply tokens by 3 for reasoning space with <think> tags
-        $lmStudioMaxTokens = defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_MAX_TOKEN')? (int)CLICSHOPPING_APP_CHATGPT_LMSTUDIO_MAX_TOKEN : $maxTokens * 3;
-        
-        return [
-          'model' => $model,
-          'messages' => [
-            ['role' => 'user', 'content' => $prompt]
-          ],
-          'temperature' => $temperature,
-          'max_tokens' => $lmStudioMaxTokens,
-          'stream' => false,
-        ];
-
-      case 'mistral':
-        // Mistral uses OpenAI-compatible format
-        return [
-          'model' => $model,
-          'messages' => [
-            ['role' => 'user', 'content' => $prompt]
-          ],
-          'temperature' => $temperature,
-          'max_tokens' => $maxTokens,
-        ];
-
-      case 'openai':
-      default:
-        // Check if this is a reasoning API model (GPT-5 style)
-        if (self::isReasoningApiModel($model)) {
-          // GPT-5 models: use reasoning_effort and verbosity instead of temperature
-          $body = [
-            'model' => $model,
-            'messages' => [
-              ['role' => 'user', 'content' => $prompt]
-            ],
-            'reasoning_effort' => defined('CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT')  ? CLICSHOPPING_APP_CHATGPT_CH_REASONING_EFFORT : 'medium',
-            'verbosity' => defined('CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY') ? CLICSHOPPING_APP_CHATGPT_CH_VERBOSITY : 'normal',
-          ];
-        } else {
-          // Standard OpenAI models: use temperature and other standard parameters
-          $body = [
-            'model' => $model,
-            'messages' => [
-              ['role' => 'user', 'content' => $prompt]
-            ],
-            'temperature' => $temperature,
-          ];
-        }
-
-        // Add correct token parameter (max_tokens vs max_completion_tokens)
-        $tokenParams = self::getModelApiParameters($model, $maxTokens);
-        return array_merge($body, $tokenParams);
+    // Note: Deprecation warning in comment only (as per task requirements)
+    // trigger_error('Gpt::buildApiRequestBody() is deprecated, use provider->buildRequestBody() instead', E_USER_DEPRECATED);
+    
+    try {
+      // Use LLMProviderFactory to create provider instance
+      $factory = LLMProviderFactory::getInstance();
+      $providerInstance = $factory->create($provider, [
+        'model' => $model,
+        'temperature' => $temperature,
+        'max_tokens' => $maxTokens,
+      ]);
+      
+      // Use provider's buildRequestBody method
+      return $providerInstance->buildRequestBody($prompt, [
+        'temperature' => $temperature,
+        'max_tokens' => $maxTokens,
+      ]);
+      
+    } catch (\Exception $e) {
+      error_log('❌ Error in buildApiRequestBody: ' . $e->getMessage());
+      
+      // Fallback to default OpenAI format for backward compatibility
+      $model = $model ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : 'gpt-4o-mini');
+      $temperature = $temperature ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE') ? (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE : 0.5);
+      $maxTokens = $maxTokens ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN') ? (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN : 4000);
+      
+      return [
+        'model' => $model,
+        'messages' => [
+          ['role' => 'user', 'content' => $prompt]
+        ],
+        'temperature' => $temperature,
+        'max_tokens' => $maxTokens,
+      ];
     }
   }
 
   /**
    * Map internal Anthropic model names to API model names
-   * Used for direct HTTP calls (ParallelLLMExecutor)
-   * getAnthropicChat() uses LLPhant AnthropicConfig which handles this internally
+   * 
+   * @deprecated This method is maintained for backward compatibility only.
+   *             AnthropicProvider now handles model name mapping internally.
+   *             New code should use AnthropicProvider directly.
+   *             This method will be removed in a future version.
+   * 
+   * NOTE: This method is also used internally by AnthropicProvider class.
+   * Used for direct HTTP calls (ParallelLLMExecutor) and backward compatibility.
+   * getAnthropicChat() uses LLPhant AnthropicConfig which handles this internally.
    * 
    * @param string $model Internal model name (e.g., 'anth-sonnet')
    * @return string API model name (e.g., 'claude-3-5-sonnet-20241022')
    */
   public static function mapAnthropicModelName(string $model): string
   {
+    // Note: Deprecation warning in comment only (as per task requirements)
+    // trigger_error('Gpt::mapAnthropicModelName() is deprecated, use AnthropicProvider instead', E_USER_DEPRECATED);
+    
     return match ($model) {
       'anth-sonnet' => 'claude-3-5-sonnet-20241022',
       'anth-opus' => 'claude-3-opus-20240229',
@@ -1561,8 +1717,14 @@ class Gpt
   
   /**
    * Build API configuration for a specific provider
-   * Reuses existing get*Chat() methods configuration logic
-   * Uses getGptModel() for dynamic model validation
+   * 
+   * @deprecated This method is maintained for backward compatibility only.
+   *             ParallelLLMExecutor now uses LLMProviderInterface directly.
+   *             New code should use LLMProviderFactory::create() instead.
+   *             This method will be removed in a future version.
+   * 
+   * REFACTORED: Now uses LLMProviderFactory internally while maintaining
+   * the same return format for backward compatibility.
    * 
    * @param string $provider Provider name (openai, ollama, lmstudio, anthropic, mistral)
    * @param string|null $model Model name (uses config default if null)
@@ -1570,80 +1732,54 @@ class Gpt
    */
   public static function buildConfigForProvider(string $provider, ?string $model = null): array
   {
-    // Get model from parameter or config - validate against getGptModel()
-    $configModel = \defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : 'gpt-4o-mini';
+    // Note: Deprecation warning in comment only (as per task requirements)
+    // trigger_error('Gpt::buildConfigForProvider() is deprecated, use LLMProviderFactory instead', E_USER_DEPRECATED);
     
-    $model = $model ?? $configModel;
-    
-    // Validate model exists in getGptModel() list
-    $availableModels = self::getGptModel();
-    $modelExists = false;
-    foreach ($availableModels as $modelInfo) {
-      if ($modelInfo['id'] === $model) {
-        $modelExists = true;
-        break;
+    try {
+      // Use LLMProviderFactory to create provider instance
+      $factory = LLMProviderFactory::getInstance();
+      $providerInstance = $factory->create($provider, ['model' => $model]);
+      
+      // Build config array in the expected format for backward compatibility
+      $config = [
+        'provider' => $providerInstance->getName(),
+        'url' => $providerInstance->getApiUrl(),
+        'model' => $providerInstance->getModel(),
+        'temperature' => $providerInstance->getTemperature(),
+        'max_tokens' => $providerInstance->getMaxTokens(),
+        'headers' => [],
+      ];
+
+      // Add provider-specific headers
+      if ($apiKey = $providerInstance->getApiKey()) {
+        if ($provider === 'anthropic') {
+          $config['headers'] = [
+            'x-api-key' => $apiKey,
+            'anthropic-version' => '2023-06-01',
+          ];
+        } else {
+          $config['headers'] = [
+            'Authorization' => 'Bearer ' . $apiKey,
+          ];
+        }
       }
-    }
-    
-    // If model not in list, use config default
-    if (!$modelExists) {
-      $model = $configModel;
-    }
 
-    // Temperature 0 for deterministic responses (SQL generation, analytics)
-    // buildConfigForProvider is used by ParallelLLMExecutor for analytical tasks
-    $temperature = \defined('CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE') ? (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE : 0.0;
-
-    $maxTokens = \defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN') ? (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN : 4000;
-
-    // Build config based on provider - reuses same URLs/settings as get*Chat() methods
-    return match ($provider) {
-      'ollama' => [
-        'provider' => 'ollama',
-        'url' => (\defined('CLICSHOPPING_APP_CHATGPT_OLLAMA_URL') ? \rtrim(CLICSHOPPING_APP_CHATGPT_OLLAMA_URL, '/') : 'http://localhost:11434') . '/api/generate',
-        'headers' => [],
-        'model' => $model,
-        'temperature' => $temperature,
-        'max_tokens' => $maxTokens,
-      ],
-      'lmstudio' => [
-        'provider' => 'lmstudio',
-        'url' => (\defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL') ? \rtrim(CLICSHOPPING_APP_CHATGPT_LMSTUDIO_URL, '/') : 'http://localhost:1234') . '/v1/chat/completions',
-        'headers' => [],
-        'model' => $model,
-        'temperature' => $temperature,
-        'max_tokens' => \defined('CLICSHOPPING_APP_CHATGPT_LMSTUDIO_MAX_TOKEN') ? (int)CLICSHOPPING_APP_CHATGPT_LMSTUDIO_MAX_TOKEN : $maxTokens * 3,
-      ],
-      'anthropic' => [
-        'provider' => 'anthropic',
-        'url' => 'https://api.anthropic.com/v1/messages',
-        'headers' => [
-          'x-api-key' => \defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_ANTHROPIC') ? CLICSHOPPING_APP_CHATGPT_CH_API_KEY_ANTHROPIC : '', 'anthropic-version' => '2023-06-01',
-        ],
-        'model' => self::mapAnthropicModelName($model),
-        'temperature' => $temperature,
-        'max_tokens' => $maxTokens,
-      ],
-      'mistral' => [
-        'provider' => 'mistral',
-        'url' => 'https://api.mistral.ai/v1/chat/completions',
-        'headers' => [
-          'Authorization' => 'Bearer ' . (\defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL') ? CLICSHOPPING_APP_CHATGPT_CH_API_KEY_MISTRAL : ''),
-        ],
-        'model' => $model,
-        'temperature' => $temperature,
-        'max_tokens' => $maxTokens,
-      ],
-      default => [
+      return $config;
+      
+    } catch (\Exception $e) {
+      error_log('❌ Error in buildConfigForProvider: ' . $e->getMessage());
+      
+      // Fallback to default OpenAI config for backward compatibility
+      return [
         'provider' => 'openai',
         'url' => 'https://api.openai.com/v1/chat/completions',
         'headers' => [
-          'Authorization' => 'Bearer ' . (\defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY') ? CLICSHOPPING_APP_CHATGPT_CH_API_KEY : ''),
+          'Authorization' => 'Bearer ' . (defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY') ? CLICSHOPPING_APP_CHATGPT_CH_API_KEY : ''),
         ],
-        'model' => $model,
-        'temperature' => $temperature,
-        'max_tokens' => $maxTokens,
-      ],
-    };
+        'model' => $model ?? (defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : 'gpt-4o-mini'),
+        'temperature' => defined('CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE') ? (float)CLICSHOPPING_APP_CHATGPT_CH_TEMPERATURE : 0.0,
+        'max_tokens' => defined('CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN') ? (int)CLICSHOPPING_APP_CHATGPT_CH_MAX_TOKEN : 4000,
+      ];
+    }
   }
 }

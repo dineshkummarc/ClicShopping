@@ -11,9 +11,11 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
 use AllowDynamicProperties;
+use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Registry;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\AI\Rag\MultiDBRAGManager;
 
 /**
  * EntityExtractor Class
@@ -398,13 +400,14 @@ class EntityExtractor
       }
 
       // Get language ID
-      $languageId = \ClicShopping\OM\Registry::get('Language')->getId() ?? 1;
+      $languageId = Registry::get('Language')->getId() ?? 1;
 
       // Get embedding tables dynamically
       $embeddingTables = DoctrineOrm::getEmbeddingTables();
       
       // Filter tables based on entity type if specified
       $prefix = CLICSHOPPING::getConfig('db_table_prefix');
+
       if (!empty($entityType) && $entityType !== 'unknown') {
         // Pluralize entity type (simple approach - add 's' if not already plural)
         $pluralEntity = $entityType;
@@ -442,7 +445,7 @@ class EntityExtractor
       }
 
       // Create MultiDBRAGManager for embedding search
-      $ragManager = new \ClicShopping\AI\Infrastructure\Rag\MultiDBRAGManager(null, $embeddingTables);
+      $ragManager = new MultiDBRAGManager(null, $embeddingTables);
 
       // Search with similarity threshold 0.7
       $minScore = 0.7;

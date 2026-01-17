@@ -10,6 +10,8 @@
 
 namespace ClicShopping\AI\Domain\Patterns\Semantic;
 
+use AllowDynamicProperties;
+
 /**
  * ClassificationEnginePatterns - Regex patterns for JSON cleaning and validation
  *
@@ -21,6 +23,7 @@ namespace ClicShopping\AI\Domain\Patterns\Semantic;
  * @moved 2025-12-31 from SubSemantics\Patterns to Domain\Patterns
  * @moved 2026-01-09 from Domain\Patterns to Domain\Patterns\Semantic
  */
+#[AllowDynamicProperties]
 class ClassificationEnginePatterns
 {
   /**

@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Domain\Semantics\SubSemantics;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Domain\Patterns\Semantic\ClassificationEnginePatterns;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
@@ -30,6 +31,7 @@ use ClicShopping\OM\Registry;
  * 
  * @version 2.0 - Refactored for Pure LLM mode
  */
+#[AllowDynamicProperties]
 class ClassificationEngine
 {
   private static ?SecurityLogger $logger = null;
@@ -61,8 +63,7 @@ class ClassificationEngine
     
     // Log if we made a fix
     if ($fixed !== $json && self::$logger && 
-        defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-        CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+        defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
       self::$logger->logStructured(
         'info',
         'ClassificationEngine',
@@ -117,8 +118,7 @@ class ClassificationEngine
       $response = Gpt::getGptResponse($prompt, 200); // Increased max tokens for JSON response
       
       // Log raw response for debugging
-      if (self::$logger && defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-          CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      if (self::$logger && defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') &&  CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
         self::$logger->logStructured(
           'info',
           'ClassificationEngine',
@@ -152,8 +152,7 @@ class ClassificationEngine
       
       // Log cleaned response if different from original
       if ($cleanResponse !== trim($response) && self::$logger && 
-          defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-          CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+          defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
         self::$logger->logStructured(
           'info',
           'ClassificationEngine',
@@ -288,8 +287,7 @@ class ClassificationEngine
       }
       
       // Log successful classification
-      if (self::$logger && defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-          CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      if (self::$logger && defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
         self::$logger->logStructured(
           'info',
           'ClassificationEngine',

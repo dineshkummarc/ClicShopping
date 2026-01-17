@@ -24,10 +24,11 @@ use ClicShopping\AI\Infrastructure\Monitoring\MetricsCollector;
 use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerCompetitorAnalysis;
 use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerPatternAnalysis;
 use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerPriceAnalytics;
+use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerAnalytics;
 use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerSemanticSearch;
 use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerWebSearch;
 use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerStandard;
-use ClicShopping\AI\Agents\PromptSystem\PromptSystem;
+use ClicShopping\AI\Agents\Planning\TaskPlannerPrompts;
 use ClicShopping\AI\Domain\Semantics\Semantics;
 use ClicShopping\OM\Registry;
 
@@ -97,6 +98,7 @@ class TaskPlanner
             'competitor_analysis' => new SubTaskPlannerCompetitorAnalysis($this->debug, $this->securityLogger),
             'pattern_analysis' => new SubTaskPlannerPatternAnalysis($this->debug, $this->securityLogger),
             'price_analytics' => new SubTaskPlannerPriceAnalytics($this->debug, $this->securityLogger),
+            'analytics' => new SubTaskPlannerAnalytics($this->debug, $this->securityLogger), // 🆕 Basic analytics catch-all
             'semantic_search' => new SubTaskPlannerSemanticSearch($this->debug, $this->securityLogger),
             'web_search' => new SubTaskPlannerWebSearch($this->debug, $this->securityLogger),
             'standard' => new SubTaskPlannerStandard($this->debug, $this->securityLogger), // Fallback
@@ -129,7 +131,7 @@ class TaskPlanner
             return;
         }
 
-        $systemPrompt = PromptSystem::getTaskPlannerSystemPrompt();
+        $systemPrompt = TaskPlannerPrompts::getTaskPlannerSystemPrompt();
         $this->chat->setSystemMessage($systemPrompt);
     }
 
@@ -283,14 +285,21 @@ class TaskPlanner
         if ($intentType === 'analytics') {
             // Tester dans l'ordre de spécificité
             $plannersToTest = [
-                'competitor_analysis',
-                'pattern_analysis',
-                'price_analytics'
+                'competitor_analysis',  // Most specific
+                'pattern_analysis',     // Specific
+                'price_analytics',      // Specific
+                'analytics'             // 🆕 Basic analytics catch-all (handles COUNT, SUM, AVG, etc.)
             ];
 
             foreach ($plannersToTest as $plannerKey) {
                 $planner = $this->subTaskPlanners[$plannerKey];
                 if ($planner->canHandle($query)) {
+                    if ($this->debug) {
+                        $this->securityLogger->logSecurityEvent(
+                            "Selected analytics planner: {$plannerKey} for query: " . substr($query, 0, 100),
+                            'info'
+                        );
+                    }
                     return $planner;
                 }
             }

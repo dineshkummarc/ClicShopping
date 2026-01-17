@@ -33,3 +33,5 @@ text_rag_ambiguous_view_sql = View SQL Query
 text_rag_ambiguous_no_results = No results found
 text_rag_ambiguous_analytics_database = Analytics Database
 text_rag_ambiguous_interpretations = interpretations
+
+text_rag_analytics_note_multiple_queries = This query contains {count} sub-queries. Results are displayed separately below.

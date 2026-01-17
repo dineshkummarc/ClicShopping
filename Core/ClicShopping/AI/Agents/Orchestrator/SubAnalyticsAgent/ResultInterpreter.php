@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Security\InputValidator;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Cache\Cache;
@@ -25,6 +26,7 @@ use ClicShopping\OM\Hash;
  * 
  * @updated 2026-01-11: Added EmptyResultFormatter integration for empty result handling
  */
+#[AllowDynamicProperties]
 class ResultInterpreter
 {
   private mixed $chat;

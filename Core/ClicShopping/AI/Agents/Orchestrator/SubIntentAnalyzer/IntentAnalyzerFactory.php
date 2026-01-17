@@ -10,7 +10,9 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\AI\Interfaces\IntentAnalyzerInterface;
 
 /**
  * IntentAnalyzerFactory
@@ -27,6 +29,7 @@ use ClicShopping\AI\Security\SecurityLogger;
  * @package ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer
  * @since 2025-12-14
  */
+#[AllowDynamicProperties]
 class IntentAnalyzerFactory
 {
   private SecurityLogger $logger;

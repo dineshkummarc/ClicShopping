@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Dashboard;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
@@ -20,6 +21,7 @@ use ClicShopping\OM\CLICSHOPPING;
  * 🔧 MIGRATED TO DOCTRINEORM: December 6, 2025
  * All database queries now use DoctrineOrm instead of PDO
  */
+#[AllowDynamicProperties]
 class DashboardStatsCollector
 {
     private string $prefix;

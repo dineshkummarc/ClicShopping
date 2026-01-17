@@ -10,12 +10,14 @@
 
 namespace ClicShopping\AI\Helper\Formatter\SubResultFormatters;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Hash;
 /**
  * AbstractFormatter - Base class for all result formatters
  */
+#[AllowDynamicProperties]
 abstract class AbstractFormatter
 {
   protected bool $debug;

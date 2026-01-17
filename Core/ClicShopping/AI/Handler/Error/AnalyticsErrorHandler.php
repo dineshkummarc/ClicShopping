@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Handler\Error;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
@@ -27,6 +28,7 @@ use ClicShopping\OM\Registry;
  * 
  * @package ClicShopping\AI\Handler\Error
  */
+#[AllowDynamicProperties]
 class AnalyticsErrorHandler
 {
   private mixed $db;

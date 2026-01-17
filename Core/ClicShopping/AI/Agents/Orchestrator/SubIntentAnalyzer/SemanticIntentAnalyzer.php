@@ -10,6 +10,8 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
+use AllowDynamicProperties;
+
 /**
  * SemanticIntentAnalyzer
  *
@@ -30,6 +32,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
  * @since 2025-12-14
  * @updated 2026-01-02 Task 8.2.1.3 - Simplified to pure LLM fallback
  */
+#[AllowDynamicProperties]
 class SemanticIntentAnalyzer extends BaseIntentAnalyzer
 {
   protected string $type = 'semantic';

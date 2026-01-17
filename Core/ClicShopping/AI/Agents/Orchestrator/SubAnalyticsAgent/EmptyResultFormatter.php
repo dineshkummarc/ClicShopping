@@ -16,6 +16,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\OM\Registry;
 
@@ -30,6 +31,7 @@ use ClicShopping\OM\Registry;
  * 
  * Requirements: 2.1, 2.2, 2.3, 2.4, 2.5
  */
+#[AllowDynamicProperties]
 class EmptyResultFormatter
 {
   private mixed $chat;

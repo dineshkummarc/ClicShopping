@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Sites\Common;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use function in_array;
@@ -24,6 +25,7 @@ use function in_array;
  * @param string $pay_check The payment method to check.
  * @return bool True if the payment method is disallowed, false otherwise.
  */
+#[AllowDynamicProperties]
 class B2BCommon
 {
   /**

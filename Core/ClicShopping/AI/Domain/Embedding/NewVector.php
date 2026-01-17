@@ -31,7 +31,6 @@ use LLPhant\VoyageAIConfig;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Security\InputValidator;
 
-
 #[AllowDynamicProperties]
 class NewVector
 {

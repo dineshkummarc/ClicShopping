@@ -2090,7 +2090,7 @@ class ProductsCommon extends Prod
    * @return int The stock quantity of the product.
    */
 
-  public function getProductsStock(?int $id = null): int
+  public function getProductsStock(int|string|null $id = null): int
   {
     $CLICSHOPPING_Prod = Registry::get('Prod');
 
@@ -2928,13 +2928,13 @@ class ProductsCommon extends Prod
    * @param $base_price
    * @return float The percentage change (positive for increase, negative for decrease)
    */
-  public function getDynamicPricing(?int $id , $base_price, int $customers_group)
+  public function getDynamicPricing(int|string|null $id , $base_price, int $customers_group)
   {
     if (is_null($id)) {
       $id = $this->getID();
     }
 
-    $dynamic_price = $this->dynamicPricingRules->apply($id, $base_price, $customers_group);
+    $dynamic_price = $this->dynamicPricingRules->apply((int)$id, $base_price, $customers_group);
 
     return $dynamic_price;
   }

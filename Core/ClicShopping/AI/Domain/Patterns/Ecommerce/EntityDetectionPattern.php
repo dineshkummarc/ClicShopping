@@ -18,8 +18,10 @@
 
 namespace ClicShopping\AI\Domain\Patterns\Ecommerce;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Domain\Patterns\Common\EntityKeywordsPattern;
 
+#[AllowDynamicProperties]
 class EntityDetectionPattern
 {
   /**

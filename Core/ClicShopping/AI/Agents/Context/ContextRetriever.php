@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Context;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Cache;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Memory\ConversationMemory;
@@ -40,6 +41,7 @@ use ClicShopping\AI\Rag\MultiDBRAGManager;
  *
  * @package ClicShopping\AI\Agents\Context
  */
+#[AllowDynamicProperties]
 class ContextRetriever
 {
   private SecurityLogger $logger;

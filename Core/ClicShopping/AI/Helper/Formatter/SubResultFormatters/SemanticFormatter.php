@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Helper\Formatter\SubResultFormatters;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\LlmGuardrails;
@@ -18,6 +19,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 /**
  * SemanticFormatter - Formats semantic search results
  */
+#[AllowDynamicProperties]
 class SemanticFormatter extends AbstractFormatter
 {
   /**

@@ -10,8 +10,11 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Common\LLMProviderInterface;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\Common\LLMProviderFactory;
 use ClicShopping\OM\CLICSHOPPING;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
@@ -36,6 +39,7 @@ use GuzzleHttp\Exception\TransferException;
  * - Uses GuzzleHttp\Promise\Utils::settle() to wait for all promises
  * - Follows same pattern as ClicShopping\OM\HTTP::getResponse()
  */
+#[AllowDynamicProperties]
 class ParallelLLMExecutor
 {
   private SecurityLogger $logger;
@@ -43,17 +47,27 @@ class ParallelLLMExecutor
   private int $timeout;
   private int $maxConcurrent;
   private bool $parallelEnabled;
+  private ?LLMProviderInterface $provider = null;
 
   /**
    * Constructor with configuration from constants
    * 
+   * @param LLMProviderInterface|null $provider LLM provider instance (null = create default OpenAI provider)
    * @param bool|null $debug Debug mode (null = use default)
    * @param int|null $timeout Timeout in seconds (null = use CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_TIMEOUT)
    * @param int|null $maxConcurrent Max concurrent calls (null = use CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_MAX_CONCURRENT)
    */
-  public function __construct(?bool $debug = null, ?int $timeout = null, ?int $maxConcurrent = null)
+  public function __construct(?LLMProviderInterface $provider = null, ?bool $debug = null, ?int $timeout = null, ?int $maxConcurrent = null)
   {
     $this->logger = new SecurityLogger();
+    
+    // Set provider (create default if not provided)
+    if ($provider === null) {
+      $factory = LLMProviderFactory::getInstance();
+      $this->provider = $factory->create('openai'); // Default to OpenAI
+    } else {
+      $this->provider = $provider;
+    }
     
     // Use configuration constants with fallback defaults
     $this->debug = $debug ?? false;
@@ -81,7 +95,7 @@ class ParallelLLMExecutor
     
     if ($this->debug) {
       $this->logger->logSecurityEvent(
-        "ParallelLLMExecutor: Initialized with config - parallel_enabled: " . ($this->parallelEnabled ? 'true' : 'false') . 
+        "ParallelLLMExecutor: Initialized with config - provider: " . $this->provider->getName() . ", parallel_enabled: " . ($this->parallelEnabled ? 'true' : 'false') . 
         ", timeout: {$this->timeout}s, max_concurrent: {$this->maxConcurrent}",
         'info'
       );
@@ -91,11 +105,10 @@ class ParallelLLMExecutor
   /**
    * Execute multiple LLM prompts in parallel using Guzzle async requests
    *
-   * @param mixed $chat Chat instance (OpenAI, Ollama, etc.)
    * @param array $prompts Array of prompts to execute indexed by key
    * @return array Array of responses indexed by prompt key
    */
-  public function executeParallel($chat, array $prompts): array
+  public function executeParallel(array $prompts): array
   {
     if (empty($prompts)) {
       return [];
@@ -106,7 +119,7 @@ class ParallelLLMExecutor
 
     if ($this->debug) {
       $this->logger->logSecurityEvent(
-        "ParallelLLMExecutor: Starting parallel execution of {$promptCount} prompts",
+        "ParallelLLMExecutor: Starting parallel execution of {$promptCount} prompts using provider: " . $this->provider->getName(),
         'info'
       );
     }
@@ -114,28 +127,19 @@ class ParallelLLMExecutor
     // Check if parallel execution is enabled
     if (!$this->parallelEnabled) {
       $this->logFallbackReason('parallel_disabled', 'Parallel execution is disabled via configuration');
-      return $this->executeSequential($chat, $prompts, $startTime);
+      return $this->executeSequential($prompts, $startTime);
     }
 
     // Try parallel execution
     try {
-      // Extract API configuration from chat instance
-      $apiConfig = $this->extractApiConfig($chat);
-
-      // Fall back if API config extraction fails (empty URL)
-      if (empty($apiConfig['url'])) {
-        $this->logFallbackReason('api_config_failed', 'API configuration extraction failed - empty URL');
-        return $this->executeSequential($chat, $prompts, $startTime);
-      }
-
       // Build request configurations for each prompt
       $requests = [];
       foreach ($prompts as $key => $prompt) {
-        $requests[$key] = $this->buildRequestOptions($prompt, $apiConfig);
+        $requests[$key] = $this->buildRequestOptions($prompt);
       }
 
       // Execute all requests in parallel
-      $results = $this->executeGuzzleAsync($requests, $apiConfig);
+      $results = $this->executeGuzzleAsync($requests);
 
       // Extract timing metadata (added by executeGuzzleAsync)
       $timingMetadata = $results['_timing'] ?? null;
@@ -148,7 +152,7 @@ class ParallelLLMExecutor
 
     } catch (\Exception $e) {
       $this->logFallbackReason('exception', 'Parallel execution failed: ' . $e->getMessage());
-      return $this->executeSequential($chat, $prompts, $startTime);
+      return $this->executeSequential($prompts, $startTime);
     }
   }
 
@@ -157,10 +161,9 @@ class ParallelLLMExecutor
    * Core parallel execution implementation
    *
    * @param array $requests Array of HTTP request configurations indexed by key
-   * @param array $apiConfig API configuration with url, headers, provider
    * @return array Results with success/failure status indexed by key
    */
-  private function executeGuzzleAsync(array $requests, array $apiConfig): array
+  private function executeGuzzleAsync(array $requests): array
   {
     $client = $this->createHttpClient();
     $promises = [];
@@ -182,7 +185,7 @@ class ParallelLLMExecutor
 
       $promises[$key] = $client->requestAsync(
         'POST',
-        $apiConfig['url'],
+        $this->provider->getApiUrl(),
         $requestOptions
       );
     }
@@ -203,8 +206,7 @@ class ParallelLLMExecutor
       $results[$key] = $this->processSettledResult(
         $result,
         $key,
-        $duration,
-        $apiConfig['provider'] ?? 'openai'
+        $duration
       );
     }
 
@@ -225,18 +227,17 @@ class ParallelLLMExecutor
    * @param array $result Settled promise result with 'state' and 'value'/'reason'
    * @param string $key The prompt key
    * @param float $duration Execution duration in seconds
-   * @param string $provider API provider name
    * @return array Processed result with success, response, duration, http_code
    */
-  private function processSettledResult(array $result, string $key, float $duration, string $provider): array
+  private function processSettledResult(array $result, string $key, float $duration): array
   {
     if ($result['state'] === 'fulfilled') {
       $response = $result['value'];
       $httpCode = $response->getStatusCode();
       $body = $response->getBody()->getContents();
 
-      // Parse the response based on provider
-      $parsedResponse = $this->parseResponse($body, $provider);
+      // Parse the response using provider
+      $parsedResponse = $this->provider->parseResponse($body);
 
       if ($this->debug) {
         $this->logger->logSecurityEvent(
@@ -553,261 +554,38 @@ class ParallelLLMExecutor
    * Build HTTP request options for Guzzle
    *
    * @param string $prompt The prompt text
-   * @param array $config API configuration
    * @return array Guzzle request options
    */
-  private function buildRequestOptions(string $prompt, array $config): array
+  private function buildRequestOptions(string $prompt): array
   {
-    $provider = $config['provider'] ?? 'openai';
+    // Build request body using provider
+    $body = $this->provider->buildRequestBody($prompt, [
+      'temperature' => $this->provider->getTemperature(),
+      'max_tokens' => $this->provider->getMaxTokens(),
+    ]);
 
-    // Build request body based on provider
-    $body = $this->buildRequestBody($prompt, $config, $provider);
+    // Build headers
+    $headers = ['Content-Type' => 'application/json'];
+    
+    if ($apiKey = $this->provider->getApiKey()) {
+      $providerName = $this->provider->getName();
+      
+      if ($providerName === 'anthropic') {
+        $headers['x-api-key'] = $apiKey;
+        $headers['anthropic-version'] = '2023-06-01';
+      } else {
+        $headers['Authorization'] = 'Bearer ' . $apiKey;
+      }
+    }
 
     $options = [
-      RequestOptions::HEADERS => array_merge(
-        ['Content-Type' => 'application/json'],
-        $config['headers'] ?? []
-      ),
+      RequestOptions::HEADERS => $headers,
       RequestOptions::JSON => $body,
       RequestOptions::TIMEOUT => $this->timeout,
       RequestOptions::CONNECT_TIMEOUT => 10,
     ];
 
     return $options;
-  }
-
-  /**
-   * Build request body based on provider
-   * Delegates to Gpt::buildApiRequestBody() for centralized logic
-   *
-   * @param string $prompt The prompt text
-   * @param array $config API configuration
-   * @param string $provider Provider name
-   * @return array Request body
-   */
-  private function buildRequestBody(string $prompt, array $config, string $provider): array
-  {
-    // Delegate to Gpt class for centralized request body building
-    return Gpt::buildApiRequestBody(
-      $prompt,
-      $provider,
-      $config['model'] ?? null,
-      $config['temperature'] ?? null,
-      $config['max_tokens'] ?? null
-    );
-  }
-
-  /**
-   * Parse LLM API response
-   * Extracts generated text from JSON response based on provider format
-   *
-   * Response formats by provider:
-   * - OpenAI-compatible (openai, lmstudio, mistral): { "choices": [{ "message": { "content": "..." } }] }
-   * - Ollama: { "response": "..." }
-   * - Anthropic: { "content": [{ "text": "..." }] }
-   *
-   * Note: LM Studio uses OpenAI-compatible format, NOT Ollama format
-   * Both are local providers but have different API implementations
-   *
-   * @param string $response Raw HTTP response body
-   * @param string $provider API provider (openai, ollama, anthropic, lmstudio, mistral)
-   * @return string Extracted text or empty string on failure
-   */
-  private function parseResponse(string $response, string $provider): string
-  {
-    if (empty($response)) {
-      $this->logger->logSecurityEvent(
-        "ParallelLLMExecutor: Empty response received from provider '{$provider}'",
-        'warning'
-      );
-      return '';
-    }
-
-    $data = json_decode($response, true);
-
-    if (json_last_error() !== JSON_ERROR_NONE) {
-      $this->logger->logSecurityEvent(
-        "ParallelLLMExecutor: Failed to parse JSON response from provider '{$provider}': " . json_last_error_msg(),
-        'error'
-      );
-      return '';
-    }
-
-    // Check for API error responses
-    if (isset($data['error'])) {
-      $errorMessage = is_array($data['error']) 
-        ? ($data['error']['message'] ?? json_encode($data['error']))
-        : $data['error'];
-      $this->logger->logSecurityEvent(
-        "ParallelLLMExecutor: API error from provider '{$provider}': {$errorMessage}",
-        'error'
-      );
-      return '';
-    }
-
-    switch ($provider) {
-      case 'ollama':
-        // Ollama uses its own format: { "response": "..." }
-        // Different from LM Studio which uses OpenAI-compatible format
-        if (isset($data['response'])) {
-          return $data['response'];
-        }
-        $this->logger->logSecurityEvent(
-          "ParallelLLMExecutor: Ollama response missing 'response' field",
-          'warning'
-        );
-        return '';
-
-      case 'anthropic':
-        // Anthropic format: { "content": [{ "type": "text", "text": "..." }] }
-        if (isset($data['content']) && is_array($data['content'])) {
-          foreach ($data['content'] as $block) {
-            if (isset($block['type']) && $block['type'] === 'text' && isset($block['text'])) {
-              return $block['text'];
-            }
-            // Fallback for simpler format
-            if (isset($block['text'])) {
-              return $block['text'];
-            }
-          }
-        }
-        $this->logger->logSecurityEvent(
-          "ParallelLLMExecutor: Anthropic response missing 'content[].text' field",
-          'warning'
-        );
-        return '';
-
-      case 'lmstudio':
-      case 'mistral':
-      case 'openai':
-      default:
-        // OpenAI-compatible format: { "choices": [{ "message": { "content": "..." } }] }
-        // LM Studio uses this format (NOT Ollama format) despite being a local provider
-        if (isset($data['choices']) && is_array($data['choices']) && !empty($data['choices'])) {
-          $firstChoice = $data['choices'][0];
-          if (isset($firstChoice['message']['content'])) {
-            return $firstChoice['message']['content'];
-          }
-          // Fallback for completion format (older API)
-          if (isset($firstChoice['text'])) {
-            return $firstChoice['text'];
-          }
-        }
-        $this->logger->logSecurityEvent(
-          "ParallelLLMExecutor: OpenAI-compatible response missing 'choices[0].message.content' field for provider '{$provider}'",
-          'warning'
-        );
-        return '';
-    }
-  }
-
-  /**
-   * Extract API configuration from chat instance
-   * Supports OpenAI, Ollama, LM Studio, Anthropic, MistralAI
-   * 
-   * Extraction priority:
-   * 1. Detect provider from chat instance class name
-   * 2. Try to extract model from chat instance properties
-   * 3. Fallback to CLICSHOPPING_APP_CHATGPT_* constants
-   *
-   * @param mixed $chat Chat instance
-   * @return array API configuration (url, headers, model, provider, temperature, max_tokens)
-   */
-  private function extractApiConfig($chat): array
-  {
-    // Detect provider from chat instance class name
-    $provider = $this->detectProvider($chat);
-    
-    // Try to extract model from chat instance config
-    $extractedModel = $this->extractModelFromChat($chat);
-
-    // Use Gpt::buildConfigForProvider() with detected provider and optional model
-    return Gpt::buildConfigForProvider($provider, $extractedModel);
-  }
-  
-  /**
-   * Detect provider from chat instance class name
-   * Maps LLPhant chat class names to provider identifiers
-   *
-   * @param mixed $chat Chat instance
-   * @return string Provider name (openai, ollama, lmstudio, anthropic, mistral)
-   */
-  private function detectProvider($chat): string
-  {
-    $className = \strtolower(\get_class($chat));
-    
-    // Check for provider indicators in class name
-    if (\str_contains($className, 'ollama')) {
-      return 'ollama';
-    }
-    
-    if (\str_contains($className, 'lmstudio') || \str_contains($className, 'lm_studio')) {
-      return 'lmstudio';
-    }
-    
-    if (\str_contains($className, 'anthropic') || \str_contains($className, 'claude')) {
-      return 'anthropic';
-    }
-    
-    if (\str_contains($className, 'mistral')) {
-      return 'mistral';
-    }
-    
-    // Default to OpenAI (most common)
-    return 'openai';
-  }
-
-  /**
-   * Extract model name from chat instance if possible
-   * Uses reflection to safely access protected properties
-   * 
-   * Note: setAccessible() is deprecated in PHP 8.1+ and removed in PHP 9.0
-   * In PHP 8.1+, Reflection can access private/protected properties directly
-   * 
-   * @param mixed $chat Chat instance
-   * @return string|null Extracted model name or null
-   */
-  private function extractModelFromChat($chat): ?string
-  {
-    try {
-      // Use reflection to safely access config property (may be protected)
-      // PHP 8.1+: setAccessible() is no longer needed - properties are accessible by default
-      $reflection = new \ReflectionClass($chat);
-      
-      // Try to get config property
-      if ($reflection->hasProperty('config')) {
-        $configProperty = $reflection->getProperty('config');
-        $config = $configProperty->getValue($chat);
-        
-        if (\is_object($config)) {
-          // Try to get model from config
-          $configReflection = new \ReflectionClass($config);
-          if ($configReflection->hasProperty('model')) {
-            $modelProperty = $configReflection->getProperty('model');
-            $model = $modelProperty->getValue($config);
-            if (!empty($model)) {
-              return $model;
-            }
-          }
-        }
-      }
-      
-      // Try direct model property
-      if ($reflection->hasProperty('model')) {
-        $modelProperty = $reflection->getProperty('model');
-        return $modelProperty->getValue($chat);
-      }
-    } catch (\ReflectionException $e) {
-      // Silently fail and return null
-      if ($this->debug) {
-        $this->logger->logSecurityEvent(
-          "ParallelLLMExecutor: Could not extract model from chat instance: " . $e->getMessage(),
-          'warning'
-        );
-      }
-    }
-
-    return null;
   }
 
   /**
@@ -840,12 +618,11 @@ class ParallelLLMExecutor
    * Execute prompts sequentially (fallback method)
    * Uses Gpt::getGptResponse() for consistent behavior with the rest of the system
    *
-   * @param mixed $chat Chat instance (kept for interface compatibility)
    * @param array $prompts Array of prompts
    * @param float $startTime Start time for total duration calculation
    * @return array Results indexed by prompt key
    */
-  private function executeSequential($chat, array $prompts, float $startTime): array
+  private function executeSequential(array $prompts, float $startTime): array
   {
     if ($this->debug) {
       $this->logger->logSecurityEvent(
@@ -1111,13 +888,12 @@ class ParallelLLMExecutor
    * Returns an array of SQL queries indexed by interpretation type.
    * Continues processing after individual failures (partial results).
    *
-   * @param mixed $chat Chat instance
    * @param array $interpretationPrompts Array of [type => prompt]
    * @return array Array of [type => ['sql' => query, 'duration' => time, 'error' => message, 'error_type' => type]]
    */
-  public function generateMultipleSQLQueries($chat, array $interpretationPrompts): array
+  public function generateMultipleSQLQueries(array $interpretationPrompts): array
   {
-    $results = $this->executeParallel($chat, $interpretationPrompts);
+    $results = $this->executeParallel($interpretationPrompts);
 
     $sqlQueries = [];
     foreach ($results as $type => $result) {
@@ -1188,6 +964,33 @@ class ParallelLLMExecutor
       $status = $enabled ? 'enabled' : 'disabled';
       $this->logger->logSecurityEvent(
         "ParallelLLMExecutor: Parallel execution {$status}",
+        'info'
+      );
+    }
+  }
+
+  /**
+   * Get the current LLM provider instance
+   *
+   * @return LLMProviderInterface
+   */
+  public function getProvider(): LLMProviderInterface
+  {
+    return $this->provider;
+  }
+
+  /**
+   * Set the LLM provider instance
+   *
+   * @param LLMProviderInterface $provider Provider instance
+   */
+  public function setProvider(LLMProviderInterface $provider): void
+  {
+    $this->provider = $provider;
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "ParallelLLMExecutor: Provider changed to " . $provider->getName(),
         'info'
       );
     }

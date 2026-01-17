@@ -937,8 +937,7 @@ class GptRetailersOpenAI extends GptRetailers
      */
     private function isEligibleForFreeShipping(): bool
     {
-        if (defined('MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING') && 
-            MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING === 'true' &&
+        if (defined('MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING') &&  MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING === 'true' &&
             defined('MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING_OVER')) {
             
             // TODO: Calculate order total and check against free shipping threshold

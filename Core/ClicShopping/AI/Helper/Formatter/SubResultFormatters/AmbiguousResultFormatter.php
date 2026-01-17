@@ -17,6 +17,7 @@
 
 namespace ClicShopping\AI\Helper\Formatter\SubResultFormatters;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 
 /**
@@ -25,6 +26,7 @@ use ClicShopping\OM\Registry;
  * Formats results from ambiguous queries that have multiple interpretations
  * Displays each interpretation with its results clearly separated
  */
+#[AllowDynamicProperties]
 class AmbiguousResultFormatter extends AbstractFormatter
 {
   /**

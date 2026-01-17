@@ -21,7 +21,7 @@ use ClicShopping\AI\Agents\Planning\SubPlanExecutor\SemanticExecutor;
 use ClicShopping\AI\Agents\Planning\SubPlanExecutor\StepExecutor;
 use ClicShopping\AI\Agents\Planning\SubPlanExecutor\ToolExecutor;
 use ClicShopping\AI\Infrastructure\Metrics\CalculatorTool;
-use ClicShopping\AI\Domain\Search\SearchCacheManager;
+use ClicShopping\AI\Infrastructure\Cache\SearchCacheManager;
 use ClicShopping\AI\Domain\Search\WebSearchTool;
 use ClicShopping\OM\Registry;
 

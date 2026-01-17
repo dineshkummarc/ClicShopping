@@ -10,6 +10,8 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
+use AllowDynamicProperties;
+
 /**
  * AnalyticsIntentAnalyzer
  *
@@ -30,6 +32,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
  * @since 2025-12-14
  * @updated 2025-12-29 Task 5.1.6.6 - Simplified to pure LLM fallback
  */
+#[AllowDynamicProperties]
 class AnalyticsIntentAnalyzer extends BaseIntentAnalyzer
 {
   protected string $type = 'analytics';

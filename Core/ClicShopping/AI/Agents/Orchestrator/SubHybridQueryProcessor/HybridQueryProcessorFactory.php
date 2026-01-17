@@ -10,6 +10,8 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor;
 
+use AllowDynamicProperties;
+
 /**
  * HybridQueryProcessorFactory - Factory for creating and orchestrating components
  *
@@ -21,6 +23,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor;
  * @package ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor
  * @since 2025-12-14
  */
+#[AllowDynamicProperties]
 class HybridQueryProcessorFactory
 {
   /**

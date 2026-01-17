@@ -11,6 +11,7 @@
 namespace ClicShopping\AI\Agents\Orchestrator;
 
 use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
@@ -36,7 +37,7 @@ use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\DiagnosticManager;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ContextManager;
 use ClicShopping\AI\Handler\Query\ComplexQueryHandler;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\HybridQueryProcessor;
-
+use ClicShopping\AI\Security\Validation\HallucinationDetector;
 
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ResponseProcessor as ResponseProcessorComponent;
 use ClicShopping\AI\Agents\Query\QueryAnalyzer;
@@ -240,11 +241,131 @@ class OrchestratorAgent
     // ✅ TASK 4.4.2.3: Variables pour tracking
     $status = 'success';
     
+    // 🔧 TASK 16.1: Initialize variables for catch block
+    $intent = null;
+    $executionId = null;
+    
     if ($this->debug) {
       error_log("⏱️ [PERF] processWithValidation START at " . date('H:i:s'));
     }
 
     try {
+      // 🔧 TASK 13.4 + 17.5: Out-of-context detection with short query skip
+      // Skip out-of-context detection for short queries (likely product names)
+      $wordCount = str_word_count($query);
+      $skipOutOfContextCheck = ($wordCount <= 4);
+      
+      if ($skipOutOfContextCheck) {
+        if ($this->debug) {
+          $this->securityLogger->logSecurityEvent(
+            "Skipping out-of-context detection for short query (likely product name): '{$query}' ({$wordCount} words)",
+            'info'
+          );
+        }
+        // Set default context check (allow query to proceed)
+        $contextCheck = [
+          'is_out_of_context' => false,
+          'context_relevance' => 1.0,
+          'detected_category' => 'ecommerce',
+          'confidence' => 1.0,
+          'explanation' => 'Short query - skipped out-of-context detection (likely product name)',
+          'suggested_action' => 'allow'
+        ];
+      } else {
+        // Only check out-of-context for longer queries (> 4 words)
+        $hallucinationDetector = new HallucinationDetector($this->debug);
+        $contextCheck = $hallucinationDetector->detectOutOfContext($query);
+        
+        if ($this->debug) {
+          $this->securityLogger->logStructured('info', 'OrchestratorAgent', 'out_of_context_check', [
+            'query' => $query,
+            'word_count' => $wordCount,
+            'is_out_of_context' => $contextCheck['is_out_of_context'],
+            'category' => $contextCheck['detected_category'],
+            'action' => $contextCheck['suggested_action'],
+            'confidence' => $contextCheck['confidence']
+          ]);
+        }
+      }
+      
+      // Handle out-of-context queries based on suggested action
+      if ($contextCheck['suggested_action'] === 'reject') {
+        // Reject query immediately - return error response
+        $this->securityLogger->logSecurityEvent(
+          "Query rejected as out-of-context: '{$query}' (category: {$contextCheck['detected_category']})",
+          'warning'
+        );
+        
+        return [
+          'success' => false,
+          'type' => 'error',
+          'error' => 'out_of_context',
+          'text_response' => "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about products, orders, customers, revenue, analytics, and business operations.",
+          'response' => "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about products, orders, customers, revenue, analytics, and business operations.",
+          'out_of_context_detection' => [
+            'is_out_of_context' => true,
+            'category' => $contextCheck['detected_category'],
+            'confidence' => $contextCheck['confidence'],
+            'explanation' => $contextCheck['explanation']
+          ],
+          'sources' => [],
+          'data' => []
+        ];
+      } elseif ($contextCheck['suggested_action'] === 'ask_clarification') {
+        // Ask user for clarification on ambiguous query
+        $this->securityLogger->logSecurityEvent(
+          "Query requires clarification: '{$query}' (category: {$contextCheck['detected_category']})",
+          'info'
+        );
+        
+        // Build clarification message
+        $clarificationMessage = "Nous avons détecté une requête ambiguë. Veuillez préciser votre question:\n\n";
+        if (isset($contextCheck['clarification_options']) && is_array($contextCheck['clarification_options'])) {
+          foreach ($contextCheck['clarification_options'] as $index => $option) {
+            $clarificationMessage .= ($index + 1) . ". " . $option . "\n";
+          }
+        } else {
+          $clarificationMessage .= "1. Rechercher un produit nommé '{$query}'\n";
+          $clarificationMessage .= "2. Obtenir des informations sur une personne\n";
+          $clarificationMessage .= "3. Autre chose\n";
+        }
+        
+        return [
+          'success' => false,
+          'type' => 'clarification_needed',
+          'error' => 'ambiguous_query',
+          'text_response' => $clarificationMessage,
+          'response' => $clarificationMessage,
+          'clarification_needed' => true,
+          'original_query' => $query,
+          'clarification_options' => $contextCheck['clarification_options'] ?? [
+            "Rechercher un produit nommé '{$query}'",
+            "Obtenir des informations sur une personne",
+            "Autre chose"
+          ],
+          'out_of_context_detection' => [
+            'is_out_of_context' => false,
+            'category' => $contextCheck['detected_category'],
+            'confidence' => $contextCheck['confidence'],
+            'explanation' => $contextCheck['explanation']
+          ],
+          'sources' => [],
+          'data' => []
+        ];
+      } elseif ($contextCheck['suggested_action'] === 'redirect_to_web_search') {
+        // Force intent to web_search for business queries requiring external data
+        if ($this->debug) {
+          $this->securityLogger->logSecurityEvent(
+            "Query redirected to web_search: '{$query}' (category: {$contextCheck['detected_category']})",
+            'info'
+          );
+        }
+        // Set option to force web_search intent
+        $options['force_intent'] = 'web_search';
+        $options['out_of_context_redirect'] = true;
+      }
+      // If action is 'allow', continue normally
+      
       // TASK 3.2.3: Use MemoryManager for contextual reference resolution
       $resolved = $this->memoryManager->resolveContextualReferences($query);
       $queryToProcess = $resolved['resolved_query'] ?? $query;
@@ -643,21 +764,7 @@ class OrchestratorAgent
           );
         }
       }
-      
-      // Operation 2: Translation (if not already done)
-      try {
-        $translatedQuery = Semantics::translateToEnglish($queryToProcess, 80);
-        $translationDuration = (microtime(true) - $translationStart) * 1000;
-      } catch (\Exception $e) {
-        $translationError = $e;
-        $translationDuration = (microtime(true) - $translationStart) * 1000;
-        if ($this->debug) {
-          $this->securityLogger->logSecurityEvent(
-            "Translation failed (using original query): " . $e->getMessage(),
-            'warning'
-          );
-        }
-      }
+      $translationDuration = 0; // No longer measured here
       
       $parallelDuration = (microtime(true) - $parallelStart) * 1000;
       
@@ -695,16 +802,6 @@ class OrchestratorAgent
         }
       }
       
-      try {
-        $translatedQuery = Semantics::translateToEnglish($queryToProcess, 80);
-      } catch (\Exception $e) {
-        if ($this->debug) {
-          $this->securityLogger->logSecurityEvent(
-            "Translation failed: " . $e->getMessage(),
-            'warning'
-          );
-        }
-      }
     }
     
     $perfMarkers['after_parallel'] = microtime(true); // 🆕
@@ -771,6 +868,58 @@ class OrchestratorAgent
     $intent = $this->analyzeIntent($queryToProcess);
     $this->workingMemory->set('intent', $intent);
 
+    // 🆕 TASK 17.1: Anti-hallucination verification (PRIORITY 1)
+    // Check if translated_query contains "revenue", "month", or "quarter" but original query does NOT
+    $translatedQuery = $intent['translated_query'] ?? $queryToProcess;
+    $originalQueryLower = strtolower($query);
+    $translatedQueryLower = strtolower($translatedQuery);
+    
+    $hallucinationDetected = false;
+    $hallucinationKeywords = [];
+    
+    // Check for revenue bias hallucination (include French equivalents)
+    if (str_contains($translatedQueryLower, 'revenue') 
+        && !str_contains($originalQueryLower, 'revenue')
+        && !str_contains($originalQueryLower, 'chiffre')
+        && !str_contains($originalQueryLower, 'affaires')
+        && !str_contains($originalQueryLower, 'revenu')
+        && !str_contains($originalQueryLower, ' ca ')) {
+      $hallucinationDetected = true;
+      $hallucinationKeywords[] = 'revenue';
+    }
+    if ((str_contains($translatedQueryLower, 'month') || str_contains($translatedQueryLower, 'monthly')) 
+        && !str_contains($originalQueryLower, 'month') && !str_contains($originalQueryLower, 'mois')) {
+      $hallucinationDetected = true;
+      $hallucinationKeywords[] = 'month';
+    }
+    if ((str_contains($translatedQueryLower, 'quarter') || str_contains($translatedQueryLower, 'quarterly')) 
+        && !str_contains($originalQueryLower, 'quarter') && !str_contains($originalQueryLower, 'trimestre')) {
+      $hallucinationDetected = true;
+      $hallucinationKeywords[] = 'quarter';
+    }
+    
+    if ($hallucinationDetected) {
+      // 🚨 HALLUCINATION DETECTED!
+      $this->securityLogger->logSecurityEvent(
+        "🚨 HALLUCINATION DETECTED: Revenue bias in translation",
+        'warning',
+        [
+          'original_query' => $query,
+          'translated_query' => $translatedQuery,
+          'hallucination_keywords' => $hallucinationKeywords,
+          'action' => 'using_original_query_as_fallback'
+        ]
+      );
+      
+      // Fallback: Use original query as translated query
+      $intent['translated_query'] = $queryToProcess;
+      $translatedQuery = $queryToProcess;
+      
+      // Log for analysis
+      error_log("🚨 HALLUCINATION: '$query' → '$translatedQuery' (keywords: " . implode(', ', $hallucinationKeywords) . ")");
+      error_log("   → Fallback to original: '$queryToProcess'");
+    }
+
     if ($this->debug) {
       error_log("⏱️ [PERF] analyzeIntent took " . round((microtime(true) - $intentStart), 2) . "s");
       $this->securityLogger->logStructured(
@@ -782,6 +931,8 @@ class OrchestratorAgent
           'intent_type' => $intent['type'] ?? 'unknown',
           'is_hybrid_flag' => $intent['is_hybrid'] ?? false,
           'confidence' => $intent['confidence'] ?? 0,
+          'hallucination_detected' => $hallucinationDetected,
+          'hallucination_keywords' => $hallucinationDetected ? $hallucinationKeywords : null,
         ]
       );
     }
@@ -899,7 +1050,23 @@ class OrchestratorAgent
     // ✅ TASK 5.2.1.1: Route hybrid queries to HybridQueryProcessor BEFORE TaskPlanner
     // Hybrid queries need to be split into sub-queries and executed by multiple agents
     // NOTE: Check intent_type ONLY (is_hybrid flag can be inconsistent)
-    $intentType = $intent['type'] ?? 'analytics';
+    // 🔧 FIX: Check both 'type' and 'query_type' fields, default to 'semantic' (safer than 'analytics')
+    $intentType = $intent['type'] ?? $intent['query_type'] ?? 'semantic';
+    
+    // Log when fallback default is used
+    if (!isset($intent['type']) && !isset($intent['query_type'])) {
+      $this->securityLogger->logStructured(
+        'warning',
+        'OrchestratorAgent',
+        'intent_type_fallback',
+        [
+          'fallback_value' => 'semantic',
+          'reason' => 'Neither type nor query_type found in intent',
+          'intent_keys' => array_keys($intent),
+          'query' => $queryToProcess
+        ]
+      );
+    }
     
     if ($intentType === 'hybrid') {
       if ($this->debug) {

@@ -12,6 +12,8 @@
 
 namespace ClicShopping\AI\Domain\Patterns\Semantic;
 
+use AllowDynamicProperties;
+
 /**
  * PatternAnalysisPattern Class
  * 
@@ -32,6 +34,7 @@ namespace ClicShopping\AI\Domain\Patterns\Semantic;
  * 
  * @moved 2026-01-09 from Domain\Patterns to Domain\Patterns\Semantic
  */
+#[AllowDynamicProperties]
 class PatternAnalysisPattern
 {
   /**

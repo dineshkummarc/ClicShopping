@@ -8,8 +8,10 @@
 
 namespace ClicShopping\AI\Helper\Detection;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 
+#[AllowDynamicProperties]
 class SemanticDomainDetector
 {
   private SecurityLogger $securityLogger;

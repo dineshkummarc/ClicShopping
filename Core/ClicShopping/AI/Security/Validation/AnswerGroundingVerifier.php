@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Security\Validation;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Domain\Embedding\NewVector;
 use ClicShopping\AI\Domain\Embedding\VectorStatistics;
@@ -29,6 +30,7 @@ use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
  *
  * @see kiro_documentation/2025_12_27/hallucination_detection_system_design.md
  */
+#[AllowDynamicProperties]
 class AnswerGroundingVerifier
 {
   private SecurityLogger $logger;

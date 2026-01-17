@@ -86,7 +86,9 @@ class ClicShoppingAdmin extends \ClicShopping\OM\SitesAbstract
         } catch (\Exception $e) {
           $cached_config = false;
         }
-      } elseif (defined('USE_MEMCACHED') && USE_MEMCACHED == 'True') {
+      }
+
+      if (defined('USE_MEMCACHED') && USE_MEMCACHED == 'True') {
         $memcached = CacheAdmin::getMemcached();
         if ($memcached !== false) {
           $cached_config = $memcached->get($cache_key);

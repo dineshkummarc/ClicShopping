@@ -10,7 +10,9 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\AI\Interfaces\QueryProcessorInterface;
 
 /**
  * BaseQueryProcessor - Abstract base class for HybridQueryProcessor components
@@ -23,6 +25,7 @@ use ClicShopping\AI\Security\SecurityLogger;
  * @package ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor
  * @since 2025-12-14
  */
+#[AllowDynamicProperties]
 abstract class BaseQueryProcessor implements QueryProcessorInterface
 {
   /**

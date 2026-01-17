@@ -10,9 +10,10 @@
 
 namespace ClicShopping\AI\Security\Validation;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\OM\CLICSHOPPING;
-
+use ClicShopping\OM\Registry;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 /**
  * HallucinationDetector Class
  *
@@ -27,11 +28,12 @@ use ClicShopping\OM\CLICSHOPPING;
  * @see kiro_documentation/2025_12_27/hallucination_detection_system_design.md
  * @see kiro_documentation/2025_12_28/ARCHITECTURE_REORGANIZATION_PROPOSAL.md
  */
+#[AllowDynamicProperties]
 class HallucinationDetector
 {
   private SecurityLogger $logger;
   private bool $debug;
-
+  private mixed $language;
   /**
    * Constructor
    *
@@ -42,6 +44,9 @@ class HallucinationDetector
     $this->logger = new SecurityLogger();
     $this->debug = $debug;
 
+    // Load language definitions
+    $this->language = Registry::get('Language');
+    $this->language->loadDefinitions('rag_out_of_context_detection', 'en', null, 'ClicShoppingAdmin');
   }
 
   /**
@@ -113,9 +118,9 @@ class HallucinationDetector
    * @return array Formatted response
    */
   public function createInsufficientInformationResponse(array $groundingResult, int $languageId = 1): array {
-    // Get localized messages from language files
-    $message = CLICSHOPPING::getDef('text_rag_insufficient_information');
-    $sourceDetails = CLICSHOPPING::getDef('text_rag_source_insufficient_information');
+    // Get localized messages from language files using instance language object
+    $message = $this->language->getDef('text_rag_insufficient_information');
+    $sourceDetails = $this->language->getDef('text_rag_source_insufficient_information');
 
     if ($this->debug) {
       $this->logger->logSecurityEvent(
@@ -209,5 +214,329 @@ class HallucinationDetector
   public function shouldFlagAnswer(array $groundingResult): bool
   {
     return ($groundingResult['decision'] ?? 'ACCEPT') === 'FLAG';
+  }
+
+  /**
+   * Detect out-of-context queries using pure LLM
+   *
+   * 🔧 TASK 13.1: Detect non-e-commerce queries using LLM (no patterns)
+   *
+   * This method uses LLM to determine if a query is out-of-context for an
+   * e-commerce backoffice BI system. It does NOT use pattern matching.
+   *
+   * **ONLY business-related questions are accepted:**
+   * - E-commerce operations (products, orders, customers, revenue)
+   * - Marketing (campaigns, promotions, advertising, SEO)
+   * - Innovation (new products, market trends, competitive analysis)
+   * - Prospection (lead generation, customer acquisition, market research)
+   * - Business strategy (growth, expansion, partnerships)
+   *
+   * **Action Logic:**
+   * - **REJECT**: Sports, entertainment, personal questions, general knowledge NOT related to business
+   * - **REDIRECT to WEB_SEARCH**: Business/marketing/innovation questions requiring external data
+   * - **ALLOW**: E-commerce business queries using internal database
+   *
+   * Examples of queries that should be REJECTED:
+   * - Sports: "What is the winner for the next world cup championship"
+   * - Entertainment: "Who won the Oscar?", "What's the latest movie?"
+   * - General knowledge: "What is the capital of France?", "Where is Paris?" (NOT business related)
+   * - Personal: "Give me personal advice"
+   *
+   * Examples of queries that should be REDIRECTED to WEB_SEARCH:
+   * - Competitor analysis: "iPhone price on Amazon"
+   * - Market research: "what are the latest e-commerce trends?"
+   * - Marketing: "how to improve our marketing campaigns?"
+   * - Prospection: "best practices for customer acquisition"
+   * - Innovation: "emerging technologies in e-commerce"
+   *
+   * Examples of queries that should be ALLOWED (in-context):
+   * - Product search: "show products", "find iPhone"
+   * - Analytics: "total revenue 2025", "how many orders?"
+   * - Business metrics: "best selling products", "customer statistics"
+   *
+   * @param string $query User query to analyze
+   * @return array Detection result with:
+   *   - 'is_out_of_context' (bool): True if query is out-of-context
+   *   - 'context_relevance' (float): 0.0-1.0 (0.0 = completely irrelevant, 1.0 = highly relevant)
+   *   - 'detected_category' (string): Category of out-of-context query (sports, entertainment, general_knowledge, news, other)
+   *   - 'confidence' (float): 0.0-1.0 confidence in detection
+   *   - 'explanation' (string): Human-readable explanation
+   *   - 'suggested_action' (string): 'reject', 'redirect_to_web_search', or 'allow'
+   *   - 'detection_method' (string): Always 'llm' (pure LLM mode)
+   */
+  public function detectOutOfContext(string $query): array
+  {
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "Detecting out-of-context query: {$query}",
+        'info'
+      );
+    }
+
+    try {
+      // Build LLM prompt for out-of-context detection
+      $prompt = $this->buildOutOfContextDetectionPrompt($query);
+
+      // Call LLM for detection (pure LLM, no patterns)
+      $response = Gpt::getGptResponse(
+        $prompt,
+        300, // max_tokens
+        0.0  // temperature (deterministic)
+      );
+
+      // Clean and parse JSON response
+      $cleanedResponse = $this->cleanJsonResponse($response);
+      $result = json_decode($cleanedResponse, true);
+
+      if (json_last_error() !== JSON_ERROR_NONE) {
+        $this->logger->logSecurityEvent(
+          "Failed to parse LLM response for out-of-context detection: " . json_last_error_msg(),
+          'warning'
+        );
+
+        // Fallback: assume in-context (safe default)
+        return $this->getDefaultInContextResult();
+      }
+
+      // Validate and sanitize result
+      $result = $this->validateOutOfContextResult($result);
+
+      // Log detection result
+      $this->logger->logStructured(
+        $result['is_out_of_context'] ? 'warning' : 'info',
+        'HallucinationDetector',
+        'out_of_context_detection',
+        [
+          'query' => $query,
+          'is_out_of_context' => $result['is_out_of_context'],
+          'context_relevance' => $result['context_relevance'],
+          'detected_category' => $result['detected_category'],
+          'confidence' => $result['confidence'],
+          'suggested_action' => $result['suggested_action'],
+        ]
+      );
+
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "Out-of-context detection result: " . json_encode($result, JSON_PRETTY_PRINT),
+          'info'
+        );
+      }
+
+      return $result;
+
+    } catch (\Exception $e) {
+      $this->logger->logSecurityEvent(
+        "Exception in out-of-context detection: " . $e->getMessage(),
+        'error'
+      );
+
+      // Fallback: assume in-context (safe default)
+      return $this->getDefaultInContextResult();
+    }
+  }
+
+  /**
+   * Build LLM prompt for out-of-context detection
+   *
+   * Creates a prompt that asks the LLM to determine if a query is relevant
+   * to an e-commerce backoffice BI system.
+   *
+   * @param string $query User query
+   * @return string LLM prompt
+   */
+  private function buildOutOfContextDetectionPrompt(string $query): string
+  {
+    // Get prompt template from language file with query parameter
+    $prompt = $this->language->getDef('text_out_of_context_detection_prompt', ['query' => $query]);
+    
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "Using out-of-context detection prompt from language file",
+        'info'
+      );
+    }
+    
+    return $prompt;
+  }
+
+  /**
+   * Clean JSON response by removing markdown code blocks
+   *
+   * @param string $response Raw LLM response
+   * @return string Cleaned JSON string
+   */
+  private function cleanJsonResponse(string $response): string
+  {
+    $response = trim($response);
+
+    // Pattern 1: ```json\n{...}\n```
+    if (preg_match('/^```(?:json)?\s*\n(.*?)\n```$/s', $response, $matches)) {
+      return trim($matches[1]);
+    }
+
+    // Pattern 2: ```{...}```
+    if (preg_match('/^```(?:json)?\s*(\{.*?\})\s*```$/s', $response, $matches)) {
+      return trim($matches[1]);
+    }
+
+    // No markdown blocks found, return as-is
+    return $response;
+  }
+
+  /**
+   * Validate and sanitize out-of-context detection result
+   *
+   * @param array|null $result Parsed JSON from LLM
+   * @return array Validated result
+   */
+  private function validateOutOfContextResult(?array $result): array
+  {
+    $default = $this->getDefaultInContextResult();
+
+    if (!is_array($result)) {
+      return $default;
+    }
+
+    // Validate is_out_of_context (bool)
+    $result['is_out_of_context'] = isset($result['is_out_of_context']) 
+      ? (bool)$result['is_out_of_context'] 
+      : false;
+
+    // Validate context_relevance (0.0-1.0)
+    $result['context_relevance'] = isset($result['context_relevance']) && is_numeric($result['context_relevance'])
+      ? max(0.0, min(1.0, (float)$result['context_relevance']))
+      : 1.0;
+
+    // Validate detected_category
+    $validCategories = ['sports', 'entertainment', 'general_knowledge', 'news', 'other', 'ecommerce'];
+    $result['detected_category'] = isset($result['detected_category']) && in_array($result['detected_category'], $validCategories, true)
+      ? $result['detected_category']
+      : 'ecommerce';
+
+    // Validate confidence (0.0-1.0)
+    $result['confidence'] = isset($result['confidence']) && is_numeric($result['confidence'])
+      ? max(0.0, min(1.0, (float)$result['confidence']))
+      : 0.5;
+
+    // Validate explanation
+    $result['explanation'] = isset($result['explanation']) && is_string($result['explanation'])
+      ? trim($result['explanation'])
+      : 'No explanation provided';
+
+    // Validate suggested_action
+    $validActions = ['reject', 'redirect_to_web_search', 'allow'];
+    $result['suggested_action'] = isset($result['suggested_action']) && in_array($result['suggested_action'], $validActions, true)
+      ? $result['suggested_action']
+      : 'allow';
+
+    // Add detection method
+    $result['detection_method'] = 'llm';
+
+    return $result;
+  }
+
+  /**
+   * Get default in-context result (safe fallback)
+   *
+   * @return array Default result assuming query is in-context
+   */
+  private function getDefaultInContextResult(): array
+  {
+    return [
+      'is_out_of_context' => false,
+      'context_relevance' => 1.0,
+      'detected_category' => 'ecommerce',
+      'confidence' => 0.5,
+      'explanation' => 'Assumed in-context (detection failed)',
+      'suggested_action' => 'allow',
+      'detection_method' => 'llm',
+    ];
+  }
+
+  /**
+   * Detect revenue bias hallucination
+   *
+   * 🆕 TASK 17.2: Detect if translated query contains revenue/month/quarter
+   * but original query does NOT (hallucination pattern)
+   *
+   * @param string $originalQuery Original user query
+   * @param string $translatedQuery Translated query from UnifiedQueryAnalyzer
+   * @return array Detection result with hallucination flag and keywords
+   */
+  public function detectRevenueBias(string $originalQuery, string $translatedQuery): array
+  {
+    $originalQueryLower = strtolower($originalQuery);
+    $translatedQueryLower = strtolower($translatedQuery);
+    
+    $hallucinationDetected = false;
+    $hallucinationKeywords = [];
+    
+    // Check for revenue bias hallucination
+    // Include French equivalents: chiffre d'affaires, CA, revenu
+    if (str_contains($translatedQueryLower, 'revenue') 
+        && !str_contains($originalQueryLower, 'revenue')
+        && !str_contains($originalQueryLower, 'chiffre')
+        && !str_contains($originalQueryLower, 'affaires')
+        && !str_contains($originalQueryLower, 'revenu')
+        && !str_contains($originalQueryLower, ' ca ')) {
+      $hallucinationDetected = true;
+      $hallucinationKeywords[] = 'revenue';
+    }
+    
+    // Check for month/monthly (English and French)
+    if ((str_contains($translatedQueryLower, 'month') || str_contains($translatedQueryLower, 'monthly')) 
+        && !str_contains($originalQueryLower, 'month') 
+        && !str_contains($originalQueryLower, 'mois')
+        && !str_contains($originalQueryLower, 'mensuel')) {
+      $hallucinationDetected = true;
+      $hallucinationKeywords[] = 'month';
+    }
+    
+    // Check for quarter/quarterly (English and French)
+    if ((str_contains($translatedQueryLower, 'quarter') || str_contains($translatedQueryLower, 'quarterly')) 
+        && !str_contains($originalQueryLower, 'quarter') 
+        && !str_contains($originalQueryLower, 'trimestre')
+        && !str_contains($originalQueryLower, 'trimestriel')) {
+      $hallucinationDetected = true;
+      $hallucinationKeywords[] = 'quarter';
+    }
+    
+    // Check for semester/semestre
+    if ((str_contains($translatedQueryLower, 'semester') || str_contains($translatedQueryLower, 'semestre')) 
+        && !str_contains($originalQueryLower, 'semester') 
+        && !str_contains($originalQueryLower, 'semestre')) {
+      $hallucinationDetected = true;
+      $hallucinationKeywords[] = 'semester';
+    }
+    
+    // Check for year/annual (only if combined with revenue)
+    if (str_contains($translatedQueryLower, 'revenue') 
+        && (str_contains($translatedQueryLower, 'year') || str_contains($translatedQueryLower, 'annual'))
+        && !str_contains($originalQueryLower, 'year') 
+        && !str_contains($originalQueryLower, 'année')
+        && !str_contains($originalQueryLower, 'annuel')
+        && !str_contains($originalQueryLower, 'an ')) {
+      $hallucinationDetected = true;
+      $hallucinationKeywords[] = 'year';
+    }
+    
+    $result = [
+      'hallucination_detected' => $hallucinationDetected,
+      'hallucination_keywords' => $hallucinationKeywords,
+      'original_query' => $originalQuery,
+      'translated_query' => $translatedQuery,
+      'suggested_action' => $hallucinationDetected ? 'use_original_query' : 'allow',
+      'confidence' => $hallucinationDetected ? 0.95 : 0.0,
+    ];
+    
+    if ($this->debug && $hallucinationDetected) {
+      $this->logger->logSecurityEvent(
+        "Revenue bias hallucination detected: '$originalQuery' → '$translatedQuery' (keywords: " . implode(', ', $hallucinationKeywords) . ")",
+        'warning'
+      );
+    }
+    
+    return $result;
   }
 }

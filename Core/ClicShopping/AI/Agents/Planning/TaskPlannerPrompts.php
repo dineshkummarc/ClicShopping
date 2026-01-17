@@ -8,26 +8,26 @@
  *
  */
 
-namespace ClicShopping\AI\Agents\PromptSystem;
+namespace ClicShopping\AI\Agents\Planning;
 
 use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
 /**
- * PromptSystem Class
+ * TaskPlannerPrompts Class
  *
- * Système centralisé de gestion des prompts pour garantir des sorties JSON valides
- * et structurées pour tous les agents du système.
+ * Centralized prompt management for TaskPlanner to ensure valid JSON outputs
+ * and structured responses.
  *
- * Responsabilités :
- * - Définir les prompts système rigides
- * - Valider les schémas JSON
- * - Fournir des templates pour chaque type d'opération
- * - Garantir la cohérence des formats de sortie
+ * Responsibilities:
+ * - Define rigid system prompts for TaskPlanner
+ * - Validate JSON schemas
+ * - Provide templates for each operation type
+ * - Ensure consistency of output formats
  */
 #[AllowDynamicProperties]
-class PromptSystem
+class TaskPlannerPrompts
 {
   /**
    * Types d'étapes autorisés dans les plans

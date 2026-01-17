@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Domain\Semantics\Semantics;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
@@ -33,6 +34,7 @@ use ClicShopping\Sites\Common\HTMLOverrideCommon;
  * @since 2025-12-14
  * @updated 2026-01-03 Phase 8.4 cleanup - Pure LLM mode
  */
+#[AllowDynamicProperties]
 class TranslationService
 {
   private SecurityLogger $logger;

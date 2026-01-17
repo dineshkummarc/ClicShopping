@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Dashboard;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\AI\Infrastructure\Monitoring\MonitoringAgent;
@@ -21,6 +22,7 @@ use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
  * 🔧 MIGRATED TO DOCTRINEORM: December 6, 2025
  * All database queries now use DoctrineOrm instead of PDO
  */
+#[AllowDynamicProperties]
 class Dashboard
 {
   private $statsCollector;
@@ -55,7 +57,8 @@ class Dashboard
       'source_stats' => $this->getSourceStats($periodDays),
       'advanced_stats' => $this->statsCollector->collectAllStats($periodDays),
       'alert_stats' => $this->getAlertStats(),
-      'websearch_stats' => $this->getWebSearchStats($periodDays)
+      'websearch_stats' => $this->getWebSearchStats($periodDays),
+      'cold_cache_metrics' => $this->getColdCacheMetrics($periodDays)
     ];
   }
 
@@ -891,6 +894,100 @@ class Dashboard
       'trends' => [],
       'period_days' => $periodDays,
       'status' => 'unknown'
+    ];
+  }
+
+  /**
+   * Get cold cache metrics
+   * 
+   * Retrieves comprehensive metrics for cold cache performance, timeout events,
+   * parallel execution, and hybrid query performance.
+   * 
+   * @param int $periodDays Number of days to analyze
+   * @return array Cold cache metrics
+   */
+  public function getColdCacheMetrics(int $periodDays = 7): array
+  {
+    try {
+      $metricsCollector = new \ClicShopping\AI\Infrastructure\Metrics\ColdCacheMetricsCollector();
+      return $metricsCollector->getAllMetrics($periodDays);
+    } catch (\Exception $e) {
+      error_log('Dashboard: Error getting cold cache metrics - ' . $e->getMessage());
+      return $this->getDefaultColdCacheMetrics($periodDays);
+    }
+  }
+
+  /**
+   * Get default cold cache metrics (fallback)
+   */
+  private function getDefaultColdCacheMetrics(int $periodDays = 7): array
+  {
+    return [
+      'cache_state_distribution' => [
+        'cold' => 0,
+        'warm' => 0,
+        'expired' => 0,
+        'total' => 0,
+        'cold_percentage' => 0,
+        'warm_percentage' => 0,
+        'expired_percentage' => 0
+      ],
+      'cold_vs_warm_performance' => [
+        'cold_avg_time' => 0,
+        'warm_avg_time' => 0,
+        'cold_count' => 0,
+        'warm_count' => 0,
+        'speedup_factor' => 0,
+        'time_saved_per_query' => 0
+      ],
+      'timeout_events' => [
+        'total_timeouts' => 0,
+        'cold_timeouts' => 0,
+        'warm_timeouts' => 0,
+        'expired_timeouts' => 0,
+        'timeout_rate' => 0
+      ],
+      'parallel_execution' => [
+        'total_parallel_queries' => 0,
+        'total_time_saved' => 0,
+        'avg_speedup_factor' => 0,
+        'analytics' => [
+          'count' => 0,
+          'avg_speedup' => 0,
+          'time_saved' => 0,
+          'percentage_faster' => 0
+        ],
+        'hybrid' => [
+          'count' => 0,
+          'avg_speedup' => 0,
+          'time_saved' => 0,
+          'percentage_faster' => 0
+        ]
+      ],
+      'hybrid_query_metrics' => [
+        'total_count' => 0,
+        'avg_subqueries' => 0,
+        'avg_execution_time' => 0,
+        'success_rate' => 0,
+        'time_distribution' => [
+          'under_5s' => 0,
+          'between_5_15s' => 0,
+          'between_15_30s' => 0,
+          'over_30s' => 0
+        ]
+      ],
+      'cache_warming' => [
+        'total_warmed' => 0,
+        'success_rate' => 0,
+        'last_run' => null,
+        'next_run' => null,
+        'queries_identified' => 0,
+        'frequency_threshold' => 5,
+        'expiring_soon' => 0,
+        'expiration_warning_days' => 3,
+        'note' => 'Cache warming scheduler not yet implemented (Task 15)'
+      ],
+      'period_days' => $periodDays
     ];
   }
 }

@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Domain\Patterns\WebSearch;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 
 /**
@@ -36,6 +37,7 @@ use ClicShopping\OM\Registry;
  * - Namespace updated: ClicShopping\AI\Domain\Patterns → ClicShopping\AI\Domain\Patterns\WebSearch
  * - Internal reference to WebSearchPatterns updated to same namespace
  */
+#[AllowDynamicProperties]
 class WebSearchPostFilter
 {
   /**

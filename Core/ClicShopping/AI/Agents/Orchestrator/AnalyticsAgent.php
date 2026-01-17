@@ -27,7 +27,7 @@ use ClicShopping\AI\Security\DbSecurity;
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\DatabaseSchemaManager;
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\ResultInterpreter;
 use ClicShopping\AI\Helper\Detection\AmbiguousQueryDetector;
-use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\PromptBuilder;
+use ClicShopping\AI\Infrastructure\Prompt\PromptBuilder;
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\AmbiguityHandler;
 use ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent\CompoundQueryHandler;
 use ClicShopping\AI\Handler\Error\AnalyticsErrorHandler;
@@ -43,6 +43,8 @@ use ClicShopping\AI\Infrastructure\Cache\QueryCache;
 use ClicShopping\AI\Tools\BIexecution;
 use ClicShopping\AI\Agents\Orchestrator\CorrectionAgent;
 use ClicShopping\AI\Domain\Patterns\Ecommerce\ModificationKeywordsPattern;
+use ClicShopping\AI\Utils\TypeSafetyGuard;
+
 /**
  * Class AnalyticsAgent
  * Handles database analytics and query processing with AI assistance
@@ -103,8 +105,17 @@ class AnalyticsAgent
 
     $this->app = Registry::get('ChatGpt');
 
-    // Utiliser getChat qui gère automatiquement tous les types de modèles
-    $this->chat = Gpt::getChat('', null, null, CLICSHOPPING_APP_CHATGPT_CH_MODEL);
+    // This replaces the duplicated model detection logic with a single, maintainable function
+    $model = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
+    
+    try {
+      $this->chat = Gpt::getChatForModel($model);
+    } catch (\Exception $e) {
+      // Log error and fallback to default
+      error_log("AnalyticsAgent: Error getting chat for model {$model}: " . $e->getMessage());
+      // Fallback to OpenAI GPT-4 as default
+      $this->chat = Gpt::getOpenAiGpt(['model' => 'gpt-4-mini']);
+    }
 
     $this->userId = $userId;
     $this->languageId = $this->language->getId();
@@ -365,7 +376,7 @@ class AnalyticsAgent
           };
           
           return $this->ambiguityHandler->handleAmbiguousQuery($question, $ambiguityAnalysis, $sqlGenerator);
-        } else if ($ambiguityAnalysis['recommendation'] === 'clarify') {
+        } elseif ($ambiguityAnalysis['recommendation'] === 'clarify') {
           $this->debugLog("→ Requesting clarification from user", "AMBIGUITY");
           return $this->ambiguityHandler->requestClarification($question, $ambiguityAnalysis);
         } else {
@@ -709,7 +720,14 @@ class AnalyticsAgent
       if (isset($results['interpretation']) && !empty($results['interpretation'])) {
         $interpretation = $results['interpretation'];
         error_log("✅ Using cached interpretation");
-        error_log("Interpretation: " . substr($interpretation, 0, 200) . "...");
+        
+        // Type-safe logging with TypeSafetyGuard
+        if (is_array($interpretation)) {
+          error_log(" WARNING: Cached interpretation is an array, not a string");
+        }
+	
+        $logSnippet = TypeSafetyGuard::safeSubstr($interpretation, 0, 200);
+        error_log("Interpretation: " . $logSnippet . "...");
       } else {
         // 🔧 TASK 4.3.4.2: Handle empty results gracefully
         if (empty($results['results'])) {
@@ -720,7 +738,14 @@ class AnalyticsAgent
           // Generate new interpretation only if we have data
           $interpretation = $this->resultInterpreter->interpretResults($question, $results['results']);
           error_log("🔄 Generated new interpretation");
-          error_log("Interpretation: " . substr($interpretation, 0, 200) . "...");
+          
+          // Type-safe logging with TypeSafetyGuard
+          if (is_array($interpretation)) {
+            error_log(" WARNING: interpretResults() returned an array, not a string");
+          }
+	  
+          $logSnippet = TypeSafetyGuard::safeSubstr($interpretation, 0, 200);
+          error_log("Interpretation: " . $logSnippet . "...");
         }
       }
 
@@ -1038,8 +1063,6 @@ class AnalyticsAgent
       // Try to get actual model name from chat config
       if (method_exists($this->chat, 'getModel')) {
         $modelName = $this->chat->getModel();
-      } else if (isset($this->chat->config) && isset($this->chat->config->model)) {
-        $modelName = $this->chat->config->model;
       }
       
       $this->debugLog("Updating system message with Schema RAG", "SCHEMA_RAG");

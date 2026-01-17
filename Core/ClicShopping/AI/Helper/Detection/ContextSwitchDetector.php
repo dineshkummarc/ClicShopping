@@ -8,9 +8,11 @@
 
 namespace ClicShopping\AI\Helper\Detection;
 
+use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Domain\Patterns\Ecommerce\ContextResetPattern;
 
+#[AllowDynamicProperties]
 class ContextSwitchDetector
 {
   private SecurityLogger $securityLogger;

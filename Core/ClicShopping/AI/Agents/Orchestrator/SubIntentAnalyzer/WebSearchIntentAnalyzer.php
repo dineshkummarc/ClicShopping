@@ -10,6 +10,8 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
+use AllowDynamicProperties;
+
 /**
  * WebSearchIntentAnalyzer
  *
@@ -26,6 +28,8 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
  * @since 2025-12-14
  * @updated 2026-01-02 - Simplified for Pure LLM mode
  */
+
+#[AllowDynamicProperties]
 class WebSearchIntentAnalyzer extends BaseIntentAnalyzer
 {
   protected string $type = 'web_search';

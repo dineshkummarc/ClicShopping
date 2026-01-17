@@ -971,4 +971,7 @@ Requested modification: {{question}}
 IMPORTANT: Do NOT create a new query from scratch.
 Modify the existing query above by adding/modifying/removing the requested elements.
 
-
+text_order_calculation = Order calculation
+text_multi_query_warning = Warning: This query contains multiple sub-queries
+multi_token_rules = Multi-token rules
+text_response_format = Response format

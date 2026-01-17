@@ -1,11 +1,15 @@
 version4.12
-- Libraries updated
-- small fix
-IA improvment :
-Add comment to sql schema
-Promtps refactoring
+  - Libraries updated
+  - small fix 
+  - IA improvment :
+      - Add comment to sql schema
+      - Prompts refactoring
+      - LLmprovider refactoring
+      - Add parallel execution for multiple tasks
+      - Parallel analysis optimized inside agent
+      - Cache optimized et intelligent timeout management
 
-----------------
+---------------
 version4.11
 - Libraries updated
 - small fix

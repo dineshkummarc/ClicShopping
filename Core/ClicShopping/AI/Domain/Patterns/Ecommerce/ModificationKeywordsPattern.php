@@ -15,6 +15,9 @@
 
 namespace ClicShopping\AI\Domain\Patterns\Ecommerce;
 
+use AllowDynamicProperties;
+
+#[AllowDynamicProperties]
 class ModificationKeywordsPattern
 {
   /**
