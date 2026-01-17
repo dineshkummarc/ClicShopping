@@ -2,31 +2,39 @@
   <img src="https://www.clicshopping.org/images/logonew.png">
 </p>
 
-**The Future of E-commerce, Powered by Generative AI**
+ClicShopping AI™ is an open-source e-commerce platform for B2B, B2C, and hybrid B2B-B2C use cases, architected natively for Generative AI integration.
 
-Unlock the full potential of your online business with ClicShopping AI™™, a powerful, open-source Ecommerce platform designed for B2B, B2C, and B2B-B2C.
-
+The platform combines a full-featured e-commerce core with AI-driven automation to optimize customer experience, operations, and decision-making at scale.
 ClicShopping AI™ helps you deliver a seamless shopping experience for your customers while giving you the tools you need to manage your store efficiently.
 
-Easily integrate ClicShopping AI™ with the most powerful Generative AI technologies:
+Generative AI Integration
 
-Use advanced AI systems like GPT and Ollama to boost your store’s capabilities.
-Leverage RAG Big Data and AI to enhance customer experience, optimize inventory management, and drive more sales.
-Take your Ecommerce business to the next level with AI-powered features.
+ClicShopping AI™ integrates with leading Generative AI systems including GPT, Ollama, and Anthropic.
+It leverages Retrieval-Augmented Generation (RAG) and Business Intelligence pipelines to improve product discovery, customer interaction, inventory optimization, and sales performance.
+
+Advanced Agentic AI Architecture
+
+The system implements a multi-agent reasoning architecture with more than eight specialized agents.
+Supported reasoning models include Chain-of-Thought (CoT), Tree-of-Thought (ToT), and Self-Consistency, enabling structured reasoning, task decomposition, and autonomous decision workflows directly within the e-commerce stack.
+
+Enterprise-Grade Infrastructure
+– Multi-Database ORM: Doctrine 2.x with MariaDB.
+– Multi-Tier Caching: Five-layer architecture (APCu, Memcached, Redis, OpCache, Static)
+– Security Stack: Ten security layers including AES-256 encryption, 2FA/TOTP, GDPR compliance, prompt-injection detection, and full audit logging
+
+Modular and Scalable Design
+
+The modular architecture allows precise customization and extension, supporting both small deployments and large-scale enterprise environments without architectural changes.
 
 Built for Everyone :
-
-Designed for small businesses and large enterprises — ClicShopping AI™’s modular architecture makes it easy to customize, extend, and adapt your store to your unique needs.
-
-Boost Your Business — For Free!: ClicShopping AI™ helps you increase sales and stay competitive — at no cost. With built-in AI tools, you can optimize inventory, deliver personalized recommendations, and enhance customer service effortlessly.
-
-Responsive Design on Any Device : Offer a seamless shopping experience everywhere. ClicShopping AI™’s modern, responsive design ensures fast, smooth performance across desktops, tablets, and smartphones.
 
 Easy, Lightweight Installation : Set up your store quickly and easily. ClicShopping AI™ installs in just a few clicks, uses minimal server resources, and offers full customization to fit your needs.
 
 Driven by Community Support : ClicShopping AI™ is powered by its community. Donations and contributions help drive continuous improvements, keeping your platform innovative and competitive.
 
 Get Started Today : Use the Artificial Intelligence to your Ecommerce business with ClicShopping AI™. Fast setup, powerful features, and a vibrant community — all completely free.
+
+
 
 
 ## Table of Contents
@@ -58,6 +66,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
  - The approach is completely modular on the catalog / administration with simple code to understand, to customize, and to update at need.
  - All informations are available at the forum https://www.clicshopping.org or look the [Wiki](https://github.com/ClicShopping/ClicShopping_V3/wiki) for the technical documentation.
  - The modules are available on Github (Official and Community) or by an internal install.
+ - Generative Artificial Intelilligence (GenAI)  implemented with AI Agent 
 
 #Functionalities 
 - B2B - B2C full functionalities
@@ -76,7 +85,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
   - Intelligent content generation with context-aware responses
   - Admin chatbot interface with RAG capabilities
   - Web Search impleted for semantic search
-  - Web Search impleted for semantic search (with embedding - see documentation)
+  - AI Agent
 - Generative Artificial Intelligence :
   - Generative artificial products customers recommendations
   - Generative artificial intelligence for All content (product,categories...)

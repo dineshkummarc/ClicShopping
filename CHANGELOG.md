@@ -10,6 +10,8 @@ version4.12
       - Cache optimized et intelligent timeout management
       - AI directory structure refactored
 
+
+
 ---------------
 version4.11
 - Libraries updated
