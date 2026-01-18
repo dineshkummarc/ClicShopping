@@ -1,3 +1,8 @@
+version4.20
+
+
+
+---------------
 version4.12
   - Libraries updated
   - small fix 
@@ -9,9 +14,6 @@ version4.12
       - Parallel analysis optimized inside agent
       - Cache optimized et intelligent timeout management
       - AI directory structure refactored
-
-
-
 ---------------
 version4.11
 - Libraries updated

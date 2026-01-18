@@ -1,6 +1,6 @@
 {
-  "version": "4.12",
+  "version": "4.20",
   "description": "This release introduce new features as Rag / Agent BI / MCP and need the maria db server 11.7 (not mandatory) at least to be used. See sql update if you need to update your shop and changelog",
-  "date": "2025",
-  "directory_version": "412"
+  "date": "2026",
+  "directory_version": "420"
 }
