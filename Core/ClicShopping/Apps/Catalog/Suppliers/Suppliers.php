@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Catalog\Suppliers;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Suppliers extends \ClicShopping\OM\ConfigurableAppAbstract
+class Suppliers extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

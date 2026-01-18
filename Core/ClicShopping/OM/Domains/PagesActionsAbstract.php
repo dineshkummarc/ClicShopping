@@ -8,13 +8,15 @@
  *
  */
 
-namespace ClicShopping\OM;
+namespace ClicShopping\OM\Domains;
+
+use ClicShopping\OM\Interfaces;
 
 /**
  * This abstract class implements the PagesActionsInterface and serves as a base
  * class for handling page-specific actions in the application.
  */
-abstract class PagesActionsAbstract implements \ClicShopping\OM\PagesActionsInterface
+abstract class PagesActionsAbstract implements Interfaces\PagesActionsInterface
 {
   protected $page;
   protected $file;
@@ -23,10 +25,10 @@ abstract class PagesActionsAbstract implements \ClicShopping\OM\PagesActionsInte
   /**
    * Constructor method for initializing the page object.
    *
-   * @param \ClicShopping\OM\PagesInterface $page An instance of PagesInterface representing the page to be initialized.
+   * @param \ClicShopping\OM\Interfaces\PagesInterface $page An instance of PagesInterface representing the page to be initialized.
    * @return void
    */
-  public function __construct(\ClicShopping\OM\PagesInterface $page)
+  public function __construct(Interfaces\PagesInterface $page)
   {
     $this->page = $page;
 

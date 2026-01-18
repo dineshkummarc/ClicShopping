@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\MCP\Sites\ClicShoppingAdmin\Pages\Home\Actions
 
 use ClicShopping\OM\Registry;
 
-class PerformanceMonitor extends \ClicShopping\OM\PagesActionsAbstract
+class PerformanceMonitor extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

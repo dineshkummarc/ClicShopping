@@ -14,7 +14,7 @@ namespace ClicShopping\Apps\Customers\Groups\Sites\ClicShoppingAdmin\Pages\Home\
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class InsertCategories extends \ClicShopping\OM\PagesActionsAbstract
+class InsertCategories extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   public function execute()

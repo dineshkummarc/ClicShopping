@@ -1,12 +1,12 @@
 version4.20
-
+- OM refactoring for Interface & Domains
 
 
 ---------------
 version4.12
   - Libraries updated
   - small fix 
-  - IA improvment :
+  - IA improvement :
       - Add comment to sql schema
       - Prompts refactoring
       - LLmprovider refactoring

@@ -50,6 +50,45 @@ NE JAMAIS répondre "Je n'ai pas cette information" pour les requêtes de statut
 RÈGLES CRITIQUES - LIRE EN PREMIER
 
 
+🚨🚨🚨 RÈGLE -1: EXPLICATION DU STATUT DES COMMANDES (OBLIGATOIRE POUR TOUTES LES REQUÊTES) 🚨🚨🚨
+
+**EXIGENCE ABSOLUE**: Chaque fois que tu génères UNE requête SQL impliquant `orders_status` ou des données de commandes, tu DOIS explicitement expliquer **dans ta description textuelle** (pas seulement dans le SQL) quels statuts de commandes sont inclus ou exclus.
+
+**POURQUOI C'EST CRITIQUE**:
+- Les requêtes SQL ne sont pas toujours affichées à l'utilisateur
+- Tout le monde n'est pas capable de comprendre le SQL
+- L'utilisateur DOIT comprendre ce qui est inclus dans l'analyse
+
+**CELA S'APPLIQUE À**:
+- Calculs de chiffre d'affaires
+- Comptages de commandes
+- Listes de commandes
+- Historique des commandes clients
+- TOUTE requête utilisant la table `clic_orders`
+
+**FORMAT REQUIS DANS TON ANALYSE TEXTUELLE** (visible par l'utilisateur):
+- Indiquer clairement: "Cette analyse inclut: [description des statuts]"
+- OU: "Exclus de cette analyse: [description des statuts exclus]"
+- Exemple: "Cette analyse inclut toutes les commandes sauf les commandes annulées (statut 4)"
+- Exemple: "Cette analyse inclut uniquement les commandes livrées (statut 3)"
+- Exemple: "Inclus: commandes en attente (1), en cours (2), et livrées (3)"
+
+**RÉFÉRENCE DES STATUTS DE COMMANDES**:
+- Statut 1: En attente (Pending)
+- Statut 2: En cours de traitement (Processing)
+- Statut 3: Livrée (Delivered)
+- Statut 4: Annulée (Cancelled) - EXCLU par défaut
+- Statut 5+: Autres statuts personnalisés
+
+**RÈGLE PAR DÉFAUT** (sauf si l'utilisateur spécifie autrement):
+- Utiliser `WHERE o.orders_status != 4` pour exclure uniquement les commandes annulées
+- Cela inclut les commandes En attente (1), En cours de traitement (2), et Livrées (3)
+
+**NE JAMAIS OUBLIER**: Même si la requête semble simple, TOUJOURS mentionner le filtrage des statuts dans ta réponse textuelle!
+
+--- FIN RÈGLE -1 ---
+
+
 RÈGLE 0: TOTAL vs LISTE - LA RÈGLE DU MOT-CLÉ "LISTE" (PRIORITÉ ABSOLUE)
 
 🚨🚨🚨 **C'EST LA RÈGLE LA PLUS IMPORTANTE** 🚨🚨🚨
@@ -864,7 +903,7 @@ REQUÊTES D'AGRÉGATION:
 
 - 'top produits vendus' → SELECT pd.products_name, SUM(op.products_quantity) AS total_sold FROM clic_orders_products op JOIN clic_products_description pd ON op.products_id = pd.products_id WHERE pd.language_id = {{language_id}} GROUP BY op.products_id, pd.products_name ORDER BY total_sold DESC LIMIT 10
 
-- 'chiffre d\'affaires ce mois' → SELECT SUM(ot.value) AS total_revenue FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' AND MONTH(o.date_purchased) = MONTH(CURDATE()) AND YEAR(o.date_purchased) = YEAR(CURDATE())
+- 'chiffre d\'affaires ce mois' → SELECT SUM(ot.value) AS total_revenue FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE o.orders_status != 4 AND ot.class = 'ST' AND MONTH(o.date_purchased) = MONTH(CURDATE()) AND YEAR(o.date_purchased) = YEAR(CURDATE())
 
 REQUÊTES PRODUIT (APPLIQUER RÈGLE 8 - MULTI-TOKENS):
 - 'stock du produit Ricardo' → SELECT p.products_quantity, p.products_id, pd.products_name FROM clic_products p JOIN clic_products_description pd ON p.products_id = pd.products_id WHERE pd.products_name LIKE '%Ricardo%' AND pd.language_id = {{language_id}}
@@ -882,7 +921,7 @@ REQUÊTES PRODUIT (APPLIQUER RÈGLE 8 - MULTI-TOKENS):
 - 'modèle et prix du Josef Strauss Prestige' → SELECT p.products_model, p.products_price AS catalog_price, p.products_id, pd.products_name FROM clic_products p JOIN clic_products_description pd ON p.products_id = pd.products_id WHERE pd.products_name LIKE '%Josef%' AND pd.products_name LIKE '%Strauss%' AND pd.products_name LIKE '%Prestige%' AND pd.language_id = {{language_id}}
 
 REQUÊTES DE COMPARAISON:
-- 'compare le chiffre d\'affaires mai vs février' → SELECT SUM(CASE WHEN MONTH(o.date_purchased) = 5 THEN ot.value ELSE 0 END) AS mai_revenue, SUM(CASE WHEN MONTH(o.date_purchased) = 2 THEN ot.value ELSE 0 END) AS fevrier_revenue FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' AND YEAR(o.date_purchased) = YEAR(CURDATE())
+- 'compare le chiffre d\'affaires mai vs février' → SELECT SUM(CASE WHEN MONTH(o.date_purchased) = 5 THEN ot.value ELSE 0 END) AS mai_revenue, SUM(CASE WHEN MONTH(o.date_purchased) = 2 THEN ot.value ELSE 0 END) AS fevrier_revenue FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE o.orders_status != 4 AND ot.class = 'ST' AND YEAR(o.date_purchased) = YEAR(CURDATE())
 
 
 text_sql_format_instructions = RÈGLES DE FORMAT SQL:
@@ -1078,7 +1117,56 @@ Modifier la requête existante ci-dessus en ajoutant/modifiant/supprimant les é
 
 
 # Missing prompts added 2026-01-13
-text_order_calculation = Calcul de commande
+text_order_calculation = RÈGLES CRITIQUES - FILTRAGE DES STATUTS DE COMMANDE:
+
+🚨 RÈGLE OBLIGATOIRE: TOUJOURS spécifier et expliquer le filtrage des statuts de commande dans votre analyse 🚨
+
+SIGNIFICATION DES STATUTS DE COMMANDE (Liste complète):
+- 1 = "En attente" (Commande passée, en attente de traitement)
+- 2 = "En cours" (Commande en préparation)
+- 3 = "Livrée" (Commande terminée et livrée)
+- 4 = "Annulée" (Commande annulée - EXCLUE du chiffre d'affaires)
+- 5+ = Autres statuts (Remboursée, En suspens, etc.)
+
+RÈGLES DE CALCUL DU CHIFFRE D'AFFAIRES:
+1. RÈGLE PAR DÉFAUT: Utiliser WHERE o.orders_status != 4 (exclure uniquement les commandes annulées)
+   - Cela inclut toutes les commandes valides: En attente (1), En cours (2), Livrée (3), et autres statuts (5+)
+   - Justification: Toutes les commandes non annulées représentent des transactions commerciales valides
+
+2. ALTERNATIVE (si l'utilisateur le spécifie): WHERE o.orders_status >= 3 (uniquement les commandes terminées)
+   - Utiliser UNIQUEMENT quand l'utilisateur demande explicitement "commandes terminées" ou "commandes livrées"
+
+3. TOUJOURS EXPLIQUER: Dans votre analyse, TOUJOURS mentionner quels statuts de commande sont inclus
+   - Exemple: "Ce calcul inclut toutes les commandes sauf les annulées (statut != 4)"
+   - Exemple: "Ce calcul inclut uniquement les commandes livrées (statut >= 3)"
+
+4. Utiliser orders_total pour le chiffre d'affaires total: SELECT SUM(o.orders_total)
+5. Utiliser orders_products pour le CA produit: SELECT SUM(op.final_price * op.products_quantity)
+6. TOUJOURS joindre orders_products avec la table orders pour vérifier orders_status
+7. NE JAMAIS calculer le chiffre d'affaires sans filtre orders_status
+
+EXEMPLES:
+✅ CORRECT (Par défaut): 
+SELECT SUM(ot.value) FROM clic_orders o 
+JOIN clic_orders_total ot ON o.orders_id = ot.orders_id 
+WHERE o.orders_status != 4 AND ot.class = 'ST'
+Note d'analyse: "Inclut toutes les commandes sauf les annulées"
+
+✅ CORRECT (Terminées uniquement): 
+SELECT SUM(ot.value) FROM clic_orders o 
+JOIN clic_orders_total ot ON o.orders_id = ot.orders_id 
+WHERE o.orders_status >= 3 AND ot.class = 'ST'
+Note d'analyse: "Inclut uniquement les commandes livrées (statut >= 3)"
+
+❌ FAUX: SELECT SUM(ot.value) FROM clic_orders_total ot (filtre orders_status manquant!)
+
+AGRÉGATIONS TEMPORELLES:
+- Maintenir le filtre orders_status sur TOUTES les périodes
+- Exemple mensuel: WHERE o.orders_status != 4 AND MONTH(o.date_purchased) = MONTH(CURDATE())
+- Exemple annuel: WHERE o.orders_status != 4 AND YEAR(o.date_purchased) = YEAR(CURDATE())
+
+REQUÊTES AMBIGUËS:
+Quand la requête est ambiguë sur le statut de commande (ex: "chiffre d'affaires par catégorie"), utiliser la règle par défaut (status != 4) et expliquer dans l'analyse
 text_multi_query_warning = Attention: Cette requête contient plusieurs sous-requêtes
 multi_token_rules = Règles multi-tokens
 text_response_format = Format de réponse

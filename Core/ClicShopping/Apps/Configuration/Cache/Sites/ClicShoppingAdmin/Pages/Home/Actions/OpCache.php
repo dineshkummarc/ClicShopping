@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Configuration\Cache\Sites\ClicShoppingAdmin\Pages\Ho
 
 use ClicShopping\OM\Registry;
 
-class OpCache extends \ClicShopping\OM\PagesActionsAbstract
+class OpCache extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

@@ -10,18 +10,17 @@
 
 namespace ClicShopping\Apps\Payment\COD;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
 /**
  * Class COD
  *
- * This class extends the abstract class \ClicShopping\OM\AppAbstract and provides functionalities
+ * This class extends the abstract class \ClicShopping\OM\Domains\AppAbstract and provides functionalities
  * related to the configuration and management of Cash on Delivery (COD) payment modules within
  * the ClicShopping application. It includes methods for retrieving configuration modules, module
  * information, API version, and identifier.
  */
-class COD extends \ClicShopping\OM\ConfigurableAppAbstract
+class COD extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_COD_V1';

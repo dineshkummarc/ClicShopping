@@ -17,7 +17,7 @@ use function count;
 use function is_array;
 use function is_null;
 
-class Process extends \ClicShopping\OM\PagesActionsAbstract
+class Process extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

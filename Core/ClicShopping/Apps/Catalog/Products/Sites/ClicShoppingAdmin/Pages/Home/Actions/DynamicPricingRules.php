@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This class handles the action for displaying and managing dynamic pricing rules in the admin interface.
  * It sets the appropriate page file and loads necessary language definitions for the dynamic pricing rules section.
  */
-class DynamicPricingRules extends \ClicShopping\OM\PagesActionsAbstract
+class DynamicPricingRules extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to manage dynamic pricing rules.

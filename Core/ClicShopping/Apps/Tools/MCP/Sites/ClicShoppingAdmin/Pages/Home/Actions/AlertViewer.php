@@ -11,7 +11,7 @@ namespace ClicShopping\Apps\Tools\MCP\Sites\ClicShoppingAdmin\Pages\Home\Actions
 
 use ClicShopping\OM\Registry;
 
-class AlertViewer extends \ClicShopping\OM\PagesActionsAbstract
+class AlertViewer extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

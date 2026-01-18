@@ -20,7 +20,7 @@ use ClicShopping\OM\Apps;
  * for retrieving information about modules and returning specific class instances
  * based on the provided module name.
  */
-class OrderTotal extends \ClicShopping\OM\ModulesAbstract
+class OrderTotal extends \ClicShopping\OM\Domains\ModulesAbstract
 {
   /**
    * Retrieves information based on the specified parameters and validates the class against an interface.

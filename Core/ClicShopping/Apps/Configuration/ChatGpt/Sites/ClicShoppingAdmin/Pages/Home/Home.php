@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Sites\ClicShoppingAdmin\Pages\Home;
 
+use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
-
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

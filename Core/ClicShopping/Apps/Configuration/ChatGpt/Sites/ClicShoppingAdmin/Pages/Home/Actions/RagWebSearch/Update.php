@@ -15,7 +15,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 #[AllowDynamicProperties]
-class Update extends \ClicShopping\OM\PagesActionsAbstract
+class Update extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
   public mixed $messageStack;

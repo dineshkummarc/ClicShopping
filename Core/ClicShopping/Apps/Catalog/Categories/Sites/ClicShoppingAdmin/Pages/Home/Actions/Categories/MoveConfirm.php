@@ -15,7 +15,7 @@ use ClicShopping\OM\Cache;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class MoveConfirm extends \ClicShopping\OM\PagesActionsAbstract
+class MoveConfirm extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   private mixed $app;
   private $Id;

@@ -8,12 +8,13 @@
  *
  */
 
-namespace ClicShopping\OM;
+namespace ClicShopping\OM\Domains;
 
-use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Domains\AppAbstract;
+use ClicShopping\OM\Interfaces\ConfigurableAppInterface;
 use ClicShopping\OM\Registry;
 
-abstract class ConfigurableAppAbstract extends AppAbstract
+abstract class ConfigurableAppAbstract extends AppAbstract implements ConfigurableAppInterface
 {
   protected $api_version = 1;
   protected string $identifier = '';

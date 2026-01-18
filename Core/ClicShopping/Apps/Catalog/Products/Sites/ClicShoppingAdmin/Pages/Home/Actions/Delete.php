@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This action class handles the deletion of products in the admin interface.
  * It sets up the page to confirm the deletion of a product.
  */
-class Delete extends \ClicShopping\OM\PagesActionsAbstract
+class Delete extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to set up the delete confirmation page.

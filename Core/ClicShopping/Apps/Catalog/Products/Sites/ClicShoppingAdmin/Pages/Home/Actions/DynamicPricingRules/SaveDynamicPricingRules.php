@@ -19,7 +19,7 @@ use ClicShopping\OM\Registry;
  * This action class handles the saving of dynamic pricing rules in the admin interface.
  * It processes both the insertion of new rules and the updating of existing ones based on user input.
  */
-class SaveDynamicPricingRules extends \ClicShopping\OM\PagesActionsAbstract
+class SaveDynamicPricingRules extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

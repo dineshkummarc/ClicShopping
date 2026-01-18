@@ -13,6 +13,7 @@ namespace ClicShopping\Service\ClicShoppingAdmin;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\MessageStack as MessageStackClassAdmin;
 use ClicShopping\OM\Registry;
+
 /**
  * Class Core
  *
@@ -22,7 +23,7 @@ use ClicShopping\OM\Registry;
  * The `start` method initializes the MessageStack instance and registers it in the Registry
  * if the required file exists, while the `stop` method is designed to terminate the service.
  */
-class Core implements \ClicShopping\OM\ServiceInterface
+class Core implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Starts the process by checking for the existence of the required file and initializing the MessageStackClassAdmin.

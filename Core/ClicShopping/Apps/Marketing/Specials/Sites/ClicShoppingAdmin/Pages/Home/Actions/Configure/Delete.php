@@ -10,14 +10,13 @@
 
 namespace ClicShopping\Apps\Marketing\Specials\Sites\ClicShoppingAdmin\Pages\Home\Actions\Configure;
 
-use ClicShopping\OM\Cache;
 use ClicShopping\OM\Registry;
 
 /**
  * Delete action for Sites module configuration.
  * Handles the Delete process with centralized functionality.
  */
-class Delete extends \ClicShopping\OM\ConfigureActionsAbstract
+class Delete extends \ClicShopping\OM\Domains\ConfigureActionsAbstract
 {
 
     /**

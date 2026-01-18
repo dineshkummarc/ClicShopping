@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Communication\PageManager\Sites\Shop\Pages\SSLcheck\
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class SSLcheck extends \ClicShopping\OM\PagesActionsAbstract
+class SSLcheck extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   public function execute()

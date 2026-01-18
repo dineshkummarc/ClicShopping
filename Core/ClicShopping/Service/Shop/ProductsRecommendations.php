@@ -10,10 +10,10 @@
 
 namespace ClicShopping\Service\Shop;
 
+use ClicShopping\Apps\Catalog\Products\Classes\Shop\ProductsRecommendations as Recommendation;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Catalog\Products\Classes\Shop\ProductsRecommendations as Recommendation;
 /**
  * Service class responsible for handling the initialization and shutdown of the ProductsRecommendations functionality.
  *
@@ -21,7 +21,7 @@ use ClicShopping\Apps\Catalog\Products\Classes\Shop\ProductsRecommendations as R
  * lifecycle of the ProductsRecommendations service. It ensures the necessary file exists and
  * manages its registration with the registry.
  */
-class ProductsRecommendations implements \ClicShopping\OM\ServiceInterface
+class ProductsRecommendations implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Starts the ProductsRecommendations class if the required file exists.

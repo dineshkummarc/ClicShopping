@@ -19,7 +19,7 @@ use UnexpectedValueException;
  * Supports validation for IPv4, IPv6, or any IP address type.
  */
 
-class IpAddress implements \ClicShopping\OM\IsInterface
+class IpAddress implements \ClicShopping\OM\Interfaces\IsInterface
 {
   /**
    * Validates whether the provided value is a valid IP address.

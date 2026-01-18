@@ -10,11 +10,11 @@
 
 namespace ClicShopping\Apps\Orders\ReturnOrders\Sites\Shop\Pages\ProductReturnHistory\Actions;
 
+use ClicShopping\Apps\Orders\ReturnOrders\ReturnOrders as ReturnOrdersApp;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
-use ClicShopping\Apps\Orders\ReturnOrders\ReturnOrders as ReturnOrdersApp;
 
-class ProductReturnHistory extends \ClicShopping\OM\PagesActionsAbstract
+class ProductReturnHistory extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

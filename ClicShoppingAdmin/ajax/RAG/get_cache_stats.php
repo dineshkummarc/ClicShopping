@@ -13,7 +13,7 @@ define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/
 require_once(CLICSHOPPING_BASE_DIR . 'OM/CLICSHOPPING.php');
 spl_autoload_register('ClicShopping\OM\CLICSHOPPING::autoload');
 
-use ClicShopping\AI\Domains\Analytics\Agent\AnalyticsAgent;
+use ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent;
 use ClicShopping\OM\CLICSHOPPING;
 
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;

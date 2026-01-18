@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Shipping\Table\Sites\ClicShoppingAdmin\Pages\Home;
 use ClicShopping\Apps\Shipping\Table\Table;
 use ClicShopping\OM\Registry;
 
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

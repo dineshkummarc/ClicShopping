@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Communication\Newsletter;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Newsletter extends \ClicShopping\OM\ConfigurableAppAbstract
+class Newsletter extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

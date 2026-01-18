@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Configuration\Countries\Sites\ClicShoppingAdmin\Page
 
 use ClicShopping\OM\Registry;
 
-class UpdateAll extends \ClicShopping\OM\PagesActionsAbstract
+class UpdateAll extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

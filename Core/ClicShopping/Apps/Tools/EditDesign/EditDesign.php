@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\EditDesign;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class EditDesign extends \ClicShopping\OM\ConfigurableAppAbstract
+class EditDesign extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

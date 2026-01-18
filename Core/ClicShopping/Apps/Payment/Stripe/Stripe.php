@@ -10,13 +10,13 @@
 
 namespace ClicShopping\Apps\Payment\Stripe;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
+
 /**
  * Class Stripe is a part of the ClicShopping payment module.
  * It handles the configuration modules and provides access to relevant information regarding payment configurations.
  */
-class Stripe extends \ClicShopping\OM\ConfigurableAppAbstract
+class Stripe extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

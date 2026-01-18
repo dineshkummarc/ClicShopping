@@ -17,7 +17,7 @@ use ClicShopping\OM\Apps;
  *
  * Provides methods to handle module information retrieval, class resolution, and filtering of modules based on specific criteria.
  */
-class Hooks extends \ClicShopping\OM\ModulesAbstract
+class Hooks extends \ClicShopping\OM\Domains\ModulesAbstract
 {
   /**
    * Retrieves information about modules that belong to a specific application and key.

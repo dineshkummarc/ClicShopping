@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\ActionsRecorder\Sites\ClicShoppingAdmin\Pages\
 
 use ClicShopping\OM\Registry;
 
-class ActionsRecorder extends \ClicShopping\OM\PagesActionsAbstract
+class ActionsRecorder extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

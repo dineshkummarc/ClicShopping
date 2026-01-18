@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Marketing\SEO\Sites\Shop\Pages\GoogleSitemap\Actions
 
 use ClicShopping\OM\CLICSHOPPING;
 
-class GoogleSitemapIndex extends \ClicShopping\OM\PagesActionsAbstract
+class GoogleSitemapIndex extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   protected $use_site_template = false;
 

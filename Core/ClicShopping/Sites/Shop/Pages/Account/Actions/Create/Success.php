@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Sites\Shop\Pages\Account\Actions\Create;
 
-class Success extends \ClicShopping\OM\PagesActionsAbstract
+class Success extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   public function execute()

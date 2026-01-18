@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Configuration\Antispam;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Antispam extends \ClicShopping\OM\ConfigurableAppAbstract
+class Antispam extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_Antispam_V1';

@@ -10,15 +10,14 @@
 
 namespace ClicShopping\Apps\Catalog\Archive\Sites\ClicShoppingAdmin\Pages\Home\Actions\Configure;
 
-use ClicShopping\OM\Registry;
-
 use ClicShopping\Apps\Catalog\Archive\Sql\MariaDb;
+use ClicShopping\OM\Registry;
 
 /**
  * Install action for Sites module configuration.
  * Handles the Install process with centralized functionality.
  */
-class Install extends \ClicShopping\OM\ConfigureActionsAbstract
+class Install extends \ClicShopping\OM\Domains\ConfigureActionsAbstract
 {
     /**
    * Execute the installation process for Sites module

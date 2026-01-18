@@ -16,7 +16,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Shop\EmailVerification;
 
-class LogIn extends \ClicShopping\OM\PagesActionsAbstract
+class LogIn extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

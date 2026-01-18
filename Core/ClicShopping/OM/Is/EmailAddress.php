@@ -24,7 +24,7 @@ use const FILTER_VALIDATE_EMAIL;
  * Methods:
  * - execute: Validates an email address based on format, length, and optional DNS checks.
  */
-class EmailAddress implements \ClicShopping\OM\IsInterface
+class EmailAddress implements \ClicShopping\OM\Interfaces\IsInterface
 {
   /**
    * Validates an email address and optionally checks its DNS records.

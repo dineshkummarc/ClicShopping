@@ -14,7 +14,7 @@ use ClicShopping\OM\Cache;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class RestoreNow extends \ClicShopping\OM\PagesActionsAbstract
+class RestoreNow extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

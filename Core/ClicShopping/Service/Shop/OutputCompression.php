@@ -14,7 +14,7 @@ namespace ClicShopping\Service\Shop;
  * It uses gzip compression if enabled and the required zlib extension is loaded,
  * and if no headers have already been sent.
  */
-class OutputCompression implements \ClicShopping\OM\ServiceInterface
+class OutputCompression implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Starts the process for configuring gzip compression if enabled.

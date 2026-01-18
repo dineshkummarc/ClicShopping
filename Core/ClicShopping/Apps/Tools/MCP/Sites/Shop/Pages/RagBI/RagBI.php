@@ -12,27 +12,24 @@
 namespace ClicShopping\Apps\Tools\MCP\Sites\Shop\Pages\RagBI;
 
 use AllowDynamicProperties;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\AI\DomainsAI\Semantics\Agents\SemanticsAgent;
 use ClicShopping\AI\Insfrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Insfrastructure\Storage\MariaDBVectorStore;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
-use ClicShopping\AI\Domains\Semantics\Agents\SemanticsAgent;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\EndPoint\RagBIPermissions;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Authentification;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpPermissions;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpSecurity;
-use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpShop;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Message;
-use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
-
 use ClicShopping\Apps\Tools\MCP\MCP;
-
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
 
 #[AllowDynamicProperties]
-class RagBI extends \ClicShopping\OM\PagesAbstract
+class RagBI extends \ClicShopping\OM\Domains\PagesAbstract
 {
   /**
    * Database connection instance.

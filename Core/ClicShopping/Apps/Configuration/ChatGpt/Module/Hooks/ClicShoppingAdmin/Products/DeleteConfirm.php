@@ -17,7 +17,7 @@ use ClicShopping\OM\Registry;
  * Class DeleteConfirm
  * Handles the deletion confirmation of products and their associated embeddings
  */
-class DeleteConfirm extends \ClicShopping\OM\PagesActionsAbstract
+class DeleteConfirm extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /** @var mixed Reference to the Products application */
   public mixed $app;

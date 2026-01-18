@@ -50,6 +50,45 @@ NEVER respond with "I don't have that information" for order status queries!
 CRITICAL RULES - READ FIRST
 
 
+🚨🚨🚨 RULE -1: ORDER STATUS EXPLANATION (MANDATORY FOR ALL ORDER QUERIES) 🚨🚨🚨
+
+**ABSOLUTE REQUIREMENT**: Whenever you generate ANY SQL query that involves `orders_status` or order data, you MUST explicitly explain **in your text description** (not just in the SQL) which order statuses are included or excluded.
+
+**WHY THIS IS CRITICAL**:
+- SQL queries are not always displayed to the user
+- Not everyone can understand SQL
+- The user MUST understand what is included in the analysis
+
+**THIS APPLIES TO**:
+- Revenue calculations
+- Order counts
+- Order lists
+- Customer order history
+- ANY query using the `clic_orders` table
+
+**REQUIRED FORMAT IN YOUR TEXT ANALYSIS** (visible to the user):
+- State clearly: "This analysis includes: [description of statuses]"
+- OR: "Excluded from this analysis: [description of excluded statuses]"
+- Example: "This analysis includes all orders except cancelled orders (status 4)"
+- Example: "This analysis includes only delivered orders (status 3)"
+- Example: "Included: pending (1), processing (2), and delivered (3) orders"
+
+**ORDER STATUS REFERENCE**:
+- Status 1: Pending (En attente)
+- Status 2: Processing (En cours de traitement)
+- Status 3: Delivered (Livrée)
+- Status 4: Cancelled (Annulée) - EXCLUDED by default
+- Status 5+: Other custom statuses
+
+**DEFAULT RULE** (unless user specifies otherwise):
+- Use `WHERE o.orders_status != 4` to exclude cancelled orders only
+- This includes Pending (1), Processing (2), and Delivered (3) orders
+
+**NEVER FORGET**: Even if the query seems simple, ALWAYS mention the status filtering in your text response!
+
+--- END RULE -1 ---
+
+
 RULE 0: TOTAL vs LIST - THE "LIST" KEYWORD RULE (ABSOLUTE PRIORITY)
 
 🚨🚨🚨 **THIS IS THE MOST IMPORTANT RULE** 🚨🚨🚨
@@ -840,7 +879,7 @@ AGGREGATION QUERIES:
 
 - 'top sold products' → SELECT pd.products_name, SUM(op.products_quantity) AS total_sold FROM clic_orders_products op JOIN clic_products_description pd ON op.products_id = pd.products_id WHERE pd.language_id = {{language_id}} GROUP BY op.products_id, pd.products_name ORDER BY total_sold DESC LIMIT 10
 
-- 'revenue this month' → SELECT SUM(ot.value) AS total_revenue FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' AND MONTH(o.date_purchased) = MONTH(CURDATE()) AND YEAR(o.date_purchased) = YEAR(CURDATE())
+- 'revenue this month' → SELECT SUM(ot.value) AS total_revenue FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE o.orders_status != 4 AND ot.class = 'ST' AND MONTH(o.date_purchased) = MONTH(CURDATE()) AND YEAR(o.date_purchased) = YEAR(CURDATE())
 
 PRODUCT QUERIES:
 - 'stock of product [ProductName]' → SELECT p.products_quantity, p.products_id, pd.products_name FROM clic_products p JOIN clic_products_description pd ON p.products_id = pd.products_id WHERE pd.products_name LIKE '%[ProductName]%' AND pd.language_id = {{language_id}}
@@ -856,7 +895,7 @@ PRODUCT QUERIES:
 - 'model and price of product [ProductName]' → SELECT p.products_model, p.products_price AS catalog_price, p.products_id, pd.products_name FROM clic_products p JOIN clic_products_description pd ON p.products_id = pd.products_id WHERE pd.products_name LIKE '%[ProductName]%' AND pd.language_id = {{language_id}}
 
 COMPARISON QUERIES:
-- 'compare revenue may vs february' → SELECT SUM(CASE WHEN MONTH(o.date_purchased) = 5 THEN ot.value ELSE 0 END) AS may_revenue, SUM(CASE WHEN MONTH(o.date_purchased) = 2 THEN ot.value ELSE 0 END) AS february_revenue FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE ot.class = 'ST' AND YEAR(o.date_purchased) = YEAR(CURDATE())
+- 'compare revenue may vs february' → SELECT SUM(CASE WHEN MONTH(o.date_purchased) = 5 THEN ot.value ELSE 0 END) AS may_revenue, SUM(CASE WHEN MONTH(o.date_purchased) = 2 THEN ot.value ELSE 0 END) AS february_revenue FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE o.orders_status != 4 AND ot.class = 'ST' AND YEAR(o.date_purchased) = YEAR(CURDATE())
 
 
 text_sql_format_instructions = SQL FORMAT RULES:
@@ -1050,29 +1089,54 @@ Modify the existing query above by adding/modifying/removing the requested eleme
 
 text_order_calculation = CRITICAL BUSINESS RULES - ORDER STATUS FILTERING:
 
-🚨 MANDATORY RULE: ALWAYS filter orders_status >= 3 for revenue/sales calculations 🚨
+🚨 MANDATORY RULE: ALWAYS specify and explain order status filtering in your analysis 🚨
 
-ORDER STATUS MEANINGS:
-- 1 = "Pending" (NOT completed - DO NOT include in revenue)
-- 2 = "Processing" (NOT completed - DO NOT include in revenue)
-- 3 = "Delivered" (COMPLETED - INCLUDE in revenue)
-- 4 = "Cancelled" (NOT completed - DO NOT include in revenue)
+ORDER STATUS MEANINGS (Complete List):
+- 1 = "Pending" (Order placed, awaiting processing)
+- 2 = "Processing" (Order being prepared)
+- 3 = "Delivered" (Order completed and delivered)
+- 4 = "Cancelled" (Order cancelled - EXCLUDED from revenue)
+- 5+ = Other statuses (Refunded, On Hold, etc.)
 
 REVENUE CALCULATION RULES:
-1. ALWAYS use: WHERE o.orders_status >= 3
-2. Use orders_total for total revenue: SELECT SUM(o.orders_total)
-3. Use orders_products for product revenue: SELECT SUM(op.final_price * op.products_quantity)
-4. ALWAYS join orders_products with orders table to check orders_status
-5. NEVER calculate revenue without orders_status filter
+1. DEFAULT RULE: Use WHERE o.orders_status != 4 (exclude cancelled orders only)
+   - This includes all valid orders: Pending (1), Processing (2), Delivered (3), and other statuses (5+)
+   - Rationale: All non-cancelled orders represent valid business transactions
+
+2. ALTERNATIVE (if user specifies): WHERE o.orders_status >= 3 (only completed orders)
+   - Use ONLY when user explicitly asks for "completed orders" or "delivered orders"
+
+3. ALWAYS EXPLAIN: In your analysis, ALWAYS mention which order statuses are included
+   - Example: "This calculation includes all orders except cancelled ones (status != 4)"
+   - Example: "This calculation includes only delivered orders (status >= 3)"
+
+4. Use orders_total for total revenue: SELECT SUM(o.orders_total)
+5. Use orders_products for product revenue: SELECT SUM(op.final_price * op.products_quantity)
+6. ALWAYS join orders_products with orders table to check orders_status
+7. NEVER calculate revenue without orders_status filter
 
 EXAMPLES:
-✅ CORRECT: SELECT SUM(ot.value) FROM clic_orders o JOIN clic_orders_total ot ON o.orders_id = ot.orders_id WHERE o.orders_status >= 3 AND ot.class = 'ST'
+✅ CORRECT (Default): 
+SELECT SUM(ot.value) FROM clic_orders o 
+JOIN clic_orders_total ot ON o.orders_id = ot.orders_id 
+WHERE o.orders_status != 4 AND ot.class = 'ST'
+Analysis note: "Includes all orders except cancelled ones"
+
+✅ CORRECT (Completed only): 
+SELECT SUM(ot.value) FROM clic_orders o 
+JOIN clic_orders_total ot ON o.orders_id = ot.orders_id 
+WHERE o.orders_status >= 3 AND ot.class = 'ST'
+Analysis note: "Includes only delivered orders (status >= 3)"
+
 ❌ WRONG: SELECT SUM(ot.value) FROM clic_orders_total ot (missing orders_status filter!)
 
 TEMPORAL AGGREGATIONS:
-- Maintain orders_status >= 3 filter across ALL time periods
-- Example monthly: WHERE o.orders_status >= 3 AND MONTH(o.date_purchased) = MONTH(CURDATE())
-- Example yearly: WHERE o.orders_status >= 3 AND YEAR(o.date_purchased) = YEAR(CURDATE())
+- Maintain orders_status filter across ALL time periods
+- Example monthly: WHERE o.orders_status != 4 AND MONTH(o.date_purchased) = MONTH(CURDATE())
+- Example yearly: WHERE o.orders_status != 4 AND YEAR(o.date_purchased) = YEAR(CURDATE())
+
+AMBIGUOUS QUERIES:
+When query is ambiguous about order status (e.g., "revenue by category"), use default rule (status != 4) and explain in analysis
 
 text_multi_query_warning = ⚠️ WARNING: Multiple SQL queries detected in response
 

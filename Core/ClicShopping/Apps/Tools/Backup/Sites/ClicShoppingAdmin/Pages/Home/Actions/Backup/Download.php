@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Tools\Backup\Sites\ClicShoppingAdmin\Pages\Home\Acti
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class Download extends \ClicShopping\OM\PagesActionsAbstract
+class Download extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

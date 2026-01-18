@@ -11,12 +11,13 @@
 namespace ClicShopping\Service\Shop;
 
 use ClicShopping\OM\CLICSHOPPING;
+
 /**
  * Service class to handle the "Store Offline" mode in the application.
  * This service checks if the store is in offline mode and redirects users
  * who are not on the allowed IP address list to an offline page.
  */
-class StoreOffline implements \ClicShopping\OM\ServiceInterface
+class StoreOffline implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Starts the application and checks if it should run in offline mode.

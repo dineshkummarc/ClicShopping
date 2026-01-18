@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\DataBaseTables;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class DataBaseTables extends \ClicShopping\OM\ConfigurableAppAbstract
+class DataBaseTables extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

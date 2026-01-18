@@ -10,8 +10,7 @@
 
 namespace ClicShopping\Apps\Payment\MoneyOrder;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
 /**
  * Class MoneyOrder
@@ -22,7 +21,7 @@ use ClicShopping\OM\Registry;
  * configuration modules, module information, API version, and the identifier of the app.
  */
 
-class MoneyOrder extends \ClicShopping\OM\ConfigurableAppAbstract
+class MoneyOrder extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_MoneyOrder_V1';

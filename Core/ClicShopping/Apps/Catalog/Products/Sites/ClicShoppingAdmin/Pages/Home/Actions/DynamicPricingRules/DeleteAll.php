@@ -10,8 +10,6 @@
 
 namespace ClicShopping\Apps\Catalog\Products\Sites\ClicShoppingAdmin\Pages\Home\Actions\DynamicPricingRules;
 
-use ClicShopping\OM\Cache;
-use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 /**
@@ -19,7 +17,7 @@ use ClicShopping\OM\Registry;
  * This class implements idempotent operations for product deletion
  * Running this operation multiple times with the same input will produce the same result
  */
-class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
+class DeleteAll extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
   protected $id;

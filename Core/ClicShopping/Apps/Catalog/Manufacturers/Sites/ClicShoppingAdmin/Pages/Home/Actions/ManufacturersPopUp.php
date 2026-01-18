@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Catalog\Manufacturers\Sites\ClicShoppingAdmin\Pages\
 
 use ClicShopping\OM\Registry;
 
-class ManufacturersPopUp extends \ClicShopping\OM\PagesActionsAbstract
+class ManufacturersPopUp extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   protected $use_site_template = false;

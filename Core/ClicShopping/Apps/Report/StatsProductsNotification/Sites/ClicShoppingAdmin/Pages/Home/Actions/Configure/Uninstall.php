@@ -10,13 +10,11 @@
 
 namespace ClicShopping\Apps\Report\StatsProductsNotification\Sites\ClicShoppingAdmin\Pages\Home\Actions\Configure;
 
-use ClicShopping\OM\Registry;
-
 /**
  * Uninstall action for Sites module configuration.
  * Handles the Uninstall process with centralized functionality.
  */
-class Uninstall extends \ClicShopping\OM\ConfigureActionsAbstract
+class Uninstall extends \ClicShopping\OM\Domains\ConfigureActionsAbstract
 {
 
     /**

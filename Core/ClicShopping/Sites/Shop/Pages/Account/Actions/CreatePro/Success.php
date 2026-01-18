@@ -13,7 +13,7 @@ namespace ClicShopping\Sites\Shop\Pages\Account\Actions\CreatePro;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class Success extends \ClicShopping\OM\PagesActionsAbstract
+class Success extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

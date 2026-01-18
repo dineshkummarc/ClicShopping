@@ -37,7 +37,7 @@ use function define;
  * Initializes key components and services required for the Shop site and manages page routing.
  * Extends the SitesAbstract class to utilize base site functionality.
  */
-class Shop extends \ClicShopping\OM\SitesAbstract
+class Shop extends \ClicShopping\OM\Domains\SitesAbstract
 {
   protected static ?string $_application;
   protected array $ignored_actions;
@@ -213,7 +213,7 @@ class Shop extends \ClicShopping\OM\SitesAbstract
    *
    * This method determines the appropriate controller class for the requested page
    * and initializes it. If a valid page controller is identified, the class must
-   * implement the `ClicShopping\OM\PagesInterface` interface. The method will execute
+   * implement the `ClicShopping\OM\Interfaces«PagesInterface` interface. The method will execute
    * any actions associated with the page.
    *
    * The selection process prioritizes custom namespaces over default namespaces,
@@ -270,12 +270,12 @@ class Shop extends \ClicShopping\OM\SitesAbstract
     }
 
     if (isset($class)) {
-      if (is_subclass_of($class, 'ClicShopping\OM\PagesInterface')) {
+      if (is_subclass_of($class, 'ClicShopping\OM\Interfaces\PagesInterface')) {
         $this->page = new $class($this);
 
         $this->page->runActions();
       } else {
-        trigger_error('ClicShopping\Sites\Shop\Shop::setPage() - ' . $page_code . ': Page does not implement ClicShopping\OM\PagesInterface and cannot be loaded.');
+        trigger_error('ClicShopping\Sites\Shop\Shop::setPage() - ' . $page_code . ': Page does not implement ClicShopping\OM\Interfaces\PagesInterface and cannot be loaded.');
       }
     }
   }

@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Configuration\Currency;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Currency extends \ClicShopping\OM\ConfigurableAppAbstract
+class Currency extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_Currency_V1';

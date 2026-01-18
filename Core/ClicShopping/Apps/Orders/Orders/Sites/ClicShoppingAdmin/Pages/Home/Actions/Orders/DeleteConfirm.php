@@ -11,12 +11,11 @@
 
 namespace ClicShopping\Apps\Orders\Orders\Sites\ClicShoppingAdmin\Pages\Home\Actions\Orders;
 
+use ClicShopping\Apps\Orders\Orders\Classes\ClicShoppingAdmin\OrderAdmin;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Orders\Orders\Classes\ClicShoppingAdmin\OrderAdmin;
-
-class DeleteConfirm extends \ClicShopping\OM\PagesActionsAbstract
+class DeleteConfirm extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
   protected bool $restock;

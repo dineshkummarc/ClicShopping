@@ -23,7 +23,7 @@ namespace ClicShopping\OM\Session;
  * @package ClicShopping\OM\Session
  */
 
-class Memcached extends \ClicShopping\OM\SessionAbstract implements \SessionHandlerInterface
+class Memcached extends \ClicShopping\OM\Domains\SessionAbstract implements \SessionHandlerInterface
 {
   private const PERSISTENT_ID = 'clicshopping_session_memcached';
   private ?\Memcached $_conn = null;

@@ -10,6 +10,6 @@
 
 namespace ClicShopping\Sites\Shop\Pages\Cart;
 
-class Cart extends \ClicShopping\OM\PagesAbstract
+class Cart extends \ClicShopping\OM\Domains\PagesAbstract
 {
 }

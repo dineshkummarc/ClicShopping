@@ -14,13 +14,14 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Shop\Breadcrumb as BreadcrumbClass;
+
 /**
  * Service class responsible for handling the initialization and management
  * of the Breadcrumb functionality within the shop.
  *
  * This class implements the \ClicShopping\OM\ServiceInterface interface.
  */
-class Breadcrumb implements \ClicShopping\OM\ServiceInterface
+class Breadcrumb implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the breadcrumb system by verifying the required file exists

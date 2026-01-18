@@ -14,7 +14,7 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Shop\AddressBook;
 
-class Delete extends \ClicShopping\OM\PagesActionsAbstract
+class Delete extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

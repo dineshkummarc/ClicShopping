@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\Backup\Sites\ClicShoppingAdmin\Pages\Home\Acti
 
 use ClicShopping\OM\Registry;
 
-class Restore extends \ClicShopping\OM\PagesActionsAbstract
+class Restore extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

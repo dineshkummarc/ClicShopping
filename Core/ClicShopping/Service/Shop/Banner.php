@@ -10,10 +10,10 @@
 
 namespace ClicShopping\Service\Shop;
 
+use ClicShopping\Apps\Marketing\BannerManager\Classes\Shop\Banner as BannerClass;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Marketing\BannerManager\Classes\Shop\Banner as BannerClass;
 /**
  * Class Banner
  *
@@ -21,7 +21,7 @@ use ClicShopping\Apps\Marketing\BannerManager\Classes\Shop\Banner as BannerClass
  * It integrates with the BannerManager app and ensures banners are activated and expired appropriately.
  * Implements the ServiceInterface for use within the ClicShopping framework.
  */
-class Banner implements \ClicShopping\OM\ServiceInterface
+class Banner implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the BannerManager application by setting up the necessary dependencies

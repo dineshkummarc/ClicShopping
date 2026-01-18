@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This action class is responsible for setting up the environment to display
  * statistics about expected products in the admin interface.
  */
-class StatsProductsExpected extends \ClicShopping\OM\PagesActionsAbstract
+class StatsProductsExpected extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to display expected products statistics.

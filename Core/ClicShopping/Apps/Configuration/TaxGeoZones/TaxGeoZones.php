@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Configuration\TaxGeoZones;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class TaxGeoZones extends \ClicShopping\OM\ConfigurableAppAbstract
+class TaxGeoZones extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_TaxGeoZones_V1';

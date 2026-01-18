@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Communication\Newsletter\Sites\ClicShoppingAdmin\Pag
 
 use ClicShopping\OM\Registry;
 
-class Confirm extends \ClicShopping\OM\PagesActionsAbstract
+class Confirm extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

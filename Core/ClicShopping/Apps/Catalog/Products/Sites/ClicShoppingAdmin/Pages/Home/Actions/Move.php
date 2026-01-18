@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This action class handles the initiation of the product move process in the admin interface.
  * It sets up the necessary page and action for moving products to a different category.
  */
-class Move extends \ClicShopping\OM\PagesActionsAbstract
+class Move extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to initiate the product move process.

@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Marketing\Featured\Sites\ClicShoppingAdmin\Pages\Hom
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class Insert extends \ClicShopping\OM\PagesActionsAbstract
+class Insert extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

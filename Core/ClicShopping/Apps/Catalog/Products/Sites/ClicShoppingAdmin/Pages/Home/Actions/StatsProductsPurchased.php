@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This action class is responsible for setting up the stats_products_purchased page in the admin interface.
  * It loads the necessary definitions and sets the appropriate file for rendering the page.
  */
-class StatsProductsPurchased extends \ClicShopping\OM\PagesActionsAbstract
+class StatsProductsPurchased extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to set up the stats_products_purchased page.

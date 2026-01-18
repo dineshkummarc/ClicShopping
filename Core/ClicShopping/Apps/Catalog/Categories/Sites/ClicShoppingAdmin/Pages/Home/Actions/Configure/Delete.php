@@ -16,7 +16,7 @@ use ClicShopping\OM\Registry;
  * Delete action for Sites module configuration.
  * Handles the Delete process with centralized functionality.
  */
-class Delete extends \ClicShopping\OM\ConfigureActionsAbstract
+class Delete extends \ClicShopping\OM\Domains\ConfigureActionsAbstract
 {
 
     /**

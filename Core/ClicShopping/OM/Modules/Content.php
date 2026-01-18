@@ -13,7 +13,7 @@ namespace ClicShopping\OM\Modules;
 
 use ClicShopping\OM\Apps;
 
-class Content extends \ClicShopping\OM\ModulesAbstract
+class Content extends \ClicShopping\OM\Domains\ModulesAbstract
 {
   public function getInfo($app, $key, $data)
   {

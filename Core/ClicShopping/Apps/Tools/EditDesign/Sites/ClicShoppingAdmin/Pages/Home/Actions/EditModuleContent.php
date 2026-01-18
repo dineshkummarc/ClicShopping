@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\EditDesign\Sites\ClicShoppingAdmin\Pages\Home\
 
 use ClicShopping\OM\Registry;
 
-class EditModuleContent extends \ClicShopping\OM\PagesActionsAbstract
+class EditModuleContent extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

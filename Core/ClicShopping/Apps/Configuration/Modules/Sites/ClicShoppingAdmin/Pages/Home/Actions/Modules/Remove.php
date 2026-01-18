@@ -10,14 +10,13 @@
 
 namespace ClicShopping\Apps\Configuration\Modules\Sites\ClicShoppingAdmin\Pages\Home\Actions\Modules;
 
+use ClicShopping\Apps\Configuration\Modules\Classes\ClicShoppingAdmin\ModulesAdmin;
 use ClicShopping\OM\Apps;
 use ClicShopping\OM\Cache;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\Modules\Classes\ClicShoppingAdmin\ModulesAdmin;
-
-class Remove extends \ClicShopping\OM\PagesActionsAbstract
+class Remove extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

@@ -20,7 +20,7 @@ use function is_array;
 use function is_null;
 use function is_object;
 
-class Process extends \ClicShopping\OM\PagesActionsAbstract
+class Process extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

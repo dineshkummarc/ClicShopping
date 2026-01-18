@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Tools\Cronjob\Sites\Shop\Pages\CJ;
 
+use ClicShopping\Apps\Tools\Cronjob\Classes\ClicShoppingAdmin\Cron;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Tools\Cronjob\Classes\ClicShoppingAdmin\Cron;
-
-class CJ extends \ClicShopping\OM\PagesAbstract
+class CJ extends \ClicShopping\OM\Domains\PagesAbstract
 {
   protected ?string $file = null;
   protected bool $use_site_template = false;

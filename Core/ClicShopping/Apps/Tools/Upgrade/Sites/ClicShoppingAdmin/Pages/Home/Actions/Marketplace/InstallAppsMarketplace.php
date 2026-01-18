@@ -10,15 +10,14 @@
 
 namespace ClicShopping\Apps\Tools\Upgrade\Sites\ClicShoppingAdmin\Pages\Home\Actions\Marketplace;
 
+use ClicShopping\Apps\Tools\Upgrade\Classes\ClicShoppingAdmin\ExtractFile;
+use ClicShopping\Apps\Tools\Upgrade\Upgrade as UpgradeApp;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Upload;
 
-use ClicShopping\Apps\Tools\Upgrade\Classes\ClicShoppingAdmin\ExtractFile;
-use ClicShopping\Apps\Tools\Upgrade\Upgrade as UpgradeApp;
-
-class InstallAppsMarketplace extends \ClicShopping\OM\PagesActionsAbstract
+class InstallAppsMarketplace extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
   private mixed $extractFile;

@@ -10,6 +10,8 @@
 
 namespace ClicShopping\Apps\Customers\Customers\Sites\ClicShoppingAdmin\Pages\Home\Actions\Customers;
 
+use ClicShopping\Apps\Configuration\TemplateEmail\Classes\ClicShoppingAdmin\TemplateEmailAdmin;
+use ClicShopping\Apps\Customers\Groups\Classes\ClicShoppingAdmin\VatNumber;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
 use ClicShopping\OM\Hash;
@@ -18,10 +20,7 @@ use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Is;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\TemplateEmail\Classes\ClicShoppingAdmin\TemplateEmailAdmin;
-use ClicShopping\Apps\Customers\Groups\Classes\ClicShoppingAdmin\VatNumber;
-
-class Create extends \ClicShopping\OM\PagesActionsAbstract
+class Create extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

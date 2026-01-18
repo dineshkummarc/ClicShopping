@@ -10,12 +10,11 @@
 
 namespace ClicShopping\Apps\Tools\Cronjob\Sites\ClicShoppingAdmin\Pages\Home\Actions\Cronjob;
 
+use ClicShopping\Apps\Tools\Cronjob\Classes\ClicShoppingAdmin\Cron;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Tools\Cronjob\Classes\ClicShoppingAdmin\Cron;
-
-class Run extends \ClicShopping\OM\PagesActionsAbstract
+class Run extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   protected string $code;
   protected string $app;

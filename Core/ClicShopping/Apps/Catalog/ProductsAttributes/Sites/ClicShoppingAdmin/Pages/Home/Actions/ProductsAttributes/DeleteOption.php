@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Catalog\ProductsAttributes\Sites\ClicShoppingAdmin\P
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class DeleteOption extends \ClicShopping\OM\PagesActionsAbstract
+class DeleteOption extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

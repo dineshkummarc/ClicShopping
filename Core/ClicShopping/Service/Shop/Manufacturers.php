@@ -10,10 +10,10 @@
 
 namespace ClicShopping\Service\Shop;
 
+use ClicShopping\Apps\Catalog\Manufacturers\Classes\Shop\Manufacturers as ManufacturersShopClass;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Catalog\Manufacturers\Classes\Shop\Manufacturers as ManufacturersShopClass;
 /**
  * Service class responsible for managing the integration of the Manufacturers module into the shop environment.
  *
@@ -21,7 +21,7 @@ use ClicShopping\Apps\Catalog\Manufacturers\Classes\Shop\Manufacturers as Manufa
  * The Manufacturers class ensures that the Manufacturers module is properly registered in the Registry
  * for usage within the shop system, checking the existence and loading the required class file.
  */
-class Manufacturers implements \ClicShopping\OM\ServiceInterface
+class Manufacturers implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the Manufacturers module by checking the existence of the required file

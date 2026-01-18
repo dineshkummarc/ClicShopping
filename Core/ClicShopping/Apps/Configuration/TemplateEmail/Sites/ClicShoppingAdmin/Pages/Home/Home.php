@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Configuration\TemplateEmail\Sites\ClicShoppingAdmin\Pages\Home;
 
+use ClicShopping\Apps\Configuration\TemplateEmail\TemplateEmail;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\TemplateEmail\TemplateEmail;
-
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

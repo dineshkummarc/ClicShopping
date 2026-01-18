@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\SecurityCheck\Sites\ClicShoppingAdmin\Pages\Ho
 
 use ClicShopping\OM\Registry;
 
-class SecurityCheck extends \ClicShopping\OM\PagesActionsAbstract
+class SecurityCheck extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   public function execute()

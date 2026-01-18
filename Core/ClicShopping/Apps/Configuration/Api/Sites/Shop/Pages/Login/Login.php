@@ -16,7 +16,7 @@ use ClicShopping\Apps\Configuration\Api\Classes\Shop\Authentification;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class Login extends \ClicShopping\OM\PagesAbstract
+class Login extends \ClicShopping\OM\Domains\PagesAbstract
 {
   protected string|null $file = null;
   protected bool $use_site_template = false;

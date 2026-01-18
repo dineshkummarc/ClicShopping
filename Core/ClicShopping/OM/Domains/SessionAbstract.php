@@ -8,7 +8,10 @@
  *
  */
 
-namespace ClicShopping\OM;
+namespace ClicShopping\OM\Domains;
+
+use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Registry;
 
 /**
  * Abstract class SessionAbstract

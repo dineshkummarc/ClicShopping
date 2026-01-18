@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Catalog\Categories\Sites\ClicShoppingAdmin\Pages\Hom
 
 use ClicShopping\OM\Registry;
 
-class ProductsCategoriesAjax extends \ClicShopping\OM\PagesActionsAbstract
+class ProductsCategoriesAjax extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   protected $file = null;
   protected bool $use_site_template = false;

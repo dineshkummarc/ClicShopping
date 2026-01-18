@@ -15,7 +15,7 @@ use ClicShopping\OM\Hash;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Shop\Pages\Account\Classes\HistoryInfo;
 
-class Download extends \ClicShopping\OM\PagesActionsAbstract
+class Download extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
 // Unlinks all subdirectories and files in $dir

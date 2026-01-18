@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Tools\SecurityCheck\Sites\ClicShoppingAdmin\Pages\Home\Actions\IpRestriction;
 
+use ClicShopping\Apps\Tools\SecurityCheck\Classes\IpRestriction;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Tools\SecurityCheck\Classes\IpRestriction;
-
-class SetFlagShop extends \ClicShopping\OM\PagesActionsAbstract
+class SetFlagShop extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

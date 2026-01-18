@@ -12,13 +12,14 @@ namespace ClicShopping\Service\ClicShoppingAdmin;
 
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\ClicShoppingAdmin\Composer as ComposerClass;
+
 /**
  * This class implements the ServiceInterface and represents
  * the Composer service within the ClicShoppingAdmin namespace.
  * It is used to register and manage the Composer class instance
  * in the Registry.
  */
-class Composer implements \ClicShopping\OM\ServiceInterface
+class Composer implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the Composer registry entry if it does not already exist.

@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This action class is responsible for displaying the configuration popup fields page in the admin interface.
  * It sets up the page without the standard site template (header/footer) and loads the necessary language definitions.
  */
-class ConfigurationPopUpFields extends \ClicShopping\OM\PagesActionsAbstract
+class ConfigurationPopUpFields extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
   * Execute the action to display the configuration popup fields page.

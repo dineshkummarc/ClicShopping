@@ -14,8 +14,8 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
-use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
+use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 
 #[AllowDynamicProperties]
 class Cron {

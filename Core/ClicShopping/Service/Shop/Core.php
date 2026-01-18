@@ -10,24 +10,24 @@
 
 namespace ClicShopping\Service\Shop;
 
-use ClicShopping\OM\Registry;
-
-use ClicShopping\Apps\Customers\Customers\Classes\Shop\CustomerShop as CustomerClass;
-use ClicShopping\Sites\Shop\Tax as TaxClass;
-use ClicShopping\Sites\Shop\NavigationHistory as NavigationHistoryClass;
-use ClicShopping\Sites\Shop\ShoppingCart as ShoppingCartClass;
-use ClicShopping\Sites\Shop\OrderTotal as OrderTotalClass;
 use ClicShopping\Apps\Catalog\Products\Classes\Shop\Prod as ProdClass;
 use ClicShopping\Apps\Catalog\Products\Classes\Shop\ProductsCommon as ProductsCommonClass;
 use ClicShopping\Apps\Catalog\Products\Classes\Shop\ProductsFunctionTemplate as ProductsFunctionTemplateClass;
 use ClicShopping\Apps\Catalog\ProductsAttributes\Classes\Shop\ProductsAttributesShop;
+use ClicShopping\Apps\Customers\Customers\Classes\Shop\CustomerShop as CustomerClass;
+use ClicShopping\OM\Registry;
+use ClicShopping\Sites\Shop\NavigationHistory as NavigationHistoryClass;
+use ClicShopping\Sites\Shop\OrderTotal as OrderTotalClass;
+use ClicShopping\Sites\Shop\ShoppingCart as ShoppingCartClass;
+use ClicShopping\Sites\Shop\Tax as TaxClass;
+
 /**
  * Core Service Class
  *
  * This class implements the ServiceInterface and provides the necessary
  * initialization and shutdown operations for the core services in the shop.
  */
-class Core implements \ClicShopping\OM\ServiceInterface
+class Core implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the required registry entries and session objects.

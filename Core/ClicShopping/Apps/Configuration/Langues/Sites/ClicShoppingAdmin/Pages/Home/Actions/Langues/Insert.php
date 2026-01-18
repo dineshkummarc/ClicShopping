@@ -15,10 +15,9 @@ use ClicShopping\OM\Cache;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
-
 use ClicShopping\Sites\ClicShoppingAdmin\ModuleDownload;
 
-class Insert extends \ClicShopping\OM\PagesActionsAbstract
+class Insert extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
   private mixed $lang;

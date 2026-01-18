@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Configuration\Zones\Sites\ClicShoppingAdmin\Pages\Ho
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class Update extends \ClicShopping\OM\PagesActionsAbstract
+class Update extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

@@ -10,17 +10,16 @@
 
 namespace ClicShopping\Sites\Shop\Pages\Account\Actions\PasswordForgotten;
 
+use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
+use ClicShopping\Apps\Tools\ActionsRecorder\Classes\Shop\ActionRecorder;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Is;
 use ClicShopping\OM\Registry;
-
-use ClicShopping\Apps\Tools\ActionsRecorder\Classes\Shop\ActionRecorder;
-use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
 use function defined;
 
-class Process extends \ClicShopping\OM\PagesActionsAbstract
+class Process extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

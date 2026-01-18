@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Marketing\Favorites;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Favorites extends \ClicShopping\OM\ConfigurableAppAbstract
+class Favorites extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_Favorites_V1';

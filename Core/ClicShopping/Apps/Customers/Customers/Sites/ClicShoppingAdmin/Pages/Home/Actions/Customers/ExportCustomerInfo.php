@@ -14,7 +14,7 @@ use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class ExportCustomerInfo extends \ClicShopping\OM\PagesActionsAbstract
+class ExportCustomerInfo extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   protected $use_site_template = false;
 

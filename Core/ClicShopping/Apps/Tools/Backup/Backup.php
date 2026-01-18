@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\Backup;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Backup extends \ClicShopping\OM\ConfigurableAppAbstract
+class Backup extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Catalog\Products\Sites\ClicShoppingAdmin\Pages\Home\
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class UpdateStatsProductsPurchased extends \ClicShopping\OM\PagesActionsAbstract
+class UpdateStatsProductsPurchased extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   public function execute()

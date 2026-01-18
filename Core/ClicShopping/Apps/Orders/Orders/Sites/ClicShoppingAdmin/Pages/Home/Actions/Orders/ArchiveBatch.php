@@ -14,7 +14,7 @@ namespace ClicShopping\Apps\Orders\Orders\Sites\ClicShoppingAdmin\Pages\Home\Act
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class ArchiveBatch extends \ClicShopping\OM\PagesActionsAbstract
+class ArchiveBatch extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

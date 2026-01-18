@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This action class handles the "Copy To" functionality in the admin interface for products.
  * It sets up the page to allow users to copy a product to another category or location.
  */
-class CopyTo extends \ClicShopping\OM\PagesActionsAbstract
+class CopyTo extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to set up the "Copy To" page.

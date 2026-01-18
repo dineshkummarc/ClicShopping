@@ -10,6 +10,6 @@
 
 namespace ClicShopping\Apps\Marketing\SEO\Sites\Shop\Pages\GoogleSitemap;
 
-class GoogleSitemap extends \ClicShopping\OM\PagesAbstract
+class GoogleSitemap extends \ClicShopping\OM\Domains\PagesAbstract
 {
 }

@@ -15,7 +15,7 @@ namespace ClicShopping\OM\Is;
  * It also allows for optional minimum and maximum range validation.
  */
 
-class Integer implements \ClicShopping\OM\IsInterface
+class Integer implements \ClicShopping\OM\Interfaces\IsInterface
 {
   /**
    * Validates whether the given value is an integer within the optional specified range.

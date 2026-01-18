@@ -11,13 +11,12 @@
 
 namespace ClicShopping\Apps\Tools\AdministratorMenu\Sites\ClicShoppingAdmin\Pages\Home\Actions\AdministratorMenu;
 
+use ClicShopping\Apps\Tools\AdministratorMenu\Classes\ClicShoppingAdmin\AdministratorMenu;
 use ClicShopping\OM\Cache;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Tools\AdministratorMenu\Classes\ClicShoppingAdmin\AdministratorMenu;
-
-class MoveCategoryConfirm extends \ClicShopping\OM\PagesActionsAbstract
+class MoveCategoryConfirm extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
   protected $Id;

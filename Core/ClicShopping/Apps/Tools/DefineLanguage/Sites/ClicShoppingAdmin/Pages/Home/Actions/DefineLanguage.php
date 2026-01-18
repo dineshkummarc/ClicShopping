@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\DefineLanguage\Sites\ClicShoppingAdmin\Pages\H
 
 use ClicShopping\OM\Registry;
 
-class DefineLanguage extends \ClicShopping\OM\PagesActionsAbstract
+class DefineLanguage extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

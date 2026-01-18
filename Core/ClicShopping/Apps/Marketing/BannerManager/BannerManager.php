@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Marketing\BannerManager;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class BannerManager extends \ClicShopping\OM\ConfigurableAppAbstract
+class BannerManager extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_BannerManager_V1';

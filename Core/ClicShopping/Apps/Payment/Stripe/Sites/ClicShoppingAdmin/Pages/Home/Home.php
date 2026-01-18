@@ -10,8 +10,8 @@
 
 namespace ClicShopping\Apps\Payment\Stripe\Sites\ClicShoppingAdmin\Pages\Home;
 
-use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Payment\Stripe\Stripe;
+use ClicShopping\OM\Registry;
 
 /**
  * Home page class for Stripe payment module administration interface.
@@ -25,7 +25,7 @@ use ClicShopping\Apps\Payment\Stripe\Stripe;
  * @copyright 2008 - https://www.clicshopping.org
  * @license GPL 2 & MIT
  */
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   /**
    * @var mixed The Stripe application instance

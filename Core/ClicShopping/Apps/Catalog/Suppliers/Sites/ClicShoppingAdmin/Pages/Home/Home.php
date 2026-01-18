@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Catalog\Suppliers\Sites\ClicShoppingAdmin\Pages\Home;
 
+use ClicShopping\Apps\Catalog\Suppliers\Suppliers;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Catalog\Suppliers\Suppliers;
-
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

@@ -8,8 +8,9 @@
  *
  */
 
-namespace ClicShopping\OM;
+namespace ClicShopping\OM\Domains;
 
+use ClicShopping\OM\Interfaces;
 use ReflectionClass;
 
 /**
@@ -17,7 +18,7 @@ use ReflectionClass;
  * This class provides basic structure and utilities for managing pages,
  * routes, and site-specific logic.
  */
-abstract class SitesAbstract implements \ClicShopping\OM\SitesInterface
+abstract class SitesAbstract implements Interfaces\SitesInterface
 {
   protected string $code;
   protected string $default_page = 'Home'; // else white page

@@ -19,7 +19,7 @@ use function strlen;
  * This class extends the SessionAbstract class and implements the PHP SessionHandlerInterface.
  * It uses file storage for session handling, providing methods for session lifecycle management.
  */
-class File extends \ClicShopping\OM\SessionAbstract implements \SessionHandlerInterface
+class File extends \ClicShopping\OM\Domains\SessionAbstract implements \SessionHandlerInterface
 {
   protected string $path;
 

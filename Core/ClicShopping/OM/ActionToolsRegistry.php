@@ -11,6 +11,7 @@
 namespace ClicShopping\OM;
 
 use AllowDynamicProperties;
+use ClicShopping\OM\Interfaces\ActionToolsInterface;
 use DirectoryIterator;
 
 #[AllowDynamicProperties]

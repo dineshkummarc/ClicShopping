@@ -10,10 +10,10 @@
 
 namespace ClicShopping\Apps\Configuration\Cache\Sites\ClicShoppingAdmin\Pages\Home\Actions\Cache;
 
-use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
+use ClicShopping\OM\Registry;
 
-class ResetOpCache extends \ClicShopping\OM\PagesActionsAbstract
+class ResetOpCache extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Configuration\OrdersStatus;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class OrdersStatus extends \ClicShopping\OM\ConfigurableAppAbstract
+class OrdersStatus extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_OrdersStatus_V1';

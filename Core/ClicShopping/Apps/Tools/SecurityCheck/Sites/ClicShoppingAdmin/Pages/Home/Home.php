@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Tools\SecurityCheck\Sites\ClicShoppingAdmin\Pages\Home;
 
+use ClicShopping\Apps\Tools\SecurityCheck\SecurityCheck;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Tools\SecurityCheck\SecurityCheck;
-
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

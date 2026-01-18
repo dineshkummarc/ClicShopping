@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\ModulesHooks;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class ModulesHooks extends \ClicShopping\OM\ConfigurableAppAbstract
+class ModulesHooks extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

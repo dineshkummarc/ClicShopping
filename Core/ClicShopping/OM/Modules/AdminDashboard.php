@@ -16,7 +16,7 @@ use ClicShopping\OM\Apps;
  * Represents the AdminDashboard module extending the base functionality of ModulesAbstract.
  * Provides methods to retrieve module information and resolve module classes.
  */
-class AdminDashboard extends \ClicShopping\OM\ModulesAbstract
+class AdminDashboard extends \ClicShopping\OM\Domains\ModulesAbstract
 {
   /**
    * Retrieves information associated with the given application, key, and data.

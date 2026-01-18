@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\MCP\Sites\ClicShoppingAdmin\Pages\Home\Actions
 
 use ClicShopping\OM\Registry;
 
-class HealthMonitor extends \ClicShopping\OM\PagesActionsAbstract
+class HealthMonitor extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

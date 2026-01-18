@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Configuration\Cache\Sites\ClicShoppingAdmin\Pages\Ho
 
 use ClicShopping\OM\Registry;
 
-class ToggleRealtime extends \ClicShopping\OM\PagesActionsAbstract
+class ToggleRealtime extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

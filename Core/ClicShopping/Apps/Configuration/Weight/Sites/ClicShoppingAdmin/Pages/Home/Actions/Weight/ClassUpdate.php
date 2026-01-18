@@ -14,7 +14,7 @@ use ClicShopping\OM\Cache;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class ClassUpdate extends \ClicShopping\OM\PagesActionsAbstract
+class ClassUpdate extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

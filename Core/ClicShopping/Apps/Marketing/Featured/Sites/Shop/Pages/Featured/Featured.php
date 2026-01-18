@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Marketing\Featured\Sites\Shop\Pages\Featured;
 
+use ClicShopping\Apps\Marketing\Featured\Featured as FeaturedApp;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Marketing\Featured\Featured as FeaturedApp;
-
-class Featured extends \ClicShopping\OM\PagesAbstract
+class Featured extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

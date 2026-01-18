@@ -10,9 +10,9 @@
 
 namespace ClicShopping\Service\ClicShoppingAdmin;
 
+use ClicShopping\Apps\Catalog\Products\Classes\ClicShoppingAdmin\ProductsAdmin as ProductAdminClass;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Catalog\Products\Classes\ClicShoppingAdmin\ProductsAdmin as ProductAdminClass;
 /**
  * Service class responsible for initializing and handling the ProductAdmin functionality
  * within the ClicShoppingAdmin namespace. This service integrates the ProductsAdmin
@@ -20,7 +20,7 @@ use ClicShopping\Apps\Catalog\Products\Classes\ClicShoppingAdmin\ProductsAdmin a
  *
  * Implements the ClicShopping\OM\ServiceInterface interface to standardize service behavior.
  */
-class ProductAdmin implements \ClicShopping\OM\ServiceInterface
+class ProductAdmin implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the ProductsAdmin system by registering the ProductAdminClass instance.

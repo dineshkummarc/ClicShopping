@@ -14,7 +14,7 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Shop\AddressBook;
 
-class PaymentAddress extends \ClicShopping\OM\PagesActionsAbstract
+class PaymentAddress extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

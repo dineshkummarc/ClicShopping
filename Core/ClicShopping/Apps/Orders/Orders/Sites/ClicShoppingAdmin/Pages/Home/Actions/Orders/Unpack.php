@@ -14,7 +14,7 @@ namespace ClicShopping\Apps\Orders\Orders\Sites\ClicShoppingAdmin\Pages\Home\Act
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class Unpack extends \ClicShopping\OM\PagesActionsAbstract
+class Unpack extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
   protected $oID;

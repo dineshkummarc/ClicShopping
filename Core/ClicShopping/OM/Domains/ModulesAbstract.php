@@ -8,7 +8,7 @@
  *
  */
 
-namespace ClicShopping\OM;
+namespace ClicShopping\OM\Domains;
 
 use ReflectionClass;
 

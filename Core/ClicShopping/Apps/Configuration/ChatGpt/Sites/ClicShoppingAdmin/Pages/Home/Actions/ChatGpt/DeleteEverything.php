@@ -19,7 +19,7 @@ use ClicShopping\OM\Registry;
  * This class handles the deletion of all records in the 'gpt' table.
  * It is triggered when the 'DeleteEverything' action is requested.
  */
-class DeleteEverything extends \ClicShopping\OM\PagesActionsAbstract
+class DeleteEverything extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
     /**
      * Execute the action to delete all records in the 'gpt' table.

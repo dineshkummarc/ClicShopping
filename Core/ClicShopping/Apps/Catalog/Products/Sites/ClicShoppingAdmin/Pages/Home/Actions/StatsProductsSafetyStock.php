@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This action class is responsible for displaying the statistics related to product safety stock levels
  * in the admin interface. It sets the appropriate page file and loads the necessary language definitions.
  */
-class StatsProductsSafetyStock extends \ClicShopping\OM\PagesActionsAbstract
+class StatsProductsSafetyStock extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to display product safety stock statistics.

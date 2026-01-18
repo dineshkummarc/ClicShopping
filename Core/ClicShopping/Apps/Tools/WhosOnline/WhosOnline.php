@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\WhosOnline;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class WhosOnline extends \ClicShopping\OM\ConfigurableAppAbstract
+class WhosOnline extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

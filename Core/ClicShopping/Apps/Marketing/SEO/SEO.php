@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Marketing\SEO;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class SEO extends \ClicShopping\OM\ConfigurableAppAbstract
+class SEO extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_SEO_V1';

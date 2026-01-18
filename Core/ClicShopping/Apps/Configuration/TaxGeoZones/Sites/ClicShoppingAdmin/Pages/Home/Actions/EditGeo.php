@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Configuration\TaxGeoZones\Sites\ClicShoppingAdmin\Pa
 
 use ClicShopping\OM\Registry;
 
-class EditGeo extends \ClicShopping\OM\PagesActionsAbstract
+class EditGeo extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

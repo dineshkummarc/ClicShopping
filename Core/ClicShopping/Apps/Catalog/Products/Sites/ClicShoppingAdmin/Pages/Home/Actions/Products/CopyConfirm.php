@@ -10,14 +10,12 @@
 
 namespace ClicShopping\Apps\Catalog\Products\Sites\ClicShoppingAdmin\Pages\Home\Actions\Products;
 
+use ClicShopping\Apps\Catalog\Products\Classes\ClicShoppingAdmin\ProductsAdmin;
 use ClicShopping\OM\Cache;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Catalog\Products\Classes\ClicShoppingAdmin\ProductsAdmin;
-use function is_null;
-
-class CopyConfirm extends \ClicShopping\OM\PagesActionsAbstract
+class CopyConfirm extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   private mixed $app;
   private $Id;

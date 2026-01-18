@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Configuration\ProductsLength\Sites\ClicShoppingAdmin
 
 use ClicShopping\OM\Registry;
 
-class ClassDelete extends \ClicShopping\OM\PagesActionsAbstract
+class ClassDelete extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

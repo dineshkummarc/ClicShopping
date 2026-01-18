@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Shipping\Table;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Table extends \ClicShopping\OM\ConfigurableAppAbstract
+class Table extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

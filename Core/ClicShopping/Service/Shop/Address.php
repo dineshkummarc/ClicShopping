@@ -13,13 +13,14 @@ namespace ClicShopping\Service\Shop;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Shop\Address as AddressClass;
+
 /**
  * Class Address
  *
  * This class implements the ClicShopping service interface for the Address module in the Shop site.
  * It manages the initialization and termination of the Address service within the application.
  */
-class Address implements \ClicShopping\OM\ServiceInterface
+class Address implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the Address module by checking if the required Address.php file exists

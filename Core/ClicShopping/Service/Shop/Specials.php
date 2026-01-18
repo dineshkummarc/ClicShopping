@@ -10,17 +10,17 @@
 
 namespace ClicShopping\Service\Shop;
 
+use ClicShopping\Apps\Marketing\Specials\Classes\Shop\SpecialsClass;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Marketing\Specials\Classes\Shop\SpecialsClass;
 /**
  * The Specials class provides methods to manage the lifecycle of the Specials service in the ClicShopping framework.
  * This service initializes the SpecialsClass functionality and ensures that scheduled and expired specials are processed.
  *
  * Implements the ServiceInterface to adhere to the structure of ClicShopping service components.
  */
-class Specials implements \ClicShopping\OM\ServiceInterface
+class Specials implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the SpecialsClass functionality if the required file exists.

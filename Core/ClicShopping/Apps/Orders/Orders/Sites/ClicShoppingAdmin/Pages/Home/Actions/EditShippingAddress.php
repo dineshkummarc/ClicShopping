@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Orders\Orders\Sites\ClicShoppingAdmin\Pages\Home\Act
 
 use ClicShopping\OM\Registry;
 
-class EditShippingAddress extends \ClicShopping\OM\PagesActionsAbstract
+class EditShippingAddress extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   protected $use_site_template = false;
 

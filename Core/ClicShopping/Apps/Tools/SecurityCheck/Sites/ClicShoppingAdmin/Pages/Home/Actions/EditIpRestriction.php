@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\SecurityCheck\Sites\ClicShoppingAdmin\Pages\Ho
 
 use ClicShopping\OM\Registry;
 
-class EditIpRestriction extends \ClicShopping\OM\PagesActionsAbstract
+class EditIpRestriction extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   public function execute()

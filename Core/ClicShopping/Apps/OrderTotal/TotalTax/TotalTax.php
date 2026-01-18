@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\OrderTotal\TotalTax;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class TotalTax extends \ClicShopping\OM\ConfigurableAppAbstract
+class TotalTax extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_TotalTax_V1';

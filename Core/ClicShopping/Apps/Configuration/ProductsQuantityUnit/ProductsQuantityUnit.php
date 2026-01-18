@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Configuration\ProductsQuantityUnit;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class ProductsQuantityUnit extends \ClicShopping\OM\ConfigurableAppAbstract
+class ProductsQuantityUnit extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_ProductsQuantityUnit_V1';

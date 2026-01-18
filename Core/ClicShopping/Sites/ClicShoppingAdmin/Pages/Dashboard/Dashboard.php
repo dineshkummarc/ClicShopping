@@ -10,6 +10,6 @@
 
 namespace ClicShopping\Sites\ClicShoppingAdmin\Pages\Dashboard;
 
-class Dashboard extends \ClicShopping\OM\PagesAbstract
+class Dashboard extends \ClicShopping\OM\Domains\PagesAbstract
 {
 }

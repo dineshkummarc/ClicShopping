@@ -8,8 +8,12 @@
  *
  */
 
-namespace ClicShopping\OM;
+namespace ClicShopping\OM\Domains;
 
+use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\HTML;
+use ClicShopping\OM\Interfaces;
+use ClicShopping\OM\Interfaces\SitesInterface;
 use ReflectionClass;
 use function array_slice;
 use function count;
@@ -20,7 +24,7 @@ use function is_array;
  * Abstract class representing the base functionality of a page. Handles templating, execution of actions,
  * and site-specific configurations. Implementations should extend this class to define specific page behavior.
  */
-abstract class PagesAbstract implements \ClicShopping\OM\PagesInterface
+abstract class PagesAbstract implements Interfaces\PagesInterface
 {
   public array $data = [];
 
@@ -37,10 +41,10 @@ abstract class PagesAbstract implements \ClicShopping\OM\PagesInterface
   /**
    * Constructor method for initializing the class.
    *
-   * @param \ClicShopping\OM\SitesInterface $site The site interface instance.
+   * @param \ClicShopping\OM\Interfaces\SitesInterface $site The site interface instance.
    * @return void
    */
-  final public function __construct(\ClicShopping\OM\SitesInterface $site)
+  final public function __construct(Interfaces\SitesInterface $site)
   {
     $this->code = (new ReflectionClass($this))->getShortName();
     $this->site = $site;
@@ -166,7 +170,7 @@ abstract class PagesAbstract implements \ClicShopping\OM\PagesInterface
         $ns = explode('\\', $class);
 
         if ((count($ns) > 2) && ($ns[0] == 'ClicShopping') && ($ns[1] == 'Apps')) {
-          if (isset($this->app) && is_subclass_of($this->app, 'ClicShopping\OM\AppAbstract')) {
+          if (isset($this->app) && is_subclass_of($this->app, 'ClicShopping\OM\Domains\AppAbstract')) {
             if ($this->app->definitionsExist(implode('/', array_slice($ns, 4)))) {
               $this->app->loadDefinitions(implode('/', array_slice($ns, 4)));
             }
@@ -238,7 +242,7 @@ abstract class PagesAbstract implements \ClicShopping\OM\PagesInterface
     $class = $this->getActionClassName($action);
 
     if (class_exists($class)) {
-      if (is_subclass_of($class, 'ClicShopping\OM\PagesActionsInterface')) {
+      if (is_subclass_of($class, 'ClicShopping\OM\Interfaces\PagesActionsInterface')) {
         return true;
       } else {
         trigger_error('ClicShopping\OM\PagesAbstract::actionExists() - ' . implode('\\', $action) . ': Action does not implement ClicShopping\OM\PagesActionInterface and cannot be loaded.');

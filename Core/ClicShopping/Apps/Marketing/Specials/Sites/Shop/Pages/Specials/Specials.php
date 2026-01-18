@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Marketing\Specials\Sites\Shop\Pages\Specials;
 
+use ClicShopping\Apps\Marketing\Specials\Specials as SpecialsApp;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Marketing\Specials\Specials as SpecialsApp;
-
-class Specials extends \ClicShopping\OM\PagesAbstract
+class Specials extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

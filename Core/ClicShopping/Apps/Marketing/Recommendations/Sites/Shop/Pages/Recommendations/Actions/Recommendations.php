@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Marketing\Recommendations\Sites\Shop\Pages\Recommend
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class Recommendations extends \ClicShopping\OM\PagesActionsAbstract
+class Recommendations extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

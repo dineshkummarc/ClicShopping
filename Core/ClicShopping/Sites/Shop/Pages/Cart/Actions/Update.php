@@ -16,7 +16,7 @@ use function count;
 use function in_array;
 use function is_array;
 
-class Update extends \ClicShopping\OM\PagesActionsAbstract
+class Update extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

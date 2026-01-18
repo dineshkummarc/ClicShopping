@@ -8,10 +8,14 @@
  *
  */
 
-namespace ClicShopping\OM;
+namespace ClicShopping\OM\Domains;
 
+use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Registry;
+use ClicShopping\OM\Interfaces\AppInterface;
 use DirectoryIterator;
 use ReflectionClass;
+
 use function call_user_func;
 use function call_user_func_array;
 use function defined;
@@ -23,7 +27,7 @@ use function is_null;
  * It provides core functionalities such as metadata management, database and language bindings,
  * and mechanisms for managing application-specific modules and configurations.
  */
-abstract class AppAbstract
+abstract class AppAbstract implements AppInterface
 {
   public string $code;
   public $title;
@@ -178,7 +182,7 @@ abstract class AppAbstract
     $metafile = CLICSHOPPING::BASE_DIR . 'Apps/' . $this->vendor . DIRECTORY_SEPARATOR . $this->code . '/clicshopping.json';
 
     if (!is_file($metafile) || (($json = json_decode(file_get_contents($metafile), true)) === null)) {
-      trigger_error('ClicShopping\OM\AppAbstract::setInfo(): ' . $this->vendor . '\\' . $this->code . ' - Could not read App information in ' . $metafile . '.');
+      trigger_error('ClicShopping\OM\Domains\AppAbstract::setInfo(): ' . $this->vendor . '\\' . $this->code . ' - Could not read App information in ' . $metafile . '.');
 
       return false;
     }

@@ -20,7 +20,7 @@ use ClicShopping\OM\Registry;
  * This action class handles setting the status flag for dynamic pricing rules in the admin interface.
  * It updates the rule's status based on user input and redirects to the DynamicPricingRules page.
  */
-class SetFlag extends \ClicShopping\OM\PagesActionsAbstract
+class SetFlag extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

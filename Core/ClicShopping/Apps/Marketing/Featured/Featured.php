@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Marketing\Featured;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Featured extends \ClicShopping\OM\ConfigurableAppAbstract
+class Featured extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_Featured_V1';

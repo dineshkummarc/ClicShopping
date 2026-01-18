@@ -19,7 +19,7 @@ use ClicShopping\OM\Apps;
  * This class represents the Shipping module functionality and handles the retrieval
  * of information and class definitions for available shipping modules.
  */
-class Shipping extends \ClicShopping\OM\ModulesAbstract
+class Shipping extends \ClicShopping\OM\Domains\ModulesAbstract
 {
   /**
    * Retrieves information related to a specific application, key, and data combination.

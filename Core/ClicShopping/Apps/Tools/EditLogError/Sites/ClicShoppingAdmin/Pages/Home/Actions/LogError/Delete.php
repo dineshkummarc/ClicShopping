@@ -15,7 +15,7 @@ use ClicShopping\OM\DateTime;
 use ClicShopping\OM\ErrorHandler;
 use ClicShopping\OM\Registry;
 
-class Delete extends \ClicShopping\OM\PagesActionsAbstract
+class Delete extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

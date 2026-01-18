@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Communication\EMail;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class EMail extends \ClicShopping\OM\ConfigurableAppAbstract
+class EMail extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

@@ -11,12 +11,11 @@
 
 namespace ClicShopping\Apps\Tools\ActionsRecorder\Sites\ClicShoppingAdmin\Pages\Home\Actions\ActionsRecorder;
 
+use ClicShopping\Apps\Tools\ActionsRecorder\Classes\ClicShoppingAdmin\ActionsRecorder as ActionsRecorderClass;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Tools\ActionsRecorder\Classes\ClicShoppingAdmin\ActionsRecorder as ActionsRecorderClass;
-
-class Expire extends \ClicShopping\OM\PagesActionsAbstract
+class Expire extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

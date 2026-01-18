@@ -10,17 +10,16 @@
 
 namespace ClicShopping\Service\ClicShoppingAdmin;
 
+use ClicShopping\Apps\Catalog\Categories\Classes\ClicShoppingAdmin\CategoriesAdmin as CategoriesAdminClass;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
-
-use ClicShopping\Apps\Catalog\Categories\Classes\ClicShoppingAdmin\CategoriesAdmin as CategoriesAdminClass;
 
 /**
  * Service class responsible for initializing the CategoriesAdmin module
  * within the ClicShoppingAdmin environment. This class implements the
  * ServiceInterface and handles the starting and stopping of the service.
  */
-class CategoriesAdmin implements \ClicShopping\OM\ServiceInterface
+class CategoriesAdmin implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the CategoriesAdmin class by checking for the existence of the required file

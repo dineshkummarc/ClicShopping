@@ -15,7 +15,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Shop\Pages\Account\Classes\HistoryInfo as Info;
 
-class HistoryInfo extends \ClicShopping\OM\PagesActionsAbstract
+class HistoryInfo extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

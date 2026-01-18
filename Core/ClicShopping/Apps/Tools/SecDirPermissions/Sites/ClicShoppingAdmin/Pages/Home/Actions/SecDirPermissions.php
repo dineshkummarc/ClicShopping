@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\SecDirPermissions\Sites\ClicShoppingAdmin\Page
 
 use ClicShopping\OM\Registry;
 
-class SecDirPermissions extends \ClicShopping\OM\PagesActionsAbstract
+class SecDirPermissions extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

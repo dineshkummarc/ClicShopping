@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Configuration\TaxRates\Sites\ClicShoppingAdmin\Pages
 
 use ClicShopping\OM\Registry;
 
-class TaxRates extends \ClicShopping\OM\PagesActionsAbstract
+class TaxRates extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

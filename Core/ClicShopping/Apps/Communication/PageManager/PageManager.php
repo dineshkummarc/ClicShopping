@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Communication\PageManager;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class PageManager extends \ClicShopping\OM\ConfigurableAppAbstract
+class PageManager extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

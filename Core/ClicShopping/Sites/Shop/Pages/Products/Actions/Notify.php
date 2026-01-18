@@ -13,7 +13,7 @@ namespace ClicShopping\Sites\Shop\Pages\Products\Actions;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class Notify extends \ClicShopping\OM\PagesActionsAbstract
+class Notify extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

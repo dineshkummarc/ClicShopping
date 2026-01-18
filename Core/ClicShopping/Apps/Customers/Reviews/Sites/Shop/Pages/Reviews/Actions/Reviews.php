@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Customers\Reviews\Sites\Shop\Pages\Reviews\Actions;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class Reviews extends \ClicShopping\OM\PagesActionsAbstract
+class Reviews extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   public function execute()

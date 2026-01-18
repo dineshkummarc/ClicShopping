@@ -10,10 +10,10 @@
 
 namespace ClicShopping\Service\Shop;
 
+use ClicShopping\Apps\Marketing\Featured\Classes\Shop\FeaturedClass;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Marketing\Featured\Classes\Shop\FeaturedClass;
 /**
  * The Featured service is responsible for initializing and managing the functionality
  * of the Featured module within the shop.
@@ -28,7 +28,7 @@ use ClicShopping\Apps\Marketing\Featured\Classes\Shop\FeaturedClass;
  *            loading it, and performing related operations. Returns true on success and false on failure.
  * - stop(): Stops the Featured service. Currently, this simply returns true without additional operations.
  */
-class Featured implements \ClicShopping\OM\ServiceInterface
+class Featured implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the FeaturedClass if the relevant file exists and executes

@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\SecurityCheck;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class SecurityCheck extends \ClicShopping\OM\ConfigurableAppAbstract
+class SecurityCheck extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

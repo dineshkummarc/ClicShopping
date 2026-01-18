@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Tools\Cronjob\Sites\ClicShoppingAdmin\Pages\Home\Act
 use ClicShopping\Apps\Tools\Cronjob\Classes\ClicShoppingAdmin\Cron;
 use ClicShopping\OM\Registry;
 
-class RunAll extends \ClicShopping\OM\PagesActionsAbstract
+class RunAll extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   protected string $code;
 

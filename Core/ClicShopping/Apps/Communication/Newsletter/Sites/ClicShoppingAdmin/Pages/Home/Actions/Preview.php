@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Communication\Newsletter\Sites\ClicShoppingAdmin\Pag
 
 use ClicShopping\OM\Registry;
 
-class Preview extends \ClicShopping\OM\PagesActionsAbstract
+class Preview extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

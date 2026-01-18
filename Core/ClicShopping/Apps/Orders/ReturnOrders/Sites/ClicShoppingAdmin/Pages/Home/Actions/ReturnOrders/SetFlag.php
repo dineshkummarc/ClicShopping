@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Orders\ReturnOrders\Sites\ClicShoppingAdmin\Pages\Ho
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class SetFlag extends \ClicShopping\OM\PagesActionsAbstract
+class SetFlag extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

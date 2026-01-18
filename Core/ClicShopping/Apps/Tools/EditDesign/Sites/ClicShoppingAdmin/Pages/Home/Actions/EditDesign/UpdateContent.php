@@ -10,11 +10,12 @@
 
 namespace ClicShopping\Apps\Tools\EditDesign\Sites\ClicShoppingAdmin\Pages\Home\Actions\EditDesign;
 
+use ClicShopping\Apps\Tools\EditDesign\Classes\CodeSecurity;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\FileSystem;
 use ClicShopping\OM\Registry;
-use ClicShopping\Apps\Tools\EditDesign\Classes\CodeSecurity;
-class UpdateContent extends \ClicShopping\OM\PagesActionsAbstract
+
+class UpdateContent extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

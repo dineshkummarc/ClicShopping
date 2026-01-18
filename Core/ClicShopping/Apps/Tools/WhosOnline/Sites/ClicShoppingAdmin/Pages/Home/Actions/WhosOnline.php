@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\WhosOnline\Sites\ClicShoppingAdmin\Pages\Home\
 
 use ClicShopping\OM\Registry;
 
-class WhosOnline extends \ClicShopping\OM\PagesActionsAbstract
+class WhosOnline extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

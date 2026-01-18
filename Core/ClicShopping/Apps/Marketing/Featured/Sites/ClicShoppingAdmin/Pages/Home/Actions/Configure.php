@@ -10,10 +10,10 @@
 
 namespace ClicShopping\Apps\Marketing\Featured\Sites\ClicShoppingAdmin\Pages\Home\Actions;
 
-use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
+use ClicShopping\OM\Registry;
 
-class Configure extends \ClicShopping\OM\PagesActionsAbstract
+class Configure extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

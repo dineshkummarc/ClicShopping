@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Configuration\Langues\Sites\ClicShoppingAdmin\Pages\
 
 use ClicShopping\OM\Registry;
 
-class Insert extends \ClicShopping\OM\PagesActionsAbstract
+class Insert extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

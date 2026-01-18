@@ -38,7 +38,7 @@ class Is
         throw new Exception('ClicShopping\Is module class does not exist: ' . $class);
       }
 
-      if (!is_subclass_of($class, 'ClicShopping\\OM\\IsInterface')) {
+      if (!is_subclass_of($class, 'ClicShopping\\OM\\Interfaces\\IsInterface')) {
         throw new Exception('ClicShopping\Is module class does not implement ClicShopping\OM\IsInterface: ' . $class);
       }
 

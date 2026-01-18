@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Configuration\Langues\Sites\ClicShoppingAdmin\Pages\Home;
 
+use ClicShopping\Apps\Configuration\Langues\Langues;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\Langues\Langues;
-
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

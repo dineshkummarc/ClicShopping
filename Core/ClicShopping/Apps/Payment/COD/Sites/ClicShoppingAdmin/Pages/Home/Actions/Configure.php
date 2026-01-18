@@ -10,8 +10,8 @@
 
 namespace ClicShopping\Apps\Payment\COD\Sites\ClicShoppingAdmin\Pages\Home\Actions;
 
-use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
+use ClicShopping\OM\Registry;
 
 /**
  * Configure action class for Cash on Delivery (COD) payment module administration.
@@ -25,7 +25,7 @@ use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\Adm
  * @copyright 2008 - https://www.clicshopping.org
  * @license GPL 2 & MIT
  */
-class Configure extends \ClicShopping\OM\PagesActionsAbstract
+class Configure extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the configuration action.

@@ -12,14 +12,14 @@ namespace ClicShopping\Sites\Shop\Pages\Account\Actions\Edit;
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
+use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Is;
-use ClicShopping\OM\Hash;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Shop\Pages\Account\Classes\Edit;
 use function strlen;
 
-class Process extends \ClicShopping\OM\PagesActionsAbstract
+class Process extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

@@ -14,7 +14,7 @@ namespace ClicShopping\Apps\Catalog\Suppliers\Sites\ClicShoppingAdmin\Pages\Home
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class Insert extends \ClicShopping\OM\PagesActionsAbstract
+class Insert extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

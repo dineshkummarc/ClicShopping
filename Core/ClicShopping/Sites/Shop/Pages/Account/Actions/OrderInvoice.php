@@ -22,7 +22,7 @@ use function count;
 use function is_null;
 use function strlen;
 
-class OrderInvoice extends \ClicShopping\OM\PagesActionsAbstract
+class OrderInvoice extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

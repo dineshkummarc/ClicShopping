@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Configuration\Weight\Sites\ClicShoppingAdmin\Pages\H
 
 use ClicShopping\OM\Registry;
 
-class Weight extends \ClicShopping\OM\PagesActionsAbstract
+class Weight extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

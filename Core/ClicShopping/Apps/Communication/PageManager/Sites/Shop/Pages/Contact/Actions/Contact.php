@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Communication\PageManager\Sites\Shop\Pages\Contact\A
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class Contact extends \ClicShopping\OM\PagesActionsAbstract
+class Contact extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   public function execute()

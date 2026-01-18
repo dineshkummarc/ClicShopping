@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Customers\Gdpr\Sites\ClicShoppingAdmin\Pages\Home\Actions\Gdpr;
 
+use ClicShopping\Apps\Customers\Gdpr\Classes\ClicShoppingAdmin\Gdpr as GdprAdmin;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Customers\Gdpr\Classes\ClicShoppingAdmin\Gdpr as GdprAdmin;
-
-class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
+class DeleteAll extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

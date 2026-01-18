@@ -12,6 +12,7 @@ namespace ClicShopping\Service\ClicShoppingAdmin;
 
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\ClicShoppingAdmin\LoggerAdmin;
+
 /**
  * Service class for handling the initialization and management of the LoggerAdmin service
  * within the ClicShoppingAdmin site.
@@ -19,7 +20,7 @@ use ClicShopping\Sites\ClicShoppingAdmin\LoggerAdmin;
  * This class implements the ClicShopping\OM\ServiceInterface and provides the methods
  * for starting and stopping the LoggerAdmin service.
  */
-class Logger implements \ClicShopping\OM\ServiceInterface
+class Logger implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the LoggerAdmin instance and registers it in the Registry.

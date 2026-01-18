@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\Cronjob\Sites\ClicShoppingAdmin\Pages\Home\Act
 
 use ClicShopping\OM\Registry;
 
-class Cronjob extends \ClicShopping\OM\PagesActionsAbstract
+class Cronjob extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

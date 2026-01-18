@@ -13,6 +13,7 @@ namespace ClicShopping\Service\Shop;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\MessageStack as MessageStackClass;
 use ClicShopping\OM\Registry;
+
 /**
  * Class MessageStack
  *
@@ -25,7 +26,7 @@ use ClicShopping\OM\Registry;
  *   and sets up any required hooks for pre-page processing.
  * - stop(): Handles any necessary cleanup or termination processes for the service.
  */
-class MessageStack implements \ClicShopping\OM\ServiceInterface
+class MessageStack implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Starts the initialization process by setting up the message stack
