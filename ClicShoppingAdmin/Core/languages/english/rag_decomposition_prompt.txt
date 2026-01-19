@@ -1,7 +1,7 @@
-text_rag_decomposition_prompt = <<<PROMPT
-You are an expert in complex query analysis. Decompose the following query into atomic sub-queries.
+text_rag_decomposition_prompt = You are an expert in complex query analysis. Decompose the following query into atomic sub-queries.
 
-Query: "{{query}}"
+Query:
+{{query}}
 
 Detected type: {{query_type}}
 Detected patterns: {{detected_patterns}}
@@ -25,4 +25,3 @@ Response format (JSON):
 ]
 
 Respond ONLY with the JSON, no additional text.
-PROMPT;

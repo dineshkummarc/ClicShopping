@@ -329,12 +329,12 @@ class CLICSHOPPING
       $link = substr($link, 0, -1);
     }
 
-// Add the session ID when moving from different HTTP and HTTPS servers, or when SID is defined
+// Add the session ID when moving from different HTTP and HTTPS servers, or when session is active
     if (($add_session_id === true) && Registry::exists('Session')) {
       $CLICSHOPPING_Session = Registry::get('Session');
 
       if ($CLICSHOPPING_Session->hasStarted() && ($CLICSHOPPING_Session->isForceCookies() === false)) {
-        if ((strlen(SID) > 0) || (((HTTP::getRequestType() == 'NONSSL') && (parse_url(self::getConfig('http_server', $req_site), PHP_URL_SCHEME) == 'https')) || ((HTTP::getRequestType() == 'SSL') && (parse_url(self::getConfig('http_server', $req_site), PHP_URL_SCHEME) == 'http')))) {
+        if ((strlen(session_id()) > 0) || (((HTTP::getRequestType() == 'NONSSL') && (parse_url(self::getConfig('http_server', $req_site), PHP_URL_SCHEME) == 'https')) || ((HTTP::getRequestType() == 'SSL') && (parse_url(self::getConfig('http_server', $req_site), PHP_URL_SCHEME) == 'http')))) {
           $link .= $separator . HTML::sanitize(session_name() . '=' . session_id());
         }
       }

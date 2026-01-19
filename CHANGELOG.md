@@ -4,6 +4,11 @@ version4.20
 
 ---------------
 version4.12
+- Libraries updated
+- fix namespace
+
+---------------
+version4.12
   - Libraries updated
   - small fix 
   - IA improvement :
