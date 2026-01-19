@@ -511,12 +511,17 @@ class LlmGuardrails
   {
     self::initLogger();
 
-    // Exemple d'appel à un wrapper interne LLM
     try {
-      $chat = Gpt::getChat($prompt);
-      $response = $chat->generateText($prompt);
+      $response = Gpt::getGptResponse($prompt, 300, 0.0);
+
+      // Check if response is valid
+      if ($response === false || empty($response)) {
+        self::$securityLogger->logSecurityEvent('LLM evaluation returned empty response', 'error');
+        return '';
+      }
 
       return trim($response);
+
     } catch (\Throwable $e) {
       self::$securityLogger->logSecurityEvent('LLM evaluation call failed: ' . $e->getMessage(), 'error');
 

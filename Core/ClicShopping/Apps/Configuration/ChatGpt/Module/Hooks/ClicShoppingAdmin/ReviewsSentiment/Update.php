@@ -43,7 +43,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     $this->lang = Registry::get('Language');
     
     if (!Registry::exists('Semantics')) {
-      Registry::set('Semantics', new Semantics());
+      Registry::set('Semantics', new SemanticAgent());
     }
     $this->semantics = Registry::get('Semantics');
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/ReviewsSentiment/rag');    
