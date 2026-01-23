@@ -18,13 +18,13 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
-use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
+use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
 use ClicShopping\AI\Helper\Formatter\ResultFormatter;
-use ClicShopping\AI\Domains\Analytics\Agent\AnalyticsAgent;
+use ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent;
 
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
@@ -171,7 +171,7 @@ class MultiDBRAGManager
         $this->reranker = new LLMReranker($chat, $nrOfOutputDocuments);
         
         if ($this->debug) {
-          error_log("✅ LLMReranker initialized with {$nrOfOutputDocuments} output documents");
+          error_log(" LLMReranker initialized with {$nrOfOutputDocuments} output documents");
         }
       } catch (\Exception $e) {
         error_log("❌ Failed to initialize LLMReranker: " . $e->getMessage());
@@ -187,7 +187,7 @@ class MultiDBRAGManager
 
     if ($this->debug) {
       error_log("🚀 MultiDBRAGManager::__construct() END");
-      error_log("═══════════════════════════════════════════════════════");
+      error_log("------------------------------------------");
     }
   }
 
@@ -486,7 +486,7 @@ class MultiDBRAGManager
       if (empty($this->vectorStores)) {
         error_log("CRITICAL: vectorStores is STILL EMPTY! ");
       } else {
-        error_log("SUCCESS: vectorStores initialized with " . count($this->vectorStores) . " stores ✅✅✅");
+        error_log("SUCCESS: vectorStores initialized with " . count($this->vectorStores) . " stores ");
       }
       error_log("═══════════════════════════════════════════════════════");
     }
@@ -605,7 +605,7 @@ class MultiDBRAGManager
       error_log("Embedding generated, length: " . count($queryEmbedding));
 
 
-      // Créer le filtre
+      // Create filter
       $filter = null;
 
       if ($languageId !== null || $entityType !== null) {
@@ -725,7 +725,7 @@ class MultiDBRAGManager
           $rerankedDocuments = $this->reranker->transformDocuments([$query], $documentsForReranking);
           
           if ($this->debug) {
-            error_log("✅ Reranking complete: " . count($rerankedDocuments) . " documents");
+            error_log(" Reranking complete: " . count($rerankedDocuments) . " documents");
             
             // Log reranked order for debugging
             foreach ($rerankedDocuments as $i => $doc) {
@@ -1106,7 +1106,7 @@ class MultiDBRAGManager
       
       // Priority documents get FULL content (no truncation)
       if ($isPriorityDoc($doc)) {
-        $docContent = $doc->content; // ✅ FULL CONTENT
+        $docContent = $doc->content; //  FULL CONTENT
         $label = $documentName . " (Priority Source)";
         
         if ($this->debug) {
@@ -1309,7 +1309,7 @@ class MultiDBRAGManager
         return self::$tableStatsCache[$tableName];
       }
 
-      // Récupérer les types de documents présents
+      // Get present document types
       $typesRows = DoctrineOrm::select("
         SELECT DISTINCT type, COUNT(*) as count 
         FROM {$tableName} 
@@ -1321,7 +1321,7 @@ class MultiDBRAGManager
         $types[$row['type']] = $row['count'];
       }
 
-      // Récupérer un échantillon de contenu pour analyse sémantique
+      // Get content sample for semantic analysis
       $sample = DoctrineOrm::selectOne("
         SELECT GROUP_CONCAT(LEFT(content, 200) SEPARATOR ' ') as sample
         FROM (

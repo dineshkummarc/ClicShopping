@@ -5,7 +5,7 @@ namespace ClicShopping\AI\Agents\Planning;
 /**
  * TaskStep Class
  *
- * Représente une étape atomique d'un plan d'exécution
+ * Represents atomic step of an execution plan
  */
 #[AllowDynamicProperties]
 class TaskStep
@@ -23,10 +23,10 @@ class TaskStep
   /**
    * Constructor
    *
-   * @param string $id Identifiant unique de l'étape
-   * @param string $type Type d'étape (analytics_query, semantic_search, synthesis, etc.)
-   * @param string $description Description de l'étape
-   * @param array $metadata Métadonnées additionnelles
+   * @param string $id Unique step identifier
+   * @param string $type Step type (analytics_query, semantic_search, synthesis, etc.)
+   * @param string $description Step description
+   * @param array $metadata Additional metadata
    */
   public function __construct(
     string $id,
@@ -41,7 +41,7 @@ class TaskStep
   }
 
   /**
-   * Démarre l'exécution de l'étape
+   * Starts step execution
    */
   public function start(): void
   {
@@ -50,7 +50,9 @@ class TaskStep
   }
 
   /**
-   * Marque l'étape comme complétée
+   * Marks step as completed
+   * 
+   * @param mixed $result Step result
    */
   public function complete($result): void
   {
@@ -63,7 +65,9 @@ class TaskStep
   }
 
   /**
-   * Marque l'étape comme échouée
+   * Marks step as failed
+   * 
+   * @param string $error Error message
    */
   public function fail(string $error): void
   {
@@ -76,7 +80,7 @@ class TaskStep
   }
 
   /**
-   * Réinitialise l'étape
+   * Resets step to initial state
    */
   public function reset(): void
   {
@@ -88,7 +92,11 @@ class TaskStep
   }
 
   /**
-   * Obtient une métadonnée spécifique
+   * Gets specific metadata value
+   * 
+   * @param string $key Metadata key
+   * @param mixed $default Default value if key not found
+   * @return mixed Metadata value or default
    */
   public function getMeta(string $key, $default = null)
   {
@@ -96,7 +104,10 @@ class TaskStep
   }
 
   /**
-   * Définit une métadonnée
+   * Sets metadata value
+   * 
+   * @param string $key Metadata key
+   * @param mixed $value Metadata value
    */
   public function setMeta(string $key, $value): void
   {
@@ -104,7 +115,9 @@ class TaskStep
   }
 
   /**
-   * Vérifie si l'étape est finale
+   * Checks if step is final
+   * 
+   * @return bool True if final step
    */
   public function isFinal(): bool
   {
@@ -112,7 +125,9 @@ class TaskStep
   }
 
   /**
-   * Vérifie si l'étape peut s'exécuter en parallèle
+   * Checks if step can execute in parallel
+   * 
+   * @return bool True if can run in parallel
    */
   public function canRunParallel(): bool
   {
@@ -120,7 +135,9 @@ class TaskStep
   }
 
   /**
-   * Obtient les dépendances
+   * Gets step dependencies
+   * 
+   * @return array Array of dependency step IDs
    */
   public function getDependencies(): array
   {

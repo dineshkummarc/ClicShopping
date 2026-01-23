@@ -11,19 +11,19 @@
 namespace ClicShopping\AI\Agents\Planning;
 
 use AllowDynamicProperties;
-use ClicShopping\AI\Domains\Analytics\Agent\AnalyticsAgent;
+use ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Infrastructure\Metrics\CalculatorTool;
-use ClicShopping\AI\Domains\WebSearch\Tool\WebSearchTool;
+use ClicShopping\AI\DomainsAI\WebSearch\Tool\WebSearchTool;
 
 /**
  * ExecutionPlan Class
  *
- * Représente un plan d'exécution complet avec :
- * - Liste ordonnée d'étapes
- * - Graphe de dépendances
- * - Métadonnées de complexité
- * - État d'exécution
+ * Represents complete execution plan with:
+ * - Ordered list of steps
+ * - Dependency graph
+ * - Complexity metadata
+ * - Execution state
  */
 #[AllowDynamicProperties]
 class ExecutionPlan
@@ -38,7 +38,7 @@ class ExecutionPlan
   private ?ExecutionPlan $originalPlan = null;
   private ?array $replanContext = null;
 
-  // État d'exécution
+  // Execution state
   private string $status = 'pending'; // pending, in_progress, completed, failed
   private array $stepResults = [];
   private ?string $finalResult = null;
@@ -57,11 +57,11 @@ class ExecutionPlan
   /**
    * Constructor
    *
-   * @param string $query Requête originale
-   * @param array $intent Intention analysée
-   * @param array $steps Liste de TaskStep
-   * @param array $dependencies Graphe de dépendances
-   * @param array $complexity Analyse de complexité
+   * @param string $query Original query
+   * @param array $intent Analyzed intent
+   * @param array $steps List of TaskStep objects
+   * @param array $dependencies Dependency graph
+   * @param array $complexity Complexity analysis
    */
   public function __construct(string $query, array $intent, array $steps, array $dependencies, array $complexity)
   {
@@ -73,7 +73,10 @@ class ExecutionPlan
   }
 
   /**
-   * Marque ce plan comme une replanification
+   * Marks this plan as a replan
+   * 
+   * @param ExecutionPlan $originalPlan Original plan that failed
+   * @param array $context Replan context
    */
   public function markAsReplan(ExecutionPlan $originalPlan, array $context): void
   {
@@ -83,7 +86,9 @@ class ExecutionPlan
   }
 
   /**
-   * Obtient la liste des étapes
+   * Gets list of steps
+   * 
+   * @return array Array of TaskStep objects
    */
   public function getSteps(): array
   {
@@ -91,7 +96,10 @@ class ExecutionPlan
   }
 
   /**
-   * Obtient une étape par son ID
+   * Gets step by ID
+   * 
+   * @param string $id Step ID
+   * @return TaskStep|null Step object or null if not found
    */
   public function getStepById(string $id): ?TaskStep
   {
@@ -104,8 +112,9 @@ class ExecutionPlan
   }
 
   /**
-   * Obtient les étapes qui peuvent s'exécuter maintenant
-   * (dont toutes les dépendances sont complétées)
+   * Gets steps that can execute now (all dependencies completed)
+   * 
+   * @return array Array of ready TaskStep objects
    */
   public function getReadySteps(): array
   {
@@ -119,7 +128,7 @@ class ExecutionPlan
       $stepId = $step->getId();
       $dependsOn = $this->dependencies[$stepId]['depends_on'] ?? [];
 
-      // Vérifier si toutes les dépendances sont complétées
+      // Check if all dependencies are completed
       $allDependenciesComplete = true;
       foreach ($dependsOn as $depId) {
         $depStep = $this->getStepById($depId);
@@ -138,7 +147,9 @@ class ExecutionPlan
   }
 
   /**
-   * Obtient les étapes qui peuvent s'exécuter en parallèle
+   * Gets steps that can execute in parallel
+   * 
+   * @return array Array of parallel-capable TaskStep objects
    */
   public function getParallelSteps(): array
   {
@@ -155,7 +166,10 @@ class ExecutionPlan
   }
 
   /**
-   * Stocke le résultat d'une étape
+   * Stores step result
+   * 
+   * @param string $stepId Step ID
+   * @param mixed $result Step result
    */
   public function setStepResult(string $stepId, $result): void
   {
@@ -168,7 +182,10 @@ class ExecutionPlan
   }
 
   /**
-   * Obtient le résultat d'une étape
+   * Gets step result
+   * 
+   * @param string $stepId Step ID
+   * @return mixed Step result or null
    */
   public function getStepResult(string $stepId)
   {
@@ -176,7 +193,9 @@ class ExecutionPlan
   }
 
   /**
-   * Obtient tous les résultats d'étapes
+   * Gets all step results
+   * 
+   * @return array All step results
    */
   public function getAllStepResults(): array
   {
@@ -184,7 +203,7 @@ class ExecutionPlan
   }
 
   /**
-   * Marque le plan comme en cours
+   * Marks plan as in progress
    */
   public function start(): void
   {
@@ -192,7 +211,9 @@ class ExecutionPlan
   }
 
   /**
-   * Marque le plan comme complété
+   * Marks plan as completed
+   * 
+   * @param string $finalResult Final result
    */
   public function complete(string $finalResult): void
   {
@@ -201,7 +222,9 @@ class ExecutionPlan
   }
 
   /**
-   * Marque le plan comme échoué
+   * Marks plan as failed
+   * 
+   * @param string $error Error message
    */
   public function fail(string $error): void
   {
@@ -210,7 +233,9 @@ class ExecutionPlan
   }
 
   /**
-   * Vérifie si toutes les étapes sont complétées
+   * Checks if all steps are completed
+   * 
+   * @return bool True if all steps completed
    */
   public function isComplete(): bool
   {
@@ -223,7 +248,9 @@ class ExecutionPlan
   }
 
   /**
-   * Vérifie si le plan a échoué
+   * Checks if plan has failed
+   * 
+   * @return bool True if plan failed
    */
   public function hasFailed(): bool
   {
@@ -236,7 +263,9 @@ class ExecutionPlan
   }
 
   /**
-   * Obtient le progrès d'exécution (0-100)
+   * Gets execution progress (0-100)
+   * 
+   * @return float Progress percentage
    */
   public function getProgress(): float
   {
@@ -255,9 +284,9 @@ class ExecutionPlan
   }
 
   /**
-   * Obtient les résultats des étapes exécutées
+   * Gets executed step results
    * 
-   * @return array Tableau des résultats par étape
+   * @return array Array of results by step
    */
   public function getResults(): array
   {
@@ -265,7 +294,9 @@ class ExecutionPlan
   }
 
   /**
-   * Génère un résumé du plan
+   * Generates plan summary
+   * 
+   * @return array Summary array
    */
   public function getSummary(): array
   {
@@ -283,7 +314,9 @@ class ExecutionPlan
   }
 
   /**
-   * Génère une représentation détaillée du plan
+   * Generates detailed plan representation
+   * 
+   * @return array Detailed view with steps and dependencies
    */
   public function getDetailedView(): array
   {

@@ -1,7 +1,7 @@
 <?php
 /**
  * File-based Cache Storage
- * Gère le cache sur disque dans Work/Cache/Rag
+ * Manages disk cache in Work/Cache/Rag directory
  * 
  * @copyright 2008 - https://www.clicshopping.org
  * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
@@ -15,8 +15,8 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\FileSystem;
 
 /**
- * Stockage de cache basé sur fichiers dans Work/Cache/Rag
- * Utilisé comme fallback ou complément au cache base de données
+ * File-based cache storage in Work/Cache/Rag
+ * Used as fallback or complement to database cache
  */
 #[AllowDynamicProperties]
 class CacheFileStorage
@@ -27,12 +27,10 @@ class CacheFileStorage
   
   public function __construct(bool $debug = false)
   {
-    // Check if cache is globally enabled
     $this->enabled = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER')   && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
     $this->cachePath = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/';
     $this->debug = $debug;
     
-    // Only create cache directory if cache is enabled
     if ($this->enabled) {
       $this->ensureCacheDirectory();
     }
@@ -43,7 +41,9 @@ class CacheFileStorage
   }
   
   /**
-   * S'assure que le répertoire de cache existe
+   * Ensure cache directory exists
+   * 
+   * @return void
    */
   private function ensureCacheDirectory(): void
   {
@@ -61,14 +61,13 @@ class CacheFileStorage
   }
   
   /**
-   * Génère le chemin du fichier de cache
+   * Generate cache file path
    * 
-   * @param string $cacheKey Clé de cache
-   * @return string Chemin complet du fichier
+   * @param string $cacheKey Cache key
+   * @return string Full file path
    */
   private function getFilePath(string $cacheKey): string
   {
-    // Utiliser les 2 premiers caractères pour créer des sous-répertoires
     $subDir = substr($cacheKey, 0, 2);
     $dirPath = $this->cachePath . $subDir . '/';
     
@@ -80,14 +79,13 @@ class CacheFileStorage
   }
   
   /**
-   * Récupère une entrée de cache depuis le fichier
+   * Get cache entry from file
    * 
-   * @param string $cacheKey Clé de cache
-   * @return array|null Données ou null si non trouvé/expiré
+   * @param string $cacheKey Cache key
+   * @return array|null Data or null if not found/expired
    */
   public function get(string $cacheKey): ?array
   {
-    // Early return if cache is disabled
     if (!$this->enabled) {
       if ($this->debug) {
         error_log("CacheFileStorage: Cache disabled, returning null");
@@ -112,9 +110,7 @@ class CacheFileStorage
       
       $data = json_decode($content, true);
       
-      // Vérifier l'expiration
       if (isset($data['expires_at']) && time() > $data['expires_at']) {
-        // Supprimer le fichier expiré
         @unlink($filePath);
         
         if ($this->debug) {
@@ -124,7 +120,6 @@ class CacheFileStorage
         return null;
       }
       
-      // Incrémenter le compteur de hits
       if (isset($data['hit_count'])) {
         $data['hit_count']++;
         file_put_contents($filePath, json_encode($data, JSON_UNESCAPED_UNICODE));
@@ -149,18 +144,17 @@ class CacheFileStorage
   }
   
   /**
-   * Stocke une entrée de cache dans un fichier
+   * Store cache entry in file
    * 
-   * @param string $cacheKey Clé de cache
-   * @param string $userQuery Question utilisateur
-   * @param string $sqlQuery Requête SQL
-   * @param array $results Résultats
-   * @param int $ttl Durée de vie en secondes
-   * @return bool Succès
+   * @param string $cacheKey Cache key
+   * @param string $userQuery User question
+   * @param string $sqlQuery SQL query
+   * @param array $results Results
+   * @param int $ttl Time to live in seconds
+   * @return bool Success
    */
   public function set(string $cacheKey, string $userQuery, string $sqlQuery, array $results, int $ttl): bool
   {
-    // Early return if cache is disabled - DO NOT create JSON files
     if (!$this->enabled) {
       if ($this->debug) {
         error_log("CacheFileStorage: Cache disabled, skipping file creation for key {$cacheKey}");
@@ -202,14 +196,13 @@ class CacheFileStorage
   }
   
   /**
-   * Supprime une entrée de cache
+   * Delete cache entry
    * 
-   * @param string $cacheKey Clé de cache
-   * @return bool Succès
+   * @param string $cacheKey Cache key
+   * @return bool Success
    */
   public function delete(string $cacheKey): bool
   {
-    // If cache is disabled, nothing to delete
     if (!$this->enabled) {
       return true;
     }
@@ -230,13 +223,12 @@ class CacheFileStorage
   }
   
   /**
-   * Vide tout le cache fichier
+   * Flush all file cache
    * 
-   * @return bool Succès
+   * @return bool Success
    */
   public function flush(): bool
   {
-    // If cache is disabled, nothing to flush
     if (!$this->enabled) {
       if ($this->debug) {
         error_log("CacheFileStorage: Cache disabled, nothing to flush");
@@ -247,7 +239,6 @@ class CacheFileStorage
     try {
       $deleted = 0;
       
-      // Parcourir tous les sous-répertoires
       $dirs = glob($this->cachePath . '*', GLOB_ONLYDIR);
       
       foreach ($dirs as $dir) {
@@ -257,7 +248,6 @@ class CacheFileStorage
             $deleted++;
           }
         }
-        // Supprimer le répertoire vide
         @rmdir($dir);
       }
       
@@ -274,13 +264,12 @@ class CacheFileStorage
   }
   
   /**
-   * Nettoie les fichiers expirés
+   * Clean expired files
    * 
-   * @return int Nombre de fichiers supprimés
+   * @return int Number of deleted files
    */
   public function cleanExpired(): int
   {
-    // If cache is disabled, nothing to clean
     if (!$this->enabled) {
       return 0;
     }
@@ -321,13 +310,12 @@ class CacheFileStorage
   }
   
   /**
-   * Récupère les statistiques du cache fichier
+   * Get file cache statistics
    * 
-   * @return array Statistiques
+   * @return array Statistics
    */
   public function getStats(): array
   {
-    // If cache is disabled, return empty stats
     if (!$this->enabled) {
       return [
         'enabled' => false,

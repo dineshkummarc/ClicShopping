@@ -1,11 +1,13 @@
 version4.20
-- OM refactoring for Interface & Domains
+AI
+   - OM Interfaces and Abstract refactored
+   - Multi-Domain Agnostic AI Framework 
+   - App Ecommerce
+- some fix
+- Librairies updated
 
 
----------------
-version4.12
-- Libraries updated
-- fix namespace
+
 
 ---------------
 version4.12

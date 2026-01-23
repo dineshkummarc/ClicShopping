@@ -12,8 +12,8 @@ namespace ClicShopping\AI\Security\Validation;
 
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
-use ClicShopping\AI\Domains\CoreAI\Embedding\VectorStatistics;
+use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
+use ClicShopping\AI\DomainsAI\CoreAI\Embedding\VectorStatistics;
 use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
 
 /**

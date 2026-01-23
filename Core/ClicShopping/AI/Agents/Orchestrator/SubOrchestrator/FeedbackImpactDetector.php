@@ -9,7 +9,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
+use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 
 /**
  * FeedbackImpactDetector Class

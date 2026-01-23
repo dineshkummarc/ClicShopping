@@ -18,9 +18,9 @@ use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Agents\Orchestrator\OrchestratorAgent;
 use ClicShopping\AI\Agents\Memory\MemoryRetentionService;
 use ClicShopping\AI\Infrastructure\Metrics\StatisticsTracker;
-use ClicShopping\AI\Helper\Formatter\ResultFormatter;
+use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\ResultFormatter;
 use ClicShopping\AI\Helper\ClarificationHelper;
-use ClicShopping\AI\Helper\AgentResponseHelper;
+use ClicShopping\AI\DomainsAI\CoreAI\Helper\AgentResponseHelper;
 use ClicShopping\AI\Security\SecurityOrchestrator;
 
 define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/') . DIRECTORY_SEPARATOR);

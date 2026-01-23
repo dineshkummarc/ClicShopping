@@ -32,10 +32,10 @@ class DashboardStatsCollector
     }
     
     /**
-     * Collecte toutes les statistiques avancées
+     * Collects all advanced statistics
      * 
-     * @param int $days Nombre de jours à analyser (défaut: 7)
-     * @return array Toutes les statistiques
+     * @param int $days Number of days to analyze (default: 7)
+     * @return array All statistics
      */
     public function collectAllStats(int $days = 7): array
     {
@@ -67,7 +67,7 @@ class DashboardStatsCollector
                 GROUP BY classification_type
             ", [$days]);
             
-            // Calculer les statistiques
+            // Calculate statistics
             $analytics = ['count' => 0, 'avg_confidence' => 0];
             $semantic = ['count' => 0, 'avg_confidence' => 0];
             $total = 0;
@@ -87,11 +87,11 @@ class DashboardStatsCollector
                 }
             }
             
-            // Calculer les pourcentages
+            // Calculate percentages
             $analytics_percentage = $total > 0 ? round(($analytics['count'] / $total) * 100, 1) : 0;
             $semantic_percentage = $total > 0 ? round(($semantic['count'] / $total) * 100, 1) : 0;
             
-            // Calculer la précision globale
+            // Calculate overall precision
             $overall_precision = 0;
             if ($total > 0) {
                 $weighted_confidence = ($analytics['count'] * $analytics['avg_confidence'] + 
@@ -124,7 +124,7 @@ class DashboardStatsCollector
     public function getSecurityStats(int $days = 7): array
     {
         try {
-            // Récupérer les scores de sécurité depuis les interactions
+            // Get security scores from interactions
             $results = DoctrineOrm::select("
                 SELECT 
                     COUNT(*) as total_evaluations,
@@ -220,7 +220,7 @@ class DashboardStatsCollector
                 $total_usage += $websearch_usage;
             }
             
-            // Calculer les pourcentages
+            // Calculate percentages
             foreach ($agents as &$agent) {
                 $agent['percentage'] = $total_usage > 0 ? round(($agent['usage_count'] / $total_usage) * 100, 1) : 0;
             }
@@ -246,7 +246,7 @@ class DashboardStatsCollector
     public function getMemoryStats(int $days = 7): array
     {
         try {
-            // Analyser les conversations
+            // Analyze conversations
             $results = DoctrineOrm::select("
                 SELECT 
                     COUNT(DISTINCT session_id) as total_conversations,
@@ -290,7 +290,7 @@ class DashboardStatsCollector
     public function getFeedbackStats(int $days = 7): array
     {
         try {
-            // Analyser les feedbacks
+            // Analyze feedbacks
             $results = DoctrineOrm::select("
                 SELECT 
                     feedback_type,
@@ -475,7 +475,7 @@ class DashboardStatsCollector
         }
     }
     
-    // Méthodes utilitaires privées
+    // Private utility methods
     
     private function getEmptyClassificationStats(int $days): array
     {

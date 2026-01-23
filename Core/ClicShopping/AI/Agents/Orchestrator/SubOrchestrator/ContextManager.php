@@ -10,9 +10,7 @@
 
 /**
  * ContextManager Class
- * 
- * Gère intelligemment le contexte conversationnel pour éviter les conflits
- * entre mémoire conversationnelle et feedback learning
+ * Manages conversational context to avoid conflicts between conversation memory and feedback learning
  */
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
@@ -20,7 +18,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Helper\Detection\ContextSwitchDetector;
-use ClicShopping\AI\Domains\Semantic\Helper\SemanticDomainDetector;
+use ClicShopping\AI\DomainsAI\Semantic\Helper\SemanticDomainDetector;
 
 #[AllowDynamicProperties]
 class ContextManager
@@ -29,7 +27,7 @@ class ContextManager
   private ContextSwitchDetector $switchDetector;
   private bool $debug;
 
-  // Options de gestion du contexte
+  // Context management options
   private array $options = [
     'auto_clear_on_domain_switch' => true,
     'prioritize_feedback_over_context' => true,
@@ -45,26 +43,26 @@ class ContextManager
   }
 
   /**
-   * Décide comment utiliser le contexte pour une nouvelle question
+   * Decide how to use context for a new question
    *
-   * @param string $query Nouvelle question
-   * @param array $conversationContext Contexte conversationnel actuel
-   * @param array $feedbackContext Contexte de feedback learning
-   * @return array Décision sur l'utilisation du contexte
+   * @param string $query New question
+   * @param array $conversationContext Current conversation context
+   * @param array $feedbackContext Feedback learning context
+   * @return array Decision on context usage
    */
   public function decideContextUsage(string $query, array $conversationContext, array $feedbackContext): array
   {
-    // 1. Détecter un changement de domaine
+    // 1. Detect domain change
     $switchDetection = $this->switchDetector->detectContextSwitch($query, $conversationContext);
 
-    // 2. Détecter des marqueurs explicites de reset
+    // 2. Detect explicit reset markers
     $hasExplicitReset = $this->switchDetector->hasExplicitContextReset($query);
 
-    // 3. Évaluer la pertinence du feedback
+    // 3. Evaluate feedback relevance
     $hasFeedback = !empty($feedbackContext);
     $feedbackRelevance = $this->evaluateFeedbackRelevance($query, $feedbackContext);
 
-    // 4. Décider de l'action
+    // 4. Make decision
     $decision = $this->makeDecision(
       $switchDetection,
       $hasExplicitReset,
@@ -83,13 +81,13 @@ class ContextManager
   }
 
   /**
-   * Prend la décision finale sur l'utilisation du contexte
+   * Make final decision on context usage
    *
-   * @param array $switchDetection Résultat de la détection de changement
-   * @param bool $hasExplicitReset Marqueur explicite de reset
-   * @param bool $hasFeedback Présence de feedback
-   * @param float $feedbackRelevance Pertinence du feedback
-   * @return array Décision
+   * @param array $switchDetection Switch detection result
+   * @param bool $hasExplicitReset Explicit reset marker
+   * @param bool $hasFeedback Feedback presence
+   * @param float $feedbackRelevance Feedback relevance score
+   * @return array Decision
    */
   private function makeDecision(array $switchDetection, bool $hasExplicitReset, bool $hasFeedback, float $feedbackRelevance): array
   {
@@ -101,7 +99,7 @@ class ContextManager
       'reason' => '',
     ];
 
-    // Cas 1 : Reset explicite demandé
+    // Case 1: Explicit reset requested
     if ($hasExplicitReset) {
       $decision['clear_conversation_context'] = true;
       $decision['use_conversation_context'] = false;
@@ -109,7 +107,7 @@ class ContextManager
       return $decision;
     }
 
-    // Cas 2 : Changement de domaine détecté
+    // Case 2: Domain switch detected
     if ($switchDetection['has_switch'] && $this->options['auto_clear_on_domain_switch']) {
       if ($switchDetection['confidence'] >= $this->options['min_confidence_for_clear']) {
         $decision['clear_conversation_context'] = true;
@@ -124,11 +122,11 @@ class ContextManager
       }
     }
 
-    // Cas 3 : Feedback pertinent disponible
+    // Case 3: Relevant feedback available
     if ($hasFeedback && $feedbackRelevance > 0.6) {
       if ($this->options['prioritize_feedback_over_context']) {
         $decision['prioritize_feedback'] = true;
-        $decision['use_conversation_context'] = false; // Désactiver le contexte conversationnel
+        $decision['use_conversation_context'] = false;
         $decision['reason'] = sprintf(
           'Prioritizing feedback learning (relevance: %.2f)',
           $feedbackRelevance
@@ -137,17 +135,17 @@ class ContextManager
       }
     }
 
-    // Cas 4 : Utiliser les deux contextes (par défaut)
+    // Case 4: Use both contexts (default)
     $decision['reason'] = 'Using both contexts with conversation priority';
     return $decision;
   }
 
   /**
-   * Évalue la pertinence du feedback pour la question actuelle
+   * Evaluate feedback relevance for current question
    *
-   * @param string $query Question actuelle
-   * @param array $feedbackContext Contexte de feedback
-   * @return float Score de pertinence (0-1)
+   * @param string $query Current question
+   * @param array $feedbackContext Feedback context
+   * @return float Relevance score (0-1)
    */
   private function evaluateFeedbackRelevance(string $query, array $feedbackContext): float
   {
@@ -161,7 +159,7 @@ class ContextManager
     foreach ($feedbackContext as $feedback) {
       $originalQuery = mb_strtolower($feedback['original_query'] ?? '');
       
-      // Calculer la similarité simple (peut être amélioré avec Levenshtein ou embeddings)
+      // Calculate simple similarity (can be improved with Levenshtein or embeddings)
       $similarity = $this->calculateSimpleSimilarity($query, $originalQuery);
       
       if ($similarity > $maxRelevance) {
@@ -173,15 +171,15 @@ class ContextManager
   }
 
   /**
-   * Calcule une similarité simple entre deux textes
+   * Calculate simple similarity between two texts
    *
-   * @param string $text1 Premier texte
-   * @param string $text2 Deuxième texte
-   * @return float Similarité (0-1)
+   * @param string $text1 First text
+   * @param string $text2 Second text
+   * @return float Similarity score (0-1)
    */
   private function calculateSimpleSimilarity(string $text1, string $text2): float
   {
-    // Tokenisation simple
+    // Simple tokenization
     $words1 = array_unique(preg_split('/\s+/', $text1));
     $words2 = array_unique(preg_split('/\s+/', $text2));
 
@@ -199,19 +197,19 @@ class ContextManager
   }
 
   /**
-   * Filtre le contexte conversationnel selon la décision
+   * Filter conversation context based on decision
    *
-   * @param array $conversationContext Contexte complet
-   * @param array $decision Décision de gestion
-   * @return array Contexte filtré
+   * @param array $conversationContext Complete context
+   * @param array $decision Management decision
+   * @return array Filtered context
    */
   public function filterConversationContext(
     array $conversationContext,
     array $decision
   ): array {
     if ($decision['clear_conversation_context'] || !$decision['use_conversation_context']) {
-      // Effacer le contexte court terme mais GARDER la mémoire long terme
-      // La mémoire long terme est basée sur la similarité sémantique, donc pertinente
+      // Clear short-term context but KEEP long-term memory
+      // Long-term memory is based on semantic similarity, so it's relevant
       $filteredLongTerm = $this->filterLongTermMemory(
         $conversationContext['long_term_context'] ?? [],
         $decision
@@ -231,14 +229,11 @@ class ContextManager
   }
 
   /**
-   * Filtre le contexte à long terme en cas de changement de domaine.
+   * Filter long-term context on domain change
    *
-   * NOTE: Pure LLM mode - domain-based filtering is disabled
-   * Returns unfiltered context to allow LLM to determine relevance
-   *
-   * @param array $longTermContext Contexte à long terme (mémoire)
-   * @param array $decision Décision de l'agent (contient le nouveau domaine)
-   * @return array Contexte non filtré (LLM determines relevance)
+   * @param array $longTermContext Long-term context (memory)
+   * @param array $decision Agent decision (contains new domain)
+   * @return array Unfiltered context (LLM determines relevance)
    */
   private function filterLongTermMemory(array $longTermContext, array $decision): array
   {
@@ -253,11 +248,11 @@ class ContextManager
   }
 
   /**
-   * Crée un contexte enrichi avec les métadonnées de décision
+   * Create enriched context with decision metadata
    *
-   * @param array $conversationContext Contexte conversationnel
-   * @param array $decision Décision prise
-   * @return array Contexte enrichi
+   * @param array $conversationContext Conversation context
+   * @param array $decision Decision made
+   * @return array Enriched context
    */
   public function enrichContextWithDecision(
     array $conversationContext,
@@ -268,9 +263,9 @@ class ContextManager
   }
 
   /**
-   * Configure les options de gestion du contexte
+   * Configure context management options
    *
-   * @param array $options Nouvelles options
+   * @param array $options New options
    * @return void
    */
   public function setOptions(array $options): void
@@ -279,7 +274,7 @@ class ContextManager
   }
 
   /**
-   * Obtient les options actuelles
+   * Get current options
    *
    * @return array Options
    */

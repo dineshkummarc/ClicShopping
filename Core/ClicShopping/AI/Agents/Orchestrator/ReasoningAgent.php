@@ -17,16 +17,11 @@ use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Infrastructure\Metrics\ReasoningAgentStats;
+use ClicShopping\AI\Config\DomainConfig;
 
 /**
  * ReasoningAgent Class
- *
- * Agent spécialisé dans le raisonnement multi-étapes :
- * - Chain-of-Thought (CoT) reasoning
- * - Tree-of-Thought (ToT) pour problèmes complexes
- * - Self-consistency checking
- * - Décomposition récursive de problèmes
- * - Génération d'hypothèses et vérification
+ * Specialized agent for multi-step reasoning with Chain-of-Thought, Tree-of-Thought, and Self-consistency methods
  */
 #[AllowDynamicProperties]
 class ReasoningAgent
@@ -182,11 +177,11 @@ class ReasoningAgent
   }
 
   /**
-   * Raisonne sur un problème avec Chain-of-Thought
-   *
-   * @param string $problem Problème à résoudre
-   * @param array $context Contexte additionnel
-   * @return array Résultat du raisonnement
+   * Reason about a problem using configured reasoning mode
+   * 
+   * @param string $problem Problem to solve
+   * @param array $context Additional context
+   * @return array Reasoning result
    */
   public function reason(string $problem, array $context = []): array
   {
@@ -245,7 +240,11 @@ class ReasoningAgent
   }
 
   /**
-   * Chain-of-Thought: Raisonnement étape par étape
+   * Chain-of-Thought reasoning with step-by-step analysis
+   * 
+   * @param string $problem Problem to solve
+   * @param array $context Additional context
+   * @return array Reasoning result with steps
    */
   private function chainOfThought(string $problem, array $context): array
   {
@@ -290,14 +289,18 @@ class ReasoningAgent
   }
 
   /**
-   * Construit le prompt pour Chain-of-Thought
+   * Build Chain-of-Thought prompt
+   * 
+   * @param string $problem Problem to solve
+   * @param array $context Additional context
+   * @return string Formatted prompt
    */
   private function buildCoTPrompt(string $problem, array $context): string
   {
     $CLICSHOPPING_Language = Registry::get('Language');
     
     // Load language file in English for internal processing
-    $CLICSHOPPING_Language->loadDefinitions('rag_reasoning_agent', 'en', null, 'ClicShoppingAdmin');
+    DomainConfig::loadLanguageFile('rag_reasoning_agent');
     
     // Get the prompt template
     $prompt = $CLICSHOPPING_Language->getDef('text_reasoning_cot_prompt');
@@ -322,7 +325,10 @@ class ReasoningAgent
   }
 
   /**
-   * Parse la réponse Chain-of-Thought
+   * Parse Chain-of-Thought response
+   * 
+   * @param string $response LLM response
+   * @return array Parsed steps, answer, and confidence
    */
   private function parseCoTResponse(string $response): array
   {
@@ -330,7 +336,7 @@ class ReasoningAgent
     $answer = '';
     $confidence = 0.8;
 
-    // Extraire les étapes
+    // Extract steps
     preg_match_all('/STEP\s+(\d+):\s*(.+?)(?=STEP\s+\d+:|FINAL ANSWER:|$)/is', $response, $stepMatches, PREG_SET_ORDER);
 
     foreach ($stepMatches as $match) {
@@ -344,17 +350,17 @@ class ReasoningAgent
         'result' => '',
       ];
 
-      // Extraire description
+      // Extract description
       if (preg_match('/^(.+?)(?:\n|Reasoning:)/i', $stepContent, $descMatch)) {
         $step['description'] = trim($descMatch[1]);
       }
 
-      // Extraire reasoning
+      // Extract reasoning
       if (preg_match('/Reasoning:\s*(.+?)(?:\n|Result:|$)/is', $stepContent, $reasonMatch)) {
         $step['reasoning'] = trim($reasonMatch[1]);
       }
 
-      // Extraire result
+      // Extract result
       if (preg_match('/Result:\s*(.+?)$/is', $stepContent, $resultMatch)) {
         $step['result'] = trim($resultMatch[1]);
       }
@@ -362,12 +368,12 @@ class ReasoningAgent
       $steps[] = $step;
     }
 
-    // Extraire la réponse finale
+    // Extract final answer
     if (preg_match('/FINAL ANSWER:\s*(.+?)(?=CONFIDENCE:|$)/is', $response, $answerMatch)) {
       $answer = trim($answerMatch[1]);
     }
 
-    // Extraire la confiance
+    // Extract confidence
     if (preg_match('/CONFIDENCE:\s*([\d\.]+)/i', $response, $confMatch)) {
       $confidence = (float)$confMatch[1];
     }
@@ -380,7 +386,11 @@ class ReasoningAgent
   }
 
   /**
-   * Tree-of-Thought: Explore plusieurs branches de raisonnement
+   * Tree-of-Thought reasoning exploring multiple reasoning paths
+   * 
+   * @param string $problem Problem to solve
+   * @param array $context Additional context
+   * @return array Best reasoning path and all explored paths
    */
   private function treeOfThought(string $problem, array $context): array
   {
@@ -391,7 +401,7 @@ class ReasoningAgent
       );
     }
 
-    // Générer plusieurs chemins de raisonnement
+    // Generate multiple reasoning paths
     $paths = [];
 
     for ($i = 0; $i < $this->treeOfThoughtPaths; $i++) {
@@ -405,7 +415,7 @@ class ReasoningAgent
       ];
     }
 
-    // Sélectionner le meilleur chemin
+    // Select best path
     usort($paths, fn($a, $b) => $b['score'] <=> $a['score']);
     $bestPath = $paths[0];
 
@@ -423,14 +433,19 @@ class ReasoningAgent
   }
 
   /**
-   * Construit le prompt pour Tree-of-Thought
+   * Build Tree-of-Thought prompt
+   * 
+   * @param string $problem Problem to solve
+   * @param array $context Additional context
+   * @param int $pathId Path identifier for approach variation
+   * @return string Formatted prompt
    */
   private function buildToTPrompt(string $problem, array $context, int $pathId): string
   {
     $CLICSHOPPING_Language = Registry::get('Language');
     
     // Load language file in English for internal processing
-    $CLICSHOPPING_Language->loadDefinitions('rag_reasoning_agent', 'en', null, 'ClicShoppingAdmin');
+    DomainConfig::loadLanguageFile('rag_reasoning_agent');
     
     // Get the prompt template
     $prompt = $CLICSHOPPING_Language->getDef('text_reasoning_tot_prompt');
@@ -452,28 +467,31 @@ class ReasoningAgent
   }
 
   /**
-   * Évalue la qualité d'un chemin de raisonnement
+   * Evaluate quality of reasoning path
+   * 
+   * @param string $reasoning Reasoning text
+   * @return float Quality score (0.0-1.0)
    */
   private function evaluatePath(string $reasoning): float
   {
     $score = 0.5;
 
-    // Critères de qualité
+    // Quality criteria
     $wordCount = str_word_count($reasoning);
     if ($wordCount > 50) $score += 0.1;
     if ($wordCount > 100) $score += 0.1;
 
-    // Présence de structure
+    // Structure presence
     if (preg_match('/\b(first|second|third|finally)\b/i', $reasoning)) {
       $score += 0.1;
     }
 
-    // Présence de justification
+    // Justification presence
     if (preg_match('/\b(because|therefore|thus|hence)\b/i', $reasoning)) {
       $score += 0.1;
     }
 
-    // Présence de conclusion
+    // Conclusion presence
     if (preg_match('/\b(conclusion|answer|result)\b/i', $reasoning)) {
       $score += 0.1;
     }
@@ -482,16 +500,19 @@ class ReasoningAgent
   }
 
   /**
-   * Extrait la réponse d'un raisonnement
+   * Extract answer from reasoning text
+   * 
+   * @param string $reasoning Reasoning text
+   * @return string Extracted answer
    */
   private function extractAnswer(string $reasoning): string
   {
-    // Chercher une conclusion explicite
+    // Look for explicit conclusion
     if (preg_match('/(?:conclusion|answer|result):\s*(.+?)(?:\n|$)/i', $reasoning, $match)) {
       return trim($match[1]);
     }
 
-    // Sinon, prendre les dernières phrases
+    // Otherwise, take last sentences
     $sentences = preg_split('/[.!?]+/', $reasoning);
     $sentences = array_filter(array_map('trim', $sentences));
 
@@ -499,7 +520,11 @@ class ReasoningAgent
   }
 
   /**
-   * Self-Consistency: Générer plusieurs réponses et voter
+   * Self-Consistency reasoning generating multiple answers and voting
+   * 
+   * @param string $problem Problem to solve
+   * @param array $context Additional context
+   * @return array Final answer with agreement rate
    */
   private function selfConsistency(string $problem, array $context): array
   {
@@ -512,7 +537,7 @@ class ReasoningAgent
 
     $answers = [];
 
-    // Générer plusieurs réponses
+    // Generate multiple answers
     for ($i = 0; $i < $this->selfConsistencyPaths; $i++) {
       $prompt = $this->buildCoTPrompt($problem, $context);
       $response = Gpt::getGptResponse($prompt, 800);
@@ -526,7 +551,7 @@ class ReasoningAgent
       ];
     }
 
-    // Voter pour la meilleure réponse
+    // Vote for best answer
     $finalAnswer = $this->voteForBestAnswer($answers);
 
     return [
@@ -543,11 +568,14 @@ class ReasoningAgent
   }
 
   /**
-   * Vote pour la meilleure réponse
+   * Vote for best answer from multiple attempts
+   * 
+   * @param array $answers Array of answer attempts
+   * @return array Best answer with confidence and agreement rate
    */
   private function voteForBestAnswer(array $answers): array
   {
-    // Compter les occurrences de chaque réponse
+    // Count occurrences of each answer
     $votes = [];
 
     foreach ($answers as $answer) {
@@ -565,7 +593,7 @@ class ReasoningAgent
       $votes[$normalizedAnswer]['total_confidence'] += $answer['confidence'];
     }
 
-    // Trouver la réponse avec le plus de votes
+    // Find answer with most votes
     $winner = null;
     $maxVotes = 0;
 
@@ -585,14 +613,17 @@ class ReasoningAgent
 
     return [
       'answer' => $winner['answer'],
-      'confidence' => $avgConfidence * $agreementRate, // Ajusté par l'accord
+      'confidence' => $avgConfidence * $agreementRate,
       'agreement_rate' => $agreementRate,
       'votes' => $winner['count'],
     ];
   }
 
   /**
-   * Normalise une réponse pour comparaison
+   * Normalize answer for comparison
+   * 
+   * @param string $answer Answer text
+   * @return string Normalized answer
    */
   private function normalizeAnswer(string $answer): string
   {
@@ -604,16 +635,16 @@ class ReasoningAgent
   }
 
   /**
-   * Décompose un problème complexe récursivement
-   *
-   * @param string $problem Problème complexe
-   * @param int $depth Profondeur actuelle
-   * @return array Décomposition hiérarchique
+   * Decompose complex problem recursively
+   * 
+   * @param string $problem Complex problem
+   * @param int $depth Current depth
+   * @return array Hierarchical decomposition
    */
   public function decompose(string $problem, int $depth = 0): array
   {
     if ($depth >= 3) {
-      // Limite de profondeur atteinte
+      // Depth limit reached
       return [
         'problem' => $problem,
         'is_atomic' => true,
@@ -626,7 +657,7 @@ class ReasoningAgent
 
     $parsed = $this->parseDecomposition($response);
 
-    // Si le problème est atomique, arrêter
+    // If problem is atomic, stop
     if ($parsed['is_atomic']) {
       return [
         'problem' => $problem,
@@ -636,7 +667,7 @@ class ReasoningAgent
       ];
     }
 
-    // Sinon, décomposer récursivement les sous-problèmes
+    // Otherwise, recursively decompose subproblems
     $subproblems = [];
     foreach ($parsed['subproblems'] as $subproblem) {
       $subproblems[] = $this->decompose($subproblem, $depth + 1);
@@ -652,14 +683,17 @@ class ReasoningAgent
   }
 
   /**
-   * Construit le prompt de décomposition
+   * Build decomposition prompt
+   * 
+   * @param string $problem Problem to decompose
+   * @return string Formatted prompt
    */
   private function buildDecomposePrompt(string $problem): string
   {
     $CLICSHOPPING_Language = Registry::get('Language');
     
     // Load language file in English for internal processing
-    $CLICSHOPPING_Language->loadDefinitions('rag_reasoning_agent', 'en', null, 'ClicShoppingAdmin');
+    DomainConfig::loadLanguageFile('rag_reasoning_agent');
     
     // Get the prompt template
     $prompt = $CLICSHOPPING_Language->getDef('text_reasoning_decompose_prompt');
@@ -671,7 +705,10 @@ class ReasoningAgent
   }
 
   /**
-   * Parse la décomposition
+   * Parse decomposition response
+   * 
+   * @param string $response LLM response
+   * @return array Parsed decomposition with atomic flag and subproblems
    */
   private function parseDecomposition(string $response): array
   {
@@ -681,17 +718,17 @@ class ReasoningAgent
       'subproblems' => [],
     ];
 
-    // Extraire IS_ATOMIC
+    // Extract IS_ATOMIC
     if (preg_match('/IS_ATOMIC:\s*(yes|no)/i', $response, $match)) {
       $result['is_atomic'] = strtolower($match[1]) === 'yes';
     }
 
-    // Extraire REASONING
+    // Extract REASONING
     if (preg_match('/REASONING:\s*(.+?)(?=SUBPROBLEM|$)/is', $response, $match)) {
       $result['reasoning'] = trim($match[1]);
     }
 
-    // Extraire SUBPROBLEMS
+    // Extract SUBPROBLEMS
     if (!$result['is_atomic']) {
       preg_match_all('/SUBPROBLEM\s+\d+:\s*(.+?)(?=SUBPROBLEM|\n\n|$)/is', $response, $matches);
       $result['subproblems'] = array_map('trim', $matches[1]);
@@ -701,11 +738,11 @@ class ReasoningAgent
   }
 
   /**
-   * Vérifie la cohérence d'une solution
-   *
-   * @param string $problem Problème original
-   * @param string $solution Solution proposée
-   * @return array Résultat de vérification
+   * Verify solution consistency
+   * 
+   * @param string $problem Original problem
+   * @param string $solution Proposed solution
+   * @return array Verification result
    */
   public function verifySolution(string $problem, string $solution): array
   {
@@ -723,14 +760,18 @@ class ReasoningAgent
   }
 
   /**
-   * Construit le prompt de vérification
+   * Build verification prompt
+   * 
+   * @param string $problem Original problem
+   * @param string $solution Proposed solution
+   * @return string Formatted prompt
    */
   private function buildVerificationPrompt(string $problem, string $solution): string
   {
     $CLICSHOPPING_Language = Registry::get('Language');
     
     // Load language file in English for internal processing
-    $CLICSHOPPING_Language->loadDefinitions('rag_reasoning_agent', 'en', null, 'ClicShoppingAdmin');
+    DomainConfig::loadLanguageFile('rag_reasoning_agent');
     
     // Get the prompt template
     $prompt = $CLICSHOPPING_Language->getDef('text_reasoning_verification_prompt');
@@ -743,7 +784,10 @@ class ReasoningAgent
   }
 
   /**
-   * Parse la vérification
+   * Parse verification response
+   * 
+   * @param string $response LLM response
+   * @return array Parsed verification with correctness flag and issues
    */
   private function parseVerification(string $response): array
   {
@@ -775,7 +819,9 @@ class ReasoningAgent
   }
 
   /**
-   * Met à jour la moyenne des étapes
+   * Update average steps statistic
+   * 
+   * @param int $steps Number of steps in current reasoning
    */
   private function updateAverageSteps(int $steps): void
   {
@@ -786,7 +832,9 @@ class ReasoningAgent
   }
 
   /**
-   * Obtient les statistiques
+   * Get statistics
+   * 
+   * @return array Statistics with success rate and configuration
    */
   public function getStats(): array
   {

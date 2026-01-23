@@ -22,13 +22,14 @@ namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor\SubSemanticExecutor;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
-use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\AI\Infrastructure\Cache\Cache;
 use ClicShopping\AI\Helper\InsufficientInformationDetector;
 use ClicShopping\AI\Handler\Fallback\LLMFallbackHandler;
-use ClicShopping\AI\Domains\WebSearch\Handler\WebSearchHandler;
+use ClicShopping\AI\DomainsAI\WebSearch\Handler\WebSearchHandler;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
+use ClicShopping\AI\Config\DomainConfig;
 
 /**
  * SemanticSearchOrchestrator Class
@@ -66,7 +67,7 @@ class SemanticSearchOrchestrator
 
     // Load language definitions
     $this->language = Registry::get('Language');
-    $this->language->loadDefinitions('rag_semantic_search_orchestrator', 'en', null, 'ClicShoppingAdmin');
+    DomainConfig::loadLanguageFile('rag_semantic_search_orchestrator');
     
     // Initialize insufficient information detector
     $this->infoDetector = new InsufficientInformationDetector();

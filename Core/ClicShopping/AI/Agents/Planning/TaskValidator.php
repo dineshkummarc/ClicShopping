@@ -1,9 +1,8 @@
 <?php
 /**
- * TaskValidator - Validateurs pour plans déterministes
- * 
- * Gère la validation des données externes et les politiques d'accès
- * Assure un comportement déterministe même si les sources externes échouent
+ * TaskValidator - Validators for deterministic plans
+ * Handles external data validation and access policies
+ * Ensures deterministic behavior even if external sources fail
  */
 
 namespace ClicShopping\AI\Agents\Planning;
@@ -14,9 +13,9 @@ use AllowDynamicProperties;
 class TaskValidator
 {
     /**
-     * Vérifie si des données concurrentes externes valides sont disponibles
+     * Checks if valid external competitor data is available
      * 
-     * @param array|null $competitorData Données concurrents
+     * @param array|null $competitorData Competitor data
      * @return array [bool $ok, array $reasoning]
      */
     public static function validateCompetitorDataAvailability(?array $competitorData): array
@@ -33,14 +32,14 @@ class TaskValidator
             return [false, $reasoning];
         }
         
-        // Vérifier structure minimale attendue
+        // Check expected minimal structure
         $sample = reset($competitorData);
         if (!is_array($sample) || !array_key_exists('name', $sample) || !array_key_exists('price', $sample)) {
             $reasoning[] = 'invalid_competitor_record_schema';
             return [false, $reasoning];
         }
         
-        // Valeurs suspectes
+        // Suspicious values
         foreach ($competitorData as $rec) {
             if (!is_numeric($rec['price']) && !is_null($rec['price'])) {
                 $reasoning[] = 'non_numeric_price_found';
@@ -48,24 +47,24 @@ class TaskValidator
             }
         }
         
-        // Si tout passe
+        // If all passes
         return [true, ['validated_competitor_dataset']];
     }
     
     /**
-     * Politique : autoriser/rejeter l'appel vers sources externes
+     * Policy: allow/reject external source calls
      * 
-     * @param array $policy Configuration de politique
-     * @return bool True si accès externe autorisé
+     * @param array $policy Policy configuration
+     * @return bool True if external access allowed
      */
     public static function externalAccessAllowed(array $policy): bool
     {
-        // Politique minimale : présence d'un flag explicite
+        // Minimal policy: explicit flag presence
         if (isset($policy['allow_external']) && $policy['allow_external'] === true) {
             return true;
         }
         
-        // Vérifier si SerpApi est configuré
+        // Check if SerpApi is configured
         if (isset($policy['serpapi_configured']) && $policy['serpapi_configured'] === true) {
             return true;
         }
@@ -74,9 +73,9 @@ class TaskValidator
     }
     
     /**
-     * Valide la disponibilité du cache interne concurrent
+     * Validates internal competitor cache availability
      * 
-     * @param array|null $internalCache Cache interne
+     * @param array|null $internalCache Internal cache
      * @return array [bool $ok, array $data]
      */
     public static function validateInternalCompetitorCache(?array $internalCache): array
@@ -85,7 +84,7 @@ class TaskValidator
             return [false, []];
         }
         
-        // Filtrer les données valides
+        // Filter valid data
         $validData = [];
         foreach ($internalCache as $item) {
             if (is_array($item) && isset($item['name']) && isset($item['price'])) {
@@ -97,16 +96,16 @@ class TaskValidator
     }
     
     /**
-     * Détermine la stratégie de fallback pour step_2
+     * Determines fallback strategy for step_2
      * 
-     * @param array $context Contexte d'exécution
+     * @param array $context Execution context
      * @return array [string $strategy, array $data]
      */
     public static function determineFallbackStrategy(array $context): array
     {
         $policy = $context['policy'] ?? ['allow_external' => false];
         
-        // Si externe bloqué par politique
+        // If external blocked by policy
         if (!self::externalAccessAllowed($policy)) {
             [$hasCache, $cacheData] = self::validateInternalCompetitorCache(
                 $context['internal_competitor_cache'] ?? null
@@ -119,7 +118,7 @@ class TaskValidator
             }
         }
         
-        // Si externe autorisé mais données invalides
+        // If external allowed but invalid data
         $competitorPayload = $context['competitor_payload'] ?? null;
         [$isValid, $reasoning] = self::validateCompetitorDataAvailability($competitorPayload);
         

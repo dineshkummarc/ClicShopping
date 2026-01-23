@@ -13,10 +13,10 @@ namespace ClicShopping\AI\Agents\Query;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Helper\LanguageHelper;
-use ClicShopping\AI\Domain\Patterns\Ecommerce\EntityDetectionPattern;
-use ClicShopping\AI\Domain\Patterns\Ecommerce\ContinuationPattern;
-use ClicShopping\AI\Domain\Patterns\Analytics\OperatorPattern;
-use ClicShopping\AI\Domain\Patterns\Analytics\QueryCriteriaPattern;
+use ClicShopping\AI\DomainsAI\CoreAI\Patterns\Common\EntityDetectionPattern;
+use ClicShopping\AI\DomainsAI\CoreAI\Patterns\Common\ContinuationPattern;
+use ClicShopping\AI\DomainsAI\Analytics\Patterns\OperatorPattern;
+use ClicShopping\AI\DomainsAI\Analytics\Patterns\QueryCriteriaPattern;
 
 /**
  * QueryAnalyzer Class

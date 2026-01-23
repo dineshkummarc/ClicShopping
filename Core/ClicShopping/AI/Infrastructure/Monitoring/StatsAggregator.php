@@ -14,12 +14,12 @@ use ClicShopping\AI\Security\SecurityLogger;
 /**
  * StatsAggregator Class
  *
- * Agrégateur de statistiques qui :
- * - Combine les métriques de plusieurs sources
- * - Calcule les tendances et les corrélations
- * - Génère des rapports synthétiques
- * - Détecte les anomalies
- * - Exporte vers différents formats
+ * Statistics aggregator that:
+ * - Combines metrics from multiple sources
+ * - Calculates trends and correlations
+ * - Generates synthetic reports
+ * - Detects anomalies
+ * - Exports to different formats
  */
 #[AllowDynamicProperties]
 class StatsAggregator
@@ -27,10 +27,10 @@ class StatsAggregator
   private SecurityLogger $logger;
   private bool $debug;
 
-  // Sources de données
+  // Data sources
   private array $dataSources = [];
 
-  // Cache des statistiques agrégées
+  // Aggregated statistics cache
   private array $aggregatedStats = [];
   private int $lastAggregationTime = 0;
 
@@ -54,10 +54,10 @@ class StatsAggregator
   }
 
   /**
-   * 📊 Ajoute une source de données
+   * Adds a data source
    *
-   * @param string $sourceName Nom de la source
-   * @param callable $dataFetcher Fonction pour récupérer les données
+   * @param string $sourceName Source name
+   * @param callable $dataFetcher Function to fetch data
    */
   public function addDataSource(string $sourceName, callable $dataFetcher): void
   {
@@ -77,13 +77,13 @@ class StatsAggregator
   }
 
   /**
-   * 🔄 Agrège toutes les statistiques
+   * Aggregates all statistics
    *
-   * @return array Statistiques agrégées
+   * @return array Aggregated statistics
    */
   public function aggregate(): array
   {
-    // Vérifier le cache
+    // Check cache
     if ($this->isCacheValid()) {
       return $this->aggregatedStats;
     }
@@ -98,7 +98,7 @@ class StatsAggregator
       'anomalies' => [],
     ];
 
-    // Récupérer les données de chaque source
+    // Get data from each source
     foreach ($this->dataSources as $sourceName => $source) {
       try {
         $data = $source['fetcher']();
@@ -120,14 +120,14 @@ class StatsAggregator
       }
     }
 
-    // Calculer les synthèses
+    // Calculate summaries
     $aggregated['system_summary'] = $this->calculateSystemSummary($aggregated['sources']);
     $aggregated['performance_metrics'] = $this->calculatePerformanceMetrics($aggregated['sources']);
     $aggregated['quality_metrics'] = $this->calculateQualityMetrics($aggregated['sources']);
     $aggregated['trends'] = $this->detectTrends($aggregated['sources']);
     $aggregated['anomalies'] = $this->detectAnomalies($aggregated['sources']);
 
-    // Mettre en cache
+    // Cache results
     $this->aggregatedStats = $aggregated;
     $this->lastAggregationTime = time();
 
@@ -135,7 +135,10 @@ class StatsAggregator
   }
 
   /**
-   * Calcule le résumé du système
+   * Calculates system summary
+   * 
+   * @param array $sources Data sources
+   * @return array System summary metrics
    */
   private function calculateSystemSummary(array $sources): array
   {
@@ -158,7 +161,7 @@ class StatsAggregator
 
       $validSources++;
 
-      // Métriques système
+      // System metrics
       if (isset($source['system'])) {
         $summary['total_uptime'] += $source['system']['uptime_seconds'] ?? 0;
         $summary['total_requests'] += $source['system']['total_requests'] ?? 0;
@@ -167,7 +170,7 @@ class StatsAggregator
         $summary['total_api_cost'] += $source['system']['total_api_cost'] ?? 0;
       }
 
-      // Statut des composants
+      // Component status
       if (isset($source['components'])) {
         foreach ($source['components'] as $comp => $data) {
           if (!isset($summary['components_status'][$comp])) {
@@ -196,7 +199,10 @@ class StatsAggregator
   }
 
   /**
-   * Calcule les métriques de performance
+   * Calculates performance metrics
+   * 
+   * @param array $sources Data sources
+   * @return array Performance metrics
    */
   private function calculatePerformanceMetrics(array $sources): array
   {
@@ -256,7 +262,10 @@ class StatsAggregator
   }
 
   /**
-   * Calcule les métriques de qualité
+   * Calculates quality metrics
+   * 
+   * @param array $sources Data sources
+   * @return array Quality metrics
    */
   private function calculateQualityMetrics(array $sources): array
   {
@@ -308,7 +317,10 @@ class StatsAggregator
   }
 
   /**
-   * Détecte les tendances
+   * Detects trends in data
+   * 
+   * @param array $sources Data sources
+   * @return array Detected trends
    */
   private function detectTrends(array $sources): array
   {
@@ -319,14 +331,17 @@ class StatsAggregator
       'api_cost_trend' => null,
     ];
 
-    // À implémenter avec des données historiques
-    // Pour l'instant, retourner une structure vide
+    // To be implemented with historical data
+    // For now, return empty structure
 
     return $trends;
   }
 
   /**
-   * Détecte les anomalies
+   * Detects anomalies in data
+   * 
+   * @param array $sources Data sources
+   * @return array Detected anomalies
    */
   private function detectAnomalies(array $sources): array
   {
@@ -337,7 +352,7 @@ class StatsAggregator
         continue;
       }
 
-      // Vérifier les taux d'erreur anormalement élevés
+      // Check for abnormally high error rates
       if (isset($source['system']['error_rate'])) {
         $errorRate = $source['system']['error_rate'];
 
@@ -352,7 +367,7 @@ class StatsAggregator
         }
       }
 
-      // Vérifier les temps de réponse anormalement lents
+      // Check for abnormally slow response times
       if (isset($source['system']['avg_response_time'])) {
         $avgTime = $source['system']['avg_response_time'];
 
@@ -367,7 +382,7 @@ class StatsAggregator
         }
       }
 
-      // Vérifier les composants défaillants
+      // Check for failing components
       if (isset($source['components'])) {
         foreach ($source['components'] as $compName => $comp) {
           $calls = $comp['total_calls'] ?? 0;
@@ -391,7 +406,9 @@ class StatsAggregator
   }
 
   /**
-   * 📈 Obtient un rapport complet
+   * Gets a complete report
+   * 
+   * @return array Full report with all metrics
    */
   public function getFullReport(): array
   {
@@ -410,7 +427,9 @@ class StatsAggregator
   }
 
   /**
-   * 🎯 Obtient un résumé exécutif
+   * Gets an executive summary
+   * 
+   * @return array Executive summary with key metrics
    */
   public function getExecutiveSummary(): array
   {
@@ -436,7 +455,10 @@ class StatsAggregator
   }
 
   /**
-   * Calcule le statut global
+   * Calculates overall system status
+   * 
+   * @param array $report Full report data
+   * @return string Status (critical, degraded, warning, healthy)
    */
   private function calculateOverallStatus(array $report): string
   {
@@ -455,7 +477,10 @@ class StatsAggregator
   }
 
   /**
-   * Génère des recommandations
+   * Generates recommendations based on report
+   * 
+   * @param array $report Full report data
+   * @return array List of recommendations
    */
   private function generateRecommendations(array $report): array
   {
@@ -464,7 +489,7 @@ class StatsAggregator
     $performance = $report['performance'];
     $quality = $report['quality'];
 
-    // Recommandation: Taux d'erreur
+    // Recommendation: Error rate
     if ($system['average_error_rate'] > 5) {
       $recommendations[] = [
         'priority' => 'high',
@@ -472,7 +497,7 @@ class StatsAggregator
       ];
     }
 
-    // Recommandation: Performance
+    // Recommendation: Performance
     if ($performance['avg_response_time'] > 3) {
       $recommendations[] = [
         'priority' => 'medium',
@@ -480,7 +505,7 @@ class StatsAggregator
       ];
     }
 
-    // Recommandation: Qualité
+    // Recommendation: Quality
     if ($quality['success_rate'] < 95) {
       $recommendations[] = [
         'priority' => 'medium',
@@ -488,7 +513,7 @@ class StatsAggregator
       ];
     }
 
-    // Recommandation: Coûts API
+    // Recommendation: API costs
     if ($system['total_api_cost'] > 100) {
       $recommendations[] = [
         'priority' => 'low',
@@ -500,7 +525,9 @@ class StatsAggregator
   }
 
   /**
-   * Exporte au format JSON
+   * Exports report to JSON format
+   * 
+   * @return string JSON formatted report
    */
   public function exportJSON(): string
   {
@@ -511,7 +538,9 @@ class StatsAggregator
   }
 
   /**
-   * Exporte au format CSV
+   * Exports report to CSV format
+   * 
+   * @return string CSV formatted report
    */
   public function exportCSV(): string
   {
@@ -540,7 +569,9 @@ class StatsAggregator
   }
 
   /**
-   * Vérifie si le cache est valide
+   * Checks if cache is valid
+   * 
+   * @return bool True if cache is valid
    */
   private function isCacheValid(): bool
   {
@@ -549,11 +580,11 @@ class StatsAggregator
   }
 
   //*******************************
-  //Not used
+  // Not used
   //*******************************
 
   /**
-   * Invalide le cache
+   * Invalidates the cache
    */
   public function invalidateCache(): void
   {
@@ -562,7 +593,9 @@ class StatsAggregator
   }
 
   /**
-   * Configuration
+   * Sets cache lifetime
+   * 
+   * @param int $seconds Cache lifetime in seconds
    */
   public function setCacheLifetime(int $seconds): void
   {
@@ -570,7 +603,9 @@ class StatsAggregator
   }
 
   /**
-   * Obtient les données sources
+   * Gets data sources status
+   * 
+   * @return array Status of all data sources
    */
   public function getSourcesStatus(): array
   {
@@ -588,7 +623,10 @@ class StatsAggregator
   }
 
   /**
-   * Obtient les statistiques de source
+   * Gets statistics for a specific source
+   * 
+   * @param string $sourceName Source name
+   * @return array|null Source statistics or null
    */
   public function getSourceStats(string $sourceName): ?array
   {
@@ -600,7 +638,11 @@ class StatsAggregator
   }
 
   /**
-   * Compare deux périodes
+   * Compares two time periods
+   * 
+   * @param array $period1 First period data
+   * @param array $period2 Second period data
+   * @return array Comparison results
    */
   public function comparePeriods(array $period1, array $period2): array
   {
@@ -610,7 +652,7 @@ class StatsAggregator
       'changes' => [],
     ];
 
-    // Comparer les métriques clés
+    // Compare key metrics
     $metrics = ['total_requests', 'total_errors', 'total_api_cost', 'avg_response_time'];
 
     foreach ($metrics as $metric) {

@@ -12,16 +12,16 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
 use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
-use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\DomainsAI\DomainRegistry;
+use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\AI\Domain\Patterns\Analytics\TemporalFinancialPreFilter;
-use ClicShopping\AI\Domain\Patterns\WebSearch\WebSearchPostFilter;
-use ClicShopping\AI\Domain\Patterns\Analytics\SuperlativePostFilter;
-use ClicShopping\AI\Domain\Patterns\Analytics\MultiTemporalPostFilter;
-use ClicShopping\AI\Domain\Patterns\Analytics\FinancialMetricsPattern;
-use ClicShopping\AI\Domain\Patterns\Analytics\TimeRangePattern;
-use ClicShopping\AI\Domain\Patterns\Analytics\TemporalPeriodMappingPattern;
+use ClicShopping\AI\DomainsAI\WebSearch\Patterns\WebSearchPostFilter;
+use ClicShopping\AI\DomainsAI\Analytics\Patterns\SuperlativePostFilter;
+use ClicShopping\AI\DomainsAI\Analytics\Patterns\MultiTemporalPostFilter;
+use ClicShopping\AI\DomainsAI\Analytics\Patterns\TimeRangePattern;
+use ClicShopping\AI\DomainsAI\Analytics\Patterns\TemporalPeriodMappingPattern;
+use ClicShopping\AI\Config\DomainConfig;
 
 /**
  * UnifiedQueryAnalyzer
@@ -71,7 +71,7 @@ class UnifiedQueryAnalyzer
     
     // Load language definitions
     $this->language = Registry::get('Language');
-    $this->language->loadDefinitions('rag_unified_analyzer', 'en', null, 'ClicShoppingAdmin');
+    DomainConfig::loadLanguageFile('rag_unified_analyzer');
   }
 
   /**
@@ -121,7 +121,7 @@ class UnifiedQueryAnalyzer
     $startTime = microtime(true);
 
     if ($this->debug) {
-      error_log("\n🔍 " . $this->language->getDef('debug_analysis_start'));
+      error_log("🔍 " . $this->language->getDef('debug_analysis_start'));
       error_log(sprintf($this->language->getDef('debug_input_query'), $query));
     }
 
@@ -131,7 +131,7 @@ class UnifiedQueryAnalyzer
       // The LLM classification prompt works best with English input
       $originalQuery = $query;
       $preTranslatedQuery = $this->semantics->translateToEnglish($query);
-      
+
       // Use pre-translated query if translation was successful
       if (!empty($preTranslatedQuery) && $preTranslatedQuery !== $query) {
         $query = $preTranslatedQuery;
@@ -240,17 +240,26 @@ class UnifiedQueryAnalyzer
         error_log("  Time constraint: " . ($analysis['time_constraint'] ?? 'NOT SET'));
       }
 
-      // ⚠️ CRITICAL: Apply TemporalFinancialPreFilter post-filter (EXCEPTION to Pure LLM)
+      // ⚠️ CRITICAL: Apply AnalyticsPatterns post-filter (EXCEPTION to Pure LLM)
       // This pattern-based post-filter overrides LLM classification for temporal financial queries
       // where LLM is inconsistent (hallucinations, wrong intent, low confidence)
       // Pattern is called on translated query (English) for deterministic results
+      // TASK 2026-01-23: Load AnalyticsPatterns dynamically from active domain
       $originalIntentType = $analysis['intent_type'];
       $originalConfidence = $analysis['confidence'];
       
-      $analysis = TemporalFinancialPreFilter::postFilter(
-        $analysis['translated_query'],
-        $analysis
-      );
+      // Load AnalyticsPatterns from active domain (domain-agnostic approach)
+      $domainApp = DomainRegistry::getInstance()->getActiveApp();
+      if ($domainApp && method_exists($domainApp, 'getAnalyticsPatternsClass')) {
+        $analyticsPatternsClass = $domainApp->getAnalyticsPatternsClass();
+        
+        if ($analyticsPatternsClass && class_exists($analyticsPatternsClass)) {
+          $analysis = $analyticsPatternsClass::postFilter(
+            $analysis['translated_query'],
+            $analysis
+          );
+        }
+      }
       
       // Log when pattern overrides LLM classification
       if ($analysis['intent_type'] !== $originalIntentType || $analysis['confidence'] !== $originalConfidence) {
@@ -275,7 +284,8 @@ class UnifiedQueryAnalyzer
             'overridden_intent' => $analysis['intent_type'],
             'overridden_confidence' => $analysis['confidence'],
             'override_reason' => $analysis['override_reason'] ?? 'unknown',
-            'detection_method' => $analysis['detection_method'] ?? 'unknown'
+            'detection_method' => $analysis['detection_method'] ?? 'unknown',
+            'domain' => $domainApp ? $domainApp->getDomainId() : 'none'
           ]
         );
         
@@ -806,7 +816,20 @@ class UnifiedQueryAnalyzer
       // Ensure all fields are present
       $analysis['temporal_periods'] = $analysis['temporal_periods'] ?? [];
       $analysis['temporal_connectors'] = $analysis['temporal_connectors'] ?? [];
-      $analysis['base_metric'] = $analysis['base_metric'] ?? FinancialMetricsPattern::extractBaseMetric($analysis['translated_query'] ?? '');
+      
+      // Load AnalyticsPatterns dynamically from active domain
+      $domainApp = DomainRegistry::getInstance()->getActiveApp();
+      if ($domainApp && method_exists($domainApp, 'getAnalyticsPatternsClass')) {
+        $analyticsPatternsClass = $domainApp->getAnalyticsPatternsClass();
+        if ($analyticsPatternsClass && class_exists($analyticsPatternsClass) && method_exists($analyticsPatternsClass, 'extractBaseMetric')) {
+          $analysis['base_metric'] = $analysis['base_metric'] ?? $analyticsPatternsClass::extractBaseMetric($analysis['translated_query'] ?? '');
+        } else {
+          $analysis['base_metric'] = $analysis['base_metric'] ?? null;
+        }
+      } else {
+        $analysis['base_metric'] = $analysis['base_metric'] ?? null;
+      }
+      
       $analysis['time_range'] = $analysis['time_range'] ?? TimeRangePattern::extractTimeRange($analysis['translated_query'] ?? '');
       $analysis['temporal_period_count'] = count($analysis['temporal_periods']);
       return $analysis;
@@ -823,7 +846,16 @@ class UnifiedQueryAnalyzer
     $isMultiTemporal = count($temporalPeriods) >= 2 && !empty($temporalConnectors);
     
     // Extract base metric and time range using pattern classes
-    $baseMetric = FinancialMetricsPattern::extractBaseMetric($translatedQuery);
+    // Load AnalyticsPatterns dynamically from active domain
+    $baseMetric = null;
+    $domainApp = DomainRegistry::getInstance()->getActiveApp();
+    if ($domainApp && method_exists($domainApp, 'getAnalyticsPatternsClass')) {
+      $analyticsPatternsClass = $domainApp->getAnalyticsPatternsClass();
+      if ($analyticsPatternsClass && class_exists($analyticsPatternsClass) && method_exists($analyticsPatternsClass, 'extractBaseMetric')) {
+        $baseMetric = $analyticsPatternsClass::extractBaseMetric($translatedQuery);
+      }
+    }
+    
     $timeRange = TimeRangePattern::extractTimeRange($translatedQuery);
     
     // Populate temporal metadata fields

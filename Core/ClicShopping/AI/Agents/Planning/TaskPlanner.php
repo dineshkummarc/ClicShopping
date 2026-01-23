@@ -9,10 +9,9 @@
  */
 
 /**
- * TaskPlanner Refactorisé
- * 
- * Orchestrateur principal qui délègue la planification aux SubTaskPlanners spécialisés
- * Responsabilité : Sélectionner le bon SubTaskPlanner et coordonner l'exécution
+ * Refactored TaskPlanner
+ * Main orchestrator that delegates planning to specialized SubTaskPlanners
+ * Selects appropriate SubTaskPlanner and coordinates execution
  */
 
 namespace ClicShopping\AI\Agents\Planning;
@@ -29,13 +28,13 @@ use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerSemanticSearch
 use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerWebSearch;
 use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerStandard;
 use ClicShopping\AI\Agents\Planning\TaskPlannerPrompts;
-use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\OM\Registry;
 
-// Import des SubTaskPlanners
+// Import SubTaskPlanners
 
 /**
- * TaskPlanner Refactorisé - Architecture modulaire avec SubTaskPlanners
+ * Refactored TaskPlanner - Modular architecture with SubTaskPlanners
  */
 #[AllowDynamicProperties]
 class TaskPlanner
@@ -46,10 +45,10 @@ class TaskPlanner
     private int $languageId;
     private MetricsCollector $collector;
 
-    // SubTaskPlanners spécialisés
+    // Specialized SubTaskPlanners
     private array $subTaskPlanners = [];
 
-    // Statistiques de planification
+    // Planning statistics
     private array $planningStats = [
         'total_plans_created' => 0,
         'total_steps_planned' => 0,
@@ -60,7 +59,7 @@ class TaskPlanner
     ];
 
     /**
-     * Constructor - Initialise les SubTaskPlanners
+     * Constructor - Initializes SubTaskPlanners
      */
     public function __construct(?int $languageId = null)
     {
@@ -74,10 +73,10 @@ class TaskPlanner
             $this->languageId = $languageId;
         }
 
-        // Initialiser le chat pour la planification
+        // Initialize chat for planning
         $this->initializeChat();
 
-        // Initialiser les SubTaskPlanners spécialisés
+        // Initialize specialized SubTaskPlanners
         $this->initializeSubTaskPlanners();
 
         if ($this->debug) {
@@ -89,16 +88,16 @@ class TaskPlanner
     }
 
     /**
-     * Initialise tous les SubTaskPlanners spécialisés
+     * Initializes all specialized SubTaskPlanners
      */
     private function initializeSubTaskPlanners(): void
     {
-        // Ordre d'évaluation : du plus spécifique au plus général
+        // Evaluation order: from most specific to most general
         $this->subTaskPlanners = [
             'competitor_analysis' => new SubTaskPlannerCompetitorAnalysis($this->debug, $this->securityLogger),
             'pattern_analysis' => new SubTaskPlannerPatternAnalysis($this->debug, $this->securityLogger),
             'price_analytics' => new SubTaskPlannerPriceAnalytics($this->debug, $this->securityLogger),
-            'analytics' => new SubTaskPlannerAnalytics($this->debug, $this->securityLogger), // 🆕 Basic analytics catch-all
+            'analytics' => new SubTaskPlannerAnalytics($this->debug, $this->securityLogger), // Basic analytics catch-all
             'semantic_search' => new SubTaskPlannerSemanticSearch($this->debug, $this->securityLogger),
             'web_search' => new SubTaskPlannerWebSearch($this->debug, $this->securityLogger),
             'standard' => new SubTaskPlannerStandard($this->debug, $this->securityLogger), // Fallback
@@ -114,18 +113,18 @@ class TaskPlanner
     }
 
     /**
-     * Initialise le chat pour le raisonnement de planification
+     * Initializes chat for planning reasoning
      */
     private function initializeChat(): void
     {
         $model = defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : 'gpt-4';
 
-        // Utiliser getChat qui gère automatiquement tous les types de modèles
+        // Use getChat which automatically handles all model types
         $this->chat = Gpt::getChat('', null, null, $model);
 
-        // Vérifier que le chat a été initialisé correctement
+        // Verify chat was initialized correctly
         if ($this->chat === false || $this->chat === null) {
-            // Mode dégradé : utiliser des plans prédéfinis au lieu de l'IA
+            // Degraded mode: use predefined plans instead of AI
             $this->chat = null;
             error_log('TaskPlannerRefactored: Using fallback mode due to missing API key');
             return;
@@ -136,12 +135,17 @@ class TaskPlanner
     }
 
     /**
-     * 🎯 MÉTHODE PRINCIPALE : Crée un plan d'exécution pour une requête
+     * Main method: Creates execution plan for a query
      * 
-     * Architecture refactorisée :
-     * 1. Sélectionne le SubTaskPlanner approprié
-     * 2. Délègue la création du plan
-     * 3. Analyse les dépendances et optimise
+     * Refactored architecture:
+     * 1. Selects appropriate SubTaskPlanner
+     * 2. Delegates plan creation
+     * 3. Analyzes dependencies and optimizes
+     * 
+     * @param array $intent Intent classification result
+     * @param string $query User query
+     * @param array $context Additional context
+     * @return ExecutionPlan Execution plan with steps
      */
     public function createPlan(array $intent, string $query, array $context = []): ExecutionPlan
     {
@@ -169,7 +173,7 @@ class TaskPlanner
                 );
             }
 
-            // 1. Sélectionner le SubTaskPlanner approprié
+            // 1. Select appropriate SubTaskPlanner
             $selectedPlanner = $this->selectSubTaskPlanner($intent, $query);
 
             if ($this->debug) {
@@ -180,7 +184,7 @@ class TaskPlanner
                 );
             }
 
-            // 2. Déléguer la création du plan au SubTaskPlanner
+            // 2. Delegate plan creation to SubTaskPlanner
             $steps = $selectedPlanner->createPlan($intent, $query);
 
             // 🔧 TASK 4.3.4.3: Log the steps created
@@ -193,19 +197,19 @@ class TaskPlanner
                 error_log("    sub_query metadata: " . ($subQuery ?? 'NULL'));
             }
 
-            // 3. Analyser les dépendances
+            // 3. Analyze dependencies
             $dependencies = $this->analyzeDependencies($steps);
 
-            // 4. Optimiser l'ordre d'exécution
+            // 4. Optimize execution order
             $optimizedSteps = $this->optimizeExecutionOrder($steps, $dependencies);
 
-            // 5. Analyser la complexité (pour compatibilité)
+            // 5. Analyze complexity (for compatibility)
             $complexity = $this->analyzeComplexity($intent, $query);
 
-            // 6. Créer le plan d'exécution
+            // 6. Create execution plan
             $plan = new ExecutionPlan($query, $intent, $optimizedSteps, $dependencies, $complexity);
 
-            // Statistiques
+            // Statistics
             $this->updatePlanningStats($selectedPlanner, count($optimizedSteps));
 
             $this->collector->stopTimer('plan_creation');
@@ -227,13 +231,17 @@ class TaskPlanner
                 'error'
             );
 
-            // Fallback : plan simple avec le planificateur standard
+            // Fallback: simple plan with standard planner
             return $this->createFallbackPlan($intent, $query);
         }
     }
 
     /**
-     * 🎯 SÉLECTEUR DE SUBTASKPLANNER : Choisit le planificateur approprié
+     * SubTaskPlanner selector: Chooses appropriate planner
+     * 
+     * @param array $intent Intent classification result
+     * @param string $query User query
+     * @return object Selected SubTaskPlanner instance
      */
     private function selectSubTaskPlanner(array $intent, string $query): object
     {
@@ -257,8 +265,8 @@ class TaskPlanner
             return $this->subTaskPlanners['standard'];
         }
 
-        // Pour les requêtes sémantiques, utiliser directement le planificateur sémantique
-        // Note: L'intent type peut être 'semantic' ou 'semantic_search'
+        // For semantic queries, use semantic planner directly
+        // Note: Intent type can be 'semantic' or 'semantic_search'
         if ($intentType === 'semantic' || $intentType === 'semantic_search') {
             if ($this->debug) {
                 $this->securityLogger->logSecurityEvent(
@@ -269,8 +277,8 @@ class TaskPlanner
             return $this->subTaskPlanners['semantic_search'];
         }
 
-        // Pour les requêtes web_search, utiliser le planificateur web search
-        // ✅ FIX (2025-01-02): Handle both 'web_search' and 'web' (QueryClassifier normalizes web_search → web)
+        // For web_search queries, use web search planner
+        // FIX (2025-01-02): Handle both 'web_search' and 'web' (QueryClassifier normalizes web_search → web)
         if ($intentType === 'web_search' || $intentType === 'web') {
             if ($this->debug) {
                 $this->securityLogger->logSecurityEvent(
@@ -281,14 +289,14 @@ class TaskPlanner
             return $this->subTaskPlanners['web_search'];
         }
 
-        // Pour les requêtes analytics, tester les planificateurs spécialisés
+        // For analytics queries, test specialized planners
         if ($intentType === 'analytics') {
-            // Tester dans l'ordre de spécificité
+            // Test in order of specificity
             $plannersToTest = [
                 'competitor_analysis',  // Most specific
                 'pattern_analysis',     // Specific
                 'price_analytics',      // Specific
-                'analytics'             // 🆕 Basic analytics catch-all (handles COUNT, SUM, AVG, etc.)
+                'analytics'             // Basic analytics catch-all (handles COUNT, SUM, AVG, etc.)
             ];
 
             foreach ($plannersToTest as $plannerKey) {
@@ -305,12 +313,15 @@ class TaskPlanner
             }
         }
 
-        // Fallback : planificateur standard
+        // Fallback: standard planner
         return $this->subTaskPlanners['standard'];
     }
 
     /**
-     * Obtient le nom d'un SubTaskPlanner pour les logs
+     * Gets SubTaskPlanner name for logging
+     * 
+     * @param object $planner SubTaskPlanner instance
+     * @return string Planner name
      */
     private function getSubTaskPlannerName(object $planner): string
     {
@@ -323,7 +334,10 @@ class TaskPlanner
     }
 
     /**
-     * Met à jour les statistiques de planification
+     * Updates planning statistics
+     * 
+     * @param object $planner SubTaskPlanner used
+     * @param int $stepsCount Number of steps created
      */
     private function updatePlanningStats(object $planner, int $stepsCount): void
     {
@@ -337,7 +351,7 @@ class TaskPlanner
         }
         $this->planningStats['planner_usage'][$plannerName]++;
 
-        // Métriques pour monitoring
+        // Metrics for monitoring
         $avgSteps = $this->planningStats['total_plans_created'] > 0 ?
             round($this->planningStats['total_steps_planned'] / $this->planningStats['total_plans_created'], 2) : 0;
 
@@ -346,37 +360,41 @@ class TaskPlanner
     }
 
     /**
-     * Analyse la complexité d'une requête (méthode conservée pour compatibilité)
+     * Analyzes query complexity (method kept for compatibility)
+     * 
+     * @param array $intent Intent classification result
+     * @param string $query User query
+     * @return array Complexity analysis with score and level
      */
     private function analyzeComplexity(array $intent, string $query): array
     {
         $score = 0;
         $factors = [];
 
-        // Traduire la requête en anglais pour analyse multilingue
+        // Translate query to English for multilingual analysis
         // not used : Delete ?
         $translatedQuery = SemanticAgent::translateToEnglish($query, 80);
 
-        // Facteur 1 : Requête hybride
+        // Factor 1: Hybrid query
         if ($intent['is_hybrid'] ?? false) {
             $score += 3;
             $factors[] = 'hybrid_query';
         }
 
-        // Facteur 2 : Contexte conversationnel requis
+        // Factor 2: Conversational context required
         if ($intent['requires_context'] ?? false) {
             $score += 2;
             $factors[] = 'requires_context';
         }
 
-        // Facteur 3 : Multiples entités
+        // Factor 3: Multiple entities
         $entityCount = count($intent['metadata']['entities'] ?? []);
         if ($entityCount > 1) {
             $score += $entityCount;
             $factors[] = "multiple_entities:{$entityCount}";
         }
 
-        // Déterminer le niveau
+        // Determine level
         $level = 'simple';
         if ($score >= 8) {
             $level = 'very_complex';
@@ -394,7 +412,10 @@ class TaskPlanner
     }
 
     /**
-     * Analyse les dépendances entre étapes (conservé de l'original)
+     * Analyzes dependencies between steps (kept from original)
+     * 
+     * @param array $steps Array of TaskStep objects
+     * @return array Dependency graph
      */
     private function analyzeDependencies(array $steps): array
     {
@@ -410,7 +431,7 @@ class TaskPlanner
             ];
         }
 
-        // Construire le graphe inverse (required_by)
+        // Build inverse graph (required_by)
         foreach ($dependencies as $stepId => $data) {
             foreach ($data['depends_on'] as $dependencyId) {
                 if (isset($dependencies[$dependencyId])) {
@@ -423,11 +444,15 @@ class TaskPlanner
     }
 
     /**
-     * Optimise l'ordre d'exécution des étapes (conservé de l'original)
+     * Optimizes execution order of steps (kept from original)
+     * 
+     * @param array $steps Array of TaskStep objects
+     * @param array $dependencies Dependency graph
+     * @return array Optimized steps array
      */
     private function optimizeExecutionOrder(array $steps, array $dependencies): array
     {
-        // Tri topologique pour respecter les dépendances
+        // Topological sort to respect dependencies
         $sorted = [];
         $visited = [];
         $temp = [];
@@ -442,7 +467,14 @@ class TaskPlanner
     }
 
     /**
-     * Tri topologique récursif (conservé de l'original)
+     * Recursive topological sort (kept from original)
+     * 
+     * @param TaskStep $step Current step
+     * @param array $allSteps All steps
+     * @param array $dependencies Dependency graph
+     * @param array $visited Visited steps
+     * @param array $temp Temporary markers
+     * @param array $sorted Sorted result
      */
     private function topologicalSort(
         TaskStep $step,
@@ -455,7 +487,7 @@ class TaskPlanner
         $stepId = $step->getId();
 
         if (isset($temp[$stepId])) {
-            // Cycle détecté - ignorer
+            // Cycle detected - ignore
             return;
         }
 
@@ -465,7 +497,7 @@ class TaskPlanner
 
         $temp[$stepId] = true;
 
-        // Visiter les dépendances d'abord
+        // Visit dependencies first
         $dependsOn = $dependencies[$stepId]['depends_on'] ?? [];
         foreach ($dependsOn as $depId) {
             $depStep = $this->findStepById($allSteps, $depId);
@@ -480,7 +512,11 @@ class TaskPlanner
     }
 
     /**
-     * Trouve une étape par son ID (conservé de l'original)
+     * Finds step by ID (kept from original)
+     * 
+     * @param array $steps Array of TaskStep objects
+     * @param string $id Step ID to find
+     * @return TaskStep|null Found step or null
      */
     private function findStepById(array $steps, string $id): ?TaskStep
     {
@@ -493,11 +529,11 @@ class TaskPlanner
     }
 
     /**
-     * Replanifie une exécution en cas d'échec
+     * Replans execution on failure
      * 
-     * @param ExecutionPlan $failedPlan Plan qui a échoué
-     * @param array $context Contexte de l'échec
-     * @return ExecutionPlan Nouveau plan
+     * @param ExecutionPlan $failedPlan Failed plan
+     * @param array $context Failure context
+     * @return ExecutionPlan New plan
      */
     public function replan(ExecutionPlan $failedPlan, array $context): ExecutionPlan
     {
@@ -505,16 +541,16 @@ class TaskPlanner
         
         if ($this->debug) {
             $this->securityLogger->logSecurityEvent(
-                "Replanification déclenchée pour: " . $failedPlan->getQuery(),
+                "Replan triggered for: " . $failedPlan->getQuery(),
                 'info'
             );
         }
         
-        // Créer un nouveau plan basé sur le contexte d'échec
+        // Create new plan based on failure context
         $query = $failedPlan->getQuery();
         $intent = $failedPlan->getIntent();
         
-        // Créer un plan simplifié en cas d'échec
+        // Create simplified plan on failure
         // Signature: createPlan(array $intent, string $query, array $context = [])
         $newPlan = $this->createPlan($intent, $query, $context);
         $newPlan->markAsReplan($failedPlan, $context);
@@ -523,7 +559,11 @@ class TaskPlanner
     }
 
     /**
-     * Crée un plan de fallback en cas d'erreur
+     * Creates fallback plan on error
+     * 
+     * @param array $intent Intent classification result
+     * @param string $query User query
+     * @return ExecutionPlan Fallback plan
      */
     private function createFallbackPlan(array $intent, string $query): ExecutionPlan
     {
@@ -550,7 +590,9 @@ class TaskPlanner
     }
 
     /**
-     * 📊 Obtient les statistiques de planification avec détail des SubTaskPlanners
+     * Gets planning statistics with SubTaskPlanner details
+     * 
+     * @return array Statistics array
      */
     public function getStats(): array
     {
@@ -572,7 +614,7 @@ class TaskPlanner
     }
 
     /**
-     * Marque un plan comme réussi
+     * Marks plan as successful
      */
     public function markPlanSuccess(): void
     {
@@ -580,7 +622,7 @@ class TaskPlanner
     }
 
     /**
-     * Marque un plan comme échoué
+     * Marks plan as failed
      */
     public function markPlanFailure(): void
     {

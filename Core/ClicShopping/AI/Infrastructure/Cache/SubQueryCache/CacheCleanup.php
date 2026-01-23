@@ -1,7 +1,7 @@
 <?php
 /**
  * Cache Cleanup Manager
- * Gère le nettoyage et la maintenance du cache
+ * Manages cache cleanup and maintenance
  * 
  * @copyright 2008 - https://www.clicshopping.org
  * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
@@ -14,7 +14,7 @@ use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 
 /**
- * Nettoie les entrées expirées et gère la taille du cache
+ * Cleans expired entries and manages cache size
  */
 #[AllowDynamicProperties]
 class CacheCleanup
@@ -31,9 +31,9 @@ class CacheCleanup
   }
   
   /**
-   * Nettoie les entrées expirées
+   * Clean expired entries
    * 
-   * @return int Nombre d'entrées supprimées
+   * @return int Number of deleted entries
    */
   public function cleanExpired(): int
   {
@@ -58,9 +58,9 @@ class CacheCleanup
   }
   
   /**
-   * Limite la taille du cache en supprimant les entrées les moins utilisées
+   * Limit cache size by removing least used entries
    * 
-   * @return int Nombre d'entrées supprimées
+   * @return int Number of deleted entries
    */
   public function limitSize(): int
   {

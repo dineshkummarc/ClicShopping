@@ -13,6 +13,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\OM\Registry;
+use ClicShopping\AI\Config\DomainConfig;
 
 /**
  * ResponseProcessor Class
@@ -51,7 +52,8 @@ class ResponseProcessor
     // Initialize language support
     $this->language = Registry::get('Language');
     $this->languageCode = $this->language->get('code');
-    $this->language->loadDefinitions('rag_response_processor', $this->languageCode, null, 'ClicShoppingAdmin');
+
+    DomainConfig::loadLanguageFile('rag_response_processor');    
 
     if ($this->debug) {
       $this->securityLogger->logSecurityEvent("ResponseProcessor initialized", 'info');

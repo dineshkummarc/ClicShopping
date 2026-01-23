@@ -11,7 +11,7 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
 use AllowDynamicProperties;
-use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 

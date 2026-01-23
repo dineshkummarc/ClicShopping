@@ -75,9 +75,9 @@ class StatisticsTracker
   }
   
   /**
-   * Arrête le tracking et calcule le temps de réponse
+   * Stops tracking and calculates response time
    * 
-   * @return int Temps de réponse en millisecondes
+   * @return int Response time in milliseconds
    */
   public function stopTracking(): int
   {
@@ -167,7 +167,7 @@ class StatisticsTracker
     $this->metrics['tokens_completion'] = $completion;
     $this->metrics['tokens_total'] = $prompt + $completion;
     
-    // Calculer le coût automatiquement
+    // Calculate cost automatically
     $this->calculateCost();
     
     return $this;
@@ -219,7 +219,7 @@ class StatisticsTracker
   }
   
   /**
-   * Calcule le coût API basé sur les tokens et le modèle
+   * Calculates API cost based on tokens and model
    * 
    * @return void
    */
@@ -250,9 +250,9 @@ class StatisticsTracker
   }
   
   /**
-   * Sauvegarde les statistiques dans la base de données
+   * Saves statistics to database
    * 
-   * @return bool True si succès, false sinon
+   * @return bool True if success, false otherwise
    */
   public function save(): bool
   {
@@ -359,9 +359,9 @@ class StatisticsTracker
   }
   
   /**
-   * Sauvegarde complète (statistiques + mise à jour interaction)
+   * Complete save (statistics + interaction update)
    * 
-   * @return bool True si succès, false sinon
+   * @return bool True if success, false otherwise
    */
   public function saveAll(): bool
   {

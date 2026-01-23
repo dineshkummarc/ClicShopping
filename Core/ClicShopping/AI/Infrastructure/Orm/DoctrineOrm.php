@@ -20,7 +20,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\Driver\SimplifiedXmlDriver;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\DBAL\Types\Type;
-use ClicShopping\AI\Domains\CoreAI\Embedding\VectorType;
+use ClicShopping\AI\DomainsAI\CoreAI\Embedding\VectorType;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Security\SecurityLogger;
 
@@ -71,9 +71,6 @@ class DoctrineOrm
   {
     $config = ORMSetup::createConfiguration(true, null, null);
     $config->setMetadataDriverImpl(new SimplifiedXmlDriver([]));
-
-
-
 
     // Désactiver les lazy ghost objects pour éviter la dépendance symfony/var-exporter
     // Cette fonctionnalité nécessite PHP 8.4+ ou symfony/var-exporter 6.4+

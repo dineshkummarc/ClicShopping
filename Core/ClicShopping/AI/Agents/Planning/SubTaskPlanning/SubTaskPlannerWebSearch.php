@@ -2,8 +2,8 @@
 /**
  * SubTaskPlannerWebSearch
  * 
- * Planificateur spécialisé pour la recherche web externe
- * Responsabilité : Créer des plans pour recherches web via SERAPI
+ * Planner spécialisé pour la recherche web externe
+ * Responsibility : Createsr des plans pour recherches web via SERAPI
  * 
  * @copyright 2008 - https://www.clicshopping.org
  * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
@@ -42,7 +42,7 @@ class SubTaskPlannerWebSearch
   }
 
   /**
-   * Détecte si une requête concerne la recherche web
+   * Detects si une requête concerne la recherche web
    * 
    * @param string $query Query to analyze
    * @return bool True if this planner can handle the query
@@ -55,7 +55,7 @@ class SubTaskPlannerWebSearch
   }
 
   /**
-   * Crée le plan de recherche web (1 étape simple)
+   * Creates le plan de recherche web (1 étape simple)
    * 
    * @param array $intent Intent analysis result
    * @param string $query Original query
@@ -69,7 +69,7 @@ class SubTaskPlannerWebSearch
 
     $steps = [];
 
-    // Étape unique: Recherche web via SERAPI
+    // Step unique: Recherche web via SERAPI
     $step1 = new TaskStep(
       'step_1',
       'web_search',
@@ -97,7 +97,7 @@ class SubTaskPlannerWebSearch
   }
 
   /**
-   * Obtient les métadonnées du planificateur
+   * Gets les planner metadata
    * 
    * @return array Planner metadata
    */

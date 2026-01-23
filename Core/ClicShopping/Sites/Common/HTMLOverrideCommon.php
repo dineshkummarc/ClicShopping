@@ -325,4 +325,42 @@ class HTMLOverrideCommon extends HTML
 
     return preg_replace($array_string, $array_replace, $input);
   }
+
+  /**
+   * Clean JSON response from LLM
+   *
+   * Removes markdown code blocks and other formatting
+   *
+   * @param string $response Raw response
+   * @return string Cleaned JSON
+   */
+  public static function cleanJsonResponse(string $response): string
+  {
+    // Remove markdown code blocks
+    $cleaned = preg_replace('/```json\s*/i', '', $response);
+    $cleaned = preg_replace('/```\s*$/i', '', $cleaned);
+
+    // Remove leading/trailing whitespace
+    $cleaned = trim($cleaned);
+
+    // Decode HTML entities (Gpt::getGptResponse applies htmlspecialchars)
+    $cleaned = html_entity_decode($cleaned, ENT_QUOTES, 'UTF-8');
+
+    return $cleaned;
+  }
+
+  /**
+   * Escape HTML content for JavaScript injection
+   * 
+   * @param string $html HTML content to escape
+   * @return string Escaped content safe for JavaScript
+   */
+  public static function escapeForJs(string $html): string
+  {
+    // Remove newlines and escape quotes
+    $html = str_replace(["\r\n", "\r", "\n"], '', $html);
+    $html = str_replace("'", "\\'", $html);
+    $html = str_replace('"', '\\"', $html);
+    return $html;
+  }
 }

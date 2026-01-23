@@ -16,6 +16,7 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use DateTime;
 use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\AI\DomainsAI\DomainRegistry;
 
 
 /**
@@ -34,6 +35,7 @@ class LlmGuardrails
   protected static ?SecurityLogger $securityLogger = null;
   private static mixed $language = null;
   private static bool $debug = false;
+  private static array $suspiciousPatterns = [];
 
   // Pondérations configurables pour le calcul du score global
   private const WEIGHTS = [
@@ -44,59 +46,12 @@ class LlmGuardrails
     'sources' => 0.05
   ];
 
-  // Patterns de détection d'hallucinations e-commerce
-  private const SUSPICIOUS_PATTERNS = [
-    // Impossible growth rates
-    '/growth\s+(?:rate\s+)?of\s+[5-9]\d{2,}\s*%/i', // >500%
-    '/increase\s+of\s+[1-9]\d{3,}\s*%/i', // >1000%
-    '/sales\s+increased\s+by\s+[1-9]\d{3,}\s*%/i',
-
-    // Impossible revenue figures
-    '/revenue\s+of\s+[1-9]\d{8,}/i', // >100M
-    '/turnover\s+of\s+[1-9]\d{8,}/i',
-    '/sales\s+of\s+[1-9]\d{7,}\s*(?:\$|€|dollars?|euros?)/i',
-
-    // Future dates
-    '/in\s+202[5-9]/i', // Future years
-    '/for\s+(?:the\s+)?year\s+202[5-9]/i',
-    '/by\s+202[5-9]/i',
-
-    // Impossible percentages
-    '/[1-9]\d{3,}\s*%/', // >1000%
-    '/conversion\s+rate\s+of\s+[5-9]\d\s*%/i', // >50%
-    '/profit\s+margin\s+of\s+[1-9]\d{2,}\s*%/i', // >100%
-
-    // Hallucinated products
-    '/product\s+(?:non-existent|fake|fictitious|imaginary)/i',
-    '/reference\s+(?:fake|fictitious|imaginary)/i',
-    '/model\s+(?:fake|fictitious|imaginary)/i',
-
-    // Impossible e-commerce metrics
-    '/average\s+(?:cart|basket)\s+(?:value\s+)?of\s+[1-9]\d{4,}/i', // >10k
-    '/margin\s+of\s+[1-9]\d{2,}\s*%/i', // >100%
-    '/roi\s+of\s+[1-9]\d{3,}\s*%/i', // >1000%
-
-    // Temporal hallucinations
-    '/yesterday\s+we\s+sold/i',
-    '/last\s+week\s+(?:the\s+)?sales/i',
-    '/this\s+morning\s+(?:we\s+)?received/i',
-
-    // Fictitious data
-    '/customer\s+(?:fictitious|fake|imaginary)/i',
-    '/order\s+(?:fictitious|fake|imaginary)/i',
-    '/transaction\s+(?:fictitious|fake|imaginary)/i',
-
-    // Impossible claims
-    '/sold\s+out\s+in\s+\d+\s+seconds/i',
-    '/\d+\s+million\s+customers\s+bought/i',
-    '/never\s+been\s+returned/i'
-  ];
-
   /**
    * Initializes the security logger if not already done.
    *
    * This method ensures that the SecurityLogger instance is created only once,
    * following the singleton pattern. It is called before any logging operations.
+   * Also loads hallucination patterns from the active domain app.
    */
   private static function initLogger(): void
   {
@@ -105,7 +60,74 @@ class LlmGuardrails
       self::$debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True';
     }
     
-      self::$language = Registry::get('Language');
+    self::$language = Registry::get('Language');
+    
+    // Load hallucination patterns from domain app
+    self::loadGuardrailsPatterns();
+  }
+
+  /**
+   * Loads hallucination patterns from the active domain app
+   *
+   * This method retrieves the active domain app via DomainRegistry and loads
+   * hallucination patterns from the domain's HallucinationPatterns class.
+   * Falls back to empty array if domain config is not available.
+   */
+  private static function loadGuardrailsPatterns(): void
+  {
+    // If patterns already loaded, skip
+    if (!empty(self::$suspiciousPatterns)) {
+      return;
+    }
+
+    try {
+      // Get DomainRegistry instance
+      $registry = DomainRegistry::getInstance();
+      
+      // Get active domain app
+      $activeApp = $registry->getActiveApp();
+
+      if ($activeApp !== null) {
+        // Try to load patterns from domain app
+        $appClass = get_class($activeApp);
+        $namespace = substr($appClass, 0, strrpos($appClass, '\\'));
+        $patternsClass = $namespace . '\\Classes\\ClicShoppingAdmin\\Patterns\\HallucinationPatterns';
+
+        if (class_exists($patternsClass) && method_exists($patternsClass, 'getSuspiciousPatterns')) {
+          self::$suspiciousPatterns = $patternsClass::getSuspiciousPatterns();
+
+          if (self::$debug) {
+            self::$securityLogger->logSecurityEvent(
+              'Loaded ' . count(self::$suspiciousPatterns) . ' hallucination patterns from domain: ' . $appClass,
+              'info'
+            );
+          }
+
+          return;
+        }
+      }
+
+      // Fallback: Load default patterns (empty for now - domain-specific only)
+      self::$suspiciousPatterns = [];
+
+      if (self::$debug) {
+        self::$securityLogger->logSecurityEvent(
+          'No domain-specific hallucination patterns found, using empty default',
+          'warning'
+        );
+      }
+
+    } catch (\Exception $e) {
+      // Fallback to empty patterns on error
+      self::$suspiciousPatterns = [];
+
+      if (self::$debug) {
+        self::$securityLogger->logSecurityEvent(
+          'Error loading hallucination patterns: ' . $e->getMessage(),
+          'error'
+        );
+      }
+    }
   }
 
   /**
@@ -275,13 +297,15 @@ class LlmGuardrails
    * such as unrealistic sales figures, future dates, or impossible values.
    * Returns details about detected patterns, future dates, impossible values,
    * a reversed score, and a suspect flag.
+   *
+   * Uses domain-specific patterns loaded from the active domain app.
    */
   private static function detectHallucinations(string $result): array
   {
     $suspiciousCount = 0;
     $detectedPatterns = [];
 
-    foreach (self::SUSPICIOUS_PATTERNS as $pattern) {
+    foreach (self::$suspiciousPatterns as $pattern) {
       if (preg_match($pattern, $result, $matches)) {
         $suspiciousCount++;
         $detectedPatterns[] = $matches[0];
@@ -449,7 +473,7 @@ class LlmGuardrails
       $recommendations = self::generateRecommendations($evaluationResults);
       $evaluationResults['recommendations'] = $recommendations;
 
-      // Sauvegarde pour analyse future
+      // Save for future analysis
       self::saveEvaluationResults($question, $result, $evaluationResults);
 
       if (self::$debug) {
@@ -668,7 +692,7 @@ class LlmGuardrails
   {
     self::initLogger();
 
-    // Sauvegarde des résultats d'évaluation pour analyse future // todo
+    // Save evaluation results for future analysis
     $data = [
       'timestamp' => date('Y-m-d H:i:s'),
       'question' => $question,
@@ -957,9 +981,9 @@ class LlmGuardrails
     $validation['source_count'] = $totalSources;
     $validation['valid_citations'] = $validSources;
 
-    // Calculer le score
+    // Calculate score
     if ($totalSources == 0) {
-      $validation['score'] = 0.3; // Pas de sources = score faible mais pas critique
+      $validation['score'] = 0.3;
     } else {
       $validRatio = $validSources / $totalSources;
       $validation['score'] = min(1.0, $validRatio * 0.8 + 0.2);

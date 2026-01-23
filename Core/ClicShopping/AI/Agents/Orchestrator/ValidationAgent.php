@@ -20,14 +20,8 @@ use ClicShopping\AI\Security\DbSecurity;
 
 /**
  * ValidationAgent Class
- *
- * Agent spécialisé dans la validation proactive :
- * - Validation de requêtes SQL AVANT exécution
- * - Vérification de l'existence des tables/colonnes
- * - Analyse de performance (EXPLAIN)
- * - Détection de requêtes dangereuses
- * - Suggestions d'optimisation
- * - Validation de la sécurité
+ * Specialized agent for proactive validation
+ * Handles SQL validation, schema verification, performance analysis, and security checks
  */
 #[AllowDynamicProperties]
 class ValidationAgent
@@ -38,11 +32,9 @@ class ValidationAgent
   private bool $debug;
   private array $schemaCache = [];
 
-  // Configuration
   private int $maxRowsWarning = 10000;
-  private float $securityScoreThreshold = 0.4; // Lowered from 0.7 to reduce false positives
+  private float $securityScoreThreshold = 0.4;
 
-  // Statistiques
   private array $stats = [
     'total_validations' => 0,
     'validations_passed' => 0,
@@ -54,7 +46,7 @@ class ValidationAgent
   /**
    * Constructor
    *
-   * @param string $userId Identifiant utilisateur
+   * @param string $userId User identifier
    */
   public function __construct(string $userId = 'system')
   {
@@ -72,11 +64,11 @@ class ValidationAgent
   }
 
   /**
-   * Valide une requête SQL avant son exécution
+   * Validate SQL query before execution
    *
-   * @param string $sql Requête SQL à valider
-   * @param array $context Contexte additionnel
-   * @return array Résultat de validation
+   * @param string $sql SQL query to validate
+   * @param array $context Additional context
+   * @return array Validation result
    */
   public function validateBeforeExecution(string $sql, array $context = []): array
   {
@@ -94,15 +86,11 @@ class ValidationAgent
     ];
 
     try {
-      // 0. Check if this is actually SQL or natural language
       if (!$this->isSqlQuery($sql)) {
-        // This is a natural language query, not SQL - skip validation
-        if ($this->debug) {
-          $this->securityLogger->logSecurityEvent(
-            "Skipping validation for natural language query: " . substr($sql, 0, 50),
-            'info'
-          );
-        }
+        $this->securityLogger->logSecurityEvent(
+          "Skipping validation for natural language query: " . substr($sql, 0, 50),
+          'info'
+        );
         
         $validation['validation_time'] = microtime(true) - $startTime;
         $this->stats['validations_passed']++;
@@ -178,13 +166,13 @@ class ValidationAgent
         }
       }
 
-      // 5. Vérifications spécifiques selon le type de requête
+      // Validate by query type
       $typeValidation = $this->validateByType($sql);
       if (!empty($typeValidation['warnings'])) {
         $validation['warnings'] = array_merge($validation['warnings'], $typeValidation['warnings']);
       }
 
-      // Mettre à jour les stats
+      // Update stats
       if ($validation['is_valid']) {
         $this->stats['validations_passed']++;
       } else {
@@ -222,21 +210,19 @@ class ValidationAgent
   }
 
   /**
-   * Détecte si l'entrée est une requête SQL ou du langage naturel
+   * Detect if input is SQL query or natural language
    *
-   * @param string $input Texte à analyser
-   * @return bool True si c'est du SQL, false si c'est du langage naturel
+   * @param string $input Text to analyze
+   * @return bool True if SQL, false if natural language
    */
   private function isSqlQuery(string $input): bool
   {
     $input = trim($input);
     
-    // Si vide, ce n'est pas du SQL
     if (empty($input)) {
       return false;
     }
     
-    // Vérifier si ça commence par un mot-clé SQL commun
     $sqlKeywords = [
       'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 
       'ALTER', 'TRUNCATE', 'REPLACE', 'SHOW', 'DESCRIBE', 'EXPLAIN'
@@ -248,27 +234,24 @@ class ValidationAgent
       return true;
     }
     
-    // Si ça contient des mots-clés SQL typiques dans une structure SQL
-    // (pas juste le mot "select" dans une phrase)
     if (preg_match('/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|TRUNCATE)\s+/i', $input)) {
       return true;
     }
     
-    // Si ça contient FROM, WHERE, JOIN qui sont typiques du SQL
     if (preg_match('/\b(FROM|WHERE|JOIN|GROUP BY|ORDER BY|HAVING|LIMIT)\b/i', $input)) {
-      // Vérifier que ce n'est pas juste dans une phrase en langage naturel
-      // Si ça contient aussi SELECT, INSERT, etc., c'est probablement du SQL
       if (preg_match('/\b(SELECT|INSERT|UPDATE|DELETE)\b/i', $input)) {
         return true;
       }
     }
     
-    // Sinon, c'est probablement du langage naturel
     return false;
   }
 
   /**
-   * Valide la syntaxe SQL
+   * Validate SQL syntax
+   * 
+   * @param string $sql SQL query
+   * @return array Validation result
    */
   private function validateSyntax(string $sql): array
   {
@@ -276,19 +259,22 @@ class ValidationAgent
   }
 
   /**
-   * Valide la sécurité de la requête
+   * Validate query security
+   * 
+   * @param string $sql SQL query
+   * @param array $context Additional context
+   * @return array Security validation result
    */
   private function validateSecurity(string $sql, array $context): array
   {
     $issues = [];
     $score = 1.0;
 
-    // 1. Détection de patterns SQL injection
     $injectionPatterns = [
-      ['/--/', 0.3],                          // SQL comments
-      ['/#/', 0.3],                           // MySQL comments
-      ['/\/\*.*?\*\//', 0.3],                 // Block comments
-      ['/\bunion\b.*\bselect\b/i', 0.4],      // UNION attacks (higher penalty)
+      ['/--/', 0.3],
+      ['/#/', 0.3],
+      ['/\/\*.*?\*\//', 0.3],
+      ['/\bunion\b.*\bselect\b/i', 0.4],
       ['/\bor\b\s+\d+\s*=\s*\d+/i', 0.4],     // OR 1=1 attacks (higher penalty)
       ['/\bsleep\s*\(/i', 0.4],               // Time-based attacks
       ['/\bbenchmark\s*\(/i', 0.4],           // Benchmark attacks
@@ -308,26 +294,26 @@ class ValidationAgent
       }
     }
 
-    // 2. Vérifier les opérations destructives
+    // Check destructive operations
     if (preg_match('/\b(DROP|TRUNCATE|DELETE|UPDATE)\b/i', $sql)) {
       $issues[] = "Destructive operation detected";
       $score -= 0.5;
     }
 
-    // 3. Vérifier les requêtes sans WHERE sur UPDATE/DELETE
+    // Check UPDATE/DELETE without WHERE
     if (preg_match('/\b(UPDATE|DELETE)\b/i', $sql) && !preg_match('/\bWHERE\b/i', $sql)) {
       $issues[] = "UPDATE/DELETE without WHERE clause";
       $score -= 0.4;
     }
 
-    // 4. Vérifier SELECT * (warning only, no score penalty for analytics)
+    // Check SELECT * (warning only)
     if (preg_match('/SELECT\s+\*/i', $sql)) {
       $issues[] = "SELECT * detected (performance concern)";
       // Reduced penalty from 0.1 to 0.05 - common in analytics
       $score -= 0.05;
     }
 
-    // 5. Vérifier les sous-requêtes multiples (more lenient threshold)
+    // Check multiple subqueries
     $subqueryCount = preg_match_all('/\(\s*SELECT\b/i', $sql);
     if ($subqueryCount > 5) { // Increased from 3 to 5
       $issues[] = "Multiple subqueries detected ({$subqueryCount})";
@@ -342,7 +328,7 @@ class ValidationAgent
   }
 
   /**
-   * Valide que les tables et colonnes existent
+   * Validate that tables and columns exist
    */
   private function validateSchema(string $sql): array
   {
@@ -356,11 +342,11 @@ class ValidationAgent
       foreach ($tables as $table) {
         $tableName = $this->normalizeTableName($table);
 
-        // Vérifier si la table existe
+        // Check if table exists
         if (!$this->tableExists($tableName)) {
           $errors[] = "Table does not exist: {$tableName}";
 
-          // Suggérer des tables similaires
+          // Suggest similar tables
           $similar = $this->findSimilarTables($tableName);
           if (!empty($similar)) {
             $suggestions[] = "Did you mean: " . implode(', ', $similar) . "?";
@@ -372,11 +358,11 @@ class ValidationAgent
       $columns = $this->extractColumns($sql);
 
       foreach ($columns as $column) {
-        // Vérifier si la colonne existe dans les tables mentionnées
+        // Check if column exists in tables
         if (!$this->columnExistsInTables($column, $tables)) {
           $errors[] = "Column may not exist: {$column}";
 
-          // Suggérer des colonnes similaires
+          // Suggest similar columns
           $similar = $this->findSimilarColumns($column, $tables);
           if (!empty($similar)) {
             $suggestions[] = "Did you mean: " . implode(', ', $similar) . "?";
@@ -407,7 +393,7 @@ class ValidationAgent
   }
 
   /**
-   * Valide la performance avec EXPLAIN
+   * Validate performance with EXPLAIN
    */
   private function validatePerformance(string $sql): array
   {
@@ -423,7 +409,7 @@ class ValidationAgent
       $explainResult = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
       foreach ($explainResult as $row) {
-        // 1. Vérifier le type de scan (more lenient for analytics)
+        // Check scan type
         $type = $row['type'] ?? '';
 
         if ($type === 'ALL') {
@@ -433,7 +419,7 @@ class ValidationAgent
           $score -= 0.05;
         }
 
-        // 2. Vérifier l'utilisation d'index (warning only)
+        // Check index usage
         $possibleKeys = $row['possible_keys'] ?? null;
         $key = $row['key'] ?? null;
 
@@ -443,7 +429,7 @@ class ValidationAgent
           $score -= 0.03;
         }
 
-        // 3. Vérifier le nombre de lignes examinées (more lenient threshold)
+        // Check rows examined
         $rows = (int)($row['rows'] ?? 0);
 
         if ($rows > $this->maxRowsWarning) {
@@ -453,7 +439,7 @@ class ValidationAgent
           $score -= 0.05;
         }
 
-        // 4. Vérifier Extra (warnings only, minimal penalties)
+        // Check Extra field
         $extra = $row['Extra'] ?? '';
 
         if (stripos($extra, 'Using filesort') !== false) {
@@ -495,7 +481,7 @@ class ValidationAgent
   }
 
   /**
-   * Valide selon le type de requête
+   * Validate by query type
    */
   private function validateByType(string $sql): array
   {
@@ -523,7 +509,7 @@ class ValidationAgent
   }
 
   /**
-   * Extrait les noms de tables d'une requête
+   * Extract table names from query
    */
   private function extractTables(string $sql): array
   {
@@ -544,7 +530,7 @@ class ValidationAgent
   }
 
   /**
-   * Extrait les noms de colonnes d'une requête
+   * Extract column names from query
    */
   private function extractColumns(string $sql): array
   {
@@ -595,7 +581,7 @@ class ValidationAgent
   }
 
   /**
-   * Vérifie si une table existe
+   * Check if table exists
    */
   private function tableExists(string $tableName): bool
   {
@@ -605,8 +591,10 @@ class ValidationAgent
 
     try {
       $stmt = $this->db->prepare(
-        "SELECT COUNT(*) FROM information_schema.tables 
-         WHERE table_schema = DATABASE() AND table_name = ?"
+        "SELECT COUNT(*) 
+         FROM information_schema.tables 
+         WHERE table_schema = DATABASE() 
+         AND table_name = ?"
       );
       $stmt->execute([$tableName]);
       $exists = (int)$stmt->fetchColumn() > 0;
@@ -627,7 +615,8 @@ class ValidationAgent
   {
     try {
       $stmt = $this->db->prepare(
-        "SELECT table_name FROM information_schema.tables 
+        "SELECT table_name 
+         FROM information_schema.tables 
          WHERE table_schema = DATABASE()"
       );
       $stmt->execute();
@@ -649,7 +638,7 @@ class ValidationAgent
   }
 
   /**
-   * Vérifie si une colonne existe dans les tables
+   * Check if column exists in tables
    */
   private function columnExistsInTables(string $column, array $tables): bool
   {
@@ -665,7 +654,7 @@ class ValidationAgent
   }
 
   /**
-   * Vérifie si une colonne existe dans une table
+   * Check if column exists in table
    */
   private function columnExistsInTable(string $column, string $table): bool
   {
@@ -677,8 +666,11 @@ class ValidationAgent
 
     try {
       $stmt = $this->db->prepare(
-        "SELECT COUNT(*) FROM information_schema.columns 
-         WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?"
+        "SELECT COUNT(*) 
+        FROM information_schema.columns 
+        WHERE table_schema = DATABASE() 
+        AND table_name = ? 
+        AND column_name = ?"
       );
       $stmt->execute([$table, $column]);
       $exists = (int)$stmt->fetchColumn() > 0;
@@ -704,8 +696,10 @@ class ValidationAgent
 
       try {
         $stmt = $this->db->prepare(
-          "SELECT column_name FROM information_schema.columns 
-           WHERE table_schema = DATABASE() AND table_name = ?"
+          "SELECT column_name 
+           FROM information_schema.columns 
+           WHERE table_schema = DATABASE() 
+           AND table_name = ?"
         );
         $stmt->execute([$tableName]);
         $columns = $stmt->fetchAll(\PDO::FETCH_COLUMN);

@@ -15,24 +15,24 @@ use ClicShopping\OM\Registry;
 
 /**
  * PerformanceStatsCollector Class
+ * Collects and analyzes performance statistics from RAG system
  * 
- * 🔧 MIGRATED TO DOCTRINEORM: December 6, 2025
- * All database queries now use DoctrineOrm instead of PDO
+ * @note Migrated to DoctrineOrm: December 6, 2025
  */
 class PerformanceStatsCollector
 {
-    private $db; // Kept for backward compatibility but not used
+    private $db;
     
     public function __construct()
     {
-        $this->db = Registry::get('Db'); // Kept for backward compatibility
+        $this->db = Registry::get('Db');
     }
     
     /**
-     * Collecte toutes les statistiques de performance
+     * Collect all performance statistics
      * 
-     * @param int $days Nombre de jours à analyser
-     * @return array Statistiques complètes
+     * @param int $days Number of days to analyze
+     * @return array Complete statistics
      */
     public function collectPerformanceStats(int $days = 7): array
     {
@@ -49,7 +49,10 @@ class PerformanceStatsCollector
     }
     
     /**
-     * Vue d'ensemble des statistiques
+     * Get overview statistics
+     * 
+     * @param int $days Number of days
+     * @return array Overview statistics
      */
     private function getOverviewStats(int $days): array
     {
@@ -97,7 +100,10 @@ class PerformanceStatsCollector
     }
     
     /**
-     * Statistiques par agent
+     * Get statistics by agent type
+     * 
+     * @param int $days Number of days
+     * @return array Agent statistics
      */
     private function getStatsByAgent(int $days): array
     {
@@ -143,7 +149,10 @@ class PerformanceStatsCollector
     }
     
     /**
-     * Statistiques par type de classification
+     * Get statistics by classification type
+     * 
+     * @param int $days Number of days
+     * @return array Classification statistics
      */
     private function getStatsByClassification(int $days): array
     {
@@ -178,7 +187,6 @@ class PerformanceStatsCollector
                 ];
             }
             
-            // Calculer les pourcentages
             foreach ($classifications as &$class) {
                 $class['percentage'] = $total > 0 ? round(($class['count'] / $total) * 100, 1) : 0;
             }
@@ -192,7 +200,10 @@ class PerformanceStatsCollector
     }
     
     /**
-     * Distribution des temps de réponse
+     * Get response time distribution
+     * 
+     * @param int $days Number of days
+     * @return array Response time distribution
      */
     private function getResponseTimeDistribution(int $days): array
     {
@@ -230,7 +241,10 @@ class PerformanceStatsCollector
     }
     
     /**
-     * Statistiques d'erreurs
+     * Get error statistics
+     * 
+     * @param int $days Number of days
+     * @return array Error statistics
      */
     private function getErrorStats(int $days): array
     {
@@ -267,7 +281,10 @@ class PerformanceStatsCollector
     }
     
     /**
-     * Statistiques de qualité
+     * Get quality statistics
+     * 
+     * @param int $days Number of days
+     * @return array Quality statistics
      */
     private function getQualityStats(int $days): array
     {
@@ -304,7 +321,10 @@ class PerformanceStatsCollector
     }
     
     /**
-     * Statistiques de cache
+     * Get cache statistics
+     * 
+     * @param int $days Number of days
+     * @return array Cache statistics
      */
     private function getCacheStats(int $days): array
     {
@@ -344,7 +364,10 @@ class PerformanceStatsCollector
     }
     
     /**
-     * Tendances (derniers 7 jours)
+     * Get trends over time
+     * 
+     * @param int $days Number of days
+     * @return array Trend data
      */
     private function getTrends(int $days): array
     {
@@ -384,7 +407,9 @@ class PerformanceStatsCollector
     }
     
     /**
-     * Retourne des statistiques vides
+     * Get empty overview statistics
+     * 
+     * @return array Empty statistics structure
      */
     private function getEmptyOverviewStats(): array
     {

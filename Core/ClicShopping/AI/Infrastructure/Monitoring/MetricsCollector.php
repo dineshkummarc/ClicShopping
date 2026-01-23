@@ -14,12 +14,12 @@ use ClicShopping\AI\Security\SecurityLogger;
 /**
  * MetricsCollector Class
  *
- * Collecteur de métriques temps réel qui :
- * - Intercepte les événements système
- * - Collecte les métriques de performance
- * - Agrège les données en temps réel
- * - Notifie le MonitoringAgent
- * - Supporte des métriques personnalisées
+ * Real-time metrics collector that:
+ * - Intercepts system events
+ * - Collects performance metrics
+ * - Aggregates data in real-time
+ * - Notifies the MonitoringAgent
+ * - Supports custom metrics
  */
 #[AllowDynamicProperties]
 class MetricsCollector
@@ -61,10 +61,10 @@ class MetricsCollector
   }
 
   /**
-   * 🎯 Démarre un timer pour mesurer la durée
+   * Starts a timer to measure duration
    *
-   * @param string $name Nom du timer
-   * @param array $tags Tags optionnels
+   * @param string $name Timer name
+   * @param array $tags Optional tags
    */
   public function startTimer(string $name, array $tags = []): void
   {
@@ -75,10 +75,10 @@ class MetricsCollector
   }
 
   /**
-   * ⏱️ Arrête un timer et enregistre la métrique
+   * Stops a timer and records the metric
    *
-   * @param string $name Nom du timer
-   * @return float|null Durée écoulée ou null si timer non trouvé
+   * @param string $name Timer name
+   * @return float|null Elapsed time or null if timer not found
    */
   public function stopTimer(string $name): ?float
   {
@@ -95,21 +95,21 @@ class MetricsCollector
     $elapsed = microtime(true) - $this->timers[$name]['start'];
     $tags = $this->timers[$name]['tags'];
 
-    // Enregistrer dans l'histogramme
+    // Record in histogram
     $this->recordHistogram($name, $elapsed, $tags);
 
-    // Nettoyer le timer
+    // Clean up timer
     unset($this->timers[$name]);
 
     return $elapsed;
   }
 
   /**
-   * ➕ Incrémente un compteur
+   * Increments a counter
    *
-   * @param string $name Nom du compteur
-   * @param int $value Valeur à ajouter (défaut: 1)
-   * @param array $tags Tags optionnels
+   * @param string $name Counter name
+   * @param int $value Value to add (default: 1)
+   * @param array $tags Optional tags
    */
   public function increment(string $name, int $value = 1, array $tags = []): void
   {
@@ -129,11 +129,11 @@ class MetricsCollector
   }
 
   /**
-   * ➖ Décrémente un compteur
+   * Decrements a counter
    *
-   * @param string $name Nom du compteur
-   * @param int $value Valeur à soustraire (défaut: 1)
-   * @param array $tags Tags optionnels
+   * @param string $name Counter name
+   * @param int $value Value to subtract (default: 1)
+   * @param array $tags Optional tags
    */
   public function decrement(string $name, int $value = 1, array $tags = []): void
   {
@@ -141,11 +141,11 @@ class MetricsCollector
   }
 
   /**
-   * 📏 Enregistre une gauge (valeur instantanée)
+   * Records a gauge (instantaneous value)
    *
-   * @param string $name Nom de la gauge
-   * @param float $value Valeur
-   * @param array $tags Tags optionnels
+   * @param string $name Gauge name
+   * @param float $value Value
+   * @param array $tags Optional tags
    */
   public function gauge(string $name, float $value, array $tags = []): void
   {
@@ -162,11 +162,11 @@ class MetricsCollector
   }
 
   /**
-   * 📊 Enregistre une valeur dans un histogramme
+   * Records a value in a histogram
    *
-   * @param string $name Nom de l'histogramme
-   * @param float $value Valeur
-   * @param array $tags Tags optionnels
+   * @param string $name Histogram name
+   * @param float $value Value
+   * @param array $tags Optional tags
    */
   public function recordHistogram(string $name, float $value, array $tags = []): void
   {
@@ -182,7 +182,7 @@ class MetricsCollector
 
     $this->histograms[$key]['values'][] = $value;
 
-    // Limiter la taille de l'histogramme
+    // Limit histogram size
     if (count($this->histograms[$key]['values']) > 1000) {
       array_shift($this->histograms[$key]['values']);
     }
@@ -191,10 +191,10 @@ class MetricsCollector
   }
 
   /**
-   * 🎯 Enregistre un événement avec métriques
+   * Records an event with metrics
    *
-   * @param string $eventType Type d'événement
-   * @param array $metrics Métriques associées
+   * @param string $eventType Event type
+   * @param array $metrics Associated metrics
    */
   public function recordEvent(string $eventType, array $metrics = []): void
   {
@@ -206,7 +206,7 @@ class MetricsCollector
 
     $this->metricsBuffer[] = $event;
 
-    // Notifier le MonitoringAgent
+    // Notify MonitoringAgent
     if ($this->monitoringAgent) {
       $this->monitoringAgent->recordEvent($eventType, $metrics);
     }
@@ -215,12 +215,12 @@ class MetricsCollector
   }
 
   /**
-   * 🚀 Mesure l'exécution d'une fonction
+   * Measures function execution
    *
-   * @param string $name Nom de la métrique
-   * @param callable $callback Fonction à mesurer
-   * @param array $tags Tags optionnels
-   * @return mixed Résultat de la fonction
+   * @param string $name Metric name
+   * @param callable $callback Function to measure
+   * @param array $tags Optional tags
+   * @return mixed Function result
    */
   public function measure(string $name, callable $callback, array $tags = [])
   {
@@ -246,11 +246,11 @@ class MetricsCollector
   }
 
   /**
-   * 📈 Obtient les statistiques d'un histogramme
+   * Gets histogram statistics
    *
-   * @param string $name Nom de l'histogramme
-   * @param array $tags Tags optionnels
-   * @return array|null Statistiques ou null
+   * @param string $name Histogram name
+   * @param array $tags Optional tags
+   * @return array|null Statistics or null
    */
   public function getHistogramStats(string $name, array $tags = []): ?array
   {
@@ -267,7 +267,7 @@ class MetricsCollector
     $sum = array_sum($values);
     $mean = $sum / $count;
 
-    // Calcul de la médiane
+    // Calculate median
     $middle = floor($count / 2);
     if ($count % 2 === 0) {
       $median = ($values[$middle - 1] + $values[$middle]) / 2;
@@ -282,7 +282,7 @@ class MetricsCollector
     $p95 = $this->percentile($values, 95);
     $p99 = $this->percentile($values, 99);
 
-    // Écart-type
+    // Standard deviation
     $variance = 0;
     foreach ($values as $value) {
       $variance += pow($value - $mean, 2);
@@ -308,7 +308,11 @@ class MetricsCollector
   }
 
   /**
-   * Calcule un percentile
+   * Calculates a percentile
+   * 
+   * @param array $sortedValues Sorted values
+   * @param int $percentile Percentile to calculate
+   * @return float Percentile value
    */
   private function percentile(array $sortedValues, int $percentile): float
   {
@@ -326,9 +330,9 @@ class MetricsCollector
   }
 
   /**
-   * 📊 Obtient toutes les métriques collectées
+   * Gets all collected metrics
    *
-   * @return array Toutes les métriques
+   * @return array All metrics
    */
   public function getAllMetrics(): array
   {
@@ -341,7 +345,9 @@ class MetricsCollector
   }
 
   /**
-   * Obtient les histogrammes avec leurs statistiques
+   * Gets histograms with their statistics
+   * 
+   * @return array Histograms with stats
    */
   private function getHistogramsWithStats(): array
   {
@@ -361,7 +367,11 @@ class MetricsCollector
   }
 
   /**
-   * 🔑 Construit une clé unique pour une métrique avec tags
+   * Builds a unique key for a metric with tags
+   * 
+   * @param string $name Metric name
+   * @param array $tags Tags
+   * @return string Unique key
    */
   private function buildKey(string $name, array $tags): string
   {
@@ -376,7 +386,7 @@ class MetricsCollector
   }
 
   /**
-   * Vérifie si le buffer doit être vidé
+   * Checks if buffer should be flushed
    */
   private function checkBuffer(): void
   {
@@ -386,7 +396,7 @@ class MetricsCollector
   }
 
   /**
-   * 🚀 Vide le buffer et envoie les métriques
+   * Flushes buffer and sends metrics
    */
   public function flush(): void
   {
@@ -401,10 +411,10 @@ class MetricsCollector
       );
     }
 
-    // Traiter le buffer
+    // Process buffer
     foreach ($this->metricsBuffer as $metric) {
-      // Ici on pourrait envoyer à un système externe (StatsD, Prometheus, etc.)
-      // Pour l'instant, on log juste
+      // Here we could send to external system (StatsD, Prometheus, etc.)
+      // For now, just log
       if ($this->debug) {
         $this->logger->logSecurityEvent(
           "Metric: " . json_encode($metric),
@@ -413,12 +423,14 @@ class MetricsCollector
       }
     }
 
-    // Vider le buffer
+    // Clear buffer
     $this->metricsBuffer = [];
   }
 
   /**
-   * 📈 Obtient le résumé des métriques
+   * Gets metrics summary
+   * 
+   * @return array Metrics summary
    */
   public function getSummary(): array
   {
@@ -434,7 +446,10 @@ class MetricsCollector
   }
 
   /**
-   * Obtient les compteurs les plus élevés
+   * Gets top counters
+   * 
+   * @param int $limit Maximum number of counters
+   * @return array Top counters
    */
   private function getTopCounters(int $limit): array
   {
@@ -446,7 +461,10 @@ class MetricsCollector
   }
 
   /**
-   * Obtient les gauges les plus récentes
+   * Gets recent gauges
+   * 
+   * @param int $limit Maximum number of gauges
+   * @return array Recent gauges
    */
   private function getRecentGauges(int $limit): array
   {
@@ -458,7 +476,7 @@ class MetricsCollector
   }
 
   /**
-   * 🗑️ Réinitialise toutes les métriques
+   * Resets all metrics
    */
   public function reset(): void
   {
@@ -477,12 +495,12 @@ class MetricsCollector
   }
 
   /**
-   * 🎯 Enregistre une métrique personnalisée
+   * Records a custom metric
    *
-   * @param string $type Type de métrique (counter, gauge, histogram)
-   * @param string $name Nom de la métrique
-   * @param mixed $value Valeur
-   * @param array $tags Tags optionnels
+   * @param string $type Metric type (counter, gauge, histogram)
+   * @param string $name Metric name
+   * @param mixed $value Value
+   * @param array $tags Optional tags
    */
   public function recordCustomMetric(string $type, string $name, $value, array $tags = []): void
   {
@@ -510,26 +528,26 @@ class MetricsCollector
   }
 
   /**
-   * 📊 Enregistre une métrique avec nom et valeur (TASK 4.4.2.3)
+   * Records a metric with name and value (TASK 4.4.2.3)
    * 
-   * Méthode simplifiée pour enregistrer des métriques de latence et autres.
-   * Détecte automatiquement le type de métrique basé sur le nom.
+   * Simplified method to record latency and other metrics.
+   * Automatically detects metric type based on name.
    *
-   * @param string $name Nom de la métrique (ex: 'orchestrator_query_latency_ms')
-   * @param float $value Valeur de la métrique
-   * @param array $tags Tags optionnels pour filtrage (ex: ['status' => 'success', 'fast_lane' => 'true'])
+   * @param string $name Metric name (e.g. 'orchestrator_query_latency_ms')
+   * @param float $value Metric value
+   * @param array $tags Optional tags for filtering (e.g. ['status' => 'success', 'fast_lane' => 'true'])
    */
   public function recordMetric(string $name, float $value, array $tags = []): void
   {
-    // Déterminer le type de métrique basé sur le nom
+    // Determine metric type based on name
     if (str_contains($name, '_latency') || str_contains($name, '_time') || str_contains($name, '_duration')) {
-      // Métriques de temps → histogramme pour statistiques
+      // Time metrics → histogram for statistics
       $this->recordHistogram($name, $value, $tags);
     } elseif (str_contains($name, '_count') || str_contains($name, '_total')) {
-      // Métriques de comptage → compteur
+      // Count metrics → counter
       $this->increment($name, (int)$value, $tags);
     } else {
-      // Par défaut → gauge (valeur instantanée)
+      // Default → gauge (instantaneous value)
       $this->gauge($name, $value, $tags);
     }
 
@@ -543,7 +561,9 @@ class MetricsCollector
   }
 
   /**
-   * 📊 Export des métriques au format Prometheus
+   * Exports metrics in Prometheus format
+   * 
+   * @return string Prometheus formatted metrics
    */
   public function exportPrometheus(): string
   {
@@ -582,7 +602,10 @@ class MetricsCollector
   }
 
   /**
-   * Formate les tags au format Prometheus
+   * Formats tags in Prometheus format
+   * 
+   * @param array $tags Tags to format
+   * @return string Formatted tags
    */
   private function formatPrometheusTags(array $tags): string
   {
@@ -599,7 +622,9 @@ class MetricsCollector
   }
 
   /**
-   * 📊 Export des métriques au format StatsD
+   * Exports metrics in StatsD format
+   * 
+   * @return array StatsD formatted metrics
    */
   public function exportStatsD(): array
   {
@@ -628,20 +653,17 @@ class MetricsCollector
   }
 
   /**
-   * Destructeur - Vider le buffer
+   * Destructor - Flush buffer
    */
   public function __destruct()
   {
     $this->flush();
   }
 
-
-  ///*************************
-  /// not used
-  /// ************************
-
   /**
-   * 🔄 Met à jour le MonitoringAgent
+   * Updates the MonitoringAgent
+   * 
+   * @param MonitoringAgent $monitoringAgent MonitoringAgent instance
    */
   public function setMonitoringAgent(MonitoringAgent $monitoringAgent): void
   {
@@ -649,7 +671,11 @@ class MetricsCollector
   }
 
   /**
-   * 📊 Obtient la valeur d'un compteur
+   * Gets counter value
+   * 
+   * @param string $name Counter name
+   * @param array $tags Optional tags
+   * @return int|null Counter value or null
    */
   public function getCounterValue(string $name, array $tags = []): ?int
   {
@@ -658,7 +684,11 @@ class MetricsCollector
   }
 
   /**
-   * 📊 Obtient la valeur d'une gauge
+   * Gets gauge value
+   * 
+   * @param string $name Gauge name
+   * @param array $tags Optional tags
+   * @return float|null Gauge value or null
    */
   public function getGaugeValue(string $name, array $tags = []): ?float
   {
@@ -667,7 +697,10 @@ class MetricsCollector
   }
 
   /**
-   * ⏱️ Vérifie si un timer est actif
+   * Checks if a timer is active
+   * 
+   * @param string $name Timer name
+   * @return bool True if timer is active
    */
   public function hasActiveTimer(string $name): bool
   {
@@ -675,15 +708,15 @@ class MetricsCollector
   }
 
   /**
-   * 🧹 Nettoie les vieilles métriques
+   * Cleans old metrics
    *
-   * @param int $maxAge Age maximum en secondes
+   * @param int $maxAge Maximum age in seconds
    */
   public function cleanOldMetrics(int $maxAge = 3600): void
   {
     $cutoff = time() - $maxAge;
 
-    // Nettoyer les gauges
+    // Clean gauges
     foreach ($this->gauges as $key => $gauge) {
       if ($gauge['timestamp'] < $cutoff) {
         unset($this->gauges[$key]);

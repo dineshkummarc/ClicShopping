@@ -80,7 +80,10 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
    */
   private function getOrderDetails(int $order_id): array
   {
-    $Q = $this->app->db->prepare(' SELECT * FROM :table_orders WHERE orders_id = :orders_id');
+    $Q = $this->app->db->prepare(' SELECT * 
+                                  FROM :table_orders 
+                                  WHERE orders_id = :orders_id
+                                  ');
     $Q->bindInt(':orders_id', $order_id);
     $Q->execute();
 

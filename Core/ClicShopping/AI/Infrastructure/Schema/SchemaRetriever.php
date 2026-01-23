@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Schema;
 
-use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
+use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Infrastructure\Prompt\PromptOptimizer;
 use ClicShopping\OM\Registry;

@@ -16,15 +16,15 @@ use ClicShopping\AI\Security\SecurityLogger;
 /**
  * MemoryRetentionService
  *
- * Orchestre les 3 niveaux de mémoire :
- * 1. NIVEAU 0 (Immédiat) : WorkingMemory - Exécution courante
- * 2. NIVEAU 1 (Court terme - 1h) : ConversationHistory - Session actuelle
- * 3. NIVEAU 2 (Long terme - persistent) : Vector Store - Apprentissage permanent
+ * Orchestrates 3 memory levels:
+ * 1. LEVEL 0 (Immediate): WorkingMemory - Current execution
+ * 2. LEVEL 1 (Short term - 1h): ConversationHistory - Active session
+ * 3. LEVEL 2 (Long term - persistent): Vector Store - Permanent learning
  *
- * Flux de rétention :
- * - Les interactions entrent en NIVEAU 1 immédiatement
- * - Après TTL_SHORT_TERM, migration vers NIVEAU 2
- * - NIVEAU 2 persiste indéfiniment (avec nettoyage optionnel)
+ * Retention flow:
+ * - Interactions enter LEVEL 1 immediately
+ * - After TTL_SHORT_TERM, migration to LEVEL 2
+ * - LEVEL 2 persists indefinitely (with optional cleanup)
  */
 #[AllowDynamicProperties]
 class MemoryRetentionService
@@ -37,8 +37,8 @@ class MemoryRetentionService
   private string $userId;
   private int $languageId;
 
-  // Configuration de rétention (en secondes)
-  private const TTL_SHORT_TERM = 3600; // 1 heure
+  // Retention configuration (in seconds)
+  private const TTL_SHORT_TERM = 3600; // 1 hour
 
   public function __construct(
     string $userId = 'system',
@@ -49,7 +49,7 @@ class MemoryRetentionService
     $this->securityLogger = new SecurityLogger();
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
 
-    // Initialiser les trois niveaux
+    // Initialize three levels
     $this->workingMemory = new WorkingMemory();
     $this->conversationMemory = new ConversationMemory($userId, $languageId);
     $this->correctionPatterns = new CorrectionPatterns($userId, $languageId);
@@ -60,10 +60,13 @@ class MemoryRetentionService
   }
 
   /**
-   * 🔴 POINT D'ENTRÉE PRINCIPAL
-   *
-   * Appelé après CHAQUE interaction utilisateur/assistant
-   * Gère automatiquement le flux de rétention
+   * Main entry point
+   * Called after EACH user/assistant interaction
+   * Automatically manages retention flow
+   * 
+   * @param string $userMessage User message
+   * @param string $assistantResponse Assistant response
+   * @param array $metadata Additional metadata
    */
   public function recordInteraction(string $userMessage, string $assistantResponse, array $metadata = []): void
   {
@@ -90,12 +93,12 @@ class MemoryRetentionService
       $this->workingMemory->set('last_interaction_id', $interactionId);
       $this->workingMemory->set('last_interaction_timestamp', $timestamp);
 
-      // ✅ NOUVEAU: Extraire entity_id et language_id du metadata
+      // NEW: Extract entity_id and language_id from metadata
       $entityId = $metadata['entity_id'] ?? 0;
       $languageId = $metadata['language_id'] ?? $this->languageId;
       $entityType = $metadata['entity_type'] ?? 'unknown';
 
-      // Assurer que ce ne sont pas NULL
+      // Ensure they are not NULL
       if (is_null($entityId) || $entityId === '') {
         $entityId = 0;
       }
@@ -115,8 +118,8 @@ class MemoryRetentionService
         'entity_type' => $entityType,
       ]);
 
-      // NIVEAU 1: short term (ConversationHistory)
-      // 🔧 FIX: Pass completeMetadata which includes user_id AND interaction_id
+      // LEVEL 1: short term (ConversationHistory)
+      // FIX: Pass completeMetadata which includes user_id AND interaction_id
       $this->conversationMemory->addInteractionWithSplitting($userMessage, $assistantResponse, $completeMetadata);
 
       // Optional: persist a flat copy into rag_conversation_memory (non-embedding)
@@ -256,11 +259,11 @@ class MemoryRetentionService
       ]);
 
       foreach ($oldInteractions as $record) {
-        // ✓ Déjà dans ConversationMemory (qui utilise MariaDBVectorStore)
-        // ✓ Rien de plus à faire - c'est persistant
+        // Already in ConversationMemory (which uses MariaDBVectorStore)
+        // Nothing more to do - it's persistent
 
-        // ✅ Update rag_memory_retention_log to mark as long-term
-        // 🔧 TASK 4.4.1 PHASE 2: Use DoctrineOrm instead of direct DB access
+        // Update rag_memory_retention_log to mark as long-term
+        // TASK 4.4.1 PHASE 2: Use DoctrineOrm instead of direct DB access
         try {
           $updateSql = "
             UPDATE {$prefix}rag_memory_retention_log 
@@ -304,7 +307,7 @@ class MemoryRetentionService
         }
       }
 
-      // Nettoyer les enregistrements migrés
+      // Clean migrated records
       if ($migrated > 0) {
         $this->workingMemory->set('interactions_to_migrate', []);
         $this->workingMemory->set('last_migration', $now);

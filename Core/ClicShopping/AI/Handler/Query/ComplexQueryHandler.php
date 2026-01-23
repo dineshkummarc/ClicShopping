@@ -24,6 +24,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\OM\Registry;
+use ClicShopping\AI\Config\DomainConfig;
 
 #[AllowDynamicProperties]
 class ComplexQueryHandler
@@ -385,7 +386,7 @@ class ComplexQueryHandler
     {
         // Load language file in English for internal processing
         $CLICSHOPPING_Language = Registry::get('Language');
-        $CLICSHOPPING_Language->loadDefinitions('rag_decomposition_prompt', 'en', null, 'ClicShoppingAdmin');
+        DomainConfig::loadLanguageFile('rag_decomposition_prompt');
         
         // Get prompt template with placeholders
         $prompt = $CLICSHOPPING_Language->getDef('text_rag_decomposition_prompt', [

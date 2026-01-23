@@ -12,7 +12,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Interfaces\IntentAnalyzerInterface;
+use ClicShopping\AI\InterfacesAI\IntentAnalyzerInterface;
 
 /**
  * IntentAnalyzerFactory

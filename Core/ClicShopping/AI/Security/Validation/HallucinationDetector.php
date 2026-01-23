@@ -12,6 +12,7 @@ namespace ClicShopping\AI\Security\Validation;
 
 use AllowDynamicProperties;
 use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\AI\Config\DomainConfig;
 use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 /**
@@ -46,7 +47,7 @@ class HallucinationDetector
 
     // Load language definitions
     $this->language = Registry::get('Language');
-    $this->language->loadDefinitions('rag_out_of_context_detection', 'en', null, 'ClicShoppingAdmin');
+    DomainConfig::loadLanguageFile('rag_out_of_context_detection');
   }
 
   /**

@@ -11,6 +11,7 @@
 
 namespace ClicShopping\AI\Security;
 
+use ClicShopping\AI\Config\DomainConfig;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Cache as OMCache;
@@ -387,10 +388,8 @@ class SemanticSecurityAnalyzer
    */
   private static function loadSecurityPrompt(string $query, string $language): string
   {
-    // Load security prompt definitions for the specified language
-    // loadDefinition() handles language fallback automatically if language not found
-    self::$language->loadDefinitions('rag_security', $language, null, 'ClicShoppingAdmin');
-    
+    DomainConfig::loadLanguageFile('rag_security');
+
     // Wrap query with explicit delimiters for meta-injection protection
     // The prompt template uses {{QUERY}} which will be replaced with this wrapped version
     $wrappedQuery = "[QUERY_START]\n" . $query . "\n[QUERY_END]";

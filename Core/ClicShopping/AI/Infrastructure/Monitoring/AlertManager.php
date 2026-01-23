@@ -16,13 +16,13 @@ use ClicShopping\AI\Infrastructure\Cache\Cache;
 /**
  * AlertManager Class
  *
- * Gestionnaire d'alertes intelligent qui :
- * - Gère les règles d'alerting configurables
- * - Supporte plusieurs canaux de notification
- * - Implémente le rate limiting et grouping
- * - Maintient l'historique des alertes
- * - Permet l'escalation automatique
- * - Gère les alertes avec priorités
+ * Intelligent alert manager that:
+ * - Manages configurable alerting rules
+ * - Supports multiple notification channels
+ * - Implements rate limiting and grouping
+ * - Maintains alert history
+ * - Allows automatic escalation
+ * - Manages alerts with priorities
  */
 #[AllowDynamicProperties]
 class AlertManager
@@ -88,7 +88,11 @@ class AlertManager
   }
 
   /**
-   * Obtient l'historique des alertes
+   * Gets alert history
+   * 
+   * @param array $filters Filters to apply
+   * @param int $limit Maximum number of results
+   * @return array Alert history
    */
   public function getAlertHistory(array $filters = [], int $limit = 100): array
   {
@@ -285,7 +289,7 @@ class AlertManager
   }
 
   /**
-   * Destructeur - Sauvegarder l'état
+   * Destructor - Save state
    */
   public function __destruct()
   {
@@ -314,7 +318,7 @@ class AlertManager
       return false;
     }
 
-    // Créer l'alerte
+    // Create alert
     $alert = $this->createAlert($alertId, $alertData);
 
     // Vérifier grouping
@@ -339,7 +343,7 @@ class AlertManager
       $alertData
     );
 
-    // Sauvegarder
+    // Save
     $this->saveAlertsToCache();
 
     return true;
@@ -488,7 +492,7 @@ class AlertManager
       }
     }
 
-    // Mettre à jour le compteur de notifications
+    // Update notification counter
     if (isset($this->activeAlerts[$alert['id']])) {
       $this->activeAlerts[$alert['id']]['notification_count']++;
       $this->activeAlerts[$alert['id']]['last_notification'] = time();
@@ -669,7 +673,10 @@ class AlertManager
   }
 
   /**
-   * 📋 Obtient toutes les alertes actives
+   * Gets all active alerts
+   * 
+   * @param array $filters Filters to apply
+   * @return array Active alerts
    */
   public function getActiveAlerts(array $filters = []): array
   {
@@ -694,7 +701,9 @@ class AlertManager
   }
 
   /**
-   * 📊 Obtient les statistiques d'alertes
+   * Gets alert statistics
+   * 
+   * @return array Statistics
    */
   public function getStats(): array
   {
@@ -734,7 +743,10 @@ class AlertManager
 
 
   /**
-   * Obtient le rapport d'alertes
+   * Gets alert report
+   * 
+   * @param int $hours Number of hours to analyze
+   * @return array Alert report
    */
   public function getAlertReport(int $hours = 24): array
   {
@@ -825,7 +837,9 @@ class AlertManager
   }
 
   /**
-   * Obtient les alertes critiques non acquittées
+   * Gets critical unacknowledged alerts
+   * 
+   * @return array Critical alerts
    */
   public function getCriticalUnacknowledged(): array
   {

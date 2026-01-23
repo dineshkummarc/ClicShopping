@@ -1,7 +1,7 @@
 <?php
 /**
  * Cache Statistics Manager
- * Collecte et calcule les statistiques du cache
+ * Collects and calculates cache statistics
  * 
  * @copyright 2008 - https://www.clicshopping.org
  * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
@@ -52,7 +52,7 @@ class CacheStatistics
       $totalEntries = $statsQuery->valueInt('total_entries');
       $totalHits = $statsQuery->valueInt('total_hits');
       
-      // Calculer le taux de hit (estimation)
+      // Calculate hit rate (estimation)
       $hitRate = $totalEntries > 0 ? round(($totalHits / ($totalEntries + $totalHits)) * 100, 1) : 0;
       
       return [
@@ -132,12 +132,12 @@ class CacheStatistics
   }
   
   /**
-   * Calcule les économies réalisées grâce au cache
+   * Calculates savings achieved through cache
    * 
-   * @param float $avgResponseTimeWithoutCache Temps moyen sans cache (secondes)
-   * @param int $avgTokensPerQuery Tokens moyens par requête
-   * @param float $costPerToken Coût par token
-   * @return array Économies calculées
+   * @param float $avgResponseTimeWithoutCache Average time without cache (seconds)
+   * @param int $avgTokensPerQuery Average tokens per query
+   * @param float $costPerToken Cost per token
+   * @return array Calculated savings
    */
   public function calculateSavings(
     float $avgResponseTimeWithoutCache = 57.0,

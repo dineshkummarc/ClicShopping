@@ -2,8 +2,8 @@
 /**
  * SubTaskPlannerPriceAnalytics
  * 
- * Planificateur spécialisé pour l'analyse de prix et tarification
- * Responsabilité : Créer des plans pour analyser évolutions, stratégies et tendances tarifaires
+ * Planner spécialisé pour l'analyse de prix et tarification
+ * Responsibility : Createsr des plans pour analyser évolutions, stratégies et tendances tarifaires
  */
 
 namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
@@ -11,7 +11,8 @@ namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
 use AllowDynamicProperties;
 use ClicShopping\AI\Agents\Planning\TaskStep;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\DomainsAI\DomainRegistry;
 
 #[AllowDynamicProperties]
 class SubTaskPlannerPriceAnalytics
@@ -26,7 +27,7 @@ class SubTaskPlannerPriceAnalytics
     }
     
     /**
-     * Détecte si une requête concerne l'analyse de prix
+     * Detects si une requête concerne l'analyse de prix
      */
     public function canHandle(string $query): bool
     {
@@ -65,7 +66,7 @@ class SubTaskPlannerPriceAnalytics
     }
     
     /**
-     * Crée le plan d'analyse de prix (3 étapes déterministes)
+     * Creates le plan d'analyse de prix (3 étapes déterministes)
      */
     public function createPlan(array $intent, string $query): array
     {
@@ -75,7 +76,7 @@ class SubTaskPlannerPriceAnalytics
         
         $steps = [];
 
-        // Étape 1: Collecte des données de prix
+        // Step 1: Collect des données de prix
         $step1 = new TaskStep(
             'step_1',
             'price_data_collection',
@@ -83,7 +84,7 @@ class SubTaskPlannerPriceAnalytics
             [
                 'intent' => $intent,
                 'data_source' => 'internal_pricing',
-                'tables' => ['products', 'specials', 'products_price_history', 'categories'],
+                'tables' => $this->getTablesFromDomain(),
                 'price_types' => ['current_price', 'special_price', 'historical_price', 'cost_price'],
                 'time_range' => 'last_12_months',
                 'depends_on' => [],
@@ -93,7 +94,7 @@ class SubTaskPlannerPriceAnalytics
         );
         $steps[] = $step1;
 
-        // Étape 2: Analyse des tendances tarifaires
+        // Step 2: Analysis des tendances tarifaires
         $step2 = new TaskStep(
             'step_2',
             'price_analysis',
@@ -116,7 +117,7 @@ class SubTaskPlannerPriceAnalytics
         );
         $steps[] = $step2;
 
-        // Étape 3: Synthèse et recommandations
+        // Step 3: Synthèse et recommandations
         $step3 = new TaskStep(
             'step_3',
             'price_insights_synthesis',
@@ -146,7 +147,7 @@ class SubTaskPlannerPriceAnalytics
     }
     
     /**
-     * Obtient les métadonnées du planificateur
+     * Gets les planner metadata
      */
     public function getMetadata(): array
     {
@@ -160,6 +161,34 @@ class SubTaskPlannerPriceAnalytics
             'supports_fallback' => false,
             'requires_external_data' => false
         ];
+    }
+    
+    /**
+     * Get tables from active domain configuration
+     * 
+     * Uses DomainRegistry to load entity configuration from the active domain app.
+     * Falls back to empty array if no domain is active (let LLM discover tables).
+     * 
+     * TASK 2026-01-23: Added for domain-agnostic table loading (Priority 2)
+     * 
+     * @return array Array of table names from domain entity config
+     */
+    private function getTablesFromDomain(): array
+    {
+        $domainApp = DomainRegistry::getInstance()->getActiveApp();
+        if ($domainApp && method_exists($domainApp, 'getEntityConfig')) {
+            $entityConfig = $domainApp->getEntityConfig();
+            $tables = [];
+            foreach ($entityConfig as $entity) {
+                if (isset($entity['table'])) {
+                    $tables[] = $entity['table'];
+                }
+            }
+            return array_unique($tables);
+        }
+        
+        // Fallback: empty array (let LLM discover tables)
+        return [];
     }
     
     private function logDebug(string $message): void

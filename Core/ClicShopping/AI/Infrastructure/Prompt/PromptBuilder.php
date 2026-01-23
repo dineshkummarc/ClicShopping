@@ -14,6 +14,7 @@ use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Cache as OMCache;
 use ClicShopping\AI\Infrastructure\Schema\SchemaRetriever;
+use ClicShopping\AI\Config\DomainConfig;
 
 /**
  * PromptBuilder
@@ -40,7 +41,7 @@ class PromptBuilder
   private string $useCache;
   private ?SchemaRetriever $schemaRetriever = null;
   private string $currentQuery = '';
-  private string $modelName = 'gpt-4o';
+  private string $modelName = 'gpt-4o-mini';
   private string $agentType = 'analytics';
   
   // Supported agent types
@@ -95,7 +96,7 @@ class PromptBuilder
    * @return string Complete system message
    * @throws \InvalidArgumentException If agent type is invalid
    */
-  public function getSystemMessage(string $agentType = 'analytics', string $query = '', string $modelName = 'gpt-4o'): string
+  public function getSystemMessage(string $agentType = 'analytics', string $query = '', string $modelName = 'gpt-4o-mini'): string
   {
     // Validate agent type
     if (!in_array($agentType, self::AGENT_TYPES)) {
@@ -206,7 +207,7 @@ class PromptBuilder
   {
     // Load language definitions from ClicShoppingAdmin/Core/languages/main.txt
     // This loads the AnalyticsAgent prompt definitions in English
-    $this->language->loadDefinitions('rag_analytics_agent', 'en', null, 'ClicShoppingAdmin');
+    DomainConfig::loadLanguageFile('rag_analytics_agent');
     
     // Get all prompt components
     $baseSystemMessage = $this->language->getDef('text_system_message');
@@ -222,6 +223,9 @@ class PromptBuilder
     $responseFormat = $this->language->getDef('text_response_format');
     $text_rag_system_message_template = $this->language->getDef('text_rag_system_message_template');
     $text_rag_system_analytics_rules = $this->language->getDef('text_rag_system_analytics_rules');
+    
+    // TASK 1.1: Add current date context for relative date queries
+    $dateContext = $this->buildDateContext();
     
     // Get table structure instructions (Schema RAG or full schema)
     $tableStructureInstructions = $this->getTableStructureInstructions();
@@ -252,20 +256,21 @@ class PromptBuilder
     }
     
     // Construct complete message in the correct order
-    $completeSystemMessage = $baseSystemMessage . "\n\n" .            // 1. Role and essential ID rules
-      $securityGuidelines . "\n\n" .                                 // 2. Security and prohibition rules
-      $text_rag_system_analytics_rules . "\n\n" .                    // 3. Critical ambiguity rules
-      $tableStructureInstructions . "\n\n" .                         // 4. Database schema (the playground)
-      $entityMetadataGuidelines . "\n\n" .                           // 5. Schema metadata
-      $aggregationRules . "\n\n" .                                   // 6. 🚨 CRITICAL: Aggregation rules (MUST be before SQL generation)
-      $sqlGenerationRules . "\n\n" .                                 // 7. SQL construction rules (JOINs, etc.)
-      $orderCalculation . "\n\n" .                                   // 8. Specific calculation rules
-      $queryExamples . "\n\n" .                                      // 9. Examples (Few-shot learning)
-      $sqlFormatInstructions . "\n\n" .                              // 10. SQL code format
-      $text_multi_query_warning. "\n\n" .                            // 11. Critical multi pattern rules
-      $responseFormat . "\n\n" .                                     // 12. Response format
-      $text_rag_system_message_template . "\n\n" .                   // 13. RAG context
-      $multiTokenRules . "\n\n"                                      // 14. Parsing rules
+    $completeSystemMessage = $baseSystemMessage . "\n\n" . // 1. Role and essential ID rules
+      $dateContext . "\n\n" .                                          // 2. TASK 1.1: Current date context (CRITICAL for relative dates)
+      $securityGuidelines . "\n\n" .                                 // 3. Security and prohibition rules
+      $text_rag_system_analytics_rules . "\n\n" .                    // 4. Critical ambiguity rules
+      $tableStructureInstructions . "\n\n" .                         // 5. Database schema (the playground)
+      $entityMetadataGuidelines . "\n\n" .                           // 6. Schema metadata
+      $aggregationRules . "\n\n" .                                   // 7. 🚨 CRITICAL: Aggregation rules (MUST be before SQL generation)
+      $sqlGenerationRules . "\n\n" .                                 // 8. SQL construction rules (JOINs, etc.)
+      $orderCalculation . "\n\n" .                                   // 9. Specific calculation rules
+      $queryExamples . "\n\n" .                                      // 10. Examples (Few-shot learning)
+      $sqlFormatInstructions . "\n\n" .                              // 11. SQL code format
+      $text_multi_query_warning. "\n\n" .                            // 12. Critical multi pattern rules
+      $responseFormat . "\n\n" .                                     // 13. Response format
+      $text_rag_system_message_template . "\n\n" .                   // 14. RAG context
+      $multiTokenRules . "\n\n"                                      // 15. Parsing rules
     ;
     
     // Replace placeholders with actual values
@@ -300,7 +305,7 @@ class PromptBuilder
   private function buildSystemMessageSemantics(): string
   {
     // Load language definitions for Semantic agent
-    $this->language->loadDefinitions('rag_semantic_agent', 'en', null, 'ClicShoppingAdmin');
+    DomainConfig::loadLanguageFile('rag_semantic_agent');
     
     // Get semantic-specific components
     $baseSystemMessage = $this->language->getDef('text_system_message');
@@ -347,7 +352,7 @@ class PromptBuilder
   private function buildSystemMessageWebSearch(): string
   {
     // Load language definitions for WebSearch agent
-    $this->language->loadDefinitions('rag_websearch_agent', 'en', null, 'ClicShoppingAdmin');
+    DomainConfig::loadLanguageFile('rag_websearch_agent');
     
     // Get websearch-specific components
     $baseSystemMessage = $this->language->getDef('text_system_message');
@@ -394,7 +399,7 @@ class PromptBuilder
   private function buildSystemMessageHybrid(): string
   {
     // Load language definitions for Hybrid agent
-    $this->language->loadDefinitions('rag_hybrid_agent', 'en', null, 'ClicShoppingAdmin');
+    DomainConfig::loadLanguageFile('rag_hybrid_agent');
     
     // Get hybrid-specific components
     $baseSystemMessage = $this->language->getDef('text_system_message');
@@ -530,7 +535,7 @@ class PromptBuilder
   public function enrichWithLastSQL(string $question, string $lastSQL): string
   {
     // Load language definitions for the template
-    $this->language->loadDefinitions('rag_analytics_agent', 'en', null, 'ClicShoppingAdmin');
+    DomainConfig::loadLanguageFile('rag_analytics_agent');
     
     // Get the enrichment template and replace placeholders
     $array = [
@@ -682,5 +687,116 @@ class PromptBuilder
       // Clear specific agent cache
       unset(self::$systemMessageCache[$agentType]);
     }
+  }
+  
+  /**
+   * Build current date context for analytics queries
+   * 
+   * TASK 1.1: Provides current date information and relative date calculations
+   * to help the LLM correctly interpret queries like "last month" across year boundaries.
+   * 
+   * This is CRITICAL for queries in January that reference "last month" (December of previous year).
+   * 
+   * @return string Formatted date context for prompt
+   */
+  private function buildDateContext(): string
+  {
+    // Get current date information
+    $currentDate = date('Y-m-d');
+    $currentYear = (int)date('Y');
+    $currentMonth = (int)date('m');
+    $currentMonthName = date('F');
+    $currentDayOfMonth = (int)date('d');
+    
+    // Calculate last month (handles year boundary correctly)
+    $lastMonthTimestamp = strtotime('first day of last month');
+    $lastMonthStart = date('Y-m-01', $lastMonthTimestamp);
+    $lastMonthEnd = date('Y-m-t', $lastMonthTimestamp);
+    $lastMonthYear = (int)date('Y', $lastMonthTimestamp);
+    $lastMonthNumber = (int)date('m', $lastMonthTimestamp);
+    $lastMonthName = date('F Y', $lastMonthTimestamp);
+    
+    // Calculate this month
+    $thisMonthStart = date('Y-m-01');
+    $thisMonthEnd = date('Y-m-t');
+    
+    // Calculate last year
+    $lastYear = $currentYear - 1;
+    $lastYearStart = $lastYear . '-01-01';
+    $lastYearEnd = $lastYear . '-12-31';
+    
+    // Build the date context section with VERY STRONG language
+    $context = "## 🚨 CRITICAL: CURRENT DATE CONTEXT (MANDATORY FOR ALL DATE QUERIES) 🚨\n\n";
+    $context .= "**YOU MUST READ AND APPLY THIS SECTION FOR ANY QUERY INVOLVING DATES OR TIME PERIODS**\n\n";
+    $context .= "**Today's Date**: {$currentDate} ({$currentMonthName} {$currentDayOfMonth}, {$currentYear})\n";
+    $context .= "**Current Year**: {$currentYear}\n";
+    $context .= "**Current Month**: {$currentMonth} ({$currentMonthName})\n\n";
+    
+    // Add critical warning for year boundaries FIRST
+    if ($currentMonth === 1) {
+      $context .= "[WARN][WARN][WARN] **CRITICAL YEAR BOUNDARY WARNING** [WARN][WARN][WARN]\n\n";
+      $context .= "We are in January {$currentYear}. This means:\n";
+      $context .= "- \"last month\" = December {$lastYear} (NOT December {$currentYear}!)\n";
+      $context .= "- You MUST use year {$lastYear} for December queries\n";
+      $context .= "- Using year {$currentYear} for December will return NO DATA (December {$currentYear} hasn't happened yet!)\n\n";
+      $context .= "**ABSOLUTE RULE**: When in January, \"last month\" queries MUST use the PREVIOUS YEAR.\n\n";
+    }
+    
+    $context .= "### 🎯 MANDATORY Relative Date Mappings (USE THESE EXACT VALUES)\n\n";
+    $context .= "**When user says \"last month\"**:\n";
+    $context .= "- Means: **{$lastMonthName}**\n";
+    $context .= "- Start date: **{$lastMonthStart}**\n";
+    $context .= "- End date: **{$lastMonthEnd}**\n";
+    $context .= "- **REQUIRED SQL**: `date_column >= '{$lastMonthStart}' AND date_column < '{$thisMonthStart}'`\n";
+    if ($currentMonth === 1) {
+      $context .= "- [WARN] **NOTE**: This is December {$lastYear}, NOT December {$currentYear}!\n";
+    }
+    $context .= "\n";
+    
+    $context .= "**When user says \"this month\"**:\n";
+    $context .= "- Means: **{$currentMonthName} {$currentYear}**\n";
+    $context .= "- Start date: **{$thisMonthStart}**\n";
+    $context .= "- End date (today): **{$currentDate}**\n";
+    $context .= "- **REQUIRED SQL**: `date_column >= '{$thisMonthStart}' AND date_column <= '{$currentDate}'`\n\n";
+    
+    $context .= "**When user says \"last year\"**:\n";
+    $context .= "- Means: **{$lastYear}**\n";
+    $context .= "- Start date: **{$lastYearStart}**\n";
+    $context .= "- End date: **{$lastYearEnd}**\n";
+    $context .= "- **REQUIRED SQL**: `date_column >= '{$lastYearStart}' AND date_column <= '{$lastYearEnd}'`\n\n";
+    
+    $context .= "### [OK] SQL Date Best Practices (MANDATORY)\n\n";
+    $context .= "**ABSOLUTE RULE**: ALWAYS use explicit date ranges. NEVER use YEAR() or MONTH() functions.\n\n";
+    $context .= "[OK] **CORRECT** (use this approach):\n";
+    $context .= "```sql\n";
+    $context .= "WHERE date_purchased >= '{$lastMonthStart}' AND date_purchased < '{$thisMonthStart}'\n";
+    $context .= "-- This correctly queries {$lastMonthName}\n";
+    $context .= "```\n\n";
+    $context .= "[ERROR] **INCORRECT** (NEVER do this):\n";
+    $context .= "```sql\n";
+    $context .= "WHERE YEAR(date_purchased) = {$currentYear} AND MONTH(date_purchased) = {$lastMonthNumber}\n";
+    if ($currentMonth === 1) {
+      $context .= "-- This would query December {$currentYear}, which doesn't exist yet!\n";
+      $context .= "-- This will return ZERO RESULTS because December {$currentYear} is in the future!\n";
+    } else {
+      $context .= "-- This is less efficient and can cause errors at year boundaries\n";
+    }
+    $context .= "```\n\n";
+    $context .= "**Why explicit date ranges are MANDATORY**:\n";
+    $context .= "1. [OK] Correctly handles year boundaries (December → January)\n";
+    $context .= "2. [OK] Better index usage (date columns can use indexes)\n";
+    $context .= "3. [OK] Avoids function calls on every row (YEAR(), MONTH())\n";
+    $context .= "4. [OK] More readable and maintainable SQL\n";
+    $context .= "5. [OK] Returns correct data (doesn't query future dates)\n\n";
+    
+    if ($currentMonth === 1) {
+      $context .= "### 🚨 FINAL REMINDER FOR JANUARY 🚨\n\n";
+      $context .= "If the user asks about \"last month\", you MUST:\n";
+      $context .= "1. Use dates from December {$lastYear} (NOT December {$currentYear})\n";
+      $context .= "2. Use the SQL: `date_column >= '{$lastMonthStart}' AND date_column < '{$thisMonthStart}'`\n";
+      $context .= "3. NEVER use YEAR() = {$currentYear} for December queries\n\n";
+    }
+    
+    return $context;
   }
 }
