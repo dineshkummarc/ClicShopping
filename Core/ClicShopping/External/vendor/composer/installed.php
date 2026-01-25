@@ -3,11 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-<<<<<<< HEAD
-        'reference' => 'e10d0eeb63c9165e361ce6360cf256bc6ffb0a9d',
-=======
-        'reference' => 'edff5a4264c8c824b9658d8278eaed4abd146172',
->>>>>>> version4.121
+        'reference' => 'fed0f3c2dfaa9055fc1a00b3ed86d1d00bee7cc7',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -17,11 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-<<<<<<< HEAD
-            'reference' => 'e10d0eeb63c9165e361ce6360cf256bc6ffb0a9d',
-=======
-            'reference' => 'edff5a4264c8c824b9658d8278eaed4abd146172',
->>>>>>> version4.121
+            'reference' => 'fed0f3c2dfaa9055fc1a00b3ed86d1d00bee7cc7',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -366,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => '57ac71b06405e32e77d960bb8490683138573f04',
+            'reference' => '8e1e81cec2f088871c624d2adf767eb5e492ecdf',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(

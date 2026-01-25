@@ -31,17 +31,16 @@ $rows = 0;
           <span
             class="col-md-1 logoHeading"><?php echo HTML::image($CLICSHOPPING_Template->getImageDirectory() . 'categories/stats_products_viewed.gif', $CLICSHOPPING_Products->getDef('heading_title'), '40', '40'); ?></span>
           <span
-            class="col-md-4 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_Products->getDef('heading_title'); ?></span>
+            class="col-md-9 pageHeading"><?php echo '&nbsp;' . $CLICSHOPPING_Products->getDef('heading_title'); ?></span>
+          <span class="col-md-1 text-end"></span>
           <span
-            class="col-md-7 text-end">
-	    <?php 
-	    echo HTML::form('stats_products_viewed', $CLICSHOPPING_Products->link('Products&UpdateStatsProductsViewed&resetViewed=0'));
-	    echo HTML::button($CLICSHOPPING_Products->getDef('button_delete'), $CLICSHOPPING_Products->link('Products&Update&resetViewed=0&page=' . $page), null, 'danger'); 
-	    ?>
-           </form>
-
-	   </span>
-        </div>
+            class="col-md-1 text-end">
+            <?php
+              echo HTML::form('stats_products_viewed', $CLICSHOPPING_Products->link('Products&UpdateStatsProductsViewed&resetViewed=0'));
+              echo HTML::button($CLICSHOPPING_Products->getDef('button_delete'), $CLICSHOPPING_Products->link('Products&Update&resetViewed=0&page=' . $page), null, 'danger');
+            ?>
+      	   </span>
+         </div>
       </div>
     </div>
   </div>
@@ -70,6 +69,7 @@ $rows = 0;
           data-sortable="true"><?php echo $CLICSHOPPING_Products->getDef('table_heading_number'); ?></th>
       <th data-field="products"
           data-sortable="true"><?php echo $CLICSHOPPING_Products->getDef('table_heading_products'); ?></th>
+      <th data-field="null" data-sortable="true"></th>
       <th data-field="viewed" data-sortable="true"
           class="text-center"><?php echo $CLICSHOPPING_Products->getDef('table_heading_viewed'); ?></th>
       <th data-field="clear" data-switchable="false"
