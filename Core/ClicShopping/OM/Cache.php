@@ -655,14 +655,4 @@ class Cache
 
     return $purged;
   }
-
-
-
-
-
-
-
-
-
-
 }

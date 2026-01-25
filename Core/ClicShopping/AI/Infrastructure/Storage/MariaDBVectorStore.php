@@ -11,6 +11,7 @@
 namespace ClicShopping\AI\Infrastructure\Storage;
 
 use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use Doctrine\DBAL\ParameterType;
 use LLPhant\Embeddings\Document;
@@ -19,7 +20,7 @@ use LLPhant\Embeddings\VectorStores\VectorStoreBase;
 use Doctrine\DBAL\Connection;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Security\SecurityLogger;
-
+use ClicShopping\AI\Infrastructure\Cache\Cache;
 
 /**
  * MariaDBVectorStore Class
@@ -318,6 +319,9 @@ class MariaDBVectorStore extends VectorStoreBase
         ]
       );
     }
+
+    // Clear semantic cache to ensure search results reflect new data
+    $this->invalidateSemanticCache($preparedData);
   }
 
   /**
@@ -332,6 +336,50 @@ class MariaDBVectorStore extends VectorStoreBase
   {
     foreach ($documents as $document) {
       $this->addDocument($document);
+    }
+  }
+
+  /**
+   * Invalidates semantic cache when embeddings are updated
+   * 
+   * When new embeddings are added to the vector store, we need to invalidate
+   * the semantic search cache to ensure search results reflect the new data.
+   * 
+   * Strategy:
+   * - Clear all semantic cache (conservative approach)
+   * - Ensures consistency between embeddings and search results
+   * - Cache will be rebuilt on next search (warm-up)
+   * 
+   * @param array $preparedData The prepared data containing entity_type and language_id
+   * @return void
+   */
+  private function invalidateSemanticCache(array $preparedData): void
+  {
+    try {
+      // Extract entity type and language ID from prepared data
+      $entityType = $preparedData['entity_type'] ?? null;
+      $languageId = $preparedData['language_id'] ?? null;
+
+      // Clear semantic cache for this entity type and language
+      // Note: Since cache keys are md5 hashes, we can't selectively clear by entity type
+      // We use a conservative approach: clear all semantic cache
+      $cleared = Cache::clearSemanticCache($entityType, $languageId);
+
+      if ($cleared > 0) {
+        $context = [];
+        if ($entityType !== null) {
+          $context[] = "EntityType: {$entityType}";
+        }
+        if ($languageId !== null) {
+          $context[] = "LanguageId: {$languageId}";
+        }
+        $contextStr = !empty($context) ? ' (' . implode(', ', $context) . ')' : '';
+        
+        error_log("✅ Semantic cache invalidated after embedding update: {$cleared} files cleared{$contextStr}");
+      }
+    } catch (\Exception $e) {
+      // Log error but don't fail the document insertion
+      error_log("⚠️ Failed to invalidate semantic cache: " . $e->getMessage());
     }
   }
 
@@ -503,6 +551,9 @@ class MariaDBVectorStore extends VectorStoreBase
         [$id]
       );
 
+      // PHASE 3 - TASK 3.3: Invalidate semantic cache when embeddings are deleted
+      $this->invalidateSemanticCache([]);
+
       return true;
     } catch (\Exception $e) {
       if ($this->debug == 'True') {
@@ -554,6 +605,8 @@ class MariaDBVectorStore extends VectorStoreBase
         ]
       );
 
+      $this->invalidateSemanticCache($preparedData);
+
       return true;
     } catch (\Exception $e) {
       if ($this->debug == 'True') {
@@ -571,7 +624,7 @@ class MariaDBVectorStore extends VectorStoreBase
   
 
   /**
-   * Add document with separated taxonomy (Task 4.1)
+   * Add document with separated taxonomy
    *
    * This method stores content, metadata, and taxonomy in separate database fields.
    * The embedding is generated only from the content field (no taxonomy).
@@ -713,5 +766,4 @@ class MariaDBVectorStore extends VectorStoreBase
     }
   }
 */
-  
 }

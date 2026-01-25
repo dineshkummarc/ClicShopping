@@ -469,6 +469,12 @@ cache_type_classification = 🎯 Classification Cache
 cache_type_classification_desc = Cached query classifications in Work/Cache/Rag/Classification/
 cache_type_hybrid = 🔀 Hybrid Query Cache
 cache_type_hybrid_desc = Cached multi-temporal query results in Work/Cache/Rag/Hybrid/
+cache_type_semantic = 📋 Semantics Query Cache
+cache_type_semantic_desc = Cached semantics request results in Work/Cache/Rag/Semantic/
+cache_type_sql = 🗂️ Sql Query Cache
+cache_type_sql_desc = Cached Sql request results in Work/Cache/Rag/SQL/
+websearch_cache_statistics = Statisques WebSearch
+
 
 # File Caches
 file_caches_statistics = File Caches Statistics

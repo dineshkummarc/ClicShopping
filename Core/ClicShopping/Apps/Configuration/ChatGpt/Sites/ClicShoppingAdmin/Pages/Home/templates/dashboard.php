@@ -9,6 +9,9 @@
  */
 
 use ClicShopping\AI\Dashboard\Dashboard;
+use ClicShopping\AI\Infrastructure\Cache\ClassificationCache;
+use ClicShopping\AI\Infrastructure\Cache\RagCache;
+use ClicShopping\AI\Infrastructure\Cache\TranslationCache;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
@@ -2146,7 +2149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php
                         // Get Translation Cache Statistics
                         try {
-                          $translationCache = new \ClicShopping\AI\Infrastructure\Cache\TranslationCache();
+                          $translationCache = new TranslationCache();
                           $translationStats = $translationCache->getStatistics();
                         } catch (Exception $e) {
                           $translationStats = ['enabled' => false, 'file_count' => 0, 'total_size_mb' => 0];
@@ -2154,11 +2157,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         // Get Classification Cache Statistics
                         try {
-                          $classificationCache = new \ClicShopping\AI\Infrastructure\Cache\ClassificationCache();
+                          $classificationCache = new ClassificationCache();
                           $classificationStats = $classificationCache->getStatistics();
                         } catch (Exception $e) {
                           $classificationStats = ['enabled' => false, 'file_count' => 0, 'total_size_mb' => 0];
                         }
+
+                          try {
+                            $ragCache = new RagCache();
+                            $ragStats = $ragCache->getStats();
+                          } catch (Exception $e) {
+                            $ragStats = ['enabled' => false, 'file_count' => 0, 'total_size_mb' => 0];
+                          }
                         ?>
                         
                         <!-- Translation Cache -->
@@ -3053,8 +3063,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_translation_ambiguity_desc'); ?></small>
               </label>
             </div>
+
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_semantic" name="cache_types[]" value="semantic" checked>
+              <label class="form-check-label" for="cache_semantic">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_semantic'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_semantic_desc'); ?></small>
+              </label>
+            </div>
+
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_sql" name="cache_types[]" value="sql" checked>
+              <label class="form-check-label" for="cache_sql">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_sql'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_sql_desc'); ?></small>
+              </label>
+            </div>
           </div>
-          
           <!-- Right Column -->
           <div class="col-md-6">
             <div class="form-check mb-2">
@@ -3066,13 +3091,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             
             <div class="form-check mb-2">
-              <input class="form-check-input" type="checkbox" id="cache_embedding" name="cache_types[]" value="embedding" checked>
+              <input class="form-check-input" type="checkbox" id="cache_embedding" name="cache_types[]" value="embeddings" checked>
               <label class="form-check-label" for="cache_embedding">
                 <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_embedding'); ?></strong>
                 <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_embedding_desc'); ?></small>
               </label>
             </div>
-            
+
             <div class="form-check mb-2">
               <input class="form-check-input" type="checkbox" id="cache_embedding_search" name="cache_types[]" value="embedding_search" checked>
               <label class="form-check-label" for="cache_embedding_search">

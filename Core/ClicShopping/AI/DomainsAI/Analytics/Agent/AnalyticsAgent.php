@@ -419,15 +419,47 @@ class AnalyticsAgent
       
       $this->debugLog("--- STEP 2: Generate SQL from question ---", "SQL");
       
-      // Update system message with Schema RAG if enabled
-      $this->updateSystemMessageForQuery($question);
+      $cacheKey = md5($question . json_encode($feedbackContext));
+      $sqlCache = new OMCache($cacheKey, 'Rag/SQL');
       
-      // Enrich question with feedback context for learning
-      $enrichedQuestion = $this->enrichQuestionWithFeedback($question, $feedbackContext);
+      if ($sqlCache->exists(60)) { // 60 minutes = 1 hour
+        $cachedSQL = $sqlCache->get();
+        if ($cachedSQL !== null && !empty($cachedSQL)) {
+          $this->debugLog("✅ SQL CACHE HIT - Duration: < 10ms", "CACHE");
+          $this->securityLogger->logSecurityEvent(
+            "SQL generation cache hit",
+            'info',
+            [
+              'query' => substr($question, 0, 100),
+              'cache_key' => $cacheKey,
+              'time_saved_estimate' => '1-2 seconds'
+            ]
+          );
+          
+          // Use cached SQL directly
+          $rawResponse = $cachedSQL;
+          $sqlQueries = [$cachedSQL];
+          $this->debugLog("Using cached SQL: " . substr($cachedSQL, 0, 200) . "...", "SQL");
+        }
+      }
       
-      $this->debugLog("Calling chat.generateText()...", "SQL");
-      $rawResponse = $this->chat->generateText($enrichedQuestion);
-      $this->debugLog("Raw response from GPT (first 500 chars): " . substr($rawResponse, 0, 500), "SQL");
+      // Generate SQL via LLM only if not cached
+      if (!isset($sqlQueries)) {
+        $this->debugLog("❌ SQL CACHE MISS - Calling LLM", "CACHE");
+        
+        // Update system message with Schema RAG if enabled
+        $this->updateSystemMessageForQuery($question);
+        
+        // Enrich question with feedback context for learning
+        $enrichedQuestion = $this->enrichQuestionWithFeedback($question, $feedbackContext);
+        
+        $this->debugLog("Calling chat.generateText()...", "SQL");
+        $startTime = microtime(true);
+        $rawResponse = $this->chat->generateText($enrichedQuestion);
+        $duration = (microtime(true) - $startTime) * 1000;
+        $this->debugLog("Raw response from GPT (first 500 chars): " . substr($rawResponse, 0, 500), "SQL");
+        $this->debugLog("LLM SQL generation took: " . round($duration, 2) . " ms", "PERFORMANCE");
+      }
 
       // Extract SQL queries (skip if we already have template SQL)
       if (!isset($sqlQueries)) {
@@ -449,6 +481,21 @@ class AnalyticsAgent
       if (empty($sqlQueries[0])) {
         $this->debugLog("ERROR: No valid SQL query extracted", "SQL");
         throw new \Exception('No valid SQL query could be extracted');
+      }
+      
+      // Only cache if this was a fresh LLM generation (not from cache)
+      if (!isset($cachedSQL)) {
+        $this->debugLog("💾 Saving SQL to cache (TTL: 1 hour)", "CACHE");
+        $sqlCache->save($sqlQueries[0]);
+        $this->securityLogger->logSecurityEvent(
+          "SQL generation cached",
+          'info',
+          [
+            'query' => substr($question, 0, 100),
+            'cache_key' => $cacheKey,
+            'sql_length' => strlen($sqlQueries[0])
+          ]
+        );
       }
 
       $this->debugLog("--- STEP 3: Execute SQL queries ---", "EXECUTION");

@@ -18,6 +18,7 @@ use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Memory\ConversationMemory;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Config\DomainConfig;
+use ClicShopping\OM\Cache;
 
 /**
  * SemanticQueryExecutor Class
@@ -78,6 +79,61 @@ class SemanticQueryExecutor
     $startTime = microtime(true);
     
     try {
+      // Extract context parameters for cache key
+      $languageId = $context['language_id'] ?? null;
+      $entityType = $context['entity_type'] ?? null;
+      
+      // Get language ID from Registry if not provided
+      if ($languageId === null && Registry::exists('Language')) {
+        $languageId = Registry::get('Language')->getId();
+      }
+      
+      // Generate cache key: md5(query + entityType + languageId)
+      $cacheKey = md5($query . ($entityType ?? '') . ($languageId ?? ''));
+      
+      // 1. Check cache (namespace: Rag/Semantic, TTL: 30 minutes)
+      $cache = new Cache($cacheKey, 'Rag/Semantic');
+      
+      if ($cache->exists(30)) { // 30 minutes
+        $cachedResults = $cache->get();
+        if ($cachedResults !== null) {
+          $duration = (microtime(true) - $startTime) * 1000;
+          
+          // TASK 3.2: Enhanced logging with performance metrics
+          $logMessage = sprintf(
+            "✅ SEMANTIC CACHE HIT - Duration: %.2f ms | Query: %s | EntityType: %s | LanguageId: %s",
+            $duration,
+            $query,
+            $entityType ?? 'null',
+            $languageId ?? 'null'
+          );
+          
+          if ($this->debug) {
+            $this->logger->logSecurityEvent($logMessage, 'info');
+          }
+          
+          // Always log to error_log for performance tracking
+          error_log($logMessage);
+          
+          return $cachedResults; // ✅ CACHE HIT (< 10ms)
+        }
+      }
+      
+      // 2. Cache miss - execute search
+      $cacheMissMessage = sprintf(
+        "❌ SEMANTIC CACHE MISS - Executing search | Query: %s | EntityType: %s | LanguageId: %s",
+        $query,
+        $entityType ?? 'null',
+        $languageId ?? 'null'
+      );
+      
+      if ($this->debug) {
+        $this->logger->logSecurityEvent($cacheMissMessage, 'info');
+      }
+      
+      // Always log cache miss for performance tracking
+      error_log($cacheMissMessage);
+      
       if ($this->debug) {
         $this->logger->logSecurityEvent(
           "SemanticQueryExecutor: Executing semantic query using RAG: {$query}",
@@ -467,7 +523,6 @@ class SemanticQueryExecutor
 
       // Return standardized response with RAG answer
       // IMPORTANT: Add 'response' field at root level for ResultFormatter compatibility
-      // TASK 4.4.2 REGRESSION FIX: Include entity_id and entity_type in metadata
       $response = AgentResponseHelper::createSemanticResponse(
         $query,
         $results,
@@ -489,12 +544,9 @@ class SemanticQueryExecutor
       $response['response'] = $answer;
       $response['interpretation'] = $answer; // Fallback field name
       
-      // TASK 4.4.2 REGRESSION FIX: Add entity at root level for easy access by other components
       $response['entity_id'] = $entityId;
       $response['entity_type'] = $entityType;
       
-      // TASK 5.2.1.2: Add source_attribution for display in SemanticFormatter
-      // TASK 5.2.1.3: Include document names for "Source: doc1 et doc2" display
       // This provides user-visible information about where the answer came from
       $response['source_attribution'] = [
         'source_type' => $this->language->getDef('text_rag_semantic_source_type'),
@@ -505,6 +557,27 @@ class SemanticQueryExecutor
         'entity_type' => $entityType,
         'entity_id' => $entityId,
       ];
+      
+      $cache->save($response);
+      
+      $cacheDuration = (microtime(true) - $startTime) * 1000;
+      
+      // TASK 3.2: Enhanced logging with complete performance metrics
+      $cacheCompleteMessage = sprintf(
+        "✅ Search completed and cached - Duration: %.2f ms | Query: %s | EntityType: %s | LanguageId: %s | ResultCount: %d",
+        $cacheDuration,
+        $query,
+        $entityType ?? 'null',
+        $languageId ?? 'null',
+        count($response['results'] ?? [])
+      );
+      
+      if ($this->debug) {
+        $this->logger->logSecurityEvent($cacheCompleteMessage, 'info');
+      }
+      
+      // Always log to error_log for performance tracking
+      error_log($cacheCompleteMessage);
       
       return $response;
 

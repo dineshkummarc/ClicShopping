@@ -13,6 +13,7 @@ namespace ClicShopping\AI\DomainsAI\CoreAI\Embedding;
 use AllowDynamicProperties;
 
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Cache;
 
 use LLPhant\Chat\OpenAIChat;
 use LLPhant\Embeddings\DataReader\FileDataReader;
@@ -193,6 +194,9 @@ class NewVector
 
     try {
       if (is_file($path_file_upload)) {
+        // ============================================================================
+        // FILE BRANCH - Cache embeddings for file content
+        // ============================================================================
         $filePath = $path_file_upload;
         $reader = new FileDataReader($filePath);
         $documents = $reader->getDocuments();
@@ -201,6 +205,23 @@ class NewVector
         foreach ($documents as $doc) {
           $totalContent .= $doc->content;
         }
+
+        // Generate cache key (content + model + token_length)
+        $model = CLICSHOPPING_APP_CHATGPT_RA_EMBEDDING_MODEL;
+        $cacheKey = md5($totalContent . $model . $token_length);
+
+        // Check cache (namespace: Rag/Embeddings)
+        $cache = new Cache($cacheKey, 'Rag/Embeddings');
+
+        if ($cache->exists(1440)) { // 1440 minutes = 24h
+          $cachedData = $cache->get();
+          if ($cachedData !== null) {
+            error_log("✅ EMBEDDING CACHE HIT (file) - Duration: < 10ms - Model: {$model}");
+            return $cachedData;
+          }
+        }
+
+        error_log("❌ EMBEDDING CACHE MISS (file) - Calling API - Model: {$model}");
 
         $estimatedTokens = self::estimateTokenCount($totalContent);
 
@@ -211,8 +232,19 @@ class NewVector
         $splitDocuments = DocumentSplitter::splitDocuments($documents, $token_length);
         $formattedDocuments = EmbeddingFormatter::formatEmbeddings($splitDocuments);
 
+        // Generate embeddings (API call 200-500ms)
         $embeddedDocuments = $embeddingGenerator->embedDocuments($formattedDocuments);
+
+        // Save to cache (24h)
+        $cache->save($embeddedDocuments);
+        error_log("✅ EMBEDDING CACHED (file) - TTL: 24h - Model: {$model}");
+
+        return $embeddedDocuments;
+
       } else {
+        // ============================================================================
+        // TEXT BRANCH - Cache embeddings for text content
+        // ============================================================================
         $embeddingGenerator = self::gptEmbeddingsModel();
 
         $estimatedTokens = self::estimateTokenCount($text_description);
@@ -222,6 +254,23 @@ class NewVector
         }
 
         if ($estimatedTokens > $token_length) {
+          // Multi-chunk text - cache the entire result
+          $model = CLICSHOPPING_APP_CHATGPT_RA_EMBEDDING_MODEL;
+          $cacheKey = md5($text_description . $model . $token_length);
+
+          // Check cache (namespace: Rag/Embeddings)
+          $cache = new Cache($cacheKey, 'Rag/Embeddings');
+
+          if ($cache->exists(1440)) { // 1440 minutes = 24h
+            $cachedData = $cache->get();
+            if ($cachedData !== null) {
+              error_log("✅ EMBEDDING CACHE HIT (text-multi) - Duration: < 10ms - Model: {$model}");
+              return $cachedData;
+            }
+          }
+
+          error_log("❌ EMBEDDING CACHE MISS (text-multi) - Calling API - Model: {$model}");
+
           $tempDocument = new Document();
           $tempDocument->content = $text_description;
           $tempDocument->sourceName = 'manual';
@@ -230,9 +279,34 @@ class NewVector
           $splitDocuments = DocumentSplitter::splitDocument($tempDocument, $token_length);
           $formattedDocuments = EmbeddingFormatter::formatEmbeddings($splitDocuments);
 
+          // Generate embeddings (API call 200-500ms)
           $embeddedDocuments = $embeddingGenerator->embedDocuments($formattedDocuments);
 
+          // Save to cache (24h)
+          $cache->save($embeddedDocuments);
+          error_log("✅ EMBEDDING CACHED (text-multi) - TTL: 24h - Model: {$model}");
+
+          return $embeddedDocuments;
+
         } else {
+          // Single-chunk text - cache the result
+          $model = CLICSHOPPING_APP_CHATGPT_RA_EMBEDDING_MODEL;
+          $cacheKey = md5($text_description . $model);
+
+          // Check cache (namespace: Rag/Embeddings)
+          $cache = new Cache($cacheKey, 'Rag/Embeddings');
+
+          if ($cache->exists(1440)) { // 1440 minutes = 24h
+            $cachedData = $cache->get();
+            if ($cachedData !== null) {
+              error_log("✅ EMBEDDING CACHE HIT (text-single) - Duration: < 10ms - Model: {$model}");
+              return $cachedData;
+            }
+          }
+
+          error_log("❌ EMBEDDING CACHE MISS (text-single) - Calling API - Model: {$model}");
+
+          // Generate embedding (API call 200-500ms)
           $embedded = $embeddingGenerator->embedText($text_description);
 
           $document = new Document();
@@ -242,10 +316,14 @@ class NewVector
           $document->sourceType = 'manual';
 
           $embeddedDocuments = [$document];
+
+          // Save to cache (24h)
+          $cache->save($embeddedDocuments);
+          error_log("✅ EMBEDDING CACHED (text-single) - TTL: 24h - Model: {$model}");
+
+          return $embeddedDocuments;
         }
       }
-
-      return $embeddedDocuments;
 
     } catch (\Exception $e) {
       $errorMessage = 'Error generating embeddings: ' . $e->getMessage();

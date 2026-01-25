@@ -903,7 +903,6 @@ class AnalyticsQueryExecutor
   /**
    * Execute parallel SQL generation for multiple interpretations
    * 
-   * TASK 1.3: Implements true parallel execution using ParallelLLMExecutor.
    * Generates SQL for multiple interpretations concurrently to reduce execution time.
    * 
    * @param string $query The analytics query
@@ -926,20 +925,131 @@ class AnalyticsQueryExecutor
       );
     }
     
-    // Build prompts for all interpretations
-    $prompts = [];
+    $cachedResults = [];
+    $uncachedInterpretations = [];
+    $cacheKeys = [];
+    
     foreach ($interpretations as $key => $interpretation) {
+      // Generate cache key: md5(query + interpretation + context)
+      $cacheKey = md5($query . $interpretation . json_encode($context));
+      $cacheKeys[$key] = $cacheKey;
+      
+      // Check cache
+      $sqlCache = new \ClicShopping\OM\Cache($cacheKey, 'Rag/SQL');
+      
+      if ($sqlCache->exists(60)) { // 60 minutes = 1 hour
+        $cachedSQL = $sqlCache->get();
+        if ($cachedSQL !== null && !empty($cachedSQL)) {
+          // Cache hit - store result
+          $cachedResults[$key] = [
+            'success' => true,
+            'interpretation' => $interpretation,
+            'sql_query' => $cachedSQL,
+            'raw_response' => $cachedSQL,
+            'execution_time' => 0,
+            'cached' => true
+          ];
+          
+          if ($this->debug) {
+            $this->logger->logSecurityEvent(
+              "✅ SQL CACHE HIT for interpretation '{$key}' - Duration: < 10ms",
+              'info',
+              [
+                'interpretation' => substr($interpretation, 0, 100),
+                'cache_key' => $cacheKey
+              ]
+            );
+          }
+        } else {
+          // Cache exists but data is invalid - treat as miss
+          $uncachedInterpretations[$key] = $interpretation;
+        }
+      } else {
+        // Cache miss - need to generate
+        $uncachedInterpretations[$key] = $interpretation;
+        
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "❌ SQL CACHE MISS for interpretation '{$key}' - Will call LLM",
+            'info',
+            ['interpretation' => substr($interpretation, 0, 100)]
+          );
+        }
+      }
+    }
+    
+    // Log cache statistics
+    $cacheHits = count($cachedResults);
+    $cacheMisses = count($uncachedInterpretations);
+    $cacheHitRate = count($interpretations) > 0 
+      ? ($cacheHits / count($interpretations)) * 100 
+      : 0;
+    
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "PHASE 4 - TASK 4.2: Cache statistics",
+        'info',
+        [
+          'total_interpretations' => count($interpretations),
+          'cache_hits' => $cacheHits,
+          'cache_misses' => $cacheMisses,
+          'cache_hit_rate' => number_format($cacheHitRate, 1) . '%',
+          'llm_calls_saved' => $cacheHits
+        ]
+      );
+    }
+    
+    // If all interpretations are cached, return immediately
+    if (empty($uncachedInterpretations)) {
+      $totalDuration = microtime(true) - $startTime;
+      
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "✅ ALL interpretations cached - No LLM calls needed!",
+          'info',
+          [
+            'total_time' => number_format($totalDuration * 1000, 2) . 'ms',
+            'interpretations_count' => count($interpretations)
+          ]
+        );
+      }
+      
+      return [
+        'success' => true,
+        'results' => $cachedResults,
+        'total_time' => $totalDuration,
+        'parallel_execution' => false,
+        'all_cached' => true,
+        'performance_metrics' => [
+          'parallel_time' => $totalDuration,
+          'theoretical_sequential_time' => 0,
+          'time_saved' => 0,
+          'percentage_faster' => 100,
+          'max_individual_time' => 0,
+          'avg_individual_time' => 0,
+          'successful_count' => count($cachedResults),
+          'failed_count' => 0,
+          'total_count' => count($interpretations),
+          'cache_hits' => $cacheHits,
+          'cache_misses' => 0
+        ]
+      ];
+    }
+    
+    // Build prompts ONLY for uncached interpretations
+    $prompts = [];
+    foreach ($uncachedInterpretations as $key => $interpretation) {
       $prompts[$key] = $this->buildSQLGenerationPrompt($query, $interpretation, $context);
       
       if ($this->debug) {
         $this->logger->logSecurityEvent(
-          "Built prompt for interpretation '{$key}': " . substr($interpretation, 0, 100),
+          "Built prompt for uncached interpretation '{$key}': " . substr($interpretation, 0, 100),
           'info'
         );
       }
     }
     
-    // Execute all prompts in parallel
+    // Execute prompts in parallel (only for uncached interpretations)
     try {
       $parallelResults = $this->parallelExecutor->executeParallel($prompts);
       
@@ -970,7 +1080,7 @@ class AnalyticsQueryExecutor
           "Parallel SQL generation completed in " . number_format($parallelDuration, 3) . "s",
           'info',
           [
-            'interpretation_count' => count($interpretations),
+            'interpretation_count' => count($uncachedInterpretations),
             'successful' => $successCount,
             'failed' => $failureCount,
             'parallel_time' => number_format($parallelDuration, 3) . 's',
@@ -979,7 +1089,9 @@ class AnalyticsQueryExecutor
             'percentage_faster' => number_format($percentageFaster, 1) . '%',
             'max_individual_time' => number_format($maxIndividualTime, 3) . 's',
             'avg_individual_time' => number_format($avgIndividualTime, 3) . 's',
-            'execution_mode' => 'parallel'
+            'execution_mode' => 'parallel',
+            'cache_hits' => $cacheHits,
+            'cache_misses' => $cacheMisses
           ]
         );
         
@@ -1004,11 +1116,30 @@ class AnalyticsQueryExecutor
           
           $sqlResults[$key] = [
             'success' => true,
-            'interpretation' => $interpretations[$key],
+            'interpretation' => $uncachedInterpretations[$key],
             'sql_query' => $sqlQueries[0] ?? null,
             'raw_response' => $rawResponse,
-            'execution_time' => $result['execution_time'] ?? 0
+            'execution_time' => $result['execution_time'] ?? 0,
+            'cached' => false
           ];
+          
+          // PHASE 4 - TASK 4.2: Cache the generated SQL
+          if (!empty($sqlQueries[0])) {
+            $cacheKey = $cacheKeys[$key];
+            $sqlCache = new \ClicShopping\OM\Cache($cacheKey, 'Rag/SQL');
+            $sqlCache->save($sqlQueries[0]);
+            
+            if ($this->debug) {
+              $this->logger->logSecurityEvent(
+                "💾 Cached SQL for interpretation '{$key}' (TTL: 1 hour)",
+                'info',
+                [
+                  'cache_key' => $cacheKey,
+                  'sql_length' => strlen($sqlQueries[0])
+                ]
+              );
+            }
+          }
           
           if ($this->debug && !empty($sqlQueries[0])) {
             $this->logger->logSecurityEvent(
@@ -1019,9 +1150,10 @@ class AnalyticsQueryExecutor
         } else {
           $sqlResults[$key] = [
             'success' => false,
-            'interpretation' => $interpretations[$key],
+            'interpretation' => $uncachedInterpretations[$key],
             'error' => $result['error'] ?? 'Unknown error',
-            'execution_time' => $result['execution_time'] ?? 0
+            'execution_time' => $result['execution_time'] ?? 0,
+            'cached' => false
           ];
           
           if ($this->debug) {
@@ -1033,10 +1165,13 @@ class AnalyticsQueryExecutor
         }
       }
       
+      // Merge cached results with newly generated results
+      $allResults = array_merge($cachedResults, $sqlResults);
+      
       // TASK 6.1: Include performance metrics in return value
       return [
         'success' => true,
-        'results' => $sqlResults,
+        'results' => $allResults,
         'total_time' => $parallelDuration,
         'parallel_execution' => true,
         'performance_metrics' => [
@@ -1046,9 +1181,12 @@ class AnalyticsQueryExecutor
           'percentage_faster' => $percentageFaster,
           'max_individual_time' => $maxIndividualTime,
           'avg_individual_time' => $avgIndividualTime,
-          'successful_count' => $successCount,
+          'successful_count' => $successCount + $cacheHits,
           'failed_count' => $failureCount,
-          'total_count' => count($interpretations)
+          'total_count' => count($interpretations),
+          'cache_hits' => $cacheHits,
+          'cache_misses' => $cacheMisses,
+          'cache_hit_rate' => $cacheHitRate
         ]
       ];
       
@@ -1057,6 +1195,18 @@ class AnalyticsQueryExecutor
         "Parallel SQL generation failed: " . $e->getMessage(),
         'error'
       );
+      
+      // Return cached results if available, even if parallel execution failed
+      if (!empty($cachedResults)) {
+        return [
+          'success' => true,
+          'results' => $cachedResults,
+          'total_time' => microtime(true) - $startTime,
+          'parallel_execution' => false,
+          'partial_cache' => true,
+          'error' => $e->getMessage()
+        ];
+      }
       
       return [
         'success' => false,

@@ -13,7 +13,11 @@ namespace ClicShopping\AI\Infrastructure\Cache;
 use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\AI\Infrastructure\Cache\Helper\SQLTableParser;
+
 use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
+use ClicShopping\OM\Cache as OMCache;
+use ClicShopping\OM\FileSystem;
 
 use function count;
 use function define;
@@ -59,6 +63,30 @@ class Cache
   private SecurityLogger $securityLogger;
   private const MEMCACHED_PREFIX = 'rag_cache_';
   private const REDIS_PREFIX = 'rag_cache_';
+  
+  // Cache type prefixes for specialized caching
+  public const CACHE_TYPE_EMBEDDING = 'emb_';
+  public const CACHE_TYPE_SEMANTIC = 'sem_';
+  public const CACHE_TYPE_SQL = 'sql_';
+  public const CACHE_TYPE_WEB = 'web_';
+  public const CACHE_TYPE_CONVERSATION = 'conv_';
+  public const CACHE_TYPE_INTENT = 'intent_';
+  public const CACHE_TYPE_TRANSLATION = 'trans_';
+  public const CACHE_TYPE_CLASSIFICATION = 'class_';
+
+  protected static array $memoryCache = [];
+  
+  // Statistics tracking by cache type
+  private array $cacheStats = [
+    'embedding' => ['hits' => 0, 'misses' => 0],
+    'semantic' => ['hits' => 0, 'misses' => 0],
+    'sql' => ['hits' => 0, 'misses' => 0],
+    'web' => ['hits' => 0, 'misses' => 0],
+    'conversation' => ['hits' => 0, 'misses' => 0],
+    'intent' => ['hits' => 0, 'misses' => 0],
+    'translation' => ['hits' => 0, 'misses' => 0],
+    'classification' => ['hits' => 0, 'misses' => 0]
+  ];
 
   /**
    * Cache constructor.
@@ -172,21 +200,24 @@ class Cache
   /**
    * Gets statistics about the prompt cache.
    *
-   * Returns information about the cache status, number of entries, and source.
+   * Returns information about the cache status, number of entries, source, and statistics by type.
    * If Memcached is used, returns Memcached stats; otherwise, returns file cache stats.
    *
    * @return array An array containing cache statistics with keys:
    * - 'enabled': boolean indicating if cache is enabled
    * - 'entries': integer count of cached items
-   * - 'source' (optional): 'memcached' if using Memcached
+   * - 'source' (optional): 'memcached', 'redis', or 'file'
    * - 'size_bytes' (optional): size of file cache in bytes
    * - 'cache_file' (optional): file path of the cache file
+   * - 'stats_by_type': array of hit/miss statistics by cache type
    */
   public function getPromptCacheStats(): array
   {
+    $baseStats = [];
+    
     if ($this->useRedis && $this->redis) {
       $entries = count($this->redis->keys(self::REDIS_PREFIX . '*'));
-      return [
+      $baseStats = [
         'enabled' => true,
         'entries' => $entries,
         'source' => 'redis'
@@ -194,19 +225,25 @@ class Cache
     } elseif ($this->useMemcached && $this->memcached) {
       $stats = $this->memcached->getStats();
       $entries = array_sum(array_column($stats, 'curr_items'));
-      return [
+      $baseStats = [
         'enabled' => true,
         'entries' => $entries,
         'source' => 'memcached'
       ];
     } else {
-      return [
+      $baseStats = [
         'enabled' => $this->enablePromptCache,
         'entries' => count($this->promptCache),
         'size_bytes' => strlen(json_encode($this->promptCache)),
-        'cache_file' => $this->getPromptCacheFilePath()
+        'cache_file' => $this->getPromptCacheFilePath(),
+        'source' => 'file'
       ];
     }
+    
+    // Add statistics by type
+    $baseStats['stats_by_type'] = $this->cacheStats;
+    
+    return $baseStats;
   }
 
   /**
@@ -502,5 +539,653 @@ class Cache
     }
 
     return null;
+  }
+
+  /**
+   * Caches an embedding for a given content and model.
+   *
+   * Stores the embedding with a cache key based on content and model.
+   * Uses the CACHE_TYPE_EMBEDDING prefix for organization.
+   *
+   * @param string $content The content that was embedded
+   * @param string $model The embedding model used
+   * @param mixed $embedding The embedding vector/data to cache
+   * @param int $ttl Time-to-live in seconds (default: 86400 = 24 hours)
+   * @return void
+   */
+  public function cacheEmbedding(string $content, string $model, $embedding, int $ttl = 86400): void
+  {
+    if (!$this->enablePromptCache) {
+      return;
+    }
+
+    $cacheKey = self::CACHE_TYPE_EMBEDDING . md5($content . $model);
+    $data = [
+      'content' => $content,
+      'model' => $model,
+      'embedding' => $embedding,
+      'created' => time(),
+      'last_used' => time(),
+      'ttl' => $ttl
+    ];
+
+    if ($this->useRedis && $this->redis) {
+      $this->redis->setex(self::REDIS_PREFIX . $cacheKey, $ttl, json_encode($data));
+    } elseif ($this->useMemcached && $this->memcached) {
+      $this->memcached->set(self::MEMCACHED_PREFIX . $cacheKey, $data, $ttl);
+    }
+
+    // Always maintain file cache as backup
+    $this->promptCache[$cacheKey] = $data;
+    $this->savePromptCache();
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent("Embedding cached for model: {$model}", 'info');
+    }
+  }
+
+  /**
+   * Retrieves a cached embedding for the given content and model.
+   *
+   * @param string $content The content to get the embedding for
+   * @param string $model The embedding model used
+   * @return mixed|null The cached embedding if found, null otherwise
+   */
+  public function getCachedEmbedding(string $content, string $model)
+  {
+    if (!$this->enablePromptCache) {
+      return null;
+    }
+
+    $cacheKey = self::CACHE_TYPE_EMBEDDING . md5($content . $model);
+
+    if ($this->useRedis && $this->redis) {
+      $data = $this->redis->get(self::REDIS_PREFIX . $cacheKey);
+      if ($data !== false) {
+        $data = json_decode($data, true);
+        if ($data !== null) {
+          $this->cacheStats['embedding']['hits']++;
+          $data['last_used'] = time();
+          $this->redis->setex(self::REDIS_PREFIX . $cacheKey, $data['ttl'], json_encode($data));
+          return $data['embedding'];
+        }
+      }
+    } elseif ($this->useMemcached && $this->memcached) {
+      $data = $this->memcached->get(self::MEMCACHED_PREFIX . $cacheKey);
+      if ($data !== false) {
+        $this->cacheStats['embedding']['hits']++;
+        $data['last_used'] = time();
+        $this->memcached->set(self::MEMCACHED_PREFIX . $cacheKey, $data, $data['ttl']);
+        return $data['embedding'];
+      }
+    }
+
+    if (isset($this->promptCache[$cacheKey])) {
+      $data = $this->promptCache[$cacheKey];
+      if (time() - $data['created'] <= $data['ttl']) {
+        $this->cacheStats['embedding']['hits']++;
+        $this->promptCache[$cacheKey]['last_used'] = time();
+        return $data['embedding'];
+      }
+      unset($this->promptCache[$cacheKey]);
+    }
+
+    $this->cacheStats['embedding']['misses']++;
+    return null;
+  }
+
+  /**
+   * Caches a semantic search result.
+   *
+   * Stores the search results with a cache key based on query, entity type, and language.
+   * Uses the CACHE_TYPE_SEMANTIC prefix for organization.
+   *
+   * @param string $query The search query
+   * @param string $entityType The entity type being searched
+   * @param int $languageId The language ID
+   * @param array $results The search results to cache
+   * @param int $ttl Time-to-live in seconds (default: 1800 = 30 minutes)
+   * @return void
+   */
+  public function cacheSemanticSearch(string $query, string $entityType, int $languageId, array $results, int $ttl = 1800): void
+  {
+    if (!$this->enablePromptCache) {
+      return;
+    }
+
+    $cacheKey = self::CACHE_TYPE_SEMANTIC . md5($query . $entityType . $languageId);
+    $data = [
+      'query' => $query,
+      'entity_type' => $entityType,
+      'language_id' => $languageId,
+      'results' => $results,
+      'created' => time(),
+      'last_used' => time(),
+      'ttl' => $ttl
+    ];
+
+    if ($this->useRedis && $this->redis) {
+      $this->redis->setex(self::REDIS_PREFIX . $cacheKey, $ttl, json_encode($data));
+    } elseif ($this->useMemcached && $this->memcached) {
+      $this->memcached->set(self::MEMCACHED_PREFIX . $cacheKey, $data, $ttl);
+    }
+
+    // Always maintain file cache as backup
+    $this->promptCache[$cacheKey] = $data;
+    $this->savePromptCache();
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent("Semantic search cached for entity: {$entityType}", 'info');
+    }
+  }
+
+  /**
+   * Retrieves a cached semantic search result.
+   *
+   * @param string $query The search query
+   * @param string $entityType The entity type being searched
+   * @param int $languageId The language ID
+   * @return array|null The cached search results if found, null otherwise
+   */
+  public function getCachedSemanticSearch(string $query, string $entityType, int $languageId): ?array
+  {
+    if (!$this->enablePromptCache) {
+      return null;
+    }
+
+    $cacheKey = self::CACHE_TYPE_SEMANTIC . md5($query . $entityType . $languageId);
+
+    if ($this->useRedis && $this->redis) {
+      $data = $this->redis->get(self::REDIS_PREFIX . $cacheKey);
+      if ($data !== false) {
+        $data = json_decode($data, true);
+        if ($data !== null) {
+          $this->cacheStats['semantic']['hits']++;
+          $data['last_used'] = time();
+          $this->redis->setex(self::REDIS_PREFIX . $cacheKey, $data['ttl'], json_encode($data));
+          return $data['results'];
+        }
+      }
+    } elseif ($this->useMemcached && $this->memcached) {
+      $data = $this->memcached->get(self::MEMCACHED_PREFIX . $cacheKey);
+      if ($data !== false) {
+        $this->cacheStats['semantic']['hits']++;
+        $data['last_used'] = time();
+        $this->memcached->set(self::MEMCACHED_PREFIX . $cacheKey, $data, $data['ttl']);
+        return $data['results'];
+      }
+    }
+
+    if (isset($this->promptCache[$cacheKey])) {
+      $data = $this->promptCache[$cacheKey];
+      if (time() - $data['created'] <= $data['ttl']) {
+        $this->cacheStats['semantic']['hits']++;
+        $this->promptCache[$cacheKey]['last_used'] = time();
+        return $data['results'];
+      }
+      unset($this->promptCache[$cacheKey]);
+    }
+
+    $this->cacheStats['semantic']['misses']++;
+    return null;
+  }
+
+  /**
+   * Caches a SQL query generated from natural language with table tracking.
+   *
+   * Stores the SQL query with a cache key based on natural query and context.
+   * Uses the CACHE_TYPE_SQL prefix for organization.
+   * Automatically extracts and stores table names for intelligent invalidation.
+   *
+   * @param string $naturalQuery The natural language query
+   * @param string $sqlQuery The generated SQL query
+   * @param array $results The query results
+   * @param array $context Additional context used for generation
+   * @param int $ttl Time-to-live in seconds (default: 3600 = 1 hour)
+   * @return void
+   */
+  public function cacheSQLQuery(string $naturalQuery, string $sqlQuery, array $results, array $context, int $ttl = 3600): void
+  {
+    if (!$this->enablePromptCache) {
+      return;
+    }
+
+    // Extract tables from SQL query for intelligent invalidation
+    $tablesUsed = \ClicShopping\AI\Infrastructure\Cache\Helper\SQLTableParser::extractTables($sqlQuery);
+
+    $cacheKey = self::CACHE_TYPE_SQL . md5($naturalQuery . json_encode($context));
+    $data = [
+      'natural_query' => $naturalQuery,
+      'sql_query' => $sqlQuery,
+      'results' => $results,
+      'context' => $context,
+      'tables_used' => $tablesUsed, // Store table names for invalidation
+      'created' => time(),
+      'last_used' => time(),
+      'ttl' => $ttl
+    ];
+
+    if ($this->useRedis && $this->redis) {
+      $this->redis->setex(self::REDIS_PREFIX . $cacheKey, $ttl, json_encode($data));
+    } elseif ($this->useMemcached && $this->memcached) {
+      $this->memcached->set(self::MEMCACHED_PREFIX . $cacheKey, $data, $ttl);
+    }
+
+    // Always maintain file cache as backup
+    $this->promptCache[$cacheKey] = $data;
+    $this->savePromptCache();
+
+    if ($this->debug) {
+      $tablesList = implode(', ', $tablesUsed);
+      $this->securityLogger->logSecurityEvent("SQL query cached: {$naturalQuery} (tables: {$tablesList})", 'info');
+    }
+  }
+
+  /**
+   * Retrieves a cached SQL query.
+   *
+   * @param string $naturalQuery The natural language query
+   * @param array $context Additional context used for generation
+   * @return array|null Array with 'sql_query' and 'results' if found, null otherwise
+   */
+  public function getCachedSQLQuery(string $naturalQuery, array $context): ?array
+  {
+    if (!$this->enablePromptCache) {
+      return null;
+    }
+
+    $cacheKey = self::CACHE_TYPE_SQL . md5($naturalQuery . json_encode($context));
+
+    if ($this->useRedis && $this->redis) {
+      $data = $this->redis->get(self::REDIS_PREFIX . $cacheKey);
+      if ($data !== false) {
+        $data = json_decode($data, true);
+        if ($data !== null) {
+          $this->cacheStats['sql']['hits']++;
+          $data['last_used'] = time();
+          $this->redis->setex(self::REDIS_PREFIX . $cacheKey, $data['ttl'], json_encode($data));
+          return [
+            'sql_query' => $data['sql_query'],
+            'results' => $data['results']
+          ];
+        }
+      }
+    } elseif ($this->useMemcached && $this->memcached) {
+      $data = $this->memcached->get(self::MEMCACHED_PREFIX . $cacheKey);
+      if ($data !== false) {
+        $this->cacheStats['sql']['hits']++;
+        $data['last_used'] = time();
+        $this->memcached->set(self::MEMCACHED_PREFIX . $cacheKey, $data, $data['ttl']);
+        return [
+          'sql_query' => $data['sql_query'],
+          'results' => $data['results']
+        ];
+      }
+    }
+
+    if (isset($this->promptCache[$cacheKey])) {
+      $data = $this->promptCache[$cacheKey];
+      if (time() - $data['created'] <= $data['ttl']) {
+        $this->cacheStats['sql']['hits']++;
+        $this->promptCache[$cacheKey]['last_used'] = time();
+        return [
+          'sql_query' => $data['sql_query'],
+          'results' => $data['results']
+        ];
+      }
+      unset($this->promptCache[$cacheKey]);
+    }
+
+    $this->cacheStats['sql']['misses']++;
+    return null;
+  }
+
+  /**
+   * Caches a web search result.
+   *
+   * Stores the search results with a cache key based on the query.
+   * Uses the CACHE_TYPE_WEB prefix for organization.
+   *
+   * @param string $query The search query
+   * @param array $results The search results to cache
+   * @param int $ttl Time-to-live in seconds (default: 7200 = 2 hours)
+   * @return void
+   */
+  public function cacheWebSearch(string $query, array $results, int $ttl = 7200): void
+  {
+    if (!$this->enablePromptCache) {
+      return;
+    }
+
+    $cacheKey = self::CACHE_TYPE_WEB . md5($query);
+    $data = [
+      'query' => $query,
+      'results' => $results,
+      'created' => time(),
+      'last_used' => time(),
+      'ttl' => $ttl
+    ];
+
+    if ($this->useRedis && $this->redis) {
+      $this->redis->setex(self::REDIS_PREFIX . $cacheKey, $ttl, json_encode($data));
+    } elseif ($this->useMemcached && $this->memcached) {
+      $this->memcached->set(self::MEMCACHED_PREFIX . $cacheKey, $data, $ttl);
+    }
+
+    // Always maintain file cache as backup
+    $this->promptCache[$cacheKey] = $data;
+    $this->savePromptCache();
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent("Web search cached: {$query}", 'info');
+    }
+  }
+
+  /**
+   * Retrieves a cached web search result.
+   *
+   * @param string $query The search query
+   * @return array|null The cached search results if found, null otherwise
+   */
+  public function getCachedWebSearch(string $query): ?array
+  {
+    if (!$this->enablePromptCache) {
+      return null;
+    }
+
+    $cacheKey = self::CACHE_TYPE_WEB . md5($query);
+
+    if ($this->useRedis && $this->redis) {
+      $data = $this->redis->get(self::REDIS_PREFIX . $cacheKey);
+      if ($data !== false) {
+        $data = json_decode($data, true);
+        if ($data !== null) {
+          $this->cacheStats['web']['hits']++;
+          $data['last_used'] = time();
+          $this->redis->setex(self::REDIS_PREFIX . $cacheKey, $data['ttl'], json_encode($data));
+          return $data['results'];
+        }
+      }
+    } elseif ($this->useMemcached && $this->memcached) {
+      $data = $this->memcached->get(self::MEMCACHED_PREFIX . $cacheKey);
+      if ($data !== false) {
+        $this->cacheStats['web']['hits']++;
+        $data['last_used'] = time();
+        $this->memcached->set(self::MEMCACHED_PREFIX . $cacheKey, $data, $data['ttl']);
+        return $data['results'];
+      }
+    }
+
+    if (isset($this->promptCache[$cacheKey])) {
+      $data = $this->promptCache[$cacheKey];
+      if (time() - $data['created'] <= $data['ttl']) {
+        $this->cacheStats['web']['hits']++;
+        $this->promptCache[$cacheKey]['last_used'] = time();
+        return $data['results'];
+      }
+      unset($this->promptCache[$cacheKey]);
+    }
+
+    $this->cacheStats['web']['misses']++;
+    return null;
+  }
+
+  /**
+   * Clear semantic cache for a specific entity type
+   *
+   * @param string|null $entityType The entity type to clear (null = clear all semantic cache)
+   * @param int|null $languageId The language ID to clear (null = all languages)
+   * @return int Number of files cleared
+   */
+  public static function clearSemanticCache(?string $entityType = null, ?int $languageId = null): int
+  {
+    if ($entityType === null && $languageId === null) {
+      // Clear all semantic cache
+      $cache = new Cache();
+
+      return $cache->clearCacheByType('semantic');
+    }
+
+    if (!FileSystem::isWritable(OMCache::getPath())) {
+      return 0;
+    }
+
+    $namespacePath = 'Rag/Semantic/';
+    $fullPath = OMCache::getPath() . $namespacePath;
+
+    if (!is_dir($fullPath)) {
+      return 0;
+    }
+
+    $cleared = 0;
+    $files = glob($fullPath . '*.cache', GLOB_NOSORT);
+
+    // We need to check each cache file to see if it matches the entity type or language
+    // Since the cache key is md5(query + entityType + languageId), we can't directly
+    // match by filename. Instead, we'll clear all semantic cache when entity data changes.
+    // This is a conservative approach that ensures consistency.
+
+    foreach ($files as $file) {
+      if (unlink($file)) {
+        $cleared++;
+
+        // Also remove from memory cache
+        $filename = basename($file, '.cache');
+        $fullKey = 'Rag/Semantic_' . $filename;
+
+        OMCache::memoryCache($fullKey);
+        unset(static::$memoryCache[$fullKey]);
+      }
+    }
+
+    if ($cleared > 0) {
+      $context = [];
+      if ($entityType !== null) {
+        $context[] = "EntityType: {$entityType}";
+      }
+      if ($languageId !== null) {
+        $context[] = "LanguageId: {$languageId}";
+      }
+      $contextStr = !empty($context) ? ' (' . implode(', ', $context) . ')' : '';
+      error_log("Semantic cache invalidated: {$cleared} files cleared{$contextStr}");
+    }
+
+    return $cleared;
+  }
+
+  /**
+   * Clears cache entries by type.
+   *
+   * Removes all cache entries matching the specified type prefix.
+   * Supports clearing from Memcached, Redis, and file cache.
+   *
+   * @param string $type The cache type to clear (e.g., 'embedding', 'semantic', 'sql', 'web', 'conversation')
+   * @return int The number of entries cleared
+   */
+  public function clearCacheByType(string $type): int
+  {
+    $cleared = 0;
+    
+    // Map type names to prefixes
+    $prefixMap = [
+      'embedding' => self::CACHE_TYPE_EMBEDDING,
+      'semantic' => self::CACHE_TYPE_SEMANTIC,
+      'sql' => self::CACHE_TYPE_SQL,
+      'web' => self::CACHE_TYPE_WEB,
+      'conversation' => self::CACHE_TYPE_CONVERSATION,
+      'intent' => self::CACHE_TYPE_INTENT,
+      'translation' => self::CACHE_TYPE_TRANSLATION,
+      'classification' => self::CACHE_TYPE_CLASSIFICATION
+    ];
+    
+    $prefix = $prefixMap[$type] ?? null;
+    if ($prefix === null) {
+      return 0;
+    }
+
+    // Clear from Redis
+    if ($this->useRedis && $this->redis) {
+      $keys = $this->redis->keys(self::REDIS_PREFIX . $prefix . '*');
+      foreach ($keys as $key) {
+        $this->redis->del($key);
+        $cleared++;
+      }
+    }
+
+    // Clear from Memcached (note: Memcached doesn't support key pattern matching easily)
+    // We'll rely on TTL expiration for Memcached
+
+    // Clear from file cache
+    foreach ($this->promptCache as $key => $data) {
+      if (strpos($key, $prefix) === 0) {
+        unset($this->promptCache[$key]);
+        $cleared++;
+      }
+    }
+
+    $this->savePromptCache();
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent("Cleared {$cleared} cache entries of type: {$type}", 'info');
+    }
+
+    return $cleared;
+  }
+
+  /**
+   * Gets cache statistics by type.
+   *
+   * Returns hit/miss statistics for each cache type.
+   *
+   * @return array Array of statistics by cache type
+   */
+  public function getCacheStatsByType(): array
+  {
+    return $this->cacheStats;
+  }
+
+  /**
+   * Invalidates all SQL query cache entries that reference a specific table.
+   *
+   * This method is used for intelligent cache invalidation - when a table is updated,
+   * all cached SQL queries that reference that table are invalidated.
+   *
+   * @param string $tableName The name of the table that was updated
+   * @return int The number of cache entries invalidated
+   */
+  public function invalidateCacheByTable(string $tableName): int
+  {
+    $invalidated = 0;
+    $cleanTableName = SQLTableParser::cleanTableName($tableName);
+
+    // Invalidate from Redis
+    if ($this->useRedis && $this->redis) {
+      $keys = $this->redis->keys(self::REDIS_PREFIX . self::CACHE_TYPE_SQL . '*');
+      foreach ($keys as $key) {
+        $data = $this->redis->get($key);
+        if ($data !== false) {
+          $data = json_decode($data, true);
+          if (isset($data['tables_used']) && in_array($cleanTableName, $data['tables_used'], true)) {
+            $this->redis->del($key);
+            $invalidated++;
+          }
+        }
+      }
+    }
+
+    // Invalidate from Memcached
+    // Note: Memcached doesn't support key pattern matching, so we can't efficiently
+    // iterate through all keys. We'll rely on TTL expiration for Memcached.
+    // For production use, consider using Redis for better invalidation support.
+
+    // Invalidate from file cache
+    foreach ($this->promptCache as $key => $data) {
+      if (strpos($key, self::CACHE_TYPE_SQL) === 0) {
+        if (isset($data['tables_used']) && in_array($cleanTableName, $data['tables_used'], true)) {
+          unset($this->promptCache[$key]);
+          $invalidated++;
+        }
+      }
+    }
+
+    $this->savePromptCache();
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent("Invalidated {$invalidated} SQL cache entries for table: {$tableName}", 'info');
+    }
+
+    return $invalidated;
+  }
+
+  /**
+   * Invalidates all SQL query cache entries that reference any of the specified tables.
+   *
+   * This is a batch version of invalidateCacheByTable for efficiency when multiple
+   * tables are updated in a single operation.
+   *
+   * @param array $tableNames Array of table names that were updated
+   * @return int The number of cache entries invalidated
+   */
+  public function invalidateCacheByTables(array $tableNames): int
+  {
+    $invalidated = 0;
+    $cleanTableNames = array_map(
+      [SQLTableParser::class, 'cleanTableName'],
+      $tableNames
+    );
+
+    // Invalidate from Redis
+    if ($this->useRedis && $this->redis) {
+      $keys = $this->redis->keys(self::REDIS_PREFIX . self::CACHE_TYPE_SQL . '*');
+      foreach ($keys as $key) {
+        $data = $this->redis->get($key);
+        if ($data !== false) {
+          $data = json_decode($data, true);
+          if (isset($data['tables_used'])) {
+            $intersection = array_intersect($cleanTableNames, $data['tables_used']);
+            if (!empty($intersection)) {
+              $this->redis->del($key);
+              $invalidated++;
+            }
+          }
+        }
+      }
+    }
+
+    // Invalidate from file cache
+    foreach ($this->promptCache as $key => $data) {
+      if (strpos($key, self::CACHE_TYPE_SQL) === 0) {
+        if (isset($data['tables_used'])) {
+          $intersection = array_intersect($cleanTableNames, $data['tables_used']);
+          if (!empty($intersection)) {
+            unset($this->promptCache[$key]);
+            $invalidated++;
+          }
+        }
+      }
+    }
+
+    $this->savePromptCache();
+
+    if ($this->debug) {
+      $tablesList = implode(', ', $tableNames);
+      $this->securityLogger->logSecurityEvent("Invalidated {$invalidated} SQL cache entries for tables: {$tablesList}", 'info');
+    }
+
+    return $invalidated;
+  }
+
+  /**
+   * Resets cache statistics.
+   *
+   * Clears all hit/miss counters for all cache types.
+   *
+   * @return void
+   */
+  public function resetCacheStats(): void
+  {
+    foreach ($this->cacheStats as $type => $stats) {
+      $this->cacheStats[$type] = ['hits' => 0, 'misses' => 0];
+    }
   }
 }

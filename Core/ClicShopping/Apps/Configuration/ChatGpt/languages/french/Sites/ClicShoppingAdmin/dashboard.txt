@@ -449,6 +449,10 @@ modal_reset_cache_reactivate_button = Réactiver le bouton
 # Types de Cache
 cache_type_database = 💾 Cache Base de Données
 cache_type_database_desc = Table de base de données clic_rag_query_cache (résultats de requêtes SQL)
+
+
+
+
 cache_type_schema = 🗂️ Cache Requêtes Schéma
 cache_type_schema_desc = Requêtes de schéma de base de données en cache dans Work/Cache/Rag/SchemaQuery/
 cache_type_intent = 🎯 Cache Classification d'Intention
@@ -469,6 +473,16 @@ cache_type_classification = 🎯 Cache Classification
 cache_type_classification_desc = Classifications de requêtes en cache dans Work/Cache/Rag/Classification/
 cache_type_hybrid = 🔀 Cache Requêtes Hybrides
 cache_type_hybrid_desc = Résultats de requêtes multi-temporelles en cache dans Work/Cache/Rag/Hybrid/
+cache_type_semantic = 📋 Cache Requêtes Sémantiques
+cache_type_semantic_desc = Résultats de requêtes sémantiques en cache dans Work/Cache/Rag/Semantic/
+cache_type_sql = 📋 Cache Requêtes SQL
+cache_type_SQL_desc = Résultats de requêtes SQL en cache dans Work/Cache/Rag/SQL/
+websearch_cache_statistics = Statisques WebSearch
+
+
+
+
+
 
 # Caches Fichiers
 file_caches_statistics = Statistiques des Caches Fichiers
