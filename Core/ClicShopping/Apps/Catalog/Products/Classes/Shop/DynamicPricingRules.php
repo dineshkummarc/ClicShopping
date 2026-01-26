@@ -75,7 +75,11 @@ class DynamicPricingRules {
     $cache_key = 'dynamic_pricing_rules';
     $cache = new Cache($cache_key);
 // Try to get rules from cache
+    $cached_rules = null;
     $cached_rules = $cache->get();
+    if (!is_array($cached_rules)) {
+      $cached_rules = null;
+    }
 
     $stock = $this->getStock($product_id);
     $sales = $this->getSalesLast30Days($product_id);

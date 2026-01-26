@@ -61,7 +61,6 @@
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/lexer" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/cache" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/cache-contracts" />
-      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/mattketmo/email-checker" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/http-client" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/http-client-contracts" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/yethee/tiktoken" />
@@ -71,6 +70,7 @@
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/phpoffice/math" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/phpoffice/phpword" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/smalot/pdfparser" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/mattketmo/email-checker" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.5">

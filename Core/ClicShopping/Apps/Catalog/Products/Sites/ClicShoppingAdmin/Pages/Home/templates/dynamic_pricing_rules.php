@@ -90,7 +90,8 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
                                                                                rules_priority,
                                                                                rules_status,
                                                                                rules_status_special,
-                                                                               customers_group
+                                                                               customers_group,
+                                                                               rules_status_promotion
                                                     from :table_dynamic_pricing_rules
                                                     order by rules_priority asc
                                                     limit :page_set_offset,
@@ -136,10 +137,10 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
 
               <td class="text-center">
                 <?php
-                if ($Qrules->valueInt('rules_status_special') == 1) {
-                  echo '<a href="' . $CLICSHOPPING_Products->link('DynamicPricingRules&SetFlagSpecial&flag=0&rID=' . $Qrules->valueInt('rules_id')) . '"><i class="bi-check text-success"></i></a>';
-                } else {
-                  echo '<a href="' . $CLICSHOPPING_Products->link('DynamicPricingRules&SetFlagSpecial&flag=1&rID=' . $Qrules->valueInt('rules_id')) . '"><i class="bi bi-x text-danger"></i></a>';
+                  if ($Qrules->valueInt('rules_status_promotion') == 1) {
+                    echo '<a href="' . $CLICSHOPPING_Products->link('DynamicPricingRules&SetFlagSpecialPrice&flag=0&rID=' . $Qrules->valueInt('rules_id')) . '"><i class="bi-check text-success"></i></a>';
+                  } else {
+                  echo '<a href="' . $CLICSHOPPING_Products->link('DynamicPricingRules&SetFlagSpecialPrice&flag=1&rID=' . $Qrules->valueInt('rules_id')) . '"><i class="bi bi-x text-danger"></i></a>';
                 }
                 ?>
               </td>
