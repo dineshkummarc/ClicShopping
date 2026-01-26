@@ -19,20 +19,20 @@ namespace EmailChecker\Adapter;
 class ArrayAdapter implements AdapterInterface
 {
     /**
-     * @var string[]
+     * @var array<string, int>
      */
-    protected $domains;
+    private array $domainSet;
 
     /**
      * @param string[] $domains List of throwaway domains
      */
     public function __construct(array $domains)
     {
-        $this->domains = $domains;
+        $this->domainSet = array_flip($domains);
     }
 
-    public function isThrowawayDomain($domain)
+    public function isThrowawayDomain(string $domain): bool
     {
-        return in_array($domain, $this->domains, true);
+        return isset($this->domainSet[$domain]);
     }
 }
