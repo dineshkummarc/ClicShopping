@@ -37,7 +37,7 @@ use ClicShopping\AI\Config\DomainConfig;
 class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
 {
   private static ?SecurityLogger $logger = null;
-  
+
   // Configuration parameters with default values
   private static array $config = [
     'classification_threshold' => 3,
@@ -49,11 +49,12 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
 
   public function __construct()
   {
-    // 🔍 DEBUG: Vérifier que la classe modifiée est chargée
-    error_log("=== SEMANTICAGENT CLASS LOADED (REFACTORED VERSION) ===");
-    error_log("File: " . __FILE__);
-    error_log("Modified: " . date("Y-m-d H:i:s", filemtime(__FILE__)));
-    
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      error_log("=== SEMANTICAGENT CLASS LOADED (REFACTORED VERSION) ===");
+      error_log("File: " . __FILE__);
+      error_log("Modified: " . date("Y-m-d H:i:s", filemtime(__FILE__)));
+    }
+
     self::initializeLogger();
     self::loadConfig();
   }
@@ -74,7 +75,7 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
       if (isset($config['Semantics']) && is_array($config['Semantics'])) {
         // Merge loaded config with defaults
         self::$config = array_merge(self::$config, $config['Semantics']);
-        
+
         if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
           error_log("SemanticAgent configuration loaded from file");
         }
@@ -141,8 +142,6 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
 
   /**
    * Translate a given text to English using the OpenAI API.
-   * 
-   * 🔧 FIX 2025-12-10: Added timeout (5s) and fallback to original query
    * to prevent blocking when translation service fails
    * 
    * @param string $message
@@ -154,10 +153,12 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
     try {
       // Check if Language is registered in Registry
       if (!Registry::exists('Language')) {
-        error_log("❌ CRITICAL: Language not registered in Registry");
-        error_log("   This usually means the method is called outside normal application context");
-        error_log("   Using hardcoded translation prompt as fallback");
-        
+        if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+          error_log("❌ CRITICAL: Language not registered in Registry");
+          error_log("   This usually means the method is called outside normal application context");
+          error_log("   Using hardcoded translation prompt as fallback");
+        }
+
         // Hardcoded fallback prompt
         $prompt = "Translate the following query to English. Follow these rules strictly:\n" .
                   "1. Preserve technical terms exactly as written.\n" .
@@ -174,16 +175,17 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
       }
 
       // Call TranslationHandler
-      // 🔧 TASK 3.2: Pass original message for fallback handling
       $startTime = microtime(true);
       $translated = TranslationHandler::translateToEnglish($prompt . ' ' . $message, self::$config['translation_cache_ttl'] ?? 3600, $message);
       $duration = microtime(true) - $startTime;
-      
-      error_log('================================');
-      error_log('Translation result SemanticAgent:');
-      error_log($translated);
-      error_log("Duration: {$duration}s");
-      error_log('================================');
+
+      if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+        error_log('================================');
+        error_log('Translation result SemanticAgent:');
+        error_log($translated);
+        error_log("Duration: {$duration}s");
+        error_log('================================');
+      }
 
       // 🔧 TASK 3.2: If translation is empty, use original message as fallback
       if (empty(trim($translated))) {
@@ -199,11 +201,12 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
       return $translated;
       
     } catch (\Exception $e) {
-      // 🔧 TASK 3.2: Fallback to original message instead of throwing exception
-      error_log("❌ TRANSLATION FAILED: " . $e->getMessage());
-      error_log("   Original query: " . substr($message, 0, 100));
-      error_log("🔄 FALLBACK: Using original message\n");
-      
+      if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+        error_log("❌ TRANSLATION FAILED: " . $e->getMessage());
+        error_log("   Original query: " . substr($message, 0, 100));
+        error_log("🔄 FALLBACK: Using original message\n");
+      }
+
       self::logSecurityEvent(
         "Translation failed, using original message as fallback: " . $e->getMessage() . " | Original: {$message}",
         'warning'
@@ -216,8 +219,6 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
 
   /**
    * Classifies query as 'analytics' or 'semantic' (delegates to ClassificationEngine)
-   * 
-   * 🔧 TASK 4.5.5 (2025-12-11): Updated to handle new array return format
    * 
    * @param string $text Text to classify
    * @return array ['type' => string, 'confidence' => float, 'reasoning' => string, 'sub_types' => array]
@@ -267,8 +268,7 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
   public static function analyticsPatterns(): array
   {
     // Pure LLM mode: patterns are disabled
-    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-        CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') &&  CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
       error_log("SemanticAgent::analyticsPatterns() - Pure LLM mode, returning empty array");
     }
     return [];
@@ -298,8 +298,7 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
   public static function semanticPatterns(): array
   {
     // Pure LLM mode: patterns are disabled
-    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-        CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') &&  CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
       error_log("SemanticAgent::semanticPatterns() - Pure LLM mode, returning empty array");
     }
     return [];
@@ -316,11 +315,13 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
    */
   public static function classifyQuery(string $text, int|null $threshold = null, bool $alreadyTranslated = false): string
   {
-    // 🔍 DEBUG: Trace pour vérifier que cette méthode est appelée
-    error_log("=== SEMANTICAGENT::classifyQuery() CALLED ===");
-    error_log("Input text: " . substr($text, 0, 100));
-    error_log("Already translated: " . ($alreadyTranslated ? 'YES' : 'NO'));
-    
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      // 🔍 DEBUG: Trace pour vérifier que cette méthode est appelée
+      error_log("=== SEMANTICAGENT::classifyQuery() CALLED ===");
+      error_log("Input text: " . substr($text, 0, 100));
+      error_log("Already translated: " . ($alreadyTranslated ? 'YES' : 'NO'));
+    }
+
     // Use configured threshold if not provided
     if ($threshold === null) {
       $threshold = self::$config['classification_threshold'];
@@ -329,10 +330,14 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
     // 🔧 FIX: Skip translation if already done
     if ($alreadyTranslated) {
       $translated = $text;
-      error_log("Skipping translation, using input as-is");
+      if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+        error_log("Skipping translation, using input as-is");
+      }
     } else {
       $translated = self::translateToEnglish($text);
-      error_log("Translated to: " . substr($translated, 0, 100));
+      if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+        error_log("Translated to: " . substr($translated, 0, 100));
+      }
     }
     
     // Clean the translation to remove GPT prefixes
@@ -455,8 +460,7 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
   public static function isCompetitorComparisonQuery(string $text): bool
   {
     // Pure LLM mode: patterns are disabled, return false
-    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-        CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') &&  CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
       error_log("SemanticAgent::isCompetitorComparisonQuery() - Pure LLM mode, returning false");
     }
     return false;
@@ -473,8 +477,7 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
   public static function hasCriticalMatch(string $text): bool
   {
     // Pure LLM mode: patterns are disabled, return false
-    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-        CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
       error_log("SemanticAgent::hasCriticalMatch() - Pure LLM mode, returning false");
     }
     return false;

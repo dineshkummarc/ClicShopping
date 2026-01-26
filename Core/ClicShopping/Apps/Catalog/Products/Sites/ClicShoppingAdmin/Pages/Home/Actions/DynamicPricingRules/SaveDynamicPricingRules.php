@@ -51,6 +51,12 @@ class SaveDynamicPricingRules extends \ClicShopping\OM\Domains\PagesActionsAbstr
       $rules_status_special = 0;
     }
 
+    if (isset($_POST['rules_status_promotion'])) {
+      $rules_status_promotion = 1;
+    } else {
+      $rules_status_promotion = 0;
+    }
+
     if (isset($_POST['rules_status'])) {
       $rules_status = 1;
     } else {
@@ -75,6 +81,7 @@ class SaveDynamicPricingRules extends \ClicShopping\OM\Domains\PagesActionsAbstr
         'rules_status' => $rules_status,
         'date_modified' => 'now()',
         'rules_status_special' => $rules_status_special,
+        'rules_status_promotion' => $rules_status_promotion,
         'customers_group' => $customers_group
       ];
 
@@ -91,6 +98,7 @@ class SaveDynamicPricingRules extends \ClicShopping\OM\Domains\PagesActionsAbstr
         'rules_status' => $rules_status,
         'date_added' => 'now()',
         'rules_status_special' => $rules_status_special,
+        'rules_status_promotion' => $rules_status_promotion,
         'customers_group' => $customers_group
       ];
 

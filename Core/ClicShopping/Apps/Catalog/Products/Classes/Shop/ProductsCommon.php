@@ -2928,7 +2928,7 @@ class ProductsCommon extends Prod
    * @param $base_price
    * @return float The percentage change (positive for increase, negative for decrease)
    */
-  public function getDynamicPricing(int|string|null $id , $base_price, int $customers_group)
+  public function getDynamicPricing(int|string|null $id , float $base_price, int $customers_group)
   {
     if (is_null($id)) {
       $id = $this->getID();

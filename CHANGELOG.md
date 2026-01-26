@@ -5,6 +5,7 @@ AI
    - App Ecommerce
 - some fix
 - Librairies updated
+- Dynamic Pricing improved
 
 
 
