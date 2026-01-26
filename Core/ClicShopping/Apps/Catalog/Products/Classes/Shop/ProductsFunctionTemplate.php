@@ -591,10 +591,10 @@ class ProductsFunctionTemplate
 
     $products_packaging = $this->productsCommon->getProductsPackaging($products_id);
 
-    if ($products_packaging == 0) $products_packaging = 'http://schema.org/NewCondition'; // default newCondition
-    if ($products_packaging == 1) $products_packaging = 'http://schema.org/NewCondition';
-    if ($products_packaging == 2) $products_packaging = 'http://schema.org/RefurbishedCondition';
-    if ($products_packaging == 3) $products_packaging = 'http://schema.org/UsedCondition';
+    if ($products_packaging == 0) $products_packaging = 'https://schema.org/NewCondition'; // default newCondition
+    if ($products_packaging == 1) $products_packaging = 'https://schema.org/NewCondition';
+    if ($products_packaging == 2) $products_packaging = 'https://schema.org/RefurbishedCondition';
+    if ($products_packaging == 3) $products_packaging = 'https://schema.org/UsedCondition';
 
     $price = $this->productsCommon->getDisplayPriceGroupWithoutCurrencies($products_id);
 
