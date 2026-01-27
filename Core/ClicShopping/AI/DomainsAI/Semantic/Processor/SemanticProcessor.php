@@ -74,7 +74,7 @@ class SemanticProcessor
   public function calculateConfidence(string $query): array
   {
     if ($this->debug) {
-      error_log("\n--- SEMANTIC CONFIDENCE CALCULATION ---");
+      error_log("--- SEMANTIC CONFIDENCE CALCULATION ---");
       error_log("Query: '{$query}'");
     }
 

@@ -126,7 +126,11 @@ class TaskPlanner
         if ($this->chat === false || $this->chat === null) {
             // Degraded mode: use predefined plans instead of AI
             $this->chat = null;
-            error_log('TaskPlannerRefactored: Using fallback mode due to missing API key');
+	    
+            if($this->debug) {
+              error_log('TaskPlannerRefactored: Using fallback mode due to missing API key');
+            }
+	    
             return;
         }
 
@@ -149,17 +153,19 @@ class TaskPlanner
      */
     public function createPlan(array $intent, string $query, array $context = []): ExecutionPlan
     {
-        $startTime = microtime(true);
-        $this->collector->startTimer('plan_creation');
+      $startTime = microtime(true);
+      $this->collector->startTimer('plan_creation');
 
-        // 🔧 TASK 4.3.4.3: Add logging to trace query through planning
-        error_log("\n" . str_repeat("+", 100));
+      if($this->debug) {
+        error_log(str_repeat("+", 100));
         error_log("TASK 4.3.4.3: TaskPlanner.createPlan() CALLED");
         error_log("+" . str_repeat("+", 99));
         error_log("Query received: '{$query}'");
         error_log("Query length: " . strlen($query));
         error_log("Intent type: " . ($intent['type'] ?? 'unknown'));
         error_log("Intent has translated_query: " . (isset($intent['translated_query']) ? 'YES' : 'NO'));
+      }
+
         if (isset($intent['translated_query'])) {
             error_log("Translated query: " . $intent['translated_query']);
         }
@@ -187,43 +193,45 @@ class TaskPlanner
             // 2. Delegate plan creation to SubTaskPlanner
             $steps = $selectedPlanner->createPlan($intent, $query);
 
-            // 🔧 TASK 4.3.4.3: Log the steps created
-            error_log("\nSteps created by SubTaskPlanner:");
-            foreach ($steps as $step) {
-                error_log("  Step: " . $step->getId());
-                error_log("    Type: " . $step->getType());
-                error_log("    Description: " . $step->getDescription());
-                $subQuery = $step->getMeta('sub_query', null);
-                error_log("    sub_query metadata: " . ($subQuery ?? 'NULL'));
-            }
+          if($this->debug) {
+            error_log("Steps created by SubTaskPlanner:");
+          }
 
-            // 3. Analyze dependencies
-            $dependencies = $this->analyzeDependencies($steps);
+          foreach ($steps as $step) {
+              error_log("  Step: " . $step->getId());
+              error_log("    Type: " . $step->getType());
+              error_log("    Description: " . $step->getDescription());
+              $subQuery = $step->getMeta('sub_query', null);
+              error_log("    sub_query metadata: " . ($subQuery ?? 'NULL'));
+          }
 
-            // 4. Optimize execution order
-            $optimizedSteps = $this->optimizeExecutionOrder($steps, $dependencies);
+          // 3. Analyze dependencies
+          $dependencies = $this->analyzeDependencies($steps);
 
-            // 5. Analyze complexity (for compatibility)
-            $complexity = $this->analyzeComplexity($intent, $query);
+          // 4. Optimize execution order
+          $optimizedSteps = $this->optimizeExecutionOrder($steps, $dependencies);
 
-            // 6. Create execution plan
-            $plan = new ExecutionPlan($query, $intent, $optimizedSteps, $dependencies, $complexity);
+          // 5. Analyze complexity (for compatibility)
+          $complexity = $this->analyzeComplexity($intent, $query);
 
-            // Statistics
-            $this->updatePlanningStats($selectedPlanner, count($optimizedSteps));
+          // 6. Create execution plan
+          $plan = new ExecutionPlan($query, $intent, $optimizedSteps, $dependencies, $complexity);
 
-            $this->collector->stopTimer('plan_creation');
-            $plan->setPlanningTime(microtime(true) - $startTime);
+          // Statistics
+          $this->updatePlanningStats($selectedPlanner, count($optimizedSteps));
 
-            if ($this->debug) {
-                $this->securityLogger->logSecurityEvent(
-                    "Plan created with " . count($optimizedSteps) . " steps in " .
-                    round($plan->getPlanningTime(), 3) . "s",
-                    'info'
-                );
-            }
+          $this->collector->stopTimer('plan_creation');
+          $plan->setPlanningTime(microtime(true) - $startTime);
 
-            return $plan;
+          if ($this->debug) {
+              $this->securityLogger->logSecurityEvent(
+                  "Plan created with " . count($optimizedSteps) . " steps in " .
+                  round($plan->getPlanningTime(), 3) . "s",
+                  'info'
+              );
+          }
+
+          return $plan;
 
         } catch (\Exception $e) {
             $this->securityLogger->logSecurityEvent(
@@ -278,7 +286,6 @@ class TaskPlanner
         }
 
         // For web_search queries, use web search planner
-        // FIX (2025-01-02): Handle both 'web_search' and 'web' (QueryClassifier normalizes web_search → web)
         if ($intentType === 'web_search' || $intentType === 'web') {
             if ($this->debug) {
                 $this->securityLogger->logSecurityEvent(
@@ -599,9 +606,7 @@ class TaskPlanner
         $totalExecutions = $this->planningStats['successful_executions'] +
             $this->planningStats['failed_executions'];
 
-        $successRate = $totalExecutions > 0
-            ? ($this->planningStats['successful_executions'] / $totalExecutions) * 100
-            : 0;
+        $successRate = $totalExecutions > 0 ? ($this->planningStats['successful_executions'] / $totalExecutions) * 100 : 0;
 
         return array_merge($this->planningStats, [
             'success_rate' => round($successRate, 2) . '%',

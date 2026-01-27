@@ -85,18 +85,18 @@ class DomainConfig
    *
    * Configuration:
    * - Constant: CLICSHOPPING_APP_CHATGPT_RA_ACTIVITIES
-   * - Default: 'ecommerce' (if not defined)
+   * - Default: '' (empty string if not defined - domain-agnostic)
    * - Possible values: 'ecommerce', 'hr', 'finance', 'trading', etc.
    * - Location: Core/config_clicshopping.php or database configuration
    *
    * @return string The active domain identifier (lowercase)
-   *                Returns 'ecommerce' if not configured
+   *                Returns empty string if not configured (domain-agnostic mode)
    *
    * @example
    * ```php
    * $domain = DomainConfig::getActivities();
-   * // Returns: 'ecommerce' (default)
-   * // Or: 'hr', 'finance', 'trading' (if configured)
+   * // Returns: '' (empty string, no domain configured)
+   * // Or: 'ecommerce', 'hr', 'finance', 'trading' (if configured)
    * ```
    *
    * @since 1.0.0
@@ -109,8 +109,8 @@ class DomainConfig
       return strtolower(CLICSHOPPING_APP_CHATGPT_RA_ACTIVITIES);
     }
 
-    // Default to 'ecommerce' for backward compatibility
-    return 'ecommerce';
+    // Return empty string for domain-agnostic mode (no default domain assumption)
+    return '';
   }
 
   /**

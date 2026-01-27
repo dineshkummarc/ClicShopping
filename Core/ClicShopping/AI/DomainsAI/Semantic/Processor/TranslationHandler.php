@@ -116,19 +116,19 @@ class TranslationHandler
 
       // 🔍 DIAGNOSTIC: Log résultat GPT
       if ($translation === false) {
-        error_log("❌ CRITICAL: Gpt::getGptResponse() returned FALSE");
+        error_log("[error] CRITICAL: Gpt::getGptResponse() returned FALSE");
         error_log("   This means GPT is disabled or API call failed");
         error_log("   Check: CLICSHOPPING_APP_CHATGPT_CH_STATUS and API_KEY");
         throw new \Exception("GPT returned FALSE - check configuration");
       }
       
       if (empty($translation)) {
-        error_log("❌ CRITICAL: Gpt::getGptResponse() returned EMPTY STRING");
+        error_log("[error] CRITICAL: Gpt::getGptResponse() returned EMPTY STRING");
         error_log("   This means API returned no content");
         throw new \Exception("GPT returned empty string");
       }
       
-      error_log("✅ Gpt::getGptResponse() returned: " . substr($translation, 0, 100));
+      error_log("[info] Gpt::getGptResponse() returned: " . substr($translation, 0, 100));
 
       // Clean the translation
       error_log("Calling extractCleanTranslation()...");
@@ -136,13 +136,13 @@ class TranslationHandler
 
       // 🔍 DIAGNOSTIC: Log après nettoyage
       if (empty($cleanTranslation)) {
-        error_log("❌ CRITICAL: extractCleanTranslation() returned EMPTY");
+        error_log("[error] CRITICAL: extractCleanTranslation() returned EMPTY");
         error_log("   Original translation was: " . substr($translation, 0, 200));
         error_log("   This means the cleaning removed everything");
         throw new \Exception("Clean translation is empty");
       }
       
-      error_log("✅ Clean translation: " . substr($cleanTranslation, 0, 100));
+      error_log("[info] Clean translation: " . substr($cleanTranslation, 0, 100));
 
       if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
         error_log("Translation result: '{$prompt}' → '{$cleanTranslation}'");
@@ -162,7 +162,7 @@ class TranslationHandler
       return $cleanTranslation;
     } catch (\Exception $e) {
       // 🔧 TASK 3.2: Fallback handling - use original query if translation fails
-      error_log("❌ TRANSLATION EXCEPTION: " . $e->getMessage());
+      error_log("[error] TRANSLATION EXCEPTION: " . $e->getMessage());
       error_log("   Stack trace: " . $e->getTraceAsString());
       error_log("🔄 FALLBACK: Using original query instead");
       error_log("   Original query: " . substr($originalQuery, 0, 200));

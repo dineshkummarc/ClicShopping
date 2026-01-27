@@ -13,6 +13,8 @@ namespace ClicShopping\AI\DomainsAI\Hybrid\Processor;
 use AllowDynamicProperties;
 use ClicShopping\AI\DomainsAI\WebSearch\Tool\WebSearchTool;
 use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\ResultFormatter;
+use ClicShopping\AI\Config\DomainConfig;
+use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
 
 /**
  * ResultAggregator - Aggregates results from different query type combinations
@@ -185,6 +187,7 @@ class ResultAggregator extends BaseQueryProcessor
 
   /**
    * Extract product data and web search results for price comparison
+   * Uses EntityConfig to dynamically discover field names instead of hardcoding
    */
   private function extractPriceComparisonData(array $successfulResults, array $failedResults): array
   {
@@ -200,12 +203,9 @@ class ResultAggregator extends BaseQueryProcessor
         $data = $result['result']['data'] ?? [];
         if (!empty($data)) {
           $firstRow = $data[0];
-          $productData = [
-            'product_id' => $firstRow['products_id'] ?? $firstRow['product_id'] ?? 0,
-            'name' => $firstRow['products_name'] ?? $firstRow['name'] ?? 'Unknown Product',
-            'price' => floatval($firstRow['products_price'] ?? $firstRow['price'] ?? 0),
-            'model' => $firstRow['products_model'] ?? $firstRow['model'] ?? '',
-          ];
+          
+          // Extract product data using dynamic field discovery
+          $productData = $this->extractProductDataFromRow($firstRow);
         }
       } elseif ($type === 'web_search') {
         // Check if already formatted
@@ -218,6 +218,110 @@ class ResultAggregator extends BaseQueryProcessor
     }
 
     return [$productData, $webSearchResults, $sources];
+  }
+
+  /**
+   * Extract product data from a database row using dynamic field discovery
+   * 
+   * This method uses EntityConfig to discover available fields instead of
+   * hardcoding field names like "products_name" or "products_price".
+   * 
+   * Fallback strategy:
+   * 1. Try to detect entity type from row keys
+   * 2. Use EntityConfig to get description fields for that entity
+   * 3. Map common field patterns (id, name, price, model)
+   * 4. Use generic fallbacks if specific fields not found
+   * 
+   * @param array $row Database row data
+   * @return array Product data with standardized keys
+   */
+  private function extractProductDataFromRow(array $row): array
+  {
+    // Detect entity type from row keys (e.g., "products_id" -> "products")
+    $entityType = $this->detectEntityTypeFromRow($row);
+    
+    // Get description fields for this entity type (if domain configured)
+    $descriptionFields = [];
+    if (!empty($entityType) && DomainConfig::getActivities() !== '') {
+      $descriptionFields = EntityConfig::getDescriptionFields($entityType);
+    }
+    
+    // Extract fields using dynamic discovery with fallbacks
+    return [
+      'product_id' => $this->extractField($row, ['id', 'product_id'], $entityType, 0),
+      'name' => $this->extractField($row, ['name', 'title', 'description'], $entityType, 'Unknown Item'),
+      'price' => floatval($this->extractField($row, ['price', 'cost', 'amount'], $entityType, 0)),
+      'model' => $this->extractField($row, ['model', 'sku', 'code', 'reference'], $entityType, ''),
+      'entity_type' => $entityType,
+      'available_fields' => array_keys($row)
+    ];
+  }
+
+  /**
+   * Detect entity type from row keys
+   * 
+   * Looks for patterns like "products_id", "orders_id", "customers_id"
+   * and extracts the entity type prefix.
+   * 
+   * @param array $row Database row
+   * @return string|null Entity type or null if not detected
+   */
+  private function detectEntityTypeFromRow(array $row): ?string
+  {
+    foreach (array_keys($row) as $key) {
+      // Look for pattern: {entity}_id or {entity}_{field}
+      if (preg_match('/^([a-z_]+)_(id|name|price|model)$/i', $key, $matches)) {
+        return $matches[1]; // Return entity prefix (e.g., "products", "orders")
+      }
+    }
+    
+    // Fallback: check if we can get entity types from EntityConfig
+    if (DomainConfig::getActivities() !== '') {
+      $entityTypes = EntityConfig::getEntityTypes();
+      foreach ($entityTypes as $entityType) {
+        $idColumn = EntityConfig::getIdColumn($entityType);
+        if (isset($row[$idColumn])) {
+          return $entityType;
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Extract a field value from row using multiple possible field names
+   * 
+   * Tries multiple field name patterns with entity type prefix:
+   * - {entity}_{fieldName} (e.g., "products_name")
+   * - {fieldName} (e.g., "name")
+   * 
+   * @param array $row Database row
+   * @param array $fieldNames Possible field names to try
+   * @param string|null $entityType Entity type prefix
+   * @param mixed $default Default value if field not found
+   * @return mixed Field value or default
+   */
+  private function extractField(array $row, array $fieldNames, ?string $entityType, $default)
+  {
+    // Try with entity prefix first (e.g., "products_name")
+    if (!empty($entityType)) {
+      foreach ($fieldNames as $fieldName) {
+        $prefixedKey = $entityType . '_' . $fieldName;
+        if (isset($row[$prefixedKey])) {
+          return $row[$prefixedKey];
+        }
+      }
+    }
+    
+    // Try without prefix (e.g., "name")
+    foreach ($fieldNames as $fieldName) {
+      if (isset($row[$fieldName])) {
+        return $row[$fieldName];
+      }
+    }
+    
+    return $default;
   }
 
   /**
@@ -241,23 +345,94 @@ class ResultAggregator extends BaseQueryProcessor
 
   /**
    * Build basic price comparison when WebSearchTool is unavailable
+   * Uses fallback display strategies for missing fields
    */
   private function buildBasicPriceComparison(?array $productData, ?array $webSearchResults, array $sources, array $successfulResults, array $failedResults): array
   {
-    $ourPrice = $productData['price'] ?? null;
-    $competitorInfo = [];
+    $text = "";
     
+    // Display product information with fallback strategies
+    if ($productData !== null) {
+      $text .= $this->formatProductDisplay($productData);
+    } else {
+      $text .= "Product information not available.\n\n";
+    }
+    
+    // Display competitor information
+    $competitorInfo = [];
     if ($webSearchResults !== null) {
       $response = $webSearchResults['result']['text_response'] ?? $webSearchResults['response'] ?? '';
-      if (!empty($response)) $competitorInfo[] = $response;
+      if (!empty($response)) {
+        $competitorInfo[] = $response;
+      }
     }
-
-    $text = ($ourPrice !== null ? "Our Price: $" . number_format($ourPrice, 2) . "\n\n" : "");
-    $text .= (!empty($competitorInfo) ? "Competitor Information:\n" . implode("\n", $competitorInfo) . "\n" : "");
+    
+    if (!empty($competitorInfo)) {
+      $text .= "Competitor Information:\n" . implode("\n", $competitorInfo) . "\n";
+    }
+    
     $text = $this->addFailedQueryWarning($text, $failedResults);
     
-    return $this->formatAggregatedResult('price_comparison', trim($text), 
-      ['our_price' => $ourPrice, 'competitor_info' => $competitorInfo], $sources, $successfulResults, $failedResults);
+    return $this->formatAggregatedResult(
+      'price_comparison', 
+      trim($text), 
+      [
+        'product' => $productData,
+        'competitor_info' => $competitorInfo
+      ], 
+      $sources, 
+      $successfulResults, 
+      $failedResults
+    );
+  }
+
+  /**
+   * Format product display with fallback strategies for missing fields
+   * 
+   * This method provides intelligent display formatting that adapts to
+   * available fields instead of assuming specific field names.
+   * 
+   * Display strategy:
+   * 1. Show name/title if available
+   * 2. Show price if available
+   * 3. Show model/SKU if available
+   * 4. Show entity type if detected
+   * 5. Gracefully handle missing fields
+   * 
+   * @param array $productData Product data from extractProductDataFromRow()
+   * @return string Formatted product display text
+   */
+  private function formatProductDisplay(array $productData): string
+  {
+    $lines = [];
+    
+    // Display name/title
+    if (!empty($productData['name']) && $productData['name'] !== 'Unknown Item') {
+      $lines[] = "Item: " . $productData['name'];
+    }
+    
+    // Display price
+    if (!empty($productData['price'])) {
+      $lines[] = "Our Price: $" . number_format($productData['price'], 2);
+    }
+    
+    // Display model/SKU
+    if (!empty($productData['model'])) {
+      $lines[] = "Model: " . $productData['model'];
+    }
+    
+    // Display entity type if detected (helps with debugging)
+    if ($this->debug && !empty($productData['entity_type'])) {
+      $lines[] = "Type: " . $productData['entity_type'];
+    }
+    
+    // Fallback if no useful information
+    if (empty($lines)) {
+      return "Item information available but fields not recognized.\n" .
+             "Available fields: " . implode(', ', $productData['available_fields'] ?? []) . "\n\n";
+    }
+    
+    return implode("\n", $lines) . "\n\n";
   }
 
   /**

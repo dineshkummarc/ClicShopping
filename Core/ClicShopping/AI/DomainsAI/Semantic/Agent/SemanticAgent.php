@@ -154,7 +154,7 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
       // Check if Language is registered in Registry
       if (!Registry::exists('Language')) {
         if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-          error_log("❌ CRITICAL: Language not registered in Registry");
+          error_log("[error] CRITICAL: Language not registered in Registry");
           error_log("   This usually means the method is called outside normal application context");
           error_log("   Using hardcoded translation prompt as fallback");
         }
@@ -202,7 +202,7 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
       
     } catch (\Exception $e) {
       if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-        error_log("❌ TRANSLATION FAILED: " . $e->getMessage());
+        error_log("[error] TRANSLATION FAILED: " . $e->getMessage());
         error_log("   Original query: " . substr($message, 0, 100));
         error_log("🔄 FALLBACK: Using original message\n");
       }

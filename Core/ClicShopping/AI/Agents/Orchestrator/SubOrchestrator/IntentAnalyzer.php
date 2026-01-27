@@ -145,7 +145,7 @@ class IntentAnalyzer
     ];
 
     if ($this->debug) {
-      error_log("\n" . str_repeat("=", 100));
+      error_log(str_repeat("=", 100));
       error_log("DEBUG: IntentAnalyzer.analyze() - START (REFACTORED)");
       error_log(str_repeat("=", 100));
       error_log("Input query: '{$query}'");
@@ -172,8 +172,8 @@ class IntentAnalyzer
         }
         
         if ($this->debug) {
-          error_log("✅ CACHE HIT - Returning cached result");
-          error_log(str_repeat("=", 100) . "\n");
+          error_log("[info] CACHE HIT - Returning cached result");
+          error_log(str_repeat("=", 100));
         }
         
         return $cachedResult;
@@ -185,7 +185,7 @@ class IntentAnalyzer
     // 2. Use UnifiedQueryAnalyzer (ALWAYS - required for analytics)
     // UnifiedQueryAnalyzer provides comprehensive intent classification for all query types
     if ($this->debug) {
-      error_log("🚀 Using UNIFIED analyzer (Pure LLM mode - always enabled)");
+      error_log("[info] Using UNIFIED analyzer (Pure LLM mode - always enabled)");
     }
     
     $unifiedStart = microtime(true);
@@ -222,7 +222,7 @@ class IntentAnalyzer
       
       // ✅ Log temporal metadata for debugging
       if (!empty($unifiedResult['is_multi_temporal']) && $unifiedResult['is_multi_temporal']) {
-        error_log("🕐 TEMPORAL METADATA DETECTED:");
+        error_log("[time] TEMPORAL METADATA DETECTED:");
         error_log("  is_multi_temporal: true");
         error_log("  temporal_periods: " . implode(', ', $unifiedResult['temporal_periods'] ?? []));
         error_log("  temporal_connectors: " . implode(', ', $unifiedResult['temporal_connectors'] ?? []));

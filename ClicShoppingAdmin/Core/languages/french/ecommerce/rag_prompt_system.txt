@@ -1,7 +1,4 @@
-text_rag_entity_metadata_guidelines = <<<GUIDELINES
----
-DIRECTIVES SUR LES MÉTADONNÉES D'ENTITÉ
----
+text_rag_entity_metadata_guidelines = --- DIRECTIVES SUR LES MÉTADONNÉES D'ENTITÉ ---
 Lors du traitement de requêtes qui référencent des entités spécifiques (produits, commandes, clients) :
 
 1. EXTRACTION D'ENTITÉ : Toujours essayer d'extraire entity_id et entity_type depuis :
@@ -31,5 +28,3 @@ Lors du traitement de requêtes qui référencent des entités spécifiques (pro
      }
    }
    ```
-
-GUIDELINES;

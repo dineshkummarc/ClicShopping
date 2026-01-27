@@ -23,6 +23,9 @@ use Doctrine\DBAL\Types\Type;
 use ClicShopping\AI\DomainsAI\CoreAI\Embedding\VectorType;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\AI\Config\DomainConfig;
+use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
+use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\AnalyticsConfig;
 
 /**
 * Class DoctrineOrm
@@ -125,13 +128,13 @@ class DoctrineOrm
             $connectionParams['serverVersion'] = 'mariadb-' . $versionNumber;
 
             if (self::$debug) {
-              error_log("✅ Using MariaDB version: mariadb-{$versionNumber}");
+              error_log("[info] Using MariaDB version: mariadb-{$versionNumber}");
             }
           } else {
             $connectionParams['serverVersion'] = 'mariadb-11.7.0';
 
             if (self::$debug) {
-              error_log("⚠️ Could not extract version, using default: mariadb-11.7.0");
+              error_log("[warning]️ Could not extract version, using default: mariadb-11.7.0");
             }
           }
         } else {
@@ -143,18 +146,18 @@ class DoctrineOrm
             $connectionParams['serverVersion'] = $versionNumber;
 
             if (self::$debug) {
-              error_log("✅ Using MySQL version: {$versionNumber}");
+              error_log("[info] Using MySQL version: {$versionNumber}");
             }
           } else {
             $connectionParams['serverVersion'] = '8.0.0';
 
             if (self::$debug) {
-              error_log("⚠️ Could not extract version, using default: 8.0.0");
+              error_log("[warning]️ Could not extract version, using default: 8.0.0");
             }
           }
         }
       } else {
-        error_log('⚠️ Unable to fetch server version, using default MariaDB 11.7.0');
+        error_log('[warning]️ Unable to fetch server version, using default MariaDB 11.7.0');
         $connectionParams['serverVersion'] = 'mariadb-11.7.0';
       }
 
@@ -362,11 +365,15 @@ class DoctrineOrm
   }
   
   /**
-   * Get fallback table list (static)
+   * Get fallback table list (domain-agnostic)
    * 
    * Used when dynamic discovery fails.
    * 
-   * @return array Static list of common tables
+   * MIGRATION: Removed hardcoded e-commerce table list.
+   * Now uses EntityConfig when ecommerce domain is active,
+   * or returns empty array for domain-agnostic mode.
+   * 
+   * @return array List of tables from domain configuration or empty array
    */
   public static function getFallbackRelevantTables(): array
   {
@@ -375,37 +382,41 @@ class DoctrineOrm
       self::$prefixDb = CLICSHOPPING::getConfig('db_table_prefix');
     }
     
-    $prefix = self::$prefixDb;
+    // Check if ecommerce domain is active
+    $activeDomain = DomainConfig::getActivities();
     
-    return [
-      // Core business entities
-      $prefix . 'products',
-      $prefix . 'products_description',
-      $prefix . 'categories',
-      $prefix . 'categories_description',
-      $prefix . 'orders',
-      $prefix . 'orders_products',
-      $prefix . 'orders_total',
-      $prefix . 'orders_status',
-      $prefix . 'orders_status_history',
-      $prefix . 'orders_status_invoice',
-      $prefix . 'customers',
-      $prefix . 'customers_info',
-      $prefix . 'customers_groups',
-      $prefix . 'manufacturers',
-      $prefix . 'suppliers',
-      $prefix . 'reviews',
-      $prefix . 'pages_manager',
-      $prefix . 'pages_manager_description',
-      
-      // Additional entities
-      $prefix . 'products_attributes',
-      $prefix . 'products_options',
-      $prefix . 'products_options_values',
-      $prefix . 'specials',
-      $prefix . 'products_featured',
-      $prefix . 'products_favorites',
-    ];
+    if ($activeDomain === 'ecommerce') {
+      // Use EntityConfig to get tables dynamically
+      try {
+        $entityConfig = EntityConfig::getConfig();
+        
+        $tables = [];
+        foreach ($entityConfig as $entityType => $config) {
+          if (isset($config['table'])) {
+            $tables[] = $config['table'];
+          }
+        }
+        
+        if (self::$debug) {
+          error_log("getFallbackRelevantTables: Using EntityConfig, found " . count($tables) . " tables");
+        }
+        
+        return $tables;
+        
+      } catch (\Exception $e) {
+        if (self::$debug) {
+          error_log("getFallbackRelevantTables: EntityConfig failed: " . $e->getMessage());
+        }
+      }
+    }
+    
+    // Domain-agnostic mode: return empty array
+    // Dynamic discovery should handle this case
+    if (self::$debug) {
+      error_log("getFallbackRelevantTables: No domain configured, returning empty array");
+    }
+    
+    return [];
   }
 
   /**
@@ -465,7 +476,7 @@ class DoctrineOrm
       // MÉTHODE 2 (FALLBACK) : SHOW TABLES LIKE
       if (empty($tables)) {
         if (self::$debug) {
-          error_log("📋 Trying SHOW TABLES fallback method...");
+          error_log("[info] Trying SHOW TABLES fallback method...");
         }
 
         try {
@@ -502,7 +513,7 @@ class DoctrineOrm
       // MÉTHODE 3 (ULTIME FALLBACK) : Liste hardcodée validée
       if (empty($tables)) {
         if (self::$debug) {
-          error_log("📋 Using hardcoded fallback list...");
+          error_log("[info] Using hardcoded fallback list...");
         }
 
         $tables = self::getFallbackEmbeddingTables();
@@ -1204,82 +1215,101 @@ class DoctrineOrm
    * Get fallback database fields (static list)
    * 
    * Used when dynamic discovery fails.
-   * Provides a comprehensive list of common database fields.
+   * Get fallback database fields (domain-agnostic)
    * 
-   * @return array List of common database fields
+   * MIGRATION: Removed hardcoded e-commerce field list.
+   * Now uses AnalyticsConfig when ecommerce domain is active,
+   * or returns empty array for domain-agnostic mode.
+   * 
+   * @return array List of database fields from domain configuration or empty array
    */
   private static function getFallbackDatabaseFields(): array
   {
-    // Use array_unique to ensure no duplicates
-    return \array_unique([
-      // Technical identifiers
-      'sku', 'ean', 'upc', 'isbn', 'gtin', 'barcode', 'code', 'reference', 'ref', 'model',
-      'id', 'number', 'serial',
-      
-      // Measurable attributes
-      'price', 'cost', 'amount', 'value', 'total', 'subtotal',
-      'stock', 'inventory', 'quantity', 'qty', 'available', 'count',
-      'weight', 'height', 'width', 'length', 'dimension', 'dimensions', 'size',
-      
-      // Timestamps
-      'date', 'time', 'created', 'updated', 'modified', 'deleted',
-      'timestamp', 'datetime',
-      
-      // Status fields
-      'status', 'state', 'active', 'enabled', 'disabled', 'published',
-      'visible', 'sold', 'shipped',
-      
-      // Financial
-      'tax', 'discount', 'margin', 'profit', 'revenue', 'sales',
-      
-      // Relationships
-      'category', 'brand', 'manufacturer', 'supplier', 'vendor',
-      
-      // Contact info
-      'email', 'phone', 'address', 'zip', 'postal', 'city', 'country',
-      
-      // Ratings
-      'rating', 'score', 'rank', 'position', 'order'
-    ]);
+    // Check if ecommerce domain is active
+    $activeDomain = \ClicShopping\AI\Config\DomainConfig::getActivities();
+    
+    if ($activeDomain === 'ecommerce') {
+      // Use AnalyticsConfig to get fields dynamically
+      try {
+        return \ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\AnalyticsConfig::getFallbackDatabaseFields();
+      } catch (\Exception $e) {
+        if (self::$debug) {
+          error_log("getFallbackDatabaseFields: AnalyticsConfig failed: " . $e->getMessage());
+        }
+      }
+    }
+    
+    // Domain-agnostic mode: return empty array
+    if (self::$debug) {
+      error_log("getFallbackDatabaseFields: No domain configured, returning empty array");
+    }
+    
+    return [];
   }
   
   /**
-   * Get non-database words (descriptive/explanatory terms)
+   * Get non-database words (domain-agnostic)
    * 
-   * These words are commonly used in queries but are NOT database fields.
-   * Used to filter out semantic queries from analytics queries.
+   * MIGRATION: Removed hardcoded e-commerce word list.
+   * Now uses AnalyticsConfig when ecommerce domain is active,
+   * or returns empty array for domain-agnostic mode.
    * 
-   * @return array List of non-database words
+   * @return array List of non-database words from domain configuration or empty array
    */
   private static function getNonDatabaseWords(): array
   {
-    return [
-      'description', 'summary', 'information', 'details', 'info',
-      'explanation', 'definition', 'meaning', 'purpose',
-      'features', 'benefits', 'advantages', 'characteristics',
-      'quality', 'performance', 'specifications', 'specs',
-      'history', 'background', 'story', 'about',
-      'why', 'how', 'what', 'when', 'where', 'who',
-      'policy', 'terms', 'conditions', 'rules', 'regulations'
-    ];
+    // Check if ecommerce domain is active
+    $activeDomain = DomainConfig::getActivities();
+    
+    if ($activeDomain === 'ecommerce') {
+      // Use AnalyticsConfig to get words dynamically
+      try {
+        return AnalyticsConfig::getNonDatabaseWords();
+      } catch (\Exception $e) {
+        if (self::$debug) {
+          error_log("getNonDatabaseWords: AnalyticsConfig failed: " . $e->getMessage());
+        }
+      }
+    }
+    
+    // Domain-agnostic mode: return empty array
+    if (self::$debug) {
+      error_log("getNonDatabaseWords: No domain configured, returning empty array");
+    }
+    
+    return [];
   }
   
   /**
-   * Get field abbreviations mapping
+   * Get field abbreviations mapping (domain-agnostic)
    * 
-   * Maps full field names to their common abbreviations.
-   * Used for field name normalization.
+   * MIGRATION: Removed hardcoded e-commerce abbreviations.
+   * Now uses AnalyticsConfig when ecommerce domain is active,
+   * or returns empty array for domain-agnostic mode.
    * 
-   * @return array Mapping of full name => abbreviation
+   * @return array Mapping of full name => abbreviation from domain configuration or empty array
    */
   private static function getFieldAbbreviations(): array
   {
-    return [
-      'quantity' => 'qty',
-      'reference' => 'ref',
-      'description' => 'desc',
-      'number' => 'no',
-      'identifier' => 'id',
-    ];
+    // Check if ecommerce domain is active
+    $activeDomain = DomainConfig::getActivities();
+    
+    if ($activeDomain === 'ecommerce') {
+      // Use AnalyticsConfig to get abbreviations dynamically
+      try {
+        return AnalyticsConfig::getFieldAbbreviations();
+      } catch (\Exception $e) {
+        if (self::$debug) {
+          error_log("getFieldAbbreviations: AnalyticsConfig failed: " . $e->getMessage());
+        }
+      }
+    }
+    
+    // Domain-agnostic mode: return empty array
+    if (self::$debug) {
+      error_log("getFieldAbbreviations: No domain configured, returning empty array");
+    }
+    
+    return [];
   }
 }

@@ -2294,6 +2294,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
               </div>
               <?php endif; ?>
+              
+              <!-- ============================================================================ -->
+              <!-- PERFORMANCE CHARTS SECTION (Task 7.3) -->
+              <!-- ============================================================================ -->
+              <div class="row mt-4">
+                <div class="col-md-12">
+                  <div class="card">
+                    <div class="card-header">
+                      <h6>📊 <?php echo $CLICSHOPPING_ChatGpt->getDef('cache_performance_charts') ?? 'Cache Performance Charts'; ?></h6>
+                    </div>
+                    <div class="card-body">
+                      <!-- Chart 1: Hit/Miss Rate Over Time -->
+                      <div class="row mb-4">
+                        <div class="col-md-12">
+                          <h6 class="mb-3"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_hit_miss_chart_title') ?? 'Cache Hit/Miss Rate Over Time'; ?></h6>
+                          <canvas id="cacheHitMissChart" style="max-height: 300px;"></canvas>
+                        </div>
+                      </div>
+                      
+                      <!-- Chart 2: API Cost Savings -->
+                      <div class="row mb-4">
+                        <div class="col-md-12">
+                          <h6 class="mb-3"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_cost_savings_chart_title') ?? 'API Cost Savings Over Time'; ?></h6>
+                          <canvas id="cacheCostSavingsChart" style="max-height: 300px;"></canvas>
+                        </div>
+                      </div>
+                      
+                      <!-- Chart 3: Response Time Comparison -->
+                      <div class="row mb-4">
+                        <div class="col-md-12">
+                          <h6 class="mb-3"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_response_time_chart_title') ?? 'Average Response Time Comparison'; ?></h6>
+                          <canvas id="cacheResponseTimeChart" style="max-height: 300px;"></canvas>
+                        </div>
+                      </div>
+                      
+                      <!-- Chart 4: Cache Size by Type -->
+                      <div class="row mb-4">
+                        <div class="col-md-6">
+                          <h6 class="mb-3"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_size_chart_title') ?? 'Cache Size by Type'; ?></h6>
+                          <canvas id="cacheSizeChart" style="max-height: 300px;"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                          <div class="alert alert-info mt-4">
+                            <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_charts_info_title') ?? 'About These Charts'; ?></h6>
+                            <ul class="mb-0">
+                              <li><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_hit_miss_label') ?? 'Hit/Miss Rate'; ?>:</strong> <?php echo $CLICSHOPPING_ChatGpt->getDef('cache_hit_miss_desc') ?? 'Shows cache effectiveness over time'; ?></li>
+                              <li><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_cost_savings_label') ?? 'Cost Savings'; ?>:</strong> <?php echo $CLICSHOPPING_ChatGpt->getDef('cache_cost_savings_desc') ?? 'API costs saved vs spent'; ?></li>
+                              <li><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_response_time_label') ?? 'Response Time'; ?>:</strong> <?php echo $CLICSHOPPING_ChatGpt->getDef('cache_response_time_desc') ?? 'Cached vs uncached performance'; ?></li>
+                              <li><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_size_label') ?? 'Cache Size'; ?>:</strong> <?php echo $CLICSHOPPING_ChatGpt->getDef('cache_size_desc') ?? 'Storage usage by cache type'; ?></li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div style="padding: 20px;">
@@ -2928,6 +2985,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $ajax_get_feedbacks_url = CLICSHOPPING::getConfig('http_server', 'ClicShoppingAdmin') . CLICSHOPPING::getConfig('http_path', 'ClicShoppingAdmin') . 'ajax/RAG/get_recent_feedbacks.php';
   $ajax_manage_cache_url = CLICSHOPPING::getConfig('http_server', 'ClicShoppingAdmin') . CLICSHOPPING::getConfig('http_path', 'ClicShoppingAdmin') . 'ajax/RAG/manage_cache.php';
   $get_cache_stats_url = CLICSHOPPING::getConfig('http_server', 'ClicShoppingAdmin') . CLICSHOPPING::getConfig('http_path', 'ClicShoppingAdmin'). 'ajax/RAG/get_cache_stats.php';
+  $get_cache_performance_url = CLICSHOPPING::getConfig('http_server', 'ClicShoppingAdmin') . CLICSHOPPING::getConfig('http_path', 'ClicShoppingAdmin'). 'ajax/RAG/get_cache_performance.php';
   ?>
 <script>
   // Single injection of PHP data into APP_DATA
@@ -2940,6 +2998,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       'getFeedbacksUrl' => $ajax_get_feedbacks_url,
       'cache' => $ajax_manage_cache_url,
       'cacheStatsUrl' => $get_cache_stats_url,
+      'cachePerformanceUrl' => $get_cache_performance_url,
       'analyzeFeedbacksUrl' => $ajax_analyze_feedbacks_url
     ],
     'systemReport' => $systemReport,
@@ -2986,6 +3045,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/flush_cache.js'); ?>"></script>
 <script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/feedback.js'); ?>"></script>
 <script defer src="<?php echo CLICSHOPPING::link('Shop/sources/javascript/clicshopping/ClicShoppingAdmin/Rag/latency_charts.js'); ?>"></script>
+<script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/cache_performance_charts.js'); ?>"></script>
 <?php endif; ?>
 
 

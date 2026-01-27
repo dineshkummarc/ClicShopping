@@ -121,7 +121,7 @@ class UnifiedQueryAnalyzer
     $startTime = microtime(true);
 
     if ($this->debug) {
-      error_log("🔍 " . $this->language->getDef('debug_analysis_start'));
+      error_log("[info] " . $this->language->getDef('debug_analysis_start'));
       error_log(sprintf($this->language->getDef('debug_input_query'), $query));
     }
 
@@ -542,7 +542,7 @@ class UnifiedQueryAnalyzer
       );
 
       if ($this->debug) {
-        error_log("❌ " . $this->language->getDef('error_analysis_exception') . ": " . $e->getMessage());
+        error_log("[error] " . $this->language->getDef('error_analysis_exception') . ": " . $e->getMessage());
       }
 
       // Return safe fallback

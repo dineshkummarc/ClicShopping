@@ -36,7 +36,7 @@ class SemanticDomainDetector
     $this->debug = $debug;
 
     if ($debug) {
-      error_log("SemanticDomainDetector::__construct() - Pure LLM mode, using empty domains\n");
+      error_log("SemanticDomainDetector::__construct() - Pure LLM mode, using empty domains");
     }
     $this->enrichedDomains = [];
   }

@@ -56,9 +56,9 @@ abstract class AbstractFormatter
 
     if ($this->debug) {
       error_log("================================================================================\n");
-      error_log("mapColumnName\n");
+      error_log("mapColumnName");
       error_log("================================================================================\n");
-      error_log("Final message length: " . $displayName . '/n' . "\n");
+      error_log("Final message length: " . $displayName);
     }
 
     if ($displayName && $displayName !== $langKey) {

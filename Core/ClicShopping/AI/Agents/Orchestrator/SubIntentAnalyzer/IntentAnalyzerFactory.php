@@ -72,7 +72,7 @@ class IntentAnalyzerFactory
   public function analyzeIntent(string $query, string $originalQuery): array
   {
     if ($this->debug) {
-      error_log("\n=== INTENT ANALYZER FACTORY ===");
+      error_log("=== INTENT ANALYZER FACTORY ===");
       error_log("Query: '{$query}'");
       error_log("Original: '{$originalQuery}'");
     }
@@ -99,7 +99,7 @@ class IntentAnalyzerFactory
       $hybridResult = $this->hybridAnalyzer->analyze($query, $originalQuery);
 
       if ($this->debug) {
-        error_log("✅ HYBRID query detected (" . count($matchedAnalyzers) . " types)");
+        error_log("[info] HYBRID query detected (" . count($matchedAnalyzers) . " types)");
         error_log("Hybrid confidence: " . round($hybridResult['confidence'], 3));
       }
 
@@ -123,7 +123,7 @@ class IntentAnalyzerFactory
       $result = $matchedAnalyzers[$type];
 
       if ($this->debug) {
-        error_log("✅ SINGLE intent detected: {$type}");
+        error_log("[info] SINGLE intent detected: {$type}");
         error_log("Confidence: " . round($result['confidence'], 3));
       }
 
@@ -142,7 +142,7 @@ class IntentAnalyzerFactory
 
     // No matches - default to semantic with low confidence
     if ($this->debug) {
-      error_log("⚠️ NO intent matched - defaulting to semantic");
+      error_log("[warning] NO intent matched - defaulting to semantic");
     }
 
     $this->logger->logStructured(

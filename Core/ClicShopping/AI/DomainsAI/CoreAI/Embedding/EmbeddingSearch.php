@@ -161,7 +161,7 @@ class EmbeddingSearch
         }
         
         if ($this->debug) {
-          error_log("❌ SEARCH CACHE MISS - Performing vector search");
+          error_log("[error] SEARCH CACHE MISS - Performing vector search");
         }
       }
       
@@ -195,7 +195,7 @@ class EmbeddingSearch
       $totalDuration = (microtime(true) - $startTime) * 1000;
       
       if ($this->debug) {
-        error_log("✅ Vector search completed");
+        error_log("[info] Vector search completed");
         error_log("Results: " . count($resultsArray));
         error_log("Search duration: " . round($searchDuration, 2) . " ms");
         error_log("Total duration: " . round($totalDuration, 2) . " ms");
@@ -248,7 +248,7 @@ class EmbeddingSearch
       );
       
       if ($this->debug) {
-        error_log("❌ SEARCH FAILED");
+        error_log("[error] SEARCH FAILED");
         error_log("Error: " . $e->getMessage());
         error_log("Duration: " . round($duration, 2) . " ms");
         error_log("--- EMBEDDING SEARCH END ---\n");
@@ -296,7 +296,7 @@ class EmbeddingSearch
         }
         
         if ($this->debug) {
-          error_log("❌ EMBEDDING CACHE MISS - Generating embedding");
+          error_log("[error] EMBEDDING CACHE MISS - Generating embedding");
         }
       }
       
@@ -343,7 +343,7 @@ class EmbeddingSearch
       );
       
       if ($this->debug) {
-        error_log("❌ EMBEDDING GENERATION FAILED");
+        error_log("[error] EMBEDDING GENERATION FAILED");
         error_log("Error: " . $e->getMessage());
       }
       

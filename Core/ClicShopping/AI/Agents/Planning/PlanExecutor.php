@@ -85,7 +85,7 @@ class PlanExecutor
 
 
     // Direct SerpApi verification (without Gpt dependency)
-    error_log("🔍 PlanExecutor: Direct SerpApi verification...");
+    error_log("[info] PlanExecutor: Direct SerpApi verification...");
 
     $serpApiKey = "";
 
@@ -93,27 +93,27 @@ class PlanExecutor
     $envKey = getenv('SERP_API_KEY');
     if (!empty($envKey)) {
       $serpApiKey = $envKey;
-      error_log("🔑 PlanExecutor: Key found in environment variable");
+      error_log("[info] PlanExecutor: Key found in environment variable");
     }
     // 2. ClicShopping constant
     elseif (defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI')) {
       $constKey = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI;
       if (!empty($constKey)) {
         $serpApiKey = $constKey;
-        error_log("🔑 PlanExecutor: Key found in constant");
+        error_log("[info] PlanExecutor: Key found in constant");
       }
     }
 
     if (!empty($serpApiKey)) {
-      error_log("🔑 SERPAPI Key loaded: " . substr($serpApiKey, 0, 10) . "...");
+      error_log("[info] SERPAPI Key loaded: " . substr($serpApiKey, 0, 10) . "...");
 
       // Set environment variable for WebSearchTool
       putenv('SERP_API_KEY=' . $serpApiKey);
-      error_log("🔍 PlanExecutor: putenv('SERP_API_KEY') set");
+      error_log("[info] PlanExecutor: putenv('SERP_API_KEY') set");
 
       $hasValidKey = true;
     } else {
-      error_log("❌ SERPAPI Key not loaded - no source found");
+      error_log("[error] SERPAPI Key not loaded - no source found");
       $hasValidKey = false;
     }
 
@@ -126,7 +126,7 @@ class PlanExecutor
           $this->securityLogger->logSecurityEvent("WebSearchTool initialized successfully", 'info');
         }
       } catch (Exception $e) {
-        error_log("⚠️ WebSearchTool initialization failed: " . $e->getMessage());
+        error_log("[warning]️ WebSearchTool initialization failed: " . $e->getMessage());
         $this->webSearchTool = null;
 
         if ($this->debug) {
@@ -134,7 +134,7 @@ class PlanExecutor
         }
       }
     } else {
-      error_log("ℹ️ SerpApi not configured - Web search disabled");
+      error_log("ℹ[info] SerpApi not configured - Web search disabled");
       $this->webSearchTool = null;
 
       if ($this->debug) {
@@ -179,7 +179,7 @@ class PlanExecutor
       if ($this->debug) {
         $stepCount = count($plan->getSteps());
         $this->securityLogger->logSecurityEvent("Starting plan execution: {$stepCount} steps", 'info');
-        error_log("⏱️ [PERF] PlanExecutor: Starting execution of {$stepCount} steps");
+        error_log("[time] [PERF] PlanExecutor: Starting execution of {$stepCount} steps");
       }
 
       // Exécuter les étapes
@@ -194,7 +194,7 @@ class PlanExecutor
             return $this->executeStepByType($step, $plan);
           });
           if ($this->debug) {
-            error_log("⏱️ [PERF] PlanExecutor: executeSteps took " . round((microtime(true) - $stepsStart), 2) . "s");
+            error_log("[time]️ [PERF] PlanExecutor: executeSteps took " . round((microtime(true) - $stepsStart), 2) . "s");
           }
 
           // Si toutes les étapes sont complétées, synthétiser le résultat
@@ -202,7 +202,7 @@ class PlanExecutor
             $synthesizeStart = microtime(true);
             $finalResult = $this->synthesizeResults($currentPlan);
             if ($this->debug) {
-              error_log("⏱️ [PERF] PlanExecutor: synthesizeResults took " . round((microtime(true) - $synthesizeStart), 2) . "s");
+              error_log("[time] [PERF] PlanExecutor: synthesizeResults took " . round((microtime(true) - $synthesizeStart), 2) . "s");
             }
             // synthesizeResults() returns an array, extract text_response for complete()
             $textResponse = is_array($finalResult) ? ($finalResult['text_response'] ?? json_encode($finalResult)) : $finalResult;
@@ -225,7 +225,7 @@ class PlanExecutor
               $this->securityLogger->logSecurityEvent('result', 'info', $array_execute);
               
               // 🆕 Debug: Check if source_attribution is in finalResult
-              error_log("🔍 PlanExecutor: finalResult has source_attribution: " . 
+              error_log("[info] PlanExecutor: finalResult has source_attribution: " .
                 (isset($finalResult['source_attribution']) ? 'YES' : 'NO'));
               if (isset($finalResult['source_attribution'])) {
                 error_log("   Source type: " . ($finalResult['source_attribution']['source_type'] ?? 'N/A'));
@@ -368,7 +368,7 @@ class PlanExecutor
   private function executeAnalyticsQuery(TaskStep $step, array $context): array
   {
     // 🔧 TASK 4.3.4.3: Add logging to trace query extraction
-    error_log("\n" . str_repeat("-", 100));
+    error_log(str_repeat("-", 100));
     error_log("TASK 4.3.4.3: PlanExecutor.executeAnalyticsQuery() CALLED");
     error_log("-" . str_repeat("-", 99));
     error_log("Step ID: " . $step->getId());
@@ -386,7 +386,7 @@ class PlanExecutor
     error_log("Query is empty: " . (empty($query) ? 'YES' : 'NO'));
     
     if (empty($query)) {
-      error_log("❌ WARNING: Query is EMPTY in PlanExecutor!");
+      error_log("[error] WARNING: Query is EMPTY in PlanExecutor!");
       error_log("This means either:");
       error_log("  1. sub_query metadata is not set");
       error_log("  2. step description is empty");

@@ -1,7 +1,4 @@
-text_rag_entity_metadata_guidelines = <<<GUIDELINES
----
-ENTITY METADATA GUIDELINES
----
+text_rag_entity_metadata_guidelines = --- ENTITY METADATA GUIDELINES ---
 When processing queries that reference specific entities (products, orders, customers):
 
 1. ENTITY EXTRACTION: Always try to extract entity_id and entity_type from:
@@ -31,5 +28,3 @@ When processing queries that reference specific entities (products, orders, cust
      }
    }
    ```
-
-GUIDELINES;

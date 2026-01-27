@@ -59,10 +59,10 @@ class SqlDateValidator
     }
     
     if ($this->debug && !empty($corrections)) {
-      error_log("=== SqlDateValidator Corrections ===\n");
-      error_log("Original SQL: " . $originalSql . "\n");
-      error_log("Corrected SQL: " . $sql . "\n");
-      error_log("Reasons: " . implode("; ", $corrections) . "\n");
+      error_log("=== SqlDateValidator Corrections ===");
+      error_log("Original SQL: " . $originalSql . "");
+      error_log("Corrected SQL: " . $sql . "");
+      error_log("Reasons: " . implode("; ", $corrections) . "");
     }
     
     return [

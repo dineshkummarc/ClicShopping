@@ -47,6 +47,8 @@ use ClicShopping\AI\Helper\OrchestratorHelper;
 
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\AI\InterfacesAI\QueryTypeDomainInterface;
+use ClicShopping\AI\Config\DomainConfig;
+use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
 
 /**
  * OrchestratorAgent Class
@@ -232,7 +234,7 @@ class OrchestratorAgent
     $executionId = null;
     
     if ($this->debug) {
-      error_log("⏱️ [PERF] processWithValidation START at " . date('H:i:s'));
+      error_log("[time]️ [PERF] processWithValidation START at " . date('H:i:s'));
     }
 
     try {
@@ -249,10 +251,12 @@ class OrchestratorAgent
           );
         }
         // Set default context check (allow query to proceed)
+        // Use DomainConfig to get active domain instead of hardcoding 'ecommerce'
+        $activeDomain = DomainConfig::getActivities();
         $contextCheck = [
           'is_out_of_context' => false,
           'context_relevance' => 1.0,
-          'detected_category' => 'ecommerce',
+          'detected_category' => $activeDomain ?: 'generic',
           'confidence' => 1.0,
           'explanation' => 'Short query - skipped out-of-context detection (likely product name)',
           'suggested_action' => 'allow'
@@ -282,12 +286,35 @@ class OrchestratorAgent
           'warning'
         );
         
+        // Build dynamic error message based on active domain
+        $activeDomain = DomainConfig::getActivities();
+        $errorMessage = "I'm sorry, but this question is not related to business operations.";
+        
+        if ($activeDomain === 'ecommerce') {
+          // Use EntityConfig to get entity types dynamically
+          try {
+            $entityTypes = EntityConfig::getEntityTypes();
+            if (!empty($entityTypes)) {
+              $entityList = implode(', ', $entityTypes);
+              $errorMessage = "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about {$entityList}, revenue, analytics, and business operations.";
+            } else {
+              $errorMessage = "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about business data, revenue, analytics, and operations.";
+            }
+          } catch (\Exception $e) {
+            // Fallback to generic message if EntityConfig fails
+            $errorMessage = "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about business data, revenue, analytics, and operations.";
+          }
+        } else {
+          // Generic message for other domains or no domain
+          $errorMessage = "I'm sorry, but this question is not related to the configured business domain. I can only help with questions about business data and operations.";
+        }
+        
         return [
           'success' => false,
           'type' => 'error',
           'error' => 'out_of_context',
-          'text_response' => "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about products, orders, customers, revenue, analytics, and business operations.",
-          'response' => "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about products, orders, customers, revenue, analytics, and business operations.",
+          'text_response' => $errorMessage,
+          'response' => $errorMessage,
           'out_of_context_detection' => [
             'is_out_of_context' => true,
             'category' => $contextCheck['detected_category'],
@@ -887,12 +914,12 @@ class OrchestratorAgent
       $translatedQuery = $queryToProcess;
       
       // Log for analysis
-      error_log("🚨 HALLUCINATION: '$query' → '$translatedQuery' (keywords: " . implode(', ', $hallucinationKeywords) . ")");
+      error_log("[warning] HALLUCINATION: '$query' → '$translatedQuery' (keywords: " . implode(', ', $hallucinationKeywords) . ")");
       error_log("   → Fallback to original: '$queryToProcess'");
     }
 
     if ($this->debug) {
-      error_log("⏱️ [PERF] analyzeIntent took " . round((microtime(true) - $intentStart), 2) . "s");
+      error_log("[time]️ [PERF] analyzeIntent took " . round((microtime(true) - $intentStart), 2) . "s");
       $this->securityLogger->logStructured(
         'info',
         'OrchestratorAgent',
@@ -1034,7 +1061,7 @@ class OrchestratorAgent
     // Future Enhancement: Business Domains (Apps/ - rag-multi-domain-evolution)
     // --------------------------------------------------------------------------
     // Will also route to business domains that define WHAT data is queried:
-    // - Ecommerce: Products, orders, customers (Apps/Ecommerce/)
+    // - Ecommerce: Dynamic entity discovery via EntityConfig (Apps/Ecommerce/)
     // - Finance: Transactions, invoices, payments (Apps/Finance/)
     // - HR: Employees, payroll, benefits (Apps/HR/)
     // - Trading: Stocks, portfolios, market data (Apps/Trading/)
@@ -1120,7 +1147,7 @@ class OrchestratorAgent
     $planStart = microtime(true);
     $plan = $this->taskPlanner->createPlan($intent, $queryToProcess, $enrichedContext);
     if ($this->debug) {
-      error_log("⏱️ [PERF] createPlan took " . round((microtime(true) - $planStart), 2) . "s");
+      error_log("[time]️ [PERF] createPlan took " . round((microtime(true) - $planStart), 2) . "s");
     }
 
     $this->workingMemory->set('execution_plan', $plan->getSummary());

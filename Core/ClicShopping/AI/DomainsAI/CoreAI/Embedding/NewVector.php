@@ -221,7 +221,7 @@ class NewVector
           }
         }
 
-        error_log("❌ EMBEDDING CACHE MISS (file) - Calling API - Model: {$model}");
+        error_log("[error] EMBEDDING CACHE MISS (file) - Calling API - Model: {$model}");
 
         $estimatedTokens = self::estimateTokenCount($totalContent);
 
@@ -269,7 +269,7 @@ class NewVector
             }
           }
 
-          error_log("❌ EMBEDDING CACHE MISS (text-multi) - Calling API - Model: {$model}");
+          error_log("[error] EMBEDDING CACHE MISS (text-multi) - Calling API - Model: {$model}");
 
           $tempDocument = new Document();
           $tempDocument->content = $text_description;
@@ -304,7 +304,7 @@ class NewVector
             }
           }
 
-          error_log("❌ EMBEDDING CACHE MISS (text-single) - Calling API - Model: {$model}");
+          error_log("[error] EMBEDDING CACHE MISS (text-single) - Calling API - Model: {$model}");
 
           // Generate embedding (API call 200-500ms)
           $embedded = $embeddingGenerator->embedText($text_description);

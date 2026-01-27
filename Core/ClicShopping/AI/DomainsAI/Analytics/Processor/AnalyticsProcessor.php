@@ -10,7 +10,9 @@
 
 namespace ClicShopping\AI\DomainsAI\Analytics\Processor;
 
+use ClicShopping\AI\Config\DomainConfig;
 use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
 
 /**
  * AnalyticsProcessor Class
@@ -74,7 +76,7 @@ class AnalyticsProcessor
   public function calculateConfidence(string $query): array
   {
     if ($this->debug) {
-      error_log("\n--- ANALYTICS CONFIDENCE CALCULATION ---");
+      error_log("--- ANALYTICS CONFIDENCE CALCULATION ---");
       error_log("Query: '{$query}'");
     }
 
@@ -85,7 +87,7 @@ class AnalyticsProcessor
       if ($this->debug) {
         error_log("Analytics confidence calculation bypassed (Pure LLM mode)");
         error_log("Returning low confidence (0.5) - LLM will handle classification");
-        error_log("--- END ANALYTICS CONFIDENCE ---\n");
+        error_log("--- END ANALYTICS CONFIDENCE ---");
       }
 
       return [
@@ -173,6 +175,10 @@ class AnalyticsProcessor
    * Simple analytics queries don't need entity context.
    * Examples: "count all products", "show me sales", "list orders"
    *
+   * 🔧 MIGRATION: Domain-agnostic implementation
+   * - Uses EntityConfig::getEntityTypes() when ecommerce domain is active
+   * - Uses generic patterns when no domain is configured
+   *
    * @param string $query Query to check
    * @param float $confidence Query confidence
    * @return bool True if simple analytics query
@@ -184,10 +190,40 @@ class AnalyticsProcessor
       return false;
     }
 
-    // Check for simple analytics patterns
+    // Get active domain
+    $domain = DomainConfig::getActivities();
+    
+    // Build entity list dynamically based on domain
+    $entityList = '';
+    if ($domain === 'ecommerce') {
+      try {
+        $entityConfig = EntityConfig::class;
+        if (class_exists($entityConfig) && method_exists($entityConfig, 'getEntityTypes')) {
+          $entities = $entityConfig::getEntityTypes();
+          if (!empty($entities)) {
+            $entityList = implode('|', array_map('strtolower', $entities));
+          }
+        }
+      } catch (\Exception $e) {
+        // Fallback to generic pattern if EntityConfig fails
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            'Failed to load EntityConfig: ' . $e->getMessage(),
+            'warning'
+          );
+        }
+      }
+    }
+    
+    // If no entity list available, use generic pattern
+    if (empty($entityList)) {
+      $entityList = 'items|records|entries|data';
+    }
+
+    // Check for simple analytics patterns with dynamic entity list
     $simplePatterns = [
-      '/\b(count|total|sum|average|list|show)\s+(all|total)?\s*(products|orders|customers|categories)\b/i',
-      '/\b(how many|combien)\s+(products|orders|customers|categories)\b/i',
+      '/\b(count|total|sum|average|list|show)\s+(all|total)?\s*(' . $entityList . ')\b/i',
+      '/\b(how many|combien)\s+(' . $entityList . ')\b/i',
     ];
 
     foreach ($simplePatterns as $pattern) {

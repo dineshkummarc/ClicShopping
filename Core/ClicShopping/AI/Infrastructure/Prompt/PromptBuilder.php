@@ -242,7 +242,7 @@ class PromptBuilder
       error_log("tableStructureInstructions length: " . strlen($tableStructureInstructions) . " chars");
       error_log("text_multi_query_warning length: " . strlen($text_multi_query_warning) . " chars");
       error_log("entityMetadataGuidelines length: " . strlen($entityMetadataGuidelines) . " chars");
-      error_log("🚨 text_aggregation_rules length: " . strlen($aggregationRules) . " chars");
+      error_log("text_aggregation_rules length: " . strlen($aggregationRules) . " chars");
       error_log("text_sql_generation_rules length: " . strlen($sqlGenerationRules) . " chars");
       error_log("text_order_calculation length: " . strlen($orderCalculation) . " chars");
       error_log("text_query_examples length: " . strlen($queryExamples) . " chars");

@@ -75,7 +75,7 @@ class AmbiguityHandler
     callable $sqlGenerator
   ): array {
     if ($this->debug) {
-      error_log("\n" . str_repeat("*", 100));
+      error_log(str_repeat("*", 100));
       error_log("DEBUG: AmbiguityHandler.handleAmbiguousQuery() - START");
       error_log("*" . str_repeat("*", 99));
     }
@@ -96,7 +96,7 @@ class AmbiguityHandler
     // Execute each interpretation
     foreach ($interpretations as $interpretation) {
       if ($this->debug) {
-        error_log("\nExecuting interpretation: " . $interpretation['type']);
+        error_log("Executing interpretation: " . $interpretation['type']);
         error_log("SQL: " . substr($interpretation['sql'], 0, 200));
       }
       

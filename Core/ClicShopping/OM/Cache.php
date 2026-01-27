@@ -634,7 +634,16 @@ class Cache
 
     return round($bytes, $precision) . ' ' . $units[$i];
   }
-  
+
+  /**
+   * @param string $fullKey
+   * @return mixed
+   */
+  public static function memoryCache(string $fullKey): mixed
+  {
+    return static::$memoryCache[$fullKey] ?? null;
+  }
+
   /**
    * Purge expired cache files
    *

@@ -102,8 +102,9 @@ class WebSearchPostFilter
     ];
     
     // Check if query has entity keywords (database query, not web search)
+    // 🔧 MIGRATION: Use centralized EntityKeywordsPattern instead of WebSearchPatterns
     $hasEntityKeyword = false;
-    foreach (WebSearchPatterns::$entityKeywords as $entity) {
+    foreach (WebSearchPatterns::getEntityKeywords() as $entity) {
       if (strpos($query, $entity) !== false) {
         $hasEntityKeyword = true;
         break;
@@ -179,7 +180,7 @@ class WebSearchPostFilter
       
     } catch (\Exception $e) {
       // Database error - continue with fallback patterns
-      error_log("WebSearchPostFilter: Database error - " . $e->getMessage() . "\n");
+      error_log("WebSearchPostFilter: Database error - " . $e->getMessage());
     }
     
     // ========================================================================

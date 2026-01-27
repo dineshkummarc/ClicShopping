@@ -691,3 +691,19 @@ no_cache_warming_data = No cache warming data available yet
 no_hybrid_query_data = No hybrid query data available yet
 no_timeout_data = No timeout management data available yet
 data_will_be_collected = Data will be collected automatically during query execution
+
+# Graphiques de Performance du Cache (Tâche 7.3)
+cache_performance_charts = Graphiques de Performance du Cache
+cache_hit_miss_chart_title = Taux de Hit/Miss du Cache dans le Temps
+cache_cost_savings_chart_title = Économies de Coûts API dans le Temps
+cache_response_time_chart_title = Comparaison des Temps de Réponse Moyens
+cache_size_chart_title = Taille du Cache par Type
+cache_charts_info_title = À Propos de Ces Graphiques
+cache_hit_miss_label = Taux Hit/Miss
+cache_hit_miss_desc = Montre l'efficacité du cache dans le temps
+cache_cost_savings_label = Économies de Coûts
+cache_cost_savings_desc = Coûts API économisés vs dépensés
+cache_response_time_label = Temps de Réponse
+cache_response_time_desc = Performance avec vs sans cache
+cache_size_label = Taille du Cache
+cache_size_desc = Utilisation du stockage par type de cache

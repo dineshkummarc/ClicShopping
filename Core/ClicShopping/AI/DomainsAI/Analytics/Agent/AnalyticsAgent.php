@@ -226,7 +226,7 @@ class AnalyticsAgent
    */
   public function executeQuery(string $question, array $feedbackContext = []): array
   {
-    error_log("\n" . str_repeat("-", 100));
+    error_log(str_repeat("-", 100));
     error_log("DEBUG: AnalyticsAgent.executeQuery() - START");
     error_log("-" . str_repeat("-", 99));
     error_log("Question: '{$question}'");

@@ -65,7 +65,7 @@ class AnalyticsExecutor
   public function executeAnalyticsQuery(string $query, array $context = []): array
   {
     // 🔧 TASK 4.3.4.3: Add comprehensive logging to trace SQL generation
-    error_log("\n" . str_repeat("=", 100));
+    error_log(str_repeat("=", 100));
     error_log("TASK 4.3.4.3: AnalyticsExecutor.executeAnalyticsQuery() CALLED");
     error_log(str_repeat("=", 100));
     error_log("Query received: '{$query}'");
@@ -89,7 +89,7 @@ class AnalyticsExecutor
 
       // 🔧 TASK 4.3.4.3: Check if query is empty before calling processBusinessQuery
       if (empty($query)) {
-        error_log("❌ ERROR: Query is EMPTY before calling processBusinessQuery!");
+        error_log("[error] ERROR: Query is EMPTY before calling processBusinessQuery!");
         error_log("This is the root cause - query was lost somewhere in the pipeline");
         
         return [
@@ -130,7 +130,7 @@ class AnalyticsExecutor
       return $formattedResult;
 
     } catch (\Exception $e) {
-      error_log("❌ EXCEPTION in executeAnalyticsQuery: " . $e->getMessage());
+      error_log("[error] EXCEPTION in executeAnalyticsQuery: " . $e->getMessage());
       error_log(str_repeat("=", 100) . "\n");
       return $this->handleAnalyticsError($e, $query);
     }
@@ -406,7 +406,7 @@ class AnalyticsExecutor
     
     // No results
     if ($count === 0) {
-      error_log("❌ RETURNING: No results found (count === 0)");
+      error_log("[error] RETURNING: No results found (count === 0)");
       error_log("This is the message user sees!");
       error_log(str_repeat("=", 100) . "\n");
       return "No results found for: {$question}";

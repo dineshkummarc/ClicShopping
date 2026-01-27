@@ -220,13 +220,18 @@ class HallucinationDetector
   /**
    * Detect out-of-context queries using pure LLM
    *
-   * 🔧 TASK 13.1: Detect non-e-commerce queries using LLM (no patterns)
+   * 🔧 TASK 13.1: Detect non-business queries using LLM (no patterns)
+   * 🔧 MIGRATION: Domain-agnostic implementation
    *
-   * This method uses LLM to determine if a query is out-of-context for an
-   * e-commerce backoffice BI system. It does NOT use pattern matching.
+   * This method uses LLM to determine if a query is out-of-context for the
+   * configured domain. It does NOT use pattern matching.
+   *
+   * **Domain-Aware Behavior:**
+   * - When domain is configured (e.g., 'ecommerce'): Uses domain-specific context from language files
+   * - When no domain configured: Uses generic business context
    *
    * **ONLY business-related questions are accepted:**
-   * - E-commerce operations (products, orders, customers, revenue)
+   * - Domain-specific operations (when domain is configured)
    * - Marketing (campaigns, promotions, advertising, SEO)
    * - Innovation (new products, market trends, competitive analysis)
    * - Prospection (lead generation, customer acquisition, market research)
@@ -235,7 +240,7 @@ class HallucinationDetector
    * **Action Logic:**
    * - **REJECT**: Sports, entertainment, personal questions, general knowledge NOT related to business
    * - **REDIRECT to WEB_SEARCH**: Business/marketing/innovation questions requiring external data
-   * - **ALLOW**: E-commerce business queries using internal database
+   * - **ALLOW**: Business queries using internal database
    *
    * Examples of queries that should be REJECTED:
    * - Sports: "What is the winner for the next world cup championship"
@@ -244,16 +249,16 @@ class HallucinationDetector
    * - Personal: "Give me personal advice"
    *
    * Examples of queries that should be REDIRECTED to WEB_SEARCH:
-   * - Competitor analysis: "iPhone price on Amazon"
-   * - Market research: "what are the latest e-commerce trends?"
+   * - Competitor analysis: "competitor prices on marketplace"
+   * - Market research: "what are the latest industry trends?"
    * - Marketing: "how to improve our marketing campaigns?"
    * - Prospection: "best practices for customer acquisition"
-   * - Innovation: "emerging technologies in e-commerce"
+   * - Innovation: "emerging technologies in the industry"
    *
    * Examples of queries that should be ALLOWED (in-context):
-   * - Product search: "show products", "find iPhone"
-   * - Analytics: "total revenue 2025", "how many orders?"
-   * - Business metrics: "best selling products", "customer statistics"
+   * - Data search: "show records", "find items"
+   * - Analytics: "total revenue 2025", "how many transactions?"
+   * - Business metrics: "best performing items", "statistics"
    *
    * @param string $query User query to analyze
    * @return array Detection result with:
@@ -341,19 +346,27 @@ class HallucinationDetector
    * Build LLM prompt for out-of-context detection
    *
    * Creates a prompt that asks the LLM to determine if a query is relevant
-   * to an e-commerce backoffice BI system.
+   * to the configured domain context (or generic context if no domain).
+   *
+   * 🔧 MIGRATION: Domain-agnostic implementation
+   * - Uses DomainConfig::getActiveDomain() to check active domain
+   * - Loads domain-specific prompt from language files when domain is active
+   * - Uses generic prompt when no domain is configured
    *
    * @param string $query User query
    * @return string LLM prompt
    */
   private function buildOutOfContextDetectionPrompt(string $query): string
   {
+    $domain = DomainConfig::getActivities();
+    
     // Get prompt template from language file with query parameter
+    // The language file path is already domain-aware via DomainConfig::loadLanguageFile()
     $prompt = $this->language->getDef('text_out_of_context_detection_prompt', ['query' => $query]);
     
     if ($this->debug) {
       $this->logger->logSecurityEvent(
-        "Using out-of-context detection prompt from language file",
+        "Using out-of-context detection prompt from language file (domain: {$domain})",
         'info'
       );
     }
@@ -388,6 +401,10 @@ class HallucinationDetector
   /**
    * Validate and sanitize out-of-context detection result
    *
+   * 🔧 MIGRATION: Domain-agnostic implementation
+   * - Uses DomainConfig::getActiveDomain() for default category
+   * - Falls back to 'generic' when no domain is configured
+   *
    * @param array|null $result Parsed JSON from LLM
    * @return array Validated result
    */
@@ -410,10 +427,14 @@ class HallucinationDetector
       : 1.0;
 
     // Validate detected_category
-    $validCategories = ['sports', 'entertainment', 'general_knowledge', 'news', 'other', 'ecommerce'];
+    // 🔧 MIGRATION: Use DomainConfig to get active domain for default category
+    $activeDomain = DomainConfig::getActivities();
+    $defaultCategory = !empty($activeDomain) ? $activeDomain : 'generic';
+    
+    $validCategories = ['sports', 'entertainment', 'general_knowledge', 'news', 'other', $defaultCategory];
     $result['detected_category'] = isset($result['detected_category']) && in_array($result['detected_category'], $validCategories, true)
       ? $result['detected_category']
-      : 'ecommerce';
+      : $defaultCategory;
 
     // Validate confidence (0.0-1.0)
     $result['confidence'] = isset($result['confidence']) && is_numeric($result['confidence'])
@@ -440,14 +461,22 @@ class HallucinationDetector
   /**
    * Get default in-context result (safe fallback)
    *
+   * 🔧 MIGRATION: Domain-agnostic implementation
+   * - Uses DomainConfig::getActiveDomain() for category
+   * - Falls back to 'generic' when no domain is configured
+   *
    * @return array Default result assuming query is in-context
    */
   private function getDefaultInContextResult(): array
   {
+    // 🔧 MIGRATION: Use DomainConfig to get active domain
+    $activeDomain = DomainConfig::getActivities();
+    $defaultCategory = !empty($activeDomain) ? $activeDomain : 'generic';
+    
     return [
       'is_out_of_context' => false,
       'context_relevance' => 1.0,
-      'detected_category' => 'ecommerce',
+      'detected_category' => $defaultCategory,
       'confidence' => 0.5,
       'explanation' => 'Assumed in-context (detection failed)',
       'suggested_action' => 'allow',

@@ -352,4 +352,46 @@ class GuardrailsConfig extends GuardrailsConfigAbstract
     $config = self::getConfig();
     return $config['context'];
   }
+
+  /**
+   * Get validation patterns for realistic metrics
+   *
+   * Returns validation rules for e-commerce metrics to detect unrealistic values.
+   * Used by LlmGuardrails to validate AI-generated responses.
+   *
+   * Validation Rules:
+   * - max_growth_percentage: Maximum realistic growth percentage (500%)
+   * - max_percentage: Maximum percentage value (1000%)
+   * - min_percentage: Minimum percentage value (0%)
+   *
+   * @return array Associative array of validation patterns
+   */
+  public static function getValidationPatterns(): array
+  {
+    return [
+      'max_growth_percentage' => 500,  // Maximum realistic growth (500%)
+      'max_percentage' => 1000,        // Maximum percentage value
+      'min_percentage' => 0,           // Minimum percentage value
+    ];
+  }
+
+  /**
+   * Get business validation rules for e-commerce content
+   *
+   * Returns business logic validation rules specific to e-commerce domain.
+   * Used by LlmGuardrails to validate business content in AI responses.
+   *
+   * Business Rules:
+   * - validate_percentages: Whether to validate percentage ranges
+   * - validate_metrics: Whether to validate metric realism
+   *
+   * @return array Associative array of business validation rules
+   */
+  public static function getBusinessRules(): array
+  {
+    return [
+      'validate_percentages' => true,
+      'validate_metrics' => true,
+    ];
+  }
 }

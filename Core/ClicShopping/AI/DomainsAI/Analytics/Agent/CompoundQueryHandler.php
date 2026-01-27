@@ -81,7 +81,7 @@ class CompoundQueryHandler
   public function detectCompoundQuery(string $query): array
   {
     if ($this->debug) {
-      error_log("\n" . str_repeat("=", 80));
+      error_log(str_repeat("=", 80));
       error_log("CompoundQueryHandler: detectCompoundQuery()");
       error_log("Query: " . substr($query, 0, 100));
     }
@@ -148,7 +148,7 @@ class CompoundQueryHandler
   public function splitIntoSubQueries(string $query): array
   {
     if ($this->debug) {
-      error_log("\n" . str_repeat("-", 80));
+      error_log(str_repeat("-", 80));
       error_log("CompoundQueryHandler: splitIntoSubQueries()");
       error_log("Query: " . substr($query, 0, 100));
     }

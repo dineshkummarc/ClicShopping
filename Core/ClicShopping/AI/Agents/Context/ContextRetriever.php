@@ -11,10 +11,13 @@
 namespace ClicShopping\AI\Agents\Context;
 
 use AllowDynamicProperties;
+
 use ClicShopping\OM\Cache;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Memory\ConversationMemory;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
+use ClicShopping\AI\Config\DomainConfig;
+use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
 
 /**
  * ContextRetriever Class
@@ -85,7 +88,7 @@ class ContextRetriever
     $startTime = microtime(true);
 
     if ($this->debug) {
-      error_log("\n--- CONTEXT RETRIEVAL START ---");
+      error_log("--- CONTEXT RETRIEVAL START ---");
       error_log("Query: '{$query}'");
       error_log("Type: {$classification['type']}");
       error_log("Confidence: {$classification['confidence']}");
@@ -96,7 +99,7 @@ class ContextRetriever
       $duration = (microtime(true) - $startTime) * 1000;
 
       if ($this->debug) {
-        error_log("⏭️ Context NOT needed - skipping retrieval");
+        error_log("[info]️ Context NOT needed - skipping retrieval");
         error_log("Duration: " . round($duration, 2) . " ms");
         error_log("--- CONTEXT RETRIEVAL END ---\n");
       }
@@ -151,7 +154,7 @@ class ContextRetriever
       }
 
       if ($this->debug) {
-        error_log("❌ CACHE MISS - Loading fresh context");
+        error_log("[error] CACHE MISS - Loading fresh context");
       }
     }
 
@@ -260,11 +263,42 @@ class ContextRetriever
 
     // 4. Check for simple analytics queries without filters
     // These don't need entity context
+    // 🔧 MIGRATION: Domain-agnostic implementation
     if ($type === 'analytics' && $confidence >= 0.8) {
-      // Simple analytics patterns that don't need context
+      // Get active domain
+      $domain = DomainConfig::getActivities();
+      
+      // Build entity list dynamically based on domain
+      $entityList = '';
+      if ($domain === 'ecommerce') {
+        try {
+          $entityConfig = EntityConfig::class;
+          if (class_exists($entityConfig) && method_exists($entityConfig, 'getEntityTypes')) {
+            $entities = $entityConfig::getEntityTypes();
+            if (!empty($entities)) {
+              $entityList = implode('|', array_map('strtolower', $entities));
+            }
+          }
+        } catch (\Exception $e) {
+          // Fallback to generic pattern if EntityConfig fails
+          if ($this->debug) {
+            $this->logger->logSecurityEvent(
+              'Failed to load EntityConfig in ContextRetriever: ' . $e->getMessage(),
+              'warning'
+            );
+          }
+        }
+      }
+      
+      // If no entity list available, use generic pattern
+      if (empty($entityList)) {
+        $entityList = 'items|records|entries|data';
+      }
+      
+      // Simple analytics patterns that don't need context (with dynamic entity list)
       $simpleAnalyticsPatterns = [
-        '/\b(count|total|sum|average|list|show)\s+(all|total)?\s*(products|orders|customers|categories)\b/i',
-        '/\b(how many|combien)\s+(products|orders|customers|categories)\b/i',
+        '/\b(count|total|sum|average|list|show)\s+(all|total)?\s*(' . $entityList . ')\b/i',
+        '/\b(how many|combien)\s+(' . $entityList . ')\b/i',
       ];
 
       foreach ($simpleAnalyticsPatterns as $pattern) {
@@ -872,7 +906,7 @@ class ContextRetriever
       }
 
       if ($this->debug) {
-        error_log("❌ CACHE MISS - Loading fresh context in parallel");
+        error_log("[error] CACHE MISS - Loading fresh context in parallel");
       }
     }
 

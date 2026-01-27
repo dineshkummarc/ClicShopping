@@ -48,6 +48,16 @@ class StatisticsTracker
     'error_message' => null
   ];
   
+  // Cache metrics (stored in metadata JSON)
+  private $cacheMetrics = [
+    'cache_type' => null,
+    'cache_response_time_ms' => null,
+    'uncached_response_time_ms' => null,
+    'time_saved_ms' => null,
+    'api_cost_saved_usd' => null,
+    'cache_key' => null
+  ];
+  
   /**
    * Constructeur
    * 
@@ -186,6 +196,50 @@ class StatisticsTracker
   }
   
   /**
+   * Sets cache metrics for performance tracking
+   * 
+   * @param string $cacheType Type of cache (embedding, semantic, sql, web, conversation)
+   * @param bool $hit Whether this was a cache hit
+   * @param int $cacheTime Response time with cache (ms)
+   * @param int $uncachedTime Estimated response time without cache (ms)
+   * @param float $costSaved Estimated API cost saved (USD)
+   * @return self
+   */
+  public function setCacheMetrics(string $cacheType, bool $hit, int $cacheTime, int $uncachedTime, float $costSaved): self
+  {
+    // Set cache hit flag
+    $this->metrics['cache_hit'] = $hit;
+    
+    // Calculate time saved
+    $timeSaved = $uncachedTime - $cacheTime;
+    
+    // Store cache metrics
+    $this->cacheMetrics = [
+      'cache_type' => $cacheType,
+      'cache_hit' => $hit,
+      'cache_response_time_ms' => $cacheTime,
+      'uncached_response_time_ms' => $uncachedTime,
+      'time_saved_ms' => $timeSaved,
+      'api_cost_saved_usd' => $costSaved,
+      'cache_key' => null // Will be set if needed
+    ];
+    
+    return $this;
+  }
+  
+  /**
+   * Sets the cache key for tracking
+   * 
+   * @param string $cacheKey Cache key used
+   * @return self
+   */
+  public function setCacheKey(string $cacheKey): self
+  {
+    $this->cacheMetrics['cache_key'] = $cacheKey;
+    return $this;
+  }
+  
+  /**
    * Définit les scores de qualité et sécurité
    * 
    * @param float|null $quality Score de qualité (0-100)
@@ -250,6 +304,31 @@ class StatisticsTracker
   }
   
   /**
+   * Calculates estimated cost savings based on cache type
+   * 
+   * @param string $cacheType Type of cache (embedding, semantic, sql, web, conversation)
+   * @param bool $hit Whether this was a cache hit
+   * @return float Estimated cost saved in USD
+   */
+  public static function calculateCostSavings(string $cacheType, bool $hit): float
+  {
+    if (!$hit) {
+      return 0.0;
+    }
+    
+    // Estimated cost per API call by cache type
+    $costPerCall = [
+      'embedding' => 0.0001,  // OpenAI embedding API cost
+      'semantic' => 0.0001,   // Embedding generation cost
+      'sql' => 0.01,          // LLM SQL generation cost
+      'web' => 0.05,          // SerpAPI search cost
+      'conversation' => 0.001 // Small LLM call cost
+    ];
+    
+    return $costPerCall[$cacheType] ?? 0.0;
+  }
+  
+  /**
    * Saves statistics to database
    * 
    * @return bool True if success, false otherwise
@@ -267,6 +346,17 @@ class StatisticsTracker
         $this->stopTracking();
       }
       
+      // Build metadata JSON
+      $metadata = [];
+      
+      // Add cache metrics if available
+      if ($this->cacheMetrics['cache_type'] !== null) {
+        $metadata = array_merge($metadata, $this->cacheMetrics);
+      }
+      
+      // Convert metadata to JSON (null if empty)
+      $metadataJson = !empty($metadata) ? json_encode($metadata) : null;
+      
       // 🔧 MIGRATED TO DOCTRINEORM
       DoctrineOrm::execute("
         INSERT INTO {$this->prefix}rag_statistics 
@@ -274,13 +364,13 @@ class StatisticsTracker
          tokens_prompt, tokens_completion, tokens_total, api_cost_usd,
          agent_type, classification_type, confidence_score, security_score,
          response_quality, error_occurred, error_type, error_message,
-         user_id, session_id, language_id, date_added)
+         user_id, session_id, language_id, metadata, date_added)
         VALUES 
         (?, ?, ?, ?, ?,
          ?, ?, ?, ?,
          ?, ?, ?, ?,
          ?, ?, ?, ?,
-         ?, ?, ?, NOW())
+         ?, ?, ?, ?, NOW())
       ", [
         $this->interactionId,
         $this->metrics['response_time_ms'],
@@ -301,11 +391,12 @@ class StatisticsTracker
         $this->metrics['error_message'],
         $this->userId,
         $this->sessionId,
-        $this->languageId
+        $this->languageId,
+        $metadataJson
       ]);
       
       // ✅ ALWAYS LOG PERFORMANCE METRICS (Requirement 8.5)
-      error_log(sprintf(
+      $logMessage = sprintf(
         '[RAG] Performance: interaction_id=%d, time=%dms, agent=%s, type=%s, confidence=%.2f, quality=%.2f, cache=%s',
         $this->interactionId,
         $this->metrics['response_time_ms'] ?? 0,
@@ -314,7 +405,19 @@ class StatisticsTracker
         $this->metrics['confidence_score'] ?? 0,
         $this->metrics['response_quality'] ?? 0,
         $this->metrics['cache_hit'] ? 'HIT' : 'MISS'
-      ));
+      );
+      
+      // Add cache metrics to log if available
+      if ($this->cacheMetrics['cache_type'] !== null) {
+        $logMessage .= sprintf(
+          ', cache_type=%s, time_saved=%dms, cost_saved=$%.4f',
+          $this->cacheMetrics['cache_type'],
+          $this->cacheMetrics['time_saved_ms'] ?? 0,
+          $this->cacheMetrics['api_cost_saved_usd'] ?? 0
+        );
+      }
+      
+      error_log($logMessage);
       
       return true;
       
@@ -400,5 +503,26 @@ class StatisticsTracker
   public function getAllMetrics(): array
   {
     return $this->metrics;
+  }
+  
+  /**
+   * Gets cache metrics
+   * 
+   * @return array Cache metrics
+   */
+  public function getCacheMetrics(): array
+  {
+    return $this->cacheMetrics;
+  }
+  
+  /**
+   * Gets a specific cache metric
+   * 
+   * @param string $key Metric key
+   * @return mixed Metric value or null
+   */
+  public function getCacheMetric(string $key)
+  {
+    return $this->cacheMetrics[$key] ?? null;
   }
 }

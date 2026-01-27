@@ -56,9 +56,9 @@ class FormatterRouter
 
     if ($this->debug) {
       error_log('FormatterRouter: Analyzing results\n');
-      error_log('  Type: ' . ($results['type'] ?? 'NONE') . "\n");
-      error_log('  Complexity: ' . $complexity['level'] . "\n");
-      error_log('  Score: ' . $complexity['score'] . "\n");
+      error_log('  Type: ' . ($results['type'] ?? 'NONE'));
+      error_log('  Complexity: ' . $complexity['level']);
+      error_log('  Score: ' . $complexity['score']);
     }
 
     // Find the best formatter
@@ -67,14 +67,14 @@ class FormatterRouter
 
       if ($formatter->canHandle($results)) {
         if ($this->debug) {
-          error_log('  ✓ Selected formatter: ' . $entry['class'] . ' (priority: ' . $entry['priority'] . ')\n' . "\n");
+          error_log('  ✓ Selected formatter: ' . $entry['class'] . ' (priority: ' . $entry['priority'] . ')\n');
         }
         return $formatter;
       }
     }
 
     if ($this->debug) {
-      error_log('  ✗ No formatter found for type: ' . ($results['type'] ?? 'NONE') . "\n");
+      error_log('  ✗ No formatter found for type: ' . ($results['type'] ?? 'NONE'));
     }
 
     return null;

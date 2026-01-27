@@ -129,7 +129,7 @@ class ResultFormatter
       ));
       
       if ($this->debug) {
-        error_log('ResultFormatter: Using ' . $formatterClass . "\n");
+        error_log('ResultFormatter: Using ' . $formatterClass);
         error_log($this->router->getComplexityReport($results));
       }
 
@@ -152,7 +152,6 @@ class ResultFormatter
   /**
    * Formats the results with memory context integration
    * 
-   * ✅ TASK 5.3.2.1: Memory context should NOT be displayed in chat
    * Memory is used internally to improve responses, but should not be shown to users
    * 
    * @param array $results The results to format
@@ -342,8 +341,8 @@ class ResultFormatter
     }
 
     if ($this->debug) {
-      error_log('[RAG] TemporalFormatter: Starting temporal formatting\n' . "\n");
-      error_log('[RAG] TemporalFormatter: Results count=' . count($results) . ', language=' . $languageCode . "\n");
+      error_log('[RAG] TemporalFormatter: Starting temporal formatting');
+      error_log('[RAG] TemporalFormatter: Results count=' . count($results) . ', language=' . $languageCode);
     }
 
     $output = '<div class="temporal-results-container" style="width: 100%;">';

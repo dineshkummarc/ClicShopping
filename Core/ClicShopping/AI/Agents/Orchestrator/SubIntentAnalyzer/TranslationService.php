@@ -83,7 +83,7 @@ class TranslationService
       );
 
       if ($this->debug) {
-        error_log("⏭️ Translation SKIPPED - Query is already in English");
+        error_log("[info] Translation SKIPPED - Query is already in English");
         error_log("Using original query: '{$query}'");
       }
 

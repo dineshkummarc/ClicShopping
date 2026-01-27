@@ -79,7 +79,7 @@ class MariaDBVectorStore extends VectorStoreBase
 
     if ($this->debug) {
       error_log("═══════════════════════════════════════════════════════");
-      error_log("📋 MariaDBVectorStore initialized");
+      error_log("[info] MariaDBVectorStore initialized");
       error_log("Input table name: {$tableName}");
       error_log("Final table name: {$this->tableName}");
       error_log("Prefix: {$prefix}");
@@ -375,11 +375,11 @@ class MariaDBVectorStore extends VectorStoreBase
         }
         $contextStr = !empty($context) ? ' (' . implode(', ', $context) . ')' : '';
         
-        error_log("✅ Semantic cache invalidated after embedding update: {$cleared} files cleared{$contextStr}");
+        error_log("[info] Semantic cache invalidated after embedding update: {$cleared} files cleared{$contextStr}");
       }
     } catch (\Exception $e) {
       // Log error but don't fail the document insertion
-      error_log("⚠️ Failed to invalidate semantic cache: " . $e->getMessage());
+      error_log("[warning]️ Failed to invalidate semantic cache: " . $e->getMessage());
     }
   }
 
@@ -443,7 +443,7 @@ class MariaDBVectorStore extends VectorStoreBase
       $results = $stmt->fetchAllAssociative();
 
       if ($this->debug) {
-        error_log("📊 SQL returned " . count($results) . " raw results");
+        error_log("[stats] SQL returned " . count($results) . " raw results");
       }
 
       $documents = [];
@@ -507,7 +507,7 @@ class MariaDBVectorStore extends VectorStoreBase
 
       if ($this->debug) {
         error_log("═══════════════════════════════════════════════════════");
-        error_log("📊 FINAL RESULTS:");
+        error_log("[stats] FINAL RESULTS:");
         error_log("Raw SQL results: " . count($results));
         error_log("Below threshold: {$belowThresholdCount}");
         error_log("Filtered by custom filter: {$filteredCount}");
@@ -520,7 +520,7 @@ class MariaDBVectorStore extends VectorStoreBase
     } catch (\Exception $e) {
       if ($this->debug) {
         error_log("═══════════════════════════════════════════════════════");
-        error_log("❌ EXCEPTION in similaritySearch()");
+        error_log("[error] EXCEPTION in similaritySearch()");
         error_log("Error: " . $e->getMessage());
         error_log("Trace: " . $e->getTraceAsString());
         error_log("═══════════════════════════════════════════════════════");
