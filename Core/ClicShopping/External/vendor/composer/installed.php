@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'ccbc4ebe8a6e215cb2bde7ec8e1368aa9be6ceda',
+        'reference' => '46beec1bb0884da7b5e231915f0a97e2ea7f5c47',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'ccbc4ebe8a6e215cb2bde7ec8e1368aa9be6ceda',
+            'reference' => '46beec1bb0884da7b5e231915f0a97e2ea7f5c47',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => '8e1e81cec2f088871c624d2adf767eb5e492ecdf',
+            'reference' => '1318024c3af64dbe11dfac73ccc8cec27739b86c',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
@@ -403,9 +403,9 @@
             'dev_requirement' => false,
         ),
         'symfony/cache' => array(
-            'pretty_version' => 'v8.0.4',
-            'version' => '8.0.4.0',
-            'reference' => '5d3fcada5e1b80157cfdfd1f9dbbd63f95ef6f13',
+            'pretty_version' => 'v8.0.5',
+            'version' => '8.0.5.0',
+            'reference' => '92e9960386c7e01f58198038c199d522959a843c',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/cache',
             'aliases' => array(),
@@ -445,9 +445,9 @@
             'dev_requirement' => false,
         ),
         'symfony/http-client' => array(
-            'pretty_version' => 'v8.0.4',
-            'version' => '8.0.4.0',
-            'reference' => 'ee9cc4a32fd1cb202b052ba9905a3c873363a465',
+            'pretty_version' => 'v8.0.5',
+            'version' => '8.0.5.0',
+            'reference' => 'f9fdd372473e66469c6d32a4ed12efcffdea38c4',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/http-client',
             'aliases' => array(),
