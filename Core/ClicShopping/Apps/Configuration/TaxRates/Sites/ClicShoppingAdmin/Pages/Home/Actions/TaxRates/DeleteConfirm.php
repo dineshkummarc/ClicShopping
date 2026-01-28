@@ -14,7 +14,7 @@ namespace ClicShopping\Apps\Configuration\TaxRates\Sites\ClicShoppingAdmin\Pages
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class DeleteConfirm extends \ClicShopping\OM\PagesActionsAbstract
+class DeleteConfirm extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

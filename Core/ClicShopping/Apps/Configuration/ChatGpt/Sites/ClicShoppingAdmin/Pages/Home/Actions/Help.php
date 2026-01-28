@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Sites\ClicShoppingAdmin\Pages\
 
 use ClicShopping\OM\Registry;
 
-class Help extends \ClicShopping\OM\PagesActionsAbstract
+class Help extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

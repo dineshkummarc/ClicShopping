@@ -15,7 +15,7 @@ use ClicShopping\OM\Cache;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class ClassDeleteConfirm extends \ClicShopping\OM\PagesActionsAbstract
+class ClassDeleteConfirm extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

@@ -12,12 +12,13 @@ namespace ClicShopping\Service\ClicShoppingAdmin;
 
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\ClicShoppingAdmin\CfgModulesAdmin as CfgModulesAdminClass;
+
 /**
  * The CfgModulesAdmin service manages the initialization and termination process
  * of the CfgModulesAdmin class within the ClicShoppingAdmin namespace.
  * This service ensures the appropriate setup and cleanup of resources in the application.
  */
-class CfgModulesAdmin implements \ClicShopping\OM\ServiceInterface
+class CfgModulesAdmin implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the CfgModulesAdmin module by setting it in the Registry.

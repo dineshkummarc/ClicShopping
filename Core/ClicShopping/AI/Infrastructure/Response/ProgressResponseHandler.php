@@ -82,10 +82,7 @@ class ProgressResponseHandler
   /**
    * Send progress update to client
    * 
-   * Sends a progress update with completion percentage and optional estimated time remaining.
-   * Updates are sent via JSON response and logged for monitoring.
-   * 
-   * @param string $message Progress message (e.g., "Processing query...")
+   * @param string $message Progress message
    * @param float $percentComplete Completion percentage (0-100)
    * @param int|null $estimatedSecondsRemaining Estimated time remaining in seconds
    * @return void
@@ -95,10 +92,8 @@ class ProgressResponseHandler
     float $percentComplete,
     ?int $estimatedSecondsRemaining = null
   ): void {
-    // Ensure percentage is within valid range
     $percentComplete = max(0.0, min(100.0, $percentComplete));
     
-    // Build progress update structure
     $update = [
       'type' => 'progress',
       'message' => $message,
@@ -106,19 +101,15 @@ class ProgressResponseHandler
       'timestamp' => time()
     ];
     
-    // Add estimated time remaining if provided
     if ($estimatedSecondsRemaining !== null) {
       $update['estimated_seconds_remaining'] = $estimatedSecondsRemaining;
       $update['estimated_completion'] = date('H:i:s', time() + $estimatedSecondsRemaining);
     }
     
-    // Send update to client (via JSON response)
     $this->sendToClient($update);
     
-    // Update last update time
     $this->lastUpdateTime = microtime(true);
     
-    // Log progress update
     if ($this->logger !== null) {
       try {
         $this->logger->logSecurityEvent(
@@ -140,43 +131,33 @@ class ProgressResponseHandler
   /**
    * Send initial processing message
    * 
-   * Sends an initial message to inform the user that query processing has started.
-   * Includes cache state information to set user expectations.
-   * 
    * @param string $query User query being processed
    * @param array $cacheState Cache state from CacheStateDetector
-   *   - state: 'cold', 'warm', or 'expired'
-   *   - exists: bool
-   *   - valid: bool
    * @return void
    */
   public function sendProcessingMessage(string $query, array $cacheState): void
   {
     $state = $cacheState['state'] ?? 'unknown';
     
-    // Determine appropriate message based on cache state
     if ($state === 'cold' || $state === 'expired') {
-      $message = "Traitement de votre requête en cours. Première exécution, cela peut prendre un moment...";
+      $message = "Processing your query. First execution, this may take a moment...";
       $expectedTime = "1-2 minutes";
     } else {
-      $message = "Traitement de votre requête en cours...";
-      $expectedTime = "quelques secondes";
+      $message = "Processing your query...";
+      $expectedTime = "a few seconds";
     }
     
-    // Build processing message structure
     $processingMessage = [
       'type' => 'processing',
       'message' => $message,
-      'query' => substr($query, 0, 100), // Truncate for display
+      'query' => substr($query, 0, 100),
       'cache_state' => $state,
       'expected_time' => $expectedTime,
       'timestamp' => time()
     ];
     
-    // Send message to client
     $this->sendToClient($processingMessage);
     
-    // Log processing start
     if ($this->logger !== null) {
       try {
         $this->logger->logSecurityEvent(
@@ -197,27 +178,21 @@ class ProgressResponseHandler
   /**
    * Send completion message
    * 
-   * Sends a completion message when query processing finishes successfully.
-   * Includes execution time for performance monitoring.
-   * 
    * @param float $executionTime Total execution time in seconds
    * @return void
    */
   public function sendCompletionMessage(float $executionTime): void
   {
-    // Build completion message structure
     $completionMessage = [
       'type' => 'completion',
-      'message' => "Requête traitée avec succès",
+      'message' => "Query processed successfully",
       'execution_time' => round($executionTime, 2),
       'execution_time_formatted' => $this->formatExecutionTime($executionTime),
       'timestamp' => time()
     ];
     
-    // Send message to client
     $this->sendToClient($completionMessage);
     
-    // Log completion
     if ($this->logger !== null) {
       try {
         $this->logger->logSecurityEvent(
@@ -238,9 +213,6 @@ class ProgressResponseHandler
   /**
    * Check if progress update is needed based on elapsed time
    * 
-   * Determines if enough time has passed since the last update to send a new one.
-   * Uses the configured update interval (default: 5 seconds).
-   * 
    * @param float $elapsedSeconds Total elapsed time since query started
    * @return bool True if update should be sent
    */
@@ -249,7 +221,6 @@ class ProgressResponseHandler
     $currentTime = microtime(true);
     $timeSinceLastUpdate = $currentTime - $this->lastUpdateTime;
     
-    // Send update if interval has passed
     $shouldSend = $timeSinceLastUpdate >= $this->updateInterval;
     
     if ($this->debug && $shouldSend) {
@@ -262,27 +233,20 @@ class ProgressResponseHandler
   /**
    * Send data to client
    * 
-   * Sends JSON-encoded data to the client via output buffer.
-   * Flushes output to ensure immediate delivery.
-   * 
    * @param array $data Data to send to client
    * @return void
    */
   private function sendToClient(array $data): void
   {
-    // Encode as JSON
     $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     
-    // Send to client with proper headers
     if (!headers_sent()) {
       header('Content-Type: application/json');
       header('X-Progress-Update: true');
     }
     
-    // Output JSON
     echo $json . "\n";
     
-    // Flush output buffers to ensure immediate delivery
     if (ob_get_level() > 0) {
       ob_flush();
     }
@@ -316,8 +280,6 @@ class ProgressResponseHandler
   /**
    * Calculate estimated time remaining
    * 
-   * Estimates remaining execution time based on current progress.
-   * 
    * @param float $elapsedSeconds Time elapsed so far
    * @param float $percentComplete Current completion percentage (0-100)
    * @return int|null Estimated seconds remaining, or null if cannot estimate
@@ -326,18 +288,14 @@ class ProgressResponseHandler
     float $elapsedSeconds,
     float $percentComplete
   ): ?int {
-    // Cannot estimate if no progress or complete
     if ($percentComplete <= 0 || $percentComplete >= 100) {
       return null;
     }
     
-    // Calculate estimated total time based on current progress
     $estimatedTotalTime = $elapsedSeconds / ($percentComplete / 100);
     
-    // Calculate remaining time
     $remainingTime = $estimatedTotalTime - $elapsedSeconds;
     
-    // Return as integer seconds (minimum 1 second)
     return max(1, (int)round($remainingTime));
   }
 
@@ -356,14 +314,12 @@ class ProgressResponseHandler
   /**
    * Set update interval
    * 
-   * Updates the interval between progress updates.
-   * 
    * @param int $seconds Update interval in seconds
    * @return void
    */
   public function setUpdateInterval(int $seconds): void
   {
-    $this->updateInterval = max(1, $seconds); // Minimum 1 second
+    $this->updateInterval = max(1, $seconds);
     
     if ($this->debug) {
       error_log("ProgressResponseHandler: Update interval set to {$this->updateInterval}s");
@@ -372,9 +328,6 @@ class ProgressResponseHandler
 
   /**
    * Reset last update time
-   * 
-   * Resets the last update time to current time.
-   * Useful when starting a new query.
    * 
    * @return void
    */
@@ -390,14 +343,7 @@ class ProgressResponseHandler
   /**
    * Get statistics
    * 
-   * Returns statistics about progress updates.
-   * 
    * @return array Statistics
-   *   - update_interval: int - configured update interval
-   *   - last_update_time: float - timestamp of last update
-   *   - time_since_last_update: float - seconds since last update
-   *   - debug_enabled: bool - debug mode status
-   *   - logger_enabled: bool - logger availability
    */
   public function getStats(): array
   {

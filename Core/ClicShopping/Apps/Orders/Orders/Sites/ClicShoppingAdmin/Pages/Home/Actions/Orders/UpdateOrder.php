@@ -11,14 +11,13 @@
 
 namespace ClicShopping\Apps\Orders\Orders\Sites\ClicShoppingAdmin\Pages\Home\Actions\Orders;
 
+use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
+use ClicShopping\Apps\Orders\Orders\Classes\Shop\Order as OrderClass;
 use ClicShopping\OM\DateTime;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
-use ClicShopping\Apps\Orders\Orders\Classes\Shop\Order as OrderClass;
-
-class UpdateOrder extends \ClicShopping\OM\PagesActionsAbstract
+class UpdateOrder extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * @var bool|\orders|null

@@ -118,7 +118,7 @@ class VatNumber
    */
   public static function checkWebService()
   {
-    $client = new SoapClient("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl");
+    $client = new SoapClient("https://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl");
 
     if (!array($client)) {
 //        $error_message = "web service at ec.europa.eu unavailable";

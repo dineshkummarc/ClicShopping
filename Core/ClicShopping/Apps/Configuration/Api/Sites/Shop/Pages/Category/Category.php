@@ -10,12 +10,11 @@
 
 namespace ClicShopping\Apps\Configuration\Api\Sites\Shop\Pages\Category;
 
+use ClicShopping\Apps\Configuration\Api\Classes\Shop\ApiShop;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\Api\Classes\Shop\ApiShop;
-
-class Category extends \ClicShopping\OM\PagesAbstract
+class Category extends \ClicShopping\OM\Domains\PagesAbstract
 {
   protected string|null $file = null;
   protected bool $use_site_template = false;

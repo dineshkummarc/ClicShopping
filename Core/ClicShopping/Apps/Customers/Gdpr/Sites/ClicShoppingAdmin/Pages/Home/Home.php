@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Customers\Gdpr\Sites\ClicShoppingAdmin\Pages\Home;
 
+use ClicShopping\Apps\Customers\Gdpr\Gdpr;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Customers\Gdpr\Gdpr;
-
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

@@ -11,14 +11,13 @@
 
 namespace ClicShopping\Apps\Customers\Members\Sites\ClicShoppingAdmin\Pages\Home\Actions\Members;
 
+use ClicShopping\Apps\Configuration\TemplateEmail\Classes\ClicShoppingAdmin\TemplateEmailAdmin;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\TemplateEmail\Classes\ClicShoppingAdmin\TemplateEmailAdmin;
-
-class ConfirmMembers extends \ClicShopping\OM\PagesActionsAbstract
+class ConfirmMembers extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

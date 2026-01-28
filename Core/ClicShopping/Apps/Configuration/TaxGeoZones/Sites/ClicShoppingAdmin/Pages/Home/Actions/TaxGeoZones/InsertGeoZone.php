@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Configuration\TaxGeoZones\Sites\ClicShoppingAdmin\Pa
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class InsertGeoZone extends \ClicShopping\OM\PagesActionsAbstract
+class InsertGeoZone extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

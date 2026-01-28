@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This action class is responsible for displaying the statistics of products viewed in the admin interface.
  * It sets the appropriate page file and loads the necessary language definitions.
  */
-class StatsProductsViewed extends \ClicShopping\OM\PagesActionsAbstract
+class StatsProductsViewed extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to display product view statistics.

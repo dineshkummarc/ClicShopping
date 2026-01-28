@@ -14,7 +14,7 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use function defined;
 
-class Q extends \ClicShopping\OM\PagesActionsAbstract
+class Q extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

@@ -12,7 +12,6 @@ namespace ClicShopping\Service\Shop;
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
-
 use ClicShopping\Sites\Shop\TemplateCache as NewTemplateCache;
 
 /**
@@ -21,7 +20,7 @@ use ClicShopping\Sites\Shop\TemplateCache as NewTemplateCache;
  * This class is responsible for managing the template cache functionality.
  * It initializes the cache system and provides methods to start and stop the service.
  */
-class TemplateCache implements \ClicShopping\OM\ServiceInterface
+class TemplateCache implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the SpecialsClass functionality if the required file exists.

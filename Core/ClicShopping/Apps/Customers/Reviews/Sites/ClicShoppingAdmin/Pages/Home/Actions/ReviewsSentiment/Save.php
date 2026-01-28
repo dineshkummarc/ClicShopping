@@ -10,13 +10,12 @@
 
 namespace ClicShopping\Apps\Customers\Reviews\Sites\ClicShoppingAdmin\Pages\Home\Actions\ReviewsSentiment;
 
+use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
-
-use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 use function count;
 
-class Save extends \ClicShopping\OM\PagesActionsAbstract
+class Save extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
    public function execute()
   {

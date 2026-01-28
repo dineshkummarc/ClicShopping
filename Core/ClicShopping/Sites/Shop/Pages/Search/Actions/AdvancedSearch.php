@@ -13,7 +13,7 @@ namespace ClicShopping\Sites\Shop\Pages\Search\Actions;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class AdvancedSearch extends \ClicShopping\OM\PagesActionsAbstract
+class AdvancedSearch extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

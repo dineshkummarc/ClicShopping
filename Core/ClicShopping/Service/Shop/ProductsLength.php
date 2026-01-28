@@ -10,15 +10,15 @@
 
 namespace ClicShopping\Service\Shop;
 
+use ClicShopping\Apps\Configuration\ProductsLength\Classes\Shop\ProductsLength as ProductsLengthShop;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\ProductsLength\Classes\Shop\ProductsLength as ProductsLengthShop;
 /**
  * Service class for managing the ProductsLength functionality in the shop.
  * This service initializes the ProductsLength class if the required file exists.
  */
-class ProductsLength implements \ClicShopping\OM\ServiceInterface
+class ProductsLength implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the ProductsLength module by checking the existence of the required file

@@ -66,20 +66,20 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
     <tbody>
     <?php
     $Qproducts = $CLICSHOPPING_Products->db->prepare('select SQL_CALC_FOUND_ROWS  p.products_id,
-                                                                                                    p.products_ordered,
-                                                                                                    p.products_image,
-                                                                                                    pd.products_name
-                                                                      from :table_products p,
-                                                                           :table_products_description pd
-                                                                      where pd.products_id = p.products_id
-                                                                      and pd.language_id = :language_id
-                                                                      and p.products_archive = 0
-                                                                      and p.products_ordered = 0
-                                                                      group by pd.products_id
-                                                                      order by p.products_ordered DESC,
-                                                                               pd.products_name
-                                                                      limit :page_set_offset,
-                                                                           :page_set_max_results
+                                                                                   p.products_image,
+                                                                                  pd.products_name
+                                                      FROM :table_products p
+                                                      JOIN :table_products_description pd ON pd.products_id = p.products_id
+                                                      LEFT JOIN :table_orders_products op ON op.products_id = p.products_id
+                                                      LEFT JOIN :table_orders o ON o.orders_id = op.orders_id
+                                                      AND o.orders_status != 4
+                                                      WHERE pd.language_id = :language_id
+                                                        AND p.products_archive = 0
+                                                        AND op.products_id IS NULL
+                                                      GROUP BY p.products_id
+                                                      ORDER BY pd.products_name
+                                                      LIMIT :page_set_offset, 
+                                                            :page_set_max_results
                                                                      ');
 
     $Qproducts->bindInt(':language_id', $CLICSHOPPING_Language->getId());

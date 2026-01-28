@@ -14,7 +14,7 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\Service\Shop\WhosOnline;
 
-class Description extends \ClicShopping\OM\PagesActionsAbstract
+class Description extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

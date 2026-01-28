@@ -10,6 +10,8 @@
 
 namespace ClicShopping\Sites\Shop\Pages\Account\Actions\CreatePro;
 
+use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
+use ClicShopping\Apps\Customers\Groups\Classes\ClicShoppingAdmin\VatNumber;
 use ClicShopping\Apps\Tools\ActionsRecorder\Classes\Shop\ActionRecorder;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
@@ -18,14 +20,11 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Is;
 use ClicShopping\OM\Registry;
-
-use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
-use ClicShopping\Apps\Customers\Groups\Classes\ClicShoppingAdmin\VatNumber;
 use function defined;
 use function is_null;
 use function strlen;
 
-class Process extends \ClicShopping\OM\PagesActionsAbstract
+class Process extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

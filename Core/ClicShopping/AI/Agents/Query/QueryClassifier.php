@@ -11,11 +11,11 @@
 namespace ClicShopping\AI\Agents\Query;
 
 use AllowDynamicProperties;
-use ClicShopping\AI\Domain\Patterns\Hybrid\HybridPreFilter;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domains\Semantic\Processor\ClassificationEngine;
+use ClicShopping\AI\DomainsAI\Semantic\Processor\ClassificationEngine;
 use ClicShopping\AI\Infrastructure\Cache\ClassificationCache;
 use ClicShopping\OM\Registry;
+use ClicShopping\AI\DomainsAI\DomainRegistry;
 
 /**
  * QueryClassifier Class
@@ -102,37 +102,52 @@ class QueryClassifier
    */
   public function classify(string $query, ?string $translatedQuery = null): array
   {
-    // Try HybridPreFilter fallback if enabled and translated query available
+    // Try HybridPreFilter fallback if enabled and translated query available (load dynamically)
     if (self::USE_HYBRID_PATTERN_FALLBACK && $translatedQuery !== null) {
       if ($this->debug) {
         $this->logger->logSecurityEvent(
-          'Pattern fallback enabled - trying HybridPreFilter',
+          'Pattern fallback enabled - trying HybridPreFilter from domain',
           'info'
         );
       }
       
-      // Use HybridPreFilter (pattern-based, English-only)
-      $hybridCheck = HybridPreFilter::preFilter($translatedQuery);
-      
-      if ($hybridCheck !== null) {
-        // Pattern detected hybrid query
-        if ($this->debug) {
-          $this->logger->logStructured(
-            'info',
-            'QueryClassifier',
-            'hybrid_pattern_fallback_match',
-            [
-              'query' => substr($translatedQuery, 0, 50),
-              'type' => 'hybrid',
-              'sub_types' => $hybridCheck['sub_types'] ?? [],
-              'confidence' => $hybridCheck['confidence'] ?? 0.90,
-              'detection_method' => 'pattern_fallback',
-              'note' => 'Pattern fallback detected hybrid query (no LLM call)'
-            ]
-          );
-        }
+      // Load HybridPreFilter dynamically from active domain (domain-agnostic approach)
+      // TASK 2026-01-23: Use DomainRegistry for domain-agnostic pattern loading
+      $domainApp = DomainRegistry::getInstance()->getActiveApp();
+      if ($domainApp && method_exists($domainApp, 'getHybridPreFilterClass')) {
+        $hybridPreFilterClass = $domainApp->getHybridPreFilterClass();
         
-        return $hybridCheck;
+        if ($hybridPreFilterClass && class_exists($hybridPreFilterClass)) {
+          // Use HybridPreFilter from domain (pattern-based, English-only)
+          $hybridCheck = $hybridPreFilterClass::preFilter($translatedQuery);
+          
+          if ($hybridCheck !== null) {
+            // Pattern detected hybrid query
+            if ($this->debug) {
+              $this->logger->logStructured(
+                'info',
+                'QueryClassifier',
+                'hybrid_pattern_fallback_match',
+                [
+                  'query' => substr($translatedQuery, 0, 50),
+                  'type' => 'hybrid',
+                  'sub_types' => $hybridCheck['sub_types'] ?? [],
+                  'confidence' => $hybridCheck['confidence'] ?? 0.90,
+                  'detection_method' => 'pattern_fallback',
+                  'domain' => $domainApp->getDomainId() ?? 'unknown',
+                  'note' => 'Pattern fallback detected hybrid query (no LLM call)'
+                ]
+              );
+            }
+            
+            return $hybridCheck;
+          }
+        }
+      } else if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          'HybridPreFilter not available from domain - using Pure LLM Mode',
+          'info'
+        );
       }
       
       // Pattern didn't match - fall through to LLM

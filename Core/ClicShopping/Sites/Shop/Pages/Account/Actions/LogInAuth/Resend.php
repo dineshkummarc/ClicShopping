@@ -10,12 +10,12 @@
 
 namespace ClicShopping\Sites\Shop\Pages\Account\Actions\LogInAuth;
 
-use ClicShopping\OM\Registry;
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\Sites\Shop\EmailVerification;
 use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
+use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Registry;
+use ClicShopping\Sites\Shop\EmailVerification;
 
-class Resend extends \ClicShopping\OM\PagesActionsAbstract
+class Resend extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

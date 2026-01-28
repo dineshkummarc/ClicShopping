@@ -17,7 +17,7 @@ use ClicShopping\OM\Registry;
  *
  * This class handles the deletion of multiple GPT entries from the database.
  */
-class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
+class DeleteAll extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
     /**
      * Execute the action to delete selected GPT entries

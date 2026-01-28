@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Catalog\ProductsAttributes\Sites\ClicShoppingAdmin\P
 
 use ClicShopping\OM\Registry;
 
-class ProductsAttributes extends \ClicShopping\OM\PagesActionsAbstract
+class ProductsAttributes extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Payment\COD\Sites\ClicShoppingAdmin\Pages\Home;
 
+use ClicShopping\Apps\Payment\COD\COD;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Payment\COD\COD;
-
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

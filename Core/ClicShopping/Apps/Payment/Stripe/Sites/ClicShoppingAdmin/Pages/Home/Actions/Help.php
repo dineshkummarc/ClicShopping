@@ -24,7 +24,7 @@ use ClicShopping\OM\Registry;
  * @copyright 2008 - https://www.clicshopping.org
  * @license GPL 2 & MIT
  */
-class Help extends \ClicShopping\OM\PagesActionsAbstract
+class Help extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   /**

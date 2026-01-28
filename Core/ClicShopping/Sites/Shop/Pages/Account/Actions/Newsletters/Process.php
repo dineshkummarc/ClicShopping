@@ -13,7 +13,7 @@ namespace ClicShopping\Sites\Shop\Pages\Account\Actions\Newsletters;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class Process extends \ClicShopping\OM\PagesActionsAbstract
+class Process extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This action class is responsible for setting up the environment to display
  * statistics about expected products in the admin interface.
  */
-class StatsDynamicPricing extends \ClicShopping\OM\PagesActionsAbstract
+class StatsDynamicPricing extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to display expected products statistics.

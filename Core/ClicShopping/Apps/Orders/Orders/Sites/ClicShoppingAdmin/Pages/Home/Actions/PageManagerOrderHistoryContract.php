@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Orders\Orders\Sites\ClicShoppingAdmin\Pages\Home\Act
 
 use ClicShopping\OM\Registry;
 
-class PageManagerOrderHistoryContract extends \ClicShopping\OM\PagesActionsAbstract
+class PageManagerOrderHistoryContract extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   protected $use_site_template = false;
 

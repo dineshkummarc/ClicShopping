@@ -1,9 +1,8 @@
 <?php
 /**
- * SubTaskPlannerStandard
+ * SubTaskPlannerStandard - Default fallback planner for generic analytics queries
  * 
- * Planificateur standard pour les requêtes analytics génériques
- * Responsabilité : Créer des plans simples pour requêtes ne correspondant à aucun type spécialisé
+ * @copyright 2008 - https://www.clicshopping.org
  */
 
 namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
@@ -11,6 +10,7 @@ namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
 use AllowDynamicProperties;
 use ClicShopping\AI\Agents\Planning\TaskStep;
 use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\AI\DomainsAI\DomainRegistry;
 
 #[AllowDynamicProperties]
 class SubTaskPlannerStandard
@@ -24,37 +24,25 @@ class SubTaskPlannerStandard
         $this->securityLogger = $securityLogger;
     }
     
-    /**
-     * Détecte si une requête peut être gérée par le planificateur standard
-     * Note: Ce planificateur accepte toutes les requêtes (fallback)
-     */
     public function canHandle(string $query): bool
     {
-        return true; // Planificateur de fallback, accepte tout
+        return true; // Fallback planner, accepts all
     }
     
-    /**
-     * Crée le plan standard (1 étape analytics simple)
-     */
     public function createPlan(array $intent, string $query): array
     {
-        if ($this->debug) {
-            $this->logDebug("Creating standard analytics plan for query: " . substr($query, 0, 100));
-        }
-        
         $steps = [];
 
-        // Étape unique: Requête analytics standard
         $step1 = new TaskStep(
             'step_1',
             'analytics_query',
             $query,
             [
-                'sub_query' => $query,  // 🔧 TASK 4.3.4.3: Add sub_query metadata for AnalyticsExecutor
+                'sub_query' => $query,
                 'intent' => $intent,
                 'query_type' => 'standard_analytics',
                 'data_source' => 'internal_database',
-                'tables' => ['products', 'categories', 'customers', 'orders','suppliers', 'manufacturers'],
+                'tables' => $this->getTablesFromDomain(),
                 'processing_mode' => 'direct_sql',
                 'depends_on' => [],
                 'can_run_parallel' => false,
@@ -63,16 +51,9 @@ class SubTaskPlannerStandard
         );
         $steps[] = $step1;
 
-        if ($this->debug) {
-            $this->logDebug("Created standard analytics plan with " . count($steps) . " step");
-        }
-
         return $steps;
     }
     
-    /**
-     * Obtient les métadonnées du planificateur
-     */
     public function getMetadata(): array
     {
         return [
@@ -86,6 +67,23 @@ class SubTaskPlannerStandard
             'requires_external_data' => false,
             'is_fallback_planner' => true
         ];
+    }
+    
+    private function getTablesFromDomain(): array
+    {
+        $domainApp = DomainRegistry::getInstance()->getActiveApp();
+        if ($domainApp && method_exists($domainApp, 'getEntityConfig')) {
+            $entityConfig = $domainApp->getEntityConfig();
+            $tables = [];
+            foreach ($entityConfig as $entity) {
+                if (isset($entity['table'])) {
+                    $tables[] = $entity['table'];
+                }
+            }
+            return array_unique($tables);
+        }
+        
+        return [];
     }
     
     private function logDebug(string $message): void

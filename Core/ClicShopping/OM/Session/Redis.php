@@ -22,7 +22,7 @@ namespace ClicShopping\OM\Session;
  *
  * @package ClicShopping\OM\Session
  */
-class Redis extends \ClicShopping\OM\SessionAbstract implements \SessionHandlerInterface
+class Redis extends \ClicShopping\OM\Domains\SessionAbstract implements \SessionHandlerInterface
 {
   private ?\Redis $_conn = null;
   private string $orig_module_name;

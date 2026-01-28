@@ -16,9 +16,9 @@ use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
+use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 
 #[AllowDynamicProperties]
 class Process implements \ClicShopping\OM\Modules\HooksInterface
@@ -80,7 +80,10 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
    */
   private function getOrderDetails(int $order_id): array
   {
-    $Q = $this->app->db->prepare(' SELECT * FROM :table_orders WHERE orders_id = :orders_id');
+    $Q = $this->app->db->prepare(' SELECT * 
+                                  FROM :table_orders 
+                                  WHERE orders_id = :orders_id
+                                  ');
     $Q->bindInt(':orders_id', $order_id);
     $Q->execute();
 
@@ -341,7 +344,7 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
-    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
+    if (Gpt::checkGptStatus() === false || !defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || !defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
 

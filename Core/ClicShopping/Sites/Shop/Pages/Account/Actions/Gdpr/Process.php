@@ -11,11 +11,11 @@
 namespace ClicShopping\Sites\Shop\Pages\Account\Actions\Gdpr;
 
 use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
 use ClicShopping\OM\Hash;
+use ClicShopping\OM\Registry;
 use function is_array;
 
-class Process extends \ClicShopping\OM\PagesActionsAbstract
+class Process extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

@@ -36,7 +36,7 @@ use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\EntityExtractor;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\DiagnosticManager;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ContextManager;
 use ClicShopping\AI\Handler\Query\ComplexQueryHandler;
-use ClicShopping\AI\Domains\Hybrid\Processor\HybridQueryProcessor;
+use ClicShopping\AI\DomainsAI\Hybrid\Processor\HybridQueryProcessor;
 use ClicShopping\AI\Security\Validation\HallucinationDetector;
 
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ResponseProcessor as ResponseProcessorComponent;
@@ -45,24 +45,19 @@ use ClicShopping\AI\Handler\Error\ErrorHandler as ErrorHandlerComponent;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\MemoryManager as MemoryManagerComponent;
 use ClicShopping\AI\Helper\OrchestratorHelper;
 
-use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
-use ClicShopping\AI\Interfaces\QueryTypeDomainInterface;
+use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\InterfacesAI\QueryTypeDomainInterface;
+use ClicShopping\AI\Config\DomainConfig;
+use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
 
 /**
  * OrchestratorAgent Class
- *
- * Agent principal qui orchestre l'ensemble du système multi-agents.
- * Responsable de :
- * - Analyser l'intention de l'utilisateur
- * - Décider quel(s) agent(s) utiliser
- * - Coordonner l'exécution
- * - Gérer les erreurs et les replans
- * - Synthétiser la réponse finale
+ * Main orchestrator agent that coordinates the multi-agent system
+ * Handles intent analysis, agent coordination, execution, error management, and response synthesis
  */
 #[AllowDynamicProperties]
 class OrchestratorAgent
 {
-  // Removed duplicate/unused properties (keep single source of truth)
   private ?MetricsCollector $collector = null;
   private SecurityLogger $securityLogger;
   private RateLimit $rateLimit;
@@ -73,30 +68,22 @@ class OrchestratorAgent
   private $db;
   private string $prefix;
 
-  // Agents disponibles
   private ?MultiDBRAGManager $ragManager = null;
-
-  // Statistiques d'exécution
   private array $executionStats = [];
-
-  // Mémoire conversationnelle et de travail
   private ?ConversationMemory $conversationMemory = null;
   private WorkingMemory $workingMemory;
 
-  // Planning / execution / agents auxiliaires
   public TaskPlanner $taskPlanner;
   public PlanExecutor $planExecutor;
   private CorrectionAgent $correctionAgent;
   private ValidationAgent $validationAgent;
   private ReasoningAgent $reasoningAgent;
 
-  // Monitoring / alerting / response processing
   private MonitoringAgent $monitoring;
   private AlertManager $alertManager;
-  private LlmResponseProcessor $responseProcessor;         // LLM formatter
+  private LlmResponseProcessor $responseProcessor;
   private ?ResponseProcessorComponent $responseProcessorComponent = null;
 
-  // Sub-orchestrator components
   private IntentAnalyzer $intentAnalyzer;
   private EntityExtractor $entityExtractor;
   private DiagnosticManager $diagnosticManager;
@@ -247,7 +234,7 @@ class OrchestratorAgent
     $executionId = null;
     
     if ($this->debug) {
-      error_log("⏱️ [PERF] processWithValidation START at " . date('H:i:s'));
+      error_log("[time]️ [PERF] processWithValidation START at " . date('H:i:s'));
     }
 
     try {
@@ -264,10 +251,12 @@ class OrchestratorAgent
           );
         }
         // Set default context check (allow query to proceed)
+        // Use DomainConfig to get active domain instead of hardcoding 'ecommerce'
+        $activeDomain = DomainConfig::getActivities();
         $contextCheck = [
           'is_out_of_context' => false,
           'context_relevance' => 1.0,
-          'detected_category' => 'ecommerce',
+          'detected_category' => $activeDomain ?: 'generic',
           'confidence' => 1.0,
           'explanation' => 'Short query - skipped out-of-context detection (likely product name)',
           'suggested_action' => 'allow'
@@ -297,12 +286,35 @@ class OrchestratorAgent
           'warning'
         );
         
+        // Build dynamic error message based on active domain
+        $activeDomain = DomainConfig::getActivities();
+        $errorMessage = "I'm sorry, but this question is not related to business operations.";
+        
+        if ($activeDomain === 'ecommerce') {
+          // Use EntityConfig to get entity types dynamically
+          try {
+            $entityTypes = EntityConfig::getEntityTypes();
+            if (!empty($entityTypes)) {
+              $entityList = implode(', ', $entityTypes);
+              $errorMessage = "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about {$entityList}, revenue, analytics, and business operations.";
+            } else {
+              $errorMessage = "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about business data, revenue, analytics, and operations.";
+            }
+          } catch (\Exception $e) {
+            // Fallback to generic message if EntityConfig fails
+            $errorMessage = "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about business data, revenue, analytics, and operations.";
+          }
+        } else {
+          // Generic message for other domains or no domain
+          $errorMessage = "I'm sorry, but this question is not related to the configured business domain. I can only help with questions about business data and operations.";
+        }
+        
         return [
           'success' => false,
           'type' => 'error',
           'error' => 'out_of_context',
-          'text_response' => "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about products, orders, customers, revenue, analytics, and business operations.",
-          'response' => "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about products, orders, customers, revenue, analytics, and business operations.",
+          'text_response' => $errorMessage,
+          'response' => $errorMessage,
           'out_of_context_detection' => [
             'is_out_of_context' => true,
             'category' => $contextCheck['detected_category'],
@@ -467,10 +479,10 @@ class OrchestratorAgent
   }
 
   /**
-   * Analyse l'intention de la requête
-   *
-   * @param string $query La requête utilisateur
-   * @return array Intention analysée avec type, confiance et flags
+   * Analyze query intent
+   * 
+   * @param string $query User query
+   * @return array Analyzed intent with type, confidence and flags
    */
   private function analyzeIntent(string $query): array
   {
@@ -479,7 +491,7 @@ class OrchestratorAgent
   }
 
   /**
-   * Initialise les statistiques
+   * Initialize execution statistics
    */
   private function initializeStats(): void
   {
@@ -497,9 +509,9 @@ class OrchestratorAgent
   }
 
   /**
-   * Obtient les statistiques d'exécution
-   *
-   * @return array Statistiques
+   * Get execution statistics
+   * 
+   * @return array Execution statistics
    */
   public function getStats(): array
   {
@@ -507,15 +519,12 @@ class OrchestratorAgent
   }
 
   /**
-   * ✅ TASK 4.4.2.3: Obtient les métriques de latence pour le dashboard
+   * Get latency metrics for dashboard
    * 
-   * Retourne les statistiques de latence des requêtes
-   *
-   * @return array Métriques de latence avec statistiques détaillées
+   * @return array Latency metrics with detailed statistics
    */
   public function getLatencyMetrics(): array
   {
-    // Récupérer les statistiques de l'histogramme de latence
     $allStats = $this->collector->getHistogramStats('orchestrator_query_latency_ms');
     
     return [
@@ -690,14 +699,12 @@ class OrchestratorAgent
         if ($subproblem['is_atomic']) {
           $solutions[] = $this->reasoningAgent->reason($subproblem['problem']);
         } else {
-          // Récursion
           $subSolutions = $this->deepReason($subproblem['problem']);
           $solutions = array_merge($solutions, $subSolutions['solutions'] ?? []);
         }
       }
     }
 
-    // 3. Synthétiser les solutions
     $finalAnswer = OrchestratorHelper::synthesizeSolutions($problem, $solutions);
 
     return [
@@ -723,11 +730,9 @@ class OrchestratorAgent
    */
   private function handleFullOrchestration(string $query, string $queryToProcess, float $startTime, array $perfMarkers): array
   {
-    // 1. Créer un scope pour cette exécution
     $executionId = 'exec_' . uniqid('', true);
     $this->workingMemory->enterScope($executionId);
 
-    // 2. Stocker la requête originale
     $this->workingMemory->set('original_query', $query);
     $this->workingMemory->set('start_time', $startTime);
     
@@ -848,23 +853,15 @@ class OrchestratorAgent
       );
     }
 
-    // 3.5. Analyser la relation avec le contexte précédent
-    // TASK 3.4.2: Delegate to QueryAnalyzer component
     $contextAnalysis = $this->queryAnalyzer->analyzeQueryContextRelation($query, $context);
     $this->workingMemory->set('context_analysis', $contextAnalysis);
 
-    // TASK 2.8: Contextual resolution already done at the beginning (line ~320)
-    // $queryToProcess is already resolved
-
-    // Si la requête est liée au contexte, enrichir avec les informations contextuelles
     if ($contextAnalysis['is_related_to_context']) {
-      // TASK 3.4.2: Delegate to QueryAnalyzer component
       $queryToProcess = $this->queryAnalyzer->enrichQueryWithContext($queryToProcess, $context, $contextAnalysis);
     }
 
     $this->workingMemory->set('resolved_query', $queryToProcess);
 
-    // 4. Analyse de l'intention
     $intentStart = microtime(true);
     $intent = $this->analyzeIntent($queryToProcess);
     $this->workingMemory->set('intent', $intent);
@@ -917,12 +914,12 @@ class OrchestratorAgent
       $translatedQuery = $queryToProcess;
       
       // Log for analysis
-      error_log("🚨 HALLUCINATION: '$query' → '$translatedQuery' (keywords: " . implode(', ', $hallucinationKeywords) . ")");
+      error_log("[warning] HALLUCINATION: '$query' → '$translatedQuery' (keywords: " . implode(', ', $hallucinationKeywords) . ")");
       error_log("   → Fallback to original: '$queryToProcess'");
     }
 
     if ($this->debug) {
-      error_log("⏱️ [PERF] analyzeIntent took " . round((microtime(true) - $intentStart), 2) . "s");
+      error_log("[time]️ [PERF] analyzeIntent took " . round((microtime(true) - $intentStart), 2) . "s");
       $this->securityLogger->logStructured(
         'info',
         'OrchestratorAgent',
@@ -1029,7 +1026,6 @@ class OrchestratorAgent
       }
     }
 
-    // 6. Créer le plan avec le contexte enrichi
     $enrichedContext = array_merge($context, [
       'context_analysis' => $contextAnalysis,
       'is_related_to_previous' => $contextAnalysis['is_related_to_context'],
@@ -1048,9 +1044,9 @@ class OrchestratorAgent
       );
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ===========================================================================
     // DOMAIN-BASED ROUTING (PHASE 8: AI Architecture Domain Reorganization)
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ===========================================================================
     //
     // Current Implementation: Query Type Domains (Domains/)
     // -------------------------------------------------------
@@ -1065,7 +1061,7 @@ class OrchestratorAgent
     // Future Enhancement: Business Domains (Apps/ - rag-multi-domain-evolution)
     // --------------------------------------------------------------------------
     // Will also route to business domains that define WHAT data is queried:
-    // - Ecommerce: Products, orders, customers (Apps/Ecommerce/)
+    // - Ecommerce: Dynamic entity discovery via EntityConfig (Apps/Ecommerce/)
     // - Finance: Transactions, invoices, payments (Apps/Finance/)
     // - HR: Employees, payroll, benefits (Apps/HR/)
     // - Trading: Stocks, portfolios, market data (Apps/Trading/)
@@ -1075,10 +1071,10 @@ class OrchestratorAgent
     // Future Orchestration Flow:
     // --------------------------
     // User Query → OrchestratorAgent
-    //   ├─ Identifies Query Type (HOW): Analytics
-    //   ├─ Identifies Business Domain (WHAT): Ecommerce
-    //   ├─ Routes to: Domains/Analytics/Agent/AnalyticsAgent (HOW to generate SQL)
-    //   └─ Coordinates with: Apps/Ecommerce/Entities/ProductEntity (WHAT data to query)
+    //   ├- Identifies Query Type (HOW): Analytics
+    //   ├- Identifies Business Domain (WHAT): Ecommerce
+    //   ├- Routes to: Domains/Analytics/Agent/AnalyticsAgent (HOW to generate SQL)
+    //   +- Coordinates with: Apps/Ecommerce/Entities/ProductEntity (WHAT data to query)
     //
     // This separation enables:
     // - Same query type across multiple business domains
@@ -1086,7 +1082,7 @@ class OrchestratorAgent
     // - Easy addition of new business domains
     // - Scalable multi-domain architecture
     //
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ===========================================================================
 
     // ✅ TASK 5.2.1.1: Route hybrid queries to HybridQueryProcessor BEFORE TaskPlanner
     // Hybrid queries need to be split into sub-queries and executed by multiple agents
@@ -1151,7 +1147,7 @@ class OrchestratorAgent
     $planStart = microtime(true);
     $plan = $this->taskPlanner->createPlan($intent, $queryToProcess, $enrichedContext);
     if ($this->debug) {
-      error_log("⏱️ [PERF] createPlan took " . round((microtime(true) - $planStart), 2) . "s");
+      error_log("[time]️ [PERF] createPlan took " . round((microtime(true) - $planStart), 2) . "s");
     }
 
     $this->workingMemory->set('execution_plan', $plan->getSummary());
@@ -1196,7 +1192,7 @@ class OrchestratorAgent
           ]);
 
           if ($correction['success']) {
-            // Mettre à jour la requête dans l'étape
+            // Update query in step
             $step->setMeta('sub_query', $correction['corrected_query']);
             $step->setMeta('was_corrected', true);
             $step->setMeta('correction_method', $correction['correction_method']);
@@ -1392,10 +1388,10 @@ class OrchestratorAgent
     // Map intent types to domain classes
     // NOTE: This mapping will be enhanced in future specs to include business domains
     $domainMap = [
-      'semantic' => \ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent::class,
-      'analytics' => \ClicShopping\AI\Domains\Analytics\Agent\AnalyticsAgent::class,
-      'hybrid' => \ClicShopping\AI\Domains\Hybrid\Processor\HybridQueryProcessor::class,
-      'web_search' => \ClicShopping\AI\Domains\WebSearch\Tool\WebSearchTool::class,
+      'semantic' => \ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent::class,
+      'analytics' => \ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent::class,
+      'hybrid' => \ClicShopping\AI\DomainsAI\Hybrid\Processor\HybridQueryProcessor::class,
+      'web_search' => \ClicShopping\AI\DomainsAI\WebSearch\Tool\WebSearchTool::class,
     ];
     
     // Get domain class for intent type

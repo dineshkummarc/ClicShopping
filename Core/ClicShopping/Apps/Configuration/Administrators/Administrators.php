@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Configuration\Administrators;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Administrators extends \ClicShopping\OM\ConfigurableAppAbstract
+class Administrators extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_Administrators_V1';

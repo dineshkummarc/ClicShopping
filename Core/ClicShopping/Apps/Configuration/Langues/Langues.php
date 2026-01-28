@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Configuration\Langues;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Langues extends \ClicShopping\OM\ConfigurableAppAbstract
+class Langues extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_Langues_V1';

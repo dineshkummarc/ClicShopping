@@ -10,17 +10,17 @@
 
 namespace ClicShopping\Service\Shop;
 
+use ClicShopping\Apps\Catalog\Categories\Classes\Shop\Category as CategoryClass;
+use ClicShopping\Apps\Catalog\Categories\Classes\Shop\CategoryTree as CategoryTreeClass;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Catalog\Categories\Classes\Shop\Category as CategoryClass;
-use ClicShopping\Apps\Catalog\Categories\Classes\Shop\CategoryTree as CategoryTreeClass;
 /**
  * This service is used to manage the initialization of CategoryTree and Category classes
  * within the ClicShopping framework. It ensures these components are properly registered
  * and available for use in the application.
  */
-class CategoryPath implements \ClicShopping\OM\ServiceInterface
+class CategoryPath implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the category-related classes if the required file exists.

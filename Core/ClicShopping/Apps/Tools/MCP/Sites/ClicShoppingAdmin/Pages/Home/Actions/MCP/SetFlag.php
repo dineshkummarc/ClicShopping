@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Tools\MCP\Sites\ClicShoppingAdmin\Pages\Home\Actions
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\Status;
 use ClicShopping\OM\Registry;
 
-class SetFlag extends \ClicShopping\OM\PagesActionsAbstract
+class SetFlag extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

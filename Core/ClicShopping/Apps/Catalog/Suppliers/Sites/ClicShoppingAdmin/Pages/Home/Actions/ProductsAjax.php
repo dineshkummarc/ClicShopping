@@ -10,10 +10,10 @@
 
 namespace ClicShopping\Apps\Catalog\Suppliers\Sites\ClicShoppingAdmin\Pages\Home\Actions;
 
-use ClicShopping\OM\Registry;
 use ClicShopping\OM\HTML;
+use ClicShopping\OM\Registry;
 
-class ProductsAjax extends \ClicShopping\OM\PagesActionsAbstract
+class ProductsAjax extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   protected $file = null;
   protected bool $use_site_template = false;

@@ -10,12 +10,11 @@
 
 namespace ClicShopping\Apps\Configuration\Api\Sites\Shop\Pages\Token;
 
+use ClicShopping\Apps\Configuration\Api\Classes\Shop\Login;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\Api\Classes\Shop\Login;
-
-class Token extends \ClicShopping\OM\PagesAbstract
+class Token extends \ClicShopping\OM\Domains\PagesAbstract
 {
   protected ?string $file = null;
   protected bool $use_site_template = false;

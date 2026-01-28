@@ -10,13 +10,11 @@
 
 namespace ClicShopping\Apps\Report\StatsProductsNotification\Sites\ClicShoppingAdmin\Pages\Home\Actions\Configure;
 
-use ClicShopping\OM\Registry;
-
 /**
  * Process action for Sites module configuration.
  * Handles the configuration processing with centralized functionality.
  */
-class Process extends \ClicShopping\OM\ConfigureActionsAbstract
+class Process extends \ClicShopping\OM\Domains\ConfigureActionsAbstract
 {
   /**
    * Execute the configuration processing for Sites module

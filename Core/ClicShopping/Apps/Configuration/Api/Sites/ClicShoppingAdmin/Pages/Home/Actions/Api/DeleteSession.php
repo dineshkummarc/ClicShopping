@@ -14,7 +14,7 @@ namespace ClicShopping\Apps\Configuration\Api\Sites\ClicShoppingAdmin\Pages\Home
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class DeleteSession extends \ClicShopping\OM\PagesActionsAbstract
+class DeleteSession extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

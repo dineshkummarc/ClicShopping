@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Configuration\Cache;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Cache extends \ClicShopping\OM\ConfigurableAppAbstract
+class Cache extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_Cache_V1';

@@ -20,7 +20,7 @@
 namespace ClicShopping\AI\Security;
 
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\AI\Domain\Patterns\Security\ObfuscationPatterns;
+use ClicShopping\AI\DomainsAI\CoreAI\Patterns\Security\ObfuscationPatterns;
 
 class ObfuscationPreprocessor
 {

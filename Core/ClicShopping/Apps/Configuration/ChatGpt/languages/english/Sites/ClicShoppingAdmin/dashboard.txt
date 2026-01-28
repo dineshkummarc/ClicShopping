@@ -469,6 +469,12 @@ cache_type_classification = 🎯 Classification Cache
 cache_type_classification_desc = Cached query classifications in Work/Cache/Rag/Classification/
 cache_type_hybrid = 🔀 Hybrid Query Cache
 cache_type_hybrid_desc = Cached multi-temporal query results in Work/Cache/Rag/Hybrid/
+cache_type_semantic = 📋 Semantics Query Cache
+cache_type_semantic_desc = Cached semantics request results in Work/Cache/Rag/Semantic/
+cache_type_sql = 🗂️ Sql Query Cache
+cache_type_sql_desc = Cached Sql request results in Work/Cache/Rag/SQL/
+websearch_cache_statistics = Statisques WebSearch
+
 
 # File Caches
 file_caches_statistics = File Caches Statistics
@@ -677,3 +683,19 @@ no_cache_warming_data = No cache warming data available yet
 no_hybrid_query_data = No hybrid query data available yet
 no_timeout_data = No timeout management data available yet
 data_will_be_collected = Data will be collected automatically during query execution
+
+# Cache Performance Charts (Task 7.3)
+cache_performance_charts = Cache Performance Charts
+cache_hit_miss_chart_title = Cache Hit/Miss Rate Over Time
+cache_cost_savings_chart_title = API Cost Savings Over Time
+cache_response_time_chart_title = Average Response Time Comparison
+cache_size_chart_title = Cache Size by Type
+cache_charts_info_title = About These Charts
+cache_hit_miss_label = Hit/Miss Rate
+cache_hit_miss_desc = Shows cache effectiveness over time
+cache_cost_savings_label = Cost Savings
+cache_cost_savings_desc = API costs saved vs spent
+cache_response_time_label = Response Time
+cache_response_time_desc = Cached vs uncached performance
+cache_size_label = Cache Size
+cache_size_desc = Storage usage by cache type

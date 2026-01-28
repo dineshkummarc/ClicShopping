@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This action class handles the preview functionality in the admin interface.
  * It sets up the preview page and loads necessary definitions.
  */
-class Preview extends \ClicShopping\OM\PagesActionsAbstract
+class Preview extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the preview action.

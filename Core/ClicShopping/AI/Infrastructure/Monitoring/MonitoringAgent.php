@@ -16,13 +16,13 @@ use ClicShopping\AI\Infrastructure\Cache\Cache;
 /**
  * MonitoringAgent Class
  *
- * Agent centralisé de monitoring système qui :
- * - Collecte les métriques de tous les composants
- * - Agrège les statistiques en temps réel
- * - Détecte les anomalies et génère des alertes
- * - Produit des rapports de santé système
- * - Track les coûts API et performance
- * - Analyse les tendances sur le temps
+ * Centralized system monitoring agent that:
+ * - Collects metrics from all components
+ * - Aggregates statistics in real-time
+ * - Detects anomalies and generates alerts
+ * - Produces system health reports
+ * - Tracks API costs and performance
+ * - Analyzes trends over time
  */
 #[AllowDynamicProperties]
 class MonitoringAgent
@@ -31,10 +31,10 @@ class MonitoringAgent
   private Cache $cache;
   private bool $debug;
 
-  // Composants monitorés
+  // Monitored components
   private array $monitoredComponents = [];
 
-  // Métriques système
+  // System metrics
   private array $systemMetrics = [
     'uptime_start' => 0,
     'total_requests' => 0,
@@ -45,22 +45,22 @@ class MonitoringAgent
     'memory_peak_usage' => 0,
   ];
 
-  // Métriques par composant
+  // Metrics per component
   private array $componentMetrics = [];
 
-  // Seuils d'alerte (conformes aux exigences Test 7.3)
+  // Alert thresholds (compliant with Test 7.3 requirements)
   private array $alertThresholds = [
-    'error_rate' => 0.1,              // 10% d'erreurs (Test 7.3 requirement)
-    'response_time' => 10.0,          // 10 secondes (Test 7.3 requirement)
-    'api_cost_per_hour' => 1.0,       // 1$ par heure
-    'memory_usage' => 0.9,            // 90% mémoire (Test 7.3 requirement)
+    'error_rate' => 0.1,              // 10% errors (Test 7.3 requirement)
+    'response_time' => 10.0,          // 10 seconds (Test 7.3 requirement)
+    'api_cost_per_hour' => 1.0,       // $1 per hour
+    'memory_usage' => 0.9,            // 90% memory (Test 7.3 requirement)
     'cache_hit_rate' => 0.5,          // 50% minimum
   ];
 
-  // Alertes actives
+  // Active alerts
   private array $activeAlerts = [];
 
-  // Historique métriques (dernières 24h)
+  // Metrics history (last 24h)
   private array $metricsHistory = [];
 
   // Configuration
@@ -78,7 +78,7 @@ class MonitoringAgent
 
     $this->systemMetrics['uptime_start'] = time();
 
-    // Charger les métriques depuis le cache
+    // Load metrics from cache
     $this->loadMetricsFromCache();
 
     if ($this->debug) {
@@ -90,11 +90,11 @@ class MonitoringAgent
   }
 
   /**
-   * 🎯 Enregistre un composant pour monitoring
+   * Registers a component for monitoring
    *
-   * @param string $componentName Nom du composant
-   * @param object $component Instance du composant
-   * @param array $metricsToTrack Métriques à suivre
+   * @param string $componentName Component name
+   * @param object $component Component instance
+   * @param array $metricsToTrack Metrics to track
    */
   public function registerComponent(string $componentName, object $component, array $metricsToTrack = []): void
   {
@@ -104,7 +104,7 @@ class MonitoringAgent
       'registered_at' => time(),
     ];
 
-    // Initialiser les métriques du composant
+    // Initialize component metrics
     $this->componentMetrics[$componentName] = [
       'total_calls' => 0,
       'successful_calls' => 0,
@@ -124,9 +124,9 @@ class MonitoringAgent
   }
 
   /**
-   * 📊 Collecte les métriques de tous les composants
+   * Collects metrics from all components
    *
-   * @return array Snapshot complet des métriques
+   * @return array Complete metrics snapshot
    */
   public function collectMetrics(): array
   {
@@ -136,28 +136,30 @@ class MonitoringAgent
       'components' => [],
     ];
 
-    // Collecter les métriques de chaque composant
+    // Collect metrics from each component
     foreach ($this->monitoredComponents as $name => $config) {
       $snapshot['components'][$name] = $this->collectComponentMetrics($name, $config['instance']);
     }
 
-    // Ajouter aux métriques actuelles
+    // Add to current metrics
     $this->componentMetrics = array_merge(
       $this->componentMetrics,
       $snapshot['components']
     );
 
-    // Sauvegarder snapshot dans l'historique
+    // Save snapshot to history
     $this->addToHistory($snapshot);
 
-    // Vérifier les seuils d'alerte
+    // Check alert thresholds
     $this->checkAlertThresholds($snapshot);
 
     return $snapshot;
   }
 
   /**
-   * Collecte les métriques système
+   * Collects system metrics
+   * 
+   * @return array System metrics
    */
   private function collectSystemMetrics(): array
   {
@@ -181,7 +183,11 @@ class MonitoringAgent
   }
 
   /**
-   * Collecte les métriques d'un composant spécifique
+   * Collects metrics from a specific component
+   * 
+   * @param string $name Component name
+   * @param object $component Component instance
+   * @return array Component metrics
    */
   private function collectComponentMetrics(string $name, object $component): array
   {
@@ -229,10 +235,10 @@ class MonitoringAgent
   }
 
   /**
-   * 🚨 Enregistre un événement (requête, erreur, etc.)
+   * Records an event (request, error, etc.)
    *
-   * @param string $eventType Type d'événement
-   * @param array $eventData Données de l'événement
+   * @param string $eventType Event type
+   * @param array $eventData Event data
    */
   public function recordEvent(string $eventType, array $eventData): void
   {
@@ -271,14 +277,18 @@ class MonitoringAgent
         break;
     }
 
-    // Sauvegarder périodiquement
+    // Save periodically
     if ($this->systemMetrics['total_requests'] % 10 === 0) {
       $this->saveMetricsToCache();
     }
   }
 
   /**
-   * Enregistre un appel à un composant
+   * Records a component call
+   * 
+   * @param string $componentName Component name
+   * @param bool $success Success status
+   * @param float $executionTime Execution time
    */
   private function recordComponentCall( string $componentName,  bool $success,  float $executionTime ): void
   {
@@ -309,9 +319,9 @@ class MonitoringAgent
   }
 
   /**
-   * 📈 Obtient un rapport de santé système complet
+   * Gets a complete system health report
    *
-   * @return array Rapport de santé
+   * @return array Health report
    */
   public function getHealthReport(): array
   {
@@ -329,7 +339,10 @@ class MonitoringAgent
   }
 
   /**
-   * Calcule la santé globale du système (0-100)
+   * Calculates overall system health (0-100)
+   * 
+   * @param array $snapshot Metrics snapshot
+   * @return array Health score and status
    */
   private function calculateOverallHealth(array $snapshot): array
   {
@@ -368,7 +381,7 @@ class MonitoringAgent
       $issues[] = "High memory usage: {$memPct}%";
     }
 
-    // Facteur 4: Alertes actives
+    // Factor 4: Active alerts
     $alertCount = count($this->activeAlerts);
     if ($alertCount > 5) {
       $healthScore -= 15;
@@ -396,7 +409,10 @@ class MonitoringAgent
   }
 
   /**
-   * Analyse la santé de chaque composant
+   * Analyzes health of each component
+   * 
+   * @param array $components Components data
+   * @return array Component health analysis
    */
   private function analyzeComponentHealth(array $components): array
   {
@@ -439,7 +455,9 @@ class MonitoringAgent
   }
 
   /**
-   * Vérifie les seuils d'alerte
+   * Checks alert thresholds
+   * 
+   * @param array $snapshot Metrics snapshot
    */
   private function checkAlertThresholds(array $snapshot): void
   {
@@ -571,7 +589,7 @@ class MonitoringAgent
         ]
       );
       
-      // Supprimer l'alerte des alertes actives
+      // Remove alert from active alerts
       unset($this->activeAlerts[$alertType]);
       
       return true;
@@ -641,7 +659,7 @@ class MonitoringAgent
         return;
       }
 
-      // Préparer le contenu de l'email
+      // Prepare email content
       $storeName = defined('STORE_NAME') ? STORE_NAME : 'ClicShopping';
       $subject = "🚨 ALERT ESCALATED: {$alertType} - {$newSeverity}";
       
@@ -706,7 +724,9 @@ class MonitoringAgent
   }
 
   /**
-   * Obtient les alertes actives
+   * Gets active alerts
+   * 
+   * @return array Active alerts
    */
   public function getActiveAlerts(): array
   {
@@ -788,7 +808,11 @@ class MonitoringAgent
   }
 
   /**
-   * Calcule la tendance d'une métrique
+   * Calculates metric trend
+   * 
+   * @param string $metricName Metric name
+   * @param int $period Period in seconds
+   * @return array Trend data
    */
   private function calculateTrend(array $history, string $metric): array
   {
@@ -909,7 +933,9 @@ class MonitoringAgent
   }
 
   /**
-   * Obtient le pourcentage d'utilisation mémoire
+   * Gets memory usage percentage
+   * 
+   * @return float Memory usage percentage
    */
   private function getMemoryUsagePercentage(): float
   {
@@ -920,7 +946,9 @@ class MonitoringAgent
   }
 
   /**
-   * Obtient la charge serveur (load average)
+   * Gets server load (load average)
+   * 
+   * @return float Server load
    */
   private function getServerLoad(): ?array
   {
@@ -992,7 +1020,7 @@ class MonitoringAgent
   }
 
   /**
-   * Sauvegarde les métriques dans le cache
+   * Saves metrics to cache
    */
   private function saveMetricsToCache(): void
   {
@@ -1011,7 +1039,7 @@ class MonitoringAgent
 
 
   /**
-   * Destructeur - Sauvegarder les métriques
+   * Destructor - Save metrics
    */
   public function __destruct()
   {
@@ -1543,7 +1571,9 @@ HTML;
   }
 
   /**
-   * Obtient un résumé rapide du système
+   * Gets a quick system summary
+   * 
+   * @return array Quick summary
    */
   public function getQuickSummary(): array
   {
@@ -1607,7 +1637,10 @@ HTML;
   }
 
   /**
-   * Obtient les statistiques détaillées d'un composant
+   * Gets detailed statistics for a component
+   * 
+   * @param string $componentName Component name
+   * @return array|null Component statistics or null
    */
   public function getComponentStats(string $componentName): ?array
   {
@@ -1617,7 +1650,7 @@ HTML;
 
     $metrics = $this->componentMetrics[$componentName];
 
-    // Calculer des métriques supplémentaires
+    // Calculate additional metrics
     $totalCalls = $metrics['total_calls'] ?? 0;
     $successfulCalls = $metrics['successful_calls'] ?? 0;
     $failedCalls = $metrics['failed_calls'] ?? 0;
@@ -1633,7 +1666,11 @@ HTML;
   }
 
   /**
-   * Obtient l'historique d'une métrique spécifique
+   * Gets history for a specific metric
+   * 
+   * @param string $metricName Metric name
+   * @param int $limit Maximum number of entries
+   * @return array Metric history
    */
   public function getMetricHistory(string $metric, int $limit = 24): array
   {
@@ -1676,7 +1713,9 @@ HTML;
   }
 
   /**
-   * Obtient les métriques d'API
+   * Gets API metrics
+   * 
+   * @return array API metrics
    */
   public function getApiMetrics(): array
   {

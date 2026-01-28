@@ -14,7 +14,7 @@ namespace ClicShopping\Apps\Tools\Apps\Sites\ClicShoppingAdmin\Pages\Home\Action
 use ClicShopping\OM\Apps;
 use ClicShopping\OM\Registry;
 
-class getInstalledApps extends \ClicShopping\OM\PagesActionsAbstract
+class getInstalledApps extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

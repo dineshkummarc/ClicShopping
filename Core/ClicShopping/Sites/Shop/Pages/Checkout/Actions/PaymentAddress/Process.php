@@ -17,7 +17,7 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Shop\AddressBook;
 use function strlen;
 
-class Process extends \ClicShopping\OM\PagesActionsAbstract
+class Process extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

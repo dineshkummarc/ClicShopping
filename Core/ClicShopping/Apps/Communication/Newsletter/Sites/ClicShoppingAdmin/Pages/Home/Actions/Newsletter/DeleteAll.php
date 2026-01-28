@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Communication\Newsletter\Sites\ClicShoppingAdmin\Pag
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class DeleteAll extends \ClicShopping\OM\PagesActionsAbstract
+class DeleteAll extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

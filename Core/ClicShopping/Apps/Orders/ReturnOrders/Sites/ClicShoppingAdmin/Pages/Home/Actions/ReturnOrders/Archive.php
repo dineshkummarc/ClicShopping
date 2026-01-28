@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Orders\ReturnOrders\Sites\ClicShoppingAdmin\Pages\Ho
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class Archive extends \ClicShopping\OM\PagesActionsAbstract
+class Archive extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
   protected int $rID;

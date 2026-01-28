@@ -10,15 +10,14 @@
 
 namespace ClicShopping\Sites\Shop\Pages\Account\Actions\Password;
 
+use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
-
-use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
 use function strlen;
 
-class Process extends \ClicShopping\OM\PagesActionsAbstract
+class Process extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

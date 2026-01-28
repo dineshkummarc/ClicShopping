@@ -2,8 +2,8 @@
 /**
  * SubTaskPlannerPatternAnalysis
  * 
- * Planificateur spécialisé pour l'analyse de patterns et tendances
- * Responsabilité : Créer des plans pour identifier motifs dominants, tendances, styles
+ * Planner spécialisé pour l'analyse de patterns et tendances
+ * Responsibility : Createsr des plans pour identifier motifs dominants, tendances, styles
  */
 
 namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
@@ -11,8 +11,8 @@ namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
 use AllowDynamicProperties;
 use ClicShopping\AI\Agents\Planning\TaskStep;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
-use ClicShopping\AI\Domain\Patterns\Semantic\PatternAnalysisPattern;
+use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\DomainsAI\DomainRegistry;
 
 #[AllowDynamicProperties]
 class SubTaskPlannerPatternAnalysis
@@ -27,9 +27,9 @@ class SubTaskPlannerPatternAnalysis
     }
     
     /**
-     * Détecte si une requête concerne l'analyse de patterns
+     * Detects si une requête concerne l'analyse de patterns
      * 
-     * NOTE: Pure LLM Mode - This method uses pattern matching for FUTURE USE.
+     * NOTE: Pure LLM Mode - This method uses simple keyword matching for FUTURE USE.
      * Current implementation should delegate to LLM-based detection.
      */
     public function canHandle(string $query): bool
@@ -45,8 +45,20 @@ class SubTaskPlannerPatternAnalysis
         // Utiliser la requête traduite en priorité
         $queryToAnalyze = !empty($translatedQuery) ? $translatedQuery : $query;
 
-        // Use PatternAnalysisPattern class for detection
-        $matches = PatternAnalysisPattern::matches($queryToAnalyze);
+        // Simple keyword matching (replaces deleted PatternAnalysisPattern)
+        $patternKeywords = ['pattern', 'trend', 'style', 'dominant', 'recurring', 'common'];
+        $queryLower = strtolower($queryToAnalyze);
+        
+        foreach ($patternKeywords as $keyword) {
+            if (strpos($queryLower, $keyword) !== false) {
+                if ($this->debug) {
+                    $this->logDebug("Pattern analysis keyword detected: $keyword");
+                }
+                return true;
+            }
+        }
+        
+        return false;
         
         if ($matches && $this->debug) {
             $this->logDebug("Pattern analysis detected using PatternAnalysisPattern class");
@@ -56,7 +68,7 @@ class SubTaskPlannerPatternAnalysis
     }
     
     /**
-     * Crée le plan d'analyse de patterns (4 étapes déterministes)
+     * Creates le plan d'analyse de patterns (4 étapes déterministes)
      */
     public function createPlan(array $intent, string $query): array
     {
@@ -66,7 +78,7 @@ class SubTaskPlannerPatternAnalysis
         
         $steps = [];
 
-        // Étape 1: Charger le catalogue produits
+        // Step 1: Charger le catalogue produits
         $step1 = new TaskStep(
             'step_1',
             'load_product_catalog_data',
@@ -75,7 +87,7 @@ class SubTaskPlannerPatternAnalysis
                 'intent' => $intent,
                 'data_source' => 'internal_database',
                 'scope' => 'our_product_catalog',
-                'tables' => ['products', 'categories', 'product_description', 'specials'],
+                'tables' => $this->getTablesFromDomain(),
                 'depends_on' => [],
                 'can_run_parallel' => false,
                 'is_final' => false,
@@ -83,7 +95,7 @@ class SubTaskPlannerPatternAnalysis
         );
         $steps[] = $step1;
 
-        // Étape 2: Extraction des patterns
+        // Step 2: Extraction des patterns
         $step2 = new TaskStep(
             'step_2',
             'pattern_extraction',
@@ -99,7 +111,7 @@ class SubTaskPlannerPatternAnalysis
         );
         $steps[] = $step2;
 
-        // Étape 3: Classement par fréquence et pertinence
+        // Step 3: Classement par fréquence et pertinence
         $step3 = new TaskStep(
             'step_3',
             'pattern_frequency_ranking',
@@ -115,7 +127,7 @@ class SubTaskPlannerPatternAnalysis
         );
         $steps[] = $step3;
 
-        // Étape 4: Synthèse des résultats
+        // Step 4: Synthèse des résultats
         $step4 = new TaskStep(
             'step_4',
             'pattern_synthesis',
@@ -139,7 +151,7 @@ class SubTaskPlannerPatternAnalysis
     }
     
     /**
-     * Obtient les métadonnées du planificateur
+     * Gets les planner metadata
      */
     public function getMetadata(): array
     {
@@ -153,6 +165,34 @@ class SubTaskPlannerPatternAnalysis
             'supports_fallback' => false,
             'requires_external_data' => false
         ];
+    }
+    
+    /**
+     * Get tables from active domain configuration
+     * 
+     * Uses DomainRegistry to load entity configuration from the active domain app.
+     * Falls back to empty array if no domain is active (let LLM discover tables).
+     * 
+     * TASK 2026-01-23: Added for domain-agnostic table loading (Priority 2)
+     * 
+     * @return array Array of table names from domain entity config
+     */
+    private function getTablesFromDomain(): array
+    {
+        $domainApp = DomainRegistry::getInstance()->getActiveApp();
+        if ($domainApp && method_exists($domainApp, 'getEntityConfig')) {
+            $entityConfig = $domainApp->getEntityConfig();
+            $tables = [];
+            foreach ($entityConfig as $entity) {
+                if (isset($entity['table'])) {
+                    $tables[] = $entity['table'];
+                }
+            }
+            return array_unique($tables);
+        }
+        
+        // Fallback: empty array (let LLM discover tables)
+        return [];
     }
     
     private function logDebug(string $message): void

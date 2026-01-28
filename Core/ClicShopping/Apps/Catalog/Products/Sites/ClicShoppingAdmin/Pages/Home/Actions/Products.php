@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This action class is responsible for setting up the Products page in the admin interface.
  * It defines the page file to be used and loads the necessary language definitions.
  */
-class Products extends \ClicShopping\OM\PagesActionsAbstract
+class Products extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to set up the Products page.

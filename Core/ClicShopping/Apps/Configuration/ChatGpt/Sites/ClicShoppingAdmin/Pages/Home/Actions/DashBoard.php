@@ -11,7 +11,7 @@ namespace ClicShopping\Apps\Configuration\ChatGpt\Sites\ClicShoppingAdmin\Pages\
 
 use ClicShopping\OM\Registry;
 
-class DashBoard extends \ClicShopping\OM\PagesActionsAbstract
+class DashBoard extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

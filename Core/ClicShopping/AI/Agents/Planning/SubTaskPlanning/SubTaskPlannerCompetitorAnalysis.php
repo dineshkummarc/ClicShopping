@@ -1,9 +1,9 @@
 <?php
 /**
- * SubTaskPlannerCompetitorAnalysis
+ * SubTaskPlannerCompetitorAnalysis - Specialized planner for competitive analysis
+ * Creates deterministic plans to compare internal data with competitors
  * 
- * Planificateur spécialisé pour les analyses concurrentielles
- * Responsabilité : Créer des plans déterministes pour comparer nos produits avec les concurrents
+ * @copyright 2008 - https://www.clicshopping.org
  */
 
 namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
@@ -11,6 +11,7 @@ namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
 use AllowDynamicProperties;
 use ClicShopping\AI\Agents\Planning\TaskStep;
 use ClicShopping\AI\Security\SecurityLogger;
+use ClicShopping\AI\DomainsAI\DomainRegistry;
 
 #[AllowDynamicProperties]
 class SubTaskPlannerCompetitorAnalysis
@@ -25,47 +26,38 @@ class SubTaskPlannerCompetitorAnalysis
     }
 
     /**
-     * Détecte si la requête concerne une analyse concurrentielle
-     *
-     * NOTE: Pure LLM mode - competitor analysis is not currently supported
-     * This feature requires external data sources and pattern-based detection
-     * which have been removed in the pure LLM implementation.
-     *
-     * @param string $query Requête utilisateur
+     * Check if query is for competitive analysis
+     * 
+     * NOTE: Feature currently disabled in Pure LLM mode
+     * Requires external data sources not yet implemented
+     * 
      * @return bool Always returns false (feature disabled)
      */
     public function canHandle(string $query): bool
     {
       if ($this->debug) {
-        $this->logDebug("Competitor analysis detection SKIPPED - Feature not supported in Pure LLM mode");
+        $this->logDebug("Competitor analysis detection SKIPPED - Feature not supported");
       }
       
-      return false; // Feature disabled in pure LLM mode
+      return false;
     }
 
-  /**
-     * Crée le plan d'analyse concurrentielle (3 étapes déterministes)
+    /**
+     * Create competitive analysis execution plan
+     * Generates 3-step plan: collect internal data, collect competitor data, compare and synthesize
      * 
-     * @param array $intent Intention analysée
-     * @param string $query Requête originale
-     * @return array Liste des TaskStep
+     * @return array List of TaskStep objects
      */
     public function createPlan(array $intent, string $query): array
     {
         if ($this->debug) {
-            $this->logDebug("Creating competitor analysis plan for query: " . substr($query, 0, 100));
+            $this->logDebug("Creating competitor analysis plan");
         }
 
-        // Extract product name from query
         $productName = $this->extractProductName($query);
-
-        if ($this->debug) {
-            $this->logDebug("Extracted product name: '{$productName}' from query");
-        }
-
         $steps = [];
 
-        // Étape 1: Collecter NOS données produits (toujours interne)
+        // Step 1: Collect internal data
         $step1 = new TaskStep(
             'step_1',
             'collect_our_product_data',
@@ -73,10 +65,10 @@ class SubTaskPlannerCompetitorAnalysis
             [
                 'intent' => $intent,
                 'sub_query' => 'Load our products and pricing from internal database',
-                'product_name' => $productName, // 🆕 Nom du produit extrait
+                'product_name' => $productName,
                 'expected_output' => 'Our product dataset (price, features, availability)',
                 'data_source' => 'internal_database',
-                'tables' => ['products', 'categories', 'prices'],
+                'tables' => $this->getTablesFromDomain(),
                 'scope' => 'our_products_only',
                 'depends_on' => [],
                 'can_run_parallel' => false,
@@ -85,7 +77,7 @@ class SubTaskPlannerCompetitorAnalysis
         );
         $steps[] = $step1;
 
-        // Étape 2: Collecter données CONCURRENTS (externes + fallback)
+        // Step 2: Collect competitor data
         $step2 = new TaskStep(
             'step_2',
             'collect_competitor_market_data',
@@ -104,7 +96,7 @@ class SubTaskPlannerCompetitorAnalysis
         );
         $steps[] = $step2;
 
-        // Étape 3: Comparaison et analyse concurrentielle
+        // Step 3: Compare and synthesize
         $step3 = new TaskStep(
             'step_3',
             'competitive_analysis_synthesis',
@@ -122,15 +114,11 @@ class SubTaskPlannerCompetitorAnalysis
         );
         $steps[] = $step3;
 
-        if ($this->debug) {
-            $this->logDebug("Created competitor analysis plan with " . count($steps) . " steps");
-        }
-
         return $steps;
     }
 
     /**
-     * Obtient les métadonnées du planificateur
+     * Get planner metadata
      */
     public function getMetadata(): array
     {
@@ -147,36 +135,26 @@ class SubTaskPlannerCompetitorAnalysis
     }
 
     /**
-     * Extrait le nom du produit de la requête
+     * Extract product name from query
+     * Uses regex patterns to identify product name in English queries
      * 
-     * @param string $query Requête (déjà traduite en anglais)
-     * @return string Nom du produit extrait
+     * @return string Extracted product name
      */
     private function extractProductName(string $query): string
     {
-        // Patterns pour extraire le nom du produit (en anglais)
         $patterns = [
-            // "compare the price of X with competitors"
             '/compare\s+the\s+price\s+of\s+(.+?)\s+with\s+(the\s+)?competitors?/iu',
-            // "compare X with competitors"
             '/compare\s+(.+?)\s+with\s+(the\s+)?competitors?/iu',
-            // "price of X with competitors"
             '/price\s+of\s+(.+?)\s+with\s+(the\s+)?competitors?/iu',
-            // "X vs competitors"
             '/(.+?)\s+vs\s+competitors?/iu',
-            // "X versus competitors"
             '/(.+?)\s+versus\s+competitors?/iu',
-            // "X against competitors"
             '/(.+?)\s+against\s+competitors?/iu',
-            // "X competitors" (dernier recours)
             '/(.+?)\s+competitors?/iu',
         ];
 
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $query, $matches)) {
                 $productName = trim($matches[1]);
-
-                // Nettoyer le nom extrait
                 $productName = preg_replace('/^(the|a|an)\s+/i', '', $productName);
                 $productName = rtrim($productName, '?!.,;:');
                 $productName = preg_replace('/\s+/', ' ', $productName);
@@ -187,15 +165,34 @@ class SubTaskPlannerCompetitorAnalysis
             }
         }
 
-        // Si aucun pattern ne correspond, retourner la requête nettoyée
         $cleaned = preg_replace('/\b(compare|comparison|price|cost|with|against|versus|vs|competitor|competitors|competition|the|a|an)\b/i', '', $query);
         $cleaned = preg_replace('/\s+/', ' ', $cleaned);
         return trim($cleaned);
     }
 
     /**
-     * Log de debug
+     * Get tables from active domain configuration
+     * Loads entity config from domain app via DomainRegistry
+     * 
+     * @return array Array of table names
      */
+    private function getTablesFromDomain(): array
+    {
+        $domainApp = DomainRegistry::getInstance()->getActiveApp();
+        if ($domainApp && method_exists($domainApp, 'getEntityConfig')) {
+            $entityConfig = $domainApp->getEntityConfig();
+            $tables = [];
+            foreach ($entityConfig as $entity) {
+                if (isset($entity['table'])) {
+                    $tables[] = $entity['table'];
+                }
+            }
+            return array_unique($tables);
+        }
+        
+        return [];
+    }
+
     private function logDebug(string $message): void
     {
         if ($this->securityLogger) {

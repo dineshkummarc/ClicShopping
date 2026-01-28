@@ -17,6 +17,7 @@
 namespace ClicShopping\AI\Infrastructure\Response;
 
 use ClicShopping\OM\Registry;
+use ClicShopping\AI\Config\DomainConfig;
 
 /**
  * TimeoutResponseFormatter Class
@@ -53,12 +54,8 @@ class TimeoutResponseFormatter
   public function __construct()
   {
     // Load language definitions
-    try {
-      $this->language = Registry::get('Language');
-      $this->language->loadDefinitions('rag_timeout_response', null, null, 'ClicShoppingAdmin');
-    } catch (\Exception $e) {
-      error_log("TimeoutResponseFormatter: Error loading language definitions: " . $e->getMessage());
-    }
+    $this->language = Registry::get('Language');
+    DomainConfig::loadLanguageFile('rag_timeout_response');
   }
 
   /**

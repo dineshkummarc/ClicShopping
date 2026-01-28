@@ -10,12 +10,11 @@
 
 namespace ClicShopping\Apps\Configuration\Api\Sites\ClicShoppingAdmin\Pages\Home\Actions\Api;
 
+use ClicShopping\Apps\Configuration\Api\Classes\ClicShoppingAdmin\ApiAdmin;
 use ClicShopping\OM\Cache;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\Api\Classes\ClicShoppingAdmin\ApiAdmin;
-
-class UpdateAll extends \ClicShopping\OM\PagesActionsAbstract
+class UpdateAll extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

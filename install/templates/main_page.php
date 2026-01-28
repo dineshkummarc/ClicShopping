@@ -60,7 +60,7 @@ $template = 'main_page';
           <div class="card">
             <div class="card-footer">
               <div class="text-center">
-                  <small>Copyright &copy; 2008-<?php echo date('Y'); ?> <a href="http://www.clicshopping.org" target="_blank" rel="noreferrer" alt="ClicShopping AI">ClicShopping AI(TM)</a> - Brand deposed at INPI</small>
+                  <small>Copyright &copy; 2008-<?php echo date('Y'); ?> <a href="https://www.clicshopping.org" target="_blank" rel="noreferrer" alt="ClicShopping AI">ClicShopping AI(TM)</a> - Brand deposed at INPI</small>
                 </div>
               </div>
             </div>

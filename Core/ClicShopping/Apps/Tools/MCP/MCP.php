@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\MCP;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class MCP extends \ClicShopping\OM\ConfigurableAppAbstract
+class MCP extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

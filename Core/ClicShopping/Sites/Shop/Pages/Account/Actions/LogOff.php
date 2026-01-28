@@ -13,7 +13,7 @@ namespace ClicShopping\Sites\Shop\Pages\Account\Actions;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class LogOff extends \ClicShopping\OM\PagesActionsAbstract
+class LogOff extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

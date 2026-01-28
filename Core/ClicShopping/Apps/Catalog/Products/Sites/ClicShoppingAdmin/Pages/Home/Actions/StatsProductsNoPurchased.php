@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This action class is responsible for displaying the statistics of products that have never been purchased.
  * It sets the appropriate page file and loads the necessary language definitions for the admin interface.
  */
-class StatsProductsNoPurchased extends \ClicShopping\OM\PagesActionsAbstract
+class StatsProductsNoPurchased extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to display products with no purchases.

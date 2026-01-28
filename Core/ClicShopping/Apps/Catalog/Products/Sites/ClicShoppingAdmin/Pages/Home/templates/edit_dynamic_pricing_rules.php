@@ -27,6 +27,7 @@ if (!is_null($rID)) {
                                                       rules_priority,
                                                       rules_status,
                                                       rules_status_special,
+                                                      rules_status_promotion,
                                                       customers_group
                                                from :table_dynamic_pricing_rules
                                                where rules_id = :rules_id
@@ -137,6 +138,20 @@ echo HTML::form('dynamic_pricing_rule_form', $CLICSHOPPING_Products->link($form_
             <li class="list-group-item-slider">
               <label class="switch">
                 <?php echo HTML::checkboxField('rules_status_special', '1', $rules['rules_status_special'] ?? '', 'class="success"'); ?>
+                <span class="slider"></span>
+              </label>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="form-group row mt-1">
+        <label class="col-2 col-form-label"><?php echo $CLICSHOPPING_Products->getDef('text_rules_status_promotion'); ?></label>
+        <div class="col-md-5">
+          <ul class="list-group-slider list-group-flush">
+            <li class="list-group-item-slider">
+              <label class="switch">
+                <?php echo HTML::checkboxField('rules_status_promotion', '1', $rules['rules_status_promotion'] ?? '', 'class="success"'); ?>
                 <span class="slider"></span>
               </label>
             </li>

@@ -14,7 +14,7 @@ namespace ClicShopping\Apps\Communication\Newsletter\Sites\ClicShoppingAdmin\Pag
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class Lock extends \ClicShopping\OM\PagesActionsAbstract
+class Lock extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

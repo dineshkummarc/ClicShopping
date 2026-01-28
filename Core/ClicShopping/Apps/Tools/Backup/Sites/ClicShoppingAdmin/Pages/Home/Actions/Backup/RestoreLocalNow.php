@@ -15,7 +15,7 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Upload;
 
-class RestoreLocalNow extends \ClicShopping\OM\PagesActionsAbstract
+class RestoreLocalNow extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

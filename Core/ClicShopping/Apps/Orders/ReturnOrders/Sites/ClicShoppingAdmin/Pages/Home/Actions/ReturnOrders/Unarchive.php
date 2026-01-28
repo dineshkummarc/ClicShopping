@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Orders\ReturnOrders\Sites\ClicShoppingAdmin\Pages\Ho
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class Unarchive extends \ClicShopping\OM\PagesActionsAbstract
+class Unarchive extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
   protected int $rID;

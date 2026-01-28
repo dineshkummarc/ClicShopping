@@ -16,9 +16,9 @@ use ClicShopping\OM\HTML;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
+use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-use ClicShopping\AI\Domains\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 
 #[AllowDynamicProperties]
 class Save implements \ClicShopping\OM\Modules\HooksInterface
@@ -63,7 +63,7 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
   {
     error_log("=== PageManager Hook Execute START ===");
     
-    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
+    if (Gpt::checkGptStatus() === false || !defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || !defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       error_log("PageManager: GPT or Embedding disabled, skipping");
       return false;
     }

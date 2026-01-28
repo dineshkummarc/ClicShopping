@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\ActionsRecorder;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class ActionsRecorder extends \ClicShopping\OM\ConfigurableAppAbstract
+class ActionsRecorder extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

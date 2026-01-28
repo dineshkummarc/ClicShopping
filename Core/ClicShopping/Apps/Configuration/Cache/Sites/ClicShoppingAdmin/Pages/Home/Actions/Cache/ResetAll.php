@@ -14,7 +14,7 @@ namespace ClicShopping\Apps\Configuration\Cache\Sites\ClicShoppingAdmin\Pages\Ho
 use ClicShopping\OM\Cache;
 use ClicShopping\OM\Registry;
 
-class ResetAll extends \ClicShopping\OM\PagesActionsAbstract
+class ResetAll extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

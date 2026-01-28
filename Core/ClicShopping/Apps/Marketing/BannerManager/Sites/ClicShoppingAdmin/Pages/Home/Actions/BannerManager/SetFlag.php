@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Marketing\BannerManager\Sites\ClicShoppingAdmin\Pages\Home\Actions\BannerManager;
 
+use ClicShopping\Apps\Marketing\BannerManager\Classes\ClicShoppingAdmin\Status;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Marketing\BannerManager\Classes\ClicShoppingAdmin\Status;
-
-class SetFlag extends \ClicShopping\OM\PagesActionsAbstract
+class SetFlag extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   public function execute()

@@ -10,14 +10,14 @@
 
 namespace ClicShopping\Service\ClicShoppingAdmin;
 
+use ClicShopping\Apps\Tools\SecurityCheck\Classes\IpRestriction as Reject;
 use ClicShopping\OM\CLICSHOPPING;
 
-use ClicShopping\Apps\Tools\SecurityCheck\Classes\IpRestriction as Reject;
 /**
  * This class implements the IpRestriction service for the ClicShoppingAdmin namespace.
  * It enforces IP-based restrictions on the admin area by checking and managing IP rules.
  */
-class IpRestriction implements \ClicShopping\OM\ServiceInterface
+class IpRestriction implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initiates the process of checking and handling IP restrictions for admin access.

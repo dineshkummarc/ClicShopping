@@ -13,7 +13,8 @@ table_heading_rules_value = Rule Value
 table_heading_rules_status = Rule Status
 table_heading_rules_priority = Rule Priority
 table_heading_rules_action = Rule Action
-text_rules_status_special = Status Applied to Promotions
+text_rules_status_special = Status Applied to price promotions
+text_rules_status_promotion = Allow to create / delete a specials
 table_help_rules_condition = (e.g., stock <= 10)
 table_heading_rules_customer_group = Customer Group
 table_heading_rules_special = Specials

@@ -1196,7 +1196,7 @@ class Order
     $this->adminOrdersStatusHistory($last_order_id);
     $this->sendCustomerEmail($last_order_id);
 
-    $CLICSHOPPING_Hooks->call('Orders', 'Process');
+    $CLICSHOPPING_Hooks->call('Orders', 'Process', ['order_id' => $last_order_id]);
   }
 
   /**

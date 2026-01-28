@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Configuration\Countries;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Countries extends \ClicShopping\OM\ConfigurableAppAbstract
+class Countries extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_Countries_V1';

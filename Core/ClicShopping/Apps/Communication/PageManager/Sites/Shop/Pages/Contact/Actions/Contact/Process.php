@@ -10,16 +10,15 @@
 
 namespace ClicShopping\Apps\Communication\PageManager\Sites\Shop\Pages\Contact\Actions\Contact;
 
+use ClicShopping\Apps\Configuration\TemplateEmail\Classes\ClicShoppingAdmin\TemplateEmailAdmin;
+use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
+use ClicShopping\Apps\Tools\ActionsRecorder\Classes\Shop\ActionRecorder;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Is;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\TemplateEmail\Classes\ClicShoppingAdmin\TemplateEmailAdmin;
-use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
-use ClicShopping\Apps\Tools\ActionsRecorder\Classes\Shop\ActionRecorder;
-
-class Process extends \ClicShopping\OM\PagesActionsAbstract
+class Process extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

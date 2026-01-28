@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\AdministratorMenu;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class AdministratorMenu extends \ClicShopping\OM\ConfigurableAppAbstract
+class AdministratorMenu extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

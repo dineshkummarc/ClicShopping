@@ -11,12 +11,11 @@
 namespace ClicShopping\Sites\Shop\Pages\Account\Actions;
 
 use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Is;
 use ClicShopping\OM\Registry;
 
-class PasswordReset extends \ClicShopping\OM\PagesActionsAbstract
+class PasswordReset extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

@@ -10,9 +10,9 @@
 
 namespace ClicShopping\Service\ClicShoppingAdmin;
 
+use ClicShopping\Apps\Configuration\Currency\Classes\Shop\Currencies as CurrenciesClass;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\Currency\Classes\Shop\Currencies as CurrenciesClass;
 /**
  * The Currencies service is responsible for initializing and managing the application-specific
  * currency functionalities within the ClicShoppingAdmin environment.
@@ -20,7 +20,7 @@ use ClicShopping\Apps\Configuration\Currency\Classes\Shop\Currencies as Currenci
  * This service integrates the Currencies class into the global Registry, allowing the application
  * to interact with currency-related operations seamlessly.
  */
-class Currencies implements \ClicShopping\OM\ServiceInterface
+class Currencies implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes and sets up the Currencies registry.

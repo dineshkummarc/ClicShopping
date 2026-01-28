@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Marketing\Recommendations\Sites\ClicShoppingAdmin\Pa
 
 use ClicShopping\OM\Registry;
 
-class SetFlag extends \ClicShopping\OM\PagesActionsAbstract
+class SetFlag extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

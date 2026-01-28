@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\Catalog\Categories;
 
-use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
 /**
  * Handles operations related to the Categories application module.
@@ -19,7 +19,7 @@ use ClicShopping\OM\CLICSHOPPING;
  * and identifiers. This class extends the AppAbstract base class to ensure
  * consistency and shared functionalities across application modules.
  */
-class Categories extends \ClicShopping\OM\ConfigurableAppAbstract
+class Categories extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_Categories_V1';

@@ -1,12 +1,20 @@
-version4.12
-- Libraries updated
-- fix namespace
+version4.20
+AI
+   - OM Interfaces and Abstract refactored
+   - Multi-Domain Agnostic AI Framework 
+   - App Ecommerce
+- some fix
+- Librairies updated
+- Dynamic Pricing improved
+
+
+
 
 ---------------
 version4.12
   - Libraries updated
   - small fix 
-  - IA improvment :
+  - IA improvement :
       - Add comment to sql schema
       - Prompts refactoring
       - LLmprovider refactoring
@@ -14,9 +22,6 @@ version4.12
       - Parallel analysis optimized inside agent
       - Cache optimized et intelligent timeout management
       - AI directory structure refactored
-
-
-
 ---------------
 version4.11
 - Libraries updated

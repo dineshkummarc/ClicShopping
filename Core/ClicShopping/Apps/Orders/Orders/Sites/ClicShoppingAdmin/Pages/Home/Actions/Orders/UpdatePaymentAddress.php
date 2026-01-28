@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Orders\Orders\Sites\ClicShoppingAdmin\Pages\Home\Act
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class UpdatePaymentAddress extends \ClicShopping\OM\PagesActionsAbstract
+class UpdatePaymentAddress extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
   private mixed $lang;

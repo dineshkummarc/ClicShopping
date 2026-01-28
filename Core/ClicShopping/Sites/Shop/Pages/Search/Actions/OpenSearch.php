@@ -17,7 +17,7 @@ use function is_null;
 
 header('Content-Type: text/xml');
 
-class OpenSearch extends \ClicShopping\OM\PagesActionsAbstract
+class OpenSearch extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

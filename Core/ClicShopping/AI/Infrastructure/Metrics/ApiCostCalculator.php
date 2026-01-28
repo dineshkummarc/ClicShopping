@@ -2,8 +2,8 @@
 /**
  * ApiCostCalculator
  * 
- * Calcule les coûts API basés sur les tokens et modèles utilisés
- * Maintient une table de prix à jour pour différents providers
+ * Calculates API costs based on tokens and models used
+ * Maintains up-to-date pricing table for different providers
  */
 
 namespace ClicShopping\AI\Infrastructure\Metrics;
@@ -43,12 +43,12 @@ class ApiCostCalculator
   ];
   
   /**
-   * Calcule le coût total d'un appel API
+   * Calculates total cost of an API call
    * 
-   * @param string $model Nom du modèle
-   * @param int $promptTokens Tokens du prompt
-   * @param int $completionTokens Tokens de la complétion
-   * @return float Coût en USD
+   * @param string $model Model name
+   * @param int $promptTokens Prompt tokens
+   * @param int $completionTokens Completion tokens
+   * @return float Total cost in USD
    */
   public static function calculateCost(string $model, int $promptTokens, int $completionTokens): float
   {
@@ -65,7 +65,7 @@ class ApiCostCalculator
     
     [$inputCost, $outputCost] = $pricing;
     
-    // Calculer le coût
+    // Calculate cost
     $promptCost = ($promptTokens / 1000) * $inputCost;
     $completionCost = ($completionTokens / 1000) * $outputCost;
     
@@ -110,11 +110,11 @@ class ApiCostCalculator
   }
   
   /**
-   * Calcule un coût par défaut pour modèles inconnus
+   * Calculates default cost for unknown models
    * 
-   * @param int $promptTokens Tokens du prompt
-   * @param int $completionTokens Tokens de la complétion
-   * @return float Coût en USD
+   * @param int $promptTokens Prompt tokens
+   * @param int $completionTokens Completion tokens
+   * @return float Estimated cost in USD
    */
   private static function calculateDefaultCost(int $promptTokens, int $completionTokens): float
   {
@@ -191,9 +191,9 @@ class ApiCostCalculator
   }
   
   /**
-   * Calcule le coût total pour un ensemble d'interactions
+   * Calculates total cost for a set of interactions
    * 
-   * @param array $interactions Liste d'interactions avec tokens
+   * @param array $interactions List of interactions with tokens
    * @return array ['total_cost' => float, 'by_model' => array]
    */
   public static function calculateBatchCost(array $interactions): array

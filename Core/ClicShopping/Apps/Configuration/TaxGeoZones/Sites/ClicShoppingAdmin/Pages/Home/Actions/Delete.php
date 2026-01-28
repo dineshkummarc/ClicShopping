@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Configuration\TaxGeoZones\Sites\ClicShoppingAdmin\Pa
 
 use ClicShopping\OM\Registry;
 
-class delete extends \ClicShopping\OM\PagesActionsAbstract
+class delete extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

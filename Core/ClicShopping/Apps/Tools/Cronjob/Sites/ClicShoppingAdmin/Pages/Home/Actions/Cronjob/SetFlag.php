@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Tools\Cronjob\Sites\ClicShoppingAdmin\Pages\Home\Actions\Cronjob;
 
+use ClicShopping\Apps\Tools\Cronjob\Classes\ClicShoppingAdmin\Cron;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Tools\Cronjob\Classes\ClicShoppingAdmin\Cron;
-
-class SetFlag extends \ClicShopping\OM\PagesActionsAbstract
+class SetFlag extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function __construct()
   {

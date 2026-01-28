@@ -10,11 +10,13 @@
 
 namespace ClicShopping\AI\Infrastructure\Schema;
 
-use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
-use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
-use ClicShopping\AI\Infrastructure\Prompt\PromptOptimizer;
+use ClicShopping\AI\Config\DomainConfig;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Cache as OMCache;
+use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
+use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
+use ClicShopping\AI\Infrastructure\Prompt\PromptOptimizer;
+use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\SchemaConfig;
 
 /**
  * SchemaRetriever
@@ -447,17 +449,20 @@ class SchemaRetriever
    * to include column comments. This approach is database-agnostic
    * and doesn't require embedding tables.
    * 
+   * TASK 5.1: Load schema rules from domain configuration when available
+   * 
    * @param array $tableNames Array of table names
    * @return string Schema text
    */
   private function buildSchemaFromTables(array $tableNames): string
   {
     $schemaParts = [];
-    $schemaParts[] = "IMPORTANT: Regarding the structure of the e-commerce tables, please note the following details:\n";
-    $schemaParts[] = "PRIORITY RULES:";
-    $schemaParts[] = "- For product weight queries: Use clic_products.products_weight (contains actual weight VALUES)";
-    $schemaParts[] = "- clic_weight_classes is a REFERENCE table for weight UNITS (kg, g, lbs, oz) NOT weight values";
-    $schemaParts[] = "- When asked about a product's weight, ALWAYS query clic_products, NOT clic_weight_classes\n";
+    
+    // TASK 5.1: Load schema rules from domain configuration
+    $schemaRules = $this->loadSchemaRules();
+    if (!empty($schemaRules)) {
+      $schemaParts[] = $schemaRules;
+    }
     
     $sectionNumber = 1;
     
@@ -481,6 +486,37 @@ class SchemaRetriever
     $schemaParts[] = "\nImportant: When generating SQL queries, strictly follow these table structures and do not invent columns.\n";
     
     return implode("\n", $schemaParts);
+  }
+  
+  /**
+   * Load schema rules from domain configuration
+   * 
+   * TASK 5.1: Load schema rules from domain configuration when available
+   * Uses generic rules if no domain is configured
+   * 
+   * @return string Schema rules text
+   */
+  private function loadSchemaRules(): string
+  {
+    // Check if ecommerce domain is active
+    $activeDomain = DomainConfig::getActivities();
+    
+    if ($activeDomain === 'ecommerce') {
+      // Load schema rules from Ecommerce domain configuration
+      try {
+        if (class_exists(SchemaConfig::class)) {
+          $schemaConfig = SchemaConfig::class;
+          return $schemaConfig::getSchemaRulesString();
+        }
+      } catch (\Exception $e) {
+        if ($this->debug) {
+          error_log("[SchemaRetriever] Failed to load ecommerce schema rules: " . $e->getMessage());
+        }
+      }
+    }
+    
+    // Use generic rules if no domain or domain not found
+    return "IMPORTANT: Please follow the database schema structure carefully when generating SQL queries.\n";
   }
   
   /**

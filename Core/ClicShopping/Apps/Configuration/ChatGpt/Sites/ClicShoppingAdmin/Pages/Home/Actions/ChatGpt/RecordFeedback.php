@@ -10,16 +10,16 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Sites\ClicShoppingAdmin\Pages\Home\Actions\ChatGpt;
 
-use ClicShopping\OM\Registry;
-use ClicShopping\OM\HTML;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag\ConversationMemory;
+use ClicShopping\OM\HTML;
+use ClicShopping\OM\Registry;
 
 /**
  * RecordFeedback Action
  * 
  * Endpoint pour enregistrer le feedback utilisateur sur les réponses du chat
  */
-class RecordFeedback extends \ClicShopping\OM\PagesActionsAbstract
+class RecordFeedback extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

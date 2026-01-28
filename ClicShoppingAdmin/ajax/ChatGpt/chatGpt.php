@@ -18,9 +18,9 @@ use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Agents\Orchestrator\OrchestratorAgent;
 use ClicShopping\AI\Agents\Memory\MemoryRetentionService;
 use ClicShopping\AI\Infrastructure\Metrics\StatisticsTracker;
-use ClicShopping\AI\Helper\Formatter\ResultFormatter;
+use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\ResultFormatter;
 use ClicShopping\AI\Helper\ClarificationHelper;
-use ClicShopping\AI\Helper\AgentResponseHelper;
+use ClicShopping\AI\DomainsAI\CoreAI\Helper\AgentResponseHelper;
 use ClicShopping\AI\Security\SecurityOrchestrator;
 
 define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/') . DIRECTORY_SEPARATOR);
@@ -62,7 +62,7 @@ try {
       if ($error && ($error['type'] === E_ERROR || $error['type'] === E_USER_ERROR)) {
         // Check if it's a timeout error
         if (strpos($error['message'], 'Maximum execution time') !== false) {
-          error_log('⏱️ TIMEOUT ERROR: Query exceeded ' . $max_execution_time . ' seconds');
+          error_log('TIMEOUT ERROR: Query exceeded ' . $max_execution_time . ' seconds');
           
           // Clean output buffer
           if (ob_get_length()) ob_clean();
@@ -83,7 +83,7 @@ try {
     });
     
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('⏱️ TIMEOUT CONFIGURED: ' . $max_execution_time . ' seconds');
+      error_log('IMEOUT CONFIGURED: ' . $max_execution_time . ' seconds');
     }
   }
   
@@ -124,7 +124,7 @@ try {
   
   // ✅ Validation 1: Empty query check
   if (empty($userQuery)) {
-    error_log('⚠️ VALIDATION ERROR: Empty query received');
+    error_log('⚠VALIDATION ERROR: Empty query received');
     
     if (ob_get_length()) ob_clean();
     
@@ -142,7 +142,7 @@ try {
   // ✅ Validation 2: Query length check (max 1000 characters)
   $maxLength = 1000;
   if (mb_strlen($userQuery, 'UTF-8') > $maxLength) {
-    error_log('⚠️ VALIDATION ERROR: Query too long (' . mb_strlen($userQuery, 'UTF-8') . ' chars)');
+    error_log('VALIDATION ERROR: Query too long (' . mb_strlen($userQuery, 'UTF-8') . ' chars)');
     
     if (ob_get_length()) ob_clean();
     
@@ -170,7 +170,7 @@ try {
   $ambiguityCheck = $clarificationHelper->detectAmbiguity($intent, $userQuery, []);
 
   if ($ambiguityCheck['is_ambiguous']) {
-    error_log('⚠️ VALIDATION ERROR: Ambiguous query detected - Type: ' . $ambiguityCheck['ambiguity_type']);
+    error_log('VALIDATION ERROR: Ambiguous query detected - Type: ' . $ambiguityCheck['ambiguity_type']);
     
     if (ob_get_length()) ob_clean();
     
@@ -211,7 +211,7 @@ try {
   $securityCheck = SecurityOrchestrator::validateQuery($userQuery, null); // auto-detect language
   
   if ($securityCheck['blocked']) {
-    error_log('🛡️ SECURITY: Blocked malicious query');
+    error_log('SECURITY: Blocked malicious query');
     error_log('   - Threat Type: ' . $securityCheck['threat_type']);
     error_log('   - Threat Score: ' . $securityCheck['threat_score']);
     error_log('   - Detection Method: ' . $securityCheck['detection_method']);
@@ -235,7 +235,7 @@ try {
   
   // Log security check passed (if debug enabled)
   if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-    error_log('✅ SECURITY: Query passed security check');
+    error_log('SECURITY: Query passed security check');
     error_log('   - Threat Score: ' . $securityCheck['threat_score']);
     error_log('   - Detection Method: ' . $securityCheck['detection_method']);
     error_log('   - Latency: ' . $securityCheck['latency_ms'] . 'ms');
@@ -261,7 +261,7 @@ try {
   $context = $memoryService->retrieveContext($userQuery, 5);
 
   if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-    error_log('📋 CONTEXT RETRIEVED:');
+    error_log('CONTEXT RETRIEVED: ');
     error_log('   - Working Memory: ' . (empty($context['working_memory']) ? '∅' : '✓'));
     error_log('   - Short-term: ' . count($context['short_term']) . ' items');
     error_log('   - Long-term: ' . count($context['long_term']) . ' items');
@@ -283,7 +283,7 @@ try {
     $elapsedTime = microtime(true) - $queryStartTime;
     
     if ($elapsedTime >= $max_execution_time) {
-      error_log('⏱️ TIMEOUT WARNING: Query took ' . round($elapsedTime, 2) . ' seconds (max: ' . $max_execution_time . ')');
+      error_log('TIMEOUT WARNING: Query took ' . round($elapsedTime, 2) . ' seconds (max: ' . $max_execution_time . ')');
       
       if (ob_get_length()) ob_clean();
       
@@ -301,7 +301,7 @@ try {
     }
     
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('⏱️ TIMEOUT CHECK: Query took ' . round($elapsedTime, 2) . ' seconds (max: ' . $max_execution_time . ')');
+      error_log('TIMEOUT CHECK: Query took ' . round($elapsedTime, 2) . ' seconds (max: ' . $max_execution_time . ')');
     }
   }
 
@@ -319,14 +319,14 @@ try {
     ->setApiInfo('openai', CLICSHOPPING_APP_CHATGPT_CH_MODEL ?? 'gpt-4');
 
   if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-    error_log('✅ OrchestratorAgent processed successfully');
+    error_log('OrchestratorAgent processed successfully ');
     error_log('   Agent Used: ' . ($aiResponse['agent_used'] ?? 'unknown'));
   }
 
   // ============================================
   // 5. EXTRAIRE entity_id ET language_id
   // ============================================
-  // ✅ LOGIQUE CORRIGÉE: Récupérer ces valeurs de la réponse OrchestratorAgent
+  //  LOGIQUE CORRIGÉE: Récupérer ces valeurs de la réponse OrchestratorAgent
 
   $entityId = null;
   $entityType = null;
@@ -369,7 +369,7 @@ try {
   }
 
   if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-    error_log('📌 EXTRACTED METADATA:');
+    error_log('EXTRACTED METADATA: ');
     error_log('   Entity ID: ' . $entityId);
     error_log('   Entity Type: ' . $entityType);
     error_log('   Language ID: ' . $languageId);
@@ -410,7 +410,7 @@ try {
   $memoryService->recordInteraction($userQuery, $responseText, $array_metadata);
 
   if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-    error_log('💾 INTERACTION RECORDED IN MEMORY');
+    error_log('INTERACTION RECORDED IN MEMORY ');
     error_log('   Query Length: ' . strlen($userQuery));
     error_log('   Response Length: ' . strlen($responseText));
   }
@@ -423,7 +423,7 @@ try {
   if (++$callCounter % 10 === 0) {
     $migrated = $memoryService->migrateShortTermToLongTerm();
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('🔄 MIGRATION TRIGGERED: ' . $migrated . ' interactions migrated');
+      error_log('MIGRATION TRIGGERED: ' . $migrated . ' interactions migrated ');
     }
   }
 
@@ -446,7 +446,7 @@ try {
 
   // 🔧 DEBUG: Log the full aiResponse structure
   if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-    error_log('🔍 FULL aiResponse structure:');
+    error_log('FULL aiResponse structure:');
     error_log('   Keys: ' . implode(', ', array_keys($aiResponse)));
     error_log('   Has data: ' . (isset($aiResponse['data']) ? 'YES' : 'NO'));
     error_log('   Has text_response: ' . (isset($aiResponse['text_response']) ? 'YES (' . strlen($aiResponse['text_response']) . ' chars)' : 'NO'));
@@ -460,7 +460,7 @@ try {
   $dataToFormat = $aiResponse['data'] ?? [];
 
   if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-    error_log('📦 DATA TO FORMAT (before processing):');
+    error_log('DATA TO FORMAT (before processing): ');
     error_log('   Type: ' . gettype($dataToFormat));
     error_log('   Is array: ' . (is_array($dataToFormat) ? 'YES' : 'NO'));
 
@@ -509,7 +509,7 @@ try {
     $formattedResult = ['content' => $formatted]; // Initialize for consistency
     
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('✅ Using pre-formatted WebSearch HTML: ' . strlen($formatted) . ' chars');
+      error_log('Using pre-formatted WebSearch HTML: ' . strlen($formatted) . ' chars');
     }
   } elseif ($dataToFormat['type'] === 'hybrid' && isset($aiResponse['text_response'])) {
     // 🔧 TASK 5.3.1.1: For hybrid queries, use text_response directly (already formatted HTML)
@@ -518,7 +518,7 @@ try {
     $formattedResult = ['content' => $formatted]; // Initialize for consistency
     
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('🔀 HYBRID QUERY DETECTED - Using pre-formatted text_response');
+      error_log('HYBRID QUERY DETECTED - Using pre-formatted text_response');
       error_log('   text_response length: ' . strlen($aiResponse['text_response']));
       error_log('   Contains web-search-results: ' . (strpos($aiResponse['text_response'], 'web-search-results') !== false ? 'YES' : 'NO'));
     }
@@ -526,7 +526,7 @@ try {
     // Use ResultFormatter for other types (analytics, semantic, etc.)
     
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('📦 DATA TO FORMAT (after processing):');
+      error_log('DATA TO FORMAT (after processing):');
       error_log('   Type: ' . ($dataToFormat['type'] ?? 'NONE'));
       error_log('   Has response: ' . (isset($dataToFormat['response']) ? 'YES' : 'NO'));
       error_log('   Has interpretation: ' . (isset($dataToFormat['interpretation']) ? 'YES' : 'NO'));
@@ -551,7 +551,7 @@ try {
       ];
       
       if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-        error_log('💾 MEMORY CONTEXT FOR DISPLAY:');
+        error_log('MEMORY CONTEXT FOR DISPLAY: ');
         error_log('   Short-term: ' . count($memoryContext['short_term_context']));
         error_log('   Long-term: ' . count($memoryContext['long_term_context']));
         error_log('   Feedback: ' . count($memoryContext['feedback_context']));
@@ -568,7 +568,7 @@ try {
     $formatted = $formattedResult['content'] ?? '';
     
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('✅ Using ResultFormatter: ' . strlen($formatted) . ' chars');
+      error_log('Using ResultFormatter: ' . strlen($formatted) . ' chars ');
       if (isset($formattedResult['has_memory_context'])) {
         error_log('   Memory context integrated: YES');
       }
@@ -576,7 +576,7 @@ try {
   } // Close the if/elseif/else block
 
   if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-    error_log('📤 FORMATTED RESPONSE:');
+    error_log('FORMATTED RESPONSE: ');
     error_log('   Formatted result type: ' . (is_array($formattedResult) ? 'array' : gettype($formattedResult)));
     error_log('   Formatted result keys: ' . (is_array($formattedResult) ? implode(', ', array_keys($formattedResult)) : 'N/A'));
     error_log('   Content length: ' . strlen($formatted));
@@ -630,7 +630,7 @@ try {
       $tokenUsage['total_tokens']
     ));
   } else {
-    error_log('⚠️ No token usage data available from Gpt::getLastTokenUsage()');
+    error_log('No token usage data available from Gpt::getLastTokenUsage()');
   }
 
   // =============================
@@ -653,14 +653,14 @@ try {
   // 10.1 PERSIST COMPLETE INTERACTION + STATS
   // ============================================
   if (empty($responseText)) {
-    error_log("⚠️ WARNING: Persisting interaction with empty response");
+    error_log("WARNING: Persisting interaction with empty response");
   }
 
   // Note: entity_id = 0 is valid for general queries (not entity-specific)
   // Only warn if entity_id is truly null (should not happen after extraction logic)
   if ($entityId === null) {
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log("⚠️ WARNING: entity_id is null (unexpected), defaulting to 0");
+      error_log("WARNING: entity_id is null (unexpected), defaulting to 0");
     }
     $entityId = 0;
     $entityType = $entityType ?? 'general';
@@ -715,7 +715,7 @@ try {
     $statsTracker->setInteractionId($dbInteractionId);
 
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log("💾 INTERACTION INSERTED:");
+      error_log("INTERACTION INSERTED: ");
       error_log("   DB ID: {$dbInteractionId}");
       error_log("   Question: " . substr($userQuery, 0, 50));
       error_log("   Answer length: " . strlen($responseText));
@@ -729,7 +729,7 @@ try {
       error_log("   API cost: " . ($apiCostValue ?? 'null'));
     }
   } catch (\Exception $e) {
-    error_log("❌ Failed to insert interaction record: " . $e->getMessage());
+    error_log("Failed to insert interaction record: " . $e->getMessage());
   }
 
   $statsSaved = false;
@@ -737,10 +737,10 @@ try {
     try {
       $statsSaved = $statsTracker->save();
     } catch (\Exception $e) {
-      error_log("❌ Failed to save statistics for interaction {$dbInteractionId}: " . $e->getMessage());
+      error_log("Failed to save statistics for interaction {$dbInteractionId}: " . $e->getMessage());
     }
   } else {
-    error_log('⚠️ STATISTICS NOT SAVED: missing interaction ID');
+    error_log('STATISTICS NOT SAVED: missing interaction ID ⚠');
   }
 
   // ✅ ALWAYS LOG CRITICAL METRICS (Requirement 8.1, 8.2, 8.5)
@@ -754,7 +754,7 @@ try {
   ));
   
   if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-    error_log('📊 STATISTICS SAVED: ' . ($statsSaved ? 'YES' : 'NO'));
+    error_log('STATISTICS SAVED:' . ($statsSaved ? 'YES' : 'NO'));
     error_log('   Response time: ' . $responseTime . 'ms');
     error_log('   Agent: ' . ($aiResponse['agent_used'] ?? 'unknown'));
     error_log('   Classification: ' . ($aiResponse['intent']['type'] ?? 'unknown'));
@@ -904,7 +904,7 @@ try {
   
   if (!$validation['valid']) {
     // Log validation errors
-    error_log('❌ RESPONSE VALIDATION FAILED:');
+    error_log(' RESPONSE VALIDATION FAILED:');
     foreach ($validation['errors'] as $error) {
       error_log('   - ' . $error);
     }
@@ -926,7 +926,7 @@ try {
   // Log warnings if any
   if (!empty($validation['warnings'])) {
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('⚠️ RESPONSE VALIDATION WARNINGS:');
+      error_log('RESPONSE VALIDATION WARNINGS: ');
       foreach ($validation['warnings'] as $warning) {
         error_log('   - ' . $warning);
       }
@@ -934,7 +934,7 @@ try {
   }
   
   if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-    error_log('✅ RESPONSE VALIDATION PASSED');
+    error_log('[info] RESPONSE VALIDATION PASSED');
   }
 
   // Ajouter les infos de debug si activé
@@ -946,7 +946,7 @@ try {
       'entity_type' => $entityType,
       'language_id' => $languageId
     ];
-    error_log('✅ CHATGPT.PHP END - JSON Response sent to client');
+    error_log('[info] CHATGPT.PHP END - JSON Response sent to client');
   }
 
   // 🔧 FIX: Nettoyer le buffer de sortie avant d'envoyer le JSON
@@ -958,7 +958,7 @@ try {
 
 } catch (\Exception $e) {
   // Log technical details for debugging
-  error_log('❌ ERREUR in chatGpt.php: ' . $e->getMessage());
+  error_log('ERREUR in chatGpt.php: ' . $e->getMessage());
   error_log('Stack: ' . $e->getTraceAsString());
   error_log('File: ' . $e->getFile() . ':' . $e->getLine());
   
@@ -978,7 +978,7 @@ try {
       stripos($e->getMessage(), 'sql') !== false ||
       stripos($e->getMessage(), 'connection') !== false) {
     $errorCode = 'DATABASE_ERROR';
-    error_log('🔴 Database error detected - hiding technical details from user');
+    error_log('Database error detected - hiding technical details from user ');
   }
   
   // Retourner une erreur JSON avec message générique

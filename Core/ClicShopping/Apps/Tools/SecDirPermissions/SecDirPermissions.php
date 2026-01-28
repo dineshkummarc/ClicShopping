@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\SecDirPermissions;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class SecDirPermissions extends \ClicShopping\OM\ConfigurableAppAbstract
+class SecDirPermissions extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

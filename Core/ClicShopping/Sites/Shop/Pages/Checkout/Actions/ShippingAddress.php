@@ -13,7 +13,7 @@ namespace ClicShopping\Sites\Shop\Pages\Checkout\Actions;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class ShippingAddress extends \ClicShopping\OM\PagesActionsAbstract
+class ShippingAddress extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

@@ -11,13 +11,14 @@
 namespace ClicShopping\Apps\Catalog\Products\Sites\ClicShoppingAdmin\Pages\Home\Actions;
 
 use ClicShopping\OM\Registry;
+
 /**
  * Class Archive
  *
  * This action class handles the display of the archive confirmation page in the admin interface.
  * It sets up the necessary page file and loads language definitions for the Products app.
  */
-class Archive extends \ClicShopping\OM\PagesActionsAbstract
+class Archive extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to display the archive confirmation page.

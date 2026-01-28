@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Configuration\Zones\Sites\ClicShoppingAdmin\Pages\Home\Actions\Zones;
 
+use ClicShopping\Apps\Configuration\Zones\Classes\ClicShoppingAdmin\Status;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\Zones\Classes\ClicShoppingAdmin\Status;
-
-class AllFlag extends \ClicShopping\OM\PagesActionsAbstract
+class AllFlag extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

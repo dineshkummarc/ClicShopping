@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Customers\Groups;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Groups extends \ClicShopping\OM\ConfigurableAppAbstract
+class Groups extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_Reviews_V1';

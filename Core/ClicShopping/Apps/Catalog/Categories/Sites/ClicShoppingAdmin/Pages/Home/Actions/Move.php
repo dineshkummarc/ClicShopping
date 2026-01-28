@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Catalog\Categories\Sites\ClicShoppingAdmin\Pages\Hom
 
 use ClicShopping\OM\Registry;
 
-class Move extends \ClicShopping\OM\PagesActionsAbstract
+class Move extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

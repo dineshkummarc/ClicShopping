@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Catalog\Categories\Sites\ClicShoppingAdmin\Pages\Hom
 use ClicShopping\Apps\Catalog\Categories\Categories;
 use ClicShopping\OM\Registry;
 
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

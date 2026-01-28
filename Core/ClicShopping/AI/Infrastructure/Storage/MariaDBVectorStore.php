@@ -11,6 +11,7 @@
 namespace ClicShopping\AI\Infrastructure\Storage;
 
 use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use Doctrine\DBAL\ParameterType;
 use LLPhant\Embeddings\Document;
@@ -19,7 +20,7 @@ use LLPhant\Embeddings\VectorStores\VectorStoreBase;
 use Doctrine\DBAL\Connection;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Security\SecurityLogger;
-
+use ClicShopping\AI\Infrastructure\Cache\Cache;
 
 /**
  * MariaDBVectorStore Class
@@ -55,9 +56,6 @@ class MariaDBVectorStore extends VectorStoreBase
   /**
    * Constructor for MariaDBVectorStore
    *
-   * Initializes the vector store with a connection to MariaDB and creates
-   * the necessary table structure if it doesn't exist.
-   *
    * @param EmbeddingGeneratorInterface $embeddingGenerator The embedding generator to use
    * @param string $tableName Optional custom table name (defaults to 'rag_embeddings')
    * @throws \Exception If database connection or table creation fails
@@ -73,26 +71,20 @@ class MariaDBVectorStore extends VectorStoreBase
       $this->tableName = $prefix . $tableName;
     }
 
-    // Récupération de la connexion Doctrine
     $entityManager = DoctrineOrm::getEntityManager();
     $this->connection = $entityManager->getConnection();
     $this->debug  = \defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True';
 
-    // Initialize security components
     $this->securityLogger = new SecurityLogger();
 
-    // Log pour debug
     if ($this->debug) {
       error_log("═══════════════════════════════════════════════════════");
-      error_log("📋 MariaDBVectorStore initialized");
+      error_log("[info] MariaDBVectorStore initialized");
       error_log("Input table name: {$tableName}");
       error_log("Final table name: {$this->tableName}");
       error_log("Prefix: {$prefix}");
       error_log("═══════════════════════════════════════════════════════");
     }
-
-    // Vérification et création de la structure de la base de données si nécessaire
-    // DoctrineOrm::createTableStructure($this->tableName);
   }
 
   /**
@@ -134,8 +126,6 @@ class MariaDBVectorStore extends VectorStoreBase
   /**
    * Validates the format of the embedding
    *
-   * Ensures that the embedding is an array and contains only numeric values.
-   *
    * @param array $embedding The embedding to validate
    * @throws \InvalidArgumentException If the embedding format is invalid
    */
@@ -150,17 +140,13 @@ class MariaDBVectorStore extends VectorStoreBase
       }
     }
 
-    // Optional: Check for specific length or range of values
     if (empty($embedding)) {
       throw new \InvalidArgumentException('Embedding array cannot be empty.');
     }
   }
 
   /**
-  * * Prepares the embedding and metadata for storage
-   *
-   * Generates the embedding for the given content and prepares the metadata
-   * for insertion into the database.
+   * Prepares the embedding and metadata for storage
    *
    * @param string $content The content to embed
    * @param array $metadata Metadata associated with the content
@@ -179,9 +165,7 @@ class MariaDBVectorStore extends VectorStoreBase
       'language_id' => $metadata['language_id'] ?? 1,
       'date_modified' => date('Y-m-d H:i:s'),
       'entity_id' => $metadata['entity_id'] ?? null,
-      // 🔧 TASK 2.17.3: Add entity_type to prepared data
       'entity_type' => $metadata['entity_type'] ?? null,
-      // 🔧 FIX: Always use metadata values, don't fallback to sourcename for user_id
       'user_id' => $metadata['user_id'] ?? null,
       'interaction_id' => $metadata['interaction_id'] ?? null,
       'metadata' => $metadata['metadata'] ?? null,
@@ -191,36 +175,26 @@ class MariaDBVectorStore extends VectorStoreBase
   /**
    * Adds a single document to the vector store
    *
-   * Processes the document content, generates embeddings, and stores it in the database
-   * along with its metadata and entity information.
-   *
    * @param Document $document The document to add, containing content and metadata
    * @throws \Exception If document addition fails
    */
   public function addDocument(Document $document): void
   {
-    // FIX pour éviter 'Typed property ... must not be accessed before initialization'
-    // Cette vérification défensive intercepte les objets Document mal formés avant d'accéder à la propriété typée $content.
     if (!isset($document->content) || $document->content === '') {
       $this->securityLogger->logSecurityEvent(
         'Document content is missing or not initialized (Typed property access error prevented).',
         'warning'
       );
-      // Abort the operation safely
       return;
     }
 
-    // Génération de l'embedding pour le document
     $embedding = $this->embeddingGenerator->embedText($document->content);
     $this->validateEmbeddingFormat($embedding);
 
-    // Get metadata safely (may be null or undefined)
     $metadata = isset($document->metadata) ? $document->metadata : [];
 
-    // Conversion de l'embedding en format texte pour VEC_FromText
     $preparedData = $this->prepareEmbeddingAndMetadata($document->content, $metadata);
 
-    // Préparer les métadonnées JSON depuis les propriétés du document
     $documentMetadata = [
       'id' => $document->id ?? null,
       'sourceType' => $document->sourceType ?? 'manual',
@@ -229,20 +203,16 @@ class MariaDBVectorStore extends VectorStoreBase
       'hash' => $document->hash ?? '',
     ];
     
-    // Fusionner avec les métadonnées existantes (déjà récupérées dans $metadata)
     if (!empty($metadata) && is_array($metadata)) {
       $documentMetadata = array_merge($documentMetadata, $metadata);
     }
     
     $metadataJson = json_encode($documentMetadata);
 
-    // Insertion dans la base de données
-    // 🔧 FIX: Include user_id, interaction_id, and entity_type columns if they exist in table
     $hasUserIdColumn = $this->hasColumn('user_id');
     $hasInteractionIdColumn = $this->hasColumn('interaction_id');
     $hasEntityTypeColumn = $this->hasColumn('entity_type');
     
-    // 🔧 FIX: Validate that both user_id and interaction_id are present
     if ($hasUserIdColumn && empty($preparedData['user_id'])) {
       $this->securityLogger->logSecurityEvent('Warning: user_id is empty when inserting into ' . $this->tableName, 'warning');
     }
@@ -252,8 +222,6 @@ class MariaDBVectorStore extends VectorStoreBase
     }
     
     if ($hasUserIdColumn || $hasInteractionIdColumn || $hasEntityTypeColumn) {
-      // Insert with user_id, interaction_id, and entity_type columns (if they exist)
-      // 🔧 TASK 2.17.3: Include entity_type column in INSERT only if it exists
       $columns = "(content, 
       type, 
       sourcetype, 
@@ -303,7 +271,6 @@ class MariaDBVectorStore extends VectorStoreBase
         $params[] = $preparedData['interaction_id'];
       }
       
-      // 🔧 FIX: Add metadata column at the end (only once!)
       $columns .= ", metadata)";
       $values .= ", ?)";
       $params[] = $metadataJson;
@@ -313,8 +280,6 @@ class MariaDBVectorStore extends VectorStoreBase
         $params
       );
     } else {
-      // Fallback for tables without these columns
-      // 🔧 TASK 2.17.3: Include entity_type in fallback INSERT
       $this->connection->executeStatement(
         "INSERT INTO {$this->tableName} 
           (content, 
@@ -354,6 +319,9 @@ class MariaDBVectorStore extends VectorStoreBase
         ]
       );
     }
+
+    // Clear semantic cache to ensure search results reflect new data
+    $this->invalidateSemanticCache($preparedData);
   }
 
   /**
@@ -372,10 +340,51 @@ class MariaDBVectorStore extends VectorStoreBase
   }
 
   /**
+   * Invalidates semantic cache when embeddings are updated
+   * 
+   * When new embeddings are added to the vector store, we need to invalidate
+   * the semantic search cache to ensure search results reflect the new data.
+   * 
+   * Strategy:
+   * - Clear all semantic cache (conservative approach)
+   * - Ensures consistency between embeddings and search results
+   * - Cache will be rebuilt on next search (warm-up)
+   * 
+   * @param array $preparedData The prepared data containing entity_type and language_id
+   * @return void
+   */
+  private function invalidateSemanticCache(array $preparedData): void
+  {
+    try {
+      // Extract entity type and language ID from prepared data
+      $entityType = $preparedData['entity_type'] ?? null;
+      $languageId = $preparedData['language_id'] ?? null;
+
+      // Clear semantic cache for this entity type and language
+      // Note: Since cache keys are md5 hashes, we can't selectively clear by entity type
+      // We use a conservative approach: clear all semantic cache
+      $cleared = Cache::clearSemanticCache($entityType, $languageId);
+
+      if ($cleared > 0) {
+        $context = [];
+        if ($entityType !== null) {
+          $context[] = "EntityType: {$entityType}";
+        }
+        if ($languageId !== null) {
+          $context[] = "LanguageId: {$languageId}";
+        }
+        $contextStr = !empty($context) ? ' (' . implode(', ', $context) . ')' : '';
+        
+        error_log("[info] Semantic cache invalidated after embedding update: {$cleared} files cleared{$contextStr}");
+      }
+    } catch (\Exception $e) {
+      // Log error but don't fail the document insertion
+      error_log("[warning]️ Failed to invalidate semantic cache: " . $e->getMessage());
+    }
+  }
+
+  /**
    * Performs a similarity search for documents
-   *
-   * Searches for documents similar to the provided query using vector similarity.
-   * Supports both text queries and direct embedding vectors.
    *
    * @param mixed $query Search query (string) or embedding vector (array)
    * @param int $k Maximum number of results to return
@@ -387,10 +396,8 @@ class MariaDBVectorStore extends VectorStoreBase
   public function similaritySearch(mixed $query, int $k = 4, mixed $minScore = 0.0, ?callable $filter = null): iterable
   {
     try {
-      // Déterminer si la requête est déjà un embedding ou un texte à convertir
       $embedding = is_array($query) ? $query : $this->embeddingGenerator->embedText($query);
 
-      // Vérification que l'embedding est bien un array
       if (!is_array($embedding)) {
         $embeddingType = gettype($embedding);
         $embeddingValue = is_string($embedding) ? substr($embedding, 0, 100) : var_export($embedding, true);
@@ -398,35 +405,20 @@ class MariaDBVectorStore extends VectorStoreBase
         throw new \RuntimeException("Embedding generator ({$generatorClass}) returned non-array value. Type: {$embeddingType}, Value: {$embeddingValue}");
       }
 
-      // Normalisation et conversion en format texte pour VEC_FromText
       $embedding = array_map('floatval', $embedding);
       $embeddingText = '[' . implode(',', $embedding) . ']';
 
-      // 🔧 FIX: Check if metadata column exists before including it in SELECT
       $hasMetadataColumn = $this->hasColumn('metadata');
       
-      // 🔧 TASK 2.17.2: Check if language_id column exists before including it in SELECT
       $hasLanguageIdColumn = $this->hasColumn('language_id');
       
-      // Build SQL query dynamically based on available columns
       $metadataSelect = $hasMetadataColumn ? 'metadata,' : '';
       $languageIdSelect = $hasLanguageIdColumn ? 'language_id,' : '';
-      
-      // 🔧 FIX: Build WHERE clause to include language_id filter if provided via callable
-      // The filter is a PHP callable that checks metadata['language_id']
-      // We need to extract language_id from the filter and add it to SQL WHERE clause
-      // This prevents LIMIT from cutting off results before PHP filter is applied
       
       $whereClause = "WHERE embedding IS NOT NULL";
       $params = [$embeddingText];
       $types = [ParameterType::STRING];
       
-      // Try to detect if filter is checking for language_id
-      // This is a workaround since we can't inspect the callable directly
-      // We'll add language_id to WHERE if the column exists and we're likely filtering by it
-      // For now, we'll keep the original behavior and fix it in MultiDBRAGManager
-      
-      // Requête SQL avec vecteur et distance euclidienne
       $sql = "SELECT id, 
                      content, 
                      type, 
@@ -451,7 +443,7 @@ class MariaDBVectorStore extends VectorStoreBase
       $results = $stmt->fetchAllAssociative();
 
       if ($this->debug) {
-        error_log("📊 SQL returned " . count($results) . " raw results");
+        error_log("[stats] SQL returned " . count($results) . " raw results");
       }
 
       $documents = [];
@@ -460,7 +452,6 @@ class MariaDBVectorStore extends VectorStoreBase
 
       foreach ($results as $r) {
         $distance = (float) ($r['distance'] ?? 1.0);
-        // Normalisation de la distance pour obtenir score [0,1]
         $similarity = 1 / (1 + $distance);
 
         if ($similarity < (float) $minScore) {
@@ -475,13 +466,11 @@ class MariaDBVectorStore extends VectorStoreBase
         $doc->sourceName = $r['sourcename'] ?? 'manual';
         $doc->chunkNumber = $r['chunknumber'] ?? 128;
 
-        // 🔧 FIX: Handle metadata column if it exists, otherwise use empty array
         $storedMetadata = [];
         if ($hasMetadataColumn && !empty($r['metadata'])) {
           $storedMetadata = json_decode($r['metadata'], true) ?? [];
         }
 	
-        // 🔧 TASK 2.17.2: Only include language_id if column exists
         $metadataArray = [
           'id' => $r['id'],
           'type' => $r['type'] ?? null,
@@ -494,14 +483,10 @@ class MariaDBVectorStore extends VectorStoreBase
           'interaction_id' => $r['interaction_id'] ?? $storedMetadata['interaction_id'] ?? null,
         ];
         
-        // Add language_id only if the column exists in the table
         if ($hasLanguageIdColumn) {
           $metadataArray['language_id'] = $r['language_id'] ?? 1;
         }
         
-        // 🔧 FIX: Add entity_type to metadata for filter compatibility
-        // The filter in MultiDBRAGManager looks for 'entity_type', but some tables store it as 'type'
-        // Priority: storedMetadata['type'] > storedMetadata['entity_type'] > $r['type']
         if (!isset($storedMetadata['entity_type']) && isset($storedMetadata['type'])) {
           $metadataArray['entity_type'] = $storedMetadata['type'];
         } elseif (isset($storedMetadata['entity_type'])) {
@@ -512,7 +497,6 @@ class MariaDBVectorStore extends VectorStoreBase
         
         $doc->metadata = array_merge($storedMetadata, $metadataArray);
 
-        // Application du filtre personnalisé
         if ($filter !== null && !$filter($doc->metadata)) {
           $filteredCount++;
           continue;
@@ -523,7 +507,7 @@ class MariaDBVectorStore extends VectorStoreBase
 
       if ($this->debug) {
         error_log("═══════════════════════════════════════════════════════");
-        error_log("📊 FINAL RESULTS:");
+        error_log("[stats] FINAL RESULTS:");
         error_log("Raw SQL results: " . count($results));
         error_log("Below threshold: {$belowThresholdCount}");
         error_log("Filtered by custom filter: {$filteredCount}");
@@ -536,7 +520,7 @@ class MariaDBVectorStore extends VectorStoreBase
     } catch (\Exception $e) {
       if ($this->debug) {
         error_log("═══════════════════════════════════════════════════════");
-        error_log("❌ EXCEPTION in similaritySearch()");
+        error_log("[error] EXCEPTION in similaritySearch()");
         error_log("Error: " . $e->getMessage());
         error_log("Trace: " . $e->getTraceAsString());
         error_log("═══════════════════════════════════════════════════════");
@@ -567,6 +551,9 @@ class MariaDBVectorStore extends VectorStoreBase
         [$id]
       );
 
+      // PHASE 3 - TASK 3.3: Invalidate semantic cache when embeddings are deleted
+      $this->invalidateSemanticCache([]);
+
       return true;
     } catch (\Exception $e) {
       if ($this->debug == 'True') {
@@ -580,9 +567,6 @@ class MariaDBVectorStore extends VectorStoreBase
   /**
    * Updates an existing document in the vector store
    *
-   * Updates document content, regenerates embeddings, and updates metadata.
-   * Maintains entity relationships and historical data.
-   *
    * @param int $id ID of the document to update
    * @param string $content New content for the document
    * @param array $metadata Updated metadata for the document
@@ -593,7 +577,6 @@ class MariaDBVectorStore extends VectorStoreBase
     try {
       $preparedData = $this->prepareEmbeddingAndMetadata($content, $metadata);
 
-      // Préparer les métadonnées JSON
       $metadataJson = json_encode($metadata);
 
       $this->connection->executeStatement(
@@ -622,6 +605,8 @@ class MariaDBVectorStore extends VectorStoreBase
         ]
       );
 
+      $this->invalidateSemanticCache($preparedData);
+
       return true;
     } catch (\Exception $e) {
       if ($this->debug == 'True') {
@@ -639,7 +624,7 @@ class MariaDBVectorStore extends VectorStoreBase
   
 
   /**
-   * Add document with separated taxonomy (Task 4.1)
+   * Add document with separated taxonomy
    *
    * This method stores content, metadata, and taxonomy in separate database fields.
    * The embedding is generated only from the content field (no taxonomy).
@@ -781,5 +766,4 @@ class MariaDBVectorStore extends VectorStoreBase
     }
   }
 */
-  
 }

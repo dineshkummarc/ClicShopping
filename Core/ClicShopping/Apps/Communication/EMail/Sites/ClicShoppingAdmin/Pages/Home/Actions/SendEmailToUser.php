@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Communication\EMail\Sites\ClicShoppingAdmin\Pages\Ho
 
 use ClicShopping\OM\Registry;
 
-class SendEmailToUser extends \ClicShopping\OM\PagesActionsAbstract
+class SendEmailToUser extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

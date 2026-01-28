@@ -16,7 +16,7 @@ use ClicShopping\OM\Apps;
  * Handles operations related to header tag modules by retrieving module information
  * and constructing proper class names for a given application context.
  */
-class HeaderTags extends \ClicShopping\OM\ModulesAbstract
+class HeaderTags extends \ClicShopping\OM\Domains\ModulesAbstract
 {
   /**
    * Retrieves information about a specific app and its associated data.

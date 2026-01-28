@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Configuration\TemplateEmail;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class TemplateEmail extends \ClicShopping\OM\ConfigurableAppAbstract
+class TemplateEmail extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_TemplateEmail_V1';

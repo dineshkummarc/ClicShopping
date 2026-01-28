@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\Upgrade\Sites\ClicShoppingAdmin\Pages\Home\Act
 
 use ClicShopping\OM\Registry;
 
-class Upgrade extends \ClicShopping\OM\PagesActionsAbstract
+class Upgrade extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

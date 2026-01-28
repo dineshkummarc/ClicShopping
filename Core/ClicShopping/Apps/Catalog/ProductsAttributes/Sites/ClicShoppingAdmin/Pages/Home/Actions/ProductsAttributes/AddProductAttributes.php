@@ -10,13 +10,12 @@
 
 namespace ClicShopping\Apps\Catalog\ProductsAttributes\Sites\ClicShoppingAdmin\Pages\Home\Actions\ProductsAttributes;
 
+use ClicShopping\Apps\Catalog\ProductsAttributes\Classes\ClicShoppingAdmin\ProductsAttributesAdmin;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Upload;
 
-use ClicShopping\Apps\Catalog\ProductsAttributes\Classes\ClicShoppingAdmin\ProductsAttributesAdmin;
-
-class AddProductAttributes extends \ClicShopping\OM\PagesActionsAbstract
+class AddProductAttributes extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

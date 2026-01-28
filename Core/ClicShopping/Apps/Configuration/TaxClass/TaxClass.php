@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Configuration\TaxClass;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class TaxClass extends \ClicShopping\OM\ConfigurableAppAbstract
+class TaxClass extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_TaxClass_V1';

@@ -365,6 +365,8 @@ $Qcustomers->execute();
                 ?>
                 <div class="mt-1"></div>
                 <div class="mt-1"></div>
+                <div id="contentTab1"></div>
+
               </div>
             </div>
           </div>
@@ -600,3 +602,4 @@ $Qcustomers->execute();
       </div>
     </div>
   </div>
+  <div class="py-4"></div>

@@ -11,12 +11,11 @@
 
 namespace ClicShopping\Apps\Customers\Customers\Sites\ClicShoppingAdmin\Pages\Home\Actions\Customers;
 
+use ClicShopping\Apps\Configuration\TemplateEmail\Classes\ClicShoppingAdmin\TemplateEmailAdmin;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\TemplateEmail\Classes\ClicShoppingAdmin\TemplateEmailAdmin;
-
-class PasswordForgotten extends \ClicShopping\OM\PagesActionsAbstract
+class PasswordForgotten extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   public function execute()

@@ -85,7 +85,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
   - Intelligent content generation with context-aware responses
   - Admin chatbot interface with RAG capabilities
   - Web Search impleted for semantic search
-  - AI Agent
+  - AI Agentic Agent
 - Generative Artificial Intelligence :
   - Generative artificial products customers recommendations
   - Generative artificial intelligence for All content (product,categories...)

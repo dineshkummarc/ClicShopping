@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Configuration\Cache\Sites\ClicShoppingAdmin\Pages\Ho
 use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
 use ClicShopping\OM\Registry;
 
-class ResetMemcached extends \ClicShopping\OM\PagesActionsAbstract
+class ResetMemcached extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

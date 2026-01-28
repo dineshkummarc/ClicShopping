@@ -766,7 +766,7 @@ echo HTML::hiddenField('customers_modify_company');
                       ?>
                       <!-- lien pointant sur le site de vérification -->
                       <a
-                        href="<?php echo 'http://ec.europa.eu/taxation_customs/vies/vieshome.do?ms=' . $cInfo->customers_tva_intracom_code_iso . '&iso=' . $cInfo->customers_tva_intracom_code_iso . '&vat=' . $cInfo->customers_tva_intracom; ?>"
+                        href="<?php echo 'https://ec.europa.eu/taxation_customs/vies/vieshome.do?ms=' . $cInfo->customers_tva_intracom_code_iso . '&iso=' . $cInfo->customers_tva_intracom_code_iso . '&vat=' . $cInfo->customers_tva_intracom; ?>"
                         target="_blank"
                         rel="noreferrer"><?php echo $CLICSHOPPING_Customers->getDef('tva_intracom_verify'); ?></a>
                     </div>

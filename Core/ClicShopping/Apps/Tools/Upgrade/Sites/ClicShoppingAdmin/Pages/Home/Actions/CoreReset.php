@@ -14,7 +14,7 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\FileSystem;
 use ClicShopping\OM\Registry;
 
-class CoreReset extends \ClicShopping\OM\PagesActionsAbstract
+class CoreReset extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

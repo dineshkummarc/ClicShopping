@@ -10,12 +10,11 @@
 
 namespace ClicShopping\Apps\Tools\WhosOnline\Sites\ClicShoppingAdmin\Pages\Home;
 
+use ClicShopping\Apps\Tools\WhosOnline\Classes\ClicShoppingAdmin\ShoppingCartAdmin;
 use ClicShopping\Apps\Tools\WhosOnline\WhosOnline;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Tools\WhosOnline\Classes\ClicShoppingAdmin\ShoppingCartAdmin;
-
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

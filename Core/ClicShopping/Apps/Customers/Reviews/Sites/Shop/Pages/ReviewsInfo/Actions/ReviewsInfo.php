@@ -14,7 +14,7 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class ReviewsInfo extends \ClicShopping\OM\PagesActionsAbstract
+class ReviewsInfo extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

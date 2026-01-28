@@ -12,7 +12,7 @@ namespace ClicShopping\Sites\Shop\Pages\Account\Actions\PasswordForgotten;
 
 use ClicShopping\OM\Registry;
 
-class Success extends \ClicShopping\OM\PagesActionsAbstract
+class Success extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

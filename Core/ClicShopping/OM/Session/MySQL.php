@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * It implements the SessionHandlerInterface and extends the
  * SessionAbstract class to define custom session management operations.
  */
-class MySQL extends \ClicShopping\OM\SessionAbstract implements \SessionHandlerInterface
+class MySQL extends \ClicShopping\OM\Domains\SessionAbstract implements \SessionHandlerInterface
 {
   private mixed $db;
 

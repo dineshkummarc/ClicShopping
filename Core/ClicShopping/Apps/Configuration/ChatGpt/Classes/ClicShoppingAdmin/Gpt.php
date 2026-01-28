@@ -1247,7 +1247,7 @@ class Gpt
         $e->getFile(),
         $e->getLine()
       ));
-      error_log("❌ [Gpt::getGptResponse] Stack trace: " . $e->getTraceAsString());
+      error_log("[error] [Gpt::getGptResponse] Stack trace: " . $e->getTraceAsString());
       
       return false;
     }

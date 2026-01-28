@@ -19,7 +19,7 @@ use ClicShopping\OM\Registry;
  * This action class handles the saving of dynamic pricing rules in the admin interface.
  * It processes both the insertion of new rules and the updating of existing ones based on user input.
  */
-class SaveDynamicPricingRules extends \ClicShopping\OM\PagesActionsAbstract
+class SaveDynamicPricingRules extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 
@@ -51,6 +51,12 @@ class SaveDynamicPricingRules extends \ClicShopping\OM\PagesActionsAbstract
       $rules_status_special = 0;
     }
 
+    if (isset($_POST['rules_status_promotion'])) {
+      $rules_status_promotion = 1;
+    } else {
+      $rules_status_promotion = 0;
+    }
+
     if (isset($_POST['rules_status'])) {
       $rules_status = 1;
     } else {
@@ -75,6 +81,7 @@ class SaveDynamicPricingRules extends \ClicShopping\OM\PagesActionsAbstract
         'rules_status' => $rules_status,
         'date_modified' => 'now()',
         'rules_status_special' => $rules_status_special,
+        'rules_status_promotion' => $rules_status_promotion,
         'customers_group' => $customers_group
       ];
 
@@ -91,6 +98,7 @@ class SaveDynamicPricingRules extends \ClicShopping\OM\PagesActionsAbstract
         'rules_status' => $rules_status,
         'date_added' => 'now()',
         'rules_status_special' => $rules_status_special,
+        'rules_status_promotion' => $rules_status_promotion,
         'customers_group' => $customers_group
       ];
 

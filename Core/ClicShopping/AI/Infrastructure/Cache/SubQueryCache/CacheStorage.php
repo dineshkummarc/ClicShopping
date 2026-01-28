@@ -1,7 +1,7 @@
 <?php
 /**
  * Cache Storage Manager
- * Gère le stockage et la récupération des données en cache
+ * Manages cache data storage and retrieval
  * 
  * @copyright 2008 - https://www.clicshopping.org
  * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
@@ -14,7 +14,7 @@ use AllowDynamicProperties;
 use ClicShopping\OM\Registry;
 
 /**
- * Gère les opérations CRUD sur la table de cache
+ * Manages CRUD operations on cache table
  */
 #[AllowDynamicProperties]
 class CacheStorage
@@ -29,10 +29,10 @@ class CacheStorage
   }
   
   /**
-   * Récupère une entrée de cache avec interprétation
+   * Get cache entry with interpretation
    * 
-   * @param string $cacheKey Clé de cache
-   * @return array|null Données ou null si non trouvé
+   * @param string $cacheKey Cache key
+   * @return array|null Data or null if not found
    */
   public function get(string $cacheKey): ?array
   {
@@ -87,17 +87,17 @@ class CacheStorage
   }
   
   /**
-   * Stocke une entrée de cache avec interprétation
+   * Store cache entry with interpretation
    * 
-   * @param string $cacheKey Clé de cache
-   * @param string $userQuery Question utilisateur
-   * @param string $sqlQuery Requête SQL
-   * @param array $results Résultats
-   * @param int $ttl Durée de vie en secondes
-   * @param string|null $interpretation Interprétation en langage naturel
-   * @param int|null $entityId ID de l'entité
-   * @param string|null $entityType Type d'entité
-   * @return bool Succès
+   * @param string $cacheKey Cache key
+   * @param string $userQuery User question
+   * @param string $sqlQuery SQL query
+   * @param array $results Results
+   * @param int $ttl Time to live in seconds
+   * @param string|null $interpretation Natural language interpretation
+   * @param int|null $entityId Entity ID
+   * @param string|null $entityType Entity type
+   * @return bool Success
    */
   public function set(
     string $cacheKey, 
@@ -152,10 +152,10 @@ class CacheStorage
   }
   
   /**
-   * Supprime une entrée de cache
+   * Delete cache entry
    * 
-   * @param string $cacheKey Clé de cache
-   * @return bool Succès
+   * @param string $cacheKey Cache key
+   * @return bool Success
    */
   public function delete(string $cacheKey): bool
   {
@@ -181,9 +181,9 @@ class CacheStorage
   }
   
   /**
-   * Vide tout le cache
+   * Flush all cache
    * 
-   * @return bool Succès
+   * @return bool Success
    */
   public function flush(): bool
   {
@@ -202,9 +202,10 @@ class CacheStorage
   }
   
   /**
-   * Incrémente le compteur de hits
+   * Increment hit counter
    * 
-   * @param string $cacheKey Clé de cache
+   * @param string $cacheKey Cache key
+   * @return void
    */
   public function incrementHitCount(string $cacheKey): void
   {

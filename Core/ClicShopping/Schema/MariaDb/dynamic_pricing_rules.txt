@@ -7,8 +7,9 @@ rules_priority int(11) not_null DEFAULT (0) comment(Rule priority for conflict r
 rules_status tinyint(1) not_null DEFAULT (0) comment(Rule status - 0: inactive, 1: active and applying)
 date_added datetime not_null comment(Timestamp when rule was created)
 date_modified datetime DEFAULT NULL comment(Timestamp of last modification to rule)
-rules_status_special tinyint(1) not_null DEFAULT (0) comment(Special pricing flag - 0: regular rule, 1: special/promotional rule)
+rules_status_special tinyint(1) not_null DEFAULT (0) comment(Special pricing flag alowing to change the special price - 0: regular rule, 1: special/promotional rule)
 customers_group tinyint(1) not_null DEFAULT (0) comment(Customer group restriction - 0: all groups, specific ID for group-specific rules)
+rules_status_promotion tinyint(1) not_null DEFAULT (0) comment(Special pricing flag to create a new specials : 0: inactive - 1: active)
 --
 primary rules_id
 idx_rules_id rules_id

@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Customers\Reviews\Sites\Shop\Pages\ReviewsInfo;
 
+use ClicShopping\Apps\Customers\Reviews\Reviews as ReviewsApp;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Customers\Reviews\Reviews as ReviewsApp;
-
-class ReviewsInfo extends \ClicShopping\OM\PagesAbstract
+class ReviewsInfo extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

@@ -11,9 +11,8 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Sites\ClicShoppingAdmin\Pages\Home\Actions\ChatGpt;
 
 use ClicShopping\OM\Registry;
-use ClicShopping\OM\HTML;
 
-class ResetAllRagStats extends \ClicShopping\OM\PagesActionsAbstract
+class ResetAllRagStats extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

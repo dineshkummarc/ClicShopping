@@ -11,6 +11,7 @@
 namespace ClicShopping\Service\Shop;
 
 use ClicShopping\OM\Registry;
+
 /**
  * Service for managing currencies geolocation in the shop.
  *
@@ -19,7 +20,7 @@ use ClicShopping\OM\Registry;
  * to start and stop the service. The service utilizes the Hooks
  * system for extending functionality.
  */
-class CurrenciesGeolocalisation implements \ClicShopping\OM\ServiceInterface
+class CurrenciesGeolocalisation implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Starts the execution of the currency geolocation process across all shops by triggering the appropriate hook.

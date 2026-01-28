@@ -1,12 +1,12 @@
 <?php
 /**
- * TaskPlanValidator - Validateur renforcé avec auto-correction
+ * TaskPlanValidator - Enhanced validator with auto-correction
  * 
- * Stratégie Mixte (Option 3) :
- * - Tente correction automatique des incohérences
- * - Si impossible → refuse avec diagnostic détaillé
- * - Fallback déterministe interne-only si doute
- * - Rollback intelligent avec skip gracieux
+ * Mixed Strategy (Option 3):
+ * - Attempts automatic correction of inconsistencies
+ * - If impossible → refuses with detailed diagnostics
+ * - Internal-only deterministic fallback if doubt
+ * - Intelligent rollback with graceful skip
  */
 
 namespace ClicShopping\AI\Agents\Planning;
@@ -18,7 +18,7 @@ class TaskPlanValidator
     private bool $debug;
     private ?SecurityLogger $securityLogger;
     
-    // Politiques de validation
+    // Validation policies
     private array $validationPolicies = [
         'min_steps' => 1,
         'max_steps' => 10,
@@ -36,11 +36,11 @@ class TaskPlanValidator
     }
     
     /**
-     * 🎯 VALIDATION PRINCIPALE - Option 3 Mixte
+     * Main validation - Mixed Option 3
      * 
-     * @param array $steps Liste des TaskStep
-     * @param array $dependencies Graphe de dépendances
-     * @param array $context Contexte d'exécution
+     * @param array $steps List of TaskStep
+     * @param array $dependencies Dependency graph
+     * @param array $context Execution context
      * @return array [bool $valid, array $correctedSteps, array $diagnostics]
      */
     public function validateAndCorrectPlan(array $steps, array $dependencies, array $context = []): array
@@ -52,7 +52,7 @@ class TaskPlanValidator
             $this->logDebug("Starting plan validation with " . count($steps) . " steps");
         }
         
-        // 1. Validations critiques (refus immédiat si échec)
+        // 1. Critical validations (immediate refusal if failed)
         $criticalValidation = $this->validateCriticalConstraints($steps, $diagnostics);
         if (!$criticalValidation['valid']) {
             return [
@@ -64,12 +64,12 @@ class TaskPlanValidator
             ];
         }
         
-        // 2. Validations avec auto-correction
+        // 2. Validations with auto-correction
         $correctionResults = $this->attemptAutoCorrections($correctedSteps, $dependencies, $context, $diagnostics);
         $correctedSteps = $correctionResults['steps'];
         $diagnostics = array_merge($diagnostics, $correctionResults['diagnostics']);
         
-        // 3. Validation finale après corrections
+        // 3. Final validation after corrections
         $finalValidation = $this->validateFinalPlan($correctedSteps, $dependencies, $diagnostics);
         
         return [
@@ -83,11 +83,15 @@ class TaskPlanValidator
     }
     
     /**
-     * 🚨 Validations critiques (refus immédiat)
+     * Critical validations (immediate refusal)
+     * 
+     * @param array $steps Steps to validate
+     * @param array $diagnostics Diagnostics array
+     * @return array Validation result
      */
     private function validateCriticalConstraints(array $steps, array &$diagnostics): array
     {
-        // Contrainte 1 : Nombre de steps
+        // Constraint 1: Number of steps
         if (count($steps) < $this->validationPolicies['min_steps']) {
             $diagnostics[] = [
                 'type' => 'critical_error',
@@ -108,7 +112,7 @@ class TaskPlanValidator
             return ['valid' => false, 'diagnostics' => $diagnostics];
         }
         
-        // Contrainte 2 : Steps vides ou malformés
+        // Constraint 2: Empty or malformed steps
         foreach ($steps as $i => $step) {
             if (!$step || !method_exists($step, 'getId') || !method_exists($step, 'getType')) {
                 $diagnostics[] = [
@@ -136,7 +140,13 @@ class TaskPlanValidator
     }
     
     /**
-     * 🔧 Tentatives d'auto-correction
+     * Auto-correction attempts
+     * 
+     * @param array $steps Steps to correct
+     * @param array $dependencies Dependency graph
+     * @param array $context Execution context
+     * @param array $diagnostics Diagnostics array
+     * @return array Correction results
      */
     private function attemptAutoCorrections(array $steps, array $dependencies, array $context, array &$diagnostics): array
     {
@@ -144,7 +154,7 @@ class TaskPlanValidator
         $correctionsApplied = false;
         $correctionDetails = [];
         
-        // Correction 1 : Dépendances circulaires
+        // Correction 1: Circular dependencies
         $circularResult = $this->fixCircularDependencies($correctedSteps, $dependencies, $diagnostics);
         if ($circularResult['corrected']) {
             $correctedSteps = $circularResult['steps'];
@@ -152,7 +162,7 @@ class TaskPlanValidator
             $correctionDetails[] = 'circular_dependencies_fixed';
         }
         
-        // Correction 2 : Steps orphelins
+        // Correction 2: Orphan steps
         $orphanResult = $this->fixOrphanSteps($correctedSteps, $dependencies, $diagnostics);
         if ($orphanResult['corrected']) {
             $correctedSteps = $orphanResult['steps'];
@@ -160,7 +170,7 @@ class TaskPlanValidator
             $correctionDetails[] = 'orphan_steps_fixed';
         }
         
-        // Correction 3 : Step final manquant
+        // Correction 3: Missing final step
         $finalStepResult = $this->ensureFinalStep($correctedSteps, $diagnostics);
         if ($finalStepResult['corrected']) {
             $correctedSteps = $finalStepResult['steps'];
@@ -168,7 +178,7 @@ class TaskPlanValidator
             $correctionDetails[] = 'final_step_ensured';
         }
         
-        // Correction 4 : Fallback interne-only si données externes douteuses
+        // Correction 4: Internal-only fallback if external data is doubtful
         $fallbackResult = $this->applyInternalFallbackIfNeeded($correctedSteps, $context, $diagnostics);
         if ($fallbackResult['corrected']) {
             $correctedSteps = $fallbackResult['steps'];
@@ -185,11 +195,16 @@ class TaskPlanValidator
     }
     
     /**
-     * 🔄 Correction des dépendances circulaires
+     * Fix circular dependencies
+     * 
+     * @param array $steps Steps to fix
+     * @param array $dependencies Dependency graph
+     * @param array $diagnostics Diagnostics array
+     * @return array Fix result
      */
     private function fixCircularDependencies(array $steps, array $dependencies, array &$diagnostics): array
     {
-        // Détecter les cycles avec algorithme DFS
+        // Detect cycles with DFS algorithm
         $visited = [];
         $recursionStack = [];
         $cycles = [];
@@ -205,18 +220,18 @@ class TaskPlanValidator
             return ['corrected' => false, 'steps' => $steps];
         }
         
-        // Correction : Supprimer les dépendances qui créent des cycles
+        // Correction: Remove dependencies that create cycles
         $correctedSteps = [];
         foreach ($steps as $step) {
             $stepId = $step->getId();
             $metadata = $step->getMetadata();
             $dependsOn = $metadata['depends_on'] ?? [];
             
-            // Filtrer les dépendances circulaires
+            // Filter circular dependencies
             $filteredDependsOn = array_filter($dependsOn, function($depId) use ($cycles, $stepId) {
                 foreach ($cycles as $cycle) {
                     if (in_array($stepId, $cycle) && in_array($depId, $cycle)) {
-                        // Cette dépendance crée un cycle
+                        // This dependency creates a cycle
                         return false;
                     }
                 }
@@ -224,7 +239,7 @@ class TaskPlanValidator
             });
             
             if (count($filteredDependsOn) !== count($dependsOn)) {
-                // Créer un nouveau step avec dépendances corrigées
+                // Create new step with corrected dependencies
                 $metadata['depends_on'] = array_values($filteredDependsOn);
                 $correctedStep = new TaskStep(
                     $step->getId(),
@@ -250,7 +265,14 @@ class TaskPlanValidator
     }
     
     /**
-     * Détection de cycles avec DFS
+     * Cycle detection with DFS
+     * 
+     * @param string $stepId Step ID
+     * @param array $dependencies Dependency graph
+     * @param array $visited Visited nodes
+     * @param array $recursionStack Recursion stack
+     * @param array $cycles Detected cycles
+     * @return void
      */
     private function detectCycles(string $stepId, array $dependencies, array &$visited, array &$recursionStack, array &$cycles): void
     {
@@ -262,7 +284,7 @@ class TaskPlanValidator
             if (!isset($visited[$depId])) {
                 $this->detectCycles($depId, $dependencies, $visited, $recursionStack, $cycles);
             } elseif (isset($recursionStack[$depId]) && $recursionStack[$depId]) {
-                // Cycle détecté
+                // Cycle detected
                 $cycles[] = [$stepId, $depId];
             }
         }
@@ -271,7 +293,12 @@ class TaskPlanValidator
     }
     
     /**
-     * 🔗 Correction des steps orphelins
+     * Fix orphan steps
+     * 
+     * @param array $steps Steps to fix
+     * @param array $dependencies Dependency graph
+     * @param array $diagnostics Diagnostics array
+     * @return array Fix result
      */
     private function fixOrphanSteps(array $steps, array $dependencies, array &$diagnostics): array
     {
@@ -287,12 +314,12 @@ class TaskPlanValidator
             $dependsOn = $dependencies[$stepId]['depends_on'] ?? [];
             $requiredBy = $dependencies[$stepId]['required_by'] ?? [];
             
-            // Un step est orphelin s'il n'a pas de dépendances ET n'est requis par personne
-            // SAUF s'il est le premier ou le dernier step
+            // A step is orphan if it has no dependencies AND is not required by anyone
+            // EXCEPT if it's the first or last step
             $isOrphan = empty($dependsOn) && empty($requiredBy) && $i > 0 && $i < (count($steps) - 1);
             
             if ($isOrphan) {
-                // Correction : Lier au step précédent
+                // Correction: Link to previous step
                 $previousStep = $steps[$i - 1];
                 $metadata = $step->getMetadata();
                 $metadata['depends_on'] = [$previousStep->getId()];
@@ -323,7 +350,11 @@ class TaskPlanValidator
     }
     
     /**
-     * ✅ Assurer qu'il y a un step final
+     * Ensure there is a final step
+     * 
+     * @param array $steps Steps to check
+     * @param array $diagnostics Diagnostics array
+     * @return array Fix result
      */
     private function ensureFinalStep(array $steps, array &$diagnostics): array
     {
@@ -331,12 +362,12 @@ class TaskPlanValidator
             return ['corrected' => false, 'steps' => $steps];
         }
         
-        // Vérifier si le dernier step est marqué comme final
+        // Check if last step is marked as final
         $lastStep = end($steps);
         $metadata = $lastStep->getMetadata();
         
         if (!($metadata['is_final'] ?? false)) {
-            // Correction : Marquer le dernier step comme final
+            // Correction: Mark last step as final
             $metadata['is_final'] = true;
             
             $correctedLastStep = new TaskStep(
@@ -363,7 +394,12 @@ class TaskPlanValidator
     }
     
     /**
-     * 🛡️ Fallback interne-only si données externes douteuses
+     * Internal-only fallback if external data is doubtful
+     * 
+     * @param array $steps Steps to check
+     * @param array $context Execution context
+     * @param array $diagnostics Diagnostics array
+     * @return array Fix result
      */
     private function applyInternalFallbackIfNeeded(array $steps, array $context, array &$diagnostics): array
     {
@@ -371,14 +407,14 @@ class TaskPlanValidator
             return ['corrected' => false, 'steps' => $steps];
         }
         
-        // Vérifier si les données externes sont fiables
+        // Check if external data is reliable
         $externalDataReliable = $this->assessExternalDataReliability($context);
         
         if ($externalDataReliable) {
             return ['corrected' => false, 'steps' => $steps];
         }
         
-        // Correction : Modifier les steps externes pour utiliser uniquement les données internes
+        // Correction: Modify external steps to use only internal data
         $correctedSteps = [];
         $hasCorrections = false;
         
@@ -387,7 +423,7 @@ class TaskPlanValidator
             $metadata = $step->getMetadata();
             
             if ($stepType === 'collect_competitor_market_data') {
-                // Forcer l'utilisation du cache interne uniquement
+                // Force internal cache only
                 $metadata['force_internal_only'] = true;
                 $metadata['external_access_blocked'] = 'unreliable_external_data';
                 
@@ -417,40 +453,48 @@ class TaskPlanValidator
     }
     
     /**
-     * Évalue la fiabilité des données externes
+     * Assess external data reliability
+     * 
+     * @param array $context Execution context
+     * @return bool True if reliable
      */
     private function assessExternalDataReliability(array $context): bool
     {
         $policy = $context['policy'] ?? [];
         
-        // Critères de fiabilité
+        // Reliability criteria
         $hasApiKey = !empty($policy['serpapi_key'] ?? '');
         $externalAllowed = $policy['allow_external'] ?? false;
         $hasValidCache = !empty($context['internal_competitor_cache'] ?? []);
         
-        // Données externes fiables si API configurée ET autorisée
+        // External data reliable if API configured AND allowed
         return $hasApiKey && $externalAllowed;
     }
     
     /**
-     * 🏁 Validation finale après corrections
+     * Final validation after corrections
+     * 
+     * @param array $steps Corrected steps
+     * @param array $dependencies Dependency graph
+     * @param array $diagnostics Diagnostics array
+     * @return array Validation result
      */
     private function validateFinalPlan(array $steps, array $dependencies, array &$diagnostics): array
     {
-        // Vérifications finales
+        // Final checks
         $issues = [];
         
-        // 1. Vérifier qu'il n'y a plus de cycles
+        // 1. Check no cycles remain
         if ($this->hasCycles($steps, $dependencies)) {
             $issues[] = 'circular_dependencies_remain';
         }
         
-        // 2. Vérifier la cohérence des types de steps
+        // 2. Check step type coherence
         if (!$this->validateStepTypeCoherence($steps)) {
             $issues[] = 'step_type_incoherence';
         }
         
-        // 3. Vérifier que toutes les dépendances existent
+        // 3. Check all dependencies exist
         if (!$this->validateDependenciesExist($steps, $dependencies)) {
             $issues[] = 'missing_dependencies';
         }
@@ -477,7 +521,11 @@ class TaskPlanValidator
     }
     
     /**
-     * Vérifie s'il reste des cycles
+     * Check if cycles remain
+     * 
+     * @param array $steps Steps to check
+     * @param array $dependencies Dependency graph
+     * @return bool True if cycles exist
      */
     private function hasCycles(array $steps, array $dependencies): bool
     {
@@ -517,7 +565,10 @@ class TaskPlanValidator
     }
     
     /**
-     * Valide la cohérence des types de steps
+     * Validate step type coherence
+     * 
+     * @param array $steps Steps to validate
+     * @return bool True if coherent
      */
     private function validateStepTypeCoherence(array $steps): bool
     {
@@ -547,7 +598,11 @@ class TaskPlanValidator
     }
     
     /**
-     * Valide que toutes les dépendances existent
+     * Validate that all dependencies exist
+     * 
+     * @param array $steps Steps to validate
+     * @param array $dependencies Dependency graph
+     * @return bool True if all exist
      */
     private function validateDependenciesExist(array $steps, array $dependencies): bool
     {
@@ -565,7 +620,10 @@ class TaskPlanValidator
     }
     
     /**
-     * Met à jour les politiques de validation
+     * Update validation policies
+     * 
+     * @param array $newPolicies New policies to merge
+     * @return void
      */
     public function updatePolicies(array $newPolicies): void
     {
@@ -577,7 +635,9 @@ class TaskPlanValidator
     }
     
     /**
-     * Obtient les politiques actuelles
+     * Get current policies
+     * 
+     * @return array Current validation policies
      */
     public function getPolicies(): array
     {

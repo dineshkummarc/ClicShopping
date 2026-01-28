@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Communication\PageManager\Sites\Shop\Pages\RSS\Actions;
 
+use ClicShopping\Apps\Communication\PageManager\Classes\Shop\RSS as RSSApp;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Communication\PageManager\Classes\Shop\RSS as RSSApp;
-
-class RSS extends \ClicShopping\OM\PagesActionsAbstract
+class RSS extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

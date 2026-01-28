@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\DefineLanguage;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class DefineLanguage extends \ClicShopping\OM\ConfigurableAppAbstract
+class DefineLanguage extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

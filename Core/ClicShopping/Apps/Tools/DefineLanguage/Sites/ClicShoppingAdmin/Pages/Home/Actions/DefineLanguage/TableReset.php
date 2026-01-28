@@ -14,7 +14,7 @@ namespace ClicShopping\Apps\Tools\DefineLanguage\Sites\ClicShoppingAdmin\Pages\H
 use ClicShopping\OM\Cache;
 use ClicShopping\OM\Registry;
 
-class TableReset extends \ClicShopping\OM\PagesActionsAbstract
+class TableReset extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

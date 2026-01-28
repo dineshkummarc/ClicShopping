@@ -18,12 +18,12 @@ use ClicShopping\AI\Infrastructure\Monitoring\StatsAggregator;
 /**
  * DocumentationGenerator Class
  *
- * Générateur de documentation automatique qui :
- * - Analyse les classes via Reflection
- * - Génère de la documentation Markdown
- * - Crée des API references
- * - Produit des diagrammes ASCII
- * - Exporte en HTML et PDF
+ * Automatic documentation generator that:
+ * - Analyzes classes via Reflection
+ * - Generates Markdown documentation
+ * - Creates API references
+ * - Produces ASCII diagrams
+ * - Exports to HTML and PDF
  */
 class DocumentationGenerator
 {
@@ -41,7 +41,10 @@ class DocumentationGenerator
   }
 
   /**
-   * Analyse une classe et génère sa documentation
+   * Analyzes a class and generates its documentation
+   * 
+   * @param string $className Class name
+   * @return array Class analysis
    */
   public function analyzeClass(string $className): array
   {
@@ -58,7 +61,7 @@ class DocumentationGenerator
         'constants' => [],
       ];
 
-      // Analyser les constantes
+      // Analyze constants
       foreach ($reflection->getConstants() as $name => $value) {
         $analysis['constants'][] = [
           'name' => $name,
@@ -66,12 +69,12 @@ class DocumentationGenerator
         ];
       }
 
-      // Analyser les propriétés
+      // Analyze properties
       foreach ($reflection->getProperties() as $property) {
         $analysis['properties'][] = $this->analyzeProperty($property);
       }
 
-      // Analyser les méthodes
+      // Analyze methods
       foreach ($reflection->getMethods() as $method) {
         $analysis['methods'][] = $this->analyzeMethod($method);
       }
@@ -88,7 +91,10 @@ class DocumentationGenerator
   }
 
   /**
-   * Analyse une propriété
+   * Analyzes a property
+   * 
+   * @param ReflectionProperty $property Property reflection
+   * @return array Property analysis
    */
   private function analyzeProperty(ReflectionProperty $property): array
   {
@@ -103,7 +109,10 @@ class DocumentationGenerator
   }
 
   /**
-   * Analyse une méthode
+   * Analyzes a method
+   * 
+   * @param ReflectionMethod $method Method reflection
+   * @return array Method analysis
    */
   private function analyzeMethod(ReflectionMethod $method): array
   {
@@ -128,7 +137,10 @@ class DocumentationGenerator
   }
 
   /**
-   * Extrait le contenu du DocComment
+   * Extracts DocComment content
+   * 
+   * @param string|null $docComment DocComment string
+   * @return string Extracted content
    */
   private function extractDocComment(?string $docComment): string
   {
@@ -136,7 +148,7 @@ class DocumentationGenerator
       return '';
     }
 
-    // Nettoyer le DocComment
+    // Clean DocComment
     $lines = explode("\n", $docComment);
     $content = [];
 
@@ -155,7 +167,10 @@ class DocumentationGenerator
   }
 
   /**
-   * Obtient la visibilité d'une propriété/méthode
+   * Gets visibility of a property/method
+   * 
+   * @param mixed $member Property or method reflection
+   * @return string Visibility (public, protected, private)
    */
   private function getVisibility($member): string
   {
@@ -166,7 +181,9 @@ class DocumentationGenerator
   }
 
   /**
-   * Génère la documentation en Markdown
+   * Generates Markdown documentation
+   * 
+   * @return string Markdown documentation
    */
   public function generateMarkdown(): string
   {
@@ -199,7 +216,10 @@ class DocumentationGenerator
   }
 
   /**
-   * Génère la documentation Markdown d'une classe
+   * Generates class Markdown documentation
+   * 
+   * @param array $analysis Class analysis
+   * @return array Markdown lines
    */
   private function generateClassMarkdown(array $analysis): array
   {
@@ -217,7 +237,7 @@ class DocumentationGenerator
     $md[] = "**Namespace:** `{$analysis['namespace']}`";
     $md[] = "";
 
-    // Propriétés
+    // Properties
     if (!empty($analysis['properties'])) {
       $md[] = "### Properties";
       $md[] = "";
@@ -232,7 +252,7 @@ class DocumentationGenerator
       $md[] = "";
     }
 
-    // Méthodes
+    // Methods
     if (!empty($analysis['methods'])) {
       $md[] = "### Methods";
       $md[] = "";
@@ -247,7 +267,7 @@ class DocumentationGenerator
           $md[] = "";
         }
 
-        // Paramètres
+        // Parameters
         if (!empty($method['parameters'])) {
           $md[] = "**Parameters:**";
           foreach ($method['parameters'] as $param) {
@@ -270,7 +290,10 @@ class DocumentationGenerator
   }
 
   /**
-   * Génère la signature d'une méthode
+   * Generates method signature
+   * 
+   * @param array $method Method data
+   * @return string Method signature
    */
   private function generateMethodSignature(array $method): string
   {
@@ -286,7 +309,9 @@ class DocumentationGenerator
   }
 
   /**
-   * Génère une référence API en HTML
+   * Generates API reference in HTML
+   * 
+   * @return string HTML documentation
    */
   public function generateHTML(): string
   {
@@ -449,7 +474,10 @@ HTML;
   }
 
   /**
-   * Convertit Markdown en HTML simple
+   * Converts Markdown to simple HTML
+   * 
+   * @param string $markdown Markdown content
+   * @return string HTML content
    */
   private function markdownToHTML(string $markdown): string
   {
@@ -490,64 +518,68 @@ HTML;
   }
 
   /**
-   * Génère un diagramme d'architecture ASCII
+   * Generates architecture diagram in ASCII
+   * 
+   * @return string ASCII diagram
    */
   public function generateArchitectureDiagram(): string
   {
     return <<<ASCII
-╔════════════════════════════════════════════════════════════════════╗
+╔====================================================================╗
 ║                      ClicShopping AI - Architecture                ║
-╚════════════════════════════════════════════════════════════════════╝
+╚====================================================================╝
 
-┌─────────────────────────────────────────────────────────────────┐
-│                     OrchestratorAgent                           │
-│            (Entry point for all queries)                        │
-└────────────────────┬────────────────────────────────────────────┘
-                     │
-        ┌────────────┼────────────┬──────────────┐
-        │            │            │              │
++-----------------------------------------------------------------+
+|                     OrchestratorAgent                           |
+|            (Entry point for all queries)                        |
++--------------------┬--------------------------------------------+
+                     |
+        +------------┼------------┬--------------+
+        |            |            |              |
         ▼            ▼            ▼              ▼
-    ┌────────┐  ┌────────┐  ┌──────────┐  ┌──────────┐
-    │Planner │  │Executor│  │Reasoning │  │Correction│
-    └────────┘  └────────┘  └──────────┘  └──────────┘
-        │            │            │              │
-        └────────────┼────────────┴──────────────┘
-                     │
-        ┌────────────┴────────────┐
-        │                         │
+    +--------+  +--------+  +----------+  +----------+
+    |Planner |  |Executor|  |Reasoning |  |Correction|
+    +--------+  +--------+  +----------+  +----------+
+        |            |            |              |
+        +------------┼------------┴--------------+
+                     |
+        +------------┴------------+
+        |                         |
         ▼                         ▼
-    ┌──────────────┐      ┌─────────────┐
-    │   RAG Stack  │      │  Analytics  │
-    │              │      │   Engine    │
-    │ - Semantic   │      │             │
-    │ - Vector DB  │      │ - SQL Query │
-    │ - Cache      │      │ - Analytics │
-    └──────────────┘      └─────────────┘
+    +--------------+      +-------------+
+    |   RAG Stack  |      |  Analytics  |
+    |              |      |   Engine    |
+    | - Semantic   |      |             |
+    | - Vector DB  |      | - SQL Query |
+    | - Cache      |      | - Analytics |
+    +--------------+      +-------------+
 
-┌─────────────────────────────────────────────────────────────────┐
-│                  Monitoring Layer (Phase 4)                      │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │  Collector   │→ │  Monitoring  │→ │  Aggregator  │          │
-│  │  (Metrics)   │  │  (Health)    │  │  (Reports)   │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-│                           │                                      │
-│                           ▼                                      │
-│                  ┌──────────────────┐                           │
-│                  │  AlertManager    │                           │
-│                  │  (Rules & Events)│                           │
-│                  └──────────────────┘                           │
-└─────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------+
+|                  Monitoring Layer (Phase 4)                      |
+├-----------------------------------------------------------------┤
+|  +--------------+  +--------------+  +--------------+          |
+|  |  Collector   |→ |  Monitoring  |→ |  Aggregator  |          |
+|  |  (Metrics)   |  |  (Health)    |  |  (Reports)   |          |
+|  +--------------+  +--------------+  +--------------+          |
+|                           |                                      |
+|                           ▼                                      |
+|                  +------------------+                           |
+|                  |  AlertManager    |                           |
+|                  |  (Rules & Events)|                           |
+|                  +------------------+                           |
++-----------------------------------------------------------------+
 
 Data Flow:
   Events → Collector → Monitoring → Alerts
-           │              │
-           └──────→ Aggregator → Reports
+           |              |
+           +------→ Aggregator → Reports
 ASCII;
   }
 
   /**
-   * Génère un guide des meilleurs pratiques
+   * Generates best practices guide
+   * 
+   * @return string Best practices guide
    */
   public function generateBestPractices(): string
   {
@@ -556,87 +588,89 @@ ASCII;
 
 ## 1. Monitoring
 
-### Enregistrer des événements importants
-- Toujours enregistrer avant/après chaque opération critique
-- Inclure les tags pour le groupage (component, operation_type, etc.)
-- Mesurer les temps d'exécution avec startTimer/stopTimer
+### Record important events
+- Always record before/after each critical operation
+- Include tags for grouping (component, operation_type, etc.)
+- Measure execution times with startTimer/stopTimer
 
-### Configuration des alertes
-- Commencer avec peu de règles, ajouter progressivement
-- Éviter les faux positifs en ajustant les seuils
-- Configurer l'escalation pour les alertes critiques
-- Tester les canaux de notification (email, Slack, etc.)
+### Alert configuration
+- Start with few rules, add progressively
+- Avoid false positives by adjusting thresholds
+- Configure escalation for critical alerts
+- Test notification channels (email, Slack, etc.)
 
 ## 2. Performance
 
-### Optimisation de la collecte
-- Utiliser le buffering (bufferSize > 1)
-- Vider le cache régulièrement (flush())
-- Nettoyer les vieilles métriques (cleanOldMetrics())
-- Désactiver le debug en production
+### Collection optimization
+- Use buffering (bufferSize > 1)
+- Flush cache regularly (flush())
+- Clean old metrics (cleanOldMetrics())
+- Disable debug in production
 
 ### Aggregation
-- Augmenter cache lifetime en production (300-600s)
-- Limiter l'historique (maxHistorySize)
-- Paralléliser les requêtes de données
+- Increase cache lifetime in production (300-600s)
+- Limit history (maxHistorySize)
+- Parallelize data queries
 
 ## 3. Analyse des données
 
-### Interprétation des rapports
-- Vérifier les tendances, pas juste les valeurs actuelles
-- Corréler les métriques (erreurs + latence)
-- Investiguer les anomalies immédiatement
-- Documenter les incidents et causes
+### Report interpretation
+- Check trends, not just current values
+- Correlate metrics (errors + latency)
+- Investigate anomalies immediately
+- Document incidents and causes
 
 ### Escalation
-- Automatiser l'escalation pour les critiques
-- Notifier les bonnes personnes au bon moment
-- Mettre à jour les runbooks avec les solutions
+- Automate escalation for critical issues
+- Notify the right people at the right time
+- Update runbooks with solutions
 
-## 4. Sécurité
+## 4. Security
 
-### Données sensibles
-- Ne pas logger les données utilisateur
-- Chiffrer les métriques sensibles
-- Limiter l'accès aux rapports
-- Audit trail pour les modifications
+### Sensitive data
+- Do not log user data
+- Encrypt sensitive metrics
+- Limit access to reports
+- Audit trail for modifications
 
 ### API Security
-- Valider tous les paramètres des alertes
-- Limiter le rate des requests API
-- Monitorer les usages d'API suspects
-- Rotater les clés régulièrement
+- Validate all alert parameters
+- Limit API request rate
+- Monitor suspicious API usage
+- Rotate keys regularly
 
 ## 5. Troubleshooting
 
 ### Debugging
-- Activer le debug mode pour les développements
-- Utiliser les logs détaillés
-- Exporter les métriques pour analyse offline
-- Comparer les périodes (before/after)
+- Enable debug mode for development
+- Use detailed logs
+- Export metrics for offline analysis
+- Compare periods (before/after)
 
-### Problèmes courants
+### Common issues
 
-**Mémoire haute**
-- Réduire maxHistorySize
-- Vider le buffer plus souvent
-- Nettoyer les vieilles métriques
+**High memory**
+- Reduce maxHistorySize
+- Flush buffer more often
+- Clean old metrics
 
-**Alertes manquées**
-- Vérifier que les règles sont activées
-- Tester la condition manuellement
-- Vérifier les canaux de notification
+**Missed alerts**
+- Check that rules are enabled
+- Test condition manually
+- Check notification channels
 
-**Performance dégradée**
-- Augmenter cache lifetime
-- Réduire la fréquence de collecte
-- Paralléliser les opérations
+**Degraded performance**
+- Increase cache lifetime
+- Reduce collection frequency
+- Parallelize operations
 
 MARKDOWN;
   }
 
   /**
-   * Génère une API Reference complète
+   * Generates complete API reference
+   * 
+   * @return string API reference
    */
   public function generateAPIReference(): string
   {
@@ -645,12 +679,12 @@ MARKDOWN;
 
 ## MonitoringAgent
 
-### Enregistrement de composants
+### Register components
 \`\`\`php
 $monitoring->registerComponent(string $componentName, object $component, array $metricsToTrack = []): void
 \`\`\`
 
-### Collecte de métriques
+### Collect metrics
 \`\`\`php
 $metrics = $monitoring->collectMetrics(): array
 \`\`\`
@@ -726,7 +760,10 @@ MARKDOWN;
   }
 
   /**
-   * Exporte toute la documentation
+   * Exports complete documentation
+   * 
+   * @param string $outputDir Output directory
+   * @return array Export results
    */
   public function exportComplete(string $outputDir): array
   {
@@ -761,7 +798,9 @@ MARKDOWN;
   }
 
   /**
-   * Génère un README complet
+   * Generates complete README
+   * 
+   * @return string README content
    */
   public function generateREADME(): string
   {
@@ -770,46 +809,46 @@ MARKDOWN;
 
 ## Overview
 
-Phase 4 implémente un système de monitoring complet, d'alerting intelligent et de rapports analytiques pour le système multi-agents ClicShopping AI.
+Phase 4 implements a complete monitoring system, intelligent alerting and analytical reports for the ClicShopping AI multi-agent system.
 
-## Composants
+## Components
 
 ### 1. MonitoringAgent
-Agent centralisé qui collecte et agrège les métriques de tous les composants du système. Fournit une vue d'ensemble de la santé du système avec détection d'anomalies.
+Centralized agent that collects and aggregates metrics from all system components. Provides system health overview with anomaly detection.
 
-**Responsabilités:**
-- Collecte des métriques de chaque composant
-- Calcul de la santé globale du système
-- Génération de rapports
-- Détection des anomalies
+**Responsibilities:**
+- Collect metrics from each component
+- Calculate overall system health
+- Generate reports
+- Detect anomalies
 
 ### 2. MetricsCollector
-Collecteur temps réel de métriques avec support des timers, compteurs, gauges et histogrammes. Utilise le buffering pour la performance.
+Real-time metrics collector with support for timers, counters, gauges and histograms. Uses buffering for performance.
 
-**Responsabilités:**
-- Collecte des timers (mesure de durée)
-- Incrément/décrement de compteurs
-- Enregistrement de gauges (valeurs instantanées)
-- Création d'histogrammes pour les distributions
+**Responsibilities:**
+- Collect timers (duration measurement)
+- Increment/decrement counters
+- Record gauges (instantaneous values)
+- Create histograms for distributions
 
 ### 3. AlertManager
-Gestionnaire d'alertes configurable avec support de règles personnalisées, canaux de notification multiples et escalation automatique.
+Configurable alert manager with support for custom rules, multiple notification channels and automatic escalation.
 
-**Responsabilités:**
-- Gestion des règles d'alerte
-- Déclenchement et grouping des alertes
-- Notification via multiples canaux
-- Escalation automatique
-- Historique des alertes
+**Responsibilities:**
+- Manage alert rules
+- Trigger and group alerts
+- Notify via multiple channels
+- Automatic escalation
+- Alert history
 
 ### 4. StatsAggregator
-Agrégateur de statistiques qui combine les données de plusieurs sources et génère des rapports synthétiques avec détection de tendances.
+Statistics aggregator that combines data from multiple sources and generates synthetic reports with trend detection.
 
-**Responsabilités:**
-- Agrégation de données multiples sources
-- Calcul de métriques consolidées
-- Détection de tendances et anomalies
-- Génération de rapports exécutifs
+**Responsibilities:**
+- Aggregate data from multiple sources
+- Calculate consolidated metrics
+- Detect trends and anomalies
+- Generate executive reports
 
 ## Quick Start
 
@@ -832,7 +871,7 @@ $alertManager = new AlertManager();
 $aggregator = new StatsAggregator();
 \`\`\`
 
-### Enregistrer les composants
+### Register components
 
 \`\`\`php
 $monitoring->registerComponent('OrchestratorAgent', $orchestrator);
@@ -840,18 +879,18 @@ $monitoring->registerComponent('TaskPlanner', $planner);
 $monitoring->registerComponent('PlanExecutor', $executor);
 \`\`\`
 
-### Collecter des métriques
+### Collect metrics
 
 \`\`\`php
 $collector->startTimer('operation');
-// ... faire quelque chose ...
+// ... do something ...
 $collector->stopTimer('operation');
 
 $collector->increment('requests_total');
 $collector->gauge('memory_usage_mb', memory_get_usage(true) / 1024 / 1024);
 \`\`\`
 
-### Configurer les alertes
+### Configure alerts
 
 \`\`\`php
 $alertManager->addRule('high_error_rate', [
@@ -862,7 +901,7 @@ $alertManager->addRule('high_error_rate', [
 ]);
 \`\`\`
 
-### Générer des rapports
+### Generate reports
 
 \`\`\`php
 $health = $monitoring->getHealthReport();
@@ -887,17 +926,17 @@ $collector->bufferSize = 50;
 
 ## Documentation
 
-- [API Reference](API.md) - Documentation complète des APIs
-- [Best Practices](BEST_PRACTICES.md) - Guide des meilleures pratiques
-- [Architecture](ARCHITECTURE.txt) - Diagramme d'architecture
-- [Integration Guide](INTEGRATION_GUIDE.md) - Guide d'intégration détaillé
+- [API Reference](API.md) - Complete API documentation
+- [Best Practices](BEST_PRACTICES.md) - Best practices guide
+- [Architecture](ARCHITECTURE.txt) - Architecture diagram
+- [Integration Guide](INTEGRATION_GUIDE.md) - Detailed integration guide
 
 ## Support
 
-Pour toute question ou problème:
-1. Consulter la [documentation](.)
-2. Vérifier les logs avec debug activé
-3. Exporter les métriques pour analyse offline
+For any question or issue:
+1. Consult the [documentation](.)
+2. Check logs with debug enabled
+3. Export metrics for offline analysis
 
 ## License
 

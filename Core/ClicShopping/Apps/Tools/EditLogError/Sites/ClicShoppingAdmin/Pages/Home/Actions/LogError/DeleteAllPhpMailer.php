@@ -14,7 +14,7 @@ use ClicShopping\OM\DateTime;
 use ClicShopping\OM\ErrorHandler;
 use ClicShopping\OM\Registry;
 
-class DeleteAllPhpMailer extends \ClicShopping\OM\PagesActionsAbstract
+class DeleteAllPhpMailer extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

@@ -10,8 +10,8 @@
 
 namespace ClicShopping\Apps\Catalog\Products\Sites\ClicShoppingAdmin\Pages\Home\Actions;
 
-use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
+use ClicShopping\OM\Registry;
 
 /**
  * Class Configure
@@ -19,7 +19,7 @@ use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\Adm
  * This action class is responsible for handling the configuration of the Products app in the admin interface.
  * It sets up the configuration page, determines the current module to be configured, and loads necessary language definitions.
  */
-class Configure extends \ClicShopping\OM\PagesActionsAbstract
+class Configure extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to display the configuration page for the Products app.

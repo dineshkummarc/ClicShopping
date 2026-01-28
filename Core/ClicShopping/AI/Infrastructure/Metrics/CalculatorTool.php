@@ -20,18 +20,17 @@ use ClicShopping\AI\Security\InputValidator;
 
 /**
  * CalculatorTool Class
- *
- * Outil de calcul avancé pour le système RAGBI.
- * Permet d'effectuer des opérations mathématiques complexes de manière sécurisée.
- *
- * Fonctionnalités :
- * - Opérations de base (+, -, *, /, %, **)
- * - Fonctions mathématiques (sin, cos, tan, sqrt, log, etc.)
- * - Constantes (pi, e)
- * - Variables et expressions
- * - Validation et sécurité stricte
- * - Historique des calculs
- * - Support des nombres décimaux et scientifiques
+ * Advanced calculation tool for RAGBI system
+ * Performs secure mathematical operations
+ * 
+ * Features:
+ * - Basic operations (+, -, *, /, %, **)
+ * - Mathematical functions (sin, cos, tan, sqrt, log, etc.)
+ * - Constants (pi, e)
+ * - Variables and expressions
+ * - Strict validation and security
+ * - Calculation history
+ * - Decimal and scientific number support
  */
 #[AllowDynamicProperties]
 class CalculatorTool
@@ -48,21 +47,14 @@ class CalculatorTool
   /**
    * Calculator Configuration Constants (2026-01-09)
    * 
-   * These are internal configuration values that rarely need to be changed.
-   * They are defined as class constants rather than global config to:
-   * - Reduce global config pollution
-   * - Keep technical details close to implementation
-   * - Simplify configuration for administrators
-   * 
-   * Only CALCULATOR_ENABLED should be in global config for admin control.
+   * Internal configuration values defined as class constants
+   * Only CALCULATOR_ENABLED should be in global config for admin control
    */
-  private const MAX_HISTORY_SIZE = 100;           // Maximum calculation history entries
-  private const CACHE_TTL = 3600;                 // Cache TTL (1 hour)
+  private const MAX_HISTORY_SIZE = 100;
+  private const CACHE_TTL = 3600;
 
-  // Variables définies par l'utilisateur
   private array $variables = [];
 
-  // Fonctions mathématiques autorisées
   private array $allowedFunctions = [
     // Trigonométrie
     'sin',
@@ -110,7 +102,6 @@ class CalculatorTool
     'M_E'
   ];
 
-  // Constantes mathématiques
   private array $constants = [
     'pi' => M_PI,
     'e' => M_E,
@@ -123,36 +114,30 @@ class CalculatorTool
 
   /**
    * Constructor
+   * Uses global RAG configuration for cache and debug settings
+   * Technical settings defined as class constants
    * 
-   * Uses global RAG configuration:
-   * - Cache: CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER
-   * - Debug/Logging: CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER
-   * 
-   * Technical settings (history size, validation, timeouts) are defined as class constants.
+   * @return void
    */
   public function __construct()
   {
     $this->securityLogger = new SecurityLogger();
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
 
-    // Initialiser la connexion à la base de données
     if (Registry::exists('Db')) {
       $this->db = Registry::get('Db');
     }
 
-    // Activer le cache si configuré (utilise la config RAG globale)
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER')
       && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True') {
       $this->enableCache = true;
     }
 
-    // Activer le logging si configuré (utilise la config RAG globale)
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER')
       && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
       $this->enableLogging = true;
     }
 
-    // Use class constants for technical settings
     $this->cacheTTL = self::CACHE_TTL;
     $this->maxHistorySize = self::MAX_HISTORY_SIZE;
 
@@ -167,11 +152,11 @@ class CalculatorTool
   }
 
   /**
-   * Exécute un calcul mathématique
+   * Execute mathematical calculation
    *
-   * @param string $expression Expression mathématique à évaluer
-   * @param array $variables Variables optionnelles (ex: ['x' => 5, 'y' => 10])
-   * @return array Résultat du calcul
+   * @param string $expression Mathematical expression to evaluate
+   * @param array $variables Optional variables (e.g. ['x' => 5, 'y' => 10])
+   * @return array Calculation result
    */
   public function calculate(string $expression, array $variables = []): array
   {
@@ -198,10 +183,8 @@ class CalculatorTool
         ];
       }
 
-      // Fusionner les variables
       $this->variables = array_merge($this->variables, $variables);
 
-      // 🆕 Vérifier le cache
       if ($this->enableCache) {
         $cachedResult = $this->getCachedResult($expression, $this->variables);
         if ($cachedResult !== null) {
@@ -215,18 +198,14 @@ class CalculatorTool
         }
       }
 
-      // Préparer l'expression
       $preparedExpression = $this->prepareExpression($expression);
 
-      // Valider la sécurité
       if (!$this->validateSecurity($preparedExpression)) {
         throw new \Exception('Expression contains unsafe patterns');
       }
 
-      // Évaluer l'expression
       $result = $this->evaluateExpression($preparedExpression);
 
-      // Construire la réponse
       $response = [
         'success' => true,
         'result' => $result,
@@ -236,17 +215,14 @@ class CalculatorTool
         'type' => $this->detectResultType($result),
       ];
 
-      // 🆕 Mettre en cache
       if ($this->enableCache) {
         $this->cacheResult($expression, $this->variables, $response);
       }
 
-      // 🆕 Logger le calcul
       if ($this->enableLogging) {
         $this->logCalculation($expression, $result, true, null, $response['execution_time']);
       }
 
-      // Stocker dans l'historique
       $this->addToHistory($expression, $result, $response['execution_time']);
 
       return $response;
@@ -259,7 +235,6 @@ class CalculatorTool
         ['expression' => $expression]
       );
 
-      // 🆕 Logger l'erreur
       if ($this->enableLogging) {
         $this->logCalculation($expression, null, false, $e->getMessage(), $executionTime);
       }
@@ -274,34 +249,35 @@ class CalculatorTool
   }
 
   /**
-   * Prépare l'expression pour l'évaluation
+   * Prepare expression for evaluation
+   * 
+   * @param string $expression Expression to prepare
+   * @return string Prepared expression
    */
   private function prepareExpression(string $expression): string
   {
-    // Supprimer les espaces superflus
     $expression = trim($expression);
 
-    // Remplacer les constantes
     foreach ($this->constants as $name => $value) {
       $expression = preg_replace('/\b' . preg_quote($name, '/') . '\b/i', (string)$value, $expression);
     }
 
-    // Remplacer les variables
     foreach ($this->variables as $name => $value) {
       $expression = preg_replace('/\b' . preg_quote($name, '/') . '\b/', (string)$value, $expression);
     }
 
-    // Remplacer ^ par ** pour les puissances
     $expression = str_replace('^', '**', $expression);
 
-    // Remplacer les fonctions spéciales
     $expression = $this->replaceFunctions($expression);
 
     return $expression;
   }
 
   /**
-   * Remplace les fonctions mathématiques par leur équivalent PHP
+   * Replace mathematical functions with PHP equivalents
+   * 
+   * @param string $expression Expression to process
+   * @return string Processed expression
    */
   private function replaceFunctions(string $expression): string
   {
@@ -345,11 +321,13 @@ class CalculatorTool
   }
 
   /**
-   * Valide la sécurité de l'expression
+   * Validate expression security
+   * 
+   * @param string $expression Expression to validate
+   * @return bool Is secure
    */
   private function validateSecurity(string $expression): bool
   {
-    // Patterns dangereux
     $dangerousPatterns = [
       '/\$/', // Variables PHP
       '/\beval\b/i',
@@ -387,7 +365,6 @@ class CalculatorTool
       }
     }
 
-    // Vérifier que seuls les caractères autorisés sont présents
     if (!preg_match('/^[0-9+\-*\/%().a-z_,\s]+$/i', $expression)) {
       $this->securityLogger->logSecurityEvent(
         "Invalid characters in expression",
@@ -397,7 +374,6 @@ class CalculatorTool
       return false;
     }
 
-    // Vérifier que les parenthèses sont équilibrées
     if (substr_count($expression, '(') !== substr_count($expression, ')')) {
       return false;
     }
@@ -406,16 +382,17 @@ class CalculatorTool
   }
 
   /**
-   * Évalue l'expression mathématique de manière sécurisée
-   * Uses a safe token-based parser instead of eval()
+   * Evaluate mathematical expression securely
+   * Uses safe token-based parser instead of eval()
+   * 
+   * @param string $expression Expression to evaluate
+   * @return float|int Result
    */
   private function evaluateExpression(string $expression): float|int
   {
     try {
-      // Parse and evaluate using a safe recursive descent parser
       $result = $this->parseExpression($expression);
 
-      // Vérifier que le résultat est valide
       if (!is_numeric($result)) {
         throw new \Exception('Result is not a number');
       }
@@ -428,6 +405,9 @@ class CalculatorTool
 
   /**
    * Safe expression parser using recursive descent
+   * 
+   * @param string $expr Expression to parse
+   * @return float|int Parsed result
    */
   private function parseExpression(string $expr): float|int
   {
@@ -573,7 +553,10 @@ class CalculatorTool
   }
 
   /**
-   * Détecte le type du résultat
+   * Detect result type
+   * 
+   * @param mixed $result Result to analyze
+   * @return string Result type
    */
   private function detectResultType($result): string
   {
@@ -592,7 +575,12 @@ class CalculatorTool
   }
 
   /**
-   * Ajoute un calcul à l'historique
+   * Add calculation to history
+   * 
+   * @param string $expression Expression
+   * @param mixed $result Result
+   * @param float $executionTime Execution time
+   * @return void
    */
   private function addToHistory(string $expression, $result, float $executionTime): void
   {
@@ -605,14 +593,16 @@ class CalculatorTool
 
     $this->calculationHistory[] = $entry;
 
-    // Limiter la taille de l'historique
     if (count($this->calculationHistory) > $this->maxHistorySize) {
       array_shift($this->calculationHistory);
     }
   }
 
   /**
-   * Obtient l'historique des calculs
+   * Get calculation history
+   * 
+   * @param int $limit Number of entries
+   * @return array History entries
    */
   public function getHistory(int $limit = 10): array
   {
@@ -620,7 +610,9 @@ class CalculatorTool
   }
 
   /**
-   * Efface l'historique
+   * Clear history
+   * 
+   * @return void
    */
   public function clearHistory(): void
   {
@@ -628,11 +620,14 @@ class CalculatorTool
   }
 
   /**
-   * Définit une variable
+   * Set variable
+   * 
+   * @param string $name Variable name
+   * @param float|int $value Variable value
+   * @return bool Success
    */
   public function setVariable(string $name, float|int $value): bool
   {
-    // Valider le nom de la variable
     if (!preg_match('/^[a-z_][a-z0-9_]*$/i', $name)) {
       return false;
     }
@@ -642,7 +637,10 @@ class CalculatorTool
   }
 
   /**
-   * Obtient une variable
+   * Get variable
+   * 
+   * @param string $name Variable name
+   * @return float|int|null Variable value
    */
   public function getVariable(string $name): float|int|null
   {
@@ -650,7 +648,9 @@ class CalculatorTool
   }
 
   /**
-   * Obtient toutes les variables
+   * Get all variables
+   * 
+   * @return array Variables
    */
   public function getVariables(): array
   {
@@ -658,7 +658,9 @@ class CalculatorTool
   }
 
   /**
-   * Efface toutes les variables
+   * Clear all variables
+   * 
+   * @return void
    */
   public function clearVariables(): void
   {
@@ -666,13 +668,13 @@ class CalculatorTool
   }
 
   /**
-   * Calcule une série de valeurs
+   * Calculate series of values
    *
-   * @param string $expression Expression avec variable $x
-   * @param float $start Début de l'intervalle
-   * @param float $end Fin de l'intervalle
-   * @param int $steps Nombre de points
-   * @return array Tableau de [x, y]
+   * @param string $expression Expression with variable $x
+   * @param float $start Start of interval
+   * @param float $end End of interval
+   * @param int $steps Number of points
+   * @return array Array of [x, y]
    */
   public function calculateSeries(string $expression, float $start, float $end, int $steps = 10): array
   {
@@ -697,7 +699,7 @@ class CalculatorTool
   }
 
   /**
-   * Résout une équation simple (ax + b = 0)
+   * Solve simple linear equation (ax + b = 0)
    *
    * @param float $a Coefficient a
    * @param float $b Coefficient b
@@ -722,7 +724,7 @@ class CalculatorTool
   }
 
   /**
-   * Résout une équation quadratique (ax² + bx + c = 0)
+   * Solve quadratic equation (ax² + bx + c = 0)
    *
    * @param float $a Coefficient a
    * @param float $b Coefficient b
@@ -760,11 +762,11 @@ class CalculatorTool
   }
 
   /**
-   * Calcule une statistique sur un ensemble de valeurs
+   * Calculate statistic on value set
    *
-   * @param array $values Valeurs
-   * @param string $operation Type de statistique (sum, avg, min, max, stddev)
-   * @return array Résultat
+   * @param array $values Values
+   * @param string $operation Statistic type (sum, avg, min, max, stddev)
+   * @return array Result
    */
   public function calculateStatistic(array $values, string $operation = 'avg'): array
   {
@@ -795,7 +797,10 @@ class CalculatorTool
   }
 
   /**
-   * Calcule l'écart-type
+   * Calculate standard deviation
+   * 
+   * @param array $values Values
+   * @return float Standard deviation
    */
   private function standardDeviation(array $values): float
   {
@@ -803,7 +808,10 @@ class CalculatorTool
   }
 
   /**
-   * Calcule la variance
+   * Calculate variance
+   * 
+   * @param array $values Values
+   * @return float Variance
    */
   private function variance(array $values): float
   {
@@ -813,7 +821,10 @@ class CalculatorTool
   }
 
   /**
-   * Calcule la médiane
+   * Calculate median
+   * 
+   * @param array $values Values
+   * @return float Median
    */
   private function median(array $values): float
   {
@@ -829,11 +840,11 @@ class CalculatorTool
   }
 
   /**
-   * Formate un nombre pour l'affichage
+   * Format number for display
    *
-   * @param float|int $number Nombre à formater
-   * @param int $decimals Nombre de décimales
-   * @return string Nombre formaté
+   * @param float|int $number Number to format
+   * @param int $decimals Number of decimals
+   * @return string Formatted number
    */
   public function formatNumber($number, int $decimals = 2): string
   {
@@ -841,7 +852,9 @@ class CalculatorTool
   }
 
   /**
-   * Obtient les statistiques d'utilisation
+   * Get usage statistics
+   * 
+   * @return array Statistics
    */
   public function getStats(): array
   {
@@ -854,7 +867,9 @@ class CalculatorTool
   }
 
   /**
-   * Obtient l'aide sur les fonctions disponibles
+   * Get help on available functions
+   * 
+   * @return array Help information
    */
   public function getHelp(): array
   {
@@ -899,21 +914,19 @@ class CalculatorTool
   }
 
   /**
-   * 🆕 Interface pour le système d'agents
-   * Exécute un calcul dans le contexte d'un plan d'exécution
+   * Execute calculation in agent context
+   * Interface for agent system execution plan
    *
-   * @param array $context Contexte fourni par PlanExecutor
-   * @return array Résultat formaté pour le plan
+   * @param array $context Context provided by PlanExecutor
+   * @return array Result formatted for plan
    */
   public function executeInAgentContext(array $context): array
   {
     try {
-      // Extraire les paramètres du contexte
       $expression = $context['expression'] ?? '';
       $variables = $context['variables'] ?? [];
       $operation = $context['operation'] ?? 'calculate';
 
-      // Récupérer les résultats des dépendances
       if (isset($context['dependency_results'])) {
         $variables = array_merge(
           $variables,
@@ -921,7 +934,6 @@ class CalculatorTool
         );
       }
 
-      // Exécuter l'opération demandée
       $result = match ($operation) {
         'calculate' => $this->calculate($expression, $variables),
         'statistic' => $this->calculateStatistic(
@@ -946,7 +958,6 @@ class CalculatorTool
         default => throw new \Exception("Unknown operation: {$operation}"),
       };
 
-      // Formater pour le système d'agents
       return [
         'type' => 'calculation_result',
         'success' => $result['success'] ?? false,
@@ -976,26 +987,26 @@ class CalculatorTool
   }
 
   /**
-   * Extrait des variables depuis les résultats des dépendances
+   * Extract variables from dependency results
+   * 
+   * @param array $dependencyResults Dependency results
+   * @return array Extracted variables
    */
   private function extractVariablesFromDependencies(array $dependencyResults): array
   {
     $variables = [];
 
     foreach ($dependencyResults as $depId => $depResult) {
-      // Si le résultat contient une valeur numérique directe
       if (isset($depResult['result']) && is_numeric($depResult['result'])) {
         $variables[$depId] = $depResult['result'];
       }
 
-      // Si c'est un résultat de calcul
       if (isset($depResult['type']) && $depResult['type'] === 'calculation_result') {
         if (is_numeric($depResult['result'])) {
           $variables[$depId . '_result'] = $depResult['result'];
         }
       }
 
-      // Si c'est un résultat analytique avec des agrégations
       if (isset($depResult['type']) && $depResult['type'] === 'aggregated_result') {
         foreach ($depResult['results'] as $aggResult) {
           foreach ($aggResult as $key => $value) {
@@ -1007,7 +1018,6 @@ class CalculatorTool
         }
       }
 
-      // Extraction récursive si nécessaire
       if (is_array($depResult)) {
         $extracted = $this->extractNumericValues($depResult, $depId);
         $variables = array_merge($variables, $extracted);
@@ -1018,13 +1028,17 @@ class CalculatorTool
   }
 
   /**
-   * Extrait les valeurs numériques d'un tableau récursivement
+   * Extract numeric values from array recursively
+   * 
+   * @param array $data Data to extract from
+   * @param string $prefix Key prefix
+   * @param int $depth Recursion depth
+   * @return array Extracted values
    */
   private function extractNumericValues(array $data, string $prefix = '', int $depth = 0): array
   {
     $values = [];
 
-    // Limiter la profondeur de récursion
     if ($depth > 3) {
       return $values;
     }
@@ -1044,12 +1058,12 @@ class CalculatorTool
     return $values;
   }
 
-  // ============================================================================
-  // 🆕 MÉTHODES DE CACHE
-  // ============================================================================
-
   /**
-   * Génère un hash pour le cache
+   * Generate cache hash
+   * 
+   * @param string $expression Expression
+   * @param array $variables Variables
+   * @return string Hash
    */
   private function generateCacheHash(string $expression, array $variables): string
   {
@@ -1058,7 +1072,11 @@ class CalculatorTool
   }
 
   /**
-   * Récupère un résultat depuis le cache
+   * Get cached result
+   * 
+   * @param string $expression Expression
+   * @param array $variables Variables
+   * @return array|null Cached result or null
    */
   private function getCachedResult(string $expression, array $variables): ?array
   {
@@ -1083,7 +1101,6 @@ class CalculatorTool
       $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
       if ($row) {
-        // Mettre à jour les statistiques d'accès
         $updateSql = "UPDATE :table_rag_calculator_cache 
                       SET last_accessed = NOW(), 
                           access_count = access_count + 1 
@@ -1091,7 +1108,6 @@ class CalculatorTool
         $updateStmt = $this->db->prepare($updateSql);
         $updateStmt->execute(['id' => $row['cache_id']]);
 
-        // Retourner le résultat mis en cache
         return [
           'success' => true,
           'result' => (float)$row['result'],
@@ -1118,7 +1134,12 @@ class CalculatorTool
   }
 
   /**
-   * Met en cache un résultat
+   * Cache result
+   * 
+   * @param string $expression Expression
+   * @param array $variables Variables
+   * @param array $result Result
+   * @return bool Success
    */
   private function cacheResult(string $expression, array $variables, array $result): bool
   {
@@ -1164,7 +1185,9 @@ class CalculatorTool
   }
 
   /**
-   * Nettoie le cache expiré
+   * Clean expired cache
+   * 
+   * @return int Number of deleted entries
    */
   public function cleanCache(): int
   {
@@ -1199,7 +1222,9 @@ class CalculatorTool
   }
 
   /**
-   * Vide complètement le cache
+   * Clear all cache
+   * 
+   * @return bool Success
    */
   public function clearCache(): bool
   {
@@ -1228,7 +1253,9 @@ class CalculatorTool
   }
 
   /**
-   * Obtient les statistiques du cache
+   * Get cache statistics
+   * 
+   * @return array Cache statistics
    */
   public function getCacheStats(): array
   {
@@ -1239,22 +1266,18 @@ class CalculatorTool
     try {
       $stats = [];
 
-      // Nombre total d'entrées
       $stmt = $this->db->query("SELECT COUNT(*) as total FROM :table_rag_calculator_cache");
       $stats['total_entries'] = (int)$stmt->fetchColumn();
 
-      // Nombre d'entrées valides (non expirées)
       $sql = "SELECT COUNT(*) as valid FROM :table_rag_calculator_cache 
               WHERE created_at > DATE_SUB(NOW(), INTERVAL :ttl SECOND)";
       $stmt = $this->db->prepare($sql);
       $stmt->execute(['ttl' => $this->cacheTTL]);
       $stats['valid_entries'] = (int)$stmt->fetchColumn();
 
-      // Nombre d'accès total
       $stmt = $this->db->query("SELECT SUM(access_count) as total FROM :table_rag_calculator_cache");
       $stats['total_accesses'] = (int)$stmt->fetchColumn();
 
-      // Entrée la plus populaire
       $stmt = $this->db->query(
         "SELECT expression, 
                 access_count 
@@ -1268,7 +1291,6 @@ class CalculatorTool
         'accesses' => (int)$popular['access_count']
       ] : null;
 
-      // Taux de hit (estimé)
       if ($stats['total_accesses'] > 0) {
         $stats['hit_rate'] = round(
           ($stats['total_accesses'] / ($stats['total_entries'] + $stats['total_accesses'])) * 100,
@@ -1291,12 +1313,18 @@ class CalculatorTool
     }
   }
 
-  // ============================================================================
-  // 🆕 MÉTHODES DE LOGGING
-  // ============================================================================
-
   /**
-   * Enregistre un calcul dans les logs
+   * Log calculation
+   * 
+   * @param string $expression Expression
+   * @param float|null $result Result
+   * @param bool $success Success status
+   * @param string|null $errorMessage Error message
+   * @param float $executionTime Execution time
+   * @param string|null $stepId Step ID
+   * @param string|null $planId Plan ID
+   * @param array|null $metadata Metadata
+   * @return bool Success
    */
   private function logCalculation(
     string $expression,
@@ -1345,7 +1373,11 @@ class CalculatorTool
   }
 
   /**
-   * Récupère les logs de calcul
+   * Get calculation logs
+   * 
+   * @param int $limit Number of entries
+   * @param array $filters Filters
+   * @return array Log entries
    */
   public function getLogs(int $limit = 100, array $filters = []): array
   {
@@ -1404,7 +1436,10 @@ class CalculatorTool
   }
 
   /**
-   * Obtient les statistiques des logs
+   * Get log statistics
+   * 
+   * @param array $filters Filters
+   * @return array Log statistics
    */
   public function getLogStats(array $filters = []): array
   {
@@ -1428,7 +1463,6 @@ class CalculatorTool
 
       $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
 
-      // Statistiques globales
       $sql = "SELECT 
                 COUNT(*) as total_calculations,
                 SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successful,
@@ -1447,7 +1481,6 @@ class CalculatorTool
 
       $stats = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-      // Taux de succès
       if ($stats['total_calculations'] > 0) {
         $stats['success_rate'] = round(
           ($stats['successful'] / $stats['total_calculations']) * 100,
@@ -1470,7 +1503,10 @@ class CalculatorTool
   }
 
   /**
-   * Nettoie les vieux logs
+   * Clean old logs
+   * 
+   * @param int $daysToKeep Days to keep
+   * @return int Number of deleted entries
    */
   public function cleanLogs(int $daysToKeep = 30): int
   {
@@ -1505,14 +1541,16 @@ class CalculatorTool
   }
 
   /**
-   * Obtient l'ID utilisateur actuel (à adapter selon votre système)
+   * Get current user ID
+   * 
+   * @return string User ID
    */
   private function getUserId(): string
   {
     AdministratorAdmin::getUserAdminId();
 
 /*
-    // Essayer de récupérer l'ID utilisateur depuis la session
+    // Try to get user ID from session
     if (isset($_SESSION['customer_id'])) {
       return (string)$_SESSION['customer_id'];
     }

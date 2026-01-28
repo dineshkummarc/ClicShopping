@@ -19,7 +19,7 @@ use ClicShopping\OM\Registry;
  * This class implements idempotent operations for product deletion
  * Running this operation multiple times with the same input will produce the same result
  */
-class DeleteConfirm extends \ClicShopping\OM\PagesActionsAbstract
+class DeleteConfirm extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
   protected $ID;

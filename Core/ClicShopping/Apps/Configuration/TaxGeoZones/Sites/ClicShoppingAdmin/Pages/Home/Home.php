@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Configuration\TaxGeoZones\Sites\ClicShoppingAdmin\Pages\Home;
 
+use ClicShopping\Apps\Configuration\TaxGeoZones\TaxGeoZones;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\TaxGeoZones\TaxGeoZones;
-
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

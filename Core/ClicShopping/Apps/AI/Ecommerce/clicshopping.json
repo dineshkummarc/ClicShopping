@@ -1,0 +1,90 @@
+{
+  "title": "AI Ecommerce Domain App Insight",
+  "app": "Ecommerce",
+  "vendor": "AI",
+  "version": "1.0.0",
+  "req_core_version": "3.0",
+  "license": "GPL-2 / MIT",
+  "authors": [
+    {
+      "name": "ClicShopping",
+      "company": "ClicShopping",
+      "email": "admin@clicshopping.org",
+      "website": "https://www.clicshopping.org"
+    }
+  ],
+  "modules": {
+    "AdminDashboard": {
+      "EntityCount": "Module\\ClicShoppingAdmin\\Dashboard\\EntityCount",
+      "QueryMetrics": "Module\\ClicShoppingAdmin\\Dashboard\\QueryMetrics"
+    },
+    "Config": {
+      "EcommerceDomain": "Module\\ClicShoppingAdmin\\Config\\EcommerceDomain"
+    },
+    "Hooks": {
+      "ClicShoppingAdmin/Categories": {
+        "CategoriesContentTab3": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\SeoChatGpt",
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\Update",
+        "DeleteConfirm": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\DeleteConfirm"
+      },
+      "ClicShoppingAdmin/Manufacturers": {
+        "ManufacturersTab4": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\SeoChatGpt",
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\DeleteAll"
+      },
+      "ClicShoppingAdmin/Products": {
+        "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\Products\\SeoChatGpt",
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Products\\DeleteAll",
+        "Delete": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Delete"
+      },
+      "ClicShoppingAdmin/Suppliers": {
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Suppliers\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Suppliers\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Suppliers\\DeleteAll"
+      },
+      "ClicShoppingAdmin/Orders": {
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\Update",
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\DeleteConfirm",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\DeleteAll"
+      },
+      "ClicShoppingAdmin/ReturnOrders": {
+        "Save": "Module\\Hooks\\ClicShoppingAdmin\\ReturnOrders\\Save",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\ReturnOrders\\DeleteAll"
+      },
+      "ClicShoppingAdmin/Reviews": {
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Reviews\\DeleteAll",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Reviews\\Update"
+      },
+      "ClicShoppingAdmin/ReviewsSentiment": {
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\DeleteAll"
+      },
+      "ClicShoppingAdmin/Recommendations": {
+      },
+      "ClicShoppingAdmin/RAG": {
+      },
+      "Shop/Orders": {
+        "Process": "Module\\Hooks\\Shop\\Orders\\Process"
+      },
+      "Shop/ReturnOrders": {
+        "Process": "Module\\Hooks\\Shop\\ReturnOrders\\Process"
+      },
+      "Shop/Reviews": {
+        "SaveEntry": "Module\\Hooks\\Shop\\Reviews\\SaveEntry"
+      },
+      "Shop/ReviewsWrite": {
+        "Process": "Module\\Hooks\\Shop\\ReviewsWrite\\Process"
+      }
+
+    }
+  },
+  "routes": {
+    "ClicShoppingAdmin": "Sites\\ClicShoppingAdmin\\Pages\\Home",
+    "Shop": {
+    }
+  }
+}

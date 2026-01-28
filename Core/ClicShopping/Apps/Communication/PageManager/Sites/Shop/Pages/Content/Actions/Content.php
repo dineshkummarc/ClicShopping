@@ -10,14 +10,13 @@
 
 namespace ClicShopping\Apps\Communication\PageManager\Sites\Shop\Pages\Content\Actions;
 
+use ClicShopping\Apps\Communication\PageManager\PageManager as PageManagerApp;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Communication\PageManager\PageManager as PageManagerApp;
-
-class Content extends \ClicShopping\OM\PagesActionsAbstract
+class Content extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   protected mixed $app;
 

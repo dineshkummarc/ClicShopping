@@ -67,21 +67,25 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
     </thead>
     <tbody>
     <?php
-    $Qproducts = $CLICSHOPPING_Products->db->prepare('select SQL_CALC_FOUND_ROWS p.products_id,
-                                                                                    p.products_ordered,
-                                                                                    p.products_image,
-                                                                                    pd.products_name
-                                                        from :table_products p,
-                                                             :table_products_description pd
-                                                        where pd.products_id = p.products_id
-                                                       and pd.language_id = :language_id
-                                                       and p.products_archive = 0
-                                                       and p.products_ordered > 0
-                                                       group by pd.products_id
-                                                       order by p.products_ordered DESC,
-                                                                pd.products_name
-                                                       limit :page_set_offset,
-                                                             :page_set_max_results
+    $Qproducts = $CLICSHOPPING_Products->db->prepare('SELECT SQL_CALC_FOUND_ROWS p.products_id,
+                                                                                 p.products_image,
+                                                                                 pd.products_name,
+                                                                                 SUM(op.products_quantity) AS total_sold
+                                                      FROM :table_orders_products op
+                                                      JOIN :table_orders o
+                                                           ON o.orders_id = op.orders_id
+                                                      JOIN :table_products p
+                                                           ON p.products_id = op.products_id
+                                                      JOIN :table_products_description pd
+                                                           ON pd.products_id = p.products_id
+                                                      WHERE o.orders_status != 4
+                                                        AND pd.language_id = :language_id
+                                                        AND p.products_archive = 0
+                                                      GROUP BY p.products_id
+                                                      ORDER BY total_sold DESC,
+                                                               pd.products_name
+                                                      LIMIT :page_set_offset, 
+                                                          :page_set_max_results
                                                       ');
 
     $Qproducts->bindInt(':language_id', $CLICSHOPPING_Language->getId());
@@ -94,11 +98,10 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
       while ($Qproducts->fetch()) {
         ?>
         <tr>
-          <th scope="row"
-              width="50px"><?php echo HTML::link(CLICSHOPPING::link(null, 'A&Catalog\Products&Preview&pID=' . $Qproducts->valueInt('products_id')), HTML::image($CLICSHOPPING_Template->getImageDirectory() . 'icons/preview.gif', $CLICSHOPPING_Products->getDef('text_preview'))); ?></th>
+          <th scope="row" width="50px"><?php echo $Qproducts->valueInt('products_id'); ?></th>
           <td><?php echo $CLICSHOPPING_Image->getSmallImageAdmin($Qproducts->valueInt('products_id')); ?></td>
           <td><?php echo HTML::link(CLICSHOPPING::link(null, 'A&Catalog\Products&Preview&pID=' . $Qproducts->valueInt('products_id')), $Qproducts->value('products_name')); ?></td>
-          <td class="text-center"><?php echo $Qproducts->valueInt('products_ordered'); ?>&nbsp;</td>
+          <td class="text-center"><?php echo $Qproducts->valueInt('total_sold'); ?>&nbsp;</td>
           <td class="text-end">
             <div class="btn-group d-flex justify-content-end" role="group" aria-label="buttonGroup">
               <?php

@@ -17,7 +17,7 @@ use ClicShopping\OM\Apps;
  * Represents the administrative menu system and provides functionalities
  * to retrieve information about modules and their corresponding class instances.
  */
-class AdminMenu extends \ClicShopping\OM\ModulesAbstract
+class AdminMenu extends \ClicShopping\OM\Domains\ModulesAbstract
 {
   /**
    * Retrieves information about the specified app and key using the provided data.

@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Sites\ClicShoppingAdmin\Pages\Home\Actions\Configure;
 
+use ClicShopping\Apps\Configuration\ChatGpt\Sql\MariaDb\MariaDb;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\ChatGpt\Sql\MariaDb\MariaDb;
-
-class Update extends \ClicShopping\OM\PagesActionsAbstract
+class Update extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

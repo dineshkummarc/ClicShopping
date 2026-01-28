@@ -15,7 +15,7 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Shop\Pages\Checkout\Classes\CheckoutSuccess;
 use function is_array;
 
-class Success extends \ClicShopping\OM\PagesActionsAbstract
+class Success extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

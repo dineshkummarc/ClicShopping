@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Tools\EditLogError\Sites\ClicShoppingAdmin\Pages\Home;
 
+use ClicShopping\Apps\Tools\EditLogError\EditLogError;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Tools\EditLogError\EditLogError;
-
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

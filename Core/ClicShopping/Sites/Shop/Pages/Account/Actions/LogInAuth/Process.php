@@ -10,12 +10,11 @@
 
 namespace ClicShopping\Sites\Shop\Pages\Account\Actions\LogInAuth;
 
+use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
-
-class Process extends \ClicShopping\OM\PagesActionsAbstract
+class Process extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   private mixed $customer;
   private mixed $db;

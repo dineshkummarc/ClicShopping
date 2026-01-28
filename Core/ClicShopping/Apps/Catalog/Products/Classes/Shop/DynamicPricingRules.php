@@ -75,11 +75,16 @@ class DynamicPricingRules {
     $cache_key = 'dynamic_pricing_rules';
     $cache = new Cache($cache_key);
 // Try to get rules from cache
+    $cached_rules = null;
     $cached_rules = $cache->get();
+    if (!is_array($cached_rules)) {
+      $cached_rules = null;
+    }
 
     $stock = $this->getStock($product_id);
     $sales = $this->getSalesLast30Days($product_id);
     $isOnPromotion = $this->isProductOnPromotion($product_id);
+    $promotion_applied = false;
 
     if ($cached_rules === null) {
       // If not in cache, fetch from database
@@ -91,12 +96,12 @@ class DynamicPricingRules {
                                            rules_priority,
                                            rules_status,
                                            rules_status_special,
+                                           rules_status_promotion,
                                            customers_group
                                      FROM :table_dynamic_pricing_rules
                                      WHERE rules_status = 1
                                      ORDER BY rules_priority ASC
                                   ');
-      $Qrules->execute();
       $Qrules->execute();
       $cached_rules = $Qrules->fetchAll();
 
@@ -111,6 +116,7 @@ class DynamicPricingRules {
       $ruleType = $rule['rules_type'];
       $ruleValue = (float)$rule['rules_value'];
       $status_special = (int)$rule['rules_status_special'];
+      $status_promotion = (int)$rule['rules_status_promotion'];
       $rule_customer_group = (int)$rule['customers_group'];
 
       $variables = [
@@ -119,6 +125,7 @@ class DynamicPricingRules {
       ];
 
       // check ths condition is valid
+
       if ($this->evaluate($condition, $variables)) {
         if (($isOnPromotion && $status_special == 0) || ($rule_customer_group > 0 && $rule_customer_group != $customer_group_id)) {
           continue;
@@ -140,9 +147,45 @@ class DynamicPricingRules {
 
         $this->logVariation($rule_id, $product_id, $base_price, $finalPrice, $ruleName);
 
+        if ($status_promotion == 1) {
+          $promotion_applied = true;
+
+          if ($isOnPromotion === false) {
+            $insert_array = [
+              'products_id' => (int)$product_id,
+              'specials_new_products_price' => (float)$finalPrice,
+              'specials_date_added' => 'now()',
+              'status' => 1,
+              'customers_group_id' => 0
+            ];
+	    
+            $this->db->save('specials', $insert_array);
+	    
+            $isOnPromotion = true;
+          } else {
+            $update_array = [
+              'specials_new_products_price' => (float)$finalPrice,
+              'specials_last_modified' => 'now()',
+              'status' => 1
+            ];
+	    
+            $this->db->save('specials', $update_array, [
+              'products_id' => (int)$product_id,
+              'customers_group_id' => 0
+            ]);
+          }
+        }
+
         return $finalPrice;
       }
-}
+    }
+
+    if ($promotion_applied === false && $isOnPromotion === true) {
+      $this->db->delete('specials', [
+        'products_id' => (int)$product_id,
+        'customers_group_id' => 0
+      ]);
+    }
 
     return $base_price;
   }

@@ -139,10 +139,22 @@ class ResultValidator
 
       // Empty results are valid (no data matched the query)
       if (!empty($dataArray)) {
-        // Check for actual numeric values (not just placeholder text)
-        if (!$this->hasNumericData($dataArray)) {
-          $validationErrors[] = "No numeric data found in results";
+        // TASK 1.2: Check for actual numeric values (not just placeholder text)
+        // BUT allow results without numeric data if they have a valid interpretation
+        $hasNumericData = $this->hasNumericData($dataArray);
+        $hasInterpretation = isset($result['interpretation']) && !empty($result['interpretation']) ||
+                            isset($result['result']['interpretation']) && !empty($result['result']['interpretation']);
+        
+        if (!$hasNumericData && !$hasInterpretation) {
+          $validationErrors[] = "No numeric data found in results and no interpretation provided";
           return false;
+        }
+        
+        if (!$hasNumericData && $hasInterpretation && $this->debug) {
+          $this->logger->logSecurityEvent(
+            "Analytics result has no numeric data but has interpretation (valid)",
+            'info'
+          );
         }
       } else if ($this->debug) {
         $this->logger->logSecurityEvent(

@@ -11,13 +11,12 @@
 namespace ClicShopping\Sites\Shop\Pages\Checkout\Actions;
 
 use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\HttpRequest;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Shop\Shipping as Delivery;
 use function defined;
 use function is_array;
 
-class Shipping extends \ClicShopping\OM\PagesActionsAbstract
+class Shipping extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

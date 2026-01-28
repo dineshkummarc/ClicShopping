@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\Cronjob;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Cronjob extends \ClicShopping\OM\ConfigurableAppAbstract
+class Cronjob extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

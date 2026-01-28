@@ -10,8 +10,8 @@
 
 namespace ClicShopping\Apps\Payment\Stripe\Sites\Shop\Pages\ST;
 
-use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Payment\Stripe\Module\Payment\ST as PaymentStripeST;
+use ClicShopping\OM\Registry;
 
 /**
  * Stripe webhook handler for payment processing.
@@ -26,7 +26,7 @@ use ClicShopping\Apps\Payment\Stripe\Module\Payment\ST as PaymentStripeST;
  * @copyright 2008 - https://www.clicshopping.org
  * @license GPL 2 & MIT
  */
-class ST extends \ClicShopping\OM\PagesAbstract
+class ST extends \ClicShopping\OM\Domains\PagesAbstract
 {
   protected ?string $file = null;
   protected bool $use_site_template = false;

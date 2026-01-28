@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Report\StatsProductsNotification;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class StatsProductsNotification extends \ClicShopping\OM\ConfigurableAppAbstract
+class StatsProductsNotification extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

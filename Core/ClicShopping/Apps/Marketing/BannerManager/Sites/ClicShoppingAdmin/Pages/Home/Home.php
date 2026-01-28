@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Marketing\BannerManager\Sites\ClicShoppingAdmin\Pages\Home;
 
+use ClicShopping\Apps\Marketing\BannerManager\BannerManager;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Marketing\BannerManager\BannerManager;
-
-class Home extends \ClicShopping\OM\PagesAbstract
+class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

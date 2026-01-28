@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Customers\Gdpr;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Gdpr extends \ClicShopping\OM\ConfigurableAppAbstract
+class Gdpr extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_Gdpr_V1';

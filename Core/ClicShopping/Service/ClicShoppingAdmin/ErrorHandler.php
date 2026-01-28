@@ -19,7 +19,7 @@ use ClicShopping\OM\Registry;
  *
  * The ErrorHandler class implements the ServiceInterface to provide start and stop functionalities for the error handler service.
  */
-class ErrorHandler implements \ClicShopping\OM\ServiceInterface
+class ErrorHandler implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initiates the process by checking if the log directory is writable, and adds a message to the message stack if it is not.

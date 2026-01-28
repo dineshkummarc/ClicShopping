@@ -13,7 +13,7 @@ namespace ClicShopping\Sites\Shop\Pages\Account\Actions;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class AddressBook extends \ClicShopping\OM\PagesActionsAbstract
+class AddressBook extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

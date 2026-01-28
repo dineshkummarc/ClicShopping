@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Configuration\Weight;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Weight extends \ClicShopping\OM\ConfigurableAppAbstract
+class Weight extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_Weight_V1';

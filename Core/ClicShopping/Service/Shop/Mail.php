@@ -13,11 +13,12 @@ namespace ClicShopping\Service\Shop;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Mail as MailClass;
 use ClicShopping\OM\Registry;
+
 /**
  * This class implements the ServiceInterface and provides functionality
  * for initializing and managing the Mail service in the ClicShopping application.
  */
-class Mail implements \ClicShopping\OM\ServiceInterface
+class Mail implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the Mail class if the Mail.php file exists in the specified directory.

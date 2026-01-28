@@ -138,7 +138,7 @@ class TypeSafetyGuard
    */
   public static function logTypeMismatch(string $context, string $expected, string $actual): void
   {
-    error_log("⚠️  TYPE MISMATCH in {$context}");
+    error_log("[warning]️  TYPE MISMATCH in {$context}");
     error_log("   Expected: {$expected}");
     error_log("   Actual: {$actual}");
     error_log("   Stack trace: " . self::getCallerInfo());

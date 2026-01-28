@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\Apps;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Apps extends \ClicShopping\OM\ConfigurableAppAbstract
+class Apps extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

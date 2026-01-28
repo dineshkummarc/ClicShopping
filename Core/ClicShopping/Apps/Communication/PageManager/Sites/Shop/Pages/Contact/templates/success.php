@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Communication\PageManager\Sites\Shop\Pages\ContactSuccess;
 
+use ClicShopping\Apps\Communication\PageManager\PageManager as PageManagerApp;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Communication\PageManager\PageManager as PageManagerApp;
-
-class ContactSuccess extends \ClicShopping\OM\PagesAbstract
+class ContactSuccess extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $app;
 

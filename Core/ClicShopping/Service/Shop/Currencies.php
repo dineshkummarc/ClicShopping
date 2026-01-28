@@ -10,17 +10,17 @@
 
 namespace ClicShopping\Service\Shop;
 
+use ClicShopping\Apps\Configuration\Currency\Classes\Shop\Currencies as CurrenciesClass;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\Currency\Classes\Shop\Currencies as CurrenciesClass;
 /**
  * Service class responsible for managing the currency system in the shop.
  * This service initializes and configures the currency settings based on various factors
  * such as session data, URL parameters, and application defaults.
  */
-class Currencies implements \ClicShopping\OM\ServiceInterface
+class Currencies implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the application currency settings by verifying the existence of required files,

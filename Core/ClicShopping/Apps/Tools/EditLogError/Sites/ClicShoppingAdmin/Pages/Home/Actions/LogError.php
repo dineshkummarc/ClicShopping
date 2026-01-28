@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\EditLogError\Sites\ClicShoppingAdmin\Pages\Hom
 
 use ClicShopping\OM\Registry;
 
-class LogError extends \ClicShopping\OM\PagesActionsAbstract
+class LogError extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

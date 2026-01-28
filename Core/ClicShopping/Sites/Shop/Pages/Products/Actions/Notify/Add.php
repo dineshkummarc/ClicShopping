@@ -15,7 +15,7 @@ use ClicShopping\OM\Registry;
 use function count;
 use function is_array;
 
-class Add extends \ClicShopping\OM\PagesActionsAbstract
+class Add extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

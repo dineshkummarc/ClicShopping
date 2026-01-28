@@ -10,6 +10,6 @@
 
 namespace ClicShopping\Sites\Shop\Pages\Info;
 
-class Info extends \ClicShopping\OM\PagesAbstract
+class Info extends \ClicShopping\OM\Domains\PagesAbstract
 {
 }

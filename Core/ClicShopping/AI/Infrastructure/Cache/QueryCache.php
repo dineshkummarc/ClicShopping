@@ -2,6 +2,7 @@
 /**
  * Query Cache System for RAG Analytics
  * Orchestrates different cache backends (DB, File, Memcached, Redis)
+ * Reduces response times from 57s to < 1s for repeated queries
  * 
  * @copyright 2008 - https://www.clicshopping.org
  * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
@@ -20,38 +21,33 @@ use ClicShopping\AI\Infrastructure\Cache\SubQueryCache\CacheStatistics;
 use ClicShopping\AI\Infrastructure\Cache\RagCache;
 
 /**
- * Système de cache pour les requêtes SQL et leurs résultats
- * Réduit les temps de réponse de 57s à < 1s pour les requêtes répétées
- * Supporte: Database, File, Memcached, Redis
+ * Query Cache System
+ * Supports: Database, File, Memcached, Redis backends
  */
 #[AllowDynamicProperties]
 class QueryCache
 {
   private int $defaultTTL;
-  private int $maxCacheSize = 1000; // Nombre max d'entrées
+  private int $maxCacheSize = 1000;
   private bool $enabled = true;
   private bool $debug = false;
 
-  // Backend storage
-  private string $backend = 'database'; // 'database', 'file', 'memcached', 'redis'
+  private string $backend = 'database';
   private ?CacheStorage $dbStorage = null;
   private ?CacheFileStorage $fileStorage = null;
   private ?RagCache $ragCache = null;
 
-  // Sub-components
   private CacheCleanup $cleanup;
   private CacheStatistics $statistics;
   private mixed $db = null;
+  
   public function __construct()
   {
-    // Activer le cache par défaut sauf si explicitement désactivé
     $this->enabled = !defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') || CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
 
-    // 🆕 Use TechnicalConfig for cache TTL (default: 30 days = 2592000 seconds)
     $this->defaultTTL = CLICSHOPPING_APP_CHATGPT_RA_CACHE_TTL;
 
-    // Toujours initialiser $db (nécessaire même si cache désactivé)
     try {
       $this->db = Registry::get("Db");
       if ($this->db === null) {
@@ -62,7 +58,6 @@ class QueryCache
       $this->db = null;
     }
 
-    // Initialiser les composants de base
     $this->cleanup = new CacheCleanup($this->maxCacheSize, $this->debug);
     $this->statistics = new CacheStatistics();
 
@@ -73,9 +68,7 @@ class QueryCache
       return;
     }
 
-    // Déterminer le backend à utiliser
     $this->determineBackend();
-
 
     if ($this->debug) {
       error_log("QueryCache: Initialized with backend: {$this->backend}");
@@ -83,20 +76,19 @@ class QueryCache
   }
 
   /**
-   * Détermine quel backend de cache utiliser selon la configuration
+   * Determine which cache backend to use
+   * Priority: Memcached > Redis > Database > File
+   * 
+   * @return void
    */
   private function determineBackend(): void
   {
-    // Priorité: Memcached > Redis > Database > File
-
     if (defined('USE_MEMCACHED') && USE_MEMCACHED === 'True') {
       $this->backend = 'memcached';
       $this->ragCache = new RagCache(true);
       
-      // Check if RagCache initialized successfully
       $stats = $this->ragCache->getStats();
       if ($stats['backend'] === 'none') {
-        // RagCache failed to initialize, fallback to database
         if ($this->debug) {
           error_log("QueryCache: RagCache initialization failed, falling back to database");
         }
@@ -115,10 +107,8 @@ class QueryCache
       $this->backend = 'redis';
       $this->ragCache = new RagCache(true);
       
-      // Check if RagCache initialized successfully
       $stats = $this->ragCache->getStats();
       if ($stats['backend'] === 'none') {
-        // RagCache failed to initialize, fallback to database
         if ($this->debug) {
           error_log("QueryCache: RagCache initialization failed, falling back to database");
         }
@@ -133,9 +123,7 @@ class QueryCache
       return;
     }
 
-    // Vérifier si la table existe pour le backend database
     try {
-      // Utiliser le backend database par défaut
       $this->backend = 'database';
       $this->dbStorage = new CacheStorage($this->debug);
 
@@ -149,7 +137,6 @@ class QueryCache
       }
     }
 
-    // Fallback sur fichier
     $this->backend = 'file';
     $this->fileStorage = new CacheFileStorage($this->debug);
 
@@ -161,11 +148,11 @@ class QueryCache
 
 
   /**
-   * Récupère une requête SQL depuis le cache
+   * Get cached SQL query and results
    * 
-   * @param string $userQuery Question de l'utilisateur
-   * @param array $context Contexte additionnel
-   * @return array|null ['sql' => string, 'results' => array, 'timestamp' => int] ou null
+   * @param string $userQuery User question
+   * @param array $context Additional context
+   * @return array|null Cached data or null
    */
   public function get(string $userQuery, array $context = []): ?array
   {
@@ -186,12 +173,10 @@ class QueryCache
           if ($result !== null) {
             $this->dbStorage->incrementHitCount($cacheKey);
             
-            // Transform created_at (MySQL datetime) to timestamp (Unix timestamp)
             if (isset($result['created_at']) && !isset($result['timestamp'])) {
               $result['timestamp'] = strtotime($result['created_at']);
             }
             
-            // Add backend information
             $result['backend'] = 'database';
           }
           return $result;
@@ -209,18 +194,19 @@ class QueryCache
   }
 
   /**
-   * Récupère depuis Memcached/Redis via RagCache
+   * Get from Memcached/Redis via RagCache
+   * 
+   * @param string $cacheKey Cache key
+   * @return array|null Cached data or null
    */
   private function getFromMemoryBackend(string $cacheKey): ?array
   {
     if ($this->ragCache === null) {
-      // Fallback to database if RagCache not available
       if ($this->debug) {
         error_log("QueryCache: RagCache not available, using database");
       }
       $result = $this->dbStorage->get($cacheKey);
       
-      // Transform created_at to timestamp for consistency
       if ($result !== null && isset($result['created_at']) && !isset($result['timestamp'])) {
         $result['timestamp'] = strtotime($result['created_at']);
         $result['backend'] = 'database';
@@ -252,14 +238,14 @@ class QueryCache
   }
 
   /**
-   * Stocke une requête SQL, ses résultats et son interprétation dans le cache
+   * Store SQL query, results and interpretation in cache
    * 
-   * @param string $userQuery Question de l'utilisateur
-   * @param string $sqlQuery Requête SQL générée
-   * @param array $results Résultats de la requête
-   * @param array $context Contexte additionnel (interpretation, entity_id, entity_type)
-   * @param int|null $ttl Durée de vie en secondes
-   * @return bool Succès
+   * @param string $userQuery User question
+   * @param string $sqlQuery Generated SQL query
+   * @param array $results Query results
+   * @param array $context Additional context
+   * @param int|null $ttl Time to live in seconds
+   * @return bool Success
    */
   public function set(string $userQuery, string $sqlQuery, array $results, array $context = [], ?int $ttl = null): bool
   {
@@ -271,10 +257,8 @@ class QueryCache
       $cacheKey = CacheKeyGenerator::generate($userQuery, $context);
       $ttl = $ttl ?? $this->defaultTTL;
 
-      // Extraire les données du contexte
       $interpretation = $context['interpretation'] ?? null;
       
-      // 🔧 FIX: Ensure interpretation is always a string (not an array)
       if (is_array($interpretation)) {
         $interpretation = json_encode($interpretation, JSON_UNESCAPED_UNICODE);
       }
@@ -282,7 +266,6 @@ class QueryCache
       $entityId = $context['entity_id'] ?? null;
       $entityType = $context['entity_type'] ?? null;
 
-      // Prepare cache data
       $cacheData = [
         'sql' => $sqlQuery,
         'results' => $results,
@@ -315,18 +298,22 @@ class QueryCache
   }
 
   /**
-   * Stocke dans Memcached/Redis via RagCache
+   * Store to Memcached/Redis via RagCache
+   * 
+   * @param string $cacheKey Cache key
+   * @param array $cacheData Data to cache
+   * @param int $ttl Time to live
+   * @return bool Success
    */
   private function setToMemoryBackend(string $cacheKey, array $cacheData, int $ttl): bool
   {
     if ($this->ragCache === null) {
-      // Fallback to database if RagCache not available
       if ($this->debug) {
         error_log("QueryCache: RagCache not available, using database");
       }
       return $this->setToDatabase(
         $cacheKey,
-        '', // userQuery not needed for database fallback
+        '',
         $cacheData['sql'],
         $cacheData['results'],
         $cacheData['interpretation'],
@@ -352,7 +339,17 @@ class QueryCache
   }
 
   /**
-   * Stocke dans la base de données
+   * Store to database
+   * 
+   * @param string $cacheKey Cache key
+   * @param string $userQuery User question
+   * @param string $sqlQuery SQL query
+   * @param array $results Query results
+   * @param string|null $interpretation Interpretation
+   * @param int|null $entityId Entity ID
+   * @param string|null $entityType Entity type
+   * @param int $ttl Time to live
+   * @return bool Success
    */
   private function setToDatabase(string $cacheKey, string $userQuery, string $sqlQuery, array $results, ?string $interpretation, ?int $entityId, ?string $entityType, int $ttl): bool
   {
@@ -361,10 +358,8 @@ class QueryCache
       return false;
     }
 
-    // Vérifier la taille du cache
     $this->cleanupIfNeeded();
 
-    // Insérer ou mettre à jour
     $query = $this->db->prepare("
       INSERT INTO :table_rag_query_cache
       (cache_key, user_query, sql_query, query_results, interpretation, entity_id, entity_type, created_at, expires_at, hit_count)
@@ -400,11 +395,11 @@ class QueryCache
   }
 
   /**
-   * Invalide une entrée de cache
+   * Invalidate cache entry
    * 
-   * @param string $userQuery Question de l'utilisateur
-   * @param array $context Contexte additionnel
-   * @return bool Succès
+   * @param string $userQuery User question
+   * @param array $context Additional context
+   * @return bool Success
    */
   public function invalidate(string $userQuery, array $context = []): bool
   {
@@ -421,8 +416,6 @@ class QueryCache
             }
             return $success;
           }
-          // Fallback to database if RagCache not available
-          // Fall through to database case
 
         case 'database':
           $query = $this->db->prepare("
@@ -452,9 +445,9 @@ class QueryCache
   }
 
   /**
-   * Vide tout le cache
+   * Flush all cache
    * 
-   * @return bool Succès
+   * @return bool Success
    */
   public function flush(): bool
   {
@@ -469,8 +462,6 @@ class QueryCache
             }
             return $success;
           }
-          // Fallback to database if RagCache not available
-          // Fall through to database case
 
         case 'database':
           $this->db->query("TRUNCATE TABLE :table_rag_query_cache");
@@ -566,7 +557,6 @@ class QueryCache
         'enabled' => $this->enabled
       ];
 
-      // Add RagCache stats if using memory backend
       if (($this->backend === 'memcached' || $this->backend === 'redis') && $this->ragCache !== null) {
         $ragStats = $this->ragCache->getStats();
         $stats = array_merge($stats, [
@@ -581,7 +571,6 @@ class QueryCache
         ]);
       }
 
-      // Add database stats if using database backend or as fallback
       if ($this->backend === 'database' || $this->dbStorage !== null) {
         $statsQuery = $this->db->query("
           SELECT 
@@ -626,9 +615,10 @@ class QueryCache
 
 
   /**
-   * Incrémente le compteur de hits
+   * Increment hit counter
    *
-   * @param string $cacheKey Clé de cache
+   * @param string $cacheKey Cache key
+   * @return void
    */
   private function incrementHitCount(string $cacheKey): void
   {

@@ -23,9 +23,9 @@
         "stripe/stripe-php": "^19.1",
         "doctrine/orm": "^3.6",
         "symfony/cache": "^8.0",
-        "mattketmo/email-checker": "^2.5",
         "symfony/http-client": "^8.0",
-        "theodo-group/llphant": "^0.11.10"
+        "theodo-group/llphant": "^0.11.10",
+        "mattketmo/email-checker": "^3.0"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"

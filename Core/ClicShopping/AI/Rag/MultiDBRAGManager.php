@@ -18,13 +18,13 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
-use ClicShopping\AI\Domains\CoreAI\Embedding\NewVector;
+use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
 use ClicShopping\AI\Helper\Formatter\ResultFormatter;
-use ClicShopping\AI\Domains\Analytics\Agent\AnalyticsAgent;
+use ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent;
 
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
@@ -64,7 +64,7 @@ class MultiDBRAGManager
 
   private mixed $resultFormatter;
   private int $userId;
-  
+
   // Reranking properties (Task 2.14.3 - LLPhant reranking integration)
   private ?LLMReranker $reranker = null;
   private bool $useReranking = false;
@@ -108,7 +108,7 @@ class MultiDBRAGManager
     // 🔥 DEBUG CRITIQUE
     if ($this->debug) {
       error_log("═══════════════════════════════════════════════════════");
-      error_log("🚀 MultiDBRAGManager::__construct() START");
+      error_log("[info] MultiDBRAGManager::__construct() START");
       error_log("Model: " . ($model ?? 'null'));
       error_log("TableNames provided: " . print_r($tableNames, true));
       error_log("Debug enabled: " . ($this->debug ? 'YES' : 'NO'));
@@ -128,7 +128,7 @@ class MultiDBRAGManager
     // 🔥 APPEL CRITIQUE : Initialize vector stores
     if ($this->debug) {
       error_log("───────────────────────────────────────────────────");
-      error_log("📋 About to call initializeVectorStores()...");
+      error_log("[info] About to call initializeVectorStores()...");
       error_log("TableNames param: " . (empty($tableNames) ? 'EMPTY (will auto-detect)' : implode(', ', $tableNames)));
     }
 
@@ -136,7 +136,7 @@ class MultiDBRAGManager
 
     if ($this->debug) {
       error_log("───────────────────────────────────────────────────");
-      error_log("📊 After initializeVectorStores():");
+      error_log("[stats] After initializeVectorStores():");
       error_log("VectorStores count: " . count($this->vectorStores));
       error_log("VectorStores keys: " . implode(', ', array_keys($this->vectorStores)));
 
@@ -148,46 +148,46 @@ class MultiDBRAGManager
     $this->embeddingGenerator = $this->createEmbeddingGenerator();
 
     // Initialize LLMReranker for better document relevance (Task 2.14.3)
-    if (defined('CLICSHOPPING_APP_CHATGPT_RA_USE_RERANKING') 
-        && CLICSHOPPING_APP_CHATGPT_RA_USE_RERANKING === 'True') {
-      
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_USE_RERANKING')
+      && CLICSHOPPING_APP_CHATGPT_RA_USE_RERANKING === 'True') {
+
       $this->useReranking = true;
-      
+
       try {
         // Set OpenAI API key as environment variable (required by LLPhant)
         Gpt::getEnvironment();
-        
+
         // Create OpenAI chat instance for reranking
         $config = new OpenAIConfig();
-        $config->model = defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') 
-                         ? CLICSHOPPING_APP_CHATGPT_CH_MODEL 
-                         : 'gpt-4o-mini';
-        
+        $config->model = defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL')
+          ? CLICSHOPPING_APP_CHATGPT_CH_MODEL
+          : 'gpt-4o-mini';
+
         $chat = new OpenAIChat($config);
-        
+
         // Number of documents to return after reranking
         $nrOfOutputDocuments = CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT;
-        
+
         $this->reranker = new LLMReranker($chat, $nrOfOutputDocuments);
-        
+
         if ($this->debug) {
-          error_log("✅ LLMReranker initialized with {$nrOfOutputDocuments} output documents");
+          error_log(" LLMReranker initialized with {$nrOfOutputDocuments} output documents");
         }
       } catch (\Exception $e) {
-        error_log("❌ Failed to initialize LLMReranker: " . $e->getMessage());
+        error_log("[error] Failed to initialize LLMReranker: " . $e->getMessage());
         $this->useReranking = false;
         $this->reranker = null;
       }
     } else {
       $this->useReranking = false;
       if ($this->debug) {
-        error_log("ℹ️ Reranking disabled in configuration");
+        error_log("[info]️ Reranking disabled in configuration");
       }
     }
 
     if ($this->debug) {
-      error_log("🚀 MultiDBRAGManager::__construct() END");
-      error_log("═══════════════════════════════════════════════════════");
+      error_log("[info] MultiDBRAGManager::__construct() END");
+      error_log("------------------------------------------");
     }
   }
 
@@ -197,15 +197,27 @@ class MultiDBRAGManager
    * @return array
    */
   /**
-   * Returns all known embedding tables
-   * 
+   * Returns all known embedding tables (fully dynamic)
+   *
    * This method dynamically detects all embedding tables in the database
-   * by querying INFORMATION_SCHEMA. It also includes a static fallback list
-   * for known tables in case the database query fails.
-   * 
-   * The method will find ANY table ending with '_embedding', making it
-   * fully dynamic and extensible.
-   * 
+   * by querying INFORMATION_SCHEMA. The method will find ANY table ending
+   * with '_embedding', making it fully dynamic and extensible.
+   *
+   * Strategy:
+   * 1. Primary: Dynamic detection via INFORMATION_SCHEMA (finds ALL *_embedding tables)
+   * 2. Fallback: Returns empty array if detection fails
+   *
+   * No Hardcoded Lists:
+   * - No hardcoded entity types in Core or Domain
+   * - System automatically discovers all embedding tables
+   * - New embeddings (including future parallel reads) are auto-detected
+   * - If dynamic detection fails, empty array prevents stale data
+   *
+   * Adding New Embeddings:
+   * - Simply create the embedding table in database (e.g., clic_new_entity_embedding)
+   * - Dynamic detection will automatically find it
+   * - No code changes needed
+   *
    * @param bool $useCache Whether to use cached results (default: true)
    * @return array List of all embedding table names
    */
@@ -213,14 +225,14 @@ class MultiDBRAGManager
   {
     // Static cache to avoid repeated database queries
     static $cachedTables = null;
-    
+
     if ($useCache && $cachedTables !== null) {
       return $cachedTables;
     }
-    
+
     $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     $dbName = CLICSHOPPING::getConfig('db_database');
-    
+
     try {
       // Try to dynamically detect all *_embedding tables from database
       $sql = "SELECT TABLE_NAME 
@@ -228,15 +240,15 @@ class MultiDBRAGManager
               WHERE TABLE_SCHEMA = :dbName 
               AND TABLE_NAME LIKE :pattern 
               ORDER BY TABLE_NAME";
-      
+
       // 🔧 TASK 4.4.1 PHASE 7: Migrated to DoctrineOrm
       $detectedTables = DoctrineOrm::select($sql, [
         'dbName' => $dbName,
         'pattern' => $prefix . '%_embedding'
       ]);
-      
+
       $detectedTables = array_column($detectedTables, 'TABLE_NAME');
-      
+
       if (!empty($detectedTables)) {
         if ($this->debug) {
           $this->securityLogger->logSecurityEvent(
@@ -245,11 +257,11 @@ class MultiDBRAGManager
             ['tables' => $detectedTables]
           );
         }
-        
+
         $cachedTables = $detectedTables;
         return $detectedTables;
       }
-      
+
     } catch (\Exception $e) {
       // Log error but continue with fallback
       $this->securityLogger->logSecurityEvent(
@@ -257,32 +269,20 @@ class MultiDBRAGManager
         'warning'
       );
     }
-    
-    // Fallback: Static list of known tables
-    $knownTables = [
-      $prefix . 'products_embedding',
-      $prefix . 'categories_embedding',
-      $prefix . 'pages_manager_embedding',
-      $prefix . 'orders_embedding',
-      $prefix . 'manufacturers_embedding',
-      $prefix . 'suppliers_embedding',
-      $prefix . 'reviews_embedding',
-      $prefix . 'reviews_sentiment_embedding',
-      $prefix . 'return_orders_embedding',
-      $prefix . 'rag_conversation_memory_embedding',
-      $prefix . 'rag_correction_patterns_embedding',
-      $prefix . 'rag_web_cache_embedding'
-    ];
-    
+
+    // Fallback: Return empty array (no hardcoded list)
+    // The dynamic detection above handles ALL embedding tables automatically.
+    // If dynamic detection fails, it's better to return empty than use stale hardcoded list.
+    // This ensures the system adapts to new embeddings (including future parallel reads).
     if ($this->debug) {
       $this->securityLogger->logSecurityEvent(
-        "Using fallback static list of " . count($knownTables) . " embedding tables",
-        'info'
+        "No embedding tables detected - returning empty array",
+        'warning'
       );
     }
-    
-    $cachedTables = $knownTables;
-    return $knownTables;
+
+    $cachedTables = [];
+    return [];
   }
 
   /**
@@ -290,7 +290,8 @@ class MultiDBRAGManager
    *
    * @return EmbeddingGeneratorInterface Instance of the embedding generator
    */
-  private function getEmbeddingGenerator(): EmbeddingGeneratorInterface {
+  private function getEmbeddingGenerator(): EmbeddingGeneratorInterface
+  {
     if (!isset($this->embeddingGenerator)) {
       $this->embeddingGenerator = $this->createEmbeddingGenerator();
     }
@@ -305,8 +306,7 @@ class MultiDBRAGManager
    */
   private function createEmbeddingGenerator(): EmbeddingGeneratorInterface
   {
-    return new class(Gpt::class) implements EmbeddingGeneratorInterface
-    {
+    return new class(Gpt::class) implements EmbeddingGeneratorInterface {
       private $gptClass;
 
       /**
@@ -371,7 +371,8 @@ class MultiDBRAGManager
        *
        * @return int Length of the embedding vector
        */
-      public function getEmbeddingLength(): int {
+      public function getEmbeddingLength(): int
+      {
         return NewVector::getEmbeddingLength();
       }
     };
@@ -386,14 +387,14 @@ class MultiDBRAGManager
   {
     if ($this->debug) {
       error_log("═══════════════════════════════════════════════════════");
-      error_log("🔧 initializeVectorStores() CALLED");
+      error_log("[info] initializeVectorStores() CALLED");
       error_log("Input tableNames: " . (empty($tableNames) ? 'EMPTY' : implode(', ', $tableNames)));
     }
 
     // 🔥 DÉCISION : Utiliser les tables fournies OU auto-détection
     if (empty($tableNames)) {
       if ($this->debug) {
-        error_log("📋 No tables provided, using auto-detection...");
+        error_log("[info] No tables provided, using auto-detection...");
       }
 
       try {
@@ -407,7 +408,7 @@ class MultiDBRAGManager
           error_log(" Auto-detection failed: " . $e->getMessage());
         }
 
-        $this->securityLogger->logSecurityEvent( "Error auto-detecting embedding tables: " . $e->getMessage(), 'error');
+        $this->securityLogger->logSecurityEvent("Error auto-detecting embedding tables: " . $e->getMessage(), 'error');
 
         // Fallback ultime
         $prefix = CLICSHOPPING::getConfig('db_table_prefix');
@@ -417,11 +418,11 @@ class MultiDBRAGManager
 
     if ($this->debug) {
       error_log("──────────────────────────────────────────────────");
-      error_log("📊 Tables to initialize: " . implode(", ", $tableNames));
+      error_log("[stats] Tables to initialize: " . implode(", ", $tableNames));
     }
 
     if (empty($tableNames)) {
-      error_log("❌❌❌ CRITICAL: No tables to initialize! ❌❌❌");
+      error_log("[error] CRITICAL: No tables to initialize!");
       return;
     }
 
@@ -433,7 +434,7 @@ class MultiDBRAGManager
       try {
         if ($this->debug) {
           error_log("──────────────────────────────────────────────────");
-          error_log("🔧 Creating VectorStore for: {$tableName}");
+          error_log("[info] Creating VectorStore for: {$tableName}");
         }
 
         // Vérifier que la table existe avant de créer le VectorStore
@@ -441,12 +442,12 @@ class MultiDBRAGManager
           if ($this->debug) {
             error_log("Table {$tableName} does not exist, skipping");
           }
-	  
+
           $failCount++;
           continue;
         }
 
-        
+
         // Création du VectorStore
         $vectorStore = new MariaDBVectorStore($this->getEmbeddingGenerator(), $tableName);
 
@@ -469,14 +470,14 @@ class MultiDBRAGManager
           error_log("Trace: " . $e->getTraceAsString());
         }
 
-       $this->securityLogger->logSecurityEvent("Error while initializing the vector store for the table {$tableName}: " . $e->getMessage(), 'error');
+        $this->securityLogger->logSecurityEvent("Error while initializing the vector store for the table {$tableName}: " . $e->getMessage(), 'error');
 
       }
     }
 
     if ($this->debug) {
       error_log("═══════════════════════════════════════════════════════");
-      error_log("📊 INITIALIZATION COMPLETE");
+      error_log("[stats] INITIALIZATION COMPLETE");
       error_log("Tables attempted: " . count($tableNames));
       error_log("Success: {$successCount}");
       error_log("Failed: {$failCount}");
@@ -486,7 +487,7 @@ class MultiDBRAGManager
       if (empty($this->vectorStores)) {
         error_log("CRITICAL: vectorStores is STILL EMPTY! ");
       } else {
-        error_log("SUCCESS: vectorStores initialized with " . count($this->vectorStores) . " stores ✅✅✅");
+        error_log("SUCCESS: vectorStores initialized with " . count($this->vectorStores) . " stores ");
       }
       error_log("═══════════════════════════════════════════════════════");
     }
@@ -516,7 +517,7 @@ class MultiDBRAGManager
           if (!DoctrineOrm::createTableStructure($tableName)) {
             throw new \Exception("Unable to create the table {$tableName}");
           }
-}
+        }
 
         // Ajouter la table aux vector stores
         $this->vectorStores[$tableName] = new MariaDBVectorStore($this->embeddingGenerator, $tableName);
@@ -549,6 +550,7 @@ class MultiDBRAGManager
 
   /**
    * Searches for similar documents across all configured tables
+   * Uses parallel search (UNION ALL) if enabled, falls back to sequential otherwise
    *
    * @param string $query Search query
    * @param int $limit Maximum number of results per table
@@ -571,206 +573,28 @@ class MultiDBRAGManager
 
       $this->logSearchQuery($query, $array_log);
 
-      $allResults = [];
+      // Check if parallel search is enabled
+      $parallelEnabled = defined('CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_ENABLED') 
+        && CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_ENABLED === 'True';
 
-      if ($this->debug) {
-        error_log("=== searchDocuments START ===");
-        error_log("Query: {$query}");
-        error_log("Limit: {$limit}, MinScore: {$minScore}");
-        error_log("VectorStores count: " . count($this->vectorStores));
-      }
-
-      // VÉRIFICATION CRITIQUE
-      if (empty($this->vectorStores)) {
-        error_log("CRITICAL: No vector stores! Attempting to reinitialize...");
-
-        // Tenter la réinitialisation
-        $this->initializeVectorStores([]);
-
-        if (empty($this->vectorStores)) {
-          error_log("FAILED: Still no vector stores after reinitialization");
-          return [
-            'documents' => [],
-            'audit_metadata' => [
-              'error' => 'No vector stores initialized',
-              'attempted_reinitialization' => true
-            ]
-          ];
-        }
-      }
-
-      // Générer l'embedding
-      error_log("Generating embedding for query...");
-      $queryEmbedding = $this->embeddingGenerator->embedText($query);
-      error_log("Embedding generated, length: " . count($queryEmbedding));
-
-
-      // Créer le filtre
-      $filter = null;
-
-      if ($languageId !== null || $entityType !== null) {
-        $filter = function($metadata) use ($languageId, $entityType) {
-          $match = true;
-          
-          // Only filter by language_id if it exists in metadata
-          // Some tables (like orders) don't have language_id column
-          if ($languageId !== null && isset($metadata['language_id'])) {
-            $match = $match && ($metadata['language_id'] == $languageId);
-          }
-          // If language_id filter is requested but column doesn't exist, accept the document
-          // This allows orders (no language_id) to appear in results
-          
-          if ($entityType !== null && isset($metadata['entity_type'])) {
-            $match = $match && ($metadata['entity_type'] == $entityType);
-          }
-          
-          return $match;
-        };
-      }
-
-      // RECHERCHE PRIORITAIRE
-      // 🔧 FIX: Increase limit before filtering to ensure we get enough results after PHP filter
-      // The SQL LIMIT happens BEFORE the PHP filter, so if we request 10 results but filter by language_id,
-      // we might get 0 results if the first 10 aren't in the target language
-      // Solution: Request more results (limit * 5) to ensure we have enough after filtering
-      $sqlLimit = $limit * 5;  // Request 5x more results to account for filtering
-      
-      foreach ($this->knownEmbeddingTable() as $priorityTable) {
-        if (isset($this->vectorStores[$priorityTable])) {
-          error_log("Searching in priority table: {$priorityTable}");
-
-          try {
-// Check here  $results = 0;
-            $results = $this->vectorStores[$priorityTable]->similaritySearch($queryEmbedding, $sqlLimit, max(0.01, $minScore - 0.15), $filter);
-            $resultsArray = is_array($results) ? $results : iterator_to_array($results);
-
-            foreach ($resultsArray as $document) {
-              // 🔧 FIX: Only apply priority boost to documents that match the language filter
-              // This prevents Orders (no language_id) from getting boosted above PageManager
-              if (isset($document->metadata['score'])) {
-                // Only boost if document has language_id AND it matches the requested language
-                // OR if no language filter was requested
-                $shouldBoost = ($languageId === null) || 
-                               (isset($document->metadata['language_id']) && $document->metadata['language_id'] == $languageId);
-                
-                if ($shouldBoost) {
-                  $document->metadata['score'] = min(1.0, $document->metadata['score'] * 1.15);
-                  $document->metadata['priority_boost'] = true;
-                }
-              }
-              $allResults[] = $document;
-            }
-          } catch (\Exception $e) {
-            error_log("Priority search error in {$priorityTable}: " . $e->getMessage());
-          }
-        }
-      }
-
-      // 🔧 FIX: Sort all results by score BEFORE taking top N
-      // This ensures PageManager (high score + boost) ranks above Categories/Manufacturers
-      usort($allResults, function($a, $b) {
-        $scoreA = $a->metadata['score'] ?? 0;
-        $scoreB = $b->metadata['score'] ?? 0;
-        return $scoreB <=> $scoreA; // Descending order (highest score first)
-      });
-      
-      if ($this->debug) {
-        error_log("📊 After sorting by score, top 5 results:");
-        foreach (array_slice($allResults, 0, 5) as $i => $doc) {
-          $score = $doc->metadata['score'] ?? 0;
-          $entityType = $doc->metadata['entity_type'] ?? 'unknown';
-          $entityId = $doc->metadata['entity_id'] ?? 'unknown';
-          $boost = isset($doc->metadata['priority_boost']) ? '✓' : '✗';
-          error_log("  #" . ($i+1) . " - Score: " . number_format($score, 4) . " - Boost: {$boost} - Type: {$entityType} - ID: {$entityId}");
-        }
-      }
-      
-      // Prepare audit metadata
-      $auditMetadata = [
-        'priority_table' => $priorityTable ?? 'none',
-        'tables_searched' => count($this->vectorStores),
-        'initial_results_count' => count($allResults)
-      ];
-
-      // Apply LLMReranker if enabled (Task 2.14.3)
-      if ($this->debug) {
-        error_log("🔍 Reranking check:");
-        error_log("  - useReranking: " . ($this->useReranking ? 'true' : 'false'));
-        error_log("  - reranker is null: " . ($this->reranker === null ? 'true' : 'false'));
-        error_log("  - allResults count: " . count($allResults));
-      }
-      
-      if ($this->useReranking && $this->reranker !== null && count($allResults) > 0) {
+      if ($parallelEnabled) {
         try {
           if ($this->debug) {
-            error_log("🔄 Applying LLMReranker to improve relevance...");
-            error_log("Query for reranking: {$query}");
-            error_log("Documents before reranking: " . count($allResults));
+            error_log("🚀 Parallel search enabled - using UNION ALL approach");
           }
-          
-          // Get the configured number of output documents for reranking
-          // We send 2-3x more documents than we want back to give the LLM options
-          $rerankingOutputCount = CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT;
-          
-          // Send 2x the output count to the reranker (but not more than available)
-          $initialLimit = min(count($allResults), $rerankingOutputCount * 2);
-          $documentsForReranking = array_slice($allResults, 0, $initialLimit);
-          
-          if ($this->debug) {
-            error_log("Reranking {$initialLimit} documents to get top {$rerankingOutputCount}");
-          }
-          
-          // Apply LLMReranker - this will reorder documents by relevance
-          // transformDocuments expects: array of questions, array of documents
-          $rerankedDocuments = $this->reranker->transformDocuments([$query], $documentsForReranking);
-          
-          if ($this->debug) {
-            error_log("✅ Reranking complete: " . count($rerankedDocuments) . " documents");
-            
-            // Log reranked order for debugging
-            foreach ($rerankedDocuments as $i => $doc) {
-              $preview = substr($doc->content, 0, 100);
-              $score = $doc->metadata['score'] ?? 0;
-              error_log("Reranked #{$i} (score: {$score}): {$preview}...");
-            }
-          }
-          
-          // Use reranked documents
-          $allResults = $rerankedDocuments;
-          
-          // Add reranking metadata
-          $auditMetadata['reranking_applied'] = true;
-          $auditMetadata['reranking_input_count'] = $initialLimit;
-          $auditMetadata['reranking_output_count'] = count($rerankedDocuments);
-          $auditMetadata['final_results_count'] = count($allResults);
-          
+          return $this->searchDocumentsParallel($query, $limit, $minScore, $languageId, $entityType);
         } catch (\Exception $e) {
-          error_log("❌ Reranking failed: " . $e->getMessage());
-          error_log("Falling back to original order");
-          
-          // Fallback: use original order, just take top N
-          $allResults = array_slice($allResults, 0, $limit);
-          $auditMetadata['reranking_failed'] = true;
-          $auditMetadata['reranking_error'] = $e->getMessage();
-          $auditMetadata['final_results_count'] = count($allResults);
-        }
-      } else {
-        // No reranking, just take top N by similarity score
-        $allResults = array_slice($allResults, 0, $limit);
-        $auditMetadata['reranking_applied'] = false;
-        $auditMetadata['final_results_count'] = count($allResults);
-        
-        if ($this->debug) {
-          error_log("ℹ️ Reranking disabled or not available, using top {$limit} by similarity");
+          error_log("⚠️ Parallel search failed, falling back to sequential: " . $e->getMessage());
+          // Fallback to sequential
         }
       }
 
-      $result = [
-        'documents' => $allResults,
-        'audit_metadata' => $auditMetadata
-      ];
+      // Sequential search (current implementation)
+      if ($this->debug) {
+        error_log("🔄 Using sequential search");
+      }
+      return $this->searchDocumentsSequential($query, $limit, $minScore, $languageId, $entityType);
 
-      return $result;
     } catch (\Exception $e) {
       error_log("EXCEPTION in searchDocuments: " . $e->getMessage());
       error_log("Trace: " . $e->getTraceAsString());
@@ -780,6 +604,486 @@ class MultiDBRAGManager
         'audit_metadata' => ['error' => $e->getMessage()]
       ];
     }
+  }
+
+  /**
+   * Sequential search implementation (original logic)
+   * Searches tables one by one
+   *
+   * @param string $query Search query
+   * @param int $limit Maximum number of results per table
+   * @param float $minScore Minimum similarity score (0-1)
+   * @param int|null $languageId Language ID for filtering results
+   * @param string|null $entityType Entity type for filtering results
+   * @return array Array of matching documents with similarity scores
+   */
+  private function searchDocumentsSequential(string $query, int $limit, float $minScore, ?int $languageId, ?string $entityType): array
+  {
+    $allResults = [];
+
+    if ($this->debug) {
+      error_log("=== searchDocuments START (Sequential) ===");
+      error_log("Query: {$query}");
+      error_log("Limit: {$limit}, MinScore: {$minScore}");
+      error_log("VectorStores count: " . count($this->vectorStores));
+    }
+
+    // VÉRIFICATION CRITIQUE
+    if (empty($this->vectorStores)) {
+      error_log("CRITICAL: No vector stores! Attempting to reinitialize...");
+
+      // Tenter la réinitialisation
+      $this->initializeVectorStores([]);
+
+      if (empty($this->vectorStores)) {
+        error_log("FAILED: Still no vector stores after reinitialization");
+        return [
+          'documents' => [],
+          'audit_metadata' => [
+            'error' => 'No vector stores initialized',
+            'attempted_reinitialization' => true
+          ]
+        ];
+      }
+    }
+
+    // Générer l'embedding
+    error_log("Generating embedding for query...");
+    $queryEmbedding = $this->embeddingGenerator->embedText($query);
+    error_log("Embedding generated, length: " . count($queryEmbedding));
+
+
+    // Create filter
+    $filter = null;
+
+    if ($languageId !== null || $entityType !== null) {
+      $filter = function ($metadata) use ($languageId, $entityType) {
+        $match = true;
+
+        // Only filter by language_id if it exists in metadata
+        // Some tables (like orders) don't have language_id column
+        if ($languageId !== null && isset($metadata['language_id'])) {
+          $match = $match && ($metadata['language_id'] == $languageId);
+        }
+        // If language_id filter is requested but column doesn't exist, accept the document
+        // This allows orders (no language_id) to appear in results
+
+        if ($entityType !== null && isset($metadata['entity_type'])) {
+          $match = $match && ($metadata['entity_type'] == $entityType);
+        }
+
+        return $match;
+      };
+    }
+
+    // RECHERCHE PRIORITAIRE
+    // 🔧 FIX: Increase limit before filtering to ensure we get enough results after PHP filter
+    // The SQL LIMIT happens BEFORE the PHP filter, so if we request 10 results but filter by language_id,
+    // we might get 0 results if the first 10 aren't in the target language
+    // Solution: Request more results (limit * 5) to ensure we have enough after filtering
+    $sqlLimit = $limit * 5;  // Request 5x more results to account for filtering
+
+    foreach ($this->knownEmbeddingTable() as $priorityTable) {
+      if (isset($this->vectorStores[$priorityTable])) {
+        error_log("Searching in priority table: {$priorityTable}");
+
+        try {
+          $results = $this->vectorStores[$priorityTable]->similaritySearch($queryEmbedding, $sqlLimit, max(0.01, $minScore - 0.15), $filter);
+          $resultsArray = is_array($results) ? $results : iterator_to_array($results);
+
+          foreach ($resultsArray as $document) {
+            // 🔧 FIX: Only apply priority boost to documents that match the language filter
+            // This prevents Orders (no language_id) from getting boosted above PageManager
+            if (isset($document->metadata['score'])) {
+              // Only boost if document has language_id AND it matches the requested language
+              // OR if no language filter was requested
+              $shouldBoost = ($languageId === null) ||
+                (isset($document->metadata['language_id']) && $document->metadata['language_id'] == $languageId);
+
+              if ($shouldBoost) {
+                $document->metadata['score'] = min(1.0, $document->metadata['score'] * 1.15);
+                $document->metadata['priority_boost'] = true;
+              }
+            }
+            $allResults[] = $document;
+          }
+        } catch (\Exception $e) {
+          error_log("Priority search error in {$priorityTable}: " . $e->getMessage());
+        }
+      }
+    }
+
+    // 🔧 FIX: Sort all results by score BEFORE taking top N
+    // This ensures PageManager (high score + boost) ranks above Categories/Manufacturers
+    usort($allResults, function ($a, $b) {
+      $scoreA = $a->metadata['score'] ?? 0;
+      $scoreB = $b->metadata['score'] ?? 0;
+      return $scoreB <=> $scoreA; // Descending order (highest score first)
+    });
+
+    if ($this->debug) {
+      error_log("[stats] After sorting by score, top 5 results:");
+      foreach (array_slice($allResults, 0, 5) as $i => $doc) {
+        $score = $doc->metadata['score'] ?? 0;
+        $entityType = $doc->metadata['entity_type'] ?? 'unknown';
+        $entityId = $doc->metadata['entity_id'] ?? 'unknown';
+        $boost = isset($doc->metadata['priority_boost']) ? '✓' : '✗';
+        error_log("  #" . ($i + 1) . " - Score: " . number_format($score, 4) . " - Boost: {$boost} - Type: {$entityType} - ID: {$entityId}");
+      }
+    }
+
+    // Prepare audit metadata
+    $auditMetadata = [
+      'search_mode' => 'sequential',
+      'tables_searched' => count($this->vectorStores),
+      'initial_results_count' => count($allResults)
+    ];
+
+    // Apply LLMReranker if enabled (Task 2.14.3)
+    if ($this->debug) {
+      error_log("[info] Reranking check:");
+      error_log("  - useReranking: " . ($this->useReranking ? 'true' : 'false'));
+      error_log("  - reranker is null: " . ($this->reranker === null ? 'true' : 'false'));
+      error_log("  - allResults count: " . count($allResults));
+    }
+
+    if ($this->useReranking && $this->reranker !== null && count($allResults) > 0) {
+      try {
+        if ($this->debug) {
+          error_log("[info] Applying LLMReranker to improve relevance...");
+          error_log("Query for reranking: {$query}");
+          error_log("Documents before reranking: " . count($allResults));
+        }
+
+        // Get the configured number of output documents for reranking
+        // We send 2-3x more documents than we want back to give the LLM options
+        $rerankingOutputCount = CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT;
+
+        // Send 2x the output count to the reranker (but not more than available)
+        $initialLimit = min(count($allResults), $rerankingOutputCount * 2);
+        $documentsForReranking = array_slice($allResults, 0, $initialLimit);
+
+        if ($this->debug) {
+          error_log("Reranking {$initialLimit} documents to get top {$rerankingOutputCount}");
+        }
+
+        // Apply LLMReranker - this will reorder documents by relevance
+        // transformDocuments expects: array of questions, array of documents
+        $rerankedDocuments = $this->reranker->transformDocuments([$query], $documentsForReranking);
+
+        if ($this->debug) {
+          error_log(" Reranking complete: " . count($rerankedDocuments) . " documents");
+
+          // Log reranked order for debugging
+          foreach ($rerankedDocuments as $i => $doc) {
+            $preview = substr($doc->content, 0, 100);
+            $score = $doc->metadata['score'] ?? 0;
+            error_log("Reranked #{$i} (score: {$score}): {$preview}...");
+          }
+        }
+
+        // Use reranked documents
+        $allResults = $rerankedDocuments;
+
+        // Add reranking metadata
+        $auditMetadata['reranking_applied'] = true;
+        $auditMetadata['reranking_input_count'] = $initialLimit;
+        $auditMetadata['reranking_output_count'] = count($rerankedDocuments);
+        $auditMetadata['final_results_count'] = count($allResults);
+
+      } catch (\Exception $e) {
+        error_log("[error] Reranking failed: " . $e->getMessage());
+        error_log("Falling back to original order");
+
+        // Fallback: use original order, just take top N
+        $allResults = array_slice($allResults, 0, $limit);
+        $auditMetadata['reranking_failed'] = true;
+        $auditMetadata['reranking_error'] = $e->getMessage();
+        $auditMetadata['final_results_count'] = count($allResults);
+      }
+    } else {
+      // No reranking, just take top N by similarity score
+      $allResults = array_slice($allResults, 0, $limit);
+      $auditMetadata['reranking_applied'] = false;
+      $auditMetadata['final_results_count'] = count($allResults);
+
+      if ($this->debug) {
+        error_log("ℹ[info] Reranking disabled or not available, using top {$limit} by similarity");
+      }
+    }
+
+    $result = [
+      'documents' => $allResults,
+      'audit_metadata' => $auditMetadata
+    ];
+
+    return $result;
+  }
+
+  /**
+   * Parallel search implementation using UNION ALL
+   * Searches all tables simultaneously with a single SQL query
+   *
+   * @param string $query Search query
+   * @param int $limit Maximum number of results
+   * @param float $minScore Minimum similarity score (0-1)
+   * @param int|null $languageId Language ID for filtering results
+   * @param string|null $entityType Entity type for filtering results
+   * @return array Array of matching documents with similarity scores
+   */
+  private function searchDocumentsParallel(string $query, int $limit, float $minScore, ?int $languageId, ?string $entityType): array
+  {
+    $startTime = microtime(true);
+
+    if ($this->debug) {
+      error_log("=== searchDocuments START (Parallel - UNION ALL) ===");
+      error_log("Query: {$query}");
+      error_log("Limit: {$limit}, MinScore: {$minScore}");
+    }
+
+    // VÉRIFICATION CRITIQUE
+    if (empty($this->vectorStores)) {
+      error_log("CRITICAL: No vector stores! Attempting to reinitialize...");
+      $this->initializeVectorStores([]);
+
+      if (empty($this->vectorStores)) {
+        error_log("FAILED: Still no vector stores after reinitialization");
+        return [
+          'documents' => [],
+          'audit_metadata' => [
+            'error' => 'No vector stores initialized',
+            'attempted_reinitialization' => true,
+            'search_mode' => 'parallel'
+          ]
+        ];
+      }
+    }
+
+    // Generate query embedding
+    error_log("Generating embedding for query...");
+    $queryEmbedding = $this->embeddingGenerator->embedText($query);
+    error_log("Embedding generated, length: " . count($queryEmbedding));
+
+    // Convert embedding to JSON string for SQL
+    $embeddingJson = json_encode($queryEmbedding);
+
+    // Build UNION ALL query for all tables
+    $unionQueries = [];
+    $tables = $this->knownEmbeddingTable();
+    $sqlLimit = $limit * 5; // Request 5x more results to account for filtering
+
+    foreach ($tables as $table) {
+      if (isset($this->vectorStores[$table])) {
+        // Build sub-query for this table
+        $subQuery = "(
+          SELECT 
+            '{$table}' as source_table,
+            id,
+            content,
+            embedding,
+            metadata,
+            (1 - (embedding <=> CAST(:queryEmbedding AS VECTOR(1536)))) as similarity_score
+          FROM {$table}
+          WHERE (1 - (embedding <=> CAST(:queryEmbedding AS VECTOR(1536)))) >= :minScore";
+
+        // Add language filter if specified
+        if ($languageId !== null) {
+          $subQuery .= " AND JSON_EXTRACT(metadata, '$.language_id') = :languageId";
+        }
+
+        // Add entity type filter if specified
+        if ($entityType !== null) {
+          $subQuery .= " AND JSON_EXTRACT(metadata, '$.entity_type') = :entityType";
+        }
+
+        $subQuery .= "
+          ORDER BY similarity_score DESC
+          LIMIT :sqlLimit
+        )";
+
+        $unionQueries[] = $subQuery;
+      }
+    }
+
+    if (empty($unionQueries)) {
+      error_log("No tables available for parallel search");
+      return [
+        'documents' => [],
+        'audit_metadata' => [
+          'error' => 'No tables available',
+          'search_mode' => 'parallel'
+        ]
+      ];
+    }
+
+    // Combine all sub-queries with UNION ALL
+    $sql = implode(" UNION ALL ", $unionQueries);
+    $sql .= " ORDER BY similarity_score DESC LIMIT :finalLimit";
+
+    // Prepare parameters
+    $params = [
+      'queryEmbedding' => $embeddingJson,
+      'minScore' => max(0.01, $minScore - 0.15), // Same adjustment as sequential
+      'sqlLimit' => $sqlLimit,
+      'finalLimit' => $sqlLimit // Get more results for reranking
+    ];
+
+    if ($languageId !== null) {
+      $params['languageId'] = $languageId;
+    }
+
+    if ($entityType !== null) {
+      $params['entityType'] = $entityType;
+    }
+
+    if ($this->debug) {
+      error_log("Executing parallel search across " . count($unionQueries) . " tables");
+      error_log("SQL Limit per table: {$sqlLimit}, Final limit: {$sqlLimit}");
+    }
+
+    // Execute parallel query
+    try {
+      $results = DoctrineOrm::select($sql, $params);
+
+      $duration = (microtime(true) - $startTime) * 1000;
+      $sequentialEstimate = count($unionQueries) * 200; // Estimate 200ms per table
+
+      if ($this->debug) {
+        error_log("✅ Parallel search completed in " . round($duration, 2) . "ms");
+        error_log("   Tables searched: " . count($unionQueries));
+        error_log("   Results found: " . count($results));
+        error_log("   Sequential would have taken: ~{$sequentialEstimate}ms");
+        error_log("   Time saved: ~" . round($sequentialEstimate - $duration, 2) . "ms");
+        error_log("   Speedup: " . round($sequentialEstimate / $duration, 1) . "x faster");
+      }
+
+      // Convert results to Document objects
+      $allResults = $this->convertSQLResultsToDocuments($results);
+
+      // Apply priority boost (same logic as sequential)
+      foreach ($allResults as $document) {
+        if (isset($document->metadata['score'])) {
+          $shouldBoost = ($languageId === null) ||
+            (isset($document->metadata['language_id']) && $document->metadata['language_id'] == $languageId);
+
+          if ($shouldBoost) {
+            $document->metadata['score'] = min(1.0, $document->metadata['score'] * 1.15);
+            $document->metadata['priority_boost'] = true;
+          }
+        }
+      }
+
+      // Sort by score
+      usort($allResults, function ($a, $b) {
+        $scoreA = $a->metadata['score'] ?? 0;
+        $scoreB = $b->metadata['score'] ?? 0;
+        return $scoreB <=> $scoreA;
+      });
+
+      if ($this->debug) {
+        error_log("[stats] After sorting by score, top 5 results:");
+        foreach (array_slice($allResults, 0, 5) as $i => $doc) {
+          $score = $doc->metadata['score'] ?? 0;
+          $entityType = $doc->metadata['entity_type'] ?? 'unknown';
+          $entityId = $doc->metadata['entity_id'] ?? 'unknown';
+          $boost = isset($doc->metadata['priority_boost']) ? '✓' : '✗';
+          error_log("  #" . ($i + 1) . " - Score: " . number_format($score, 4) . " - Boost: {$boost} - Type: {$entityType} - ID: {$entityId}");
+        }
+      }
+
+      // Prepare audit metadata
+      $auditMetadata = [
+        'search_mode' => 'parallel',
+        'parallel_method' => 'UNION ALL',
+        'tables_searched' => count($unionQueries),
+        'initial_results_count' => count($allResults),
+        'search_duration_ms' => round($duration, 2),
+        'estimated_sequential_ms' => $sequentialEstimate,
+        'time_saved_ms' => round($sequentialEstimate - $duration, 2),
+        'speedup_factor' => round($sequentialEstimate / $duration, 1)
+      ];
+
+      // Apply LLMReranker if enabled (same logic as sequential)
+      if ($this->useReranking && $this->reranker !== null && count($allResults) > 0) {
+        try {
+          if ($this->debug) {
+            error_log("[info] Applying LLMReranker to improve relevance...");
+          }
+
+          $rerankingOutputCount = CLICSHOPPING_APP_CHATGPT_RA_RERANKING_OUTPUT;
+          $initialLimit = min(count($allResults), $rerankingOutputCount * 2);
+          $documentsForReranking = array_slice($allResults, 0, $initialLimit);
+
+          $rerankedDocuments = $this->reranker->transformDocuments([$query], $documentsForReranking);
+
+          if ($this->debug) {
+            error_log("✅ Reranking complete: " . count($rerankedDocuments) . " documents");
+          }
+
+          $allResults = $rerankedDocuments;
+          $auditMetadata['reranking_applied'] = true;
+          $auditMetadata['reranking_input_count'] = $initialLimit;
+          $auditMetadata['reranking_output_count'] = count($rerankedDocuments);
+          $auditMetadata['final_results_count'] = count($allResults);
+
+        } catch (\Exception $e) {
+          error_log("[error] Reranking failed: " . $e->getMessage());
+          $allResults = array_slice($allResults, 0, $limit);
+          $auditMetadata['reranking_failed'] = true;
+          $auditMetadata['reranking_error'] = $e->getMessage();
+          $auditMetadata['final_results_count'] = count($allResults);
+        }
+      } else {
+        $allResults = array_slice($allResults, 0, $limit);
+        $auditMetadata['reranking_applied'] = false;
+        $auditMetadata['final_results_count'] = count($allResults);
+      }
+
+      return [
+        'documents' => $allResults,
+        'audit_metadata' => $auditMetadata
+      ];
+
+    } catch (\Exception $e) {
+      error_log("❌ Parallel search failed: " . $e->getMessage());
+      error_log("Trace: " . $e->getTraceAsString());
+      throw $e; // Re-throw to trigger fallback to sequential
+    }
+  }
+
+  /**
+   * Convert SQL results from parallel search to Document objects
+   *
+   * @param array $results SQL results from UNION ALL query
+   * @return array Array of Document objects
+   */
+  private function convertSQLResultsToDocuments(array $results): array
+  {
+    $documents = [];
+
+    foreach ($results as $row) {
+      try {
+        // Parse metadata JSON
+        $metadata = json_decode($row['metadata'], true) ?? [];
+        
+        // Add similarity score to metadata
+        $metadata['score'] = $row['similarity_score'];
+        $metadata['source_table'] = $row['source_table'];
+
+        // Create Document object (using LLPhant Document class)
+        $document = new Document();
+        $document->content = $row['content'];
+        $document->metadata = $metadata;
+
+        $documents[] = $document;
+
+      } catch (\Exception $e) {
+        error_log("Error converting SQL result to Document: " . $e->getMessage());
+        continue;
+      }
+    }
+
+    return $documents;
   }
 
 
@@ -802,12 +1106,10 @@ class MultiDBRAGManager
         // Check if it looks like analytics results
         if (isset($results['results']) && is_array($results['results'])) {
           $results['type'] = 'analytics_results';
-        }
-        // Check if it looks like a semantic response
+        } // Check if it looks like a semantic response
         else if (isset($results['response']) || isset($results['query'])) {
           $results['type'] = 'semantic_results';
-        }
-        // Default to unknown
+        } // Default to unknown
         else {
           $results['type'] = 'unknown';
         }
@@ -855,7 +1157,7 @@ class MultiDBRAGManager
       //Check the request
       if (!$analyticsAgent->isAnalyticsQuery($query)) {
         return [
-          'type'    => 'not_analytics',
+          'type' => 'not_analytics',
           'message' => CLICSHOPPING::getDef('text_not_analytics')
         ];
       }
@@ -864,27 +1166,26 @@ class MultiDBRAGManager
 
       if ($results['type'] === 'error') {
         return [
-          'type'    => 'error',
+          'type' => 'error',
           'message' => $results['message']
         ];
       }
 
-        $matchedCategories = $analyticsAgent->getAnalyticsCategories($query);
+      $matchedCategories = $analyticsAgent->getAnalyticsCategories($query);
 
-        $response = [
-        'type'               => 'analytics_results',
-        'query'              => $query,
+      $response = [
+        'type' => 'analytics_results',
+        'query' => $query,
         'matched_categories' => $matchedCategories,
-        'interpretation'     => Hash::displayDecryptedDataText($results['interpretation'] ?? ''),
-        'count'              => $results['count'] ?? 0,
-        'results'            => $results['results'] ?? []
+        'interpretation' => Hash::displayDecryptedDataText($results['interpretation'] ?? ''),
+        'count' => $results['count'] ?? 0,
+        'results' => $results['results'] ?? []
       ];
 
       // Si on a plusieurs blocs de requêtes SQL
       if (isset($results['multi_query_results'])) {
         $response['multi_query_results'] = $results['multi_query_results'];
-      }
-      // Sinon on renvoie la requête SQL unique
+      } // Sinon on renvoie la requête SQL unique
       else {
         // clé sql_query créée par processBusinessQuery
         $response['sql_query'] = $results['sql_query'] ?? '';
@@ -902,7 +1203,7 @@ class MultiDBRAGManager
 
     } catch (\Exception $e) {
       return [
-        'type'    => 'error',
+        'type' => 'error',
         'message' => 'Error executing analytics query: ' . $e->getMessage()
       ];
     }
@@ -951,12 +1252,12 @@ class MultiDBRAGManager
    * @return array|string Answer with metadata or just answer string
    */
   public function answerQuestion(
-    string $question,
-    int $limit = 5,
-    float $minScore = 0.5,
-    ?int $languageId = null,
+    string  $question,
+    int     $limit = 5,
+    float   $minScore = 0.5,
+    ?int    $languageId = null,
     ?string $entityType = null,
-    array $options = []
+    array   $options = []
   ): array|string
   {
     try {
@@ -1009,16 +1310,16 @@ class MultiDBRAGManager
           $documentNames[] = $docName;
         }
       }
-      
+
       // Remove duplicates and re-index array
       $documentNames = array_values(array_unique($documentNames));
 
       // Generate answer using LLM with context
       $synthesisPrompt = "Based on the following information, answer this question: {$question}\n\nInformation:\n{$context}\n\n";
-      
+
       // 🔧 TASK 5.2.1.3 FIX: DO NOT ask LLM to cite sources - we display them separately
       // The formatter will display sources at the end in italic, so the LLM should not include them
-      
+
       $synthesisPrompt .= "Answer:";
 
       // 🔥 CRITICAL FIX: Add language instruction with anti-hallucination rules
@@ -1027,7 +1328,7 @@ class MultiDBRAGManager
       $synthesisPrompt .= "\n\n" . $languageInstruction;
 
       if ($this->debug) {
-        error_log("📤 Prompt with language instruction: " . strlen($synthesisPrompt) . " chars");
+        error_log("[info] Prompt with language instruction: " . strlen($synthesisPrompt) . " chars");
       }
 
       try {
@@ -1078,13 +1379,13 @@ class MultiDBRAGManager
 
   /**
    * Build context with priority document handling
-   * 
+   *
    * Priority documents (with priority_boost metadata) get full content
    * Other documents are truncated to maxCharsPerDoc
-   * 
+   *
    * This ensures critical information from priority sources is not lost,
    * which is essential for accurate answers (e.g., "14 days" vs "7 days")
-   * 
+   *
    * @param array $documents Array of Document objects
    * @param int $maxCharsPerDoc Maximum chars per non-priority document
    * @return string Formatted context string
@@ -1096,21 +1397,21 @@ class MultiDBRAGManager
     $maxTotalChars = 60000; // Global limit: ~15,000 tokens
 
     // Function to detect priority documents
-    $isPriorityDoc = function($doc) {
+    $isPriorityDoc = function ($doc) {
       return isset($doc->metadata['priority_boost']) && $doc->metadata['priority_boost'] === true;
     };
 
     foreach ($documents as $i => $doc) {
       // 🔧 TASK 3.5.2.3: Extract real document name from metadata
       $documentName = $this->extractDocumentName($doc);
-      
+
       // Priority documents get FULL content (no truncation)
       if ($isPriorityDoc($doc)) {
-        $docContent = $doc->content; // ✅ FULL CONTENT
+        $docContent = $doc->content; //  FULL CONTENT
         $label = $documentName . " (Priority Source)";
-        
+
         if ($this->debug) {
-          error_log("📄 Doc #{$i} PRIORITY ({$documentName}): " . strlen($docContent) . " chars (full content)");
+          error_log("[info] Doc #{$i} PRIORITY ({$documentName}): " . strlen($docContent) . " chars (full content)");
         }
       } else {
         // Other documents are truncated
@@ -1119,16 +1420,16 @@ class MultiDBRAGManager
           $docContent = mb_substr($docContent, 0, $maxCharsPerDoc) . "\n[...content truncated...]";
         }
         $label = $documentName;
-        
+
         if ($this->debug) {
-          error_log("📄 Doc #{$i} secondary ({$documentName}): " . strlen($docContent) . " chars (truncated)");
+          error_log("[info] Doc #{$i} secondary ({$documentName}): " . strlen($docContent) . " chars (truncated)");
         }
       }
 
       // Check global limit
       if ($totalChars + strlen($docContent) > $maxTotalChars) {
         if ($this->debug) {
-          error_log("⚠️ Context limit reached after " . ($i + 1) . " documents");
+          error_log("⚠[warning] Context limit reached after " . ($i + 1) . " documents");
         }
         break;
       }
@@ -1139,7 +1440,7 @@ class MultiDBRAGManager
     }
 
     if ($this->debug) {
-      error_log("📊 Context built: {$totalChars} chars (~" . round($totalChars/4) . " tokens)");
+      error_log("[stats] Context built: {$totalChars} chars (~" . round($totalChars / 4) . " tokens)");
     }
 
     return $context;
@@ -1147,12 +1448,12 @@ class MultiDBRAGManager
 
   /**
    * Extract document name from document metadata
-   * 
+   *
    * 🔧 TASK 5.2.1.3: Extract real document names for citation
-   * 
+   *
    * This method extracts the document name from metadata to use in prompts
    * instead of generic "Document 1", "Document 2" labels.
-   * 
+   *
    * Priority order:
    * 1. title (most common)
    * 2. document_name
@@ -1163,7 +1464,7 @@ class MultiDBRAGManager
    * 7. page_title
    * 8. source_table (as fallback)
    * 9. "Document" (last resort - changed from "Unknown Document" to avoid polluting LLM responses)
-   * 
+   *
    * @param object $doc Document object with metadata
    * @return string Document name
    */
@@ -1176,49 +1477,49 @@ class MultiDBRAGManager
     } elseif (is_array($doc) && isset($doc['metadata'])) {
       $metadata = $doc['metadata'];
     }
-    
+
     if ($metadata === null) {
       return "Document";
     }
-    
+
     // Try different metadata fields in priority order
     // 🔧 TASK 5.2.1.3: Added brand_name and category_name based on diagnostic results
     $possibleFields = ['title', 'document_name', 'brand_name', 'product_name', 'category_name', 'name', 'page_title'];
-    
+
     foreach ($possibleFields as $field) {
       if (isset($metadata[$field]) && !empty($metadata[$field])) {
         $name = trim($metadata[$field]);
-        
+
         // Clean up the name (remove extra whitespace, limit length)
         $name = preg_replace('/\s+/', ' ', $name);
-        
+
         // Limit length to 100 chars for readability
         if (strlen($name) > 100) {
           $name = substr($name, 0, 97) . '...';
         }
-        
+
         return $name;
       }
     }
-    
+
     // Fallback: use source_table if available
     if (isset($metadata['source_table']) && !empty($metadata['source_table'])) {
       $tableName = $metadata['source_table'];
-      
+
       // Remove prefix and _embedding suffix
       $prefix = CLICSHOPPING::getConfig('db_table_prefix');
       if (!empty($prefix) && strpos($tableName, $prefix) === 0) {
         $tableName = substr($tableName, strlen($prefix));
       }
       $tableName = str_replace('_embedding', '', $tableName);
-      
+
       // Convert to readable format (e.g., "pages_manager_description" -> "Pages Manager Description")
       $tableName = str_replace('_', ' ', $tableName);
       $tableName = ucwords($tableName);
-      
+
       return $tableName;
     }
-    
+
     // Last resort: return generic name (changed from "Unknown Document" to "Document")
     // 🔧 TASK 5.2.1.3: This prevents "(Unknown Document)" from appearing in LLM responses
     return "Document";
@@ -1295,7 +1596,7 @@ class MultiDBRAGManager
 
     try {
       // 🔧 TASK 4.4.1 PHASE 7: Migrated to DoctrineOrm
-      
+
       // Compter les documents
       $count = DoctrineOrm::selectOne("SELECT COUNT(*) as total FROM {$tableName}");
 
@@ -1309,19 +1610,19 @@ class MultiDBRAGManager
         return self::$tableStatsCache[$tableName];
       }
 
-      // Récupérer les types de documents présents
+      // Get present document types
       $typesRows = DoctrineOrm::select("
         SELECT DISTINCT type, COUNT(*) as count 
         FROM {$tableName} 
         GROUP BY type
       ");
-      
+
       $types = [];
       foreach ($typesRows as $row) {
         $types[$row['type']] = $row['count'];
       }
 
-      // Récupérer un échantillon de contenu pour analyse sémantique
+      // Get content sample for semantic analysis
       $sample = DoctrineOrm::selectOne("
         SELECT GROUP_CONCAT(LEFT(content, 200) SEPARATOR ' ') as sample
         FROM (
@@ -1341,7 +1642,7 @@ class MultiDBRAGManager
       self::$tableStatsCache[$tableName] = $stats;
 
       if ($this->debug) {
-        error_log("📊 Table {$tableName} stats: " . json_encode($stats));
+        error_log("[stats] Table {$tableName} stats: " . json_encode($stats));
       }
 
       return $stats;
@@ -1360,12 +1661,12 @@ class MultiDBRAGManager
     }
   }
 
-/**
-* Construit le prompt avec le contexte récupéré par le MemoryService.
-*
-* @param string $prompt La requête utilisateur originale.
-* @param array $context Le contexte structuré (array) retourné par MemoryRetentionService.
-* @return string Le prompt final formaté pour le LLM.
+  /**
+   * Construit le prompt avec le contexte récupéré par le MemoryService.
+   *
+   * @param string $prompt La requête utilisateur originale.
+   * @param array $context Le contexte structuré (array) retourné par MemoryRetentionService.
+   * @return string Le prompt final formaté pour le LLM.
    */
   private function buildPromptWithContext(string $userQuery, array $context): string
   {
@@ -1381,7 +1682,6 @@ class MultiDBRAGManager
 
     return "RAG Context (Previous Interactions):\n---\n{$contextString}\n---\n\nCurrent Request: {$userQuery}";
   }
-
 
 
   /**
@@ -1475,10 +1775,4 @@ class MultiDBRAGManager
     error_log("=== DIAGNOSTIC END ===");
     return $diagnostics;
   }
-
-
-
-
-
-
 }

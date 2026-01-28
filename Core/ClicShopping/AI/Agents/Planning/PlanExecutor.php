@@ -13,7 +13,7 @@ namespace ClicShopping\AI\Agents\Planning;
 use AllowDynamicProperties;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Domains\Analytics\Agent\AnalyticsAgent;
+use ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent;
 use ClicShopping\AI\Infrastructure\Monitoring\MetricsCollector;
 use ClicShopping\AI\Agents\Planning\SubPlanExecutor\AnalyticsExecutor;
 use ClicShopping\AI\Agents\Planning\SubPlanExecutor\ResultSynthesizer;
@@ -21,21 +21,15 @@ use ClicShopping\AI\Agents\Planning\SubPlanExecutor\SemanticExecutor;
 use ClicShopping\AI\Agents\Planning\SubPlanExecutor\StepExecutor;
 use ClicShopping\AI\Agents\Planning\SubPlanExecutor\ToolExecutor;
 use ClicShopping\AI\Infrastructure\Metrics\CalculatorTool;
-use ClicShopping\AI\Domains\WebSearch\Cache\SearchCacheManager;
-use ClicShopping\AI\Domains\WebSearch\Tool\WebSearchTool;
+use ClicShopping\AI\DomainsAI\WebSearch\Cache\SearchCacheManager;
+use ClicShopping\AI\DomainsAI\WebSearch\Tool\WebSearchTool;
 use ClicShopping\OM\Registry;
 
 // 🆕 Refactored SubPlanExecutor components
 
 /**
  * PlanExecutor Class
- *
- * Exécuteur de plans qui :
- * - Exécute les étapes dans l'ordre correct
- * - Gère l'exécution parallèle quand possible
- * - Transmet les résultats entre étapes
- * - Gère les erreurs et déclenche la replanification
- * - Synthétise les résultats finaux
+ * Executes plans with step-by-step execution, parallel processing, result transmission, error handling, and result synthesis
  */
 #[AllowDynamicProperties]
 class PlanExecutor
@@ -50,7 +44,7 @@ class PlanExecutor
 
   // Configuration
   private int $maxRetries = 2;
-  private bool $enableParallelExecution = false; // Pour future implémentation
+  private bool $enableParallelExecution = false; // For future implementation
 
   private ?CalculatorTool $calculatorTool = null;
   private mixed $webSearchTool;
@@ -67,9 +61,9 @@ class PlanExecutor
   /**
    * Constructor
    *
-   * @param TaskPlanner $planner Instance du planificateur
-   * @param string $userId Identifiant utilisateur
-   * @param int $languageId ID de la langue
+   * @param TaskPlanner $planner Planner instance
+   * @param string $userId User identifier
+   * @param int $languageId Language ID
    */
   public function __construct(TaskPlanner $planner, string $userId = 'system', int $languageId = 1)
   {
@@ -79,7 +73,7 @@ class PlanExecutor
     $this->securityLogger = new SecurityLogger();
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
 
-    // 🆕 NOUVEAU : Initialiser le CalculatorTool si activé
+    // 🆕 NEW: Initialize CalculatorTool if enabled
     if (defined('CLICSHOPPING_APP_CHATGPT_CALCULATOR_ENABLED') && CLICSHOPPING_APP_CHATGPT_CALCULATOR_ENABLED === 'True') {
       Registry::set('CalculatorTool', new CalculatorTool());
       $this->calculatorTool = Registry::get('CalculatorTool');
@@ -90,36 +84,36 @@ class PlanExecutor
     }
 
 
-    // Vérification SerpApi directe (sans dépendance Gpt)
-    error_log("🔍 PlanExecutor: Vérification SerpApi directe...");
+    // Direct SerpApi verification (without Gpt dependency)
+    error_log("[info] PlanExecutor: Direct SerpApi verification...");
 
     $serpApiKey = "";
 
-    // 1. Variable d'environnement
+    // 1. Environment variable
     $envKey = getenv('SERP_API_KEY');
     if (!empty($envKey)) {
       $serpApiKey = $envKey;
-      error_log("🔑 PlanExecutor: Clé trouvée dans variable d'environnement");
+      error_log("[info] PlanExecutor: Key found in environment variable");
     }
-    // 2. Constante ClicShopping
+    // 2. ClicShopping constant
     elseif (defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI')) {
       $constKey = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI;
       if (!empty($constKey)) {
         $serpApiKey = $constKey;
-        error_log("🔑 PlanExecutor: Clé trouvée dans constante");
+        error_log("[info] PlanExecutor: Key found in constant");
       }
     }
 
     if (!empty($serpApiKey)) {
-      error_log("🔑 SERPAPI Key loaded: " . substr($serpApiKey, 0, 10) . "...");
+      error_log("[info] SERPAPI Key loaded: " . substr($serpApiKey, 0, 10) . "...");
 
-      // Définir la variable d'environnement pour WebSearchTool
+      // Set environment variable for WebSearchTool
       putenv('SERP_API_KEY=' . $serpApiKey);
-      error_log("🔍 PlanExecutor: putenv('SERP_API_KEY') défini");
+      error_log("[info] PlanExecutor: putenv('SERP_API_KEY') set");
 
       $hasValidKey = true;
     } else {
-      error_log("❌ SERPAPI Key not loaded - aucune source trouvée");
+      error_log("[error] SERPAPI Key not loaded - no source found");
       $hasValidKey = false;
     }
 
@@ -132,7 +126,7 @@ class PlanExecutor
           $this->securityLogger->logSecurityEvent("WebSearchTool initialized successfully", 'info');
         }
       } catch (Exception $e) {
-        error_log("⚠️ WebSearchTool initialization failed: " . $e->getMessage());
+        error_log("[warning]️ WebSearchTool initialization failed: " . $e->getMessage());
         $this->webSearchTool = null;
 
         if ($this->debug) {
@@ -140,7 +134,7 @@ class PlanExecutor
         }
       }
     } else {
-      error_log("ℹ️ SerpApi not configured - Web search disabled");
+      error_log("ℹ[info] SerpApi not configured - Web search disabled");
       $this->webSearchTool = null;
 
       if ($this->debug) {
@@ -185,7 +179,7 @@ class PlanExecutor
       if ($this->debug) {
         $stepCount = count($plan->getSteps());
         $this->securityLogger->logSecurityEvent("Starting plan execution: {$stepCount} steps", 'info');
-        error_log("⏱️ [PERF] PlanExecutor: Starting execution of {$stepCount} steps");
+        error_log("[time] [PERF] PlanExecutor: Starting execution of {$stepCount} steps");
       }
 
       // Exécuter les étapes
@@ -200,7 +194,7 @@ class PlanExecutor
             return $this->executeStepByType($step, $plan);
           });
           if ($this->debug) {
-            error_log("⏱️ [PERF] PlanExecutor: executeSteps took " . round((microtime(true) - $stepsStart), 2) . "s");
+            error_log("[time]️ [PERF] PlanExecutor: executeSteps took " . round((microtime(true) - $stepsStart), 2) . "s");
           }
 
           // Si toutes les étapes sont complétées, synthétiser le résultat
@@ -208,7 +202,7 @@ class PlanExecutor
             $synthesizeStart = microtime(true);
             $finalResult = $this->synthesizeResults($currentPlan);
             if ($this->debug) {
-              error_log("⏱️ [PERF] PlanExecutor: synthesizeResults took " . round((microtime(true) - $synthesizeStart), 2) . "s");
+              error_log("[time] [PERF] PlanExecutor: synthesizeResults took " . round((microtime(true) - $synthesizeStart), 2) . "s");
             }
             // synthesizeResults() returns an array, extract text_response for complete()
             $textResponse = is_array($finalResult) ? ($finalResult['text_response'] ?? json_encode($finalResult)) : $finalResult;
@@ -231,7 +225,7 @@ class PlanExecutor
               $this->securityLogger->logSecurityEvent('result', 'info', $array_execute);
               
               // 🆕 Debug: Check if source_attribution is in finalResult
-              error_log("🔍 PlanExecutor: finalResult has source_attribution: " . 
+              error_log("[info] PlanExecutor: finalResult has source_attribution: " .
                 (isset($finalResult['source_attribution']) ? 'YES' : 'NO'));
               if (isset($finalResult['source_attribution'])) {
                 error_log("   Source type: " . ($finalResult['source_attribution']['source_type'] ?? 'N/A'));
@@ -305,7 +299,7 @@ class PlanExecutor
         );
       }
 
-      // Préparer le contexte
+      // Prepare context
       $context = [
         'plan_intent' => $plan->getIntent(),
         'previous_results' => $plan->getAllStepResults(),
@@ -374,7 +368,7 @@ class PlanExecutor
   private function executeAnalyticsQuery(TaskStep $step, array $context): array
   {
     // 🔧 TASK 4.3.4.3: Add logging to trace query extraction
-    error_log("\n" . str_repeat("-", 100));
+    error_log(str_repeat("-", 100));
     error_log("TASK 4.3.4.3: PlanExecutor.executeAnalyticsQuery() CALLED");
     error_log("-" . str_repeat("-", 99));
     error_log("Step ID: " . $step->getId());
@@ -392,7 +386,7 @@ class PlanExecutor
     error_log("Query is empty: " . (empty($query) ? 'YES' : 'NO'));
     
     if (empty($query)) {
-      error_log("❌ WARNING: Query is EMPTY in PlanExecutor!");
+      error_log("[error] WARNING: Query is EMPTY in PlanExecutor!");
       error_log("This means either:");
       error_log("  1. sub_query metadata is not set");
       error_log("  2. step description is empty");
@@ -406,10 +400,12 @@ class PlanExecutor
   }
 
   /**
-   * Exécute une recherche sémantique
+   * Execute a semantic search
+   * Delegates to SemanticExecutor which handles the fallback chain: ConversationMemory → Documents → LLM → Web
    * 
-   * Délègue à SemanticExecutor qui gère la chaîne de fallback:
-   * ConversationMemory → Documents → LLM → Web
+   * @param TaskStep $step Step to execute
+   * @param array $context Execution context
+   * @return array Semantic search result
    */
   private function executeSemanticSearch(TaskStep $step, array $context): array
   {
@@ -440,7 +436,11 @@ class PlanExecutor
   }
 
   /**
-   * Exécute un calcul
+   * Execute a calculation
+   * 
+   * @param TaskStep $step Step to execute
+   * @param array $context Execution context
+   * @return array Calculation result
    */
   private function executeCalculator(TaskStep $step, array $context): array
   {
@@ -589,14 +589,18 @@ class PlanExecutor
   }
 
   /**
-   * Exécute une synthèse
+   * Execute a synthesis
+   * 
+   * @param TaskStep $step Step to execute
+   * @param array $context Execution context
+   * @return array Synthesis result
    */
   private function executeSynthesis(TaskStep $step, array $context): array
   {
-    // Récupérer tous les résultats précédents
+    // Get all previous results
     $previousResults = $context['previous_results'] ?? [];
 
-    // Utiliser ResultSynthesizer pour combiner les résultats
+    // Use ResultSynthesizer to combine results
     $synthesized = $this->resultSynthesizer->synthesize($previousResults, $context);
 
     return [
@@ -606,11 +610,11 @@ class PlanExecutor
   }
 
   /**
-   * Synthétise les résultats finaux du plan
-   * 🆕 REFACTORED: Délègue à ResultSynthesizer
+   * Synthesize final plan results
+   * 🆕 REFACTORED: Delegates to ResultSynthesizer
    *
-   * @param ExecutionPlan $plan Plan complété
-   * @return array Résultat final synthétisé
+   * @param ExecutionPlan $plan Completed plan
+   * @return array Synthesized final result
    */
   private function synthesizeResults(ExecutionPlan $plan): array
   {
@@ -618,14 +622,14 @@ class PlanExecutor
   }
 
   /**
-   * Obtient la dernière étape qui a échoué
+   * Get the last failed step
    * 
-   * @param ExecutionPlan $plan Plan d'exécution
-   * @return TaskStep|null La dernière étape en échec, ou null
+   * @param ExecutionPlan $plan Execution plan
+   * @return TaskStep|null Last failed step, or null
    */
   public function getLastFailedStep(ExecutionPlan $plan): ?TaskStep
   {
-    // Parcourir les étapes du plan pour trouver la dernière qui a échoué
+    // Iterate through plan steps to find the last failed one
     $failedStep = null;
 
     foreach ($plan->getSteps() as $step) {
@@ -638,7 +642,10 @@ class PlanExecutor
   }
 
   /**
-   * Active/désactive l'exécution parallèle
+   * Enable/disable parallel execution
+   * 
+   * @param bool $enable Enable parallel execution
+   * @return void
    */
   public function setEnableParallelExecution(bool $enable): void
   {

@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\EditLogError;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class EditLogError extends \ClicShopping\OM\ConfigurableAppAbstract
+class EditLogError extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Configuration\Administrators\Sites\ClicShoppingAdmin
 
 use ClicShopping\OM\Registry;
 
-class DeleteConfirm extends \ClicShopping\OM\PagesActionsAbstract
+class DeleteConfirm extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

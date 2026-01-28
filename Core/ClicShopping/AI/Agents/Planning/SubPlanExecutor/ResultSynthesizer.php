@@ -198,6 +198,28 @@ class ResultSynthesizer
    * Validate final result before returning
    *
    * TASK 4.1: Validate the final synthesized result
+   * 
+   * Validation Rules by Result Type:
+   * 
+   * 1. analytics_response:
+   *    - MUST have: text_response OR response field (non-empty)
+   *    - MUST have: source_attribution field
+   *    - MUST have: data OR interpretation (empty data is valid if interpretation exists)
+   * 
+   * 2. semantic_results:
+   *    - MUST have: text_response OR response field (non-empty)
+   *    - MUST have: source_attribution field
+   *    - MUST have: sources OR data (non-empty)
+   * 
+   * 3. mixed (hybrid queries):
+   *    - MUST have: text_response OR response field (non-empty)
+   *    - MUST have: source_attribution field
+   *    - MUST have: data OR sources (at least one non-empty)
+   * 
+   * 4. web_search_response:
+   *    - MUST have: text_response OR response field (non-empty)
+   *    - MUST have: source_attribution field
+   *    - MUST have: sources (non-empty)
    *
    * @param array $finalResult Final synthesized result
    * @return array Validation result with 'valid' boolean and 'errors' array
@@ -217,12 +239,17 @@ class ResultSynthesizer
     $hasResponse = isset($finalResult['response']) && !empty($finalResult['response']);
 
     if (!$hasTextResponse && !$hasResponse) {
-      $errors[] = "Missing text_response or response field";
+      // TASK 2.3: Improved error message with field status
+      $textResponseStatus = isset($finalResult['text_response']) ? 'empty' : 'not set';
+      $responseStatus = isset($finalResult['response']) ? 'empty' : 'not set';
+      $errors[] = "Missing text_response or response field (text_response: {$textResponseStatus}, response: {$responseStatus})";
     }
 
     // Check for source attribution
     if (!isset($finalResult['source_attribution']) || empty($finalResult['source_attribution'])) {
-      $errors[] = "Missing source attribution";
+      // TASK 2.3: Improved error message with field status
+      $attributionStatus = isset($finalResult['source_attribution']) ? 'empty' : 'not set';
+      $errors[] = "Missing source_attribution field (field {$attributionStatus})";
     }
 
     // Type-specific validation
@@ -245,15 +272,24 @@ class ResultSynthesizer
         $hasTextResponse = !empty($finalResult['text_response']) || !empty($finalResult['response']);
         $hasSources = !empty($finalResult['sources']) || !empty($finalResult['data']);
         
-        if (!$hasTextResponse && !$hasSources) {
-          $errors[] = "Semantic result missing sources or data";
+        // Semantic results MUST have sources OR data (not just text_response alone)
+        if (!$hasSources) {
+          $sourcesStatus = isset($finalResult['sources']) ? 'empty' : 'not set';
+          $dataStatus = isset($finalResult['data']) ? 'empty' : 'not set';
+          $errors[] = "Semantic result missing sources and data (sources: {$sourcesStatus}, data: {$dataStatus})";
         }
         break;
 
       case 'mixed':
         // Mixed results should have data from multiple sources
-        if (empty($finalResult['data']) && empty($finalResult['sources'])) {
-          $errors[] = "Mixed result missing data and sources";
+        // TASK 2.3: Improved error message with field status
+        $hasData = !empty($finalResult['data']);
+        $hasSources = !empty($finalResult['sources']);
+        
+        if (!$hasData && !$hasSources) {
+          $dataStatus = isset($finalResult['data']) ? 'empty' : 'not set';
+          $sourcesStatus = isset($finalResult['sources']) ? 'empty' : 'not set';
+          $errors[] = "Mixed result missing data and sources (data: {$dataStatus}, sources: {$sourcesStatus})";
         }
         break;
     }
@@ -304,6 +340,23 @@ class ResultSynthesizer
 
       $type = $result['type'] ?? 'unknown';
 
+      // TASK 2.4: Debug logging for step result structure
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "Step {$stepId} result structure",
+          'info',
+          [
+            'type' => $type,
+            'has_text_response' => isset($result['text_response']) && !empty($result['text_response']),
+            'has_interpretation' => isset($result['interpretation']) && !empty($result['interpretation']),
+            'has_source_attribution' => isset($result['source_attribution']),
+            'has_results' => isset($result['results']),
+            'has_data' => isset($result['data']),
+            'result_keys' => array_keys($result),
+          ]
+        );
+      }
+
       // 🆕 Always log step result keys for debugging
       error_log("ResultSynthesizer: Step {$stepId} keys: " . implode(', ', array_keys($result)));
       error_log("ResultSynthesizer: Step {$stepId} has source_attribution: " . (isset($result['source_attribution']) ? 'YES' : 'NO'));
@@ -314,6 +367,9 @@ class ResultSynthesizer
       } elseif (isset($result['interpretation']) && !empty($result['interpretation'])) {
         // 🔧 FIX: Also collect 'interpretation' field for analytics results
         $aggregated['text_responses'][] = $result['interpretation'];
+      } elseif (isset($result['result']['interpretation']) && !empty($result['result']['interpretation'])) {
+        // TASK 1.2: Also check result.interpretation for new structure
+        $aggregated['text_responses'][] = $result['result']['interpretation'];
       }
 
       // 🆕 Collect source attribution if present
@@ -345,9 +401,21 @@ class ResultSynthesizer
       switch ($type) {
         case 'analytics':
         case 'analytics_response':
+          // Handle analytics result structures
           if (isset($result['results'])) {
+            // Standard structure: results at root level
             $aggregated['analytics_results'][] = $result;
             $aggregated['data'] = array_merge($aggregated['data'], (array)$result['results']);
+          } elseif (isset($result['result']['rows'])) {
+            // Nested structure: results in result.rows
+            $aggregated['analytics_results'][] = $result;
+            $aggregated['data'] = array_merge($aggregated['data'], (array)$result['result']['rows']);
+          } elseif (isset($result['result'])) {
+            // Fallback: collect entire result object
+            $aggregated['analytics_results'][] = $result;
+            if (is_array($result['result'])) {
+              $aggregated['data'] = array_merge($aggregated['data'], [$result['result']]);
+            }
           }
           break;
 
@@ -424,6 +492,19 @@ class ResultSynthesizer
 
   /**
    * Format final result
+   * 
+   * This method combines aggregated sub-query results into a single coherent response.
+   * 
+   * Key Features:
+   * 1. Text Response Fallback: If no sub-queries provide text responses, generates
+   *    a fallback based on available data, sources, or query types. This ensures
+   *    hybrid queries always have a text response for validation.
+   * 
+   * 2. Source Attribution Merging: When multiple sub-queries have source attributions,
+   *    creates a "Mixed" attribution that includes all source types and counts.
+   * 
+   * 3. Type Determination: Determines the primary result type based on the mix of
+   *    sub-query types (analytics_response, semantic_results, mixed, web_search_response).
    *
    * @param array $aggregated Aggregated results
    * @param array $entityMetadata Entity metadata
@@ -433,6 +514,30 @@ class ResultSynthesizer
   {
     // Combine text responses
     $textResponse = implode("\n\n", array_filter($aggregated['text_responses']));
+
+    // TASK 2.1: Add fallback text response generation if empty
+    // This is critical for hybrid query validation - ensures every result has a text response
+    // even when sub-queries don't provide interpretations or text_response fields.
+    // Fallback priority: data count > sources count > generic success message
+    if (empty($textResponse)) {
+      // Generate fallback based on available data
+      if (!empty($aggregated['data'])) {
+        $dataCount = count($aggregated['data']);
+        $textResponse = "Retrieved {$dataCount} result(s) successfully.";
+      } elseif (!empty($aggregated['sources'])) {
+        $sourcesCount = count($aggregated['sources']);
+        $textResponse = "Found {$sourcesCount} relevant source(s).";
+      } elseif (!empty($aggregated['analytics_results']) || !empty($aggregated['semantic_results'])) {
+        $textResponse = "Query executed successfully.";
+      }
+      
+      if ($this->debug && !empty($textResponse)) {
+        $this->logger->logSecurityEvent(
+          "TASK 2.1: Generated fallback text_response (original was empty)",
+          'info'
+        );
+      }
+    }
 
     // Determine primary result type
     $primaryType = 'mixed';
@@ -460,11 +565,15 @@ class ResultSynthesizer
     }
 
     // 🆕 Add source attribution (merge if multiple, or use single)
+    // For hybrid queries with multiple sub-queries, this creates a "Mixed" attribution
+    // that preserves information about all data sources used. This is required for
+    // validation and provides transparency to users about where data originated.
     if (!empty($aggregated['source_attributions'])) {
       if (count($aggregated['source_attributions']) === 1) {
+        // Single source - use as-is
         $finalResult['source_attribution'] = $aggregated['source_attributions'][0];
       } else {
-        // Multiple sources - create mixed attribution
+        // Multiple sources - create merged attribution with all source types
         $sourceTypes = array_unique(array_column($aggregated['source_attributions'], 'source_type'));
         $finalResult['source_attribution'] = [
           'source_type' => 'Mixed',
@@ -565,6 +674,24 @@ class ResultSynthesizer
 
     // 🆕 Debug: Log if source_attribution is in final result
     if ($this->debug) {
+      // TASK 2.5: Debug logging for final result structure before validation
+      $this->logger->logSecurityEvent(
+        "Final result structure before validation",
+        'info',
+        [
+          'type' => $finalResult['type'] ?? 'unknown',
+          'has_text_response' => isset($finalResult['text_response']) && !empty($finalResult['text_response']),
+          'has_response' => isset($finalResult['response']) && !empty($finalResult['response']),
+          'has_source_attribution' => isset($finalResult['source_attribution']),
+          'has_data' => isset($finalResult['data']) && !empty($finalResult['data']),
+          'has_sources' => isset($finalResult['sources']) && !empty($finalResult['sources']),
+          'text_response_length' => isset($finalResult['text_response']) ? strlen($finalResult['text_response']) : 0,
+          'data_count' => isset($finalResult['data']) ? count($finalResult['data']) : 0,
+          'sources_count' => isset($finalResult['sources']) ? count($finalResult['sources']) : 0,
+        ]
+      );
+      
+      // Original debug logging
       $this->logger->logSecurityEvent(
         "ResultSynthesizer: Final result has source_attribution: " . 
         (isset($finalResult['source_attribution']) ? 'YES (' . ($finalResult['source_attribution']['source_type'] ?? 'unknown') . ')' : 'NO'),

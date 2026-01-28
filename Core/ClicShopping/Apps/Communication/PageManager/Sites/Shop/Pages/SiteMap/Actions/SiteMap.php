@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Communication\PageManager\Sites\Shop\Pages\SiteMap\A
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class SiteMap extends \ClicShopping\OM\PagesActionsAbstract
+class SiteMap extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   public function execute()

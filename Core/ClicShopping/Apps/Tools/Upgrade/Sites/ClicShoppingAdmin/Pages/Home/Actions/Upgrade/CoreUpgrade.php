@@ -10,13 +10,12 @@
 
 namespace ClicShopping\Apps\Tools\Upgrade\Sites\ClicShoppingAdmin\Pages\Home\Actions\Upgrade;
 
+use ClicShopping\Apps\Tools\Upgrade\Classes\ClicShoppingAdmin\Github;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\FileSystem;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Tools\Upgrade\Classes\ClicShoppingAdmin\Github;
-
-class CoreUpgrade extends \ClicShopping\OM\PagesActionsAbstract
+class CoreUpgrade extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

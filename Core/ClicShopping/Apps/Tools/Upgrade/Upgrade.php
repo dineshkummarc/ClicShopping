@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Tools\Upgrade;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class Upgrade extends \ClicShopping\OM\ConfigurableAppAbstract
+class Upgrade extends ConfigurableAppAbstract
 {
 
   protected $api_version = 1;

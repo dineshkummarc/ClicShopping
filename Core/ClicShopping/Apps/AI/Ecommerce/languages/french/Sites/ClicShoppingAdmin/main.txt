@@ -1,0 +1,71 @@
+heading_title = Domaine IA E-Commerce
+heading_dashboard = Tableau de Bord
+heading_overview = Aperçu
+heading_configuration = Configuration
+heading_help = Aide
+
+button_dashboard = Tableau de Bord
+button_overview = Aperçu
+button_configuration = Configuration
+button_help = Aide
+button_back = Retour
+
+tab_overview = Aperçu
+tab_entities = Entités
+tab_queries = Requêtes
+tab_performance = Performance
+
+section_welcome = Bienvenue dans le Domaine IA E-Commerce
+text_welcome_message = Ceci est l'interface de gestion du Domaine IA E-Commerce. Vous pouvez ici surveiller et gérer toutes les opérations IA liées à l'e-commerce.
+
+section_domain_overview = Aperçu du Domaine
+subsection_domain_info = Informations du Domaine
+subsection_supported_entities = Entités Supportées
+subsection_query_capabilities = Capacités de Requête
+subsection_semantic_queries = Requêtes Sémantiques
+subsection_analytics_queries = Requêtes Analytiques
+subsection_hybrid_queries = Requêtes hybrides
+
+label_domain_name = Nom du Domaine
+label_domain_id = ID du Domaine
+label_pure_llm_mode = Mode LLM Pur
+label_language_processing = Traitement du Langage
+
+status_enabled = Activé
+domain_ecommerce = E-Commerce
+text_english_processing = Tout le traitement interne est effectué en anglais
+
+entity_products = Produits
+entity_products_desc = Catalogue de produits avec descriptions, prix et inventaire
+entity_orders = Commandes
+entity_orders_desc = Commandes clients avec statut, articles et informations de paiement
+entity_customers = Clients
+entity_customers_desc = Profils clients avec informations de contact et de compte
+entity_categories = Catégories
+entity_categories_desc = Catégories de produits et hiérarchies
+entity_manufacturers = Fabricants
+entity_manufacturers_desc = Fabricants de produits et informations sur les marques
+entity_suppliers = Fournisseurs
+entity_suppliers_desc = Fournisseurs de produits et informations d’approvisionnement
+entity_reviews = Avis
+entity_reviews_desc = Avis et notes des clients sur les produits
+entity_return_orders = Retours de commandes
+entity_return_orders_desc = Demandes de retour de produits et informations de remboursement
+entity_reviews_sentiment = Sentiment des avis
+entity_reviews_sentiment_desc = Analyse du sentiment des avis clients
+
+
+text_query_capabilities = Le domaine e-commerce supporte les requêtes sémantiques, analytiques et hybride:
+
+query_example_1 = Trouver des produits similaires à "chaussures de course"
+query_example_2 = Quels sont les produits les plus vendus ce mois?
+query_example_3 = Montrez-moi les avis clients pour le produit X
+
+query_example_4 = Calculer le revenu total par catégorie
+query_example_5 = Lister les commandes avec le statut "en attente"
+query_example_6 = Afficher l'historique d'achat du client
+
+
+query_example_7 = Donnes-moi le prix de l'Iphone 17 pro et article 4 des cgv
+query_example_8 = Donnes-moi le prix de l'Iphone 17 pro et les quantités en stock des produits
+query_example_9 = Calcules-moi le chiffres d'affaires par trimestres et donnes moi les produits les plus vendus par trimests et par ordre descendant

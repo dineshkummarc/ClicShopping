@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\DataBaseTables\Sites\ClicShoppingAdmin\Pages\H
 
 use ClicShopping\OM\Registry;
 
-class DataBaseTables extends \ClicShopping\OM\PagesActionsAbstract
+class DataBaseTables extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

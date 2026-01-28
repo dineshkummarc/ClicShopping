@@ -616,6 +616,92 @@ try {
       $errors[] = "Hybrid cache: " . $e->getMessage();
       error_log("Cache Reset Error (hybrid): " . $e->getMessage());
     }
+
+    // ============================================================================
+    // 12. Reset Semantic Query Cache (TASK 8: Multi-temporal query caching)
+    // ============================================================================
+    if (in_array('semantic', $cacheTypes)) {
+      try {
+        // Count hybrid cache files before
+        $semanticCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Semantic/';
+        $filesBefore = 0;
+
+        if (is_dir($semanticCacheDir)) {
+          $files = glob($semanticCacheDir . '*.cache');
+          $filesBefore = count($files);
+
+          // Delete all hybrid cache files
+          foreach ($files as $file) {
+            @unlink($file);
+          }
+        }
+
+        // Count files after
+        $filesAfter = 0;
+        if (is_dir($semanticCacheDir)) {
+          $files = glob($semanticCacheDir . '*.cache');
+          $filesAfter = count($files);
+        }
+
+        $results['semantic'] = $filesBefore - $filesAfter;
+
+        error_log("Cache Reset: Semantic query cache flushed - {$results['semantic']} files deleted");
+
+      } catch (Exception $e) {
+        $errors[] = "Semantic cache: " . $e->getMessage();
+        error_log("Cache Reset Error (semantic): " . $e->getMessage());
+      }
+    }
+
+    // ============================================================================
+    // 13. Reset Embeddings Cache (PHASE 2 - NewVector cache)
+    // ============================================================================
+    if (in_array('embeddings', $cacheTypes)) {
+      try {
+        $embeddingsCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Embeddings/';
+        $filesBefore = 0;
+
+        if (is_dir($embeddingsCacheDir)) {
+          $files = glob($embeddingsCacheDir . '*.cache');
+          $filesBefore = count($files);
+          foreach ($files as $file) {
+            @unlink($file);
+          }
+        }
+
+        $filesAfter = is_dir($embeddingsCacheDir) ? count(glob($embeddingsCacheDir . '*.cache')) : 0;
+        $results['embeddings'] = $filesBefore - $filesAfter;
+
+        error_log("Cache Reset: Embeddings cache flushed - {$results['embeddings']} files deleted");
+      } catch (Exception $e) {
+        $errors[] = "Embeddings cache: " . $e->getMessage();
+      }
+    }
+
+    // ============================================================================
+    // 14. Reset SQL Query Cache (PHASE 4)
+    // ============================================================================
+    if (in_array('sql', $cacheTypes)) {
+      try {
+        $sqlCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/SQL/';
+        $filesBefore = 0;
+
+        if (is_dir($sqlCacheDir)) {
+          $files = glob($sqlCacheDir . '*.cache');
+          $filesBefore = count($files);
+          foreach ($files as $file) {
+            @unlink($file);
+          }
+        }
+
+        $filesAfter = is_dir($sqlCacheDir) ? count(glob($sqlCacheDir . '*.cache')) : 0;
+        $results['sql'] = $filesBefore - $filesAfter;
+
+        error_log("Cache Reset: SQL query cache flushed - {$results['sql']} files deleted");
+      } catch (Exception $e) {
+        $errors[] = "SQL cache: " . $e->getMessage();
+      }
+    }
   }
   
   // ============================================================================

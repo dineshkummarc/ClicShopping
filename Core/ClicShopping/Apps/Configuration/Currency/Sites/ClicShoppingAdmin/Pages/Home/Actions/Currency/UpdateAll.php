@@ -10,12 +10,11 @@
 
 namespace ClicShopping\Apps\Configuration\Currency\Sites\ClicShoppingAdmin\Pages\Home\Actions\Currency;
 
+use ClicShopping\Apps\Configuration\Currency\Classes\ClicShoppingAdmin\CurrenciesAdmin;
 use ClicShopping\OM\Cache;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Configuration\Currency\Classes\ClicShoppingAdmin\CurrenciesAdmin;
-
-class UpdateAll extends \ClicShopping\OM\PagesActionsAbstract
+class UpdateAll extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

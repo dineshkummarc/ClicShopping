@@ -11,7 +11,6 @@
 namespace ClicShopping\AI\Agents\Memory;
 
 use AllowDynamicProperties;
-use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Rag\MultiDBRAGManager;

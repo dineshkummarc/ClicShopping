@@ -28,11 +28,10 @@ use ClicShopping\OM\Registry;
 use ClicShopping\OM\Service;
 use ClicShopping\OM\Session;
 use ClicShopping\Apps\Configuration\Cache\Classes\ClicShoppingAdmin\CacheAdmin;
-
 use Exception;
 use function count;
 
-class ClicShoppingAdmin extends \ClicShopping\OM\SitesAbstract
+class ClicShoppingAdmin extends \ClicShopping\OM\Domains\SitesAbstract
 {
   protected static string $default_application = 'Dashboard';
 
@@ -209,7 +208,17 @@ class ClicShoppingAdmin extends \ClicShopping\OM\SitesAbstract
     }
 
 // configuration generale du systeme
-    require_once(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/config_clicshopping.php');
+     $dirRoot = CLICSHOPPING::getConfig('dir_root', 'Shop');
+
+     if (is_string($dirRoot) && $dirRoot !== '') {
+       $file = $dirRoot . 'Core/config_clicshopping.php';
+
+       if (is_file($file)) {
+         require_once $file;
+       }
+     } else {
+       trigger_error('Missing config value: dir_root', E_USER_WARNING);
+     }
 
     Registry::set('Service', new Service());
     Registry::get('Service')->start();
@@ -271,11 +280,11 @@ class ClicShoppingAdmin extends \ClicShopping\OM\SitesAbstract
     }
 
     if (isset($class)) {
-      if (is_subclass_of($class, 'ClicShopping\OM\PagesInterface')) {
+      if (is_subclass_of($class, 'ClicShopping\OM\Interfaces\PagesInterface')) {
         $this->page = new $class($this);
         $this->page->runActions();
       } else {
-        trigger_error('ClicShopping\Sites\ClicShoppingAdmin\ClicShoppingAdmin::setPage() - ' . $page_code . ': Page does not implement ClicShopping\OM\PagesInterface and cannot be loaded.');
+        trigger_error('ClicShopping\Sites\ClicShoppingAdmin\ClicShoppingAdmin::setPage() - ' . $page_code . ': Page does not implement ClicShopping\OM\Interfaces\PagesInterface and cannot be loaded.');
       }
     }
   }

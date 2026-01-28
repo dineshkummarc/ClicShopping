@@ -10,14 +10,14 @@
 
 namespace ClicShopping\Service\Shop;
 
+use ClicShopping\Apps\Tools\SecurityCheck\Classes\IpRestriction as Reject;
 use ClicShopping\OM\CLICSHOPPING;
 
-use ClicShopping\Apps\Tools\SecurityCheck\Classes\IpRestriction as Reject;
 /**
  * This class provides the service for handling IP restrictions in the shop.
  * It implements the ServiceInterface and ensures that unauthorized IPs are redirected to an offline page.
  */
-class IpRestriction implements \ClicShopping\OM\ServiceInterface
+class IpRestriction implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Starts the process of checking IP restrictions and handling the redirection if necessary.

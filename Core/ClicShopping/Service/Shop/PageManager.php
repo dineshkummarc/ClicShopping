@@ -10,16 +10,16 @@
 
 namespace ClicShopping\Service\Shop;
 
+use ClicShopping\Apps\Communication\PageManager\Classes\Shop\PageManagerShop as PageManagerShopClass;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Communication\PageManager\Classes\Shop\PageManagerShop as PageManagerShopClass;
 /**
  * Service class for managing the PageManager functionality within the shop.
  * This service initializes and activates the PageManagerShop class, enabling
  * the handling of page manager-related operations.
  */
-class PageManager implements \ClicShopping\OM\ServiceInterface
+class PageManager implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initializes the PageManagerShop class if the required file exists.

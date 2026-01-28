@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\OrderTotal\SubTotal;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class SubTotal extends \ClicShopping\OM\ConfigurableAppAbstract
+class SubTotal extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_SubTotal_V1';

@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Orders\Orders\Sites\ClicShoppingAdmin\Pages\Home\Act
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-class ArchiveToConfirm extends \ClicShopping\OM\PagesActionsAbstract
+class ArchiveToConfirm extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
   protected $oID;

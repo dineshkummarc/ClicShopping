@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Communication\PageManager\Sites\Shop\Pages\Cookies\A
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class Cookies extends \ClicShopping\OM\PagesActionsAbstract
+class Cookies extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
 
   public function execute()

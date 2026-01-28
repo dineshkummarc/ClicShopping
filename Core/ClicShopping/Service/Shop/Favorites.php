@@ -10,10 +10,10 @@
 
 namespace ClicShopping\Service\Shop;
 
+use ClicShopping\Apps\Marketing\Favorites\Classes\Shop\FavoritesClass;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Marketing\Favorites\Classes\Shop\FavoritesClass;
 /**
  * Service class for managing the Favorites functionality in the shop.
  *
@@ -22,7 +22,7 @@ use ClicShopping\Apps\Marketing\Favorites\Classes\Shop\FavoritesClass;
  * of the Favorites module and invokes necessary functions related to scheduled
  * and expired favorites handling.
  */
-class Favorites implements \ClicShopping\OM\ServiceInterface
+class Favorites implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Initiates the FavoritesClass if the required file exists.

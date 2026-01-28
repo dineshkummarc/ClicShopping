@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\OrderTotal\TotalShipping;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class TotalShipping extends \ClicShopping\OM\ConfigurableAppAbstract
+class TotalShipping extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_TotalShipping_V1';

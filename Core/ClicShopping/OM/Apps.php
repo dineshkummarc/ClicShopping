@@ -122,10 +122,10 @@ class Apps
   }
 
   /**
-   * Checks if a given app exists and is a valid subclass of ClicShopping\OM\AppAbstract.
+   * Checks if a given app exists and is a valid subclass of ClicShopping\OM\Domains\AppAbstract.
    *
    * @param string $app The fully qualified name of the app in the format "Vendor\App".
-   * @return bool Returns true if the app exists and is a subclass of ClicShopping\OM\AppAbstract, otherwise false.
+   * @return bool Returns true if the app exists and is a subclass of ClicShopping\OM\Domains\AppAbstract, otherwise false.
    */
   public static function exists(string $app): bool
   {
@@ -133,10 +133,10 @@ class Apps
       [$vendor, $app] = explode('\\', $app, 2);
 
       if (class_exists('ClicShopping\Apps\\' . $vendor . '\\' . $app . '\\' . $app)) {
-        if (is_subclass_of('ClicShopping\Apps\\' . $vendor . '\\' . $app . '\\' . $app, 'ClicShopping\OM\AppAbstract')) {
+        if (is_subclass_of('ClicShopping\Apps\\' . $vendor . '\\' . $app . '\\' . $app, 'ClicShopping\OM\Domains\AppAbstract')) {
           return true;
         } else {
-          trigger_error('ClicShopping\OM\Apps::exists(): ' . $vendor . '\\' . $app . ' - App is not a subclass of ClicShopping\OM\AppAbstract and cannot be loaded.');
+          trigger_error('ClicShopping\OM\Apps::exists(): ' . $vendor . '\\' . $app . ' - App is not a subclass of ClicShopping\OM\Domains\AppAbstract and cannot be loaded.');
         }
       }
     } else {

@@ -37,7 +37,7 @@ use function define;
  * Initializes key components and services required for the Shop site and manages page routing.
  * Extends the SitesAbstract class to utilize base site functionality.
  */
-class Shop extends \ClicShopping\OM\SitesAbstract
+class Shop extends \ClicShopping\OM\Domains\SitesAbstract
 {
   protected static ?string $_application;
   protected array $ignored_actions;
@@ -160,7 +160,12 @@ class Shop extends \ClicShopping\OM\SitesAbstract
     }
 
 // Security
-    require_once(CLICSHOPPING::getConfig('dir_root') . 'Core/Module/SecurityPro/Security.php');
+      $securityFile = dirname(CLICSHOPPING::BASE_DIR) . '/Module/SecurityPro/Security.php';
+
+      if (is_file($securityFile)) {
+        require_once $securityFile;
+      }
+
     $security_pro = new \Security();
 
 // If you need to exclude a file from cleansing then you can add it like below
@@ -196,8 +201,16 @@ class Shop extends \ClicShopping\OM\SitesAbstract
       WhosOnlineShop::getWhosOnlineUpdateSession_id($parameters['old_id'], session_id());
     });
 
-    if (is_file(CLICSHOPPING::getConfig('dir_root') . 'Core/config_clicshopping.php')) {
-      require_once(CLICSHOPPING::getConfig('dir_root') . 'Core/config_clicshopping.php');
+    $dirRoot = CLICSHOPPING::getConfig('dir_root', 'Shop');
+
+    if (is_string($dirRoot) && $dirRoot !== '') {
+      $file = $dirRoot . 'Core/config_clicshopping.php';
+
+      if (is_file($file)) {
+        require_once $file;
+      }
+    } else {
+      trigger_error('Missing config value: dir_root', E_USER_WARNING);
     }
 
     Registry::set('Service', new Service());
@@ -213,7 +226,7 @@ class Shop extends \ClicShopping\OM\SitesAbstract
    *
    * This method determines the appropriate controller class for the requested page
    * and initializes it. If a valid page controller is identified, the class must
-   * implement the `ClicShopping\OM\PagesInterface` interface. The method will execute
+   * implement the `ClicShopping\OM\Interfaces«PagesInterface` interface. The method will execute
    * any actions associated with the page.
    *
    * The selection process prioritizes custom namespaces over default namespaces,
@@ -270,12 +283,12 @@ class Shop extends \ClicShopping\OM\SitesAbstract
     }
 
     if (isset($class)) {
-      if (is_subclass_of($class, 'ClicShopping\OM\PagesInterface')) {
+      if (is_subclass_of($class, 'ClicShopping\OM\Interfaces\PagesInterface')) {
         $this->page = new $class($this);
 
         $this->page->runActions();
       } else {
-        trigger_error('ClicShopping\Sites\Shop\Shop::setPage() - ' . $page_code . ': Page does not implement ClicShopping\OM\PagesInterface and cannot be loaded.');
+        trigger_error('ClicShopping\Sites\Shop\Shop::setPage() - ' . $page_code . ': Page does not implement ClicShopping\OM\Interfaces\PagesInterface and cannot be loaded.');
       }
     }
   }

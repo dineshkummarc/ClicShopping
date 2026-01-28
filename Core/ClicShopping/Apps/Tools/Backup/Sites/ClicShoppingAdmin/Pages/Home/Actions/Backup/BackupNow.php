@@ -10,11 +10,10 @@
 
 namespace ClicShopping\Apps\Tools\Backup\Sites\ClicShoppingAdmin\Pages\Home\Actions\Backup;
 
+use ClicShopping\Apps\Tools\Backup\Classes\ClicShoppingAdmin\Backup;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Tools\Backup\Classes\ClicShoppingAdmin\Backup;
-
-class BackupNow extends \ClicShopping\OM\PagesActionsAbstract
+class BackupNow extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

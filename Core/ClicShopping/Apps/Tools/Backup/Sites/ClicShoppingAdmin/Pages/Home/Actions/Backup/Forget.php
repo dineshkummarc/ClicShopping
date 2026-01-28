@@ -12,7 +12,7 @@ namespace ClicShopping\Apps\Tools\Backup\Sites\ClicShoppingAdmin\Pages\Home\Acti
 
 use ClicShopping\OM\Registry;
 
-class Forget extends \ClicShopping\OM\PagesActionsAbstract
+class Forget extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;
 

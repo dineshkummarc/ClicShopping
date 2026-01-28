@@ -10,15 +10,15 @@
 
 namespace ClicShopping\Service\Shop;
 
+use ClicShopping\Apps\Customers\Reviews\Classes\Shop\ReviewsClass as NewReviews;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-use ClicShopping\Apps\Customers\Reviews\Classes\Shop\ReviewsClass as NewReviews;
 /**
  * Service class responsible for managing the initialization and termination of the Reviews module in the shop.
  * Implements the ClicShopping service interface.
  */
-class Reviews implements \ClicShopping\OM\ServiceInterface
+class Reviews implements \ClicShopping\OM\Interfaces\ServiceInterface
 {
   /**
    * Starts the process to initialize the Reviews class if the specified file exists.

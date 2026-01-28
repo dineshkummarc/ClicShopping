@@ -33,23 +33,23 @@ curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=
 namespace ClicShopping\Apps\Tools\MCP\Sites\Shop\Pages\CustomersProducts;
 
 use AllowDynamicProperties;
-use ClicShopping\OM\HTML;
-use ClicShopping\OM\Registry;
-
-// Nouvelle dépendance pour l'authentification
-use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Authentification;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\EndPoint\Products;
+use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Authentification;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpPermissions;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpSecurity;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Message;
 use ClicShopping\Apps\Tools\MCP\MCP;
+use ClicShopping\OM\HTML;
+use ClicShopping\OM\Registry;
+
+// Nouvelle dépendance pour l'authentification
 
 #[AllowDynamicProperties]
 /**
  * This class serves as the main entry point for the MCP Products API.
  * It handles request routing for product-related queries and chat interactions.
  */
-class CustomersProducts extends \ClicShopping\OM\PagesAbstract
+class CustomersProducts extends \ClicShopping\OM\Domains\PagesAbstract
 {
   /** @var mixed The database connection instance. */
   public mixed $db;

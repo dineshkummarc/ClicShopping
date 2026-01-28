@@ -10,14 +10,13 @@
 
 namespace ClicShopping\Apps\Orders\ReturnOrders\Sites\Shop\Pages\ProductReturn\Actions;
 
+use ClicShopping\Apps\Orders\ReturnOrders\ReturnOrders as ReturnOrdersApp;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
-
-use ClicShopping\Apps\Orders\ReturnOrders\ReturnOrders as ReturnOrdersApp;
 use ClicShopping\Sites\Shop\Pages\Account\Classes\HistoryInfo as Info;
 
-class ProductReturn extends \ClicShopping\OM\PagesActionsAbstract
+class ProductReturn extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {

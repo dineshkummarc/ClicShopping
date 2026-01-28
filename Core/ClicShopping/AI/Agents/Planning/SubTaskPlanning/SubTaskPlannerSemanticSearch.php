@@ -2,8 +2,8 @@
 /**
  * SubTaskPlannerSemanticSearch
  * 
- * Planificateur spécialisé pour la recherche sémantique
- * Responsabilité : Créer des plans pour recherches dans la base de connaissances
+ * Planner spécialisé pour la recherche sémantique
+ * Responsibility : Createsr des plans pour recherches dans la base de connaissances
  */
 
 namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
@@ -27,7 +27,7 @@ class SubTaskPlannerSemanticSearch
   }
 
   /**
-   * Détecte si une requête concerne la recherche sémantique
+   * Detects si une requête concerne la recherche sémantique
    * Note: Ce planificateur est utilisé par défaut pour les requêtes de type 'semantic_search'
    */
   public function canHandle(string $query): bool
@@ -38,7 +38,7 @@ class SubTaskPlannerSemanticSearch
   }
 
   /**
-   * Crée le plan de recherche sémantique (1 étape simple)
+   * Creates le plan de recherche sémantique (1 étape simple)
    */
   public function createPlan(array $intent, string $query): array
   {
@@ -50,7 +50,7 @@ class SubTaskPlannerSemanticSearch
 
     $embeddingTables = $this->ragManager->knownEmbeddingTable();
 
-    // Étape unique: Recherche sémantique
+    // Step unique: Recherche sémantique
     $step1 = new TaskStep(
       'step_1',
       'semantic_search',
@@ -77,7 +77,7 @@ class SubTaskPlannerSemanticSearch
   }
 
   /**
-   * Obtient les métadonnées du planificateur
+   * Gets les planner metadata
    */
   public function getMetadata(): array
   {

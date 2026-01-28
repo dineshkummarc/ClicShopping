@@ -10,10 +10,9 @@
 
 namespace ClicShopping\Apps\Orders\ReturnOrders;
 
-use ClicShopping\OM\CLICSHOPPING;
-use ClicShopping\OM\Registry;
+use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-class ReturnOrders extends \ClicShopping\OM\ConfigurableAppAbstract
+class ReturnOrders extends ConfigurableAppAbstract
 {
   protected $api_version = 1;
   protected string $identifier = 'ClicShopping_ReturnOrders_V1';

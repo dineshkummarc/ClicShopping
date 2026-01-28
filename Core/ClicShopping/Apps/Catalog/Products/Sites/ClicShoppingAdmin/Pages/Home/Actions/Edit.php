@@ -18,7 +18,7 @@ use ClicShopping\OM\Registry;
  * This action class handles the editing of products in the admin interface.
  * It sets up the page for editing and loads necessary definitions.
  */
-class Edit extends \ClicShopping\OM\PagesActionsAbstract
+class Edit extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   /**
    * Execute the action to edit a product.

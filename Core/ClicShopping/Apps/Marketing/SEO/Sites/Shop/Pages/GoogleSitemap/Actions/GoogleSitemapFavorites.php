@@ -13,7 +13,7 @@ namespace ClicShopping\Apps\Marketing\SEO\Sites\Shop\Pages\GoogleSitemap\Actions
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
-class GoogleSitemapFavorites extends \ClicShopping\OM\PagesActionsAbstract
+class GoogleSitemapFavorites extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   protected $use_site_template = false;
   protected $rewriteUrl;
