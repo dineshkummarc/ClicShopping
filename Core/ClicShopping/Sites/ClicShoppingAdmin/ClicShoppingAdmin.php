@@ -208,7 +208,17 @@ class ClicShoppingAdmin extends \ClicShopping\OM\Domains\SitesAbstract
     }
 
 // configuration generale du systeme
-    require_once(CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Core/config_clicshopping.php');
+     $dirRoot = CLICSHOPPING::getConfig('dir_root', 'Shop');
+
+     if (is_string($dirRoot) && $dirRoot !== '') {
+       $file = $dirRoot . 'Core/config_clicshopping.php';
+
+       if (is_file($file)) {
+         require_once $file;
+       }
+     } else {
+       trigger_error('Missing config value: dir_root', E_USER_WARNING);
+     }
 
     Registry::set('Service', new Service());
     Registry::get('Service')->start();
