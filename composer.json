@@ -20,7 +20,7 @@
         "guzzlehttp/guzzle": "^7.10",
         "phpmailer/phpmailer": "^7.0",
         "amnuts/opcache-gui": "^3.6",
-        "stripe/stripe-php": "^19.1",
+        "stripe/stripe-php": "^19.3",
         "doctrine/orm": "^3.6",
         "symfony/cache": "^8.0",
         "symfony/http-client": "^8.0",
