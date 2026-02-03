@@ -67,6 +67,7 @@ class ProductsCommon extends Prod
   protected $infoPriceDiscountByQuantity;
   protected $saveMoney;
   protected $dynamicPricingRules;
+  protected string $button;
 
   public function __construct()
   {
@@ -83,7 +84,7 @@ class ProductsCommon extends Prod
    *
    * @return int|false Returns the ID if valid, otherwise returns false.
    */
-  public function getID()
+  public function getID(): mixed
   {
     if (parent::getID() === null || !is_numeric(parent::getID()) || empty(parent::getID())) {
       return false;
@@ -1257,7 +1258,7 @@ class ProductsCommon extends Prod
    * @param string|null $id The ID of the product. If null, a default ID may be used.
    * @return mixed The price of the product calculated by weight.
    */
-  public function getProductsPriceByWeight(string $id = null)
+  public function getProductsPriceByWeight(?string $id = null)
   {
     return $this->setProductsPriceByWeight($id);
   }
@@ -1268,7 +1269,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
    * @return string The "products_quantity_unit_title" value for the product.
    */
-  public function getProductsQuantityByUnit($id = null): string
+  public function getProductsQuantityByUnit(?string $id = null): string
   {
     if (is_null($id)) {
       $id = $this->getID();

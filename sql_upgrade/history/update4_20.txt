@@ -15,6 +15,6 @@ ADD INDEX IF NOT EXISTS idx_languages_definitions_domain_group_key (domain, cont
 
 
 
-ALTER TABLE clic_dynamic_pricing_rules 
+ALTER TABLE clic_dynamic_pricing_rules
 ADD COLUMN IF NOT EXISTS rules_status_promotion tyniint(1) DEFAULT (0) not null COMMENT 'Special pricing flag to create a new specials : 0 - inactive - 1 - active )'
 AFTER customers_group;

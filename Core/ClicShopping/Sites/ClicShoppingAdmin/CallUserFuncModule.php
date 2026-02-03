@@ -30,7 +30,7 @@ class CallUserFuncModule
    *
    * @return mixed Returns the result of the executed function or method.
    */
-  public static function execute(string $function, array|string|null $default = null, string $key = null)
+  public static function execute(string $function, array|string|null $default = null, ?string $key = null)
   {
     if (str_contains($function, '::')) {
       $class_method = explode('::', $function);

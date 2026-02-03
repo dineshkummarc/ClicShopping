@@ -34,7 +34,7 @@ class ActionRecorderAdmin extends \ClicShopping\Apps\Tools\ActionsRecorder\Class
    * @param string|null $user_name Optional user name.
    * @return void
    */
-  public function __construct(string $module, string $user_id = null, string $user_name = null)
+  public function __construct(string $module, ?string $user_id = null, ?string $user_name = null)
   {
     $this->lang = Registry::get('Language');
 

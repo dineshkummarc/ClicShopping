@@ -1,0 +1,6 @@
+INSERT INTO `clic_administrator_menu` VALUES(814, '', 2, 50, 1, '', 0, NULL, 1);
+
+INSERT INTO `clic_administrator_menu_description` VALUES(810, 'AI', 1);
+INSERT INTO `clic_administrator_menu_description` VALUES(810, 'IA', 2);
+
+UPDATE `clic_administrator_menu` SET `parent_id` = '814' WHERE `clic_administrator_menu`.`id` = 809;

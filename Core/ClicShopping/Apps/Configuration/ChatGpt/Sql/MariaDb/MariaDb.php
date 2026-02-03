@@ -11,6 +11,7 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Sql\MariaDb;
 
 use ClicShopping\OM\Cache;
+use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
 class MariaDb
@@ -938,7 +939,7 @@ class MariaDb
   public static function addTaxonomyColumns(array $tables = []): array
   {
     $CLICSHOPPING_Db = Registry::get('Db');
-    $prefix = \ClicShopping\OM\CLICSHOPPING::getConfig('db_table_prefix');
+    $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     $results = [];
     
     // Default to all known embedding tables if none specified
@@ -1023,7 +1024,7 @@ class MariaDb
   public static function createMetadataIndexes(string $tableName): bool
   {
     $CLICSHOPPING_Db = Registry::get('Db');
-    $prefix = \ClicShopping\OM\CLICSHOPPING::getConfig('db_table_prefix');
+    $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     $fullTableName = $prefix . $tableName;
     
     try {
@@ -1078,7 +1079,7 @@ class MariaDb
   public static function validateSchema(string $tableName): array
   {
     $CLICSHOPPING_Db = Registry::get('Db');
-    $prefix = \ClicShopping\OM\CLICSHOPPING::getConfig('db_table_prefix');
+    $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     $fullTableName = $prefix . $tableName;
     
     $validation = [

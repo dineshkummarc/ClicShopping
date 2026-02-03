@@ -21,17 +21,15 @@ class ResetAllRagStats extends \ClicShopping\OM\Domains\PagesActionsAbstract
 
     if (isset($_POST['confirm_reset']) && $_POST['confirm_reset'] === 'yes') {
       try {
-        $db = Registry::get('Db');
-
         // Supprimer toutes les statistiques
-        $db->exec('DELETE FROM :table_rag_statistics');
+        $CLICSHOPPING_ChatGpt->exec('DELETE FROM :table_rag_statistics');
         
         // Supprimer toutes les interactions
-        $db->exec('DELETE FROM :table_rag_interactions');
+        $CLICSHOPPING_ChatGpt->exec('DELETE FROM :table_rag_interactions');
         
         // Réinitialiser les auto-increment
-        $db->exec('ALTER TABLE :table_rag_statistics AUTO_INCREMENT = 1');
-        $db->exec('ALTER TABLE :table_rag_interactions AUTO_INCREMENT = 1');
+        $CLICSHOPPING_ChatGpt->exec('ALTER TABLE :table_rag_statistics AUTO_INCREMENT = 1');
+        $CLICSHOPPING_ChatGpt->exec('ALTER TABLE :table_rag_interactions AUTO_INCREMENT = 1');
         
         $CLICSHOPPING_MessageStack->add($CLICSHOPPING_ChatGpt->getDef('success_reset_all_stats'), 'success', 'chatgpt');
         
