@@ -393,7 +393,7 @@ class Template
    * @param string $file The name of the file to retrieve the path for.
    * @param string|null $template The
    */
-  public function getFile(string $file, string $template = null): string
+  public function getFile(string $file, ?string $template = null): string
   {
     if (!isset($template)) {
       $template = $this->getCode();
@@ -408,7 +408,7 @@ class Template
    * @param string $file The name of the file to retrieve.
    * @param string|null $template The template to use for the
    */
-  public function getPublicFile(string $file, string $template = null): string
+  public function getPublicFile(string $file, ?string $template = null): string
   {
     if (!isset($template)) {
       $template = $this->getCode();

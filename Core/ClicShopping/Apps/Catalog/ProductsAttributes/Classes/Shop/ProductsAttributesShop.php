@@ -187,7 +187,7 @@ class ProductsAttributesShop
 
         $Qattributes->execute();
       }
-} else {
+    } else {
       if ($this->customer->getCustomersGroupID() != 0) {
         $Qattributes = $this->db->prepare('select distinct pov.products_options_values_id,
                                                               pov.products_options_values_name,
@@ -235,7 +235,7 @@ class ProductsAttributesShop
         $Qattributes->bindInt(':language_id', $language_id);
         $Qattributes->execute();
       }
-}
+    }
 
     return $Qattributes;
   }
@@ -438,7 +438,7 @@ class ProductsAttributesShop
 
         $Qattributes->execute();
       }
-} else {
+    } else {
       if ($this->customer->getCustomersGroupID() != 0) {
         $Qattributes = $this->db->prepare('select popt.products_options_name,
                                                    poval.products_options_values_name,
@@ -494,7 +494,7 @@ class ProductsAttributesShop
 
         $Qattributes->execute();
       }
-}
+    }
 
     return $Qattributes;
   }

@@ -551,7 +551,7 @@ class CategoriesAdmin
    * @return array A multi-dimensional array representing the generated category paths or
    *               product-to-category relationships and their parent-child hierarchy.
    */
-  public function getGenerateCategoryPath($id, $from = 'category', $categories_array = '', $index = 0)
+  public function getGenerateCategoryPath(int $id, string $from = 'category', $categories_array = '', int $index = 0): array
   {
     if (!is_array($categories_array)) {
       $categories_array = [];

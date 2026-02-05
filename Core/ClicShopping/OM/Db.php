@@ -112,8 +112,8 @@ class Db extends PDO
     $password = null,
     $database = null,
     $port = null,
-    array $driver_options = null,
-    array $options = null
+    ?array $driver_options = null,
+    ?array $options = null
   )
   {
     if (!isset($server)) {

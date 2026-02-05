@@ -499,12 +499,12 @@ class TemplateAdmin extends \ClicShopping\Sites\Shop\Template
   /**
    * Updates the template with the available directory options and returns an HTML select menu.
    *
-   * @param string $name The name attribute for the select menu.
+   * @param ?string $name The name attribute for the select menu.
    * @param string $default The default option text to display in the select menu.
    * @param string|null $item_value The selected value in the select menu, or null if none is selected.
    * @return string The generated HTML select menu.
    */
-  public function updateTemplate(string $name, string $default = '', string|null $item_value): string
+  public function updateTemplate(?string $name, string $default, string|null $item_value): string
   {
     $template_directory = CLICSHOPPING::getConfig('dir_root', 'Shop') . $this->getTemplateDirectory() . '/';
 

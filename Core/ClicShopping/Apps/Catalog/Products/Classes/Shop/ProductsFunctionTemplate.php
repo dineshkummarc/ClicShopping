@@ -63,7 +63,7 @@ class ProductsFunctionTemplate
    * @param int|string $products_id The ID of the product for which the name URL is being generated.
    * @return string The formatted product name URL.
    */
-  public function getProductsNameUrl($products_id): string
+  public function getProductsNameUrl(int|string $products_id): string
   {
     $products_name = HTML::link($this->rewriteUrl->getProductNameUrl($products_id), '<span itemprop="name">' . $this->productsCommon->getProductsName($products_id) . '</span>', 'itemprop="url"');
 
@@ -301,7 +301,7 @@ class ProductsFunctionTemplate
    * @param string $tag An optional tag to prepend to the product model. Defaults to a single space.
    * @return string The formatted product model, or an empty string if the model is not available.
    */
-  public function getProductsModel(string $products_id, string $tag = ' '): string
+  public function getProductsModel(int|string $products_id, string $tag = ' '): string
   {
     if (!empty($this->productsCommon->getProductsModel($products_id))) {
       $products_model = $tag . $this->productsCommon->getProductsModel($products_id);
@@ -319,7 +319,7 @@ class ProductsFunctionTemplate
    * @param string $tag An optional tag to append to the manufacturer name. Defaults to a single space.
    * @return string The formatted manufacturer name or an empty string if no manufacturer is found.
    */
-  public function getProductsManufacturer(string $products_id, string $tag = ' '): string
+  public function getProductsManufacturer(int|string $products_id, string $tag = ' '): string
   {
     if (!empty($this->productsCommon->getProductsManufacturer($products_id))) {
       $products_manufacturers = CLICSHOPPING::getDef('text_manufacturer') . $tag . $this->productsCommon->getProductsManufacturer($products_id);
@@ -337,7 +337,7 @@ class ProductsFunctionTemplate
    * @param string $tag An optional tag to append to the price per weight unit. Defaults to a single space.
    * @return string The formatted price per weight unit, or an empty string if the price information is not available.
    */
-  public function getProductsPriceByWeight(string $products_id, string $tag = ' '): string
+  public function getProductsPriceByWeight(int|string $products_id, string $tag = ' '): string
   {
     if (!empty($this->productsCommon->getProductsPriceByWeight($products_id))) {
       $product_price_kilo = CLICSHOPPING::getDef('text_products_price_kilo') . $tag . $this->productsCommon->getProductsPriceByWeight($products_id);
@@ -355,7 +355,7 @@ class ProductsFunctionTemplate
    * @param string $tag An optional tag to prepend to the formatted availability date. Defaults to a single space.
    * @return string The formatted product availability date or an empty string if no date is set or available.
    */
-  public function getProductsDateAvailable($products_id, string $tag = ' '): string
+  public function getProductsDateAvailable(int|string $products_id, string $tag = ' '): string
   {
     if (!empty($this->productsCommon->getProductsDateAvailable($products_id))) {
       $products_date_available = $this->productsCommon->getProductsDateAvailable($products_id);
@@ -375,7 +375,7 @@ class ProductsFunctionTemplate
    * @param mixed $products_id The ID of the product to check its shop-only availability.
    * @return string The shop-only availability message if applicable, or an empty string otherwise.
    */
-  public function getProductsOnlyTheShop($products_id): string
+  public function getProductsOnlyTheShop(int|string $products_id): string
   {
     if ($this->productsCommon->getProductsOnlyTheShop($products_id) == 1) {
       $products_only_shop = CLICSHOPPING::getDef('text_only_shop');
@@ -392,7 +392,7 @@ class ProductsFunctionTemplate
    * @param mixed $products_id The ID of the product to check.
    * @return string The label indicating the product is only available on the website, or an empty string if not applicable.
    */
-  public function getProductsOnlyOnTheWebSite($products_id): string
+  public function getProductsOnlyOnTheWebSite(int|string $products_id): string
   {
     if ($this->productsCommon->getProductsOnlyOnTheWebSite($products_id) == 1) {
       $products_only_web = CLICSHOPPING::getDef('text_only_web');
@@ -410,7 +410,7 @@ class ProductsFunctionTemplate
    * @param string $tag An optional tag to format the packaging type. Defaults to a single space.
    * @return string The formatted product packaging type. Returns an empty string if packaging type is not set or invalid.
    */
-  public function getProductsPackaging($products_id, string $tag = ' '): string
+  public function getProductsPackaging(int|string $products_id, string $tag = ' '): string
   {
     $products_packaging = $this->productsCommon->getProductsPackaging($products_id);
 
@@ -429,7 +429,7 @@ class ProductsFunctionTemplate
    * @param string $tag An optional tag to append to the shipping delay information. Defaults to a single space.
    * @return string The formatted shipping delay information, or an empty string if no delay information is available.
    */
-  public function getProductsShippingDelay($products_id, string $tag = ' '): string
+  public function getProductsShippingDelay(int|string $products_id, string $tag = ' '): string
   {
     if (!empty($this->productsCommon->getProductsShippingDelay($products_id))) {
       $products_shipping_delay = CLICSHOPPING::getDef('text_display_shipping_delay') . $tag . $this->productsCommon->getProductsShippingDelay($products_id);
@@ -447,7 +447,7 @@ class ProductsFunctionTemplate
    * @param string $tag An optional tag to append to the shipping delay message. Defaults to a single space.
    * @return string The formatted out-of-stock shipping delay message. Returns an empty string if no delay message is found.
    */
-  public function getProductsShippingDelayOutOfStock($products_id, string $tag = ' '): string
+  public function getProductsShippingDelayOutOfStock(int|string $products_id, string $tag = ' '): string
   {
     if (!empty($this->productsCommon->getProductsShippingDelayOutOfStock($products_id))) {
       $products_shipping_delay_out_of_stock = CLICSHOPPING::getDef('text_display_shipping_delay_out_of_stock') . $tag . $this->productsCommon->getProductsShippingDelayOutOfStock($products_id);
@@ -464,7 +464,7 @@ class ProductsFunctionTemplate
    * @param mixed $products_id The ID of the product for which the head tag(s) should be retrieved.
    * @return array|string An array of processed head tag(s) if available, or an empty string if no tags are found.
    */
-  public function getProductsHeadTag($products_id)
+  public function getProductsHeadTag(int|string $products_id)
   {
     if (!empty($this->productsCommon->getProductsHeadTag($products_id))) {
       $products_tag = $this->productsCommon->getProductsHeadTag($products_id);
@@ -485,7 +485,7 @@ class ProductsFunctionTemplate
    * @param string $tag An optional tag to append to the product volume. Defaults to a single space.
    * @return string The formatted product volume. Returns an empty string if no volume is found.
    */
-  public function getProductsVolume($products_id, string $tag = ' '): string
+  public function getProductsVolume(int $products_id, string $tag = ' '): string
   {
     if (!empty($this->productsCommon->getProductsVolume($products_id))) {
       $products_volume = CLICSHOPPING::getDef('text_products_volume') . $tag . $this->productsCommon->getProductsVolume($products_id);
@@ -503,7 +503,7 @@ class ProductsFunctionTemplate
    * @param string $tag An optional tag to format the weight value and weight symbol. Defaults to ' / '.
    * @return string The formatted product weight including the weight symbol. Returns an empty string if no weight is available.
    */
-  public function getProductsWeight($products_id, string $tag = ' / '): string
+  public function getProductsWeight(int $products_id, string $tag = ' / '): string
   {
     if (!empty($this->productsCommon->getProductsWeight($products_id))) {
       $weight_symbol = $this->productsCommon->getSymbolWeightByProducts($this->productsCommon->getWeightClassIdByProducts($products_id));
@@ -521,7 +521,7 @@ class ProductsFunctionTemplate
    * @param mixed $products_id The ID of the product for which the manufacturer name should be retrieved.
    * @return string The formatted manufacturer name as a hyperlink.
    */
-  public function getManufacturerName($products_id): string
+  public function getManufacturerName(int $products_id): string
   {
     if (isset($_GET['manufacturersId']) && !is_null($_GET['manufacturersId']) && is_numeric($_GET['manufacturersId'])) {
       $manufacturer_id = HTML::sanitize($_GET['manufacturersId']);
@@ -540,7 +540,7 @@ class ProductsFunctionTemplate
    * @param string $products_image The product image file name to be included in the link.
    * @return string A string containing the HTML link element for the manufacturer image.
    */
-  public function getManufacturerImage($products_id, string $products_image): string
+  public function getManufacturerImage(int $products_id, string $products_image): string
   {
     if (isset($_GET['manufacturersId']) && is_numeric($_GET['manufacturersId'])) {
       $manufacturer_id = HTML::sanitize($_GET['manufacturersId']);
@@ -558,7 +558,7 @@ class ProductsFunctionTemplate
    * @param mixed $products_id The ID of the product for which the length dimension should be retrieved.
    * @return string The length of the product, formatted with a descriptive label. Returns an empty string if no dimension is found.
    */
-  public function getProductslength($products_id): string
+  public function getProductslength(int $products_id): string
   {
     if (!empty($this->productsCommon->getProductsDimension($products_id))) {
       $products_length = CLICSHOPPING::getDef('text_products_length') . ' : ' . $this->productsCommon->getProductsDimension($products_id);
@@ -575,7 +575,7 @@ class ProductsFunctionTemplate
    * @param mixed $products_id The ID of the product for which the JSON-LD data is generated.
    * @return string The JSON-LD structured data script for the specified product.
    */
-  public function getProductJsonLd($products_id): string
+  public function getProductJsonLd(int $products_id): string
   {
     $CLICSHOPPING_Reviews = Registry::get('Reviews');
 

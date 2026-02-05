@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Catalog\Products\Classes\Shop;
 
+use AllowDynamicProperties;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
 use ClicShopping\OM\HTML;
@@ -25,6 +26,7 @@ use function strlen;
  * This class provides functionality for managing details and properties of products,
  * including retrieving product information, performing checks, and updating product views.
  */
+#[AllowDynamicProperties]
 class ProductsCommon extends Prod
 {
   public mixed $app;
@@ -1258,7 +1260,7 @@ class ProductsCommon extends Prod
    * @param string|null $id The ID of the product. If null, a default ID may be used.
    * @return mixed The price of the product calculated by weight.
    */
-  public function getProductsPriceByWeight(?string $id = null)
+  public function getProductsPriceByWeight(?string $id = null):mixed
   {
     return $this->setProductsPriceByWeight($id);
   }
@@ -1269,7 +1271,7 @@ class ProductsCommon extends Prod
    * @param int|null $id The ID of the product. If null, the method will use the current ID.
    * @return string The "products_quantity_unit_title" value for the product.
    */
-  public function getProductsQuantityByUnit(?string $id = null): string
+  public function getProductsQuantityByUnit(mixed $id = null): string
   {
     if (is_null($id)) {
       $id = $this->getID();
@@ -1708,7 +1710,7 @@ class ProductsCommon extends Prod
    * @param mixed $button The buy button to be set and returned.
    * @return mixed The specified buy button.
    */
-  public function getBuyButton($button)
+  public function getBuyButton(mixed $button): mixed
   {
     $this->button = $button;
 
@@ -2859,7 +2861,7 @@ class ProductsCommon extends Prod
    * @param int $id The ID of the product to retrieve the weight class ID for.
    * @return int|null The "products_weight_class_id" value for the product, or null if not found.
    */
-  private function setWeightClassIdByProducts($id)
+  private function setWeightClassIdByProducts(int $id): ?int
   {
     $QweightClass = $this->db->prepare('select products_weight_class_id
                                            from :table_products
@@ -2882,7 +2884,7 @@ class ProductsCommon extends Prod
    * @param mixed $id The ID of the product, which will be sanitized before use.
    * @return mixed The weight class ID of the specified product.
    */
-  public function getWeightClassIdByProducts($id)
+  public function getWeightClassIdByProducts(int $id): ?int
   {
     $id = HTML::sanitize($id);
 
@@ -2915,7 +2917,7 @@ class ProductsCommon extends Prod
    * @param int $weight_class_id The ID of the weight class to retrieve the symbol weight for.
    * @return mixed The symbol weight associated with the specified weight class.
    */
-  public function getSymbolWeightByProducts(int $weight_class_id)
+  public function getSymbolWeightByProducts(int $weight_class_id): mixed
   {
     $weight_class_id = HTML::sanitize($weight_class_id);
 

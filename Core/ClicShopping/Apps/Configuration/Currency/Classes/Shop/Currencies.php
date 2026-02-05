@@ -389,7 +389,7 @@ class Currencies
    * @param bool $use_locale Indicates whether to use locale-specific numeric formatting. Defaults to false.
    * @return string The formatted currency value as a string.
    */
-  public function raw(float $number, string $currency_code = null, float $currency_value = null, bool $calculate = true, bool $use_locale = false): string
+  public function raw(float $number, ?string $currency_code = null, ?float $currency_value = null, bool $calculate = true, bool $use_locale = false): string
   {
     if (!isset($currency_code)) {
       $currency_code = $this->getDefault();

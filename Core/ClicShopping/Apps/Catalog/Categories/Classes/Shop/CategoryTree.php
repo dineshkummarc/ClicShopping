@@ -439,7 +439,7 @@ class CategoryTree
    * @return array|bool Returns an associative array of category data or a specific value if a key is provided. Returns false if the category is not found.
    */
 
-  public function getData(string $id, string $key = null): array|bool
+  public function getData(string $id, ?string $key = null): array|bool
   {
     foreach ($this->_data as $parent => $categories) {
       foreach ($categories as $category_id => $info) {
@@ -548,7 +548,7 @@ class CategoryTree
    * @param mixed $id The unique identifier for the category to search for.
    * @return int|bool The number of products in the specified category, or `false` if the category ID is not found.
    */
-  public function getNumberOfProducts($id): int|bool
+  public function getNumberOfProducts(int $id): int|bool
   {
     foreach ($this->_data as $parent => $categories) {
       foreach ($categories as $category_id => $info) {
@@ -568,7 +568,7 @@ class CategoryTree
    * @param mixed $root_category_id The ID to be set as the root category.
    * @return void
    */
-  public function setRootCategoryID($root_category_id): void
+  public function setRootCategoryID(int $root_category_id): void
   {
     $this->root_category_id = $root_category_id;
   }
@@ -593,7 +593,7 @@ class CategoryTree
    * @param string $root_end_string The string to be used as the ending delimiter for the root element.
    * @return void This method does not return a value.
    */
-  public function setRootString($root_start_string, $root_end_string): void
+  public function setRootString(string $root_start_string, string $root_end_string): void
   {
     $this->root_start_string = $root_start_string;
     $this->root_end_string = $root_end_string;
@@ -607,7 +607,7 @@ class CategoryTree
    * @param string $parent_end_string The string to mark the end of a parent element.
    * @return void
    */
-  public function setParentString($parent_start_string, $parent_end_string): void
+  public function setParentString(string $parent_start_string, string $parent_end_string): void
   {
     $this->parent_start_string = $parent_start_string;
     $this->parent_end_string = $parent_end_string;
@@ -622,7 +622,7 @@ class CategoryTree
    * @param bool $apply_to_root Indicates whether the parent group strings should be applied to the root level.
    * @return void
    */
-  public function setParentGroupString($parent_group_start_string, $parent_group_end_string, bool $apply_to_root = false): void
+  public function setParentGroupString(string $parent_group_start_string, string $parent_group_end_string, bool $apply_to_root = false): void
   {
     $this->parent_group_start_string = $parent_group_start_string;
     $this->parent_group_end_string = $parent_group_end_string;
@@ -637,7 +637,7 @@ class CategoryTree
    * @param string $child_end_string The string to append to each child element.
    * @return void
    */
-  public function setChildString($child_start_string, $child_end_string): void
+  public function setChildString(string $child_start_string, string $child_end_string): void
   {
     $this->child_start_string = $child_start_string;
     $this->child_end_string = $child_end_string;
@@ -649,7 +649,7 @@ class CategoryTree
    * @param string $breadcrumb_separator The string to be used as the separator in breadcrumb navigation.
    * @return void
    */
-  public function setBreadcrumbSeparator($breadcrumb_separator): void
+  public function setBreadcrumbSeparator(string $breadcrumb_separator): void
   {
     $this->breadcrumb_separator = $breadcrumb_separator;
   }
@@ -661,7 +661,7 @@ class CategoryTree
    * @param bool $breadcrumb_usage Indicates whether breadcrumb usage should be enabled (true) or disabled (false).
    * @return void
    */
-  public function setBreadcrumbUsage($breadcrumb_usage): void
+  public function setBreadcrumbUsage(bool $breadcrumb_usage): void
   {
     if ($breadcrumb_usage === true) {
       $this->breadcrumb_usage = true;

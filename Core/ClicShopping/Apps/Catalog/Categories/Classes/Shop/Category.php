@@ -218,7 +218,7 @@ class Category
    * @param int|null $id The index of the specific component to retrieve (optional).
    * @return array|string The path array if no index is provided or the specific component at the given index.
    */
-  public function getPathArray($id = null)
+  public function getPathArray(?int $id = null)
   {
     $cPath_array = explode('_', $this->getPath());
 
