@@ -1,5 +1,5 @@
 {
-  "title": "AI Ecommerce Domain App Insight",
+  "title": "AI Ecommerce Domain",
   "app": "Ecommerce",
   "vendor": "AI",
   "version": "1.0.0",
@@ -63,10 +63,6 @@
         "Update": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\Update",
         "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\DeleteAll"
       },
-      "ClicShoppingAdmin/Recommendations": {
-      },
-      "ClicShoppingAdmin/RAG": {
-      },
       "Shop/Orders": {
         "Process": "Module\\Hooks\\Shop\\Orders\\Process"
       },
@@ -78,13 +74,17 @@
       },
       "Shop/ReviewsWrite": {
         "Process": "Module\\Hooks\\Shop\\ReviewsWrite\\Process"
+      },
+      "ClicShoppingAdmin/Recommendations": {
+      },
+      "ClicShoppingAdmin/RAG": {
       }
-
     }
   },
   "routes": {
     "ClicShoppingAdmin": "Sites\\ClicShoppingAdmin\\Pages\\Home",
     "Shop": {
+      "OpenAI&ACP": "Sites\\Shop\\Pages\\ACP"
     }
   }
 }

@@ -34,11 +34,6 @@
       },
       "ClicShoppingAdmin/SEO": {
         "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\SEO\\SeoChatGpt"
-      },
-      "ClicShoppingAdmin/Orders": {
-        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\Update",
-        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\DeleteConfirm",
-        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\DeleteAll"
       }
     }
   },

@@ -19,14 +19,6 @@ module_ra_introduction = Rag Bi (business intelligence) avec agent est une techn
 Pour utilisez cette fonctionnalité vous devez vérifier si votre base de données est compatible avec <strong>Mariab Db version 11.7</strong> au minimum. >C'est une version beta fonctionnelle.<br />
 MySQL server n'est pas compatible avec cette fonctionnalité.<br /
 
-module_re_title = OpenAI Ecommerce 
-module_re_short_title =  OpenAI Ecommerce 
-module_re_introduction = OpenAI a développé un protocole de commerce électronique appelé Agentic Commerce Protocol (ACP).
-Il permet d’afficher les produits directement dans GPT avec un paiement instantané.
-Ce module implémente ce protocole, gère le paiement et assure le suivi des commandes via ClicShopping.<br>
-Vous devez vous enregistrer auprés de OpenAi pour utiliser ce procol ACP.
-
-
 button_install_title = Installer
 button_configure = Configurer
 button_save = Sauver

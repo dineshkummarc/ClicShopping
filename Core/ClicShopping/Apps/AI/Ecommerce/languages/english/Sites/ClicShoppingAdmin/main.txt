@@ -9,6 +9,8 @@ button_overview = Overview
 button_configuration = Configuration
 button_help = Help
 button_back = Back
+button_install_title = Install
+button_save = Save
 
 tab_overview = Overview
 tab_entities = Entities
@@ -18,13 +20,22 @@ tab_performance = Performance
 section_welcome = Welcome to AI Ecommerce Domain
 text_welcome_message = This is the AI Ecommerce Domain management interface. Here you can monitor and manage all e-commerce related AI operations.
 
+module_ec_short_title = Ecommerce Agent
+module_ec_title = Ecommerce Agent
+
+module_acp_title = OpenAI ACP Ecommerce
+module_acp_short_title =  OpenAI ACP Ecommerce
+module_acp_introduction = OpenAi has developed a ecommerce protocol called Agentic Commerce Protocol.<br>
+It allows to display the product inside Gpt with a payment instant. This module implement this protocol, the payment and allow to follow the order accross ClicShopping.<br>
+You must be registred at OpenAI to use this ACP protocol.
+
 section_domain_overview = Domain Overview
 subsection_domain_info = Domain Information
 subsection_supported_entities = Supported Entities
 subsection_query_capabilities = Query Capabilities
 subsection_semantic_queries = Semantic Queries
 subsection_analytics_queries = Analytics Queries
-subsection_hybrid_queries = Requêtes hybrides
+subsection_hybrid_queries = Hybrid request
 
 label_domain_name = Domain Name
 label_domain_id = Domain ID

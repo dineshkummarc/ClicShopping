@@ -297,10 +297,10 @@ class ProductHelper implements EntityHelperInterface
       }
       
       $ecommerceApp = $this->ecommerceApp;
-      $db = $ecommerceApp->db;
+      $ClicShopping_Db = $ecommerceApp->db;
       
       // Query using Ecommerce app database
-      $Qproduct = $db->prepare('SELECT 
+      $Qproduct = $ClicShopping_Db->prepare('SELECT 
                                   p.products_id as product_id,
                                   pd.products_name as name,
                                   p.products_price as price,
@@ -348,10 +348,10 @@ class ProductHelper implements EntityHelperInterface
       }
       
       $ecommerceApp = $this->ecommerceApp;
-      $db = $ecommerceApp->db;
+      $ClicShopping_Db = $ecommerceApp->db;
       
       // Query using Ecommerce app database
-      $Qproduct = $db->prepare('SELECT 
+      $Qproduct = $ClicShopping_Db->prepare('SELECT 
                                   p.products_id as product_id,
                                   pd.products_name as name,
                                   p.products_price as price,
@@ -412,10 +412,10 @@ class ProductHelper implements EntityHelperInterface
       }
 
       $ecommerceApp = $this->ecommerceApp;
-      $db = $ecommerceApp->db;
+      $ClicShopping_Db = $ecommerceApp->db;
       
       // Query using Ecommerce app database
-      $Qproduct = $db->prepare('
+      $Qproduct = $ClicShopping_Db->prepare('
         SELECT p.products_id as product_id,
                pd.products_name as name,
                p.products_price as price,

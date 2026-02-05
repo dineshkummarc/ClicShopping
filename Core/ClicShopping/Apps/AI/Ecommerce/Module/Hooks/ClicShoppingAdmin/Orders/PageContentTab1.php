@@ -147,9 +147,9 @@ EOD;
    */
   private function loadInsightsFromDatabase(int $orderId, string $insightType): ?array
   {
-    $db = Registry::get('Db');
+    $ClicShopping_Db = Registry::get('Db');
     
-    $query = $db->prepare('
+    $query = $ClicShopping_Db->prepare('
       SELECT * 
       FROM :table_rag_order_insights 
       WHERE orders_id = :orders_id 

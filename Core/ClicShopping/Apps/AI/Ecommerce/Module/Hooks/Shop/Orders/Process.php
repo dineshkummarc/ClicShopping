@@ -1,539 +1,414 @@
 <?php
 /**
- * Process Hook for Orders (Shop)
- * 
- * Generates and STORES order insights after order creation using LLM.
- * This hook is triggered automatically after an order is placed in the Shop.
- * 
+ *
  * @copyright 2008 - https://www.clicshopping.org
  * @Brand : ClicShoppingAI(TM) at Inpi all right Reserved
  * @Licence GPL 2 & MIT
  * @Info : https://www.clicshopping.org/forum/trademark/
- * 
- * Triggered by: Hooks::call('Orders', 'Process') in Shop after order creation
- * 
- * The insights are stored in rag_order_insights table for later display in admin.
- * 
- * Requirements: 3.1, 3.3
+ *
  */
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\Shop\Orders;
 
+use AllowDynamicProperties;
+use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
+use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
+use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\OM\Hash;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
-use ClicShopping\Apps\AI\Ecommerce\Ecommerce as EcommerceApp;
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
-
-/**
- * Process Hook (Shop)
- * 
- * Generates order insights after order creation and stores them in database.
- * This allows the admin to view pre-generated insights without waiting for LLM.
- */
+#[AllowDynamicProperties]
 class Process implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
-  public mixed $language;
-  private bool $debug = false;
+  public mixed $lang;
+  public mixed $semantics;
   
+  /**
+   * Class constructor.
+   *
+   * Initializes the ChatGptApp instance in the Registry if it doesn't already exist,
+   * and loads the necessary definitions for the application.
+   *
+   * @return void
+   */
   public function __construct()
   {
-    if (!Registry::exists('Ecommerce')) {
-      Registry::set('Ecommerce', new EcommerceApp());
+    if (!Registry::exists('ChatGpt')) {
+      Registry::set('ChatGpt', new ChatGptApp());
     }
-    
-    $this->app = Registry::get('Ecommerce');
-    $this->language = Registry::get('Language');
-    
-    // Load language definitions for this hook
+
+    $this->app = Registry::get('ChatGpt');
+    $this->lang = Registry::get('Language');
+
+    if (!Registry::exists('Semantics')) {
+      Registry::set('Semantics', new SemanticAgent());
+    }
+    $this->semantics = Registry::get('Semantics');
     $this->app->loadDefinitions('Module/Hooks/Shop/Orders/process');
-    
-    // Enable debug mode if constant is set
-    if (\defined('CLICSHOPPING_APP_ECOMMERCE_EC_DEBUG') && CLICSHOPPING_APP_ECOMMERCE_EC_DEBUG === 'True') {
-      $this->debug = true;
-    }
+  }
+
+  /**
+   * Checks if the embedding already exists for the given order ID.
+   *
+   * @param int $order_id The order ID.
+   *
+   * @return bool True if the embedding exists, false otherwise.
+   */
+ 
+ private function embeddingExists(int $order_id): bool
+  {
+    $Qcheck = $this->app->db->prepare('SELECT id 
+                                       FROM :table_orders_embedding
+                                      WHERE entity_id = :entity_id
+                                      ');
+    $Qcheck->bindInt(':entity_id', $order_id);
+    $Qcheck->execute();
+
+    return $Qcheck->fetch() !== false;
   }
   
   /**
-   * Execute method - Generates and stores insights after order creation
-   * 
-   * This is called automatically after an order is placed in the Shop.
-   * It generates insights asynchronously and stores them for later viewing.
-   * 
-   * @param array|null $parameters Parameters passed from the hook call, including 'order_id'
+   * Retrieves the order details from the database.
+   *
+   * @param int $order_id The order ID.
+   *
+   * @return array The order details.
    */
-  public function execute(?array $parameters = null)
+  private function getOrderDetails(int $order_id): array
   {
+    $Q = $this->app->db->prepare(' SELECT * 
+                                  FROM :table_orders 
+                                  WHERE orders_id = :orders_id
+                                  ');
+    $Q->bindInt(':orders_id', $order_id);
+    $Q->execute();
 
-    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_STATUS  == 'False' ||
-      CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || CLICSHOPPING_APP_ECOMMERCE_EC_STATUS == 'False' ||
-      CLICSHOPPING_APP_ECOMMERCE_EC_INSIGHT == 'False'
-    ) {
+    return $Q->fetch();
+  }
+
+  /**
+   * Retrieves the products associated with the order.
+   *
+   * @param int $order_id The order ID.
+   *
+   * @return array The products associated with the order.
+   */
+  private function getOrderProducts(int $order_id): array
+  {
+    $Q = $this->app->db->prepare('SELECT * 
+                                  FROM :table_orders_products 
+                                  WHERE orders_id = :orders_id
+                                  ');
+    $Q->bindInt(':orders_id', $order_id);
+    $Q->execute();
+
+    return $Q->fetchAll();
+  }
+
+  /**
+   * Retrieves the product attributes associated with the order.
+   *
+   * @param int $order_id The order ID.
+   *
+   * @return array The product attributes associated with the order.
+   */
+  private function getOrderProductAttributes(int $order_id): array
+  {
+    $Q = $this->app->db->prepare('SELECT * 
+                                  FROM :table_orders_products_attributes opa
+                                  JOIN :table_orders_products op ON opa.orders_id = op.orders_id
+                                  WHERE op.orders_id = :orders_id
+                                ');
+    $Q->bindInt(':orders_id', $order_id);
+    $Q->execute();
+
+    return $Q->fetchAll();
+  }
+
+  /**
+   * Retrieves the order status history associated with the order.
+   *
+   * @param int $order_id The order ID.
+   *
+   * @return array The order status history associated with the order.
+   */
+  private function getOrderStatusHistory(int $order_id): array
+  {
+    $Q = $this->app->db->prepare('SELECT * FROM :table_orders_status_history WHERE orders_id = :orders_id');
+    $Q->bindInt(':orders_id', $order_id);
+    $Q->execute();
+
+    return $Q->fetchAll();
+  }
+
+  /**
+   * Retrieves the order totals associated with the order.
+   *
+   * @param int $order_id The order ID.
+   *
+   * @return array The order totals associated with the order.
+   */
+  private function getOrderTotals(int $order_id): array
+  {
+    $Q = $this->app->db->prepare('SELECT title, 
+                                         value,
+                                         class
+                                  FROM :table_orders_total 
+                                  WHERE orders_id = :orders_id');
+    $Q->bindInt(':orders_id', $order_id);
+    $Q->execute();
+
+    return $Q->fetchAll();
+  }
+
+  /**
+   * Builds the embedding data for the order using normalized atomic keys.
+   *
+   * This method constructs factual, deterministic embedding data with atomic keys
+   * suitable for semantic search and vector embeddings.
+   *
+   * @param int $order_id The order ID.
+   * @param array $order The order details.
+   * @param array $products The products associated with the order.
+   * @param array $attributes The product attributes associated with the order.
+   * @param array $statusHistory The order status history associated with the order.
+   * @param array $totals The order totals associated with the order.
+   *
+   * @return string The constructed embedding data string.
+   */
+  private function buildEmbeddingData(int $order_id, array $order, array $products, array $attributes, array $statusHistory, array $totals): string
+  {
+    $customers_city = Hash::displayDecryptedDataText($order['customers_city']);
+    $customers_name = Hash::displayDecryptedDataText($order['customers_name']);
+    $customers_company = Hash::displayDecryptedDataText($order['customers_company']);
+    $delivery_city = Hash::displayDecryptedDataText($order['delivery_city']);
+
+    // Use language file definitions for atomic keys
+    $data = "[{$this->app->getDef('text_key_domain')}]: {$this->app->getDef('text_value_domain_ecommerce')}\n";
+    $data .= "[{$this->app->getDef('text_key_entity')}]: {$this->app->getDef('text_value_entity_order')}\n\n";
+    
+    // Order information - atomic keys from language file
+    $data .= "[{$this->app->getDef('text_key_order_id')}]: $order_id\n";
+    $data .= "[{$this->app->getDef('text_key_order_date')}]: " . str_replace(' ', 'T', $order['date_purchased']) . "\n";
+    $data .= "[{$this->app->getDef('text_key_order_status')}]: {$order['orders_status']}\n";
+    $data .= "[{$this->app->getDef('text_key_order_currency')}]: {$order['currency']}\n";
+    
+    // Normalize payment method using HTMLOverrideCommon
+    $paymentMethod = HTMLOverrideCommon::normalizeForAtomicKey($order['payment_method']);
+    $data .= "[{$this->app->getDef('text_key_order_payment_method')}]: $paymentMethod\n\n";
+    
+    // Customer information - atomic keys from language file
+    $data .= "[{$this->app->getDef('text_key_customer_name')}]: $customers_name\n";
+    if (!empty($customers_company)) {
+      $data .= "[{$this->app->getDef('text_key_customer_company')}]: $customers_company\n";
+    }
+    $data .= "[{$this->app->getDef('text_key_customer_city')}]: $customers_city\n";
+    $data .= "[{$this->app->getDef('text_key_customer_country')}]: {$order['customers_country']}\n\n";
+    
+    // Delivery information - atomic keys from language file
+    $data .= "[{$this->app->getDef('text_key_delivery_city')}]: $delivery_city\n";
+    $data .= "[{$this->app->getDef('text_key_delivery_country')}]: {$order['delivery_country']}\n\n";
+    
+    // Products information - indexed atomic keys from language file
+    $productIndex = 1;
+    foreach ($products as $product) {
+      $prefix = count($products) > 1 ? "$productIndex." : "";
+      $baseKey = $this->app->getDef('text_key_product_name');
+      $data .= "[" . str_replace('product.', "product.{$prefix}", $baseKey) . "]: {$product['products_name']}\n";
+      
+      $baseKey = $this->app->getDef('text_key_product_model');
+      $data .= "[" . str_replace('product.', "product.{$prefix}", $baseKey) . "]: {$product['products_model']}\n";
+      
+      $baseKey = $this->app->getDef('text_key_product_price');
+      $data .= "[" . str_replace('product.', "product.{$prefix}", $baseKey) . "]: {$product['products_price']}\n";
+      
+      $baseKey = $this->app->getDef('text_key_product_quantity');
+      $data .= "[" . str_replace('product.', "product.{$prefix}", $baseKey) . "]: {$product['products_quantity']}\n";
+      
+      $baseKey = $this->app->getDef('text_key_product_tax_rate');
+      $data .= "[" . str_replace('product.', "product.{$prefix}", $baseKey) . "]: " . ($product['products_tax'] / 100) . "\n";
+      
+      // Product attributes if any - indexed atomic keys from language file
+      if (!empty($attributes) && is_array($attributes)) {
+        $attrIndex = 1;
+        foreach ($attributes as $attribute) {
+          if (isset($attribute['orders_products_id']) && $attribute['orders_products_id'] == $product['orders_products_id']) {
+            $baseKey = $this->app->getDef('text_key_product_attribute_option');
+            $data .= "[" . str_replace(['product.', 'attribute.'], ["product.{$prefix}", "attribute.{$attrIndex}."], $baseKey) . "]: {$attribute['products_options']}\n";
+            
+            $baseKey = $this->app->getDef('text_key_product_attribute_value');
+            $data .= "[" . str_replace(['product.', 'attribute.'], ["product.{$prefix}", "attribute.{$attrIndex}."], $baseKey) . "]: {$attribute['products_options_values']}\n";
+            $attrIndex++;
+          }
+        }
+      }
+      
+      $data .= "\n";
+      $productIndex++;
+    }
+    
+    // Totals information - atomic keys from language file with normalization
+    $totalMapping = [
+      'Sous Total' => $this->app->getDef('text_key_total_subtotal'),
+      'Sub-Total' => $this->app->getDef('text_key_total_subtotal'),
+      'Subtotal' => $this->app->getDef('text_key_total_subtotal'),
+      'Shipping' => $this->app->getDef('text_key_total_shipping'),
+      'Expédition' => $this->app->getDef('text_key_total_shipping'),
+      'Tax' => $this->app->getDef('text_key_total_tax'),
+      'TVA' => $this->app->getDef('text_key_total_tax'),
+      'Taxe' => $this->app->getDef('text_key_total_tax'),
+      'Total' => $this->app->getDef('text_key_total_total')
+    ];
+    
+    foreach ($totals as $total) {
+      $titleClean = trim(strip_tags($total['title']));
+      $key = null;
+      
+      foreach ($totalMapping as $search => $mapped) {
+        if (stripos($titleClean, $search) !== false) {
+          $key = $mapped;
+          break;
+        }
+      }
+      
+      if ($key) {
+        $data .= "[$key]: {$total['value']}\n";
+      }
+    }
+    
+    // Status history - indexed atomic keys from language file, only with comments (factual insights)
+    if (!empty($statusHistory) && is_array($statusHistory)) {
+      $data .= "\n";
+      $historyIndex = 1;
+      $hasComments = false;
+      
+      foreach ($statusHistory as $status) {
+        if (!empty($status['comments'])) {
+          $hasComments = true;
+          
+          $baseKey = $this->app->getDef('text_key_history_date');
+          $data .= "[" . str_replace('history.', "history.{$historyIndex}.", $baseKey) . "]: " . str_replace(' ', 'T', $status['date_added']) . "\n";
+          
+          $baseKey = $this->app->getDef('text_key_history_status');
+          $data .= "[" . str_replace('history.', "history.{$historyIndex}.", $baseKey) . "]: {$status['orders_status_id']}\n";
+          
+          $baseKey = $this->app->getDef('text_key_history_comment');
+          $data .= "[" . str_replace('history.', "history.{$historyIndex}.", $baseKey) . "]: " . HTMLOverrideCommon::cleanHtmlForEmbedding($status['comments']) . "\n";
+          
+          if (!empty($status['orders_tracking_number'])) {
+            $baseKey = $this->app->getDef('text_key_history_tracking');
+            $data .= "[" . str_replace('history.', "history.{$historyIndex}.", $baseKey) . "]: {$status['orders_tracking_number']}\n";
+          }
+          if (!empty($status['admin_user_name'])) {
+            $baseKey = $this->app->getDef('text_key_history_admin');
+            $data .= "[" . str_replace('history.', "history.{$historyIndex}.", $baseKey) . "]: {$status['admin_user_name']}\n";
+          }
+          
+          $historyIndex++;
+        }
+      }
+      
+      // If no comments, just add the most recent status (factual state)
+      if (!$hasComments && !empty($statusHistory)) {
+        $lastStatus = end($statusHistory);
+        
+        $baseKey = $this->app->getDef('text_key_history_date');
+        $data .= "[" . str_replace('history.', "history.1.", $baseKey) . "]: " . str_replace(' ', 'T', $lastStatus['date_added']) . "\n";
+        
+        $baseKey = $this->app->getDef('text_key_history_status');
+        $data .= "[" . str_replace('history.', "history.1.", $baseKey) . "]: {$lastStatus['orders_status_id']}\n";
+        
+        if (!empty($lastStatus['admin_user_name'])) {
+          $baseKey = $this->app->getDef('text_key_history_admin');
+          $data .= "[" . str_replace('history.', "history.1.", $baseKey) . "]: {$lastStatus['admin_user_name']}\n";
+        }
+      }
+    }
+
+    return $data;
+  }
+
+  /**
+   * Executes the embedding process for order updates.
+   *
+   * This method checks the GPT status and whether the embedding feature is enabled.
+   * If the conditions are met, it retrieves order details, products, attributes,
+   * status history, totals, and returns. It then builds the embedding data and
+   * saves it to the database.
+   *
+   * @return bool Returns false if conditions are not met, otherwise true.
+   */
+  public function execute()
+  {
+    if (Gpt::checkGptStatus() === false || !defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || !defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
       return false;
     }
 
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
+    if (!isset($_GET['Checkout'], $_GET['Process'])) {
+      return false;
+    }
 
-    $startTime = microtime(true);
-    
-    try {
-      // Get order ID from parameters (passed by Order::process())
-      $orderId = $parameters['order_id'] ?? null;
-      
-      // Fallback to session for test environment
-      if (empty($orderId) && isset($_SESSION['last_order_id'])) {
-        $orderId = (int)$_SESSION['last_order_id'];
-      }
-      
-      if ($this->debug) {
-        error_log("\n[DEBUG] [Process Hook Shop] Generating insights for order #{$orderId}");
-      }
+    if ($embedding_enabled) {
+      //take id of the latest order
+      $Qorder = $this->app->db->prepare('select orders_id
+                                        from :table_orders
+                                        order by orders_id desc
+                                        limit 1
+                                        ');
+      $Qorder->execute();
 
-      $orderData = $this->fetchOrderData((int)$orderId);
-      
-      if (empty($orderData)) {
-        error_log("[ERROR] [Process Hook Shop] Order #{$orderId} not found");
-        return;
-      }
-      
-      // Generate insights for different types
-      $insightTypes = ['summary', 'recommendations'];
-      $allInsights = [];
-      
-      foreach ($insightTypes as $insightType) {
-        try {
-          if ($this->debug) {
-            error_log("[PROC] [Process Hook Shop] Generating '{$insightType}' insights...");
-          }
-          
-          $insights = $this->generateInsights($orderData, $insightType);
-          
-          if ($insights['success']) {
-            // Store insights in database
-            $insightId = $this->storeInsights($orderId, $insights, $insightType);
-            $allInsights[$insightType] = $insights;
-            $allInsights[$insightType]['insight_id'] = $insightId;
-            
-            if ($this->debug) {
-              error_log("[OK] [Process Hook Shop] Stored '{$insightType}' insights for order #{$orderId} (ID: {$insightId})");
-            }
-          } else {
-            error_log("[WARN] [Process Hook Shop] Failed to generate '{$insightType}' insights: " . ($insights['error'] ?? 'Unknown error'));
-          }
-        } catch (\Exception $e) {
-          error_log("[ERROR] [Process Hook Shop] Error generating '{$insightType}': " . $e->getMessage());
+      $order_id = $Qorder->valueInt('orders_id');
+
+      $insert_embedding = !$this->embeddingExists($order_id);
+
+      $orderData = $this->getOrderDetails($order_id);
+      $products = $this->getOrderProducts($order_id);
+      $attributes = $this->getOrderProductAttributes($order_id);
+      $statusHistory = $this->getOrderStatusHistory($order_id);
+      $totals = $this->getOrderTotals($order_id);
+
+      $embeddingData = $this->buildEmbeddingData($order_id, $orderData, $products, $attributes, $statusHistory, $totals);
+
+      // Extract atomic keys from embedding data for metadata
+      $tags = [];
+      if (preg_match_all('/^\[([^\]]+)\]:\s*(.+)$/m', $embeddingData, $matches, PREG_SET_ORDER)) {
+        foreach ($matches as $match) {
+          $tags[] = $match[1]; // Store only keys (atomic identifiers)
         }
       }
-      
-      // Generate embeddings if enabled and insights were generated
-      if (\defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && !empty($allInsights)) {
-        
-        try {
-          if ($this->debug) {
-            error_log("[PROC] [Process Hook Shop] Generating embeddings for insights...");
-          }
-          
-          $this->generateAndSaveEmbeddings($orderId, $allInsights);
-          
-          if ($this->debug) {
-            error_log("[OK] [Process Hook Shop] Embeddings generated successfully");
-          }
-        } catch (\Exception $e) {
-          error_log("[ERROR] [Process Hook Shop] Error generating embeddings: " . $e->getMessage());
-        }
-      }
-      
-      $executionTime = round((microtime(true) - $startTime) * 1000, 2);
-      
-      if ($this->debug) {
-        error_log("[OK] [Process Hook Shop] Total execution time: {$executionTime}ms");
-      }
-      
-    } catch (\Exception $e) {
-      error_log("[ERROR] [Process Hook Shop] Error: " . $e->getMessage());
-    }
-  }
-  
-  /**
-   * Fetch order data from database
-   */
-  private function fetchOrderData(int $orderId): array
-  {
-    $db = Registry::get('Db');
-    
-    $query = $db->prepare('
-      SELECT o.*, 
-             os.orders_status_name,
-             c.customers_firstname,
-             c.customers_lastname,
-             c.customers_email_address
-      FROM :table_orders o
-      LEFT JOIN :table_orders_status os ON o.orders_status = os.orders_status_id
-      LEFT JOIN :table_customers c ON o.customers_id = c.customers_id
-      WHERE o.orders_id = :orders_id
-    ');
-    $query->bindInt(':orders_id', $orderId);
-    $query->execute();
-    
-    $orderData = $query->fetch();
-    
-    if (!$orderData) {
-      return [];
-    }
-    
-    // Fetch order total
-    $totalQuery = $db->prepare('
-      SELECT value 
-      FROM :table_orders_total 
-      WHERE orders_id = :orders_id 
-      AND class = :class
-    ');
-    $totalQuery->bindInt(':orders_id', $orderId);
-    $totalQuery->bindValue(':class', 'TO');
-    $totalQuery->execute();
-    
-    $totalRow = $totalQuery->fetch();
-    $orderData['order_total'] = $totalRow ? $totalRow['value'] : 0;
-    
-    // Fetch order products - FILTER BY CURRENT LANGUAGE to avoid duplicates
-    $languageId = $this->language->getId();
-    
-    $productsQuery = $db->prepare('
-      SELECT op.*, 
-             p.products_model,
-             pd.products_name
-      FROM :table_orders_products op
-      LEFT JOIN :table_products p ON op.products_id = p.products_id
-      LEFT JOIN :table_products_description pd ON op.products_id = pd.products_id 
-        AND pd.language_id = :language_id
-      WHERE op.orders_id = :orders_id
-    ');
-    $productsQuery->bindInt(':orders_id', $orderId);
-    $productsQuery->bindInt(':language_id', $languageId);
-    $productsQuery->execute();
-    
-    $orderData['products'] = $productsQuery->fetchAll();
-    
-    return $orderData;
-  }
-  
-  /**
-   * Generate insights using LLM
-   */
-  private function generateInsights(array $orderData, string $insightType): array
-  {
-    $startTime = microtime(true);
-    
-    // Format order data
-    $formattedOrderData = $this->formatOrderDataForPrompt($orderData);
-    
-    // Get prompt from language definitions with order_data parameter
-    $promptKey = "llm_prompt_insights_{$insightType}";
-    $prompt = $this->app->getDef($promptKey, ['order_data' => $formattedOrderData]);
-    
-    if (empty($prompt)) {
-      throw new \Exception("Prompt '{$promptKey}' not found in language definitions");
-    }
-    
-    // Call LLM
-    $response = Gpt::getGptResponse($prompt, 500, 0.3);
-    
-    if ($response === false || empty($response)) {
-      return [
-        'success' => false,
-        'error' => 'LLM returned empty response'
-      ];
-    }
-    
-    $executionTime = round((microtime(true) - $startTime) * 1000, 2);
-    
-    // Parse response
-    $result = $this->parseInsightsResponse($response, $insightType);
-    $result['execution_time_ms'] = $executionTime;
-    
-    return $result;
-  }
-  
-  /**
-   * Store insights in database
-   */
-  private function storeInsights(int $orderId, array $insights, string $insightType): int
-  {
-    $db = Registry::get('Db');
-    $language = Registry::get('Language');
-    
-    // Get current language ID
-    $languageId = $language->getId();
-    
-    // Check if insights already exist for this order and type
-    $checkQuery = $db->prepare('
-      SELECT insight_id 
-      FROM :table_rag_order_insights 
-      WHERE orders_id = :orders_id 
-      AND insight_type = :insight_type
-      AND language_id = :language_id
-    ');
-    $checkQuery->bindInt(':orders_id', $orderId);
-    $checkQuery->bindValue(':insight_type', $insightType);
-    $checkQuery->bindInt(':language_id', $languageId);
-    $checkQuery->execute();
-    
-    $existing = $checkQuery->fetch();
 
-    if ($existing) {
-      $array_update = [
-        'insights' => json_encode($insights['insights'] ?? []),
-        'confidence' => $insights['confidence'] ?? 0.8,
-        'recommendations' => json_encode($insights['recommendations'] ?? []),
-        'summary' => $insights['summary'] ?? '',
-        'raw_response' => $insights['raw_response'] ?? '',
-        'execution_time_ms' => $insights['execution_time_ms'] ?? 0
+      // Generate embeddings
+      $embeddedDocuments = NewVector::createEmbedding(null, $embeddingData);
+
+      // Prepare base metadata for centralized chunk management
+      $baseMetadata = [
+        'order_name' => 'Order #' . $order_id,
+        'content' => $embeddingData,
+        'type' => 'orders',  // Entity type (goes in 'type' column)
+        'tags' => $tags,
+        'source' => ['type' => 'manual', 'name' => 'manual']  // Goes in 'sourcetype' and 'sourcename' columns
       ];
 
-      $db->save('rag_order_insights', $array_update, ['insight_id' => $existing['insight_id']]);
-      
-      if ($this->debug) {
-        error_log("[OK] [Process Hook Shop] Updated insights for language_id: {$languageId}");
-      }
-      
-      return (int)$existing['insight_id'];
-    } else {
-      $array_insert = [
-        'orders_id' => $orderId,
-        'insight_type' => $insightType,
-        'insights' => json_encode($insights['insights'] ?? []),
-        'confidence' => $insights['confidence'] ?? 0.8,
-        'recommendations' => json_encode($insights['recommendations'] ?? []),
-        'summary' => $insights['summary'] ?? '',
-        'raw_response' => $insights['raw_response'] ?? '',
-        'execution_time_ms' => $insights['execution_time_ms'] ?? 0,
-        'language_id' => $languageId
-      ];
+      // Save all chunks using centralized method
+      $result = NewVector::saveEmbeddingsWithChunks(
+        $embeddedDocuments,
+        'orders_embedding',  // Table name
+        (int)$order_id,
+        null,  // language_id - orders table doesn't have this column
+        $baseMetadata,
+        $this->app->db,
+        !$insert_embedding  // isUpdate = true if not inserting (i.e., updating existing entity)
+      );
 
-      $db->save('rag_order_insights', $array_insert);
-      
-      if ($this->debug) {
-        error_log("[OK] [Process Hook Shop] Stored insights for language_id: {$languageId}");
+      if (!$result['success']) {
+        error_log("Shop/Orders: Failed to save embeddings - " . $result['error']);
+      } else {
+        error_log("Shop/Orders: Successfully saved {$result['chunks_saved']} chunk(s) for order {$order_id}");
       }
-      
-      return (int)$db->lastInsertId();
-    }
-  }
-  
-  /**
-   * Format order data for prompt
-   */
-  private function formatOrderDataForPrompt(array $orderData): string
-  {
-    $formatted = "Order ID: " . ($orderData['orders_id'] ?? 'N/A') . "\n";
-    $formatted .= "Order Date: " . ($orderData['date_purchased'] ?? 'N/A') . "\n";
-    $formatted .= "Order Status: " . ($orderData['orders_status_name'] ?? 'N/A') . "\n";
-    $formatted .= "Currency: " . ($orderData['currency'] ?? 'N/A') . "\n";
-    $formatted .= "Order Total: " . number_format((float)($orderData['order_total'] ?? 0), 2) . " " . ($orderData['currency'] ?? '') . "\n";
-    $formatted .= "\nProducts Ordered:\n";
-    
-    $totalItems = 0;
-    $subtotal = 0;
-    
-    if (!empty($orderData['products'])) {
-      foreach ($orderData['products'] as $product) {
-        $quantity = (int)($product['products_quantity'] ?? 1);
-        $price = (float)($product['final_price'] ?? 0);
-        $lineTotal = $quantity * $price;
-        
-        $formatted .= "- Product: " . ($product['products_name'] ?? 'Unknown') . "\n";
-        $formatted .= "  Quantity: " . $quantity . "\n";
-        $formatted .= "  Unit Price: " . number_format($price, 2) . " " . ($orderData['currency'] ?? '') . "\n";
-        $formatted .= "  Line Total: " . number_format($lineTotal, 2) . " " . ($orderData['currency'] ?? '') . "\n";
-        
-        // Add product attributes if any
-        if (!empty($product['products_options'])) {
-          $formatted .= "  Options: " . $product['products_options'] . "\n";
-        }
-        
-        $totalItems += $quantity;
-        $subtotal += $lineTotal;
-      }
-    }
-    
-    $formatted .= "\nOrder Summary:\n";
-    $formatted .= "Total Items: " . $totalItems . "\n";
-    $formatted .= "Subtotal: " . number_format($subtotal, 2) . " " . ($orderData['currency'] ?? '') . "\n";
-    $formatted .= "Final Total: " . number_format((float)($orderData['order_total'] ?? 0), 2) . " " . ($orderData['currency'] ?? '') . "\n";
-    
-    $formatted .= "\nNote: Customer personal information is encrypted for GDPR compliance and should not be analyzed.\n";
-    
-    return $formatted;
-  }
-  
-  /**
-   * Parse LLM response
-   */
-  private function parseInsightsResponse(string $response, string $insightType): array
-  {
-    $cleaned = HTMLOverrideCommon::cleanJsonResponse($response);
-    $parsed = json_decode($cleaned, true);
-    
-    if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
-      return [
-        'success' => true,
-        'insight_type' => $insightType,
-        'insights' => $parsed['insights'] ?? [],
-        'confidence' => $parsed['confidence'] ?? 0.8,
-        'recommendations' => $parsed['recommendations'] ?? [],
-        'summary' => $parsed['summary'] ?? '',
-        'raw_response' => $response
-      ];
-    }
-    
-    return [
-      'success' => true,
-      'insight_type' => $insightType,
-      'insights' => [$response],
-      'confidence' => 0.7,
-      'recommendations' => [],
-      'summary' => substr($response, 0, 200),
-      'raw_response' => $response
-    ];
-  }
-  
-  /**
-   * Check if embedding already exists for this order
-   */
-  private function embeddingExists(int $orderId): bool
-  {
-    $db = Registry::get('Db');
-    
-    $checkQuery = $db->prepare('
-      SELECT id 
-      FROM :table_rag_order_insights_embedding
-      WHERE entity_id = :entity_id
-    ');
-    $checkQuery->bindInt(':entity_id', $orderId);
-    $checkQuery->execute();
-    
-    return $checkQuery->fetch() !== false;
-  }
-  
-  /**
-   * Build embedding content from insights
-   * 
-   * Combines all insights into a structured format for embedding generation
-   * Uses multilingual atomic keys from language definitions
-   */
-  private function buildEmbeddingContent(int $orderId, array $allInsights): string
-  {
-    $language = Registry::get('Language');
-    $languageCode = $language->getCode();
-    
-    // Use language definitions for atomic keys
-    $content = "[{$this->app->getDef('embedding_key_domain')}]: {$this->app->getDef('embedding_value_domain')}\n";
-    $content .= "[{$this->app->getDef('embedding_key_entity')}]: {$this->app->getDef('embedding_value_entity')}\n";
-    $content .= "[{$this->app->getDef('embedding_key_order_id')}]: {$orderId}\n";
-    $content .= "[{$this->app->getDef('embedding_key_language')}]: {$languageCode}\n\n";
-    
-    // Add summary insights
-    if (isset($allInsights['summary'])) {
-      $summary = $allInsights['summary'];
-      $content .= "[{$this->app->getDef('embedding_key_summary')}]:\n";
-      $content .= $summary['summary'] ?? '';
-      $content .= "\n\n";
-      
-      if (!empty($summary['insights'])) {
-        $content .= "[{$this->app->getDef('embedding_key_key_insights')}]:\n";
-        $insights = is_array($summary['insights']) ? $summary['insights'] : json_decode($summary['insights'], true);
-        if (is_array($insights)) {
-          foreach ($insights as $idx => $insight) {
-            $num = $idx + 1;
-            $content .= "- {$this->app->getDef('embedding_key_insight')} {$num}: {$insight}\n";
-          }
-        }
-        $content .= "\n";
-      }
-    }
-    
-    // Add recommendations
-    if (isset($allInsights['recommendations'])) {
-      $recommendations = $allInsights['recommendations'];
-      $content .= "[{$this->app->getDef('embedding_key_recommendations')}]:\n";
-      
-      if (!empty($recommendations['recommendations'])) {
-        $recs = is_array($recommendations['recommendations']) ? $recommendations['recommendations'] : json_decode($recommendations['recommendations'], true);
-        if (is_array($recs)) {
-          foreach ($recs as $idx => $rec) {
-            $num = $idx + 1;
-            $content .= "- {$this->app->getDef('embedding_key_recommendation')} {$num}: {$rec}\n";
-          }
-        }
-      }
-      
-      if (!empty($recommendations['summary'])) {
-        $content .= "\n" . $recommendations['summary'];
-      }
-    }
-    
-    return $content;
-  }
-  
-  /**
-   * Generate and save embeddings for insights
-   */
-  private function generateAndSaveEmbeddings(int $orderId, array $allInsights): void
-  {
-    $db = Registry::get('Db');
-    $language = Registry::get('Language');
-    $languageId = $language->getId();
-    
-    // Check if embedding already exists
-    $isUpdate = $this->embeddingExists($orderId);
-    
-    // Build embedding content
-    $embeddingContent = $this->buildEmbeddingContent($orderId, $allInsights);
-    
-    if ($this->debug) {
-      error_log("📝 [Process Hook Shop] Embedding content length: " . strlen($embeddingContent) . " chars");
-    }
-    
-    // Generate embeddings
-    $embeddedDocuments = NewVector::createEmbedding(null, $embeddingContent);
-    
-    if (empty($embeddedDocuments)) {
-      throw new \Exception("Failed to generate embeddings - empty result");
-    }
-    
-    // Extract tags from content
-    $tags = [];
-    if (preg_match_all('/^\[([^\]]+)\]:/m', $embeddingContent, $matches)) {
-      $tags = array_unique($matches[1]);
-    }
-    
-    // Prepare metadata
-    $baseMetadata = [
-      'order_name' => "Order #{$orderId} Insights",
-      'content' => $embeddingContent,
-      'type' => 'order_insights',
-      'tags' => $tags,
-      'source' => ['type' => 'automated', 'name' => 'insights_agent']
-    ];
-    
-    // Save embeddings using centralized method with language_id
-    $result = NewVector::saveEmbeddingsWithChunks(
-      $embeddedDocuments,
-      'rag_order_insights_embedding',
-      $orderId,
-      $languageId, // Pass language_id for multilingual support
-      $baseMetadata,
-      $db,
-      $isUpdate
-    );
-    
-    if (!$result['success']) {
-      throw new \Exception("Failed to save embeddings: " . ($result['error'] ?? 'Unknown error'));
-    }
-    
-    if ($this->debug) {
-      error_log("[OK] [Process Hook Shop] Saved {$result['chunks_saved']} embedding chunk(s) for order {$orderId} (language_id: {$languageId})");
     }
   }
 }

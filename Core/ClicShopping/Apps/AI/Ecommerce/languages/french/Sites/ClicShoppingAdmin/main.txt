@@ -9,6 +9,8 @@ button_overview = Aperçu
 button_configuration = Configuration
 button_help = Aide
 button_back = Retour
+button_install_title = Installer
+button_save = Enregistrer
 
 tab_overview = Aperçu
 tab_entities = Entités
@@ -17,6 +19,16 @@ tab_performance = Performance
 
 section_welcome = Bienvenue dans le Domaine IA E-Commerce
 text_welcome_message = Ceci est l'interface de gestion du Domaine IA E-Commerce. Vous pouvez ici surveiller et gérer toutes les opérations IA liées à l'e-commerce.
+
+module_acp_title = OpenAI ACP Ecommerce
+module_acp_short_title =  OpenAI ACP Ecommerce
+module_acp_introduction = OpenAI a développé un protocole de commerce électronique appelé Agentic Commerce Protocol (ACP).
+Il permet d’afficher les produits directement dans GPT avec un paiement instantané.
+Ce module implémente ce protocole, gère le paiement et assure le suivi des commandes via ClicShopping.<br>
+Vous devez vous enregistrer auprés de OpenAi pour utiliser ce procol ACP.
+
+module_ec_short_title = Agent Ecommerce
+module_ec_title = Agent Ecommerce
 
 section_domain_overview = Aperçu du Domaine
 subsection_domain_info = Informations du Domaine

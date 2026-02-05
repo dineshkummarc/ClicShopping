@@ -1,2 +1,0 @@
-cfg_chatgpt_delivery_latest_title = Standard Latest Delivery
-cfg_chatgpt_delivery_latest_description =  Standard Latest Delivery
