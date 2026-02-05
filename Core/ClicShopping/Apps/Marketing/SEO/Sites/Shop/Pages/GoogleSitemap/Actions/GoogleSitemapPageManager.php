@@ -43,7 +43,7 @@ class GoogleSitemapPageManager extends \ClicShopping\OM\Domains\PagesActionsAbst
       $QpageManager->execute();
 
       while ($QpageManager->fetch()) {
-        $location = htmlspecialchars(CLICSHOPPING::utf8Encode($this->rewriteUrl->getPageManagerContentUrl($QpageManager->valueInt('pages_id'))), ENT_QUOTES | ENT_HTML5);
+        $location = htmlspecialchars(mb_convert_encoding($this->rewriteUrl->getPageManagerContentUrl($QpageManager->valueInt('pages_id')), 'UTF-8', 'ISO-8859-1'), ENT_QUOTES | ENT_HTML5);
         $page_manager_array[$QpageManager->valueInt('pages_id')]['loc'] = $location;
         $page_manager_array[$QpageManager->valueInt('pages_id')]['lastmod'] = $QpageManager->value('last_modified');
         $page_manager_array[$QpageManager->valueInt('pages_id')]['changefreq'] = 'weekly';
@@ -64,4 +64,3 @@ class GoogleSitemapPageManager extends \ClicShopping\OM\Domains\PagesActionsAbst
     }
   }
 }
-

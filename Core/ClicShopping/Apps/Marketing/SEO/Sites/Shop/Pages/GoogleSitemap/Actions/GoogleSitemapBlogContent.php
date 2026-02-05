@@ -41,7 +41,7 @@ class GoogleSitemapBlogContent extends \ClicShopping\OM\Domains\PagesActionsAbst
       $Qproducts->execute();
 
       while ($Qproducts->fetch()) {
-        $location = htmlspecialchars(CLICSHOPPING::utf8Encode(CLICSHOPPING::link(null, 'Blog&Content&blogContentId=' . $Qproducts->valueInt('blog_content_id'))), ENT_QUOTES | ENT_HTML5);
+        $location = htmlspecialchars(mb_convert_encoding(CLICSHOPPING::link(null, 'Blog&Content&blogContentId=' . $Qproducts->valueInt('blog_content_id')), 'UTF-8', 'ISO-8859-1'), ENT_QUOTES | ENT_HTML5);
 
         $products_array[$Qproducts->valueInt('blog_content_id')]['loc'] = $location;
         $products_array[$Qproducts->valueInt('blog_content_id')]['lastmod'] = $Qproducts->value('last_modified');

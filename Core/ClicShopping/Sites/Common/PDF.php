@@ -130,7 +130,7 @@ class PDF extends FPDF
     $this->SetTextColor(INVOICE_RGB);
     $this->Ln(0);
     $this->Cell(125);
-    $this->MultiCell(100, 3.5, utf8_decode(STORE_NAME), 0, 'L');
+    $this->MultiCell(100, 3.5, mb_convert_encoding(STORE_NAME, 'ISO-8859-1', 'UTF-8'), 0, 'L');
 
 // Adresse de la compagnie
     $this->SetX(0);
@@ -139,7 +139,7 @@ class PDF extends FPDF
     $this->SetTextColor(INVOICE_RGB);
     $this->Ln(0);
     $this->Cell(125);
-    $this->MultiCell(100, 3.5, utf8_decode(STORE_NAME_ADDRESS), 0, 'L');
+    $this->MultiCell(100, 3.5, mb_convert_encoding(STORE_NAME_ADDRESS, 'ISO-8859-1', 'UTF-8'), 0, 'L');
 
 // Email
     $this->SetX(0);
@@ -148,7 +148,7 @@ class PDF extends FPDF
     $this->SetTextColor(INVOICE_RGB);
     $this->Ln(0);
     $this->Cell(-3);
-    $this->MultiCell(100, 3.5, utf8_decode(CLICSHOPPING::getDef('entry_email')) . ' ' . STORE_OWNER_EMAIL_ADDRESS, 0, 'L');
+    $this->MultiCell(100, 3.5, mb_convert_encoding(CLICSHOPPING::getDef('entry_email'), 'ISO-8859-1', 'UTF-8') . ' ' . STORE_OWNER_EMAIL_ADDRESS, 0, 'L');
 
 // Website
     $this->SetX(0);
@@ -175,40 +175,40 @@ class PDF extends FPDF
     $this->SetY(-55);
     $this->SetFont('Arial', 'B', 8);
     $this->SetTextColor(INVOICE_RGB);
-    $this->Cell(0, 10, utf8_decode(CLICSHOPPING::getDef('thank_you_customer')), 0, 0, 'C');
+    $this->Cell(0, 10, mb_convert_encoding(CLICSHOPPING::getDef('thank_you_customer'), 'ISO-8859-1', 'UTF-8'), 0, 0, 'C');
 
 // Proprieties Legal
     $this->SetY(-45);
     $this->SetFont('Arial', '', 7);
     $this->SetTextColor(INVOICE_RGB);
-    $this->Cell(0, 10, utf8_decode(CLICSHOPPING::getDef('reserve_propriete')), 0, 0, 'C');
+    $this->Cell(0, 10, mb_convert_encoding(CLICSHOPPING::getDef('reserve_propriete'), 'ISO-8859-1', 'UTF-8'), 0, 0, 'C');
 
     $this->SetY(-40);
     $this->SetFont('Arial', '', 7);
     $this->SetTextColor(INVOICE_RGB);
-    $this->Cell(0, 10, utf8_decode(CLICSHOPPING::getDef('reserve_propriete_next')), 0, 0, 'C');
+    $this->Cell(0, 10, mb_convert_encoding(CLICSHOPPING::getDef('reserve_propriete_next'), 'ISO-8859-1', 'UTF-8'), 0, 0, 'C');
 
     $this->SetY(-35);
     $this->SetFont('Arial', '', 7);
     $this->SetTextColor(INVOICE_RGB);
-    $this->Cell(0, 10, utf8_decode(CLICSHOPPING::getDef('reserve_propriete_next1')), 0, 0, 'C');
+    $this->Cell(0, 10, mb_convert_encoding(CLICSHOPPING::getDef('reserve_propriete_next1'), 'ISO-8859-1', 'UTF-8'), 0, 0, 'C');
 
 // Informations de la compagnie
     $this->SetY(-25);
     $this->SetFont('Arial', '', 8);
     $this->SetTextColor(INVOICE_RGB);
-    $this->Cell(0, 10, utf8_decode(CLICSHOPPING::getDef('entry_info_societe')), 0, 0, 'C');
+    $this->Cell(0, 10, mb_convert_encoding(CLICSHOPPING::getDef('entry_info_societe'), 'ISO-8859-1', 'UTF-8'), 0, 0, 'C');
 
     $this->SetY(-20);
     $this->SetFont('Arial', '', 8);
     $this->SetTextColor(INVOICE_RGB);
-    $this->Cell(0, 10, utf8_decode(CLICSHOPPING::getDef('entry_info_societe_next')), 0, 0, 'C');
+    $this->Cell(0, 10, mb_convert_encoding(CLICSHOPPING::getDef('entry_info_societe_next'), 'ISO-8859-1', 'UTF-8'), 0, 0, 'C');
 
 // Autres informations (champ libre) sur la compagnie
     $this->SetY(-15);
     $this->SetFont('Arial', '', 8);
     $this->SetTextColor(INVOICE_RGB);
-    $this->Cell(0, 10, utf8_decode(CLICSHOPPING::getDef('shop_divers')), 0, 0, 'C');
+    $this->Cell(0, 10, mb_convert_encoding(CLICSHOPPING::getDef('shop_divers'), 'ISO-8859-1', 'UTF-8'), 0, 0, 'C');
   }
 
   /***************************************************
@@ -229,9 +229,9 @@ class PDF extends FPDF
     $pdf->SetFont('Arial', 'B', 8);
     $pdf->SetY($Y_Fields_Name_position);
     $pdf->SetX(6);
-    $pdf->Cell(9, 6, utf8_decode(CLICSHOPPING::getDef('table_heading_qte')), 1, 0, 'C', 1);
+    $pdf->Cell(9, 6, mb_convert_encoding(CLICSHOPPING::getDef('table_heading_qte'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', 1);
     $pdf->SetX(15);
-    $pdf->Cell(27, 6, utf8_decode(CLICSHOPPING::getDef('table_heading_products_model')), 1, 0, 'C', 1);
+    $pdf->Cell(27, 6, mb_convert_encoding(CLICSHOPPING::getDef('table_heading_products_model'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', 1);
     $pdf->SetX(40);
     $pdf->Cell(103, 6, CLICSHOPPING::getDef('table_heading_products'), 1, 0, 'C', 1);
     $pdf->SetX(143);
@@ -267,9 +267,9 @@ class PDF extends FPDF
     $pdf->SetFont('Arial', 'B', 8);
     $pdf->SetY($Y_Fields_Name_position);
     $pdf->SetX(6);
-    $pdf->Cell(14, 6, utf8_decode(CLICSHOPPING::getDef('table_heading_qte')), 1, 0, 'C', 1);
+    $pdf->Cell(14, 6, mb_convert_encoding(CLICSHOPPING::getDef('table_heading_qte'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', 1);
     $pdf->SetX(20);
-    $pdf->Cell(40, 6, utf8_decode(CLICSHOPPING::getDef('table_heading_products_model')), 1, 0, 'C', 1);
+    $pdf->Cell(40, 6, mb_convert_encoding(CLICSHOPPING::getDef('table_heading_products_model'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', 1);
     $pdf->SetX(60);
     $pdf->Cell(138, 6, CLICSHOPPING::getDef('table_heading_products'), 1, 0, 'C', 1);
     $pdf->Ln();
@@ -289,9 +289,9 @@ class PDF extends FPDF
     $pdf->SetFont('Arial', 'B', 8);
     $pdf->SetY($Y_Fields_Name_position);
     $pdf->SetX(6);
-    $pdf->Cell(9, 6, utf8_decode(CLICSHOPPING::getDef('table_heading_qte')), 1, 0, 'C', 1);
+    $pdf->Cell(9, 6, mb_convert_encoding(CLICSHOPPING::getDef('table_heading_qte'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', 1);
     $pdf->SetX(15);
-    $pdf->Cell(27, 6, utf8_decode(CLICSHOPPING::getDef('table_heading_products_model')), 1, 0, 'C', 1);
+    $pdf->Cell(27, 6, mb_convert_encoding(CLICSHOPPING::getDef('table_heading_products_model'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', 1);
     $pdf->SetX(40);
     $pdf->Cell(78, 6, CLICSHOPPING::getDef('table_heading_products'), 1, 0, 'C', 1);
     $pdf->SetX(105);
@@ -316,13 +316,13 @@ class PDF extends FPDF
     $pdf->SetFont('Arial', 'B', 8);
     $pdf->SetY($Y_Fields_Name_position);
     $pdf->SetX(6);
-    $pdf->Cell(9, 6, utf8_decode(CLICSHOPPING::getDef('table_heading_qte')), 1, 0, 'C', 1);
+    $pdf->Cell(9, 6, mb_convert_encoding(CLICSHOPPING::getDef('table_heading_qte'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', 1);
     $pdf->SetX(15);
     $pdf->Cell(13, 6, CLICSHOPPING::getDef('table_heading_customers_id'), 1, 0, 'C', 1);
     $pdf->SetX(28);
     $pdf->Cell(25, 6, CLICSHOPPING::getDef('table_heading_customers_name'), 1, 0, 'C', 1);
     $pdf->SetX(53);
-    $pdf->Cell(30, 6, utf8_decode(CLICSHOPPING::getDef('table_heading_products_model')), 1, 0, 'C', 1);
+    $pdf->Cell(30, 6, mb_convert_encoding(CLICSHOPPING::getDef('table_heading_products_model'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', 1);
     $pdf->SetX(83);
     $pdf->Cell(60, 6, CLICSHOPPING::getDef('table_heading_products'), 1, 0, 'C', 1);
     $pdf->SetX(143);

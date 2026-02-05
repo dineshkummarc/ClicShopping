@@ -114,7 +114,7 @@ class File extends \ClicShopping\OM\Domains\SessionAbstract implements \SessionH
    */
   public function write(string $session_id, string$session_data)
   {
-    $id = basename(CLICSHOPPING::utf8Encode($session_id));
+    $id = basename(mb_convert_encoding($session_id, 'UTF-8', 'ISO-8859-1'));
     return file_put_contents($this->path . '/sess_' . $id, $session_data) !== false;
   }
 

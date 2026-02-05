@@ -49,7 +49,7 @@ class GoogleSitemapCategories extends \ClicShopping\OM\Domains\PagesActionsAbstr
     while ($Qcategorie->fetch()) {
 
       $this->rewriteUrl->getCategoryTreeTitle($Qcategorie->value('categories_name'));
-      $location = htmlspecialchars(CLICSHOPPING::utf8Encode($this->rewriteUrl->getCategoryTreeUrl($Qcategorie->valueInt('categories_id'))), ENT_QUOTES | ENT_HTML5);
+      $location = htmlspecialchars(mb_convert_encoding($this->rewriteUrl->getCategoryTreeUrl($Qcategorie->valueInt('categories_id')), 'UTF-8', 'ISO-8859-1'), ENT_QUOTES | ENT_HTML5);
 
       $category_array[$Qcategorie->valueInt('categories_id')]['loc'] = $location;
       $category_array[$Qcategorie->valueInt('categories_id')]['lastmod'] = $Qcategorie->value('last_modified');

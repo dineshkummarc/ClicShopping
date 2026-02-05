@@ -46,7 +46,7 @@ class GoogleSitemapProducts extends \ClicShopping\OM\Domains\PagesActionsAbstrac
       $Qproducts->execute();
 
       while ($Qproducts->fetch()) {
-        $location = htmlspecialchars(CLICSHOPPING::utf8Encode($this->rewriteUrl->getProductNameUrl($Qproducts->valueInt('products_id'))), ENT_QUOTES | ENT_HTML5);
+        $location = htmlspecialchars(mb_convert_encoding($this->rewriteUrl->getProductNameUrl($Qproducts->valueInt('products_id')), 'UTF-8', 'ISO-8859-1'), ENT_QUOTES | ENT_HTML5);
 
         $product_array[$Qproducts->valueInt('products_id')]['loc'] = $location;
         $product_array[$Qproducts->valueInt('products_id')]['lastmod'] = $Qproducts->value('last_modified');

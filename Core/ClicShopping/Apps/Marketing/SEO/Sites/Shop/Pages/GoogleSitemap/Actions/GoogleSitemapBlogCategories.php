@@ -50,8 +50,8 @@ class GoogleSitemapBlogCategories extends \ClicShopping\OM\Domains\PagesActionsA
       while ($QBlogCategories->fetch()) {
 
 //          $this->rewriteUrl->getCategoryTreeTitle($QBlogCategories->value('blog_categories_name'));
-//          $location =  htmlspecialchars(CLICSHOPPING::utf8Encode($this->rewriteUrl->getBlogCategoriesUrl($QBlogCategories->valueInt('blog_categories_id'))));
-        $location = htmlspecialchars(CLICSHOPPING::utf8Encode(CLICSHOPPING::link(null, 'Blog&Categories&amp;current=' . $QBlogCategories->valueInt('blog_categories_id'))), ENT_QUOTES | ENT_HTML5);
+//          $location =  htmlspecialchars(mb_convert_encoding($this->rewriteUrl->getBlogCategoriesUrl($QBlogCategories->valueInt('blog_categories_id')), 'UTF-8', 'ISO-8859-1'));
+        $location = htmlspecialchars(mb_convert_encoding(CLICSHOPPING::link(null, 'Blog&Categories&amp;current=' . $QBlogCategories->valueInt('blog_categories_id')), 'UTF-8', 'ISO-8859-1'), ENT_QUOTES | ENT_HTML5);
 
         $products_array[$QBlogCategories->valueInt('blog_categories_id')]['loc'] = $location;
         $products_array[$QBlogCategories->valueInt('blog_categories_id')]['lastmod'] = $QBlogCategories->value('last_modified');

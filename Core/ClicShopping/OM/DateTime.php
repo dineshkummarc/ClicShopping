@@ -291,7 +291,7 @@ class DateTime
    * @param string|null $format The date format to use. If null, a default long date format is applied.
    * @return string The formatted current date and time.
    */
-    public static function getNow(?string $format = null): string
+  public static function getNow(?string $format = null): string
     {
       if (!isset($format)) {
         $format = CLICSHOPPING::getDef('date_format_long');
@@ -299,6 +299,64 @@ class DateTime
 
       return date($format);
     }
+
+  /**
+   * Formats a timestamp using a strftime-like format string.
+   *
+   * @param string $format The strftime-style format string.
+   * @param int|null $timestamp The Unix timestamp to format. Defaults to now.
+   * @return string The formatted date string.
+   */
+  public static function strftime(string $format, ?int $timestamp = null): string
+  {
+    $timestamp = $timestamp ?? time();
+
+    $format = strtr($format, [
+      '%C' => '{_C_}',
+      '%e' => '{_e_}',
+      '%j' => '{_j_}',
+      '%s' => '{_s_}',
+    ]);
+
+    $php_format = self::convertStrftimeFormat($format);
+    $result = date($php_format, $timestamp);
+
+    return strtr($result, [
+      '{_C_}' => sprintf('%02d', (int)floor((int)date('Y', $timestamp) / 100)),
+      '{_e_}' => sprintf('%2d', (int)date('j', $timestamp)),
+      '{_j_}' => sprintf('%03d', (int)date('z', $timestamp) + 1),
+      '{_s_}' => (string)$timestamp,
+    ]);
+  }
+
+  /**
+   * Formats a timestamp using a strftime-like format string in UTC.
+   *
+   * @param string $format The strftime-style format string.
+   * @param int|null $timestamp The Unix timestamp to format. Defaults to now.
+   * @return string The formatted date string.
+   */
+  public static function gmstrftime(string $format, ?int $timestamp = null): string
+  {
+    $timestamp = $timestamp ?? time();
+
+    $format = strtr($format, [
+      '%C' => '{_C_}',
+      '%e' => '{_e_}',
+      '%j' => '{_j_}',
+      '%s' => '{_s_}',
+    ]);
+
+    $php_format = self::convertStrftimeFormat($format);
+    $result = gmdate($php_format, $timestamp);
+
+    return strtr($result, [
+      '{_C_}' => sprintf('%02d', (int)floor((int)gmdate('Y', $timestamp) / 100)),
+      '{_e_}' => sprintf('%2d', (int)gmdate('j', $timestamp)),
+      '{_j_}' => sprintf('%03d', (int)gmdate('z', $timestamp) + 1),
+      '{_s_}' => (string)$timestamp,
+    ]);
+  }
 
   /**
    * Retrieves a short date reference string formatted according to the defined date format.
@@ -311,7 +369,7 @@ class DateTime
       return '';
     }
 
-    return strftime(CLICSHOPPING::getDef('date_format'), $this->getTimestamp());
+    return self::strftime(CLICSHOPPING::getDef('date_format'), $this->getTimestamp());
   }
 
   /**
@@ -502,5 +560,43 @@ class DateTime
     } catch (\Exception) {
       return '';
     }
+  }
+
+  /**
+   * Converts strftime format strings to PHP date format strings.
+   *
+   * @param string $format The strftime-style format string.
+   * @return string The PHP date format string.
+   */
+  private static function convertStrftimeFormat(string $format): string
+  {
+    return strtr($format, [
+      '%%' => '%',
+      '%a' => 'D',
+      '%A' => 'l',
+      '%b' => 'M',
+      '%B' => 'F',
+      '%d' => 'd',
+      '%D' => 'm/d/y',
+      '%F' => 'Y-m-d',
+      '%H' => 'H',
+      '%I' => 'h',
+      '%m' => 'm',
+      '%M' => 'i',
+      '%p' => 'A',
+      '%P' => 'a',
+      '%R' => 'H:i',
+      '%S' => 's',
+      '%T' => 'H:i:s',
+      '%u' => 'N',
+      '%w' => 'w',
+      '%x' => 'Y-m-d',
+      '%X' => 'H:i:s',
+      '%y' => 'y',
+      '%Y' => 'Y',
+      '%z' => 'O',
+      '%Z' => 'T',
+      '%c' => 'Y-m-d H:i:s',
+    ]);
   }
 }

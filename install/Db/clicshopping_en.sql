@@ -218,7 +218,7 @@ INSERT INTO administrator_menu VALUES(807, 'index.php?A&Catalog\\Products&Dynami
 INSERT INTO administrator_menu VALUES(808, 'index.php?A&Catalog\\Products&StatsDynamicPricing', 98, 5, 0, '', 0, 'app_catalog_products', 1);
 INSERT INTO administrator_menu VALUES(809, 'index.php?A&Tools\\MCP&MCP', 810, 30, 1, '', 0, 'app_tools_mcp', 1);
 INSERT INTO administrator_menu VALUES(810, '', 2, 50, 2, '', 0, NULL, 1);
-INSERT INTO administrator_menu VALUES(811, 'index.php?A&AI\\Ecommerce', 814, 5, 1, '', 0, NULL, 1);
+INSERT INTO administrator_menu VALUES(811, 'index.php?A&AI\\Ecommerce', 814, 5, 1, '', 0, 'app_ai_ecommerce', 1);
 
 
 INSERT INTO administrator_menu_description VALUES(0, '', 1);

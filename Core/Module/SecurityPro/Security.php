@@ -157,12 +157,12 @@ class Security
     $lang_additions = '@ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïðòóôõöùúûüýÿ'; // Special language characters go here - see the example above
 
 // decode utf8 ==> search engine problem
-    $cleansed = preg_replace("/[^\s{}a-z0-9_\.\-@$lang_additions]/i", "", urldecode(CLICSHOPPING::utf8Decode($string)));
+    $cleansed = preg_replace("/[^\s{}a-z0-9_\.\-@$lang_additions]/i", "", urldecode(mb_convert_encoding($string, 'ISO-8859-1', 'UTF-8')));
 
 // Remove banned words
     $cleansed = preg_replace($banned_string_pattern, '', $cleansed);
 // Ensure that a clever hacker hasn't gained himself a naughty double hyphen -- after our cleansing
-    $cleansed = CLICSHOPPING::utf8Encode($cleansed);
+    $cleansed = mb_convert_encoding($cleansed, 'UTF-8', 'ISO-8859-1');
 
     return preg_replace('@[-]+@', '-', $cleansed);
   } // end method

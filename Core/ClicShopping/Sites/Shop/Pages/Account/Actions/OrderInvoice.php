@@ -149,7 +149,7 @@ class OrderInvoice extends \ClicShopping\OM\Domains\PagesActionsAbstract
     $pdf->SetX(0);
     $pdf->SetY(47);
     $pdf->Cell(9);
-    $pdf->MultiCell(70, 3.3, utf8_decode($CLICSHOPPING_Address->addressFormat($CLICSHOPPING_Order->customer['format_id'], $CLICSHOPPING_Order->customer, '', '', "\n")), 0, 'L');
+    $pdf->MultiCell(70, 3.3, mb_convert_encoding($CLICSHOPPING_Address->addressFormat($CLICSHOPPING_Order->customer['format_id'], $CLICSHOPPING_Order->customer, '', '', "\n"), 'ISO-8859-1', 'UTF-8'), 0, 'L');
 
 //Draw Box for Delivery Address
 // Cadre pour l'adresse de livraison
@@ -167,7 +167,7 @@ class OrderInvoice extends \ClicShopping\OM\Domains\PagesActionsAbstract
     $pdf->SetX(0);
     $pdf->SetY(47);
     $pdf->Cell(111);
-    $pdf->MultiCell(70, 3.3, utf8_decode($CLICSHOPPING_Address->addressFormat($CLICSHOPPING_Order->delivery['format_id'], $CLICSHOPPING_Order->delivery, '', '', "\n")), 0, 'L');
+    $pdf->MultiCell(70, 3.3, mb_convert_encoding($CLICSHOPPING_Address->addressFormat($CLICSHOPPING_Order->delivery['format_id'], $CLICSHOPPING_Order->delivery, '', '', "\n"), 'ISO-8859-1', 'UTF-8'), 0, 'L');
 
 // Information client
     $pdf->SetFont('Arial', 'B', 8);
@@ -184,13 +184,13 @@ class OrderInvoice extends \ClicShopping\OM\Domains\PagesActionsAbstract
 // Numero de client
     $pdf->SetFont('Arial', '', 8);
     $pdf->SetTextColor(0);
-    $pdf->Text(15, 95, utf8_decode(CLICSHOPPING::getDef('entry_customer_number')) . ' ' . $QordersInfo->valueInt('customers_id'));
+    $pdf->Text(15, 95, mb_convert_encoding(CLICSHOPPING::getDef('entry_customer_number'), 'ISO-8859-1', 'UTF-8') . ' ' . $QordersInfo->valueInt('customers_id'));
 
 //  Customer phone
 // Telephone du client
     $pdf->SetFont('Arial', '', 8);
     $pdf->SetTextColor(0);
-    $pdf->Text(15, 100, utf8_decode(CLICSHOPPING::getDef('entry_phone')) . ' ' . Hash::displayDecryptedDataText($CLICSHOPPING_Order->customer['telephone']));
+    $pdf->Text(15, 100, mb_convert_encoding(CLICSHOPPING::getDef('entry_phone'), 'ISO-8859-1', 'UTF-8') . ' ' . Hash::displayDecryptedDataText($CLICSHOPPING_Order->customer['telephone']));
 
 //Draw Box for Order Number, Date & Payment method
 // Cadre du numero de commande, date de commande et methode de paiemenent
@@ -240,10 +240,10 @@ class OrderInvoice extends \ClicShopping\OM\Domains\PagesActionsAbstract
 
 
 //Draw Payment Method Text
-//      $payment_info = substr(utf8_decode($CLICSHOPPING_Order->info['payment_method']) , 0, 30);
+//      $payment_info = substr(mb_convert_encoding($CLICSHOPPING_Order->info['payment_method'], 'ISO-8859-1', 'UTF-8') , 0, 30);
 //      $pdf->Text(120,113, CLICSHOPPING::getDef('entry_payment_method') . ' ' . $payment_info);
 
-    $temp = substr(utf8_decode($CLICSHOPPING_Order->info['payment_method']), 0, 30);
+    $temp = substr(mb_convert_encoding($CLICSHOPPING_Order->info['payment_method'], 'ISO-8859-1', 'UTF-8'), 0, 30);
     $pdf->Text(120, 113, CLICSHOPPING::getDef('entry_payment_method') . ' ' . $temp);
 
 // Cadre pour afficher "BON DE COMMANDE" ou "FACTURE"
@@ -374,7 +374,7 @@ class OrderInvoice extends \ClicShopping\OM\Domains\PagesActionsAbstract
         $CLICSHOPPING_Order->totals[$i]['text'] = substr($temp2, 0, strlen($temp2) - 4);
       }
 
-      $pdf->MultiCell(94, 6, substr(utf8_decode(html_entity_decode($CLICSHOPPING_Order->totals[$i]['title'])), 0, 30) . ' : ' . utf8_decode(html_entity_decode($CLICSHOPPING_Order->totals[$i]['text'])), 0, 'R');
+      $pdf->MultiCell(94, 6, substr(mb_convert_encoding(html_entity_decode($CLICSHOPPING_Order->totals[$i]['title']), 'ISO-8859-1', 'UTF-8'), 0, 30) . ' : ' . mb_convert_encoding(html_entity_decode($CLICSHOPPING_Order->totals[$i]['text']), 'ISO-8859-1', 'UTF-8'), 0, 'R');
       $Y_Table_Position += 5;
     }
 

@@ -11,6 +11,7 @@
 namespace ClicShopping\Apps\Orders\Orders\Classes\Shop;
 
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\DateTime;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\HTTP;
@@ -1271,7 +1272,7 @@ class Order
 
       $message_order = stripslashes(CLICSHOPPING::getDef('entry_text_order_number')) . ' ' . $order_id . "\n" . stripslashes(CLICSHOPPING::getDef('email_text_invoice_url'));
 
-      $email_order = $message_order . ' ' . CLICSHOPPING::link(null, 'Account&HistoryInfo&order_id=' . $order_id) . "\n" . CLICSHOPPING::getDef('email_text_date_ordered') . ' ' . strftime(CLICSHOPPING::getDef('date_format_long')) . "\n\n";
+      $email_order = $message_order . ' ' . CLICSHOPPING::link(null, 'Account&HistoryInfo&order_id=' . $order_id) . "\n" . CLICSHOPPING::getDef('email_text_date_ordered') . ' ' . DateTime::strftime(CLICSHOPPING::getDef('date_format_long')) . "\n\n";
 
       if ($this->info['comments']) {
         $email_order .= HTML::outputProtected($this->info['comments']) . "\n\n";

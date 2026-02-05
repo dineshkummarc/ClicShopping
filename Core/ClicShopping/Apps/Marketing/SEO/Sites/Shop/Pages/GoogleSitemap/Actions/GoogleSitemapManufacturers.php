@@ -40,7 +40,7 @@ class GoogleSitemapManufacturers extends \ClicShopping\OM\Domains\PagesActionsAb
       $Qmanufacturers->execute();
 
       while ($Qmanufacturers->fetch()) {
-        $location = htmlspecialchars(CLICSHOPPING::utf8Encode($this->rewriteUrl->getManufacturerUrl($Qmanufacturers->valueInt('manufacturers_id'))), ENT_QUOTES | ENT_HTML5);
+        $location = htmlspecialchars(mb_convert_encoding($this->rewriteUrl->getManufacturerUrl($Qmanufacturers->valueInt('manufacturers_id')), 'UTF-8', 'ISO-8859-1'), ENT_QUOTES | ENT_HTML5);
 
         $manufacturer_array[$Qmanufacturers->valueInt('manufacturers_id')]['loc'] = $location;
         $manufacturer_array[$Qmanufacturers->valueInt('manufacturers_id')]['lastmod'] = $Qmanufacturers->value('last_modified');
