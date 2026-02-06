@@ -10,7 +10,6 @@
 
 namespace ClicShopping\Sites\Common;
 
-
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use function in_array;

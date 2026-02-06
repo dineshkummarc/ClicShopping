@@ -86,6 +86,7 @@ class ACP extends \ClicShopping\OM\Domains\PagesAbstract
     if (!empty($_SERVER['HTTP_IDEMPOTENCY_KEY'])) {
       header('Idempotency-Key: ' . $_SERVER['HTTP_IDEMPOTENCY_KEY']);
     }
+
     if (!empty($_SERVER['HTTP_REQUEST_ID'])) {
       header('Request-Id: ' . $_SERVER['HTTP_REQUEST_ID']);
     }
@@ -107,15 +108,14 @@ class ACP extends \ClicShopping\OM\Domains\PagesAbstract
       http_response_code(204);
       exit;
     }
-
+//security
     try {
       if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
         $authHeader = trim($_SERVER['HTTP_AUTHORIZATION']);
-        $expectedSecret = \defined('CLICSHOPPING_APP_ECOMMERCE_ACP_SHARED_SECRET') ? CLICSHOPPING_APP_ECOMMERCE_ACP_SHARED_SECRET : '';
-        if ($expectedSecret === '') {
-          $expectedSecret = (string)CLICSHOPPING::getConfig('data_encryption');
-        }
+        $expectedSecret = \defined('CLICSHOPPING_APP_ECOMMERCE_ACP_SHARED_KEY_RETAIL') ? CLICSHOPPING_APP_ECOMMERCE_ACP_SHARED_KEY_RETAIL : '';
+
         $expectedHeader = $expectedSecret !== '' ? 'Bearer ' . $expectedSecret : '';
+
         if ($expectedHeader === '' || $authHeader !== $expectedHeader) {
           http_response_code(401);
           echo json_encode(['error' => 'Unauthorized'], JSON_UNESCAPED_SLASHES);

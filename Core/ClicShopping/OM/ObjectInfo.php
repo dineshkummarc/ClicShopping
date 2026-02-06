@@ -10,8 +10,6 @@
 
 namespace ClicShopping\OM;
 
-
-
 /**
  * Class ObjectInfo
  *

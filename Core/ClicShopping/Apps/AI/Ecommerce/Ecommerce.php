@@ -10,15 +10,11 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce;
 
-
-
-use ClicShopping\OM\Domains\AbstractDomainApp;
-use ClicShopping\OM\Domains\ConfigurableAppAbstract;
-
 use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
 use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\Patterns\HybridPreFilter;
 use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\ProductHelper;
 use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\Patterns\AnalyticsPatterns;
+use ClicShopping\OM\Domains\AbstractDomainApp;
 
 /**
  * Ecommerce Domain App for ClicShopping AI
@@ -32,7 +28,65 @@ use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\Patterns\AnalyticsP
  * with the DomainRegistry. It operates in Pure LLM Mode by default, using LLM-based entity
  * detection and query classification instead of pattern matching.
  * 
-
+ * Key Features:
+ * - Pure LLM Mode for entity detection and query classification
+ * - E-commerce specific entities: products, orders, customers, categories, manufacturers, suppliers
+ * - 3-layer security architecture (Core, AI/LLM, Domain Guardrails)
+ * - Context-aware guardrails (Admin vs Shop with different permissions)
+ * - Domain-specific LLM prompts for accurate query processing
+ * - Helper classes for product, order, and customer operations
+ * - Multilingual support with English processing (translation at boundaries)
+ * - Backward compatibility with existing RAG BI system
+ * 
+ * Security Architecture (3 Layers):
+ * 
+ * Layer 1: Core Application Security (DbSecurity)
+ * - Rate limiting, SQL validation, prepared statements, automatic LIMIT
+ * - Location: Core/ClicShopping/AI/Security/DbSecurity.php
+ * 
+ * Layer 2: AI/LLM Security (SecurityOrchestrator + Components)
+ * - Obfuscation detection, semantic threat analysis, response validation
+ * - Location: Core/ClicShopping/AI/Security/
+ * - Components: SecurityOrchestrator, ObfuscationPreprocessor, SemanticSecurityAnalyzer,
+ *   LlmGuardrails, AnswerGroundingVerifier, HallucinationDetector
+ * 
+ * Layer 3: Domain Guardrails (This Class)
+ * - Context-aware security rules (Admin vs Shop)
+ * - Abstract: Core/ClicShopping/OM/Domains/GuardrailsConfigAbstract.php
+ * - Admin: Classes/ClicShoppingAdmin/GuardrailsConfig.php (permissive)
+ * - Shop: Classes/Shop/GuardrailsConfig.php (restrictive - future)
+ * 
+ * Directory Structure:
+ * - Classes/ClicShoppingAdmin/: Configuration classes (EntityConfig, GuardrailsConfig, Helpers)
+ * - Module/Hooks/ClicShoppingAdmin/: Agent hooks (SEOAgent, AnalyticsAgent, EntityDetection, etc.)
+ * - Module/ClicShoppingAdmin/Config/: Configuration modules for admin settings
+ * - Module/ClicShoppingAdmin/Dashboard/: Dashboard widgets for admin interface
+ * - Sites/ClicShoppingAdmin/Pages/: Admin pages for domain management
+ * - Sql/: Database schema and migration scripts
+ * - languages/: Language files for multilingual support
+ * 
+ * Future Extensions (Shop):
+ * - Classes/Shop/: Automation classes (DynamicPricing, ProductRecommendations, PersonalizationEngine)
+ * - Module/Hooks/Shop/: Shop-side hooks for catalog automations
+ * - Module/HeaderTags/: AI-generated meta tags and SEO
+ * - Sites/Shop/Pages/: AI-powered catalog pages
+ * 
+ * Usage:
+ * ```php
+ * // Domain is automatically discovered and registered
+ * $registry = \ClicShopping\AI\DomainRegistry::getInstance();
+ * $ecommerce = $registry->getApp('ecommerce');
+ * 
+ * // Get domain configuration
+ * $entities = $ecommerce->getEntityConfig();
+ * $guardrails = $ecommerce->getGuardrailsConfig(); // Context-aware (Admin vs Shop)
+ * $helpers = $ecommerce->getHelpers();
+ * 
+ * // Check Pure LLM Mode
+ * if ($ecommerce->isPureLlmMode()) {
+ *     // Use LLM-based entity detection
+ * }
+ * ```
  * 
  * @see AbstractDomainApp
  * @see \ClicShopping\AI\DomainsAI\Registry
@@ -40,7 +94,6 @@ use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\Patterns\AnalyticsP
  * @see \ClicShopping\OM\Domains\GuardrailsConfigAbstract
  * @see \ClicShopping\AI\Security\SecurityOrchestrator
  */
-
 
 
 class Ecommerce extends AbstractDomainApp
@@ -187,6 +240,6 @@ class Ecommerce extends AbstractDomainApp
    */
   public function getAnalyticsPatternsClass(): ?string
   {
-    return Patterns\AnalyticsPatterns::class;
+    return AnalyticsPatterns::class;
   }
 }

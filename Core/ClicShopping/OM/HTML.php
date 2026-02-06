@@ -10,7 +10,6 @@
 
 namespace ClicShopping\OM;
 
-
 use ArrayIterator;
 use CachingIterator;
 use function count;
