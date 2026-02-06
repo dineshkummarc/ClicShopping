@@ -22,9 +22,9 @@
 
 namespace ClicShopping\AI\DomainsAI\CoreAI\Patterns\Common;
 
-use AllowDynamicProperties;
 
-#[AllowDynamicProperties]
+
+
 // DEPRECATED: Pattern-based logic superseded by Pure LLM Mode. Scheduled for removal in Q3 2026.
 
 class EntityKeywordsPattern

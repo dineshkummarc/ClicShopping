@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Analytics\Agent;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\AI\Security\InputValidator;
 use ClicShopping\AI\Security\SecurityLogger;
@@ -20,7 +20,7 @@ use ClicShopping\AI\Security\SecurityLogger;
  * Manages database schema information, table relationships, and column indexing
  * Provides caching mechanisms for improved performance
  */
-#[AllowDynamicProperties]
+
 class DatabaseSchemaManager
 {
   private \PDO $db;

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Prompt;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Cache as OMCache;
 use ClicShopping\AI\Infrastructure\Schema\SchemaRetriever;
@@ -32,7 +32,7 @@ use ClicShopping\AI\Config\DomainConfig;
  * 
  * @package ClicShopping\AI\Infrastructure\Prompt
  */
-#[AllowDynamicProperties]
+
 class PromptBuilder
 {
   private mixed $language;

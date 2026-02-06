@@ -16,7 +16,7 @@
 
 namespace ClicShopping\AI\Agents\Planning;
 
-use AllowDynamicProperties;
+
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Monitoring\MetricsCollector;
@@ -36,7 +36,7 @@ use ClicShopping\OM\Registry;
 /**
  * Refactored TaskPlanner - Modular architecture with SubTaskPlanners
  */
-#[AllowDynamicProperties]
+
 class TaskPlanner
 {
     private SecurityLogger $securityLogger;

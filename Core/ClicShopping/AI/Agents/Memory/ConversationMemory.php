@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Memory;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\SecurityLogger;
@@ -87,7 +87,7 @@ use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
  * @see ContextResolver For contextual reference resolution
  * @see EntityTracker For entity tracking and implicit context
  */
-#[AllowDynamicProperties]
+
 class ConversationMemory
 {
   private SecurityLogger $securityLogger;

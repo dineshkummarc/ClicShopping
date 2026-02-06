@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Planning;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Infrastructure\Metrics\CalculatorTool;
@@ -25,7 +25,7 @@ use ClicShopping\AI\DomainsAI\WebSearch\Tool\WebSearchTool;
  * - Complexity metadata
  * - Execution state
  */
-#[AllowDynamicProperties]
+
 class ExecutionPlan
 {
   private string $query;

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\ReviewsSentiment;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
@@ -20,7 +20,7 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use function count;
 
-#[AllowDynamicProperties]
+
 class Update implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;

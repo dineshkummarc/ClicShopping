@@ -9,11 +9,11 @@
 
 namespace ClicShopping\Apps\Tools\MCP\Classes\Shop\Security;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-#[AllowDynamicProperties]
+
 /**
  * Classe de gestion des permissions MCP
  * Vérifie les droits d'accès basés sur les champs de la table clic_mcp

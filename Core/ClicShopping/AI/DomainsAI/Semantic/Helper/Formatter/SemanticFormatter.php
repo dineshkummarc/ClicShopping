@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Semantic\Helper\Formatter;
 
-use AllowDynamicProperties;
+
 
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\Registry;
@@ -22,7 +22,7 @@ use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\SubResultFormatters\Abstra
 /**
  * SemanticFormatter - Formats semantic search results
  */
-#[AllowDynamicProperties]
+
 class SemanticFormatter extends AbstractFormatter
 {
   /**

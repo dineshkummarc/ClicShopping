@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Memory\SubConversationMemory;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Memory\ConversationHistory;
 use LLPhant\Chat\Message;
@@ -28,7 +28,7 @@ use LLPhant\Chat\Message;
  * - Automatic trimming when limit reached
  * - Clear history when needed
  */
-#[AllowDynamicProperties]
+
 class ShortTermMemoryManager
 {
   private ConversationHistory $conversationHistory;

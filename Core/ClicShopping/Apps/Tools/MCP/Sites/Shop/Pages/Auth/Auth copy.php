@@ -6,7 +6,7 @@
 
 namespace ClicShopping\Apps\Tools\MCP\Sites\Shop\Pages\Auth;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpSecurity;

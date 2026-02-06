@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Metrics;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 
 /**
@@ -25,7 +25,7 @@ use ClicShopping\AI\Security\SecurityLogger;
  * - Calculate average response times
  * - Generate statistics reports
  */
-#[AllowDynamicProperties]
+
 class MemoryStatistics
 {
   private SecurityLogger $logger;

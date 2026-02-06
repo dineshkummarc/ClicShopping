@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Planning;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent;
@@ -31,7 +31,7 @@ use ClicShopping\OM\Registry;
  * PlanExecutor Class
  * Executes plans with step-by-step execution, parallel processing, result transmission, error handling, and result synthesis
  */
-#[AllowDynamicProperties]
+
 class PlanExecutor
 {
   private SecurityLogger $securityLogger;

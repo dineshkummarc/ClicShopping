@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Analytics\Agent;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\InputValidator;
 use ClicShopping\AI\DomainsAI\CoreAI\Helper\AgentResponseHelper;
 use ClicShopping\AI\DomainsAI\Analytics\Helper\Detection\AmbiguousQueryDetector;
@@ -29,7 +29,7 @@ use ClicShopping\AI\DomainsAI\Analytics\Helper\Detection\AmbiguousQueryDetector;
  * 
  * @package ClicShopping\AI\Agents\Orchestrator\SubAnalyticsAgent
  */
-#[AllowDynamicProperties]
+
 class AmbiguityHandler
 {
   private AmbiguousQueryDetector $ambiguityDetector;

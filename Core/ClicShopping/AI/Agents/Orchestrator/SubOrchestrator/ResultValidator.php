@@ -11,7 +11,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 
 /**
@@ -30,7 +30,7 @@ use ClicShopping\AI\Security\SecurityLogger;
  * Created as part of Phase 4: Validation, Testing, and Quality Assurance
  * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5
  */
-#[AllowDynamicProperties]
+
 class ResultValidator
 {
   private SecurityLogger $logger;

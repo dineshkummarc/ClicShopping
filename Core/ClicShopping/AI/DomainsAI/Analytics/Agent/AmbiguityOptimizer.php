@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Analytics\Agent;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\DomainsAI\Hybrid\Patterns\AmbiguityPreFilter;
 use ClicShopping\AI\DomainsAI\Analytics\Patterns\TemporalConflictPattern;
@@ -32,7 +32,7 @@ use ClicShopping\OM\Cache as OMCache;
  * - Cache hit: ~0.5s (vs ~9-14s for full generation)
  * - Total potential gain: ~8-13s per query
  */
-#[AllowDynamicProperties]
+
 class AmbiguityOptimizer
 {
   private SecurityLogger $logger;

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
@@ -23,7 +23,7 @@ use ClicShopping\AI\Config\DomainConfig;
  * ReasoningAgent Class
  * Specialized agent for multi-step reasoning with Chain-of-Thought, Tree-of-Thought, and Self-consistency methods
  */
-#[AllowDynamicProperties]
+
 class ReasoningAgent
 {
   private SecurityLogger $securityLogger;

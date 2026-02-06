@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Config\DomainConfig;
@@ -31,7 +31,7 @@ use ClicShopping\AI\Config\DomainConfig;
  * Requirements: REQ-4.1, REQ-8.1
  * TASK 4: Internationalization support added
  */
-#[AllowDynamicProperties]
+
 class ResponseProcessor
 {
   private SecurityLogger $securityLogger;

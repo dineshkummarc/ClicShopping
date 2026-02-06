@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\WebSearch\Helper\Formatter;
 
-use AllowDynamicProperties;
+
 
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\Registry;
@@ -28,7 +28,7 @@ use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\SubResultFormatters\Abstra
  * - Comparative tables
  * - Source attribution with web search icon
  */
-#[AllowDynamicProperties]
+
 class WebSearchFormatter extends AbstractFormatter
 {
   /**

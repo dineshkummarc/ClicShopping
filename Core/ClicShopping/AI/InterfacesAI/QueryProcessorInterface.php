@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\InterfacesAI;
 
-use AllowDynamicProperties;
+
 
 /**
  * QueryProcessorInterface

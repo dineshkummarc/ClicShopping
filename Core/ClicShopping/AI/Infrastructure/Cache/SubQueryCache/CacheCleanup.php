@@ -10,13 +10,13 @@
 
 namespace ClicShopping\AI\Infrastructure\Cache\SubQueryCache;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 
 /**
  * Cleans expired entries and manages cache size
  */
-#[AllowDynamicProperties]
+
 class CacheCleanup
 {
   private mixed $db;

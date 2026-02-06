@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Semantic\Patterns;
 
-use AllowDynamicProperties;
+
 
 /**
  * ClassificationEnginePatterns - Regex patterns for JSON cleaning and validation
@@ -29,7 +29,7 @@ use AllowDynamicProperties;
  *             Use UnifiedQueryAnalyzer for intent classification instead
  *             See Domain/Patterns/DEPRECATED.md for migration guide
  **/
-#[AllowDynamicProperties]
+
 // DEPRECATED: Pattern-based logic superseded by Pure LLM Mode. Scheduled for removal in Q3 2026.
 
 class ClassificationEnginePatterns

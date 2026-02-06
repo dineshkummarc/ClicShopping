@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Memory;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 
 /**
@@ -32,7 +32,7 @@ use ClicShopping\AI\Security\SecurityLogger;
  * - Configurable limits for maximum entries and maximum value size
  */
 
-#[AllowDynamicProperties]
+
 class WorkingMemory
 {
   private SecurityLogger $securityLogger;

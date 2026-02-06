@@ -17,7 +17,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Semantic\Patterns;
 
-use AllowDynamicProperties;
+
 
 /**
  * PatternAnalysisPattern Class
@@ -40,7 +40,7 @@ use AllowDynamicProperties;
  * @moved 2026-01-09 from Domain\Patterns to Domain\Patterns\Semantic
  * @moved 2026-01-22 from Domain\Patterns\Semantic to DomainsAI\Semantic\Patterns
  */
-#[AllowDynamicProperties]
+
 // DEPRECATED: Pattern-based logic superseded by Pure LLM Mode. Scheduled for removal in Q3 2026.
 
 class PatternAnalysisPattern

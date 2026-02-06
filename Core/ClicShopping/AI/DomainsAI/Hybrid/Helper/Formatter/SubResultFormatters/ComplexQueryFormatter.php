@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\SubResultFormatters;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Config\DomainConfig;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\CLICSHOPPING;
@@ -29,7 +29,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
  * 
  * Displays results in structured sections with proper source attribution
  */
-#[AllowDynamicProperties]
+
 class ComplexQueryFormatter extends AbstractFormatter
 {
   /**

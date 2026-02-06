@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Security;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
@@ -30,7 +30,7 @@ use ClicShopping\AI\Config\DomainConfig;
  * When a domain is configured (e.g., 'ecommerce'), it loads domain-specific validation rules.
  * When no domain is configured, it uses generic validation patterns.
  */
-#[AllowDynamicProperties]
+
 class LlmGuardrails
 {
   private const CONFIDENCE_THRESHOLD = 0.75;

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\Catalog\Products\Classes\Shop;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
 use ClicShopping\OM\HTML;
@@ -26,7 +26,7 @@ use function strlen;
  * This class provides functionality for managing details and properties of products,
  * including retrieving product information, performing checks, and updating product views.
  */
-#[AllowDynamicProperties]
+
 class ProductsCommon extends Prod
 {
   public mixed $app;

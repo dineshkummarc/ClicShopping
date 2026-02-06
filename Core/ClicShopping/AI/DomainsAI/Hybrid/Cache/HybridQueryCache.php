@@ -15,7 +15,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Hybrid\Cache;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Cache as OMCache;
 use ClicShopping\AI\Security\SecurityLogger;
 
@@ -31,7 +31,7 @@ use ClicShopping\AI\Security\SecurityLogger;
  * 
  * Cache Directory: Work/Cache/Rag/Hybrid/
  */
-#[AllowDynamicProperties]
+
 class HybridQueryCache
 {
   private const CACHE_NAMESPACE = 'Rag/Hybrid';

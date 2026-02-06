@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
@@ -29,7 +29,7 @@ use ClicShopping\AI\Rag\MultiDBRAGManager;
  * - Handle multiple extraction strategies (step results, intent, metadata)
  * - Provide fallback values when extraction fails
  */
-#[AllowDynamicProperties]
+
 class EntityExtractor
 {
   private SecurityLogger $logger;

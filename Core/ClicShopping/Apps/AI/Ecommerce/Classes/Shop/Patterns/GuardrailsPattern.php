@@ -13,7 +13,7 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Classes\Shop\Patterns;
 
-use AllowDynamicProperties;
+
 /**
  * GuardrailsPattern - Shop Context
  *
@@ -37,7 +37,7 @@ use AllowDynamicProperties;
  * Entity detection uses Pure LLM Mode (not pattern matching).
  */
 
-#[AllowDynamicProperties]
+
 class GuardrailsPattern
 {
   /**

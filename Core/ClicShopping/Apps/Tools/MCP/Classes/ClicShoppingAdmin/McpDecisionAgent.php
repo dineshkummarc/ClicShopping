@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Mail;
 
@@ -22,7 +22,7 @@ use ClicShopping\OM\SimpleLogger;
  * Acts as the brain of the MCP agentic system.
  * Analyzes performance recommendations, makes decisions, and logs alerts.
  */
-#[AllowDynamicProperties]
+
 class McpDecisionAgent
 {
   /**

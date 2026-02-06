@@ -2,7 +2,7 @@
 
 namespace ClicShopping\AI\Agents\Memory;
 
-use AllowDynamicProperties;
+
 use LLPhant\Chat\Message;
 
 /**
@@ -10,7 +10,7 @@ use LLPhant\Chat\Message;
  *
  * Manages the conversation history for a chat application.
  */
-#[AllowDynamicProperties]
+
 class ConversationHistory
 {
   private array $messages = [];

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Cache\SubQueryCache;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\FileSystem;
 
@@ -18,7 +18,7 @@ use ClicShopping\OM\FileSystem;
  * File-based cache storage in Work/Cache/Rag
  * Used as fallback or complement to database cache
  */
-#[AllowDynamicProperties]
+
 class CacheFileStorage
 {
   private string $cachePath;

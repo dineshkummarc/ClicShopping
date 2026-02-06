@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Memory\SubConversationMemory;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Memory\EntityTypeRegistry;
 use ClicShopping\AI\DomainsAI\CoreAI\Entity\EntityHelper;
@@ -29,7 +29,7 @@ use LLPhant\Chat\Message;
  * - Support multilingual patterns (FR/EN)
  * - Dynamic entity type discovery via EntityTypeRegistry
  */
-#[AllowDynamicProperties]
+
 class ContextResolver
 {
   private SecurityLogger $logger;

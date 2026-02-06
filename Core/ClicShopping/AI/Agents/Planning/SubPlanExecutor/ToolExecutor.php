@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Metrics\CalculatorTool;
 use ClicShopping\AI\DomainsAI\WebSearch\Cache\SearchCacheManager;
@@ -29,7 +29,7 @@ use ClicShopping\AI\DomainsAI\WebSearch\Tool\WebSearchTool;
  * - Handle tool errors
  * - Manage search cache
  */
-#[AllowDynamicProperties]
+
 class ToolExecutor
 {
   private SecurityLogger $logger;

@@ -14,10 +14,10 @@
 
 namespace ClicShopping\AI\Agents\Response;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 
-#[AllowDynamicProperties]
+
 class LlmResponseProcessor
 {
     private SecurityLogger $securityLogger;

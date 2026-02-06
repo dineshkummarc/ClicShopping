@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\Products;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
@@ -27,7 +27,7 @@ use ClicShopping\Sites\Common\HTMLOverrideCommon;
  * It generates SEO metadata, summaries, and translations based on product information,
  * and also creates product-related images if specified.
  */
-#[AllowDynamicProperties]
+
 class Insert implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;

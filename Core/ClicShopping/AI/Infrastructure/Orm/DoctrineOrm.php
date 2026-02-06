@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Orm;
 
-use AllowDynamicProperties;
+
 
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
@@ -46,7 +46,7 @@ use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\AnalyticsConfig;
  * @package ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag
 */
 
-#[AllowDynamicProperties]
+
 class DoctrineOrm
 {
   private static $debug = false;

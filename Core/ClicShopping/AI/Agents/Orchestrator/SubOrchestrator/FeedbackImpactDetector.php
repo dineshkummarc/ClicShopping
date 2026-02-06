@@ -7,7 +7,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 
@@ -27,7 +27,7 @@ use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
  *
  * @package ClicShopping\AI\Agents\Orchestrator\SubOrchestrator
  */
-#[AllowDynamicProperties]
+
 class FeedbackImpactDetector
 {
   private SecurityLogger $logger;

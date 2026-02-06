@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Memory;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
@@ -28,7 +28,7 @@ use ClicShopping\AI\Rag\MultiDBRAGManager;
  * - Support for custom entity types
  * - No code duplication - uses existing MultiDBRAGManager
  */
-#[AllowDynamicProperties]
+
 class EntityTypeRegistry
 {
   private static ?EntityTypeRegistry $instance = null;

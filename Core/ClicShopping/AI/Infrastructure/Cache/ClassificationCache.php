@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Cache;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 
 /**
@@ -27,7 +27,7 @@ use ClicShopping\OM\CLICSHOPPING;
  * @package ClicShopping\AI\Infrastructure\Cache
  * @since 2025-12-26
  */
-#[AllowDynamicProperties]
+
 class ClassificationCache
 {
   /**

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Hybrid\Processor;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Memory\ConversationMemory;
 use ClicShopping\AI\Agents\Memory\MemoryRetentionService;
@@ -99,7 +99,7 @@ use ClicShopping\AI\InterfacesAI\EntityHelperInterface;
  * @since 2025-12-14
  * @version 1.0.0
  */
-#[AllowDynamicProperties]
+
 class HybridQueryProcessor
 {
   private SecurityLogger $logger;

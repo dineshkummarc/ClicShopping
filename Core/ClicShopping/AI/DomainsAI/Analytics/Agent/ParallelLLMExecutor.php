@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Analytics\Agent;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\Common\LLMProviderInterface;
@@ -39,7 +39,7 @@ use GuzzleHttp\Exception\TransferException;
  * - Uses GuzzleHttp\Promise\Utils::settle() to wait for all promises
  * - Follows same pattern as ClicShopping\OM\HTTP::getResponse()
  */
-#[AllowDynamicProperties]
+
 class ParallelLLMExecutor
 {
   private SecurityLogger $logger;

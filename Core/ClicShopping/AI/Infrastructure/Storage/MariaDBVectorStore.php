@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Storage;
 
-use AllowDynamicProperties;
+
 
 use ClicShopping\OM\CLICSHOPPING;
 use Doctrine\DBAL\ParameterType;
@@ -44,7 +44,7 @@ use ClicShopping\AI\Infrastructure\Cache\Cache;
  * @package ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag
  */
  
-#[AllowDynamicProperties]
+
 class MariaDBVectorStore extends VectorStoreBase
 {
   private Connection $connection;

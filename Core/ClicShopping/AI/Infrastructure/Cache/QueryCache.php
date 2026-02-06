@@ -11,7 +11,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Cache;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Infrastructure\Cache\SubQueryCache\CacheKeyGenerator;
 use ClicShopping\AI\Infrastructure\Cache\SubQueryCache\CacheStorage;
@@ -24,7 +24,7 @@ use ClicShopping\AI\Infrastructure\Cache\RagCache;
  * Query Cache System
  * Supports: Database, File, Memcached, Redis backends
  */
-#[AllowDynamicProperties]
+
 class QueryCache
 {
   private int $defaultTTL;

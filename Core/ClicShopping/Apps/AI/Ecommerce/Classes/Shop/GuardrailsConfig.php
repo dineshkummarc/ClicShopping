@@ -11,7 +11,7 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Classes\Shop;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Domains\GuardrailsConfigAbstract;
 use ClicShopping\Apps\AI\Ecommerce\Classes\Shop\Patterns\GuardrailsPattern;
 
@@ -40,7 +40,7 @@ use ClicShopping\Apps\AI\Ecommerce\Classes\Shop\Patterns\GuardrailsPattern;
  *
  * @see \ClicShopping\OM\Domains\GuardrailsConfigAbstract Base class with common security rules
  */
-#[AllowDynamicProperties]
+
 class GuardrailsConfig extends GuardrailsConfigAbstract
 {
   /**

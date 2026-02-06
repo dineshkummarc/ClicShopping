@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Analytics\Helper\Formatter;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Config\DomainConfig;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\Registry;
@@ -21,7 +21,7 @@ use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\SubResultFormatters\Abstra
 /**
  * AnalyticsFormatter - Formats analytics query results
  */
-#[AllowDynamicProperties]
+
 class AnalyticsFormatter extends AbstractFormatter
 {
   /**

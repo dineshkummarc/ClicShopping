@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Analytics\Helper;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Config\DomainConfig;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
@@ -29,7 +29,7 @@ use ClicShopping\OM\Registry;
  * 
  * @package ClicShopping\AI\Handler\Error
  */
-#[AllowDynamicProperties]
+
 class AnalyticsErrorHandler
 {
   private mixed $db;

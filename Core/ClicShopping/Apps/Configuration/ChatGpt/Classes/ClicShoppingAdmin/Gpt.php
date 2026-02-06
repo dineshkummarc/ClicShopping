@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
@@ -42,7 +42,7 @@ use LLPhant\Chat\AnthropicChat;
 use function defined;
 use function is_null;
 
-#[AllowDynamicProperties]
+
 /**
  * Gpt
  *

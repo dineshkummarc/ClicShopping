@@ -16,7 +16,7 @@
 
 namespace ClicShopping\Apps\Tools\MCP\Classes\Shop\EndPoint;
 
-use AllowDynamicProperties;
+
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Tools\Cache\TranslationCache;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
@@ -26,7 +26,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 
-#[AllowDynamicProperties]
+
 class Products
 {
   /** @var mixed The MCP application instance. */

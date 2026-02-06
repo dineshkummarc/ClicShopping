@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Classes\Shop\ACP;
 
-use AllowDynamicProperties;
+
 use ClicShopping\Apps\Orders\Orders\Classes\Shop\Order;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\SimpleLogger;
@@ -23,7 +23,7 @@ use ClicShopping\OM\SimpleLogger;
  * session, into the ClicShopping database. It handles the direct insertion of order data,
  * products, totals, and status history.
  */
-#[AllowDynamicProperties]
+
 class GptOrderManager
 {
   /**

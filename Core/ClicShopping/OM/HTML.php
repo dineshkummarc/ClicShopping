@@ -10,7 +10,7 @@
 
 namespace ClicShopping\OM;
 
-use AllowDynamicProperties;
+
 use ArrayIterator;
 use CachingIterator;
 use function count;
@@ -23,7 +23,7 @@ use function strlen;
 /**
  * Namespace for organizing the HTML class logic.
  */
-#[AllowDynamicProperties]
+
 class HTML
 {
   /**

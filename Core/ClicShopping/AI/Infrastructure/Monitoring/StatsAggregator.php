@@ -8,7 +8,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Monitoring;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 
 /**
@@ -21,7 +21,7 @@ use ClicShopping\AI\Security\SecurityLogger;
  * - Detects anomalies
  * - Exports to different formats
  */
-#[AllowDynamicProperties]
+
 class StatsAggregator
 {
   private SecurityLogger $logger;

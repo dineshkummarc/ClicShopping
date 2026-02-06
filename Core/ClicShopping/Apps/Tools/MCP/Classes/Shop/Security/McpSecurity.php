@@ -11,14 +11,14 @@
 namespace ClicShopping\Apps\Tools\MCP\Classes\Shop\Security;
 
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\DateTime;
 use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 use Exception;
 use PDOException;
 
-#[AllowDynamicProperties]
+
 /**
  * Provides security-related functionalities for the MCP API, including token validation,
  * session management, rate limiting, and IP address validation.

@@ -10,11 +10,11 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Sites\ClicShoppingAdmin\Pages\Home\Actions\RagWebSearch;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-#[AllowDynamicProperties]
+
 class Update extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public mixed $app;

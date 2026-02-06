@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Metrics;
 
-use AllowDynamicProperties;
+
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
@@ -32,7 +32,7 @@ use ClicShopping\AI\Security\InputValidator;
  * - Calculation history
  * - Decimal and scientific number support
  */
-#[AllowDynamicProperties]
+
 class CalculatorTool
 {
   private SecurityLogger $securityLogger;

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Query;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\DomainsAI\Semantic\Processor\ClassificationEngine;
 use ClicShopping\AI\Infrastructure\Cache\ClassificationCache;
@@ -31,7 +31,7 @@ use ClicShopping\AI\DomainsAI\DomainRegistry;
  * 
  * TASK 2.10.2 (2025-12-26): Added ClassificationCache integration for performance optimization
  */
-#[AllowDynamicProperties]
+
 class QueryClassifier
 {
   private SecurityLogger $logger;

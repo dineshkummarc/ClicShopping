@@ -11,7 +11,7 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
@@ -72,7 +72,7 @@ use ClicShopping\OM\Domains\GuardrailsConfigAbstract;
  * @see \ClicShopping\Apps\AI\Ecommerce\Ecommerce Domain app that uses this configuration
  */
 
-#[AllowDynamicProperties]
+
 class GuardrailsConfig extends GuardrailsConfigAbstract
 {
   /**

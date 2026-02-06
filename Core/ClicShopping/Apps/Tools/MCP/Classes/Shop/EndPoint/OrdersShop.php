@@ -8,14 +8,14 @@
  */
 namespace ClicShopping\Apps\Tools\MCP\Classes\Shop\EndPoint;
 
-use AllowDynamicProperties;
+
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Message;
 use ClicShopping\Apps\Tools\MCP\MCP;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
-#[AllowDynamicProperties]
+
 /**
  * This class handles the business logic for managing customer orders through an API.
  * It provides methods for listing, retrieving, and updating orders, ensuring data integrity and customer ownership.

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\CoreAI\Embedding;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Cache;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
@@ -39,7 +39,7 @@ use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
  *
  * @package ClicShopping\AI\Domain\Embedding
  */
-#[AllowDynamicProperties]
+
 class EmbeddingSearch
 {
   private SecurityLogger $logger;

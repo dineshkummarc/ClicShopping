@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\DomainsAI\CoreAI\Entity\EntityRegistry;
@@ -36,7 +36,7 @@ use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
  * ```
  */
 
-#[AllowDynamicProperties]
+
 class AnalyticsConfig
 {
   private static ?array $configCache = null;

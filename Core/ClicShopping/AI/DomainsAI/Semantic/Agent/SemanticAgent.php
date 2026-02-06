@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Semantic\Agent;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
@@ -33,7 +33,7 @@ use ClicShopping\AI\Config\DomainConfig;
  * Implements ConfigurableComponent for dynamic configuration management.
  * Implements QueryTypeDomainInterface for domain-driven architecture.
  */
-#[AllowDynamicProperties]
+
 class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
 {
   private static ?SecurityLogger $logger = null;

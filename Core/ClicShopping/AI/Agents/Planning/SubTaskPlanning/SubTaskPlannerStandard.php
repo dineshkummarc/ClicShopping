@@ -7,12 +7,12 @@
 
 namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Agents\Planning\TaskStep;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\DomainsAI\DomainRegistry;
 
-#[AllowDynamicProperties]
+
 class SubTaskPlannerStandard
 {
     private bool $debug;

@@ -11,7 +11,7 @@
 
 namespace ClicShopping\Apps\Tools\MCP\Sites\Shop\Pages\RagBI;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\DomainsAI\Semantics\Agents\SemanticsAgent;
 use ClicShopping\AI\Insfrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Insfrastructure\Storage\MariaDBVectorStore;
@@ -28,7 +28,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
 
-#[AllowDynamicProperties]
+
 class RagBI extends \ClicShopping\OM\Domains\PagesAbstract
 {
   /**

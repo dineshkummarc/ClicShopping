@@ -2,8 +2,9 @@ version4.20
 AI
    - OM Interfaces and Abstract refactored
    - Multi-Domain Agnostic AI Framework 
-   - App Ecommerce
-- some fix
+   - App Ecommerce 
+   - ACP Protocol link refactored
+- some fix (included deprecated)
 - Librairies updated
 - Dynamic Pricing improved
 

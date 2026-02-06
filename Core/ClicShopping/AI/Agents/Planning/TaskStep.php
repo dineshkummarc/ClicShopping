@@ -7,7 +7,7 @@ namespace ClicShopping\AI\Agents\Planning;
  *
  * Represents atomic step of an execution plan
  */
-#[AllowDynamicProperties]
+
 class TaskStep
 {
   private string $id;

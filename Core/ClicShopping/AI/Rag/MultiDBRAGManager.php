@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Rag;
 
-use AllowDynamicProperties;
+
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
@@ -50,7 +50,7 @@ use LLPhant\OpenAIConfig;
  *
  * @package ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag
  */
-#[AllowDynamicProperties]
+
 class MultiDBRAGManager
 {
   public mixed $app;

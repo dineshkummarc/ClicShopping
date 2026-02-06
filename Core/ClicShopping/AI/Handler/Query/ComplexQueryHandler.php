@@ -19,14 +19,14 @@
 
 namespace ClicShopping\AI\Handler\Query;
 
-use AllowDynamicProperties;
+
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Config\DomainConfig;
 
-#[AllowDynamicProperties]
+
 class ComplexQueryHandler
 {
     private $securityLogger;

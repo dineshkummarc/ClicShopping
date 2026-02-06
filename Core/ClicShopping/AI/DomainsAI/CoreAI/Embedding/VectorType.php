@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\CoreAI\Embedding;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
@@ -36,7 +36,7 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
  * @package ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag
  * @extends Type
  */
-#[AllowDynamicProperties]
+
 class VectorType extends Type
 {
   /**

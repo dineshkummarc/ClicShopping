@@ -8,12 +8,12 @@
 
 namespace ClicShopping\AI\Agents\Planning\SubTaskPlanning;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Agents\Planning\TaskStep;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 
-#[AllowDynamicProperties]
+
 class SubTaskPlannerSemanticSearch
 {
   private bool $debug;

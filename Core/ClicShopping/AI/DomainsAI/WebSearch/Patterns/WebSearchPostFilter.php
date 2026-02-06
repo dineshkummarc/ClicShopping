@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\WebSearch\Patterns;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 
 /**
@@ -43,7 +43,7 @@ use ClicShopping\OM\Registry;
  *             Use UnifiedQueryAnalyzer for intent classification instead
  *             See Domain/Patterns/DEPRECATED.md for migration guide
  **/
-#[AllowDynamicProperties]
+
 // DEPRECATED: Pattern-based logic superseded by Pure LLM Mode. Scheduled for removal in Q3 2026.
 
 class WebSearchPostFilter

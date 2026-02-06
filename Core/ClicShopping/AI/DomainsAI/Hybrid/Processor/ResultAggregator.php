@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Hybrid\Processor;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\DomainsAI\WebSearch\Tool\WebSearchTool;
 use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\ResultFormatter;
 use ClicShopping\AI\Config\DomainConfig;
@@ -36,7 +36,7 @@ use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
  * @package ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor
  * @since 2025-12-14
  */
-#[AllowDynamicProperties]
+
 class ResultAggregator extends BaseQueryProcessor
 {
   /**

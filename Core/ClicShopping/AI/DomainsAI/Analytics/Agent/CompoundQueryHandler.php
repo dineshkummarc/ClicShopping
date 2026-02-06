@@ -19,7 +19,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Analytics\Agent;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\DomainsAI\CoreAI\Patterns\Common\CompoundQueryIndicatorsPattern;
 use ClicShopping\OM\Registry;
@@ -39,7 +39,7 @@ use ClicShopping\AI\Config\DomainConfig;
  * 
  * Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6
  */
-#[AllowDynamicProperties]
+
 class CompoundQueryHandler
 {
   private mixed $chat;

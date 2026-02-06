@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\CoreAI\Embedding;
 
-use AllowDynamicProperties;
+
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Cache;
@@ -32,7 +32,7 @@ use LLPhant\VoyageAIConfig;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Security\InputValidator;
 
-#[AllowDynamicProperties]
+
 class NewVector
 {
   /**

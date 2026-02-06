@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\SubResultFormatters\FormatterRouter;
 use ClicShopping\AI\DomainsAI\Analytics\Helper\Formatter\AnalyticsFormatter;
@@ -36,7 +36,7 @@ use ClicShopping\AI\Config\DomainConfig;
  *
  * @version 2.0 - Refactored 2025-12-30
  */
-#[AllowDynamicProperties]
+
 class ResultFormatter
 {
   private FormatterRouter $router;

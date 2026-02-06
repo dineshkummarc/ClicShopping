@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\CoreAI\Entity;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\DomainsAI\CoreAI\Entity\EntityRegistry;
 
@@ -28,7 +28,7 @@ use ClicShopping\AI\DomainsAI\CoreAI\Entity\EntityRegistry;
  * - Handle multiple entity types (products, categories, orders, customers, etc.)
  * - Provide fallback values when no entity is found
  */
-#[AllowDynamicProperties]
+
 class EntityIdExtractor
 {
   private SecurityLogger $logger;

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Classes\Shop\ACP;
 
-use AllowDynamicProperties;
+
 use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
@@ -27,7 +27,7 @@ use ClicShopping\OM\SimpleLogger;
  * This includes inserting records into the 'customers', 'address_book', and 'customers_info'
  * tables, along with handling temporary passwords and sending welcome emails.
  */
-#[AllowDynamicProperties]
+
 class GptCustomerManager
 {
   /**

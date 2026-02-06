@@ -7,7 +7,7 @@
 
 namespace ClicShopping\AI\Agents\Memory;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
@@ -26,7 +26,7 @@ use ClicShopping\AI\Security\SecurityLogger;
  * - After TTL_SHORT_TERM, migration to LEVEL 2
  * - LEVEL 2 persists indefinitely (with optional cleanup)
  */
-#[AllowDynamicProperties]
+
 class MemoryRetentionService
 {
   private ConversationMemory $conversationMemory;

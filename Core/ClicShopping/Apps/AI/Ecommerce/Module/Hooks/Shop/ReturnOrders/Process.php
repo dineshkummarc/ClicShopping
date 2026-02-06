@@ -10,14 +10,14 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\Shop\ReturnOrders;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
-#[AllowDynamicProperties]
+
 class Process implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;

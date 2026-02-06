@@ -10,10 +10,10 @@
 
 namespace ClicShopping\Apps\Communication\PageManager;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 
-#[AllowDynamicProperties]
+
 class PageManager extends ConfigurableAppAbstract
 {
   /**

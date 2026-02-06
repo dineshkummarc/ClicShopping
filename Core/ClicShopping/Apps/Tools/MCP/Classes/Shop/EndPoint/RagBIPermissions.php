@@ -11,7 +11,7 @@
 
 namespace ClicShopping\Apps\Tools\MCP\Classes\Shop\EndPoint;
 
-use AllowDynamicProperties;
+
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpPermissions;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpSecurity;
 use ClicShopping\OM\Registry;
@@ -20,7 +20,7 @@ use ClicShopping\OM\Registry;
  * Classe de gestion des permissions spécifiques au RAG-BI
  * Contrôle strict des accès aux données sensibles pour les analyses
  */
-#[AllowDynamicProperties]
+
 class RagBIPermissions
 {
     private mixed $db;

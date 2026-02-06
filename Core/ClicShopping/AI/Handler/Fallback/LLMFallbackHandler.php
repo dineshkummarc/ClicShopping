@@ -13,7 +13,7 @@
 
 namespace ClicShopping\AI\Handler\Fallback;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\OM\CLICSHOPPING;
@@ -24,7 +24,7 @@ use ClicShopping\OM\CLICSHOPPING;
  * Provides LLM fallback functionality for semantic queries when vector stores
  * don't contain relevant information.
  */
-#[AllowDynamicProperties]
+
 class LLMFallbackHandler
 {
   private SecurityLogger $logger;

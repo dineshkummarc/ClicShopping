@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
@@ -33,7 +33,7 @@ use ClicShopping\OM\CLICSHOPPING;
  * - Handle semantic errors
  * - Manage search cache
  */
-#[AllowDynamicProperties]
+
 class SemanticExecutor
 {
   private SecurityLogger $logger;

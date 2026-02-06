@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Query;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Helper\LanguageHelper;
 use ClicShopping\AI\DomainsAI\CoreAI\Patterns\Common\EntityDetectionPattern;
@@ -35,7 +35,7 @@ use ClicShopping\AI\DomainsAI\Analytics\Patterns\QueryCriteriaPattern;
  * REORGANIZATION: Moved from SubOrchestrator to Agents/Query (2025-12-10)
  * Requirements: REQ-4.2, REQ-8.1
  */
-#[AllowDynamicProperties]
+
 class QueryAnalyzer
 {
   private SecurityLogger $securityLogger;

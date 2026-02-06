@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
-use AllowDynamicProperties;
+
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Security\SecurityLogger;
 
@@ -27,7 +27,7 @@ use ClicShopping\AI\Security\SecurityLogger;
  * - Analyze error patterns and suggest improvements
  * - Calculate classification accuracy
  */
-#[AllowDynamicProperties]
+
 class DiagnosticManager
 {
   private SecurityLogger $logger;

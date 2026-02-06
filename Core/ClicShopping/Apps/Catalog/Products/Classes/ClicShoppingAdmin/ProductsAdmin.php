@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\Catalog\Products\Classes\ClicShoppingAdmin;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Cache;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
@@ -29,7 +29,7 @@ use function is_null;
  * including retrieving product information, saving product descriptions,
  * and managing various product-specific details like model, SKU, EAN, and packaging.
  */
-#[AllowDynamicProperties]
+
 class ProductsAdmin
 {
   private mixed $db;

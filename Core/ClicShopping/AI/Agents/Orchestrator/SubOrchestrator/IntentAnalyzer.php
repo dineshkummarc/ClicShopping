@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
-use AllowDynamicProperties;
+
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
@@ -50,7 +50,7 @@ use ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer\UnifiedQueryAnalyzer;
  * - Resolve contextual references
  * - Monitor performance
  */
-#[AllowDynamicProperties]
+
 class IntentAnalyzer
 {
   private SecurityLogger $logger;

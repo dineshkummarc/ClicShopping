@@ -10,13 +10,13 @@
 
 namespace ClicShopping\AI\Infrastructure\Cache\SubQueryCache;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 
 /**
  * Manages CRUD operations on cache table
  */
-#[AllowDynamicProperties]
+
 class CacheStorage
 {
   private mixed $db;

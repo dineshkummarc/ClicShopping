@@ -17,7 +17,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Analytics\Helper\Formatter;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Config\DomainConfig;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\SubResultFormatters\AbstractFormatter;
@@ -28,7 +28,7 @@ use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\SubResultFormatters\Abstra
  * Formats results from ambiguous queries that have multiple interpretations
  * Displays each interpretation with its results clearly separated
  */
-#[AllowDynamicProperties]
+
 class AmbiguousResultFormatter extends AbstractFormatter
 {
   /**

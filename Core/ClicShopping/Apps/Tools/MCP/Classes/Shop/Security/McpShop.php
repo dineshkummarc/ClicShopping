@@ -10,13 +10,13 @@
 
 namespace ClicShopping\Apps\Tools\MCP\Classes\Shop\Security;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 use Exception;
 use PDOException;
 
-#[AllowDynamicProperties]
+
 /**
  * Handles MCP security functions for the Shop side.
  */

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Handler\Error;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ResponseProcessor;
 
@@ -29,7 +29,7 @@ use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ResponseProcessor;
  * TASK 2.3: Extracted from OrchestratorAgent (Phase 2 - Component Extraction)
  * Requirements: REQ-4.3, REQ-4.4, REQ-8.1
  */
-#[AllowDynamicProperties]
+
 class ErrorHandler
 {
   private SecurityLogger $securityLogger;

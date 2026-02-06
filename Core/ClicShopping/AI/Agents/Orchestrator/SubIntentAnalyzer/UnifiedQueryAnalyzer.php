@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\DomainsAI\DomainRegistry;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
@@ -50,7 +50,7 @@ use ClicShopping\AI\Config\DomainConfig;
  * @since 2025-12-14
  * @version 2.0 (Pure LLM Mode)
  */
-#[AllowDynamicProperties]
+
 class UnifiedQueryAnalyzer
 {
   private SemanticAgent $semantics;

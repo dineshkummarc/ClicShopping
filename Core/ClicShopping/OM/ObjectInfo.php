@@ -10,7 +10,7 @@
 
 namespace ClicShopping\OM;
 
-use AllowDynamicProperties;
+
 
 /**
  * Class ObjectInfo
@@ -19,7 +19,7 @@ use AllowDynamicProperties;
  * based on the provided associative array. The class facilitates the dynamic population
  * of object properties at runtime.
  */
-#[AllowDynamicProperties]
+
 class ObjectInfo
 {
   /**

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Classes\Shop\ACP;
 
-use AllowDynamicProperties;
+
 use ClicShopping\Apps\Catalog\Manufacturers\Classes\ClicShoppingAdmin\ManufacturerAdmin;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
 use ClicShopping\OM\CLICSHOPPING;
@@ -30,7 +30,7 @@ use Stripe\Webhook;
  * checkout session creation/management, delegated payment handling (Stripe),
  * webhook communication with the ACP agent, and order creation.
  */
-#[AllowDynamicProperties]
+
 class GptRetailers
 {
   /**

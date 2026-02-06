@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent;
 use ClicShopping\AI\DomainsAI\Analytics\Patterns\AnalyticsExecutorPatterns;
@@ -27,7 +27,7 @@ use ClicShopping\AI\DomainsAI\Analytics\Patterns\AnalyticsExecutorPatterns;
  * - Handle analytics errors
  * - Extract entity metadata from results
  */
-#[AllowDynamicProperties]
+
 class AnalyticsExecutor
 {
   private SecurityLogger $logger;

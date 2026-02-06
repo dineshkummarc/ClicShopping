@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Hybrid\Processor;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\ResultFormatter;
 use ClicShopping\AI\DomainsAI\CoreAI\Helper\AgentResponseHelper;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
@@ -37,7 +37,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
  * @package ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor
  * @since 2025-12-14
  */
-#[AllowDynamicProperties]
+
 class ResultSynthesizer extends BaseQueryProcessor
 {
   /**

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\PageManager;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\HTML;
 
@@ -20,7 +20,7 @@ use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 
-#[AllowDynamicProperties]
+
 class Save implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;

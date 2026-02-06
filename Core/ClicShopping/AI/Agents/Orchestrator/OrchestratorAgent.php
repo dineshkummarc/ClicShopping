@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator;
 
-use AllowDynamicProperties;
+
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
@@ -55,7 +55,7 @@ use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
  * Main orchestrator agent that coordinates the multi-agent system
  * Handles intent analysis, agent coordination, execution, error management, and response synthesis
  */
-#[AllowDynamicProperties]
+
 class OrchestratorAgent
 {
   private ?MetricsCollector $collector = null;

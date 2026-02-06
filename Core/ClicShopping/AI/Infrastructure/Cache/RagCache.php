@@ -12,7 +12,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Cache;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Session\Redis as RedisSession;
 use ClicShopping\OM\Session\Memcached as MemcachedSession;
 
@@ -36,7 +36,7 @@ use ClicShopping\OM\Session\Memcached as MemcachedSession;
  * - USE_REDIS: Enable Redis backend (True/False)
  * - MEMCACHED_CACHE_LIFETIME: Default TTL in seconds (default: 3600)
  */
-#[AllowDynamicProperties]
+
 class RagCache
 {
   private const CACHE_PREFIX = 'rag:';

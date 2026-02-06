@@ -8,7 +8,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Monitoring;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Cache\Cache;
@@ -24,7 +24,7 @@ use ClicShopping\AI\Infrastructure\Cache\Cache;
  * - Allows automatic escalation
  * - Manages alerts with priorities
  */
-#[AllowDynamicProperties]
+
 class AlertManager
 {
   private SecurityLogger $logger;

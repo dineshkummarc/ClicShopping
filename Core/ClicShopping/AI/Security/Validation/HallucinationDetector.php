@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Security\Validation;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Config\DomainConfig;
 use ClicShopping\OM\Registry;
@@ -29,7 +29,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
  * @see kiro_documentation/2025_12_27/hallucination_detection_system_design.md
  * @see kiro_documentation/2025_12_28/ARCHITECTURE_REORGANIZATION_PROPOSAL.md
  */
-#[AllowDynamicProperties]
+
 class HallucinationDetector
 {
   private SecurityLogger $logger;

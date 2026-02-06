@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Analytics\Agent;
 
-use AllowDynamicProperties;
+
 
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
@@ -50,7 +50,7 @@ use ClicShopping\AI\Utils\TypeSafetyGuard;
  * Manages table relationships, schema validation, and query optimization
  * Implements comprehensive security measures
  */
-#[AllowDynamicProperties]
+
 class AnalyticsAgent
 {
   private mixed $chat;

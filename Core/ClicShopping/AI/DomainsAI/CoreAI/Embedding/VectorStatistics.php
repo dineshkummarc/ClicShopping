@@ -10,9 +10,9 @@
 
 namespace ClicShopping\AI\DomainsAI\CoreAI\Embedding;
 
-use AllowDynamicProperties;
 
-#[AllowDynamicProperties]
+
+
 class VectorStatistics
 {
 public function __construct()

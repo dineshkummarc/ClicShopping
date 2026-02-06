@@ -14,7 +14,7 @@
 
 namespace ClicShopping\AI\DomainsAI\WebSearch\Cache;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
@@ -33,7 +33,7 @@ use LLPhant\Embeddings\DocumentSplitter\DocumentSplitter;
  * - Accelerating future queries
  * - Learning from past searches (self-healing)
  */
-#[AllowDynamicProperties]
+
 class SearchCacheManager
 {
   private MariaDBVectorStore $vectorStore;

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Cache;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Cache\Helper\SQLTableParser;
@@ -49,7 +49,7 @@ use function array_slice;
  * This class manages a cache system to store and retrieve prompts efficiently
  *
  */
-#[AllowDynamicProperties]
+
 class Cache
 {
   private array $promptCache = [];

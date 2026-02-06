@@ -20,7 +20,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
-#[AllowDynamicProperties]
+
 class Update implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;

@@ -7,7 +7,7 @@
 
 namespace ClicShopping\AI\Agents\Memory;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
@@ -15,7 +15,7 @@ use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use LLPhant\Embeddings\Document;
 use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
 
-#[AllowDynamicProperties]
+
 class CorrectionPatterns
 {
   private SecurityLogger $securityLogger;

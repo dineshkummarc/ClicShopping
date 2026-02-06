@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Memory\SubConversationMemory;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\OM\CLICSHOPPING;
@@ -27,7 +27,7 @@ use ClicShopping\OM\CLICSHOPPING;
  * - Resolve entities by position ("the previous product")
  * - Clear entity tracking when needed
  */
-#[AllowDynamicProperties]
+
 class EntityTracker
 {
   private SecurityLogger $logger;

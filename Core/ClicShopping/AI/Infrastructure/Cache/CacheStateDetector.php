@@ -12,7 +12,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Cache;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Infrastructure\Cache\QueryCache;
 
 /**
@@ -43,7 +43,7 @@ use ClicShopping\AI\Infrastructure\Cache\QueryCache;
  * }
  * ```
  */
-#[AllowDynamicProperties]
+
 class CacheStateDetector
 {
   private QueryCache $queryCache;

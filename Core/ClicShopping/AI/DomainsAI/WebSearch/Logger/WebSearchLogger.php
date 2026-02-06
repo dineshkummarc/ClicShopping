@@ -8,7 +8,7 @@
 
 namespace ClicShopping\AI\DomainsAI\WebSearch\Logger;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTTP;
@@ -24,7 +24,7 @@ use DateTimeImmutable;
  * Manages web search query logging and results storage.
  * Separates web_search data from internal RAG data (gpt table).
  */
-#[AllowDynamicProperties]
+
 class WebSearchLogger
 {
   private $db;

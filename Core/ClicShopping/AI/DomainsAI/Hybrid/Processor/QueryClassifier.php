@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Hybrid\Processor;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\AI\DomainsAI\WebSearch\Patterns\WebSearchPostFilter;
 use ClicShopping\AI\DomainsAI\DomainRegistry;
@@ -35,7 +35,7 @@ use ClicShopping\AI\DomainsAI\DomainRegistry;
  * @package ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor
  * @since 2025-12-14
  */
-#[AllowDynamicProperties]
+
 class QueryClassifier extends BaseQueryProcessor
 {
   /**

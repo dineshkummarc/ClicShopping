@@ -8,7 +8,7 @@
 
 namespace ClicShopping\AI\DomainsAI\WebSearch\Tool;
 
-use AllowDynamicProperties;
+
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Infrastructure\Cache\Cache;
 use ClicShopping\AI\DomainsAI\WebSearch\Cache\SearchCacheManager;
@@ -34,7 +34,7 @@ use ClicShopping\OM\HTTP;
  * direct SQL queries. This makes WebSearchTool work with any domain (Ecommerce, HR, etc.)
  * while maintaining backward compatibility with direct SQL fallback.
  */
-#[AllowDynamicProperties]
+
 class WebSearchTool
 {
   private string $apiKey;

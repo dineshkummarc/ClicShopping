@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Planning;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Config\DomainConfig;
@@ -27,7 +27,7 @@ use ClicShopping\AI\Config\DomainConfig;
  * - Provide templates for each operation type
  * - Ensure consistency of output formats
  */
-#[AllowDynamicProperties]
+
 class TaskPlannerPrompts
 {
   /**

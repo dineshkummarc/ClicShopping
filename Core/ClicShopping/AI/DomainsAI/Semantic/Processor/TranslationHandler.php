@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Semantic\Processor;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
@@ -29,7 +29,7 @@ use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
  * Handles query translation to English with caching and retry logic.
  * Provides clean translation extraction and prompt validation.
  */
-#[AllowDynamicProperties]
+
 class TranslationHandler
 {
   private static ?SecurityLogger $logger = null;

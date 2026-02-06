@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Semantic\Processor;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
@@ -21,7 +21,7 @@ use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
  * Manages automatic threshold adjustment based on feedback analysis.
  * Provides rollback capability and maintains adjustment history.
  */
-#[AllowDynamicProperties]
+
 class ThresholdManager
 {
   private static ?SecurityLogger $logger = null;

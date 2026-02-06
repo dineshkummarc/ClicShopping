@@ -10,13 +10,13 @@
 
 namespace ClicShopping\AI\Infrastructure\Cache\SubQueryCache;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 
 /**
  * Génère des clés de cache MD5 uniques basées sur la requête et le contexte
  */
-#[AllowDynamicProperties]
+
 class CacheKeyGenerator
 {
   /**

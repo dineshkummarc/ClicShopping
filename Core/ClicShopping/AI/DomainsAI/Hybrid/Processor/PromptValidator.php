@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Hybrid\Processor;
 
-use AllowDynamicProperties;
+
 
 /**
  * PromptValidator - Validates and sanitizes prompts before LLM calls
@@ -27,7 +27,7 @@ use AllowDynamicProperties;
  * @package ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor
  * @since 2025-12-14
  */
-#[AllowDynamicProperties]
+
 class PromptValidator extends BaseQueryProcessor
 {
   /**

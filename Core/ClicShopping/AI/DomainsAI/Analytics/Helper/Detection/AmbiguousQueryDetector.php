@@ -9,7 +9,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Analytics\Helper\Detection;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
@@ -30,7 +30,7 @@ use ClicShopping\AI\Security\SecurityLogger;
  * - "Show me customer orders" -> All vs Recent vs Active
  * - "What is the price?" -> Average vs Min vs Max vs List
  */
-#[AllowDynamicProperties]
+
 class AmbiguousQueryDetector
 {
   private SecurityLogger $securityLogger;

@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Hybrid\Processor;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\InterfacesAI\QueryProcessorInterface;
 
@@ -25,7 +25,7 @@ use ClicShopping\AI\InterfacesAI\QueryProcessorInterface;
  * @package ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor
  * @since 2025-12-14
  */
-#[AllowDynamicProperties]
+
 abstract class BaseQueryProcessor implements QueryProcessorInterface
 {
   /**

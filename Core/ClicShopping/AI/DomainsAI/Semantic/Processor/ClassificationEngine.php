@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\DomainsAI\Semantic\Processor;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\DomainsAI\Semantic\Patterns\ClassificationEnginePatterns;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
@@ -32,7 +32,7 @@ use ClicShopping\AI\Config\DomainConfig;
  * 
  * @version 2.0 - Refactored for Pure LLM mode
  */
-#[AllowDynamicProperties]
+
 class ClassificationEngine
 {
   private static ?SecurityLogger $logger = null;

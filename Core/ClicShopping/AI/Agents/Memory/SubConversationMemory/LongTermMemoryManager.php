@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Memory\SubConversationMemory;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\Registry;
 use LLPhant\Embeddings\Document;
 use LLPhant\Embeddings\DocumentSplitter\DocumentSplitter;
@@ -32,7 +32,7 @@ use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
  * - Search similar interactions via semantic search
  * - Handle document chunking for long texts
  */
-#[AllowDynamicProperties]
+
 class LongTermMemoryManager
 {
   private MariaDBVectorStore $vectorStore;

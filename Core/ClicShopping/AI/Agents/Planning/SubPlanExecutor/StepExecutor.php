@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Planning\ExecutionPlan;
 use ClicShopping\AI\Agents\Planning\TaskStep;
@@ -28,7 +28,7 @@ use ClicShopping\AI\Agents\Planning\TaskStep;
  * - Manage step dependencies
  * - Prepare step context
  */
-#[AllowDynamicProperties]
+
 class StepExecutor
 {
   private SecurityLogger $logger;

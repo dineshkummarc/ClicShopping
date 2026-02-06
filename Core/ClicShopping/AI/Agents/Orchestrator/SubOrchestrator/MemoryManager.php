@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Memory\ConversationMemory;
 use ClicShopping\AI\Agents\Memory\WorkingMemory;
@@ -31,7 +31,7 @@ use ClicShopping\AI\Agents\Memory\WorkingMemory;
  * TASK 2.4: Extracted from OrchestratorAgent (Phase 2 - Component Extraction)
  * Requirements: REQ-4.5, REQ-8.1
  */
-#[AllowDynamicProperties]
+
 class MemoryManager
 {
   private ?ConversationMemory $conversationMemory;

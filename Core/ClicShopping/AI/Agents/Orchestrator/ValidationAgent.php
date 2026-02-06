@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
@@ -23,7 +23,7 @@ use ClicShopping\AI\Security\DbSecurity;
  * Specialized agent for proactive validation
  * Handles SQL validation, schema verification, performance analysis, and security checks
  */
-#[AllowDynamicProperties]
+
 class ValidationAgent
 {
   private SecurityLogger $securityLogger;

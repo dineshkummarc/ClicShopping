@@ -10,12 +10,12 @@
 
 namespace ClicShopping\Apps\Tools\MCP\Classes\Shop\Security;
 
-use AllowDynamicProperties;
+
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 
-#[AllowDynamicProperties]
+
 /**
  * Handles MCP authentication and session management for the Shop side.
  */

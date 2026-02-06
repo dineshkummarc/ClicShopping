@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce;
 
-use AllowDynamicProperties;
+
 
 use ClicShopping\OM\Domains\AbstractDomainApp;
 use ClicShopping\OM\Domains\ConfigurableAppAbstract;
@@ -41,7 +41,7 @@ use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\Patterns\AnalyticsP
  * @see \ClicShopping\AI\Security\SecurityOrchestrator
  */
 
-#[AllowDynamicProperties]
+
 
 class Ecommerce extends AbstractDomainApp
 {

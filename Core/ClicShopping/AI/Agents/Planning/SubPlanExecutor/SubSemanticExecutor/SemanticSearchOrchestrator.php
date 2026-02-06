@@ -19,7 +19,7 @@
 
 namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor\SubSemanticExecutor;
 
-use AllowDynamicProperties;
+
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
@@ -37,7 +37,7 @@ use ClicShopping\AI\Config\DomainConfig;
  * Orchestrates semantic search with fallback chain to ensure users always get answers.
  * Implements the strategy pattern for different search sources.
  */
-#[AllowDynamicProperties]
+
 class SemanticSearchOrchestrator
 {
   private SecurityLogger $logger;
