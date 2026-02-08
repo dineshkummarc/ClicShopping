@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '696ca9f9ea11b83cdb454c09cd2ebefa11bd0d4d',
+        'reference' => '213c56974577cec9970561fcfacd6c58663e787b',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '696ca9f9ea11b83cdb454c09cd2ebefa11bd0d4d',
+            'reference' => '213c56974577cec9970561fcfacd6c58663e787b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -56,9 +56,9 @@
             'dev_requirement' => false,
         ),
         'doctrine/deprecations' => array(
-            'pretty_version' => '1.1.5',
-            'version' => '1.1.5.0',
-            'reference' => '459c2f5dd3d6a4633d3b5f46ee2b1c40f57d3f38',
+            'pretty_version' => '1.1.6',
+            'version' => '1.1.6.0',
+            'reference' => 'd4fe3e6fd9bb9e72557a19674f44d8ac7db4c6ca',
             'type' => 'library',
             'install_path' => __DIR__ . '/../doctrine/deprecations',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => '258cd5fdcb59c29f421927b2cf77f48de9458a98',
+            'reference' => '7ea2d110787f6807213e27a1255c6b858ad99d89',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
