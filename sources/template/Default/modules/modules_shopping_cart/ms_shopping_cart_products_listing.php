@@ -77,7 +77,7 @@ class ms_shopping_cart_products_listing
           foreach ($products[$i]['attributes'] as $option => $value) {
             $shopping_cart .= HTML::hiddenField('id[' . $products[$i]['id'] . '][' . $option . ']', $value);
 
-            $Qattributes = $CLICSHOPPING_ProductsAttributes->getProductsAttributesInfo($products[$i]['id'], $option, $value, $CLICSHOPPING_Language->getId());
+            $Qattributes = $CLICSHOPPING_ProductsAttributes->getProductsAttributesInfo($products[$i]['id'], $option, $CLICSHOPPING_Language->getId(), $value);
 
             $products[$i][$option]['products_attributes_values_name'] = $Qattributes->value('products_options_name');
             $products[$i][$option]['attributes_values_id'] = $value;

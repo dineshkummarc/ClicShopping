@@ -11,6 +11,20 @@ button_help = Help
 button_back = Back
 button_install_title = Install
 button_save = Save
+button_ecommerce = Ecommerce
+button_dialog_uninstall =  Uninstall
+button_uninstall =  Uninstall
+button_delete = Delete
+button_cancel = Cancel
+
+dialog_uninstall_title = Uninstall
+dialog_uninstall_body = Do you want to install this App ?
+dialog_uninstall_title = Uninstall Module?
+dialog_uninstall_body = Are you sure you want to uninstall this module?
+
+alert_module_install_success = Module has been successfully installed.
+alert_module_uninstall_success = Module has been successfully uninstalled.
+alert_cfg_saved_success = Configuration parameters have been successfully saved.
 
 tab_overview = Overview
 tab_entities = Entities
@@ -20,8 +34,8 @@ tab_performance = Performance
 section_welcome = Welcome to AI Ecommerce Domain
 text_welcome_message = This is the AI Ecommerce Domain management interface. Here you can monitor and manage all e-commerce related AI operations.
 
-module_ec_short_title = Ecommerce Agent
-module_ec_title = Ecommerce Agent
+module_ec_short_title = Ecommerce Agent Insight
+module_ec_title = Ecommerce Agent Insight
 
 module_acp_title = OpenAI ACP Ecommerce
 module_acp_short_title =  OpenAI ACP Ecommerce

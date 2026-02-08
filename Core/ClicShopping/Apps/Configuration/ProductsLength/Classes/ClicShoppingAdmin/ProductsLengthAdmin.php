@@ -101,7 +101,7 @@ class ProductsLengthAdmin extends \ClicShopping\Apps\Configuration\ProductsLengt
    * @param int|null $id The ID of the product's length class. If null, no title is retrieved.
    * @return string The title of the product's length class.
    */
-  public static function getLengthProductsTitle(int $id = null): string
+  public static function getLengthProductsTitle(?int $id = null): string
   {
     $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_Language = Registry::get('Language');
@@ -121,5 +121,7 @@ class ProductsLengthAdmin extends \ClicShopping\Apps\Configuration\ProductsLengt
 
       return $result;
     }
+    
+    return '';
   }
 }

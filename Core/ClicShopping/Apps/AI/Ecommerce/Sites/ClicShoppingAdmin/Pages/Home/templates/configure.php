@@ -145,3 +145,4 @@ echo HTML::button($CLICSHOPPING_Ecommerce->getDef('button_ecommerce'), null, $CL
   }
   ?>
 </div>
+<div class="py-4"></div>

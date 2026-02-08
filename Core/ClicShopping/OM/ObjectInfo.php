@@ -16,10 +16,18 @@ namespace ClicShopping\OM;
  * ObjectInfo is a utility class that dynamically assigns properties to the object
  * based on the provided associative array. The class facilitates the dynamic population
  * of object properties at runtime.
+ * 
+ * PHP 9 compatible implementation using magic methods instead of dynamic properties.
  */
 
 class ObjectInfo
 {
+  /**
+   * Internal storage for dynamic properties
+   * @var array
+   */
+  private array $data = [];
+
   /**
    * Constructor method to initialize the object with provided data.
    *
@@ -40,7 +48,52 @@ class ObjectInfo
   public function objectInfo(array $object_array)
   {
     foreach ($object_array as $key => $value) {
-      $this->$key = $value;
+      $this->data[$key] = $value;
     }
+  }
+
+  /**
+   * Magic method to get a property value
+   *
+   * @param string $name Property name
+   * @return mixed Property value or null if not set
+   */
+  public function __get(string $name): mixed
+  {
+    return $this->data[$name] ?? null;
+  }
+
+  /**
+   * Magic method to set a property value
+   *
+   * @param string $name Property name
+   * @param mixed $value Property value
+   * @return void
+   */
+  public function __set(string $name, mixed $value): void
+  {
+    $this->data[$name] = $value;
+  }
+
+  /**
+   * Magic method to check if a property is set
+   *
+   * @param string $name Property name
+   * @return bool True if property exists
+   */
+  public function __isset(string $name): bool
+  {
+    return isset($this->data[$name]);
+  }
+
+  /**
+   * Magic method to unset a property
+   *
+   * @param string $name Property name
+   * @return void
+   */
+  public function __unset(string $name): void
+  {
+    unset($this->data[$name]);
   }
 }

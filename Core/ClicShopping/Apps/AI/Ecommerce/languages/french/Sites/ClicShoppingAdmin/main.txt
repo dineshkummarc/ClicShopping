@@ -11,6 +11,16 @@ button_help = Aide
 button_back = Retour
 button_install_title = Installer
 button_save = Enregistrer
+button_ecommerce = Ecommerce
+button_dialog_uninstall =  Désinstaller
+button_uninstall =  Désinstaller
+button_delete = Supprimer
+button_cancel = Annuler
+
+dialog_uninstall_title = Désinstaller
+dialog_uninstall_body = Souhaitez-vous installer cette App ?
+dialog_uninstall_title = Désinstaller le module?
+dialog_uninstall_body = Etes vous sur de désinstaller ce module?
 
 tab_overview = Aperçu
 tab_entities = Entités
@@ -27,8 +37,8 @@ Il permet d’afficher les produits directement dans GPT avec un paiement instan
 Ce module implémente ce protocole, gère le paiement et assure le suivi des commandes via ClicShopping.<br>
 Vous devez vous enregistrer auprés de OpenAi pour utiliser ce procol ACP.
 
-module_ec_short_title = Agent Ecommerce
-module_ec_title = Agent Ecommerce
+module_ec_short_title = Agent Ecommerce Insight
+module_ec_title = Agent Ecommerce Insight
 
 section_domain_overview = Aperçu du Domaine
 subsection_domain_info = Informations du Domaine

@@ -135,3 +135,4 @@ $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
     </div>
   </div>
 </div>
+<div class="py-4"></div>

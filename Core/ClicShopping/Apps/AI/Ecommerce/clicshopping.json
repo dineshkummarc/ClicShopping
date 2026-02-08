@@ -64,7 +64,8 @@
         "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\ReviewsSentiment\\DeleteAll"
       },
       "Shop/Orders": {
-        "Process": "Module\\Hooks\\Shop\\Orders\\Process"
+        "Process": "Module\\Hooks\\Shop\\Orders\\Process",
+        "AIProcess": "Module\\Hooks\\Shop\\Orders\\AIProcess"
       },
       "Shop/ReturnOrders": {
         "Process": "Module\\Hooks\\Shop\\ReturnOrders\\Process"

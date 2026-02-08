@@ -112,7 +112,7 @@ class pi_products_info_options
         while ($QproductsOptionsName->fetch()) {
           $products_options_array = [];
 
-          $QproductsOptions = $CLICSHOPPING_ProductsAttributes->getProductsAttributesInfo($CLICSHOPPING_ProductsCommon->getID(), $QproductsOptionsName->valueInt('products_options_id'), null, $CLICSHOPPING_Language->getId());
+          $QproductsOptions = $CLICSHOPPING_ProductsAttributes->getProductsAttributesInfo($CLICSHOPPING_ProductsCommon->getID(), $QproductsOptionsName->valueInt('products_options_id'), $CLICSHOPPING_Language->getId());
 //
 // select
 //

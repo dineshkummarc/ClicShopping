@@ -294,7 +294,7 @@ class ph_products_favorites
             $products_tag = '';
             if (isset($tag) && \is_array($tag)) {
               foreach ($tag as $value) {
-                $products_tag .= '#<span class="productTag">' . HTML::link(CLICSHOPPING::link(null, 'Search&keywords=' . HTML::outputProtected(mb_convert_encoding($value, 'ISO-8859-1', 'UTF-8') . '&search_in_description=1&categories_id=&inc_subcat=1'), 'rel="nofollow"'), $value) . '</span> ';
+                $products_tag .= '#<span class="productTag">' . HTML::link(CLICSHOPPING::link(null, 'Search&keywords=' . HTML::outputProtected(CLICSHOPPING::utf8Decode($value) . '&search_in_description=1&categories_id=&inc_subcat=1'), 'rel="nofollow"'), $value) . '</span> ';
               }
             }
             // display products volume

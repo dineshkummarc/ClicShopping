@@ -27,6 +27,7 @@ class ar_contact_us
   public $attempts = 3;
   public $identifier;
   public $enabled = true;
+  public string $group;
 
   /**
    * Constructor method for initializing the class properties.

@@ -736,7 +736,7 @@ class Order
 
           foreach ($products[$i]['attributes'] as $option => $value) {
 
-            $Qattributes = $CLICSHOPPING_ProductsAttributes->getProductsAttributesInfo($products[$i]['id'], $option, $value, $this->lang->getId());
+            $Qattributes = $CLICSHOPPING_ProductsAttributes->getProductsAttributesInfo($products[$i]['id'], $option, $this->lang->getId(), $value);
 
             $this->products[$index]['attributes'][$subindex] = ['option' => $Qattributes->value('products_options_name'),
               'value' => $Qattributes->value('products_options_values_name'),
@@ -1088,8 +1088,9 @@ class Order
     $CLICSHOPPING_Prod = Registry::get('Prod');
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
-    $CLICSHOPPING_Hooks->call('Orders', 'PreActionProcess');
-
+    $CLICSHOPPING_Hooks->call('Orders', 'PreActionProcess', ['order_id' => $last_order_id]);
+    $CLICSHOPPING_Hooks->call('Orders', 'PreActionAIProcess', ['order_id' => $last_order_id]);
+    
     $Qproducts = $this->db->prepare('select products_id,
                                             products_quantity
                                       from :table_orders_products
@@ -1198,6 +1199,7 @@ class Order
     $this->sendCustomerEmail($last_order_id);
 
     $CLICSHOPPING_Hooks->call('Orders', 'Process', ['order_id' => $last_order_id]);
+    $CLICSHOPPING_Hooks->call('Orders', 'AIProcess', ['order_id' => $last_order_id]);
   }
 
   /**

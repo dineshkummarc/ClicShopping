@@ -126,11 +126,11 @@ class ProductsAttributesShop
    * Retrieve product attributes information based on the given parameters.
    * @param int $products_id The ID of the product to fetch attributes for.
    * @param int $option_id The ID of the option associated with the product.
+   * @param int $language_id The ID of the language for localized attribute information.
    * @param int|null $options_values_id The ID of the option's value to filter attributes (optional).
-   * @param int|null $language_id The ID of the language for localized attribute information.
    * @return object The prepared query object containing the fetched product attributes information.
    */
-  public function getProductsAttributesInfo(mixed $products_id, int $option_id,  int|null $options_values_id = null,  int|null $language_id)
+  public function getProductsAttributesInfo(mixed $products_id, int $option_id, int $language_id, int|null $options_values_id = null)
   {
     if (!is_null($options_values_id)) {
       if ($this->customer->getCustomersGroupID() != 0) {

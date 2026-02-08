@@ -343,7 +343,10 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
-    if (Gpt::checkGptStatus() === false || !defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || !defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
+    if (Gpt::checkGptStatus() === false || CLICSHOPPING_APP_CHATGPT_RA_STATUS  == 'False' ||
+      CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' ||
+      CLICSHOPPING_APP_ECOMMERCE_ACP_STATUS == 'False' || empty(CLICSHOPPING_APP_ECOMMERCE_ACP_SHARED_KEY_RETAIL)
+    ) {
       return false;
     }
 
