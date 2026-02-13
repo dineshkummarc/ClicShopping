@@ -8,20 +8,18 @@
  *
  */
 
-namespace ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Config\CH;
-
+namespace ClicShopping\Apps\AI\Ecommerce\Module\ClicShoppingAdmin\Config\UCP;
 /**
- * This class represents the ChatGPT configuration module within the ClicShoppingAdmin environment.
+ * This class represents the Ecommerce configuration module within the ClicShoppingAdmin environment.
  * It extends the ConfigAbstract class and provides functionality for initializing, installing,
- * and uninstalling the ChatGPT module.
+ * and uninstalling the Ecommerce module.
  */
-class CH extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Config\ConfigAbstract
+class UCP extends \ClicShopping\Apps\AI\Ecommerce\Module\ClicShoppingAdmin\Config\ConfigAbstract
 {
-
-  protected $pm_code = 'chatgpt';
+  protected $pm_code = 'UCP';
 
   public bool $is_uninstallable = true;
-  public int|null $sort_order = 400;
+  public int|null $sort_order = 410;
 
   /**
    * Initializes the module by setting its title, short title, introduction, and installation status
@@ -31,10 +29,10 @@ class CH extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdm
    */
   protected function init()
   {
-    $this->title = $this->app->getDef('module_ch_title');
-    $this->short_title = $this->app->getDef('module_ch_short_title');
-    $this->introduction = $this->app->getDef('module_ch_introduction');
-    $this->is_installed = \defined('CLICSHOPPING_APP_CHATGPT_CH_STATUS') && (trim(CLICSHOPPING_APP_CHATGPT_CH_STATUS) != '');
+    $this->title = $this->app->getDef('module_ucp_title');
+    $this->short_title = $this->app->getDef('module_ucp_short_title');
+    $this->introduction = $this->app->getDef('module_ucp_introduction');
+    $this->is_installed = \defined('CLICSHOPPING_APP_ECOMMERCE_UCP_STATUS') && (trim(CLICSHOPPING_APP_ECOMMERCE_UCP_STATUS) != '');
   }
 
   /**
@@ -46,13 +44,13 @@ class CH extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdm
   {
     parent::install();
 
-    if (\defined('MODULE_MODULES_CHATGPT_INSTALLED')) {
-      $installed = explode(';', MODULE_MODULES_CHATGPT_INSTALLED);
+    if (\defined('MODULE_MODULES_ECOMMERCE_INSTALLED')) {
+      $installed = explode(';', MODULE_MODULES_ECOMMERCE_INSTALLED);
     }
 
     $installed[] = $this->app->vendor . '\\' . $this->app->code . '\\' . $this->code;
 
-    $this->app->saveCfgParam('MODULE_MODULES_CHATGPT_INSTALLED', implode(';', $installed));
+    $this->app->saveCfgParam('MODULE_MODULES_ECOMMERCE_INSTALLED', implode(';', $installed));
   }
 
   /**
@@ -64,13 +62,13 @@ class CH extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdm
   {
     parent::uninstall();
 
-    $installed = explode(';', MODULE_MODULES_CHATGPT_INSTALLED);
+    $installed = explode(';', MODULE_MODULES_ECOMMERCE_INSTALLED);
     $installed_pos = array_search($this->app->vendor . '\\' . $this->app->code . '\\' . $this->code, $installed);
 
     if ($installed_pos !== false) {
       unset($installed[$installed_pos]);
 
-      $this->app->saveCfgParam('MODULE_MODULES_CHATGPT_INSTALLED', implode(';', $installed));
+      $this->app->saveCfgParam('MODULE_MODULES_ECOMMERCE_INSTALLED', implode(';', $installed));
     }
   }
 }

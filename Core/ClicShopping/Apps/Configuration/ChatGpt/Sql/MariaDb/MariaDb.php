@@ -872,6 +872,7 @@ class MariaDb
         `entity_id` int(11) DEFAULT NULL COMMENT 'ID de la requête source (optionnel)',
         `language_id` int(11) DEFAULT 1 COMMENT 'ID de la langue',
         `chunknumber` int(11) DEFAULT 128 COMMENT 'Taille du chunk utilisé',
+        'entity_type' VARCHAR(50) DEFAULT NULL COMMENT 'Type of entity (web_search)',
         `date_modified` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
         `metadata` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`metadata`))
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

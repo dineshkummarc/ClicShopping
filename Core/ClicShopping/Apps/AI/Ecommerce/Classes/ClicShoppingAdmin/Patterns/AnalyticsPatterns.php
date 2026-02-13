@@ -39,7 +39,7 @@ namespace ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\Patterns;
  * WHEN TO DELETE THIS CLASS:
  * - When LLM classification achieves 95%+ consistency for temporal financial queries
  * - When LLM temperature is reduced to 0.0 and tested
- * - When LLM model is upgraded (e.g., GPT-4o instead of GPT-4o-mini)
+ * - When LLM model is upgraded (e.g., GPT-4o instead of gpt-4.1-mini)
  * 
  * ⚠️ ENGLISH ONLY (Post-Translation):
  * - All patterns are called AFTER translation to English

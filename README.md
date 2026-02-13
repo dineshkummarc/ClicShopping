@@ -103,7 +103,8 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 - Real time safety stock predictive (AI)
 - Server MCP (model context Protocol) for ecommerce agentic approach
 - Agentic Commerce Protocol (ACP) from OpenAI.
-
+- Universal Commerce Protocol (UCP) from Google.
+- 
 ##Security & Compliance
 - GDPR Ready: Built-in compliance tools and data protection
 - AES Encryption: Secure storage of sensitive information

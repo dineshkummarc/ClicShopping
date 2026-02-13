@@ -10,7 +10,6 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Classes\Shop\ACP;
 
-
 use ClicShopping\Apps\Catalog\Manufacturers\Classes\ClicShoppingAdmin\ManufacturerAdmin;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
 use ClicShopping\OM\CLICSHOPPING;

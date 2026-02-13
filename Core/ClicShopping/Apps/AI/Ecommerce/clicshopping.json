@@ -85,7 +85,8 @@
   "routes": {
     "ClicShoppingAdmin": "Sites\\ClicShoppingAdmin\\Pages\\Home",
     "Shop": {
-      "OpenAI&ACP": "Sites\\Shop\\Pages\\ACP"
+      "OpenAI&ACP": "Sites\\Shop\\Pages\\ACP",
+      "Google&UCP": "Sites\\Shop\\Pages\\UCP"
     }
   }
 }

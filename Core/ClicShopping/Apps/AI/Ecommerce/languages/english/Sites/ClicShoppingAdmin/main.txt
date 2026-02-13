@@ -43,6 +43,11 @@ module_acp_introduction = OpenAi has developed a ecommerce protocol called Agent
 It allows to display the product inside Gpt with a payment instant. This module implement this protocol, the payment and allow to follow the order accross ClicShopping.<br>
 You must be registred at OpenAI to use this ACP protocol.
 
+module_ucp_title = Google UCP Ecommerce
+module_ucp_short_title =  Google UCP Ecommerce
+module_ucp_introduction = Google has developed an open ecommerce protocol called Universal Commerce Protocol (UCP).<br>
+It allows agents to retrieve products, create checkout sessions, and complete payments through standardized endpoints.
+
 section_domain_overview = Domain Overview
 subsection_domain_info = Domain Information
 subsection_supported_entities = Supported Entities
@@ -96,4 +101,3 @@ query_example_6 = Show customer purchase history
 query_example_7 = Give me the price of the iPhone 17 Pro and Article 4 of the terms and conditions
 query_example_8 = Give me the price of the iPhone 17 Pro and the stock quantities of the products
 query_example_9 = Calculate the revenue by quarter and give me the best-selling products per quarter in descending order
-
