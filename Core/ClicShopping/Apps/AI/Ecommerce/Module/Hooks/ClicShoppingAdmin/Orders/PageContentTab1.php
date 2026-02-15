@@ -151,7 +151,7 @@ EOD;
     
     $query = $ClicShopping_Db->prepare('
       SELECT * 
-      FROM :table_rag_order_insights 
+      FROM :table_rag_agent_order_insights 
       WHERE orders_id = :orders_id 
       AND insight_type = :insight_type
       ORDER BY generated_at DESC

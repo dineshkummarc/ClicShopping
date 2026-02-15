@@ -92,11 +92,11 @@ class MariaDb
   {
     $CLICSHOPPING_Db = Registry::get('Db');
 
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_rag_order_insights"');
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_rag_agent_order_insights"');
 
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
-CREATE TABLE IF NOT EXISTS :table_rag_order_insights (
+CREATE TABLE IF NOT EXISTS :table_rag_agent_order_insights (
   insight_id int(11) NOT NULL AUTO_INCREMENT COMMENT 'Primary key - unique identifier for each insight',
   orders_id int(11) NOT NULL COMMENT 'FK to orders table - order being analyzed',
   insight_type varchar(50) NOT NULL DEFAULT 'summary' COMMENT 'Type of insight - summary, recommendations, etc.',
@@ -120,11 +120,11 @@ EOD;
     }
 
     // Create embeddings table for order insights
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_rag_order_insights_embedding"');
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_rag_agent_order_insights_embedding"');
 
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
-CREATE TABLE IF NOT EXISTS :table_rag_order_insights_embedding (
+CREATE TABLE IF NOT EXISTS :table_rag_agent_order_insights_embedding (
     id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each insight embedding',
     content longtext DEFAULT NULL COMMENT 'Insight content for embedding generation - summary, recommendations, analysis',
     type TEXT DEFAULT NULL COMMENT 'Type of content - summary, recommendations, full_insights',
@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS :table_rag_order_insights_embedding (
     embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
     chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
     date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
-    entity_id INT COMMENT 'FK to rag_order_insights table - insight ID',
+    entity_id INT COMMENT 'FK to rag_agent_order_insights table - insight ID',
     metadata LONGTEXT COMMENT 'JSON metadata for the embedding',
     language_id INT DEFAULT NULL COMMENT 'Language ID from languages table',
     KEY idx_entity_id (entity_id),
@@ -144,7 +144,7 @@ EOD;
       $CLICSHOPPING_Db->exec($sql);
 
       // Create vector index
-      $CLICSHOPPING_Db->exec('CREATE VECTOR INDEX embedding_index ON :table_rag_order_insights_embedding (embedding)');
+      $CLICSHOPPING_Db->exec('CREATE VECTOR INDEX embedding_index ON :table_rag_agent_order_insights_embedding (embedding)');
     }
   }
 }

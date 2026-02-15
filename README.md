@@ -2,7 +2,7 @@
   <img src="https://www.clicshopping.org/images/logonew.png">
 </p>
 
-ClicShopping AI™ is an open-source e-commerce platform for B2B, B2C, and hybrid B2B-B2C use cases, architected natively for Generative AI integration.
+ClicShopping AI™ is an open-source agentic e-commerce platform for B2B, B2C, and hybrid B2B-B2C use cases, architected natively for Generative AI integration.
 
 The platform combines a full-featured e-commerce core with AI-driven automation to optimize customer experience, operations, and decision-making at scale.
 ClicShopping AI™ helps you deliver a seamless shopping experience for your customers while giving you the tools you need to manage your store efficiently.
@@ -85,7 +85,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
   - Intelligent content generation with context-aware responses
   - Admin chatbot interface with RAG capabilities
   - Web Search impleted for semantic search
-  - AI Agentic Agent via Multi Domain Approach
+  - AI Agentic Agent via Multi Domain Approach and Actors expertise
     - Analytics (BI)
     - Semantic (RAG)
     - WebSearch
@@ -104,7 +104,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 - Server MCP (model context Protocol) for ecommerce agentic approach
 - Agentic Commerce Protocol (ACP) from OpenAI.
 - Universal Commerce Protocol (UCP) from Google.
-- 
+
 ##Security & Compliance
 - GDPR Ready: Built-in compliance tools and data protection
 - AES Encryption: Secure storage of sensitive information

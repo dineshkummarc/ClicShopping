@@ -12,7 +12,7 @@
  * 
  * Triggered by: Hooks::call('Orders', 'Process') in Shop after order creation
  * 
- * The insights are stored in rag_order_insights table for later display in admin.
+ * The insights are stored in rag_agent_order_insights table for later display in admin.
  * 
  * Requirements: 3.1, 3.3
  */
@@ -269,7 +269,7 @@ class AIProcess implements \ClicShopping\OM\Modules\HooksInterface
     // Check if insights already exist for this order and type
     $checkQuery = $ClicShopping_Db->prepare('
       SELECT insight_id 
-      FROM :table_rag_order_insights 
+      FROM :table_rag_agent_order_insights 
       WHERE orders_id = :orders_id 
       AND insight_type = :insight_type
       AND language_id = :language_id
@@ -291,7 +291,7 @@ class AIProcess implements \ClicShopping\OM\Modules\HooksInterface
         'execution_time_ms' => $insights['execution_time_ms'] ?? 0
       ];
 
-      $ClicShopping_Db->save('rag_order_insights', $array_update, ['insight_id' => $existing['insight_id']]);
+      $ClicShopping_Db->save('rag_agent_order_insights', $array_update, ['insight_id' => $existing['insight_id']]);
       
       if ($this->debug) {
         error_log("[OK] [Process Hook Shop] Updated insights for language_id: {$languageId}");
@@ -311,7 +311,7 @@ class AIProcess implements \ClicShopping\OM\Modules\HooksInterface
         'language_id' => $languageId
       ];
 
-      $ClicShopping_Db->save('rag_order_insights', $array_insert);
+      $ClicShopping_Db->save('rag_agent_order_insights', $array_insert);
       
       if ($this->debug) {
         error_log("[OK] [Process Hook Shop] Stored insights for language_id: {$languageId}");
@@ -407,7 +407,7 @@ class AIProcess implements \ClicShopping\OM\Modules\HooksInterface
     
     $checkQuery = $ClicShopping_Db->prepare('
       SELECT id 
-      FROM :table_rag_order_insights_embedding
+      FROM :table_rag_agent_order_insights_embedding
       WHERE entity_id = :entity_id
     ');
     $checkQuery->bindInt(':entity_id', $orderId);
@@ -520,7 +520,7 @@ class AIProcess implements \ClicShopping\OM\Modules\HooksInterface
     // Save embeddings using centralized method with language_id
     $result = NewVector::saveEmbeddingsWithChunks(
       $embeddedDocuments,
-      'rag_order_insights_embedding',
+      'rag_agent_order_insights_embedding',
       $orderId,
       $languageId, // Pass language_id for multilingual support
       $baseMetadata,

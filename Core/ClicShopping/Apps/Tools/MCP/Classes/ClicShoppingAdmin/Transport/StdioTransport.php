@@ -74,7 +74,7 @@ class StdioTransport implements TransportInterface
    * @param LoggerInterface|null $logger An optional PSR-3 logger instance.
    * @throws McpException If the configuration is invalid.
    */
-  public function __construct(array $config, LoggerInterface $logger = null)
+  public function __construct(array $config, ?LoggerInterface $logger = null)
   {
     $this->config = $config;
     $this->logger = $logger ?? new NullLogger();
