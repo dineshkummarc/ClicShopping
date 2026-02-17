@@ -88,7 +88,7 @@ class FormatterRouter
 
     if ($this->debug) {
       error_log('No formatter found for type: ' . ($results['type'] ?? 'NONE'));
-      error_log(Available formatters: ' . count($this->formatters));
+      error_log('Available formatters: ' . count($this->formatters));
     }
 
     return null;
