@@ -346,7 +346,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
               }
 
               if (!empty($products_description)) {
-	        c$embedding_data .= $this->app->getDef('text_product_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
+	              $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
                 $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($products_description), $language_code, null);
 
                 if (!empty($taxonomy)) {

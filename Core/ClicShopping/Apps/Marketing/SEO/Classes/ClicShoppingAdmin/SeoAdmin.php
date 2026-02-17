@@ -35,6 +35,34 @@ class SeoAdmin
     return mb_substr($title, 0, self::SEO_TITLE_MAX_LENGTH);
   }
 
+
+  /**
+   * Normalize the SEO Description
+   * @param string $value
+   * @return string
+   */
+  public static function normalizeSeoDescription(string $value): string
+  {
+    $description = preg_replace('/\s+/u', ' ', trim(strip_tags($value)));
+
+    return mb_substr((string)$description, 0, self::SEO_DESCRIPTION_MAX_LENGTH);
+  }
+
+  /**
+   * Normalize the SEO Keywords
+   * @param string $value
+   * @return string
+   */
+  public static function normalizeSeoKeywords(string $value): string
+  {
+    $cleanValue = str_replace([';', '|'], ',', strip_tags($value));
+    $keywords = array_filter(array_map(static fn($keyword) => trim($keyword), explode(',', $cleanValue)));
+    $keywords = array_values(array_unique($keywords));
+    $keywords = array_slice($keywords, 0, self::SEO_KEYWORDS_MAX_COUNT);
+
+    return implode(', ', $keywords);
+  }
+
   /**
    *
    * Retrieves the SEO default language title H1 from the database based on the provided SEO ID and language ID.
@@ -726,32 +754,5 @@ class SeoAdmin
     $Qseo = Registry::get('Db')->get('seo', 'seo_language_recommendations_keywords', ['seo_id' => $seo_id, 'language_id' => $language_id]);
 
     return $Qseo->value('seo_language_recommendations_keywords');
-  }
-
-  /**
-   * Normalize the SEO Description
-   * @param string $value
-   * @return string
-   */
-  public static function normalizeSeoDescription(string $value): string
-  {
-    $description = preg_replace('/\s+/u', ' ', trim(strip_tags($value)));
-
-    return mb_substr((string)$description, 0, self::SEO_DESCRIPTION_MAX_LENGTH);
-  }
-
-  /**
-   * Normalize the SEO Keywords
-   * @param string $value
-   * @return string
-   */
-  public static function normalizeSeoKeywords(string $value): string
-  {
-    $cleanValue = str_replace([';', '|'], ',', strip_tags($value));
-    $keywords = array_filter(array_map(static fn($keyword) => trim($keyword), explode(',', $cleanValue)));
-    $keywords = array_values(array_unique($keywords));
-    $keywords = array_slice($keywords, 0, self::SEO_KEYWORDS_MAX_COUNT);
-
-    return implode(', ', $keywords);
   }
 }
