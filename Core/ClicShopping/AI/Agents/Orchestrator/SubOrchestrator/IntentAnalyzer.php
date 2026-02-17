@@ -363,41 +363,6 @@ class IntentAnalyzer
   }
 
   /**
-   * Cache analysis result
-   *
-   * Cache location: Work/Cache/Rag/Intent/intent_*.cache
-   *
-   * @param string $cacheKey Cache key
-   * @param array $result Analysis result
-   */
-  private function cacheResult(string $cacheKey, array $result): void
-  {
-    try {
-      // Use 'Rag/Intent' namespace to store cache in Work/Cache/Rag/Intent/
-      $cache = new Cache($cacheKey, 'Rag/Intent');
-      $cache->save($result);
-      
-      if ($this->debug) {
-        error_log("✅ Result cached successfully in Work/Cache/Rag/Intent/");
-      }
-      
-    } catch (\Exception $e) {
-      $this->logger->logStructured(
-        'warning',
-        'IntentAnalyzer',
-        'cache_write_error',
-        [
-          'error' => $e->getMessage(),
-        ]
-      );
-      
-      if ($this->debug) {
-        error_log("⚠️ CACHE WRITE ERROR: " . $e->getMessage());
-      }
-    }
-  }
-
-  /**
    * Enrich metadata with entities, context, and additional information
    *
    * @param array $metadata Base metadata from intent analyzer
@@ -420,20 +385,55 @@ class IntentAnalyzer
     // Add context if available
     if ($this->contextRetriever) {
       $contextStart = microtime(true);
-      
+
       // Build classification array for context retrieval
       $classification = [
         'type' => $queryType,
         'confidence' => $confidence,
         'metadata' => $metadata
       ];
-      
+
       $context = $this->contextRetriever->retrieveContext($classification, $translatedQuery);
       $metadata['context'] = $context;
       $metadata['context_retrieval_time_ms'] = (microtime(true) - $contextStart) * 1000;
     }
 
     return $metadata;
+  }
+
+  /**
+   * Cache analysis result
+   *
+   * Cache location: Work/Cache/Rag/Intent/intent_*.cache
+   *
+   * @param string $cacheKey Cache key
+   * @param array $result Analysis result
+   */
+  private function cacheResult(string $cacheKey, array $result): void
+  {
+    try {
+      // Use 'Rag/Intent' namespace to store cache in Work/Cache/Rag/Intent/
+      $cache = new Cache($cacheKey, 'Rag/Intent');
+      $cache->save($result);
+
+      if ($this->debug) {
+        error_log("[SUCCESS] Result cached successfully in Work/Cache/Rag/Intent/");
+      }
+
+    } catch (\Exception $e) {
+      $this->logger->logStructured(
+        'warning',
+        'IntentAnalyzer',
+        'cache_write_error',
+        [
+          'error' => $e->getMessage(),
+        ]
+      );
+
+      if ($this->debug) {
+        error_log("[WARNING] CACHE WRITE ERROR: " . $e->getMessage());
+      }
+    }
   }
 
   /**
@@ -534,7 +534,7 @@ class IntentAnalyzer
     
     if ($this->debug) {
       $mode = $enable ? 'HYBRID (patterns for FR/EN, GPT for others)' : 'FULL GPT (all languages)';
-      error_log("🔄 Unified analyzer mode: {$mode}");
+      error_log("[INFO] Unified analyzer mode: {$mode}");
     }
   }
   

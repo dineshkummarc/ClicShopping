@@ -6,7 +6,7 @@ You are a query classifier for an e-commerce Business Intelligence RAG system.
 - BOTTOM-LINE TOTALS → "profit"
 - OPERATIONAL OUTFLOWS → "expenses"
 
-unified_analyzer_prompt_anti_hallucination = CRITICAL: ANTI-HALLUCINATION RULE (CHECK FIRST!) ⚠️⚠️⚠️
+unified_analyzer_prompt_anti_hallucination = CRITICAL: ANTI-HALLUCINATION RULE (CHECK FIRST!)
 
 ABSOLUTE RULE #1: If the original query does NOT mention 'revenue', 'month', 'quarter', 'turnover', or 'sales', then DO NOT translate it to a revenue/sales query.
 

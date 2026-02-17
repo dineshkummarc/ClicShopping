@@ -8,13 +8,11 @@
  *
  */
 
-
 namespace ClicShopping\Apps\Tools\MCP\Sites\Shop\Pages\RagBI;
 
-
-use ClicShopping\AI\DomainsAI\Semantics\Agents\SemanticsAgent;
-use ClicShopping\AI\Insfrastructure\Orm\DoctrineOrm;
-use ClicShopping\AI\Insfrastructure\Storage\MariaDBVectorStore;
+use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
+use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
@@ -31,20 +29,9 @@ use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
 
 class RagBI extends \ClicShopping\OM\Domains\PagesAbstract
 {
-  /**
-   * Database connection instance.
-   * @var mixed
-   */
   public mixed $db;
-  /**
-   * ClicShopping application instance.
-   * @var mixed
-   */
+  protected mixed $lang;
   public mixed $app;
-  /**
-   * Display the message
-   * @var bool
-   */
   public mixed $message;
 
  // private mixed $mcpConnector;

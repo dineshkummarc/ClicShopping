@@ -58,7 +58,7 @@ class ResponseFormatter
     }
     
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('📝 FORMATTING RESPONSE:');
+      error_log('[INFO] FORMATTING RESPONSE:');
       error_log('   Has hybrid components: ' . ($hasHybridComponents ? 'YES' : 'NO'));
       error_log('   Type: ' . gettype($dataToFormat));
       error_log('   Is array: ' . (is_array($dataToFormat) ? 'YES' : 'NO'));

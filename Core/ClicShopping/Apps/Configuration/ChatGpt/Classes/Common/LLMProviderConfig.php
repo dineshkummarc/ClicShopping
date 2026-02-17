@@ -78,43 +78,6 @@ class LLMProviderConfig
   }
 
   /**
-   * Get configuration value
-   *
-   * Retrieves a configuration value with the following priority:
-   * 1. In-memory cache
-   * 2. Database
-   * 3. PHP constants
-   * 4. Default value
-   *
-   * @param string $key Configuration key (e.g., 'openai_api_key')
-   * @param mixed $default Default value if key not found
-   * @return mixed Configuration value or default
-   */
-  public function get(string $key, $default = null)
-  {
-    // Load cache if not already loaded
-    if (!$this->cacheLoaded) {
-      $this->loadCache();
-    }
-
-    // Check cache first
-    if (isset($this->cache[$key])) {
-      return $this->cache[$key];
-    }
-
-    // Fallback to PHP constants
-    $constantName = 'CLICSHOPPING_APP_CHATGPT_' . strtoupper($key);
-    if (defined($constantName)) {
-      $value = constant($constantName);
-      // Cache the constant value
-      $this->cache[$key] = $value;
-      return $value;
-    }
-
-    return $default;
-  }
-
-  /**
    * Set configuration value
    *
    * Sets a configuration value in memory and optionally persists to database.
@@ -129,69 +92,6 @@ class LLMProviderConfig
 
     // Optionally persist to database
     $this->saveToDatabase($key, $value);
-  }
-
-  /**
-   * Check if configuration key exists
-   *
-   * Checks if a configuration key exists in cache, database, or constants.
-   *
-   * @param string $key Configuration key
-   * @return bool True if key exists, false otherwise
-   */
-  public function has(string $key): bool
-  {
-    // Load cache if not already loaded
-    if (!$this->cacheLoaded) {
-      $this->loadCache();
-    }
-
-    // Check cache
-    if (isset($this->cache[$key])) {
-      return true;
-    }
-
-    // Check PHP constants
-    $constantName = 'CLICSHOPPING_APP_CHATGPT_' . strtoupper($key);
-    return defined($constantName);
-  }
-
-  /**
-   * Load configuration from database
-   *
-   * Loads all ChatGPT configuration from database into cache.
-   * Silently fails if database is unavailable.
-   *
-   * @return void
-   */
-  private function loadCache(): void
-  {
-    try {
-      $db = Registry::get('Db');
-
-      $query = $db->prepare('
-        SELECT configuration_key, configuration_value
-        FROM :table_configuration_chatgpt
-        WHERE configuration_key LIKE :prefix
-      ');
-
-      $query->bindValue(':prefix', 'CLICSHOPPING_APP_CHATGPT_%');
-      $query->execute();
-
-      while ($row = $query->fetch()) {
-        // Convert database key to cache key
-        // CLICSHOPPING_APP_CHATGPT_OPENAI_API_KEY -> openai_api_key
-        $key = str_replace('CLICSHOPPING_APP_CHATGPT_', '', $row['configuration_key']);
-        $key = strtolower($key);
-        $this->cache[$key] = $row['configuration_value'];
-      }
-
-      $this->cacheLoaded = true;
-    } catch (\Exception $e) {
-      // Database not available, use constants only
-      // This is expected during installation or when database is down
-      $this->cacheLoaded = true;
-    }
   }
 
   /**
@@ -229,17 +129,103 @@ class LLMProviderConfig
   }
 
   /**
-   * Clear cache
+   * Get configuration value
    *
-   * Clears the in-memory configuration cache.
-   * Next get() call will reload from database.
+   * Retrieves a configuration value with the following priority:
+   * 1. In-memory cache
+   * 2. Database
+   * 3. PHP constants
+   * 4. Default value
+   *
+   * @param string $key Configuration key (e.g., 'openai_api_key')
+   * @param mixed $default Default value if key not found
+   * @return mixed Configuration value or default
+   */
+  public function get(string $key, $default = null)
+  {
+    // Load cache if not already loaded
+    if (!$this->cacheLoaded) {
+      $this->loadCache();
+    }
+
+    // Check cache first
+    if (isset($this->cache[$key])) {
+      return $this->cache[$key];
+    }
+
+    // Fallback to PHP constants
+    $constantName = 'CLICSHOPPING_APP_CHATGPT_' . strtoupper($key);
+    if (defined($constantName)) {
+      $value = constant($constantName);
+      // Cache the constant value
+      $this->cache[$key] = $value;
+      return $value;
+    }
+
+    return $default;
+  }
+
+  /**
+   * Load configuration from database
+   *
+   * Loads all ChatGPT configuration from database into cache.
+   * Silently fails if database is unavailable.
    *
    * @return void
    */
-  public function clearCache(): void
+  private function loadCache(): void
   {
-    $this->cache = [];
-    $this->cacheLoaded = false;
+    try {
+      $db = Registry::get('Db');
+
+      $query = $db->prepare('
+        SELECT configuration_key, configuration_value
+        FROM :table_configuration
+        WHERE configuration_key LIKE :prefix
+      ');
+
+      $query->bindValue(':prefix', 'CLICSHOPPING_APP_CHATGPT_%');
+      $query->execute();
+
+      while ($row = $query->fetch()) {
+        // Convert database key to cache key
+        // CLICSHOPPING_APP_CHATGPT_OPENAI_API_KEY -> openai_api_key
+        $key = str_replace('CLICSHOPPING_APP_CHATGPT_', '', $row['configuration_key']);
+        $key = strtolower($key);
+        $this->cache[$key] = $row['configuration_value'];
+      }
+
+      $this->cacheLoaded = true;
+    } catch (\Exception $e) {
+      // Database not available, use constants only
+      // This is expected during installation or when database is down
+      $this->cacheLoaded = true;
+    }
+  }
+
+  /**
+   * Check if configuration key exists
+   *
+   * Checks if a configuration key exists in cache, database, or constants.
+   *
+   * @param string $key Configuration key
+   * @return bool True if key exists, false otherwise
+   */
+  public function has(string $key): bool
+  {
+    // Load cache if not already loaded
+    if (!$this->cacheLoaded) {
+      $this->loadCache();
+    }
+
+    // Check cache
+    if (isset($this->cache[$key])) {
+      return true;
+    }
+
+    // Check PHP constants
+    $constantName = 'CLICSHOPPING_APP_CHATGPT_' . strtoupper($key);
+    return defined($constantName);
   }
 
   /**
@@ -274,11 +260,17 @@ class LLMProviderConfig
   }
 
   /**
-   * Prevent cloning of singleton
+   * Clear cache
+   *
+   * Clears the in-memory configuration cache.
+   * Next get() call will reload from database.
+   *
+   * @return void
    */
-  private function __clone()
+  public function clearCache(): void
   {
-    // Prevent cloning
+    $this->cache = [];
+    $this->cacheLoaded = false;
   }
 
   /**
@@ -287,5 +279,13 @@ class LLMProviderConfig
   public function __wakeup()
   {
     throw new \Exception("Cannot unserialize singleton");
+  }
+
+  /**
+   * Prevent cloning of singleton
+   */
+  private function __clone()
+  {
+    // Prevent cloning
   }
 }

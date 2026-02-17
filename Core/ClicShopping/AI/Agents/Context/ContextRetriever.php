@@ -350,6 +350,30 @@ class ContextRetriever
   }
 
   /**
+   * Generate cache key for context
+   *
+   * @param array $classification Classification result
+   * @param string $query Original query
+   * @param int $limit Maximum number of results
+   * @return string Cache key
+   */
+  private function generateCacheKey(array $classification, string $query, int $limit): string
+  {
+    $type = $classification['type'] ?? 'unknown';
+    $confidence = $classification['confidence'] ?? 0.5;
+
+    // Generate key from query, type, confidence, and limit
+    $keyData = [
+      'query' => strtolower(trim($query)),
+      'type' => $type,
+      'confidence' => round($confidence, 2),
+      'limit' => $limit,
+    ];
+
+    return md5(json_encode($keyData));
+  }
+  
+  /**
    * Load context based on query type
    *
    * 🔧 PRIORITY 3 - PHASE 3.1: Type-specific context loading
@@ -501,7 +525,7 @@ class ContextRetriever
         "Error loading context in parallel: " . $e->getMessage(),
         'error'
       );
-      
+
       // Graceful degradation: return empty context
       return [];
     }
@@ -558,7 +582,7 @@ class ContextRetriever
   {
     try {
       $context = [];
-      
+
       if ($this->conversationMemory) {
         $recentInteractions = $this->conversationMemory->getRecentInteractions($limit);
 
@@ -582,7 +606,7 @@ class ContextRetriever
       return [];
     }
   }
-  
+
   /**
    * Load entity context (extracted from loadAnalyticsContext for parallel execution)
    *
@@ -634,6 +658,73 @@ class ContextRetriever
         'error'
       );
       return [];
+    }
+  }
+
+  /**
+   * Assess the impact of degradation based on failed operations
+   *
+   *
+   * Determines the severity and impact of failed operations on the final result.
+   * This helps with monitoring and alerting for production issues.
+   *
+   * Impact Levels:
+   * - "minimal": Failed operations are not critical for this query type
+   * - "moderate": Failed operations reduce context quality but result is still usable
+   * - "significant": Failed operations significantly impact result quality
+   *
+   * @param array $failedOps List of failed operation names
+   * @param string $queryType Type of query (semantic, analytics, hybrid, web_search)
+   * @return string Impact assessment (minimal, moderate, significant)
+   */
+  private function assessDegradationImpact(array $failedOps, string $queryType): string
+  {
+    if (empty($failedOps)) {
+      return 'none';
+    }
+
+    // Assess impact based on query type and failed operations
+    switch ($queryType) {
+      case 'semantic':
+        // For semantic queries, embeddings are critical
+        if (in_array('embeddings', $failedOps)) {
+          return 'significant'; // Embeddings are essential for semantic search
+        }
+        if (in_array('memory', $failedOps)) {
+          return 'moderate'; // Memory helps but not critical
+        }
+        return 'minimal';
+
+      case 'analytics':
+        // For analytics queries, entities are critical
+        if (in_array('entities', $failedOps)) {
+          return 'significant'; // Entities are essential for analytics
+        }
+        if (in_array('memory', $failedOps)) {
+          return 'minimal'; // Memory less important for analytics
+        }
+        return 'minimal';
+
+      case 'hybrid':
+        // For hybrid queries, all operations are important
+        $criticalOps = ['embeddings', 'entities'];
+        $failedCritical = array_intersect($criticalOps, $failedOps);
+
+        if (count($failedCritical) >= 2) {
+          return 'significant'; // Multiple critical operations failed
+        }
+        if (count($failedCritical) === 1) {
+          return 'moderate'; // One critical operation failed
+        }
+        return 'minimal'; // Only non-critical operations failed
+
+      case 'web_search':
+        // For web search, context is less important (external sources)
+        return 'minimal';
+
+      default:
+        // Unknown query type - assume moderate impact
+        return 'moderate';
     }
   }
 
@@ -800,30 +891,6 @@ class ContextRetriever
   }
 
   /**
-   * Generate cache key for context
-   *
-   * @param array $classification Classification result
-   * @param string $query Original query
-   * @param int $limit Maximum number of results
-   * @return string Cache key
-   */
-  private function generateCacheKey(array $classification, string $query, int $limit): string
-  {
-    $type = $classification['type'] ?? 'unknown';
-    $confidence = $classification['confidence'] ?? 0.5;
-
-    // Generate key from query, type, confidence, and limit
-    $keyData = [
-      'query' => strtolower(trim($query)),
-      'type' => $type,
-      'confidence' => round($confidence, 2),
-      'limit' => $limit,
-    ];
-
-    return md5(json_encode($keyData));
-  }
-
-  /**
    * Enable or disable caching
    *
    * @param bool $enabled Enable caching
@@ -833,7 +900,7 @@ class ContextRetriever
   {
     $this->cacheEnabled = $enabled;
   }
-
+  
   /**
    * Set cache TTL in minutes
    *
@@ -874,7 +941,7 @@ class ContextRetriever
       $duration = (microtime(true) - $startTime) * 1000;
 
       if ($this->debug) {
-        error_log("⏭️ Context NOT needed - skipping retrieval");
+        error_log("[INFO] Context NOT needed - skipping retrieval");
         error_log("Duration: " . round($duration, 2) . " ms");
         error_log("--- PARALLEL CONTEXT RETRIEVAL END ---\n");
       }
@@ -939,7 +1006,7 @@ class ContextRetriever
         $cache->save($context);
 
         if ($this->debug) {
-          error_log("✅ Context cached for {$this->cacheTTL} minutes");
+          error_log("[INFO] Context cached for {$this->cacheTTL} minutes");
         }
       } catch (\Exception $e) {
         $this->logger->logSecurityEvent(
@@ -950,72 +1017,5 @@ class ContextRetriever
     }
 
     return $context;
-  }
-  
-  /**
-   * Assess the impact of degradation based on failed operations
-   *
-   *
-   * Determines the severity and impact of failed operations on the final result.
-   * This helps with monitoring and alerting for production issues.
-   *
-   * Impact Levels:
-   * - "minimal": Failed operations are not critical for this query type
-   * - "moderate": Failed operations reduce context quality but result is still usable
-   * - "significant": Failed operations significantly impact result quality
-   *
-   * @param array $failedOps List of failed operation names
-   * @param string $queryType Type of query (semantic, analytics, hybrid, web_search)
-   * @return string Impact assessment (minimal, moderate, significant)
-   */
-  private function assessDegradationImpact(array $failedOps, string $queryType): string
-  {
-    if (empty($failedOps)) {
-      return 'none';
-    }
-    
-    // Assess impact based on query type and failed operations
-    switch ($queryType) {
-      case 'semantic':
-        // For semantic queries, embeddings are critical
-        if (in_array('embeddings', $failedOps)) {
-          return 'significant'; // Embeddings are essential for semantic search
-        }
-        if (in_array('memory', $failedOps)) {
-          return 'moderate'; // Memory helps but not critical
-        }
-        return 'minimal';
-        
-      case 'analytics':
-        // For analytics queries, entities are critical
-        if (in_array('entities', $failedOps)) {
-          return 'significant'; // Entities are essential for analytics
-        }
-        if (in_array('memory', $failedOps)) {
-          return 'minimal'; // Memory less important for analytics
-        }
-        return 'minimal';
-        
-      case 'hybrid':
-        // For hybrid queries, all operations are important
-        $criticalOps = ['embeddings', 'entities'];
-        $failedCritical = array_intersect($criticalOps, $failedOps);
-        
-        if (count($failedCritical) >= 2) {
-          return 'significant'; // Multiple critical operations failed
-        }
-        if (count($failedCritical) === 1) {
-          return 'moderate'; // One critical operation failed
-        }
-        return 'minimal'; // Only non-critical operations failed
-        
-      case 'web_search':
-        // For web search, context is less important (external sources)
-        return 'minimal';
-        
-      default:
-        // Unknown query type - assume moderate impact
-        return 'moderate';
-    }
   }
 }

@@ -54,7 +54,7 @@ class MemoryManager
     $memoryService->recordInteraction($query, $responseText, $fullMetadata);
     
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('💾 INTERACTION RECORDED IN MEMORY');
+      error_log('[INFO] INTERACTION RECORDED IN MEMORY');
       error_log('   Query Length: ' . strlen($query));
       error_log('   Response Length: ' . strlen($responseText));
       error_log('   Agent: ' . ($aiResponse['agent_used'] ?? 'unknown'));
