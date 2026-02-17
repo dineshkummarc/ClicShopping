@@ -81,7 +81,6 @@ class WebSearchFormatter extends AbstractFormatter
       
     $question = $results['question'] ?? $results['query'] ?? 'Unknown request';
 
-    // ✅ TASK 5.3.2.1: Log response structure for debugging
     if ($this->debug) {
       error_log('[WebSearchFormatter] Formatting web search results\n');
       error_log('[WebSearchFormatter] Result keys: ' . implode(', ', array_keys($results)) . "\n");
@@ -116,7 +115,6 @@ class WebSearchFormatter extends AbstractFormatter
     }
 
     if (!empty($interpretationText)) {
-      // ✅ TASK 5.3.2.1: Don't double-encode HTML content from text_response
       if ($isHtmlContent) {
         // text_response already contains formatted HTML - use as-is
         $output .= "<div class='interpretation'>" . $interpretationText . "</div>";

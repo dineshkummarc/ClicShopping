@@ -40,6 +40,10 @@ class FormatterRouter
 
     // Sort by priority (higher priority first)
     usort($this->formatters, fn($a, $b) => $b['priority'] <=> $a['priority']);
+
+    if ($this->debug) {
+      error_log('FormatterRouter: Registered formatter ' . get_class($formatter) . ' with priority ' . $priority);
+    }
   }
 
   /**
@@ -48,6 +52,9 @@ class FormatterRouter
   public function route(array $results): ?AbstractFormatter
   {
     if (empty($results)) {
+      if ($this->debug) {
+        error_log('FormatterRouter: Empty results provided');
+      }
       return null;
     }
 
@@ -55,26 +62,33 @@ class FormatterRouter
     $complexity = $this->analyzeComplexity($results);
 
     if ($this->debug) {
-      error_log('FormatterRouter: Analyzing results\n');
-      error_log('  Type: ' . ($results['type'] ?? 'NONE'));
-      error_log('  Complexity: ' . $complexity['level']);
-      error_log('  Score: ' . $complexity['score']);
+      error_log('[INFO : HYBRID]FormatterRouter: Analyzing results');
+      error_log('   Type: ' . ($results['type'] ?? 'NONE'));
+      error_log('   Has analytics_component: ' . (isset($results['analytics_component']) ? 'YES' : 'NO'));
+      error_log('   Has semantic_component: ' . (isset($results['semantic_component']) ? 'YES' : 'NO'));
+      error_log('   Complexity: ' . $complexity['level'] . ' (score: ' . $complexity['score'] . ')');
+      error_log('   Factors: ' . implode(', ', $complexity['factors']));
     }
 
     // Find the best formatter
     foreach ($this->formatters as $entry) {
       $formatter = $entry['formatter'];
 
+      if ($this->debug) {
+        error_log('   Testing formatter: ' . $entry['class']);
+      }
+
       if ($formatter->canHandle($results)) {
         if ($this->debug) {
-          error_log('  ✓ Selected formatter: ' . $entry['class'] . ' (priority: ' . $entry['priority'] . ')\n');
+          error_log('Selected formatter: ' . $entry['class'] . ' (priority: ' . $entry['priority'] . ')');
         }
         return $formatter;
       }
     }
 
     if ($this->debug) {
-      error_log('  ✗ No formatter found for type: ' . ($results['type'] ?? 'NONE'));
+      error_log('No formatter found for type: ' . ($results['type'] ?? 'NONE'));
+      error_log(Available formatters: ' . count($this->formatters));
     }
 
     return null;
@@ -94,16 +108,26 @@ class FormatterRouter
     if (in_array($type, ['complex_query', 'hybrid'])) {
       $score += 30;
       $factors[] = 'complex_type';
+      if ($this->debug) {
+        error_log('Complexity factor: complex_type (+30)');
+      }
     } elseif (in_array($type, ['analytics_results', 'analytics_response'])) {
       $score += 10;
       $factors[] = 'analytics_type';
+      if ($this->debug) {
+        error_log('Complexity factor: analytics_type (+10)');
+      }
     }
 
     // Factor 2: Multiple sub-results
     if (!empty($results['sub_results'])) {
       $subCount = count($results['sub_results']);
-      $score += min($subCount * 10, 30);
+      $points = min($subCount * 10, 30);
+      $score += $points;
       $factors[] = "sub_results_count:{$subCount}";
+      if ($this->debug) {
+        error_log('   Complexity factor: sub_results_count:' . $subCount . ' (+' . $points . ')');
+      }
     }
 
     // Factor 3: Multiple data sources
@@ -111,6 +135,9 @@ class FormatterRouter
       if (isset($results['data'][0]['sub_query'])) {
         $score += 20;
         $factors[] = 'multiple_data_sources';
+        if ($this->debug) {
+          error_log('   Complexity factor: multiple_data_sources (+20)');
+        }
       }
     }
 
@@ -118,12 +145,18 @@ class FormatterRouter
     if (!empty($results['sql_query'])) {
       $score += 5;
       $factors[] = 'has_sql';
+      if ($this->debug) {
+        error_log('   Complexity factor: has_sql (+5)');
+      }
     }
 
     // Factor 5: Has web search results
     if (!empty($results['web_results']) || !empty($results['sources'])) {
       $score += 15;
       $factors[] = 'has_web_search';
+      if ($this->debug) {
+        error_log('   Complexity factor: has_web_search (+15)');
+      }
     }
 
     // Factor 6: Large result set
@@ -132,6 +165,9 @@ class FormatterRouter
       if ($resultCount > 10) {
         $score += 10;
         $factors[] = "large_result_set:{$resultCount}";
+        if ($this->debug) {
+          error_log('   Complexity factor: large_result_set:' . $resultCount . ' (+10)');
+        }
       }
     }
 
@@ -141,6 +177,10 @@ class FormatterRouter
       $level = 'complex';
     } elseif ($score >= 20) {
       $level = 'medium';
+    }
+
+    if ($this->debug) {
+      error_log('   Final complexity: ' . $level . ' (score: ' . $score . ')');
     }
 
     return [

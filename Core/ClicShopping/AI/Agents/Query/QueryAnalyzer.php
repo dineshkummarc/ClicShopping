@@ -31,9 +31,7 @@ use ClicShopping\AI\DomainsAI\Analytics\Patterns\QueryCriteriaPattern;
  * - Enrich queries with conversation context
  * - Format structured filters to human-readable text
  *
- * TASK 2.2: Extracted from OrchestratorAgent (Phase 2 - Component Extraction)
  * REORGANIZATION: Moved from SubOrchestrator to Agents/Query (2025-12-10)
- * Requirements: REQ-4.2, REQ-8.1
  */
 
 class QueryAnalyzer

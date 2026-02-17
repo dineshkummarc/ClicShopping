@@ -210,14 +210,14 @@ class AnalyticsQueryExecutor
       }
 
       // Extract results from analytics response
-      // Handle ambiguous results specially - TASK 1.4: Use parallel execution for multiple interpretations
+      // Handle ambiguous results specially - Use parallel execution for multiple interpretations
       if (isset($analyticsResult['type']) && $analyticsResult['type'] === 'analytics_results_ambiguous') {
         // For ambiguous results, we have multiple interpretations
         $interpretationResults = $analyticsResult['interpretation_results'] ?? [];
         
         if (!empty($interpretationResults) && \count($interpretationResults) > 1) {
-          // TASK 1.4: Detect when multiple interpretations are beneficial
-          // TASK 1.5: Check if parallel execution is available, fall back to sequential if not
+          // Detect when multiple interpretations are beneficial
+          // Check if parallel execution is available, fall back to sequential if not
           $parallelStatus = $this->isParallelExecutionAvailable();
           
           if ($parallelStatus['available']) {
@@ -333,7 +333,6 @@ class AnalyticsQueryExecutor
               }
             }
           } else {
-            // TASK 1.5: Parallel execution not available, fall back to sequential
             if ($this->debug) {
               $this->logger->logSecurityEvent(
                 "TASK 1.5: Parallel execution unavailable, falling back to sequential. Reason: " . $parallelStatus['reason'],
@@ -445,7 +444,6 @@ class AnalyticsQueryExecutor
         $entityType = $analyticsResult['entity_type'] ?? null;
       }
 
-      // TASK 1.2: Ensure interpretation is always present (fallback for all paths)
       // This is critical for hybrid query validation - ResultSynthesizer requires
       // either interpretation or text_response to generate the final text response.
       // Without this fallback, queries that don't generate interpretations would fail
@@ -461,7 +459,6 @@ class AnalyticsQueryExecutor
         }
       }
 
-      // TASK 1.3: Validate and fix SQL date logic (especially for year boundaries)
       if (!empty($sqlQuery)) {
         $dateValidator = new \ClicShopping\AI\DomainsAI\Analytics\Validator\SqlDateValidator($this->debug);
         $validationResult = $dateValidator->validateAndFix($sqlQuery, $query);
@@ -496,8 +493,6 @@ class AnalyticsQueryExecutor
           );
         }
 
-        // TASK 3: Execute each query using parallel execution when possible
-        // TASK 1.5: Check if parallel execution is available, fall back to sequential if not
         $startParallelTime = microtime(true);
         
         $parallelStatus = $this->isParallelExecutionAvailable();
@@ -598,8 +593,7 @@ class AnalyticsQueryExecutor
               'info'
             );
           }
-        } else {
-          // TASK 1.5: Sequential execution (parallel unavailable or only one query)
+        } else {      
           if ($this->debug) {
             $reason = !$parallelStatus['available'] 
               ? "parallel execution unavailable: " . $parallelStatus['reason']
@@ -660,7 +654,6 @@ class AnalyticsQueryExecutor
             'query_count' => count($allResults),
             'entity_id' => $entityId,
             'entity_type' => $entityType,
-            // TASK 1.1: Source attribution for hybrid query validation
             // This field is required for ResultSynthesizer to properly validate and merge results
             // from multiple sub-queries. It identifies the data source and provides metadata
             // for display in the UI.
@@ -750,7 +743,6 @@ class AnalyticsQueryExecutor
           'sql_queries' => !empty($sqlQuery) ? [$sqlQuery] : [],
           'entity_id' => $entityId,
           'entity_type' => $entityType,
-          // TASK 1.1: Source attribution for hybrid query validation
           // This field is required for ResultSynthesizer to properly validate and merge results
           // from multiple sub-queries. It identifies the data source and provides metadata
           // for display in the UI.
@@ -792,7 +784,6 @@ class AnalyticsQueryExecutor
   /**
    * Detect if query contains multiple SQL queries (AND connector)
    *
-   * TASK 2.9.8.6.1: Pattern-based detection removed in Pure LLM mode
    * 
    * This method always returns false in Pure LLM mode.
    * Multi-query detection is handled by the LLM itself.
@@ -816,7 +807,6 @@ class AnalyticsQueryExecutor
   /**
    * Build SQL generation prompt for LLM
    * 
-   * TASK 1.2: Extracted from AnalyticsAgent for parallel execution support.
    * This method builds a prompt that asks the LLM to generate SQL for an analytics query.
    * 
    * @param string $query The analytics query in natural language
@@ -1054,8 +1044,6 @@ class AnalyticsQueryExecutor
       $parallelResults = $this->parallelExecutor->executeParallel($prompts);
       
       $parallelDuration = microtime(true) - $startTime;
-      
-      // TASK 6.1: Calculate detailed performance metrics
       $individualTimes = array_column($parallelResults, 'execution_time');
       $maxIndividualTime = !empty($individualTimes) ? max($individualTimes) : 0;
       $sumIndividualTimes = !empty($individualTimes) ? array_sum($individualTimes) : 0;
@@ -1066,15 +1054,12 @@ class AnalyticsQueryExecutor
       
       // Calculate time saved vs sequential execution
       $timeSaved = $theoreticalSequentialTime - $parallelDuration;
-      $percentageFaster = $theoreticalSequentialTime > 0 
-        ? ($timeSaved / $theoreticalSequentialTime) * 100 
-        : 0;
+      $percentageFaster = $theoreticalSequentialTime > 0 ? ($timeSaved / $theoreticalSequentialTime) * 100 : 0;
       
       // Count successes and failures
       $successCount = count(array_filter($parallelResults, fn($r) => $r['success']));
       $failureCount = count(array_filter($parallelResults, fn($r) => !$r['success']));
       
-      // TASK 6.1: Log detailed performance metrics
       if ($this->debug) {
         $this->logger->logSecurityEvent(
           "Parallel SQL generation completed in " . number_format($parallelDuration, 3) . "s",
@@ -1095,7 +1080,6 @@ class AnalyticsQueryExecutor
           ]
         );
         
-        // TASK 6.1: Log individual operation times
         foreach ($parallelResults as $key => $result) {
           $this->logger->logSecurityEvent(
             "Interpretation '{$key}' execution time: " . 
@@ -1123,7 +1107,6 @@ class AnalyticsQueryExecutor
             'cached' => false
           ];
           
-          // PHASE 4 - TASK 4.2: Cache the generated SQL
           if (!empty($sqlQueries[0])) {
             $cacheKey = $cacheKeys[$key];
             $sqlCache = new \ClicShopping\OM\Cache($cacheKey, 'Rag/SQL');
@@ -1168,7 +1151,6 @@ class AnalyticsQueryExecutor
       // Merge cached results with newly generated results
       $allResults = array_merge($cachedResults, $sqlResults);
       
-      // TASK 6.1: Include performance metrics in return value
       return [
         'success' => true,
         'results' => $allResults,
@@ -1258,8 +1240,7 @@ class AnalyticsQueryExecutor
   
   /**
    * Check if parallel execution is available
-   * 
-   * TASK 1.5: Determines if parallel execution can be used.
+   *
    * Checks both ParallelLLMExecutor availability and configuration.
    * 
    * @return array Status array with 'available' flag and 'reason' if unavailable
@@ -1293,7 +1274,6 @@ class AnalyticsQueryExecutor
   /**
    * Execute sequential SQL generation fallback
    * 
-   * TASK 1.5: Fallback method when parallel execution is unavailable.
    * Executes interpretations sequentially using AnalyticsAgent.
    * 
    * @param string $query The analytics query

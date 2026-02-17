@@ -1,14 +1,15 @@
 version4.21
-AI
-   - AI improvment and refactoring to be full agentic
-   - Agent - Actor - Critic - Objectives - Evaluation - Conversation
-   - App Ecommerce Domain with Insight (basic), ACP, UCP
-   - ACP Protocol Beta  refactored via Ecommerce AI app
-   - UCP Protocol Beta added via Ecommerce AI app
-   - App Ecommerce Domain with Insight (basic) aproach
-   - some fix (included deprecated)
-   - Librairies updated
-   - php9 compatibility
+- AI
+   - AI improvement and refactoring to be full agentic approach
+   - Agent - Actor - Critic - Objectives - Evaluation - Conversation included
+   - Around 50 KPI for statistics
+   - App Ecommerce Domain with Insight (basic) approach including ACP et UCP below
+   - Refactoring ACP and add UCP Beta for AI Ecommerce App
+     - ACP Protocol Beta refactored via Ecommerce AI app
+     - UCP Protocol Beta added via Ecommerce AI app
+- Some fix (included deprecated)
+- Librairies updated
+- php9 compatibility
 
 ---------------
 version4.20

@@ -30,6 +30,11 @@ class TranslationCache
   private int $lifetime;
 
   /**
+   * @var bool Cache enabled flag.
+   */
+  private bool $cache;
+
+  /**
    * TranslationCache constructor.
    *
    * @param int $lifetime Cache lifetime in seconds.

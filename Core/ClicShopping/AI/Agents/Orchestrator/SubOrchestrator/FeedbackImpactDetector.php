@@ -17,8 +17,6 @@ use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
  * Detects if previous user feedback (corrections or positive feedback) should influence
  * the current query response. Uses embedding-based similarity to determine relevance.
  *
- * TASK 2.9: Feedback Impact Detection and Display
- *
  * Responsibilities:
  * - Retrieve feedback context from ConversationMemory
  * - Calculate query similarity using embeddings

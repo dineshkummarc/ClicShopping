@@ -15,7 +15,6 @@ use ClicShopping\OM\Registry;
 /**
  * StatisticsTracker Class
  * 
- * 🔧 MIGRATED TO DOCTRINEORM: December 6, 2025
  * All database queries now use DoctrineOrm instead of PDO
  */
 class StatisticsTracker
@@ -279,28 +278,15 @@ class StatisticsTracker
    */
   private function calculateCost(): void
   {
-    if ($this->metrics['tokens_total'] === null || $this->metrics['model_used'] === null) {
+    if ($this->metrics['tokens_prompt'] === null || $this->metrics['tokens_completion'] === null || $this->metrics['model_used'] === null) {
       return;
     }
-    
-    // Coûts approximatifs par 1K tokens (à ajuster selon les modèles)
-    $costPer1kTokens = [
-      'gpt-4' => 0.03,
-      'gpt-4-turbo' => 0.01,
-      'gpt-3.5-turbo' => 0.002,
-      'claude-3-opus' => 0.015,
-      'claude-3-sonnet' => 0.003,
-      'claude-3-haiku' => 0.00025,
-      'llama2' => 0.0, // Local, gratuit
-      'mistral' => 0.0, // Local, gratuit
-      'phi4' => 0.0, // Local, gratuit
-      'gemma' => 0.0 // Local, gratuit
-    ];
-    
-    $model = $this->metrics['model_used'];
-    $costRate = $costPer1kTokens[$model] ?? 0.002; // Défaut: 0.002
-    
-    $this->metrics['api_cost_usd'] = ($this->metrics['tokens_total'] / 1000) * $costRate;
+
+    $this->metrics['api_cost_usd'] = ApiCostCalculator::calculateCost(
+      $this->metrics['model_used'],
+      (int)$this->metrics['tokens_prompt'],
+      (int)$this->metrics['tokens_completion']
+    );
   }
   
   /**

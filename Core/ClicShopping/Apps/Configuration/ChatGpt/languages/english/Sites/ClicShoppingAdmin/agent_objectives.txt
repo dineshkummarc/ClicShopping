@@ -1,0 +1,60 @@
+heading_title_agent_objectives = Agent Objectives Management
+button_refresh = Refresh
+button_back_dashboard = Back to Dashboard
+button_clear_filters = Clear Filters
+button_close = Close
+button_cancel = Cancel
+button_confirm = Confirm
+
+text_filters = Filters
+text_agent = Agent
+text_all_agents = All Agents
+text_status = Status
+text_all_statuses = All Statuses
+text_pending = Pending
+text_approved = Approved
+text_active = Active
+text_completed = Completed
+text_failed = Failed
+text_cancelled = Cancelled
+text_priority = Priority
+text_all_priorities = All Priorities
+text_low = Low
+text_medium = Medium
+text_high = High
+text_critical = Critical
+
+text_agent_objectives = Agent Objectives
+text_loading = Loading...
+text_id = ID
+text_goal = Goal
+text_created = Created
+text_estimated_completion = Est. Completion
+text_actions = Actions
+
+text_objective_details = Objective Details
+text_confirm_action = Confirm Action
+text_reason = Reason:
+
+text_error_loading_objectives = Error loading objectives: 
+text_network_error = Network error: 
+text_no_objectives = No objectives found
+text_approve = Approve
+text_cancel = Cancel
+text_activate = Activate
+text_complete = Complete
+text_fail = Fail
+text_no_actions = No actions
+text_error_prefix = Error: 
+
+text_confirm_title_prefix = Confirm 
+text_confirm_message_prefix = Are you sure you want to 
+text_confirm_message_suffix =  this objective?
+
+text_objective_id = Objective ID
+text_success_criteria = Success Criteria
+text_seconds = seconds
+text_metrics = Metrics
+text_failure_reason = Failure Reason
+text_previous = Previous
+text_next = Next

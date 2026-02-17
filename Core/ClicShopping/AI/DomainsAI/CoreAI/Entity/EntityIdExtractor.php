@@ -17,7 +17,6 @@ use ClicShopping\AI\DomainsAI\CoreAI\Entity\EntityRegistry;
 /**
  * EntityIdExtractor Class
  *
- * TASK 4.3.1: Extract entity_id and entity_type from SQL query results
  * 
  * This class provides centralized logic for extracting entity information
  * from database query results, which is essential for populating memory tables correctly.
@@ -54,7 +53,6 @@ class EntityIdExtractor
   /**
    * Extract entity_id and entity_type from SQL query results
    *
-   * TASK 4.3.1: Uses dynamic discovery like MultiDBRAGManager
    *
    * @param array $sqlResults SQL query results (array of rows)
    * @param string|null $sqlQuery Optional SQL query for context
@@ -130,7 +128,6 @@ class EntityIdExtractor
   /**
    * Get entity column mappings using centralized EntityRegistry
    *
-   * TASK 4.4.2: Use EntityRegistry as single source of truth for entity mappings
    *
    * @return array Map of column names to entity types
    */
@@ -223,7 +220,6 @@ class EntityIdExtractor
   /**
    * Extract entity_id and entity_type from metadata (for semantic queries)
    *
-   * TASK 4.4.2 REGRESSION FIX: Semantic queries return metadata, not SQL rows
    *
    * @param array $metadata Metadata from semantic search results
    * @return array ['entity_id' => int|null, 'entity_type' => string|null]
@@ -258,7 +254,6 @@ class EntityIdExtractor
   /**
    * Extract entity from mixed results (SQL or metadata)
    *
-   * TASK 4.4.2 REGRESSION FIX: Handle both SQL results and semantic metadata
    *
    * @param array $results Results array (can be SQL rows or semantic results with metadata)
    * @param string|null $sqlQuery Optional SQL query for context

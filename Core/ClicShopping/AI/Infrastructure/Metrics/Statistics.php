@@ -31,14 +31,14 @@ class Statistics {
    */
   public static function getTotalTokenByMonth(): array
   {
-    // 🔧 TASK 4.4.1 PHASE 6: Migrated to DoctrineOrm
+    
     $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     
-    $sql = "SELECT sum(promptTokens) as promptTokens,
-                   sum(completionTokens) as completionTokens,
-                   sum(totalTokens) as totalTokens,
+    $sql = "SELECT sum(tokens_prompt) as promptTokens,
+                   sum(tokens_completion) as completionTokens,
+                   sum(tokens_total) as totalTokens,
                    max(date_added) as date_added
-            FROM {$prefix}gpt_usage
+            FROM {$prefix}rag_statistics
             WHERE date_added >= DATE_SUB(NOW(), INTERVAL 1 MONTH)";
 
     $result = DoctrineOrm::selectOne($sql);
@@ -54,15 +54,15 @@ class Statistics {
    */
   public static function getTokenUsageByPeriod(int $days = 7): array
   {
-    // 🔧 TASK 4.4.1 PHASE 6: Migrated to DoctrineOrm
+    
     $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     
-    $sql = "SELECT sum(promptTokens) as promptTokens,
-                   sum(completionTokens) as completionTokens,
-                   sum(totalTokens) as totalTokens,
+    $sql = "SELECT sum(tokens_prompt) as promptTokens,
+                   sum(tokens_completion) as completionTokens,
+                   sum(tokens_total) as totalTokens,
                    count(*) as requests_count,
                    max(date_added) as last_request
-            FROM {$prefix}gpt_usage
+            FROM {$prefix}rag_statistics
             WHERE date_added >= DATE_SUB(NOW(), INTERVAL :days DAY)";
 
     $result = DoctrineOrm::selectOne($sql, ['days' => $days]);
@@ -78,15 +78,15 @@ class Statistics {
    */
   public static function getDailyTokenUsage(int $days = 7): array
   {
-    // 🔧 TASK 4.4.1 PHASE 6: Migrated to DoctrineOrm
+    
     $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     
     $sql = "SELECT DATE(date_added) as usage_date,
-                   sum(promptTokens) as daily_prompt_tokens,
-                   sum(completionTokens) as daily_completion_tokens,
-                   sum(totalTokens) as daily_total_tokens,
+                   sum(tokens_prompt) as daily_prompt_tokens,
+                   sum(tokens_completion) as daily_completion_tokens,
+                   sum(tokens_total) as daily_total_tokens,
                    count(*) as daily_requests
-            FROM {$prefix}gpt_usage
+            FROM {$prefix}rag_statistics
             WHERE date_added >= DATE_SUB(NOW(), INTERVAL :days DAY)
             GROUP BY DATE(date_added)
             ORDER BY usage_date DESC";
@@ -114,20 +114,20 @@ class Statistics {
    */
   public static function getUsageByModel(int $days = 7): array
   {
-    // 🔧 TASK 4.4.1 PHASE 6: Migrated to DoctrineOrm
+    
     $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     
-    $sql = "SELECT model,
-                   sum(promptTokens) as model_prompt_tokens,
-                   sum(completionTokens) as model_completion_tokens,
-                   sum(totalTokens) as model_total_tokens,
-                   count(*) as model_requests,equest
-            FROM {$prefix}gpt_usage
-            WHERE date_added >= DATE_SUB(NOW(), INL :days DAY)
-            GROUP BY model
-          ORDER BY model_total_tokens DESC";
+    $sql = "SELECT model_used as model,
+                   sum(tokens_prompt) as model_prompt_tokens,
+                   sum(tokens_completion) as model_completion_tokens,
+                   sum(tokens_total) as model_total_tokens,
+                   count(*) as model_requests,
+                   avg(tokens_total) as avg_tokens_per_request
+            FROM {$prefix}rag_statistics
+            WHERE date_added >= DATE_SUB(NOW(), INTERVAL :days DAY)
+            GROUP BY model_used
+            ORDER BY model_total_tokens DESC";
 
-    $rows = DoctrineOrm::select($sql, ['days' => $days]);
     $rows = DoctrineOrm::select($sql, ['days' => $days]);
 
     $results = [];
@@ -161,10 +161,25 @@ class Statistics {
       return [];
     }
 
-    // Calculate cost estimate (using GPT-4 pricing as default)
-    $inputCost = ($periodStats['promptTokens'] / 1000) * 0.03;
-    $outputCost = ($periodStats['completionTokens'] / 1000) * 0.06;
-    $totalCost = $inputCost + $outputCost;
+    $prefix = CLICSHOPPING::getConfig('db_table_prefix');
+    $costRows = DoctrineOrm::select(
+      "SELECT model_used as model,
+              sum(tokens_prompt) as promptTokens,
+              sum(tokens_completion) as completionTokens
+       FROM {$prefix}rag_statistics
+       WHERE date_added >= DATE_SUB(NOW(), INTERVAL :days DAY)
+       GROUP BY model_used",
+      ['days' => $days]
+    );
+
+    $totalCost = 0.0;
+    
+    foreach ($costRows as $row) {
+      $model = $row['model'] ?? '';
+      $promptTokens = (int)($row['promptTokens'] ?? 0);
+      $completionTokens = (int)($row['completionTokens'] ?? 0);
+      $totalCost += ApiCostCalculator::calculateCost($model, $promptTokens, $completionTokens);
+    }
 
     // Prepare daily usage for charts (simple array of totals)
     $dailyTotals = [];
@@ -194,25 +209,12 @@ class Statistics {
    * @param string $model Model name (default: gpt-4)
    * @return float Estimated cost in USD
    */
-  public static function calculateEstimatedCost(array $tokenData, string $model = 'gpt-4'): float
+  public static function calculateEstimatedCost(array $tokenData, string $model = 'gpt-5-mini'): float
   {
     $inputTokens = $tokenData['promptTokens'] ?? $tokenData['prompt_tokens'] ?? 0;
     $outputTokens = $tokenData['completionTokens'] ?? $tokenData['completion_tokens'] ?? 0;
 
-    // Pricing per 1K tokens (as of 2024)
-    $pricing = [
-      'gpt-4' => ['input' => 0.03, 'output' => 0.06],
-      'gpt-4-turbo' => ['input' => 0.01, 'output' => 0.03],
-      'gpt-3.5-turbo' => ['input' => 0.0015, 'output' => 0.002],
-      'default' => ['input' => 0.03, 'output' => 0.06] // Fallback to GPT-4 pricing
-    ];
-
-    $modelPricing = $pricing[$model] ?? $pricing['default'];
-
-    $inputCost = ($inputTokens / 1000) * $modelPricing['input'];
-    $outputCost = ($outputTokens / 1000) * $modelPricing['output'];
-
-    return $inputCost + $outputCost;
+    return ApiCostCalculator::estimateCost($model, (int)$inputTokens, (int)$outputTokens);
   }
 
   /**
@@ -224,11 +226,12 @@ class Statistics {
    */
   public static function saveStats(array|null $usage, string $engine): void
   {
-    // 🔧 TASK 4.4.1 PHASE 6: Migrated to DoctrineOrm
-    $sql = 'SELECT gpt_id
-            FROM :table_gpt
+    $prefix = CLICSHOPPING::getConfig('db_table_prefix');
+    
+    $sql = "SELECT gpt_id
+            FROM {$prefix}gpt
             ORDER BY gpt_id DESC
-            LIMIT 1';
+            LIMIT 1";
 
     $lastId = DoctrineOrm::selectValue($sql);
 
@@ -263,7 +266,6 @@ class Statistics {
    */
   public static function getTokenbyId(int $id): array
   {
-    // 🔧 TASK 4.4.1 PHASE 6: Migrated to DoctrineOrm
     $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     
     $sql = "SELECT sum(promptTokens) as promptTokens,
@@ -311,8 +313,7 @@ class Statistics {
    * @return int Number of deleted records
    */
   public static function cleanupOldData(int $keepDays = 90): int
-  {
-    // 🔧 TASK 4.4.1 PHASE 6: Migrated to DoctrineOrm
+  {  
     $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     
     $sql = "DELETE FROM {$prefix}gpt_usage
@@ -328,7 +329,6 @@ class Statistics {
    */
   public static function getSumTotalTokenByMonth(): int
   {
-    // 🔧 TASK 4.4.1 PHASE 6: Migrated to DoctrineOrm
     $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     
     $sql = "SELECT sum(totalTokens) as total_tokens
@@ -348,7 +348,6 @@ class Statistics {
    */
   public static function getTotalToken(): int
   {
-    // 🔧 TASK 4.4.1 PHASE 6: Migrated to DoctrineOrm
     $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     
     $sql = "SELECT sum(totalTokens) as total_tokens
@@ -366,7 +365,7 @@ class Statistics {
    * @param string $model Model name for pricing calculation
    * @return array Cost estimation details
    */
-  public static function getCostEstimation(array $tokenData, string $model = 'gpt-4'): array
+  public static function getCostEstimation(array $tokenData, string $model = 'gpt-5-mini'): array
   {
     $inputTokens = $tokenData['promptTokens'] ?? $tokenData['input_tokens'] ?? 0;
     $outputTokens = $tokenData['completionTokens'] ?? $tokenData['output_tokens'] ?? 0;
@@ -374,16 +373,21 @@ class Statistics {
 
     // Pricing per 1K tokens (updated 2024 rates)
     $pricing = [
-      'gpt-4' => ['input' => 0.03, 'output' => 0.06],
-      'gpt-4-turbo' => ['input' => 0.01, 'output' => 0.03],
-      'gpt-4o' => ['input' => 0.005, 'output' => 0.015],
-      'gpt-3.5-turbo' => ['input' => 0.0015, 'output' => 0.002],
-      'claude-3-opus' => ['input' => 0.015, 'output' => 0.075],
-      'claude-3-sonnet' => ['input' => 0.003, 'output' => 0.015],
+      'gpt-5.2'        => ['input' => 0.00175, 'output' => 0.01400],
+      'gpt-5.2-pro'    => ['input' => 0.02100, 'output' => 0.16800],
+      'gpt-5-mini'     => ['input' => 0.00025, 'output' => 0.00200],
+      'gpt-4.1'        => ['input' => 0.00300, 'output' => 0.01200],
+      'gpt-4.1-mini'   => ['input' => 0.00080, 'output' => 0.00320],
+      'gpt-4.1-nano'   => ['input' => 0.00020, 'output' => 0.00080],
+      'gpt-4'          => ['input' => 0.03,    'output' => 0.06],
+      'gpt-4-turbo'    => ['input' => 0.01,    'output' => 0.03],
+      'gpt-4o'         => ['input' => 0.005,   'output' => 0.015],
+      'claude-3-opus'  => ['input' => 0.015,   'output' => 0.075],
+      'claude-3-sonnet'=> ['input' => 0.003,   'output' => 0.015],
       'claude-3-haiku' => ['input' => 0.00025, 'output' => 0.00125],
-      'mistral-large' => ['input' => 0.008, 'output' => 0.024],
-      'mistral-medium' => ['input' => 0.0027, 'output' => 0.0081],
-      'default' => ['input' => 0.03, 'output' => 0.06] // Fallback to GPT-4 pricing
+      'mistral-large'  => ['input' => 0.008,   'output' => 0.024],
+      'mistral-medium' => ['input' => 0.0027,  'output' => 0.0081],
+      'default'        => ['input' => 0.03,    'output' => 0.06],
     ];
 
     $modelPricing = $pricing[$model] ?? $pricing['default'];
@@ -414,8 +418,7 @@ class Statistics {
    * @return array Detailed cost analysis
    */
   public static function getCostAnalysis(int $days = 30): array
-  {
-    // 🔧 TASK 4.4.1 PHASE 6: Migrated to DoctrineOrm
+  {   
     $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     
     $sql = "SELECT model,

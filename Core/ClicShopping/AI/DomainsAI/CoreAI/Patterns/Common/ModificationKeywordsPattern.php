@@ -5,9 +5,7 @@
  * Provides keywords for detecting query modifications (add, remove, change, etc.)
  * Used by AnalyticsAgent and other components to detect modification requests.
  * 
- * TASK 5.1.1: Extracted from AnalyticsAgent::getModificationKeywords()
  * RESTRUCTURATION: Relocated to Common (2026-01-22)
- * TASK: pattern-migration-domain-to-domainsai - Phase 2
  * 
  * @package ClicShopping\AI\DomainsAI\CoreAI\Patterns\Common
  * @since 2025-12-28
@@ -61,7 +59,6 @@ class ModificationKeywordsPattern
   /**
    * Get all modification keywords (alias for getModificationKeywords)
    * 
-   * TASK 7.1.2.2: Added as standardized method name for pattern classes
    * 
    * @return array<string> List of all modification keywords
    */

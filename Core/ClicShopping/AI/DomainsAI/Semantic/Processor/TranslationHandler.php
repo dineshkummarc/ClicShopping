@@ -20,7 +20,6 @@ use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 /**
  * TranslationHandler
  * 
- * TASK 4.4.2: Simplified translation handler
  * - Removed: protectTechnicalTerms, restoreTechnicalTerms (no longer needed)
  * - Removed: getLanguageName (use Registry::get('Language') instead)
  * - Removed: translateFromEnglish (not needed for core functionality)
@@ -46,11 +45,9 @@ class TranslationHandler
   
   /**
    * Translates text to English with caching
-   * 
-   * TASK 4.4.2: Simplified translation with cache configuration support
+   *
    * Integrates CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER (True/False)
    * 
-   * TASK 3.2 (2025-12-12): Added fallback handling
    * - Returns original query if translation fails
    * - Logs translation failures for monitoring
    * - Prevents empty string returns
@@ -83,7 +80,6 @@ class TranslationHandler
       $languageId = Registry::get('Language')->getId();
     }
 
-    // TASK 4.4.2: Check cache configuration
     $useCache = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER')  && CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
 
     if ($useCache) {
@@ -161,10 +157,9 @@ class TranslationHandler
 
       return $cleanTranslation;
     } catch (\Exception $e) {
-      // 🔧 TASK 3.2: Fallback handling - use original query if translation fails
       error_log("[error] TRANSLATION EXCEPTION: " . $e->getMessage());
       error_log("   Stack trace: " . $e->getTraceAsString());
-      error_log("🔄 FALLBACK: Using original query instead");
+      error_log("   FALLBACK: Using original query instead");
       error_log("   Original query: " . substr($originalQuery, 0, 200));
       error_log("=== TRANSLATION END (FAILED - USING FALLBACK) ===");
       
@@ -175,7 +170,6 @@ class TranslationHandler
         );
       }
 
-      // 🔧 TASK 3.2: Return original query instead of throwing exception
       // This allows the system to continue processing with the original query
       return $originalQuery;
     }

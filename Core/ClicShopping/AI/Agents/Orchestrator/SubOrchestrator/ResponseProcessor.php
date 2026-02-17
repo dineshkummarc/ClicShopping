@@ -27,9 +27,6 @@ use ClicShopping\AI\Config\DomainConfig;
  * - Build structured error responses
  * - Analyze errors and generate user-friendly messages
  *
- * TASK 2.1: Extracted from OrchestratorAgent (Phase 2 - Component Extraction)
- * Requirements: REQ-4.1, REQ-8.1
- * TASK 4: Internationalization support added
  */
 
 class ResponseProcessor
@@ -124,12 +121,9 @@ class ResponseProcessor
   }
 
   /**
-   * Extract final response from execution result
-   *
+   * Extract final response from exe
    * Extracts the human-readable response text from various execution result structures.
    * Handles analytics, semantic, and hybrid response types.
-   *
-   * TASK 2.17.1: Improved response extraction to prevent JSON fallback
    *
    * @param mixed $executionResult Execution result (string or array)
    * @return string Final response text
@@ -143,7 +137,6 @@ class ResponseProcessor
 
     // If it's an array, search for the response
     if (is_array($executionResult)) {
-      // TASK 2.17.1: Check for text_response first (used by wrapped responses)
       if (isset($executionResult['text_response']) && !empty($executionResult['text_response'])) {
         // Check if text_response is NOT the JSON fallback
         if (strpos($executionResult['text_response'], 'Résultat:') === false) {
@@ -151,17 +144,14 @@ class ResponseProcessor
         }
       }
       
-      // TASK 2.17.1: Check for response field (highest priority)
       if (isset($executionResult['response']) && !empty($executionResult['response'])) {
         return $executionResult['response'];
       }
 
-      // TASK 2.17.1: Check for interpretation field
       if (isset($executionResult['interpretation']) && !empty($executionResult['interpretation'])) {
         return $executionResult['interpretation'];
       }
       
-      // TASK 2.17.1: Check for data array (wrapped response structure)
       if (isset($executionResult['data']) && is_array($executionResult['data'])) {
         // Try to extract response from data
         if (isset($executionResult['data']['response']) && !empty($executionResult['data']['response'])) {
@@ -178,7 +168,6 @@ class ResponseProcessor
         return $this->language->getDef('response_not_available');
       }
       
-      // TASK 2.17.1: Check for semantic type (from SemanticExecutor)
       if (isset($executionResult['type']) && $executionResult['type'] === 'semantic') {
         // Already checked response above, check answer field
         if (isset($executionResult['answer']) && !empty($executionResult['answer'])) {
@@ -192,8 +181,7 @@ class ResponseProcessor
         // Already checked interpretation above, return default
         return $this->language->getDef('analysis_not_available');
       }
-
-      // TASK 2.17.1: Log when falling back to JSON (this should NOT happen for semantic queries)
+ 
       if ($this->debug) {
         $this->securityLogger->logSecurityEvent(
           "⚠️ TASK 2.17.1: extractFinalResponse falling back to JSON - this indicates a problem!",
@@ -360,8 +348,7 @@ class ResponseProcessor
    * 
    * Handles the complex logic of extracting and formatting responses,
    * especially for semantic queries which require special handling.
-   * 
-   * ✅ TASK 5.2.1.1: Updated to handle hybrid query results correctly
+   *
    * - For hybrid queries, executionResult is the synthesized result directly (not wrapped)
    * - For other queries, executionResult has ['result' => ...] structure
    * 
@@ -383,7 +370,6 @@ class ResponseProcessor
     string $entityType,
     $responseProcessor
   ): array {
-    // ✅ TASK 5.2.1.1: Check if this is a hybrid result (already synthesized)
     // Hybrid results have 'text_response' at top level and 'type' === 'hybrid'
     $isHybridResult = isset($executionResult['text_response']) && 
                       isset($executionResult['type']) && 
@@ -427,7 +413,6 @@ class ResponseProcessor
     $rawResult = $executionResult['result'] ?? [];
     
     // Process response through LLM formatter (if available)
-    // ✅ TASK 5.2.1.1: Check if responseProcessor is null before calling
     $intentType = $intent['type'] ?? $intent['query_type'] ?? 'semantic';
     $dataForFormatter = null;
     
@@ -464,7 +449,41 @@ class ResponseProcessor
       'agent_used' => 'orchestrator',
     ];
     
-    // ✅ TASK 5.1.7.4: Preserve cache flags from execution result
+    // 2026-01-29: Preserve complete analytics structure
+    // Issue: Analytics results (SQL, data table) not displaying in chat
+    // Cause: ResponseProcessor was not preserving analytics-specific fields
+    if ($intent['type'] === 'analytics' && is_array($rawResult)) {
+      // Ensure analytics-specific fields are preserved in data
+      if (!isset($response['data']['results']) && isset($rawResult['results'])) {
+        $response['data']['results'] = $rawResult['results'];
+      }
+      if (!isset($response['data']['sql_query']) && isset($rawResult['sql_query'])) {
+        $response['data']['sql_query'] = $rawResult['sql_query'];
+      }
+      if (!isset($response['data']['count']) && isset($rawResult['count'])) {
+        $response['data']['count'] = $rawResult['count'];
+      }
+      if (!isset($response['data']['interpretation']) && isset($rawResult['interpretation'])) {
+        $response['data']['interpretation'] = $rawResult['interpretation'];
+      }
+      if (!isset($response['data']['question']) && isset($rawResult['question'])) {
+        $response['data']['question'] = $rawResult['question'];
+      }
+      
+      // Ensure type is set correctly for AnalyticsFormatter
+      if (!isset($response['data']['type'])) {
+        $response['data']['type'] = 'analytics_results';
+      }
+      
+      if ($this->debug) {
+        $this->securityLogger->logSecurityEvent(
+          "✅ Analytics structure preserved: results=" . (isset($response['data']['results']) ? count($response['data']['results']) : 0) . 
+          ", sql=" . (isset($response['data']['sql_query']) ? 'YES' : 'NO'),
+          'info'
+        );
+      }
+    }
+    
     // Check multiple possible cache flag locations
     if (isset($rawResult['cached']) && $rawResult['cached'] === true) {
       $response['cached'] = true;
@@ -480,7 +499,6 @@ class ResponseProcessor
       $response['from_cache'] = true;
     }
     
-    // TASK 5.1.6.12.1: Include source_attribution at top level for UI display
     // Extract from dataForFormatter or rawResult
     if (isset($dataForFormatter['source_attribution'])) {
       $response['source_attribution'] = $dataForFormatter['source_attribution'];

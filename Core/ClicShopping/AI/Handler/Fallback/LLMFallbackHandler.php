@@ -92,7 +92,7 @@ class LLMFallbackHandler
           'success' => false,
           'error' => 'empty_response',
           'answer' => $errorMessage,
-          'response' => $errorMessage,  // 🔧 TASK 2.17.2: Add 'response' for consistency
+          'response' => $errorMessage,  
           'text_response' => $errorMessage,
           'documents' => [],
           'audit_metadata' => [
@@ -124,7 +124,7 @@ class LLMFallbackHandler
         'success' => false,
         'error' => 'llm_failure',
         'answer' => $errorMessage,
-        'response' => $errorMessage,  // 🔧 TASK 2.17.2: Add 'response' for consistency
+        'response' => $errorMessage,  
         'text_response' => $errorMessage,
         'documents' => [],
         'audit_metadata' => [
@@ -189,7 +189,7 @@ class LLMFallbackHandler
     return [
       'success' => true,
       'answer' => $cleanedResponse,
-      'response' => $cleanedResponse,  // 🔧 TASK 2.17.2: Add 'response' for consistency
+      'response' => $cleanedResponse,  
       'text_response' => $cleanedResponse,
       'documents' => [], // LLM doesn't return documents
       'audit_metadata' => [

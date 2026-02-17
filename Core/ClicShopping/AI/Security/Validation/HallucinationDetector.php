@@ -22,7 +22,6 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
  * Provides utility methods for logging flagged answers and creating
  * insufficient information responses.
  *
- * 🔧 TASK 3.5.1.3: Implement hallucination flagging
  * 🔧 ARCHITECTURE REORGANIZATION: Moved from SubSemanticExecutor to Security/Validation
  * 🔧 RENAMED: HallucinationDetectionHelper → HallucinationDetector (consistent naming)
  *
@@ -53,7 +52,6 @@ class HallucinationDetector
   /**
    * Log flagged answer for review
    *
-   * 🔧 TASK 3.5.1.3: Log flagged answers
    *
    * Logs answers that have been flagged or rejected due to low grounding scores.
    * This creates an audit trail for systematic review and improvement.
@@ -220,8 +218,6 @@ class HallucinationDetector
   /**
    * Detect out-of-context queries using pure LLM
    *
-   * 🔧 TASK 13.1: Detect non-business queries using LLM (no patterns)
-   * 🔧 MIGRATION: Domain-agnostic implementation
    *
    * This method uses LLM to determine if a query is out-of-context for the
    * configured domain. It does NOT use pattern matching.
@@ -348,7 +344,6 @@ class HallucinationDetector
    * Creates a prompt that asks the LLM to determine if a query is relevant
    * to the configured domain context (or generic context if no domain).
    *
-   * 🔧 MIGRATION: Domain-agnostic implementation
    * - Uses DomainConfig::getActiveDomain() to check active domain
    * - Loads domain-specific prompt from language files when domain is active
    * - Uses generic prompt when no domain is configured
@@ -401,7 +396,6 @@ class HallucinationDetector
   /**
    * Validate and sanitize out-of-context detection result
    *
-   * 🔧 MIGRATION: Domain-agnostic implementation
    * - Uses DomainConfig::getActiveDomain() for default category
    * - Falls back to 'generic' when no domain is configured
    *
@@ -427,7 +421,6 @@ class HallucinationDetector
       : 1.0;
 
     // Validate detected_category
-    // 🔧 MIGRATION: Use DomainConfig to get active domain for default category
     $activeDomain = DomainConfig::getActivities();
     $defaultCategory = !empty($activeDomain) ? $activeDomain : 'generic';
     
@@ -461,7 +454,6 @@ class HallucinationDetector
   /**
    * Get default in-context result (safe fallback)
    *
-   * 🔧 MIGRATION: Domain-agnostic implementation
    * - Uses DomainConfig::getActiveDomain() for category
    * - Falls back to 'generic' when no domain is configured
    *
@@ -469,7 +461,6 @@ class HallucinationDetector
    */
   private function getDefaultInContextResult(): array
   {
-    // 🔧 MIGRATION: Use DomainConfig to get active domain
     $activeDomain = DomainConfig::getActivities();
     $defaultCategory = !empty($activeDomain) ? $activeDomain : 'generic';
     
@@ -487,7 +478,6 @@ class HallucinationDetector
   /**
    * Detect revenue bias hallucination
    *
-   * 🆕 TASK 17.2: Detect if translated query contains revenue/month/quarter
    * but original query does NOT (hallucination pattern)
    *
    * @param string $originalQuery Original user query

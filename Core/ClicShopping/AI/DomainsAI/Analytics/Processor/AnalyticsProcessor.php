@@ -38,7 +38,6 @@ class AnalyticsProcessor
   /**
    * Cached pattern bypass check result
    * 
-   * TASK 6.4.5: Optimize pattern bypass checks
    * Cache the result once in constructor instead of checking repeatedly
    * 
    * @var bool True if Pure LLM mode (patterns disabled), False if Pattern mode
@@ -55,7 +54,6 @@ class AnalyticsProcessor
     $this->logger = new SecurityLogger();
     $this->debug = $debug;
     
-    // TASK 6.4.5: Cache pattern bypass check once (optimization)
     // This eliminates 3 repeated checks throughout the class
     $this->usePureLlmMode = !defined('USE_PATTERN_BASED_DETECTION') || USE_PATTERN_BASED_DETECTION === 'False';
   }
@@ -80,7 +78,6 @@ class AnalyticsProcessor
       error_log("Query: '{$query}'");
     }
 
-    // TASK 6.4.5: Use cached pattern bypass check (optimization)
     if ($this->usePureLlmMode) {
       // Pure LLM mode: Return low confidence
       // LLM handles analytics classification through prompts

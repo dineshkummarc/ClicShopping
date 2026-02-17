@@ -139,7 +139,6 @@ class ResultValidator
 
       // Empty results are valid (no data matched the query)
       if (!empty($dataArray)) {
-        // TASK 1.2: Check for actual numeric values (not just placeholder text)
         // BUT allow results without numeric data if they have a valid interpretation
         $hasNumericData = $this->hasNumericData($dataArray);
         $hasInterpretation = isset($result['interpretation']) && !empty($result['interpretation']) ||

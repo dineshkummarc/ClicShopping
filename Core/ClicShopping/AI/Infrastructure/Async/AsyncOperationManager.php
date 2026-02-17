@@ -125,7 +125,6 @@ class AsyncOperationManager
   /**
    * Log timeout event
    *
-   * 🔧 TASK 4.3: Enhanced timeout logging with degradation details
    *
    * @param string $operationName Name of the operation that timed out
    * @param float $duration Actual duration in milliseconds
@@ -152,7 +151,6 @@ class AsyncOperationManager
   /**
    * Log error event
    *
-   * 🔧 TASK 4.3: Enhanced error logging with degradation details
    *
    * @param string $operationName Name of the operation that failed
    * @param \Exception $exception The exception that was thrown
@@ -179,7 +177,6 @@ class AsyncOperationManager
   /**
    * Log degradation event for monitoring and alerting
    *
-   * 🔧 TASK 4.3: Structured logging for graceful degradation events
    *
    * This method logs degradation events in a structured format that can be:
    * - Monitored for alerting (e.g., high degradation rate)

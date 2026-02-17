@@ -58,12 +58,10 @@ class ClassificationCache
    */
   public function __construct(int $lifetime = 2592000, bool $debug = false)
   {
-    $this->cacheEnabled = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') && 
-                          CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
+    $this->cacheEnabled = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER') &&  CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True';
     $this->cacheDir = CLICSHOPPING::BASE_DIR . 'Work/Cache/Rag/Classification/';
     $this->lifetime = $lifetime;
-    $this->debug = $debug || (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-                              CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True');
+    $this->debug = $debug || (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True');
 
     // Check cache configuration
     $this->checkClassificationCache();
@@ -102,7 +100,56 @@ class ClassificationCache
   }
 
   /**
+   * Clears the entire classification cache.
+   *
+
+   *
+   * @return bool True on success, false on failure.
+   */
+  public function clearCache(): bool
+  {
+    if (!is_dir($this->cacheDir)) {
+
+      if ($this->debug) {
+        error_log(sprintf(
+          "[ClassificationCache] Cache CLEAR - directory does not exist: %s",
+          $this->cacheDir
+        ));
+      }
+      return true; // Nothing to clear
+    }
+
+    $files = glob($this->cacheDir . '*.json');
+    $success = true;
+    $count = 0;
+    $failed = 0;
+
+    foreach ($files as $file) {
+      if (@unlink($file)) {
+        $count++;
+      } else {
+        $success = false;
+        $failed++;
+      }
+    }
+
+    if ($this->debug) {
+      error_log(sprintf(
+        "[ClassificationCache] Cache CLEARED - directory: %s, files_deleted: %d, files_failed: %d, success: %s",
+        $this->cacheDir,
+        $count,
+        $failed,
+        $success ? 'true' : 'false'
+      ));
+    }
+
+    return $success;
+  }
+
+  /**
    * Retrieves a cached classification for a given query.
+   *
+
    *
    * @param string $query Original query.
    * @param string|null $translatedQuery Translated query (English).
@@ -111,26 +158,38 @@ class ClassificationCache
   public function getCachedClassification(string $query, ?string $translatedQuery = null): ?array
   {
     if (!$this->cacheEnabled) {
+
+      if ($this->debug) {
+        error_log(sprintf(
+          "[ClassificationCache] Cache DISABLED - query: \"%s\"",
+          substr($query, 0, 50)
+        ));
+      }
       return null;
     }
 
     $file = $this->getCacheFile($query, $translatedQuery);
-    
+    $cacheKey = basename($file, '.json');
+
     if (file_exists($file)) {
       $data = json_decode(file_get_contents($file), true);
 
       // Check if the cache is expired
       $age = time() - ($data['timestamp'] ?? 0);
       if ($age < $this->lifetime) {
+
         if ($this->debug) {
           error_log(sprintf(
-            "[ClassificationCache] Cache HIT for query: \"%s\" (age: %ds, file: %s)",
+            "[ClassificationCache] Cache HIT - query: \"%s\", type: %s, confidence: %.2f, age: %ds/%ds, key: %s",
             substr($query, 0, 50),
+            $data['type'] ?? 'unknown',
+            $data['confidence'] ?? 0.0,
             $age,
-            basename($file)
+            $this->lifetime,
+            $cacheKey
           ));
         }
-        
+
         // Return classification result
         return [
           'type' => $data['type'] ?? 'semantic',
@@ -145,71 +204,30 @@ class ClassificationCache
 
       // If expired, delete the file to trigger a new classification
       @unlink($file);
-      
+
+
       if ($this->debug) {
         error_log(sprintf(
-          "[ClassificationCache] Cache EXPIRED for query: \"%s\" (age: %ds > TTL: %ds)",
+          "[ClassificationCache] Cache EXPIRED - query: \"%s\", age: %ds > TTL: %ds, key: %s, file deleted",
           substr($query, 0, 50),
           $age,
-          $this->lifetime
+          $this->lifetime,
+          $cacheKey
         ));
       }
     } else {
+
       if ($this->debug) {
         error_log(sprintf(
-          "[ClassificationCache] Cache MISS for query: \"%s\" (file: %s)",
+          "[ClassificationCache] Cache MISS - query: \"%s\", key: %s, file: %s",
           substr($query, 0, 50),
+          $cacheKey,
           basename($file)
         ));
       }
     }
 
     return null;
-  }
-
-  /**
-   * Stores a classification result in the cache.
-   *
-   * @param string $query Original query.
-   * @param string|null $translatedQuery Translated query (English).
-   * @param array $classification Classification result.
-   */
-  public function cacheClassification(string $query, ?string $translatedQuery, array $classification): void
-  {
-    if (!$this->cacheEnabled) {
-      return;
-    }
-
-    $file = $this->getCacheFile($query, $translatedQuery);
-    $data = [
-      'query' => $query,
-      'translated_query' => $translatedQuery,
-      'type' => $classification['type'] ?? 'semantic',
-      'confidence' => $classification['confidence'] ?? 0.5,
-      'reasoning' => $classification['reasoning'] ?? [],
-      'detection_method' => $classification['detection_method'] ?? 'llm',
-      'sub_types' => $classification['sub_types'] ?? [],
-      'timestamp' => time()
-    ];
-
-    $success = file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT));
-    
-    if ($this->debug) {
-      if ($success !== false) {
-        error_log(sprintf(
-          "[ClassificationCache] Cached classification for query: \"%s\" (type: %s, confidence: %.2f, file: %s)",
-          substr($query, 0, 50),
-          $data['type'],
-          $data['confidence'],
-          basename($file)
-        ));
-      } else {
-        error_log(sprintf(
-          "[ClassificationCache] ERROR: Failed to cache classification for query: \"%s\"",
-          substr($query, 0, 50)
-        ));
-      }
-    }
   }
 
   /**
@@ -229,37 +247,65 @@ class ClassificationCache
   }
 
   /**
-   * Clears the entire classification cache.
+   * Stores a classification result in the cache.
    *
-   * @return bool True on success, false on failure.
+
+   *
+   * @param string $query Original query.
+   * @param string|null $translatedQuery Translated query (English).
+   * @param array $classification Classification result.
    */
-  public function clearCache(): bool
+  public function cacheClassification(string $query, ?string $translatedQuery, array $classification): void
   {
-    if (!is_dir($this->cacheDir)) {
-      return true; // Nothing to clear
-    }
+    if (!$this->cacheEnabled) {
 
-    $files = glob($this->cacheDir . '*.json');
-    $success = true;
-    $count = 0;
-
-    foreach ($files as $file) {
-      if (@unlink($file)) {
-        $count++;
-      } else {
-        $success = false;
+      if ($this->debug) {
+        error_log(sprintf(
+          "[ClassificationCache] Cache DISABLED - not storing classification for query: \"%s\"",
+          substr($query, 0, 50)
+        ));
       }
+      return;
     }
+
+    $file = $this->getCacheFile($query, $translatedQuery);
+    $cacheKey = basename($file, '.json');
+
+    $data = [
+      'query' => $query,
+      'translated_query' => $translatedQuery,
+      'type' => $classification['type'] ?? 'semantic',
+      'confidence' => $classification['confidence'] ?? 0.5,
+      'reasoning' => $classification['reasoning'] ?? [],
+      'detection_method' => $classification['detection_method'] ?? 'llm',
+      'sub_types' => $classification['sub_types'] ?? [],
+      'timestamp' => time()
+    ];
+
+    $success = file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT));
+
 
     if ($this->debug) {
-      error_log(sprintf(
-        "[ClassificationCache] Cleared %d cache files from %s",
-        $count,
-        $this->cacheDir
-      ));
+      if ($success !== false) {
+        error_log(sprintf(
+          "[ClassificationCache] Cache STORED - query: \"%s\", type: %s, confidence: %.2f, method: %s, key: %s, file: %s, size: %d bytes",
+          substr($query, 0, 50),
+          $data['type'],
+          $data['confidence'],
+          $data['detection_method'],
+          $cacheKey,
+          basename($file),
+          $success
+        ));
+      } else {
+        error_log(sprintf(
+          "[ClassificationCache] Cache STORAGE FAILED - query: \"%s\", key: %s, file: %s, error: failed to write file",
+          substr($query, 0, 50),
+          $cacheKey,
+          basename($file)
+        ));
+      }
     }
-
-    return $success;
   }
 
   /**

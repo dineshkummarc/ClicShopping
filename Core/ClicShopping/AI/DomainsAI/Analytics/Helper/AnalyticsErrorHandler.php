@@ -204,7 +204,6 @@ class AnalyticsErrorHandler
     $CLICSHOPPING_Language = Registry::get('Language');
     DomainConfig::loadLanguageFile('rag_error_handler');
     
-    // 🔧 TASK 4.7 (2025-12-19): Enhanced message asking for clarification
     // Base message - more conversational and asking for clarification
     $message = CLICSHOPPING::getDef('text_empty_results_base');
 
@@ -241,7 +240,6 @@ class AnalyticsErrorHandler
         $message .= CLICSHOPPING::getDef('text_empty_results_customer_period');
         $message .= CLICSHOPPING::getDef('text_empty_results_customer_specific');
       }
-      // Reference/SKU/Model queries (new for TASK 4.7)
       elseif (stripos($sql, 'products_model') !== false || 
               stripos($question, 'référence') !== false || 
               stripos($question, 'sku') !== false ||

@@ -48,8 +48,6 @@ class ThresholdManager
     self::initLogger();
     
     try {
-      // 🔧 TASK 4.4.1 PHASE 9: Migrated to DoctrineOrm
-      
       // Get classification-related feedbacks from last 7 days
       $sql = "SELECT f.id,
                      f.interaction_id,
@@ -223,8 +221,6 @@ class ThresholdManager
   private static function saveThresholdHistory(int $threshold, float $errorRate): void
   {
     try {
-      // 🔧 TASK 4.4.1 PHASE 9: Migrated to DoctrineOrm
-      
       // Create history table if it doesn't exist
       DoctrineOrm::execute("
         CREATE TABLE IF NOT EXISTS rag_threshold_history (
@@ -267,8 +263,6 @@ class ThresholdManager
     self::initLogger();
     
     try {
-      // 🔧 TASK 4.4.1 PHASE 9: Migrated to DoctrineOrm
-      
       // Get last threshold from history
       $sql = "SELECT threshold_value, error_rate 
               FROM rag_threshold_history 
@@ -329,8 +323,6 @@ class ThresholdManager
     self::initLogger();
     
     try {
-      // 🔧 TASK 4.4.1 PHASE 9: Migrated to DoctrineOrm
-      
       $sql = "SELECT 
                 threshold_value,
                 error_rate,

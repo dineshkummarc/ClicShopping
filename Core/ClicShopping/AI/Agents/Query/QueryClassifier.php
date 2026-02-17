@@ -29,7 +29,6 @@ use ClicShopping\AI\DomainsAI\DomainRegistry;
  *
  * All classification logic should be maintained here to avoid duplication and inconsistencies.
  * 
- * TASK 2.10.2 (2025-12-26): Added ClassificationCache integration for performance optimization
  */
 
 class QueryClassifier
@@ -59,7 +58,6 @@ class QueryClassifier
     $this->logger = new SecurityLogger();
     $this->debug = $debug;
     
-    // TASK 2.10.2: Initialize ClassificationCache
     if (!Registry::exists('ClassificationCache')) {
       Registry::set('ClassificationCache', new ClassificationCache(2592000, $this->debug));
     }
@@ -75,8 +73,6 @@ class QueryClassifier
   /**
    * Classify a query into one of: analytics, semantic, web_search, hybrid
    * 
-   * 🔧 TASK 4.3 (2025-12-11): Enhanced fallback logic
-   * 🔧 TASK 2026-01-09: Pure LLM mode with optional pattern fallback
    * 
    * CLASSIFICATION FLOW (Pure LLM Mode):
    * 1. Use LLM classification for all queries (default)
@@ -98,10 +94,28 @@ class QueryClassifier
    *
    * @param string $query Query to classify (can be in any language)
    * @param string|null $translatedQuery Optional pre-translated query (English)
+   * @param array|null $conversationContext Optional conversation context for disambiguation
    * @return array Classification result with type, confidence, and reasoning
    */
-  public function classify(string $query, ?string $translatedQuery = null): array
+  public function classify(string $query, ?string $translatedQuery = null, ?array $conversationContext = null): array
   {
+    $classificationStartTime = microtime(true);
+    
+    if ($this->debug) {
+      $this->logger->logStructured(
+        'info',
+        'QueryClassifier',
+        'classification_start',
+        [
+          'query' => substr($query, 0, 100),
+          'translated_query' => $translatedQuery ? substr($translatedQuery, 0, 100) : null,
+          'has_conversation_context' => $conversationContext !== null,
+          'context_turns' => $conversationContext ? count($conversationContext) : 0,
+          'timestamp' => date('Y-m-d H:i:s')
+        ]
+      );
+    }
+    
     // Try HybridPreFilter fallback if enabled and translated query available (load dynamically)
     if (self::USE_HYBRID_PATTERN_FALLBACK && $translatedQuery !== null) {
       if ($this->debug) {
@@ -111,8 +125,7 @@ class QueryClassifier
         );
       }
       
-      // Load HybridPreFilter dynamically from active domain (domain-agnostic approach)
-      // TASK 2026-01-23: Use DomainRegistry for domain-agnostic pattern loading
+      // Load HybridPreFilter dynamically from active domain (domain-agnostic approach)   
       $domainApp = DomainRegistry::getInstance()->getActiveApp();
       if ($domainApp && method_exists($domainApp, 'getHybridPreFilterClass')) {
         $hybridPreFilterClass = $domainApp->getHybridPreFilterClass();
@@ -122,7 +135,7 @@ class QueryClassifier
           $hybridCheck = $hybridPreFilterClass::preFilter($translatedQuery);
           
           if ($hybridCheck !== null) {
-            // Pattern detected hybrid query
+            // Pattern detected hybrid query     
             if ($this->debug) {
               $this->logger->logStructured(
                 'info',
@@ -135,6 +148,9 @@ class QueryClassifier
                   'confidence' => $hybridCheck['confidence'] ?? 0.90,
                   'detection_method' => 'pattern_fallback',
                   'domain' => $domainApp->getDomainId() ?? 'unknown',
+                  'used_context' => false,
+                  'context_influence' => null,
+                  'execution_time_ms' => round((microtime(true) - $classificationStartTime) * 1000, 2),
                   'note' => 'Pattern fallback detected hybrid query (no LLM call)'
                 ]
               );
@@ -166,6 +182,32 @@ class QueryClassifier
     
     $result = $this->classifyWithLLM($query, $translatedQuery);
     $result['detection_method'] = 'llm';
+    
+    
+    if ($this->debug) {
+      $executionTime = microtime(true) - $classificationStartTime;
+      
+      $this->logger->logStructured(
+        'info',
+        'QueryClassifier',
+        'classification_complete',
+        [
+          'query' => substr($query, 0, 100),
+          'type' => $result['type'],
+          'confidence' => $result['confidence'],
+          'reasoning' => $result['reasoning'] ?? [],
+          'sub_types' => $result['sub_types'] ?? [],
+          'detection_method' => $result['detection_method'],
+          'used_context' => $conversationContext !== null,
+          'context_turns_available' => $conversationContext ? count($conversationContext) : 0,
+          'context_influence' => $conversationContext !== null ? 'available_but_not_used_for_pure_classification' : null,
+          'execution_time_ms' => round($executionTime * 1000, 2),
+          'timestamp' => date('Y-m-d H:i:s'),
+          'note' => 'Pure LLM classification - context not used for initial classification'
+        ]
+      );
+    }
+    
     return $result;
   }
 
@@ -220,8 +262,6 @@ class QueryClassifier
   /**
    * Classify query using LLM fallback when patterns fail
    * 
-   * 🔧 TASK 4.5.5 (2025-12-11): Updated to handle new array return format from checkSemantics
-   * 🔧 TASK 2.10.2 (2025-12-26): Added ClassificationCache integration for performance optimization
    * 
    * This method uses ClassificationEngine::checkSemantics() which calls the LLM
    * to determine if a query is 'analytics', 'semantic', 'hybrid', or 'web_search'.
@@ -242,7 +282,6 @@ class QueryClassifier
     // Use translated query if available, otherwise use original
     $queryToClassify = $translatedQuery ?? $query;
     
-    // TASK 2.10.2: Check cache first
     if ($this->classificationCache !== null) {
       $cached = $this->classificationCache->getCachedClassification($query, $translatedQuery);
       
@@ -256,7 +295,9 @@ class QueryClassifier
               'query' => substr($queryToClassify, 0, 50),
               'type' => $cached['type'],
               'confidence' => $cached['confidence'],
-              'cache_age' => $cached['cache_age'] ?? 'unknown',
+              'reasoning' => $cached['reasoning'] ?? [],
+              'cache_age_seconds' => $cached['cache_age'] ?? 'unknown',
+              'detection_method' => 'llm_cached',
               'note' => 'Returned from cache (no LLM call)'
             ]
           );
@@ -288,9 +329,13 @@ class QueryClassifier
       );
     }
     
+    $llmStartTime = microtime(true);
+    
     try {
       // Use ClassificationEngine::checkSemantics() which returns array with type, confidence, reasoning
       $classificationResult = ClassificationEngine::checkSemantics($queryToClassify);
+      
+      $llmExecutionTime = microtime(true) - $llmStartTime;
       
       // Extract type
       $type = $classificationResult['type'] ?? 'semantic';
@@ -298,10 +343,20 @@ class QueryClassifier
       // Validate response (now supports 4 categories)
       $validTypes = ['analytics', 'semantic', 'hybrid', 'web_search'];
       if (!in_array($type, $validTypes)) {
+        
         if ($this->debug) {
-          $this->logger->logSecurityEvent(
-            "LLM returned invalid type '{$type}', defaulting to semantic",
-            'warning'
+          $this->logger->logStructured(
+            'warning',
+            'QueryClassifier',
+            'invalid_classification_type',
+            [
+              'query' => substr($queryToClassify, 0, 50),
+              'invalid_type' => $type,
+              'valid_types' => $validTypes,
+              'defaulting_to' => 'semantic',
+              'llm_response' => $classificationResult,
+              'note' => 'LLM returned invalid type, defaulting to semantic'
+            ]
           );
         }
         $type = 'semantic';
@@ -316,24 +371,26 @@ class QueryClassifier
         'sub_types' => $classificationResult['sub_types'] ?? []
       ];
       
-      // TASK 2.10.2: Cache the result for future queries
       if ($this->classificationCache !== null) {
         $this->classificationCache->cacheClassification($query, $translatedQuery, $result);
       }
       
-      // Log classification with confidence and reasoning
       if ($this->debug) {
         $this->logger->logStructured(
           'info',
           'QueryClassifier',
           'llm_classification',
           [
-            'query' => $queryToClassify,
+            'query' => substr($queryToClassify, 0, 100),
             'type' => $type,
             'confidence' => $classificationResult['confidence'] ?? 0.7,
             'reasoning' => $classificationResult['reasoning'] ?? 'N/A',
             'sub_types' => $classificationResult['sub_types'] ?? [],
-            'cached' => 'yes'
+            'llm_execution_time_ms' => round($llmExecutionTime * 1000, 2),
+            'cached' => 'yes',
+            'detection_method' => 'llm',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'note' => 'Fresh LLM classification - result cached for future queries'
           ]
         );
       }
@@ -341,10 +398,25 @@ class QueryClassifier
       return $result;
       
     } catch (\Exception $e) {
+      $llmExecutionTime = microtime(true) - $llmStartTime;
+      
       if ($this->debug) {
-        $this->logger->logSecurityEvent(
-          "LLM fallback failed: {$e->getMessage()}",
-          'error'
+        $this->logger->logStructured(
+          'error',
+          'QueryClassifier',
+          'llm_classification_error',
+          [
+            'query' => substr($queryToClassify, 0, 100),
+            'error_message' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'error_file' => $e->getFile(),
+            'error_line' => $e->getLine(),
+            'llm_execution_time_ms' => round($llmExecutionTime * 1000, 2),
+            'defaulting_to' => 'semantic',
+            'default_confidence' => 0.5,
+            'timestamp' => date('Y-m-d H:i:s'),
+            'note' => 'LLM fallback failed, defaulting to semantic'
+          ]
         );
       }
       

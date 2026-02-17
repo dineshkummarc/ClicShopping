@@ -10,7 +10,7 @@
 
 namespace ClicShopping\AI\Agents\Memory;
 
-
+use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
@@ -47,8 +47,7 @@ class EntityTypeRegistry
   private function __construct()
   {
     $this->logger = new SecurityLogger();
-    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-                   CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
+    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
     $this->prefix = CLICSHOPPING::getConfig('db_table_prefix');
     
     // Initialize MultiDBRAGManager for accessing embedding tables
@@ -77,6 +76,20 @@ class EntityTypeRegistry
   }
 
   /**
+   * Get all entity types
+   *
+   * @return array List of entity types
+   */
+  public function getAllEntityTypes(): array
+  {
+    if (!$this->initialized) {
+      $this->initialize();
+    }
+
+    return $this->entityTypes;
+  }
+
+  /**
    * Initialize entity types from database
    *
    * @param bool $forceRefresh Force refresh from database
@@ -95,7 +108,7 @@ class EntityTypeRegistry
       // Build entity type mappings
       foreach ($embeddingTables as $tableName) {
         $entityType = $this->extractEntityTypeFromTable($tableName);
-        
+
         if ($entityType !== null) {
           $this->entityTypes[] = $entityType;
           $this->tableToEntityMap[$tableName] = $entityType;
@@ -110,7 +123,7 @@ class EntityTypeRegistry
 
       if ($this->debug) {
         $this->logger->logSecurityEvent(
-          "EntityTypeRegistry initialized with " . count($this->entityTypes) . " entity types: " . 
+          "EntityTypeRegistry initialized with " . count($this->entityTypes) . " entity types: " .
           implode(', ', $this->entityTypes),
           'info'
         );
@@ -142,7 +155,7 @@ class EntityTypeRegistry
       if ($this->ragManager !== null) {
         // Use MultiDBRAGManager's knownEmbeddingTable() method
         $allTables = $this->ragManager->knownEmbeddingTable(true);
-        
+
         // Filter out system tables
         foreach ($allTables as $tableName) {
           if (!$this->isSystemTable($tableName)) {
@@ -174,6 +187,30 @@ class EntityTypeRegistry
   }
 
   /**
+   * Check if table is a system table (should be excluded)
+   *
+   * @param string $tableName Table name
+   * @return bool True if system table
+   */
+  private function isSystemTable(string $tableName): bool
+  {
+    $systemTables = [
+      'rag_conversation_memory_embedding',
+      'rag_correction_patterns_embedding',
+      'rag_web_cache_embedding',
+      'rag_feedback_embedding',
+    ];
+
+    foreach ($systemTables as $systemTable) {
+      if (str_contains($tableName, $systemTable)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Fallback: Discover embedding tables directly from database
    *
    * Only used if MultiDBRAGManager is not available
@@ -185,16 +222,13 @@ class EntityTypeRegistry
     $tables = [];
 
     try {
-      // 🔧 TASK 4.4.1 PHASE 2: Migrated to use DoctrineOrm
       $pattern = $this->prefix . '%_embedding';
-      
       $sql = "SHOW TABLES LIKE :pattern";
-      $results = \ClicShopping\AI\Infrastructure\Orm\DoctrineOrm::select($sql, ['pattern' => $pattern]);
+      $results = DoctrineOrm::select($sql, ['pattern' => $pattern]);
 
       foreach ($results as $row) {
         // Get the table name from the result (key varies by database)
         $tableName = reset($row); // Get first value from array
-        
         // Exclude system tables
         if (!$this->isSystemTable($tableName)) {
           $tables[] = $tableName;
@@ -230,40 +264,16 @@ class EntityTypeRegistry
   {
     // Remove prefix
     $withoutPrefix = str_replace($this->prefix, '', $tableName);
-    
+
     // Remove '_embedding' suffix
     $entityType = str_replace('_embedding', '', $withoutPrefix);
-    
+
     // Validate entity type
     if (empty($entityType) || strlen($entityType) < 2) {
       return null;
     }
 
     return $entityType;
-  }
-
-  /**
-   * Check if table is a system table (should be excluded)
-   *
-   * @param string $tableName Table name
-   * @return bool True if system table
-   */
-  private function isSystemTable(string $tableName): bool
-  {
-    $systemTables = [
-      'rag_conversation_memory_embedding',
-      'rag_correction_patterns_embedding',
-      'rag_web_cache_embedding',
-      'rag_feedback_embedding',
-    ];
-
-    foreach ($systemTables as $systemTable) {
-      if (str_contains($tableName, $systemTable)) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   /**
@@ -295,7 +305,7 @@ class EntityTypeRegistry
 
       foreach ($filteredTables as $tableName) {
         $entityType = $this->extractEntityTypeFromTable($tableName);
-        
+
         if ($entityType !== null) {
           $this->entityTypes[] = $entityType;
           $this->tableToEntityMap[$tableName] = $entityType;
@@ -318,24 +328,10 @@ class EntityTypeRegistry
         "Error in fallback initialization: " . $e->getMessage(),
         'error'
       );
-      
+
       // Absolute last resort: empty initialization
       $this->initialized = true;
     }
-  }
-
-  /**
-   * Get all entity types
-   *
-   * @return array List of entity types
-   */
-  public function getAllEntityTypes(): array
-  {
-    if (!$this->initialized) {
-      $this->initialize();
-    }
-
-    return $this->entityTypes;
   }
 
   /**

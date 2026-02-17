@@ -11,9 +11,10 @@
 
 namespace ClicShopping\AI\Security;
 
-use ClicShopping\AI\Infrastructure\Cache\Cache;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\AI\Infrastructure\Cache\Cache;
+use ClicShopping\AI\Infrastructure\Metrics\SecurityStatistics;
 
 /**
  * Class SecurityLogger
@@ -24,11 +25,12 @@ use ClicShopping\OM\CLICSHOPPING;
  */
 class SecurityLogger
 {
-    private $logFile;
-    private $maxLogSize;
-    private $logRotations;
-    private $logLevel;
-    private $db;
+    private mixed $logFile;
+    private mixed $maxLogSize;
+    private mixed $logRotations;
+    private mixed $logLevel;
+    private mixed $db;
+    private mixed $stats;
     
     // Performance optimization: Cache log level numeric values
     private static $levelCache = [
@@ -74,6 +76,8 @@ class SecurityLogger
         if ($bufferEnabled) {
             register_shutdown_function([$this, 'flushBuffer']);
         }
+	
+	$this->stats = new SecurityStatistics();
     }
 
     /**
@@ -528,20 +532,19 @@ class SecurityLogger
     public function generateReport(string $period = 'daily', ?string $startDate = null, ?string $endDate = null): array
     {
         // Use SecurityStatistics for comprehensive reporting
-        $stats = new \ClicShopping\AI\Infrastructure\Metrics\SecurityStatistics();
         
         switch ($period) {
             case 'daily':
-                return $stats->generateDailyReport($startDate);
+                return 	$this->stats->generateDailyReport($startDate);
             case 'weekly':
-                return $stats->generateWeeklyReport($startDate);
+                return 	$this->stats->generateWeeklyReport($startDate);
             case 'monthly':
                 // Monthly is 30 days
                 $start = $startDate ?? date('Y-m-d', strtotime('-30 days'));
                 $end = $endDate ?? date('Y-m-d');
-                return $stats->generateWeeklyReport($start); // Use weekly format for monthly
+                return 	$this->stats->generateWeeklyReport($start); // Use weekly format for monthly
             default:
-                return $stats->generateDailyReport($startDate);
+                return 	$this->stats->generateDailyReport($startDate);
         }
     }
     
@@ -556,8 +559,7 @@ class SecurityLogger
      */
     public function calculateDetectionRates(string $startDate, string $endDate): array
     {
-        $stats = new \ClicShopping\AI\Infrastructure\Metrics\SecurityStatistics();
-        return $stats->calculateDetectionRates($startDate, $endDate);
+        return 	$this->stats->calculateDetectionRates($startDate, $endDate);
     }
     
     /**
@@ -571,8 +573,7 @@ class SecurityLogger
      */
     public function calculateFalsePositiveRates(string $startDate, string $endDate): array
     {
-        $stats = new \ClicShopping\AI\Infrastructure\Metrics\SecurityStatistics();
-        return $stats->calculateFalsePositiveRates($startDate, $endDate);
+        return 	$this->stats->calculateFalsePositiveRates($startDate, $endDate);
     }
     
     /**
@@ -585,8 +586,7 @@ class SecurityLogger
      */
     public function generateTrendAnalysis(int $days = 30): array
     {
-        $stats = new \ClicShopping\AI\Infrastructure\Metrics\SecurityStatistics();
-        return $stats->generateTrendAnalysis($days);
+        return 	$this->stats->generateTrendAnalysis($days);
     }
     
     /**
@@ -599,8 +599,7 @@ class SecurityLogger
      */
     public function getComprehensiveMetrics(int $days = 7): array
     {
-        $stats = new \ClicShopping\AI\Infrastructure\Metrics\SecurityStatistics();
-        return $stats->getComprehensiveMetrics($days);
+        return 	$this->stats->getComprehensiveMetrics($days);
     }
     
     /**
@@ -613,8 +612,7 @@ class SecurityLogger
      */
     public function getSecurityHealthScore(int $days = 7): array
     {
-        $stats = new \ClicShopping\AI\Infrastructure\Metrics\SecurityStatistics();
-        return $stats->getSecurityHealthScore($days);
+        return 	$this->stats->getSecurityHealthScore($days);
     }
     
     /**

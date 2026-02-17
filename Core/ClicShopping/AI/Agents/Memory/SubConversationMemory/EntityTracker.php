@@ -81,15 +81,12 @@ class EntityTracker
   /**
    * Get the last entity
    * 
-   * TASK 2.8 FIX: Added database fallback to support cross-request entity retrieval.
-   * TASK 2.18 FIX: Check for explicit clear (-1) to prevent database fallback after context switch.
    * First checks in-memory (fast path), then queries database if needed.
    *
    * @return array|null Array with 'id' and 'type', or null if no entity
    */
   public function getLastEntity(): ?array
   {
-    // TASK 2.18: Check if entity was explicitly cleared (context switch)
     // -1 is sentinel value meaning "cleared, don't use database fallback"
     if ($this->lastEntityId === -1) {
       return null;
@@ -103,14 +100,12 @@ class EntityTracker
       ];
     }
 
-    // TASK 2.8 FIX: Fallback to database query for cross-request persistence
     // This enables contextual queries to work across HTTP requests
-    // 🔧 TASK 4.4.1 PHASE 2: Use DoctrineOrm instead of direct DB access
+    
     try {
       // Get table prefix from configuration
       $prefix = CLICSHOPPING::getConfig('db_table_prefix', 'DB');
       
-      // TASK 2.8 FIX: Use rag_conversation_memory_embedding table which stores entity_id
       // This table is used by LongTermMemoryManager to store interactions with embeddings
       $tableName = $prefix . 'rag_conversation_memory_embedding';
       
@@ -171,7 +166,6 @@ class EntityTracker
 
   /**
    * Get the last tracked entity for contextual reference resolution.
-   * TASK 4.4.2.7: Single source of truth for entity references.
    * 
    * This method provides the last entity in a format suitable for ContextResolver,
    * eliminating the need for ContextResolver to determine "last entity" itself.
@@ -231,7 +225,6 @@ class EntityTracker
 
   /**
    * Clear the last entity
-   * TASK 2.18: Set to explicit null to prevent database fallback
    *
    * @return void
    */

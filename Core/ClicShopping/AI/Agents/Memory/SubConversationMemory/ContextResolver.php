@@ -37,12 +37,11 @@ class ContextResolver
   private int $languageId;
   private int $maxContextWindow = 5; // Max messages to analyze for context
   private EntityTypeRegistry $entityRegistry;
-  private ?EntityTracker $entityTracker = null; // TASK 4.4.2.7: Injected dependency
+  private ?EntityTracker $entityTracker = null; 
   
   /**
    * Cached pattern bypass check result
    * 
-   * TASK 6.4.5: Optimize pattern bypass checks
    * Cache the result once in constructor instead of checking repeatedly
    * 
    * @var bool True if Pure LLM mode (patterns disabled), False if Pattern mode
@@ -51,7 +50,6 @@ class ContextResolver
 
   /**
    * Constructor
-   * TASK 4.4.2.7: Added EntityTracker dependency injection
    *
    * @param int $languageId Language ID for pattern selection
    * @param bool $debug Enable debug logging
@@ -63,9 +61,8 @@ class ContextResolver
     $this->debug = $debug;
     $this->logger = new SecurityLogger();
     $this->entityRegistry = EntityTypeRegistry::getInstance();
-    $this->entityTracker = $entityTracker; // TASK 4.4.2.7: Store injected tracker
+    $this->entityTracker = $entityTracker; 
     
-    // TASK 6.4.5: Cache pattern bypass check once (optimization)
     // This eliminates 8 repeated checks throughout the class
     $this->usePureLlmMode = !defined('USE_PATTERN_BASED_DETECTION') || USE_PATTERN_BASED_DETECTION === 'False';
 
@@ -81,7 +78,6 @@ class ContextResolver
   /**
    * Detect contextual references in a query
    * 
-   * TASK 6.4.8.1 EXTENSION: Pattern-based reference detection disabled in Pure LLM mode
    * 
    * Examples of contextual references:
    * - "it", "this", "that" (demonstrative pronouns)
@@ -106,7 +102,6 @@ class ContextResolver
    */
   public function detectContextualReferences(string $query): bool
   {
-    // TASK 6.4.5: Use cached pattern bypass check (optimization)
     // In Pure LLM mode, patterns should NOT be used for contextual reference detection
     if ($this->usePureLlmMode) {
       // Pure LLM mode: Pattern-based contextual reference detection is DISABLED
@@ -146,7 +141,6 @@ class ContextResolver
   /**
    * Detect implicit contextual queries (queries that need context but don't have pronouns)
    * 
-   * TASK 6.4.8.1: Pattern-based implicit context detection disabled in Pure LLM mode
    * 
    * Examples of implicit contextual queries:
    * - "compare avec les concurrents" (needs product from previous query)
@@ -166,17 +160,16 @@ class ContextResolver
    * Query must be translated to English before calling this method.
    *
    * @deprecated Pattern-based detection will be removed in Q2 2026. See LLM-based alternative
-   *             in kiro_documentation/2025_12_22/implicit_context_pattern_removal.md
-   * @see kiro_documentation/2025_12_22/IMPLICIT_CONTEXT_PATTERN_ISSUE.md
-   * @see kiro_documentation/2025_12_22/implicit_context_pattern_removal.md
-   * @see kiro_documentation/2026_01_02/pattern_removal_roadmap.md (Phase 4.5)
+   *             in doc/2025_12_22/implicit_context_pattern_removal.md
+   * @see doc/2025_12_22/IMPLICIT_CONTEXT_PATTERN_ISSUE.md
+   * @see doc/2025_12_22/implicit_context_pattern_removal.md
+   * @see doc/2026_01_02/pattern_removal_roadmap.md (Phase 4.5)
    *
    * @param string $query Query to analyze (MUST BE IN ENGLISH)
    * @return bool True if implicit context needed
    */
   public function detectImplicitContextualQuery(string $query): bool
   {
-    // TASK 6.4.5: Use cached pattern bypass check (optimization)
     // In Pure LLM mode, patterns should NOT be used for implicit context detection
     if ($this->usePureLlmMode) {
       // Pure LLM mode: Pattern-based implicit context detection is DISABLED
@@ -223,7 +216,6 @@ class ContextResolver
    * 
    * Translation from user's language to English must happen BEFORE this method.
    * 
-   * TASK 4.4.2.7: Now uses last_entity_tracked from EntityTracker (single source of truth)
    *
    * @param string $query Query with references (MUST BE IN ENGLISH)
    * @param array $entities Extracted entities from context
@@ -233,7 +225,6 @@ class ContextResolver
   {
     $resolvedQuery = $query;
 
-    // TASK 4.4.2.7: Use last_entity_tracked from EntityTracker (single source of truth)
     $lastEntityRef = $entities['last_entity_tracked'] ?? null;
 
     // Replace demonstrative pronouns (ENGLISH ONLY)

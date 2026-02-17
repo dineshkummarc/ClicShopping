@@ -50,7 +50,6 @@ class ClassificationEngine
   /**
    * Fix malformed JSON array closing
    * 
-   * ✅ TASK 5.2.1.1: LLMs sometimes close arrays with }] instead of ]]
    * This causes JSON parsing to fail for hybrid queries
    * 
    * Uses ClassificationEnginePatterns for the fix logic.
@@ -83,7 +82,6 @@ class ClassificationEngine
   /**
    * Classifies query using GPT with improved prompt and JSON response
    * 
-   * 🔧 TASK 4.5.4 (2025-12-11): Updated to use new classification prompt with JSON response
    * 
    * IMPROVEMENTS:
    * - Loads prompt from language file (rag_classification.txt)
@@ -150,7 +148,6 @@ class ClassificationEngine
       // Uses HTMLOverrideCommon::cleanJsonEntities() for consistent entity handling
       $cleanResponse = HTMLOverrideCommon::cleanJsonEntities($cleanResponse);
       
-      // ✅ TASK 5.2.1.1: Fix common JSON malformation - array closing with }] instead of ]]
       // LLMs sometimes close arrays with }] which is invalid JSON
       // Example: ["analytics", "semantic"}] → ["analytics", "semantic"]]
       $cleanResponse = self::fixMalformedArrayClosing($cleanResponse);

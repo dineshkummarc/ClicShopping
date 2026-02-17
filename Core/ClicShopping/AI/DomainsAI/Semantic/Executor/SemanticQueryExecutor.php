@@ -9,16 +9,15 @@
  */
 
 namespace ClicShopping\AI\DomainsAI\Semantic\Executor;
-
-// TASK 4.4.2: Updated to use Tools/Semantics/Semantics (consolidated class)
+use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\Registry;
+use ClicShopping\OM\Cache;
+use ClicShopping\AI\Config\DomainConfig;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\AI\DomainsAI\CoreAI\Helper\AgentResponseHelper;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Memory\ConversationMemory;
-use ClicShopping\OM\Registry;
-use ClicShopping\AI\Config\DomainConfig;
-use ClicShopping\OM\Cache;
 
 /**
  * SemanticQueryExecutor Class
@@ -98,8 +97,7 @@ class SemanticQueryExecutor
         $cachedResults = $cache->get();
         if ($cachedResults !== null) {
           $duration = (microtime(true) - $startTime) * 1000;
-          
-          // TASK 3.2: Enhanced logging with performance metrics
+
           $logMessage = sprintf(
             "✅ SEMANTIC CACHE HIT - Duration: %.2f ms | Query: %s | EntityType: %s | LanguageId: %s",
             $duration,
@@ -242,7 +240,6 @@ class SemanticQueryExecutor
         );
       }
 
-      // TASK 4.4.2 REGRESSION FIX: Search for documents to extract entity metadata
       // Use SemanticAgent::search() to get documents with entity information
       $searchResults = SemanticAgent::search(
         $resolvedQuery,
@@ -253,8 +250,6 @@ class SemanticQueryExecutor
         $entityId
       );
       
-      // TASK 5.2.1.3: Extract document names from search results for source attribution
-      // TASK 11.3: Enhanced to support all entity types (orders, products, customers, etc.)
       $documentNames = [];
       if (!empty($searchResults['results'])) {
         foreach ($searchResults['results'] as $result) {
@@ -298,8 +293,10 @@ class SemanticQueryExecutor
           // Fallback 2: Use source_table if no name found
           if ($docName === null && isset($metadata['source_table'])) {
             $tableName = $metadata['source_table'];
+
             // Remove prefix and _embedding suffix
-            $prefix = defined('CLICSHOPPING_DB_TABLE_PREFIX') ? CLICSHOPPING_DB_TABLE_PREFIX : 'clic_';
+            $prefix = CLICSHOPPING::getConfig('db_table_prefix');
+
             if (strpos($tableName, $prefix) === 0) {
               $tableName = substr($tableName, strlen($prefix));
             }
@@ -314,7 +311,6 @@ class SemanticQueryExecutor
         }
       }
       
-      // 🔧 TASK 5.2.1.3: Remove duplicate document names and re-index array
       $documentNames = array_values(array_unique($documentNames));
       
       if ($this->debug && !empty($documentNames)) {
@@ -424,7 +420,6 @@ class SemanticQueryExecutor
         );
       }
 
-      // TASK 4.4.2 REGRESSION FIX: Extract entity from search results
       // This ensures entity_id and entity_type are captured from semantic search results
       if (!empty($searchResults)) {
         $firstDoc = $searchResults[0] ?? null;
@@ -497,7 +492,7 @@ class SemanticQueryExecutor
             'method' => 'llphant_question_answering',
             'language_id' => $languageId,
             'entity_type' => $entityType,
-            'entity_id' => $entityId, // TASK 4.4.2 FIX: Include entity_id in metadata
+            'entity_id' => $entityId, 
           ]
         ]
       ];
@@ -535,8 +530,8 @@ class SemanticQueryExecutor
           'query_resolved' => $resolvedQuery !== $query,
           'rag_used' => true,
           'method' => 'llphant_question_answering',
-          'entity_id' => $entityId, // TASK 4.4.2 FIX: Pass entity_id
-          'entity_type' => $entityType, // TASK 4.4.2 FIX: Pass entity_type
+          'entity_id' => $entityId, 
+          'entity_type' => $entityType, 
         ])
       );
       
@@ -553,7 +548,7 @@ class SemanticQueryExecutor
         'source_icon' => '📚',
         'source_details' => $this->language->getDef('text_rag_semantic_source_details'),
         'document_count' => count($documentNames),
-        'document_names' => $documentNames, // TASK 5.2.1.3: Add document names
+        'document_names' => $documentNames, 
         'entity_type' => $entityType,
         'entity_id' => $entityId,
       ];
@@ -562,7 +557,6 @@ class SemanticQueryExecutor
       
       $cacheDuration = (microtime(true) - $startTime) * 1000;
       
-      // TASK 3.2: Enhanced logging with complete performance metrics
       $cacheCompleteMessage = sprintf(
         "✅ Search completed and cached - Duration: %.2f ms | Query: %s | EntityType: %s | LanguageId: %s | ResultCount: %d",
         $cacheDuration,

@@ -18,6 +18,7 @@ use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
+use ClicShopping\AI\Agents\Memory\SubConversationMemory\EntityMatcher;
 
 /**
  * LongTermMemoryManager Class
@@ -41,6 +42,7 @@ class LongTermMemoryManager
   private bool $debug;
   private float $similarityThreshold;
   private int $maxChunkSize = 2000; // Max characters per chunk (reduced chunking to avoid perceived duplicates)
+  private EntityMatcher $entityMatcher;
 
   /**
    * Constructor
@@ -61,6 +63,7 @@ class LongTermMemoryManager
     $this->similarityThreshold = $similarityThreshold;
     $this->debug = $debug;
     $this->logger = new SecurityLogger();
+    $this->entityMatcher = new EntityMatcher($debug);
 
     if ($this->debug) {
       $this->logger->logSecurityEvent(
@@ -80,7 +83,6 @@ class LongTermMemoryManager
   public function storeInteraction(string $content, array $metadata = []): bool
   {
     try {
-      // 🔧 TASK 4.4.1 PHASE 3: Migrated to DoctrineOrm
       // Enhanced duplicate detection - check both interaction_id AND content hash
       $tableName = $this->vectorStore->getTableName();
       
@@ -225,7 +227,12 @@ class LongTermMemoryManager
       
       $metadata['sourcename'] = $document->sourceName; // Keep consistent
 
-      // Store metadata
+      // Store metadata - PHP 8.4+ compatible
+      // LLPhant Document uses dynamic properties, suppress warning
+      if (!property_exists($document, 'metadata')) {
+        // Initialize as empty array if property doesn't exist
+        @$document->metadata = [];
+      }
       $document->metadata = $metadata;
       
       // 🔧 FIX: Log what we're about to store
@@ -269,9 +276,18 @@ class LongTermMemoryManager
    * @param int|null $languageId Filter by language ID (optional)
    * @return array Array of similar documents
    */
-  public function searchSimilar(string $query, int $limit = 3, ?string $userId = null, ?int $languageId = null): array
+  public function searchSimilar(string $query, int $limit = 3, ?string $userId = null, ?int $languageId = null, string $domain = 'Ecommerce'): array
   {
     try {
+      $queryEntities = $this->entityMatcher->extractEntities($query, $domain);
+      
+      if ($this->debug && !empty($queryEntities)) {
+        $this->logger->logSecurityEvent(
+          "BUG FIX: Extracted " . count($queryEntities) . " entities from query for filtering (domain: {$domain}): " . json_encode($queryEntities),
+          'info'
+        );
+      }
+      
       // 🔧 FIX: Create filter for user_id and language_id if provided
       $filter = null;
       if ($userId !== null || $languageId !== null) {
@@ -400,6 +416,21 @@ class LongTermMemoryManager
       // Limit to requested number of results
       $resultsArray = array_slice($resultsArray, 0, $limit);
 
+      // Apply entity-specific filtering to prevent context pollution
+      // This ensures "article 4" doesn't return "article 3" content
+      if (!empty($queryEntities)) {
+        $beforeEntityFilter = count($resultsArray);
+        $resultsArray = $this->entityMatcher->filterDocumentsByEntities($resultsArray, $queryEntities, $domain);
+        $afterEntityFilter = count($resultsArray);
+        
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "BUG FIX: Entity filtering applied (domain: {$domain}) - {$beforeEntityFilter} documents -> {$afterEntityFilter} documents (filtered: " . ($beforeEntityFilter - $afterEntityFilter) . ")",
+            'info'
+          );
+        }
+      }
+
       if ($this->debug) {
         $filterInfo = $userId !== null || $languageId !== null 
           ? " (filtered: user={$userId}, lang={$languageId})" 
@@ -459,7 +490,6 @@ class LongTermMemoryManager
   private function storeWithChunking(string $content, int|string $userId, int $languageId, array $metadata = []): bool
   {
     try {
-      // 🔧 TASK 4.4.1 PHASE 3: Migrated to DoctrineOrm
       // Enhanced duplicate detection for chunked content
       $tableName = $this->vectorStore->getTableName();
       
@@ -518,9 +548,6 @@ class LongTermMemoryManager
       // Add content_hash to metadata for future duplicate detection
       $metadata['content_hash'] = $contentHash;
 
-      // Split into chunks
-      $splitter = new DocumentSplitter($this->maxChunkSize, "\n\n");
-      
       // Create base document
       $baseDocument = new Document();
       $baseDocument->content = $content;
@@ -529,16 +556,22 @@ class LongTermMemoryManager
 
       // Store metadata in the metadata property (not as dynamic properties)
       // This avoids PHP 8.x deprecated warnings
+      // Check property existence before assignment
+      if (!property_exists($baseDocument, 'metadata')) {
+        @$baseDocument->metadata = [];
+      }
       $baseDocument->metadata = $metadata;
 
-      // Split document
-      $chunks = $splitter->splitDocument($baseDocument);
+      // Split document using static method (DocumentSplitter has no constructor)
+      $chunks = DocumentSplitter::splitDocument($baseDocument, $this->maxChunkSize, "\n\n");
 
       // Store each chunk
       $storedCount = 0;
       foreach ($chunks as $index => $chunk) {
         // Ensure chunk inherits critical metadata (entity_id, language_id, user_id, interaction_id)
-        $chunkMeta = isset($chunk->metadata) ? $chunk->metadata : [];
+        // Use get_object_vars to safely access dynamic properties
+        $chunkVars = get_object_vars($chunk);
+        $chunkMeta = $chunkVars['metadata'] ?? [];
         
         // 🔧 FIX: Validate user_id and interaction_id are present
         $chunkUserId = $metadata['user_id'] ?? 'system';
@@ -563,6 +596,11 @@ class LongTermMemoryManager
           'is_chunked' => true,
           'chunk_index' => $index,
         ]);
+        
+        // Check property existence before assignment
+        if (!property_exists($chunk, 'metadata')) {
+          @$chunk->metadata = [];
+        }
         $chunk->metadata = $mergedMeta;
         // Create embedding
         $chunk = $this->embeddingGenerator->embedDocument($chunk);
@@ -599,7 +637,6 @@ class LongTermMemoryManager
   public function cleanDuplicates(): array
   {
     try {
-      // 🔧 TASK 4.4.1 PHASE 3: Migrated to DoctrineOrm
       $tableName = $this->vectorStore->getTableName();
       
       $stats = [

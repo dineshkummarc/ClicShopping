@@ -442,7 +442,6 @@ class ContextRetriever
       // Execute all operations in parallel with 200ms timeout
       $results = $asyncManager->executeParallel($operations, 200);
 
-      // 🔧 TASK 4.3: Track degradation for monitoring
       $completedOps = array_keys(array_filter($results, fn($r) => $r !== null));
       $failedOps = array_keys(array_filter($results, fn($r) => $r === null));
       $degradationOccurred = !empty($failedOps);
@@ -469,7 +468,6 @@ class ContextRetriever
       $maxItems = $type === 'hybrid' ? $limit * 2 : $limit;
       $context = array_slice($context, 0, $maxItems);
 
-      // 🔧 TASK 4.3: Log degradation events with structured data
       if ($degradationOccurred) {
         $this->logger->logStructured(
           'warning',
@@ -957,7 +955,6 @@ class ContextRetriever
   /**
    * Assess the impact of degradation based on failed operations
    *
-   * 🔧 TASK 4.3: Graceful degradation impact assessment
    *
    * Determines the severity and impact of failed operations on the final result.
    * This helps with monitoring and alerting for production issues.

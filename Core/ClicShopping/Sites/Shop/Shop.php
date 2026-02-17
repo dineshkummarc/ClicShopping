@@ -250,14 +250,17 @@ class Shop extends \ClicShopping\OM\Domains\SitesAbstract
       if (($route = Apps::getRouteDestination()) !== null) {
         $this->route = $route;
 
-        list($vendor_app, $page) = explode('/', $route['destination'], 2);
+        // Check if destination exists and contains a slash
+        if (isset($route['destination']) && is_string($route['destination']) && str_contains($route['destination'], '/')) {
+          list($vendor_app, $page) = explode('/', $route['destination'], 2);
 
-// get controller class name from namespace
-        $page_namespace = explode('\\', $page);
-        $page_code = $page_namespace[count($page_namespace) - 1];
+          // get controller class name from namespace
+          $page_namespace = explode('\\', $page);
+          $page_code = $page_namespace[count($page_namespace) - 1];
 
-        if (class_exists('ClicShopping\Apps\\' . $vendor_app . '\\' . $page . '\\' . $page_code)) {
-          $class = 'ClicShopping\Apps\\' . $vendor_app . '\\' . $page . '\\' . $page_code;
+          if (class_exists('ClicShopping\Apps\\' . $vendor_app . '\\' . $page . '\\' . $page_code)) {
+            $class = 'ClicShopping\Apps\\' . $vendor_app . '\\' . $page . '\\' . $page_code;
+          }
         }
       } else {
         // If no route is defined, check the GET parameters

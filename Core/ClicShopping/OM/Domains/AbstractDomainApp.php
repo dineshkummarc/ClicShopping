@@ -12,6 +12,7 @@ namespace ClicShopping\OM\Domains;
 
 use ClicShopping\OM\Domains\ConfigurableAppAbstract;
 use ClicShopping\OM\Interfaces\DomainAppInterface;
+use ClicShopping\AI\Agents\Orchestrator\SubAutonomous\BusinessDomainPermissionManager;
 
 /**
  * Abstract base class for Domain-specific ClicShopping AI applications
@@ -166,4 +167,92 @@ abstract class AbstractDomainApp extends ConfigurableAppAbstract implements Doma
   abstract public function getEntityConfig(): array;
 
   abstract public function getHelpers(): array;
+
+  /**
+   * Check if an agent has permission to perform an action on this domain
+   * 
+   * This method integrates with the BusinessDomainPermissionManager to enforce
+   * permission checks for autonomous agent access to business domains.
+   * 
+   * @param string $agentId Agent identifier
+   * @param string $action Action to perform (read, write, modify_rules, etc.)
+   * @return bool True if agent has permission
+   * @throws \Exception If permission check fails
+   */
+  public function checkAgentPermission(string $agentId, string $action): bool
+  {
+    // Get BusinessDomainPermissionManager
+    $permissionManager = $this->getBusinessDomainPermissionManager();
+    
+    // Check permission for this domain
+    $hasPermission = $permissionManager->checkPermission(
+      $agentId,
+      $this->getDomainId(),
+      $action
+    );
+    
+    // Log access attempt
+    $permissionManager->logAccess(
+      $agentId,
+      $this->getDomainId(),
+      $action,
+      $hasPermission
+    );
+    
+    return $hasPermission;
+  }
+
+  /**
+   * Check if an action requires approval from orchestrator or human operator
+   * 
+   * @param string $agentId Agent identifier
+   * @param string $action Action to perform
+   * @return bool True if approval is required
+   */
+  public function requiresApproval(string $agentId, string $action): bool
+  {
+    $permissionManager = $this->getBusinessDomainPermissionManager();
+    
+    return $permissionManager->requiresApproval(
+      $agentId,
+      $this->getDomainId(),
+      $action
+    );
+  }
+
+  /**
+   * Get the BusinessDomainPermissionManager instance
+   * 
+   * @return \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\BusinessDomainPermissionManager
+   */
+  protected function getBusinessDomainPermissionManager()
+  {
+    static $permissionManager = null;
+    
+    if ($permissionManager === null) {
+      $permissionManager = new BusinessDomainPermissionManager();
+    }
+    
+    return $permissionManager;
+  }
+
+  /**
+   * Enforce permission check for an agent action
+   * 
+   * This method checks permissions and throws an exception if access is denied.
+   * Use this method to enforce permission checks at domain access points.
+   * 
+   * @param string $agentId Agent identifier
+   * @param string $action Action to perform
+   * @throws \Exception If agent does not have permission
+   * @return void
+   */
+  public function enforcePermission(string $agentId, string $action): void
+  {
+    if (!$this->checkAgentPermission($agentId, $action)) {
+      throw new \Exception(
+        "Agent '{$agentId}' does not have permission to perform action '{$action}' on domain '{$this->getDomainId()}'"
+      );
+    }
+  }
 }

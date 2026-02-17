@@ -451,9 +451,8 @@ class SemanticSecurityAnalyzer
       $maxTokens = 500; // Security analysis should be concise
       
       // Get configured model or use default
-      $model = defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? 
-        CLICSHOPPING_APP_CHATGPT_CH_MODEL : 'gpt-4o';
-      
+      $model = defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : Gpt::getTechnicalFallbackModel();
+
       if (self::$debug) {
         self::$logger->logSecurityEvent(
           "Calling LLM for security analysis (model: $model, temp: $temperature, max_tokens: $maxTokens)",

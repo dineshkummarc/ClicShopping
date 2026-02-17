@@ -1,0 +1,52 @@
+heading_title_agent_evaluations = Agent Evaluations Monitoring
+button_refresh = Refresh
+button_back_dashboard = Back to Dashboard
+button_close = Close
+
+text_total_evaluations = Total Evaluations
+text_average_score = Average Score
+text_consensus_sessions = Consensus Sessions
+text_consensus_rate = Consensus Rate
+
+text_recent_evaluations = Recent Evaluations
+text_score_distribution = Score Distribution
+
+text_evaluator = Evaluator
+text_producer = Producer
+text_output_type = Output Type
+text_overall_score = Overall Score
+text_accuracy = Accuracy
+text_completeness = Completeness
+text_efficiency = Efficiency
+text_clarity = Clarity
+text_date = Date
+text_actions = Actions
+
+text_avg_scores_by_dimension = Average Scores by Dimension
+text_dimension = Dimension
+text_visual = Visual
+
+text_session_id = Session ID
+text_output_id = Output ID
+text_participants = Participants
+text_status = Status
+text_final_score = Final Score
+text_created = Created
+text_resolved = Resolved
+
+text_evaluation_details = Evaluation Details
+text_details = Details
+text_number_of_evaluations = Number of Evaluations
+text_reached = Reached
+text_failed = Failed
+text_pending = Pending
+text_na = N/A
+text_none = None
+
+text_evaluation_id = Evaluation ID
+text_scores = Scores
+text_overall = Overall
+text_feedback = Feedback
+text_strengths = Strengths
+text_improvements = Improvements
+text_evaluated = Evaluated

@@ -112,7 +112,6 @@ class QuerySplitter extends BaseQueryProcessor
       $intent = $context['intent'] ?? [];
     }
 
-    // ✅ TASK 3: Check for multi-temporal query first (Requirements 4.1, 4.2, 4.3, 4.4)
     // If the intent contains temporal metadata, use temporal splitting
     if ($this->isMultiTemporalQuery($intent)) {
       if ($this->debug) {

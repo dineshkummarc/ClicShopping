@@ -8,6 +8,8 @@
 
 namespace ClicShopping\AI\Infrastructure\Metrics;
 
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+
 class ApiCostCalculator
 {
   /**
@@ -16,6 +18,14 @@ class ApiCostCalculator
    */
   private const PRICING = [
     // OpenAI
+    'gpt-5' => [0.00125, 0.01],
+    'gpt-5.2' => [0.00175, 0.00175],
+    'gpt-5.2-pro' => [0.021, 0.021],
+    'gpt-5-mini' => [0.00025, 0.00025],
+    'gpt-5-nano' => [0.00005, 0.0004],
+    'gpt-4.1' => [0.003, 0.003],
+    'gpt-4.1-mini' => [0.0008, 0.0008],
+    'gpt-4.1-nano' => [0.0002, 0.0002],
     'gpt-4' => [0.03, 0.06],
     'gpt-4-turbo' => [0.01, 0.03],
     'gpt-4-turbo-preview' => [0.01, 0.03],
@@ -39,7 +49,21 @@ class ApiCostCalculator
     'llama-2-70b' => [0.0, 0.0],
     'mistral-7b' => [0.0, 0.0],
     'mixtral-8x7b' => [0.0, 0.0],
-    'ollama' => [0.0, 0.0]
+    'mistral' => [0.0, 0.0],
+    'phi4' => [0.0, 0.0],
+    'gemma' => [0.0, 0.0],
+    'ollama' => [0.0, 0.0],
+    'local' => [0.0, 0.0]
+  ];
+
+  /**
+   * Mapping from configured model IDs to pricing keys.
+   */
+  private const MODEL_ALIASES = [
+    'anth-sonnet' => 'claude-3-sonnet',
+    'anth-opus' => 'claude-3-opus',
+    'anth-haiku' => 'claude-3-haiku',
+    'mistral-large-latest' => 'mistral-large'
   ];
   
   /**
@@ -53,11 +77,18 @@ class ApiCostCalculator
   public static function calculateCost(string $model, int $promptTokens, int $completionTokens): float
   {
     // Normaliser le nom du modèle
-    $model = strtolower($model);
+    $model = self::normalizeModelName($model);
     
     // Chercher le modèle exact ou un match partiel
     $pricing = self::findModelPricing($model);
     
+    if ($pricing === null) {
+      $fallbackModel = self::getFallbackModel($model);
+      if ($fallbackModel !== $model) {
+        $pricing = self::findModelPricing($fallbackModel);
+      }
+    }
+
     if ($pricing === null) {
       // Modèle inconnu, utiliser un coût par défaut conservateur
       return self::calculateDefaultCost($promptTokens, $completionTokens);
@@ -108,6 +139,81 @@ class ApiCostCalculator
     
     return null;
   }
+
+  /**
+   * Normalise le nom du modèle et applique les alias connus.
+   *
+   * @param string $model Nom du modèle
+   * @return string Nom normalisé
+   */
+  private static function normalizeModelName(string $model): string
+  {
+    $model = strtolower(trim($model));
+
+    if (isset(self::MODEL_ALIASES[$model])) {
+      return self::MODEL_ALIASES[$model];
+    }
+
+    $providerMap = self::getConfiguredModelProviderMap();
+    if (isset($providerMap[$model]) && $providerMap[$model] === 'lmstudio') {
+      return 'local';
+    }
+
+    return $model;
+  }
+
+  /**
+   * Récupère le modèle de fallback depuis la configuration si disponible.
+   *
+   * @param string $model Nom du modèle
+   * @return string Modèle de fallback normalisé
+   */
+  private static function getFallbackModel(string $model): string
+  {
+    if (class_exists(Gpt::class)) {
+      $fallback = strtolower(Gpt::getTechnicalFallbackModel());
+      if ($fallback !== '') {
+        $fallback = self::normalizeModelName($fallback);
+        if ($fallback !== $model) {
+          return $fallback;
+        }
+      }
+    }
+
+    return $model;
+  }
+
+  /**
+   * Retourne la map des providers des modèles configurés.
+   *
+   * @return array [model_id => provider]
+   */
+  private static function getConfiguredModelProviderMap(): array
+  {
+    static $cache = null;
+
+    if ($cache !== null) {
+      return $cache;
+    }
+
+    $cache = [];
+
+    if (!class_exists(Gpt::class)) {
+      return $cache;
+    }
+
+    foreach (Gpt::getGptModel() as $model) {
+      if (!isset($model['id'])) {
+        continue;
+      }
+
+      $id = strtolower($model['id']);
+      $provider = strtolower($model['provider'] ?? 'openai');
+      $cache[$id] = $provider;
+    }
+
+    return $cache;
+  }
   
   /**
    * Calculates default cost for unknown models
@@ -149,7 +255,7 @@ class ApiCostCalculator
    */
   public static function getModelPricing(string $model): array
   {
-    $model = strtolower($model);
+    $model = self::normalizeModelName($model);
     $pricing = self::findModelPricing($model);
     
     if ($pricing === null) {

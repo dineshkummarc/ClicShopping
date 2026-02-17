@@ -10,11 +10,12 @@
 
 namespace ClicShopping\AI\Dashboard;
 
-
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\AI\Infrastructure\Monitoring\MonitoringAgent;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
+use ClicShopping\AI\Dashboard\DecompositionStatsProvider;
+use ClicShopping\AI\Infrastructure\Metrics\ColdCacheMetricsCollector;
 
 /**
  * Dashboard Class
@@ -58,7 +59,8 @@ class Dashboard
       'advanced_stats' => $this->statsCollector->collectAllStats($periodDays),
       'alert_stats' => $this->getAlertStats(),
       'websearch_stats' => $this->getWebSearchStats($periodDays),
-      'cold_cache_metrics' => $this->getColdCacheMetrics($periodDays)
+      'cold_cache_metrics' => $this->getColdCacheMetrics($periodDays),
+      'decomposition_stats' => $this->getDecompositionStats($periodDays)
     ];
   }
 
@@ -909,7 +911,7 @@ class Dashboard
   public function getColdCacheMetrics(int $periodDays = 7): array
   {
     try {
-      $metricsCollector = new \ClicShopping\AI\Infrastructure\Metrics\ColdCacheMetricsCollector();
+      $metricsCollector = new ColdCacheMetricsCollector();
       return $metricsCollector->getAllMetrics($periodDays);
     } catch (\Exception $e) {
       error_log('Dashboard: Error getting cold cache metrics - ' . $e->getMessage());
@@ -989,5 +991,35 @@ class Dashboard
       ],
       'period_days' => $periodDays
     ];
+  }
+
+  /**
+   * Get hybrid query decomposition statistics
+   * 
+   * Task 6: Add performance monitoring for hybrid query decomposition
+   * 
+   * @param int $periodDays Number of days to analyze
+   * @return array Decomposition statistics
+   */
+  public function getDecompositionStats(int $periodDays = 7): array
+  {
+    try {
+      return DecompositionStatsProvider::getStats($periodDays);
+    } catch (\Exception $e) {
+      error_log('Dashboard: Failed to get decomposition stats - ' . $e->getMessage());
+      
+      return [
+        'total_decompositions' => 0,
+        'avg_time_ms' => 0,
+        'min_time_ms' => 0,
+        'max_time_ms' => 0,
+        'cache_hit_rate' => 0,
+        'error_rate' => 0,
+        'slow_operation_rate' => 0,
+        'period_days' => $periodDays,
+        'daily_breakdown' => [],
+        'error' => $e->getMessage()
+      ];
+    }
   }
 }

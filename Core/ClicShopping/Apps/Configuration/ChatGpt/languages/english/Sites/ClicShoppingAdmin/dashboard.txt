@@ -524,6 +524,7 @@ tab11_loading_feedbacks = Loading feedbacks...
 # Tab 12 - Exports
 tab12_title = Data Exports
 tab12_download_metrics = Download metrics and reports in different formats:
+tab12_csv_export = CSV Export
 tab12_json_health = JSON - Health Report
 tab12_json_metrics = JSON - Metrics
 tab12_json_alerts = JSON - Alerts
@@ -538,6 +539,87 @@ tab12_health_report = System health report
 tab12_all_metrics_json = All metrics in JSON
 tab12_prometheus_metrics = Metrics in Prometheus format
 tab12_api_documentation = API Documentation Markdown
+
+# Tab 12 - Actor-Critic Metrics Exports
+tab12_actor_critic_section = 📊 Actor-Critic Metrics
+tab12_actor_critic_dashboard = JSON - Actor-Critic Dashboard
+tab12_actor_metrics = JSON - Actor Metrics
+tab12_critic_metrics = JSON - Critic Metrics
+tab12_actor_critic_utilization = JSON - Utilization Metrics
+tab12_actor_critic_alerts = JSON - Actor-Critic Alerts
+tab12_actor_critic_trends = JSON - Performance Trends
+tab12_actor_critic_prometheus = Prometheus - Actor-Critic Metrics
+tab12_actors_csv = CSV - Actor Metrics Export
+tab12_critics_csv = CSV - Critic Metrics Export
+tab12_actor_critic_dashboard_desc = Complete actor-critic dashboard data
+tab12_actor_metrics_desc = Performance metrics for all actors
+tab12_critic_metrics_desc = Performance metrics for all critics
+tab12_utilization_desc = Real-time actor and critic utilization
+tab12_actor_critic_alerts_desc = Active performance degradation alerts
+tab12_trends_desc = Historical performance trends
+tab12_actor_critic_prometheus_desc = Metrics in Prometheus format for monitoring
+tab12_actors_csv_desc = Download actor metrics as CSV
+tab12_critics_csv_desc = Download critic metrics as CSV
+
+# Actor-Critic Metrics - General
+text_actor_critic_summary = Actor-Critic Summary
+text_total_actors = Total Actors
+text_total_critics = Total Critics
+text_separation_ratio = Separation Ratio
+text_total_agents = Total Agents
+text_actor_metrics_title = 🎭 Actor Performance Metrics
+text_critic_metrics_title = 🔍 Critic Performance Metrics
+text_coordination_metrics = 🔄 Coordination Metrics
+text_utilization_metrics = 📊 Utilization Metrics
+text_performance_alerts = ⚠️ Performance Alerts
+
+# Actor Metrics
+text_total_executions = Total Executions
+text_success_rate = Success Rate
+text_avg_execution_time = Avg Execution Time
+text_quality_score = Quality Score
+text_performance_score = Performance Score
+text_actor_utilization = Actor Utilization
+text_by_action_type = By Action Type
+
+# Critic Metrics
+text_total_evaluations = Total Evaluations
+text_avg_evaluation_time = Avg Evaluation Time
+text_agreement_with_consensus = Agreement with Consensus
+text_evaluation_consistency = Evaluation Consistency
+text_critic_utilization = Critic Utilization
+text_by_output_type = By Output Type
+
+# Coordination Metrics
+text_total_coordinations = Total Coordinations
+text_avg_coordination_time = Avg Coordination Time
+text_avg_actor_execution_time = Avg Actor Execution Time
+text_avg_critic_evaluation_time = Avg Critic Evaluation Time
+
+# Alert Types
+alert_type_low_success_rate = Low Success Rate
+alert_type_slow_execution = Slow Execution
+alert_type_low_quality = Low Quality Score
+alert_type_high_utilization = High Utilization
+alert_type_low_agreement = Low Agreement with Consensus
+alert_type_slow_evaluation = Slow Evaluation
+alert_type_inconsistent_evaluations = Inconsistent Evaluations
+
+# Alert Messages
+alert_actor_low_success = Actor {actor_id} success rate below threshold
+alert_actor_slow_execution = Actor {actor_id} execution time exceeds threshold
+alert_actor_low_quality = Actor {actor_id} quality score below threshold
+alert_actor_high_utilization = Actor {actor_id} utilization exceeds threshold
+alert_critic_low_agreement = Critic {critic_id} agreement with consensus below threshold
+alert_critic_slow_evaluation = Critic {critic_id} evaluation time exceeds threshold
+alert_critic_inconsistent = Critic {critic_id} evaluation consistency below threshold
+alert_critic_high_utilization = Critic {critic_id} utilization exceeds threshold
+
+# Export Buttons
+button_export_actor_metrics = Export Actor Metrics
+button_export_critic_metrics = Export Critic Metrics
+button_export_actor_critic_dashboard = Export Dashboard Data
+button_view_actor_critic_metrics = View Actor-Critic Metrics
 
 # Latency Recommendations (hardcoded text)
 latency_rec_low_usage_text = Only {percentage}% of requests use fast-lane. Consider expanding detection criteria.
@@ -699,3 +781,36 @@ cache_response_time_label = Response Time
 cache_response_time_desc = Cached vs uncached performance
 cache_size_label = Cache Size
 cache_size_desc = Storage usage by cache type
+text_agent_monitoring_management = 🤖 Agent Monitoring & Management
+button_agent_objectives = 📋 Agent Objectives
+text_agent_objectives_help = View and manage agent objectives
+button_agent_evaluations = 📊 Agent Evaluations
+text_agent_evaluations_help = Monitor evaluation scores and consensus
+button_agent_alerts = 🚨 Agent Alerts
+text_agent_alerts_help = View overdue objectives and issues
+button_actor_critic = 🎭 Actor-Critic/Evaluation
+text_actor_critic_help = Monitor actor-critic separation metrics
+
+
+# Hybrid Query Decomposition Statistics
+decomposition_stats_title = Hybrid Query Decomposition
+decomposition_total = Total Decompositions
+decomposition_avg_time = Average Time
+decomposition_range = Range
+decomposition_cache_hit_rate = Cache Hit Rate
+decomposition_cached_results = Cached Results
+decomposition_error_rate = Error Rate
+decomposition_success_rate = Success Rate
+decomposition_performance_details = Performance Details
+decomposition_slow_operations = Slow Operations (>500ms)
+decomposition_threshold = Threshold
+decomposition_min_time = Minimum Time
+decomposition_max_time = Maximum Time
+decomposition_about = About Decomposition
+decomposition_about_description = Hybrid query decomposition splits complex queries into separate sub-tasks for parallel processing.
+decomposition_what = What
+decomposition_what_description = Breaks down hybrid queries into analytics, semantic, and web search components
+decomposition_why = Why
+decomposition_why_description = Enables parallel processing and specialized handling of each query type
+decomposition_performance = Performance
+decomposition_performance_description = Target: <500ms per decomposition with >60% cache hit rate

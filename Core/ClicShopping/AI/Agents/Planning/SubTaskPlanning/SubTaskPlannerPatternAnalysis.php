@@ -173,7 +173,7 @@ class SubTaskPlannerPatternAnalysis
      * Uses DomainRegistry to load entity configuration from the active domain app.
      * Falls back to empty array if no domain is active (let LLM discover tables).
      * 
-     * TASK 2026-01-23: Added for domain-agnostic table loading (Priority 2)
+     * Added for domain-agnostic table loading (Priority 2)
      * 
      * @return array Array of table names from domain entity config
      */

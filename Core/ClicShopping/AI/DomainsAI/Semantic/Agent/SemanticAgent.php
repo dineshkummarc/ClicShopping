@@ -187,7 +187,6 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
         error_log('================================');
       }
 
-      // 🔧 TASK 3.2: If translation is empty, use original message as fallback
       if (empty(trim($translated))) {
         error_log("⚠️ WARNING: Translation is empty after TranslationHandler, using original message");
         $translated = $message;
@@ -258,7 +257,6 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
    * - filters: Query filtering expressions
    * - sorting: Result ordering expressions
    *
-   * TASK 2.9.8.6.11: Added pattern bypass check for Pure LLM mode
    *
    * @return array<string, array<string>> Associative array where:
    *                                     - key: pattern category (string)
@@ -289,7 +287,7 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
    * - account: Account-related queries
    * - feedback: Reviews and opinions
    *
-   * TASK 2.9.8.6.11: Added pattern bypass check for Pure LLM mode
+
    *
    * @return array<string, array<string>> Associative array where:
    *                                     - key: pattern category (string)
@@ -418,7 +416,6 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
       error_log("Pure LLM mode: Skipping pattern-based scoring, using LLM classification");
     }
 
-    // 🔧 TASK 4.5.5 (2025-12-11): Handle new array return format from checkSemantics
     $classificationResult = self::checkSemantics($translated);
     
     // Extract type for backward compatibility
@@ -452,7 +449,6 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
   /**
    * Detects competitor comparison queries (delegates to PatternAnalyzer)
    * 
-   * TASK 2.9.8.6.11: Added pattern bypass check for Pure LLM mode
    * 
    * @param string $text Text to analyze
    * @return bool True if competitor comparison detected
@@ -469,7 +465,6 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
   /**
    * Checks if text contains critical analytics patterns (delegates to PatternAnalyzer)
    * 
-   * TASK 2.9.8.6.11: Added pattern bypass check for Pure LLM mode
    * 
    * @param string $text Text to analyze
    * @return bool True if critical pattern found
@@ -729,7 +724,6 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
    * This method provides a simplified interface for semantic search using the MultiDBRAGManager.
    * It searches across all embedding tables and returns relevant documents with similarity scores.
    *
-   * TASK 4.4.2: Ported from Domain/SemanticSearch/Semantics to consolidate functionality
    *
    * @param string $query Search query
    * @param int $limit Maximum number of results to return (default: 5)
@@ -832,8 +826,7 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
       $endTime = microtime(true);
       $responseTime = (int)round(($endTime - $startTime) * 1000);
 
-      // Record statistics
-      // TASK: Manual Test 1.1 - Statistiques enregistrées correctement
+      // Record statistics    
       self::recordSearchStatistics(
         $query,
         $responseTime,
@@ -878,7 +871,6 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
   /**
    * Record search statistics to rag_statistics table
    * 
-   * TASK: Manual Test 1.1 - Statistiques enregistrées correctement
    * 
    * @param string $query Search query
    * @param int $responseTime Response time in milliseconds

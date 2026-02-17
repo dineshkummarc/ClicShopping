@@ -140,7 +140,7 @@ help_examples_analytics_6 = Donnez-moi le SKU du produit X
 help_examples_analytics_7 = Combien de nouveaux clients ce mois-ci ?
 help_examples_analytics_8 = Quelle est notre valeur moyenne de commande ?
 
-help_examples_semantic_title = Requêtes Sémantiques (GPT-4o, GPT-4.1-mini, GPT-4o-mini, Mistral)
+help_examples_semantic_title = Requêtes Sémantiques (GPT-4.1-mini, gpt-4.1-mini, Mistral)
 help_examples_semantic_1 = Quelle est notre politique de retour ?
 help_examples_semantic_2 = Comment expédier à l'international ?
 help_examples_semantic_3 = Quelles sont les conditions de garantie ?
@@ -173,7 +173,7 @@ help_decision_title = Guide de Décision Rapide
 help_decision_subtitle = Choisissez Votre Modèle en 3 Questions :
 
 help_decision_q1 = Avez-vous besoin de la recherche sémantique (questions sur politiques/documents) ?
-help_decision_q1_yes = Oui → Choisissez GPT-4.1-mini, GPT-4o-mini, GPT-4o, ou Mistral Large
+help_decision_q1_yes = Oui → Choisissez GPT-4.1-mini,ou Mistral Large
 help_decision_q1_no = Non → Microsoft Phi-4 est également une option
 
 help_decision_q2 = La confidentialité des données est-elle critique (santé, finance) ?
@@ -182,7 +182,7 @@ help_decision_q2_no = Non → Continuez à la question 3
 
 help_decision_q3 = Quelle est votre priorité ?
 help_decision_q3_value = Meilleur rapport qualité-prix → GPT-4.1-mini
-help_decision_q3_cost = Coût le plus bas → GPT-4o-mini
+help_decision_q3_cost = Coût le plus bas → gpt-4.1-mini
 help_decision_q3_capability = Capacité maximale → GPT-4o
 help_decision_q3_diversity = Diversité des fournisseurs → Mistral Large
 
@@ -191,7 +191,7 @@ help_technical_title = Informations Techniques
 
 help_embeddings_title = À Propos des Embeddings et de la Recherche Sémantique
 help_embeddings_text = Quand nous disons qu'un modèle "supporte les embeddings", cela signifie que le modèle peut fonctionner avec les fonctionnalités de recherche sémantique. Le système utilise un modèle d'embedding séparé (text-embedding-3-large) pour convertir vos documents en vecteurs recherchables, puis le modèle de chat utilise ces vecteurs pour trouver les informations pertinentes.
-help_embeddings_with = <strong>Modèles avec support des embeddings :</strong> GPT-4o, GPT-4.1-mini, GPT-4o-mini, Mistral Large
+help_embeddings_with = <strong>Modèles avec support des embeddings :</strong>gpt-4.1-mini, Mistral Large
 help_embeddings_without = <strong>Modèles sans support des embeddings :</strong> Microsoft Phi-4 (analytique uniquement)
 
 help_notes_title = Notes Importantes

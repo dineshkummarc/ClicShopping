@@ -75,13 +75,10 @@ class RagCache
        CLICSHOPPING_APP_CHATGPT_RA_CACHE_RAG_MANAGER === 'True');
     
     // Check debug mode
-    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-                   CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
+    $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
     
     // Get default TTL
-    $this->defaultTTL = defined('MEMCACHED_CACHE_LIFETIME') ? 
-                        (int)MEMCACHED_CACHE_LIFETIME : 
-                        self::DEFAULT_TTL;
+    $this->defaultTTL = defined('MEMCACHED_CACHE_LIFETIME') ? (int)MEMCACHED_CACHE_LIFETIME : self::DEFAULT_TTL;
     
     if (!$this->enabled) {
       if ($this->debug) {
@@ -158,12 +155,16 @@ class RagCache
       }
       
       // Test connection
-      if ($this->redisConn->ping() !== '+PONG') {
+      $ping = $this->redisConn->ping();
+      $isPingOk = $ping === true || strtoupper((string)$ping) === '+PONG' || strtoupper((string)$ping) === 'PONG';
+
+      if (!$isPingOk) {
         if ($this->debug) {
           error_log("RagCache: Redis ping failed");
         }
         $this->redisConn->close();
         $this->redisConn = null;
+
         return false;
       }
       

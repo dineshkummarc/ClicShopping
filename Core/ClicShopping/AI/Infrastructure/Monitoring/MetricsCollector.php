@@ -528,7 +528,6 @@ class MetricsCollector
   }
 
   /**
-   * Records a metric with name and value (TASK 4.4.2.3)
    * 
    * Simplified method to record latency and other metrics.
    * Automatically detects metric type based on name.

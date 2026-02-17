@@ -28,7 +28,6 @@ namespace ClicShopping\AI\InterfacesAI;
  * - AccountHelper (Finance domain) - queries accounts table
  * - AssetHelper (Trading domain) - queries assets table
  *
- * TASK 2.19: Created as part of Phase 1 refactoring (2026-01-20)
  */
 interface EntityHelperInterface
 {

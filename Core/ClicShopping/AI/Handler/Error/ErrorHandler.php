@@ -26,8 +26,6 @@ use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ResponseProcessor;
  * - Build error responses (delegates to ResponseProcessor)
  * - Manage retry attempts and delays
  *
- * TASK 2.3: Extracted from OrchestratorAgent (Phase 2 - Component Extraction)
- * Requirements: REQ-4.3, REQ-4.4, REQ-8.1
  */
 
 class ErrorHandler

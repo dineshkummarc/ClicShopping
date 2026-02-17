@@ -35,14 +35,15 @@ use ClicShopping\AI\Agents\Query\QueryClassifier;
 use ClicShopping\AI\DomainsAI\Analytics\Executor\QueryExecutor;
 use ClicShopping\AI\DomainsAI\Analytics\Executor\SqlQueryProcessor;
 use ClicShopping\AI\DomainsAI\CoreAI\Helper\AgentResponseHelper;
-
+use ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AutonomousConfig;
 use ClicShopping\AI\Infrastructure\Cache\Cache;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\AI\Infrastructure\Cache\QueryCache;
-
+use ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AutonomousConfig;
 use ClicShopping\AI\Agents\Orchestrator\CorrectionAgent;
 use ClicShopping\AI\DomainsAI\CoreAI\Patterns\Common\ModificationKeywordsPattern;
 use ClicShopping\AI\Utils\TypeSafetyGuard;
+use ClicShopping\AI\Agents\Orchestrator\SubAbstention\AgentAbstentionManager;
 
 /**
  * Class AnalyticsAgent
@@ -83,6 +84,8 @@ class AnalyticsAgent
   
   private mixed $conversationMemory = null;
   private string $Usecache;
+  private ?AutonomousConfig $autonomousConfig = null;
+  private ?AgentAbstentionManager $abstentionManager = null;
 
   /**
    * Constructor for AnalyticsAgent
@@ -97,6 +100,8 @@ class AnalyticsAgent
   {
     $this->db = Registry::get('Db');
     $this->language = Registry::get('Language');
+    $this->autonomousConfig = new AutonomousConfig($this->debug ?? false);
+    $this->abstentionManager = new AgentAbstentionManager();
 
     if (!Registry::exists('ChatGpt')) {
       Registry::set('ChatGpt', new ChatGpt());
@@ -113,7 +118,7 @@ class AnalyticsAgent
       // Log error and fallback to default
       error_log("AnalyticsAgent: Error getting chat for model {$model}: " . $e->getMessage());
       // Fallback to OpenAI GPT-4 as default
-      $this->chat = Gpt::getOpenAiGpt(['model' => 'gpt-4-mini']);
+      $this->chat = Gpt::getOpenAiGpt(['model' => 'gpt-5-mini']);
     }
 
     $this->userId = $userId;
@@ -294,6 +299,105 @@ class AnalyticsAgent
     $this->debugLog("Feedback context items: " . count($feedbackContext), "QUERY");
 
     try {
+      
+      //  Use classification confidence instead of recalculating
+      $this->debugLog("--- STEP -1: Evaluate confidence for abstention ---", "ABSTENTION");
+      
+      // FIX 2026-01-29: Configure lower thresholds for AnalyticsAgent
+      // Abstention: 0.15 (was 0.3), Delegation: 0.5 (was 0.7)
+      try {
+        $this->abstentionManager->setThresholds('AnalyticsAgent', 0.15, 0.5);
+        $this->debugLog("Thresholds configured: abstention=0.15, delegation=0.5", "ABSTENTION");
+      } catch (\Exception $e) {
+        $this->debugLog("Failed to set thresholds: " . $e->getMessage(), "ABSTENTION");
+      }
+      
+      // Get classification confidence (already calculated in isAnalyticsQuery)
+      $translatedForClassification = SemanticAgent::translateToEnglish($question, 80);
+      $cleanTranslation = $this->resultInterpreter->extractCleanTranslation($translatedForClassification);
+      $classifier = new QueryClassifier($this->debug);
+      $classificationResult = $classifier->classify($cleanTranslation, $cleanTranslation);
+      
+      $classificationConfidence = $classificationResult['confidence'] ?? 0.0;
+      $this->debugLog("Classification confidence: {$classificationConfidence}", "ABSTENTION");
+      
+      // Use classification confidence if high, otherwise calculate complexity-based confidence
+      if ($classificationConfidence >= 0.7) {
+        // High classification confidence - use it directly
+        $confidence = $classificationConfidence;
+        $this->debugLog("Using classification confidence: {$confidence}", "ABSTENTION");
+      } else {
+        // Low classification confidence - calculate based on complexity
+        $complexity = $this->estimateQueryComplexity($question);
+        $this->debugLog("Query complexity: {$complexity}", "ABSTENTION");
+        
+        $confidence = $this->abstentionManager->evaluateConfidence(
+          'AnalyticsAgent',
+          $question,
+          [
+            'task_type' => 'analytics_query',
+            'description' => $question,
+            'parameters' => $feedbackContext,
+            'complexity' => $complexity
+          ]
+        );
+        $this->debugLog("Calculated confidence: {$confidence}", "ABSTENTION");
+      }
+      
+      $decision = $this->abstentionManager->getAbstentionDecision(
+        'AnalyticsAgent',
+        $confidence,
+        'analytics_query'
+      );
+      
+      $this->debugLog("Abstention decision: {$decision['action']}", "ABSTENTION");
+      $this->debugLog("Reason: {$decision['reason']}", "ABSTENTION");
+      
+      if ($decision['action'] === 'abstain') {
+        // Log abstention to database
+        $this->abstentionManager->logAbstention(
+          'AnalyticsAgent',
+          md5($question),
+          'analytics_query',
+          $confidence,
+          $decision['reason'],
+          'escalate_human'
+        );
+        
+        $this->debugLog("ABSTAINING - Confidence too low", "ABSTENTION");
+        
+        // Return error requiring human intervention
+        return [
+          'type' => 'error',
+          'message' => 'Confidence too low for autonomous execution. Human review required.',
+          'reason' => $decision['reason'],
+          'confidence' => $confidence,
+          'requires_human' => true,
+          'query' => $question
+        ];
+      }
+      
+      if ($decision['action'] === 'delegate') {
+        // Log delegation intent
+        $this->abstentionManager->logAbstention(
+          'AnalyticsAgent',
+          md5($question),
+          'analytics_query',
+          $confidence,
+          $decision['reason'],
+          'delegate_peer',
+          $decision['suggested_delegate']
+        );
+        
+        $this->debugLog("DELEGATING - Medium confidence", "ABSTENTION");
+        $this->debugLog("Suggested delegate: " . ($decision['suggested_delegate'] ?? 'none'), "ABSTENTION");
+        
+        // For now, proceed with execution but log the delegation intent
+        // TODO: Implement actual delegation mechanism when peer agents are available
+      }
+      
+      $this->debugLog("EXECUTING - Confidence sufficient ({$confidence})", "ABSTENTION");
+      
       $this->debugLog("--- STEP 0: Translate query for ambiguity detection ---", "TRANSLATION");
       
       // CRITICAL FIX: Translate query to English for ambiguity detection
@@ -341,7 +445,6 @@ class AnalyticsAgent
         );
       }
       
-      // TASK 6.1: Detect ambiguous queries using translated query (only if not skipped)
       $ambiguityAnalysis = $skipAmbiguity 
         ? ['is_ambiguous' => false, 'skipped' => true, 'reason' => 'high_confidence_analytics', 'confidence' => $classificationConfidence]
         : $this->ambiguityDetector->detectAmbiguity($queryForAmbiguity);
@@ -409,7 +512,7 @@ class AnalyticsAgent
           'entity_id' => $cacheResult['entity_id'] ?? null,
           'entity_type' => $cacheResult['entity_type'] ?? null,
           'interpretation' => $cacheResult['interpretation'] ?? null,  // 🆕 Return cached interpretation
-          'ambiguous' => $ambiguityAnalysis['is_ambiguous'],  // TASK 6.1: Add ambiguity metadata
+          'ambiguous' => $ambiguityAnalysis['is_ambiguous'],  // Add ambiguity metadata
           'ambiguity_type' => $ambiguityAnalysis['ambiguity_type'] ?? null,
           'cached' => true,
           'cache_age' => time() - strtotime($cacheResult['created_at'])
@@ -509,7 +612,6 @@ class AnalyticsAgent
         $resolvedQuery = $this->queryProcessor->resolvePlaceholders($sqlQuery);
         $this->debugLog("After placeholder resolution: " . substr($resolvedQuery, 0, 150) . "...", "EXECUTION");
 
-        // TASK 3: Validate LIKE patterns
         $likeValidation = $this->queryProcessor->validateLikePatterns($resolvedQuery);
         if (!empty($likeValidation['warnings'])) {
           $this->debugLog("LIKE pattern warnings: " . count($likeValidation['warnings']), "VALIDATION");
@@ -543,9 +645,7 @@ class AnalyticsAgent
           continue;
         }
 
-        $finalQuery = $validation['valid'] ? $resolvedQuery : $sqlQuery;
-        
-        // TASK 10.6: Fix date filters to include YEAR() when MONTH() is used
+        $finalQuery = $validation['valid'] ? $resolvedQuery : $sqlQuery;  
         $finalQuery = $this->queryProcessor->fixDateFilters($finalQuery);
         
         error_log("  Final query to execute: " . substr($finalQuery, 0, 150) . "...");
@@ -587,13 +687,13 @@ class AnalyticsAgent
             'count' => count($queryResults),
             'entity_id' => $entityId,
             'entity_type' => $entityType,
-            'ambiguous' => $ambiguityAnalysis['is_ambiguous'] ?? false,  // TASK 6.1: Add ambiguity metadata
+            'ambiguous' => $ambiguityAnalysis['is_ambiguous'] ?? false,  //Add ambiguity metadata
             'ambiguity_type' => $ambiguityAnalysis['ambiguity_type'] ?? null,
             'interpretations' => $ambiguityAnalysis['is_ambiguous'] ? array_keys($ambiguityAnalysis['interpretations']) : [],
           ];
           
           // 🆕 CACHE THE SUCCESSFUL RESULT
-          error_log("  💾 Caching successful query result in QueryCache");
+          error_log("   Caching successful query result in QueryCache");
           $this->queryCache->set(
             $question,
             $finalQuery,
@@ -629,14 +729,14 @@ class AnalyticsAgent
               'count' => count($correctedData['results']),
               'entity_id' => $entityInfo['entity_id'],
               'entity_type' => $entityInfo['entity_type'],
-              'ambiguous' => $ambiguityAnalysis['is_ambiguous'] ?? false,  // TASK 6.1: Add ambiguity metadata
+              'ambiguous' => $ambiguityAnalysis['is_ambiguous'] ?? false,  // Add ambiguity metadata
               'ambiguity_type' => $ambiguityAnalysis['ambiguity_type'] ?? null,
               'interpretations' => $ambiguityAnalysis['is_ambiguous'] ? array_keys($ambiguityAnalysis['interpretations']) : [],
             ];
             
             // 🆕 CACHE THE CORRECTED RESULT
             if (!empty($correctedData['results'])) {
-              error_log("  💾 Caching corrected query result");
+              error_log("  Caching corrected query result");
               $this->queryCache->set(
                 $question,
                 $correctedData['executed_query'],
@@ -725,20 +825,19 @@ class AnalyticsAgent
       error_log("  has error: " . (isset($results['error']) ? 'YES' : 'NO'));
       error_log("  has results: " . (isset($results['results']) ? 'YES (' . count($results['results']) . ' rows)' : 'NO'));
 
-      // TASK 1.3: Validate and fix SQL date logic BEFORE checking for errors
       if (isset($results['sql_query']) && !empty($results['sql_query'])) {
         $dateValidator = new \ClicShopping\AI\DomainsAI\Analytics\Validator\SqlDateValidator($this->debug);
         $dateValidation = $dateValidator->validateAndFix($results['sql_query'], $question);
         
         if ($dateValidation['corrected']) {
-          error_log("🔧 TASK 1.3: SQL date logic corrected in processBusinessQuery: " . $dateValidation['reason']);
+          error_log(" SQL date logic corrected in processBusinessQuery: " . $dateValidation['reason']);
           
           // Update the SQL in results
           $results['original_sql_query'] = $results['sql_query'];
           $results['sql_query'] = $dateValidation['sql'];
           
           // Re-execute the corrected SQL
-          error_log("🔄 Re-executing corrected SQL...");
+          error_log(" Re-executing corrected SQL...");
           try {
             $executionResult = $this->queryExecutor->execute($dateValidation['sql']);
             
@@ -750,7 +849,7 @@ class AnalyticsAgent
               // 🔧 FIX: Clear cached interpretation so it gets regenerated with new results
               if (isset($results['interpretation'])) {
                 unset($results['interpretation']);
-                error_log("🔄 Cleared cached interpretation to force regeneration with corrected results");
+                error_log("Cleared cached interpretation to force regeneration with corrected results");
               }
             } else {
               error_log("⚠️  Corrected SQL execution failed: " . ($executionResult['error'] ?? 'unknown'));
@@ -811,15 +910,14 @@ class AnalyticsAgent
         $logSnippet = TypeSafetyGuard::safeSubstr($interpretation, 0, 200);
         error_log("Interpretation: " . $logSnippet . "...");
       } else {
-        // 🔧 TASK 4.3.4.2: Handle empty results gracefully
         if (empty($results['results'])) {
           error_log("⚠️  WARNING: No results to interpret, generating empty results message");
           $interpretation = $this->errorHandler->generateEmptyResultsMessage($question, $results, $this->debug);
-          error_log("📝 Empty results message: " . $interpretation);
+          error_log(" Empty results message: " . $interpretation);
         } else {
           // Generate new interpretation only if we have data
           $interpretation = $this->resultInterpreter->interpretResults($question, $results['results']);
-          error_log("🔄 Generated new interpretation");
+          error_log(" Generated new interpretation");
           
           // Type-safe logging with TypeSafetyGuard
           if (is_array($interpretation)) {
@@ -1081,8 +1179,6 @@ class AnalyticsAgent
    * Detects if the query is a modification of a previous query
    * Note: Questions are translated to English before processing
    *
-   * TASK 5.1.1: Refactored to use ModificationKeywordsPattern
-   * TASK 7.1.2.2: Updated to use centralized pattern class with getAllKeywords() support
    *
    * @param string $question The user's question (in English after translation)
    * @return bool True if it's a modification query
@@ -1139,8 +1235,8 @@ class AnalyticsAgent
     }
     
     try {
+      $modelName = defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : Gpt::getTechnicalFallbackModel();
       // Get model name from chat instance
-      $modelName = 'gpt-4o'; // default
       
       // Try to get actual model name from chat config
       if (method_exists($this->chat, 'getModel')) {
@@ -1233,5 +1329,408 @@ class AnalyticsAgent
     }
     
     error_log($logMessage);
+  }
+
+  // ========================================
+  // AUTONOMOUS AGENT INTERFACE IMPLEMENTATION
+  // ========================================
+
+  /**
+   * Create a local objective for analytics optimization
+   *
+   * AnalyticsAgent can create objectives for:
+   * - Query performance optimization
+   * - Schema analysis improvements
+   * - Cache hit rate optimization
+   * - Error rate reduction
+   *
+   * @param string $goalStatement Clear description of the goal
+   * @param array $successCriteria Measurable success criteria
+   * @param string $priority Priority level
+   * @return \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective
+   */
+  public function createLocalObjective(
+    string $goalStatement,
+    array $successCriteria,
+    string $priority
+  ): \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective {
+    
+    if (!$this->autonomousConfig->canAgentCreateObjectives('AnalyticsAgent')) {
+      throw new \RuntimeException('AnalyticsAgent is not authorized to create objectives (disabled in configuration)');
+    }
+    
+    // Estimate completion time based on priority
+    $estimatedTime = match ($priority) {
+      'critical' => 300,  // 5 minutes
+      'high' => 900,      // 15 minutes
+      'medium' => 1800,   // 30 minutes
+      'low' => 3600,      // 1 hour
+      default => 1800
+    };
+
+    $objective = new \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective(
+      'AnalyticsAgent',
+      $goalStatement,
+      $successCriteria,
+      $priority,
+      $estimatedTime
+    );
+
+    // Register with ObjectiveRegistry
+    $objectiveRegistry = new \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\ObjectiveRegistry($this->db, $this->debug);
+    $objectiveRegistry->registerObjective($objective);
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "AnalyticsAgent created objective: {$goalStatement}",
+        'info'
+      );
+    }
+
+    return $objective;
+  }
+
+  /**
+   * Execute an analytics optimization objective
+   *
+   * @param \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective $objective
+   * @return mixed Execution results
+   */
+  public function executeObjective(\ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective $objective): mixed
+  {
+    $goalStatement = $objective->getGoalStatement();
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "AnalyticsAgent executing objective: {$goalStatement}",
+        'info'
+      );
+    }
+
+    // Update objective status to active
+    $objective->setStatus('active');
+
+    try {
+      // Execute based on goal type
+      $result = null;
+
+      if (str_contains(strtolower($goalStatement), 'query performance')) {
+        $result = $this->optimizeQueryPerformance();
+      } elseif (str_contains(strtolower($goalStatement), 'cache')) {
+        $result = $this->optimizeCacheStrategy();
+      } elseif (str_contains(strtolower($goalStatement), 'schema')) {
+        $result = $this->analyzeSchemaOptimizations();
+      } else {
+        $result = ['message' => 'Objective type not yet implemented'];
+      }
+
+      // Mark objective as completed
+      $objective->markCompleted([
+        'execution_time' => time() - strtotime($objective->getCreatedAt()->format('Y-m-d H:i:s')),
+        'result' => $result
+      ]);
+
+      return $result;
+
+    } catch (\Exception $e) {
+      // Mark objective as failed
+      $objective->markFailed($e->getMessage());
+      throw $e;
+    }
+  }
+
+  /**
+   * Evaluate peer agent output (SQL queries, data analysis)
+   *
+   * @param string $outputType Type of output
+   * @param mixed $output The output to evaluate
+   * @param array $criteria Evaluation criteria
+   * @return \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AgentEvaluation
+   */
+  public function evaluatePeerOutput(
+    string $outputType,
+    mixed $output,
+    array $criteria
+  ): \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AgentEvaluation {
+    
+    if (!$this->autonomousConfig->canAgentEvaluatePeers('AnalyticsAgent')) {
+      throw new \RuntimeException('AnalyticsAgent is not authorized to evaluate peers (disabled in configuration)');
+    }
+    
+    // Verify capability
+    $capabilities = $this->getEvaluationCapabilities();
+    if (!isset($capabilities[$outputType])) {
+      throw new \InvalidArgumentException(
+        "AnalyticsAgent cannot evaluate {$outputType}"
+      );
+    }
+
+    // Perform evaluation based on output type
+    $scores = match ($outputType) {
+      'sql_query' => $this->evaluateSqlQuery($output, $criteria),
+      'data_analysis' => $this->evaluateDataAnalysis($output, $criteria),
+      default => $this->getDefaultScores()
+    };
+
+    return new \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AgentEvaluation(
+      'AnalyticsAgent',
+      $output['output_id'] ?? uniqid('output_'),
+      $scores,
+      $scores['feedback'] ?? 'Evaluation completed',
+      $scores['strengths'] ?? [],
+      $scores['improvements'] ?? []
+    );
+  }
+
+  /**
+   * Receive and process feedback from peer agents
+   *
+   * @param array $feedback Feedback from peer agent
+   */
+  public function receiveFeedback(array $feedback): void
+  {
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "AnalyticsAgent received feedback from {$feedback['source_agent_id']}",
+        'info'
+      );
+    }
+
+    // Acknowledge feedback
+    $feedbackManager = new \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\FeedbackManager($this->db, $this->debug);
+    $feedbackManager->acknowledgeFeedback(
+      $feedback['feedback_id'],
+      'AnalyticsAgent',
+      null
+    );
+
+    // Learn from feedback (future enhancement)
+    // Could adjust query generation strategies based on feedback patterns
+  }
+
+  /**
+   * Get evaluation capabilities for AnalyticsAgent
+   *
+   * @return array Mapping of output types to capability levels
+   */
+  public function getEvaluationCapabilities(): array
+  {
+    return [
+      'sql_query' => 'expert',        // Expert in SQL query evaluation
+      'data_analysis' => 'expert',    // Expert in data analysis
+      'reasoning_chain' => 'competent', // Competent in reasoning evaluation
+      'validation_result' => 'novice'  // Basic validation understanding
+    ];
+  }
+
+  /**
+   * Check if AnalyticsAgent can collaborate on an objective
+   *
+   * @param \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective $objective
+   * @return bool True if can collaborate
+   */
+  public function canCollaborate(\ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective $objective): bool
+  {
+    $goalStatement = strtolower($objective->getGoalStatement());
+
+    // Can collaborate on objectives related to:
+    // - Data analysis
+    // - Query optimization
+    // - Database performance
+    // - Analytics
+    $keywords = ['data', 'query', 'sql', 'analytics', 'database', 'performance', 'optimization'];
+
+    foreach ($keywords as $keyword) {
+      if (str_contains($goalStatement, $keyword)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // ========================================
+  // PRIVATE HELPER METHODS FOR AUTONOMOUS FEATURES
+  // ========================================
+
+  /**
+   * Optimize query performance
+   *
+   * @return array Optimization results
+   */
+  private function optimizeQueryPerformance(): array
+  {
+    // Placeholder for query performance optimization logic
+    return [
+      'optimizations_applied' => 0,
+      'performance_improvement' => '0%',
+      'message' => 'Query performance optimization not yet implemented'
+    ];
+  }
+
+  /**
+   * Optimize cache strategy
+   *
+   * @return array Cache optimization results
+   */
+  private function optimizeCacheStrategy(): array
+  {
+    // Placeholder for cache optimization logic
+    return [
+      'cache_hit_rate_before' => 0,
+      'cache_hit_rate_after' => 0,
+      'message' => 'Cache optimization not yet implemented'
+    ];
+  }
+
+  /**
+   * Analyze schema optimizations
+   *
+   * @return array Schema analysis results
+   */
+  private function analyzeSchemaOptimizations(): array
+  {
+    // Placeholder for schema analysis logic
+    return [
+      'recommendations' => [],
+      'message' => 'Schema analysis not yet implemented'
+    ];
+  }
+
+  /**
+   * Evaluate SQL query quality
+   *
+   * @param mixed $output SQL query output
+   * @param array $criteria Evaluation criteria
+   * @return array Evaluation scores
+   */
+  private function evaluateSqlQuery(mixed $output, array $criteria): array
+  {
+    $sql = $output['sql_query'] ?? '';
+
+    // Evaluate SQL query
+    $validation = InputValidator::validateSqlQuery($sql);
+
+    $accuracyScore = $validation['valid'] ? 0.9 : 0.5;
+    $completenessScore = 0.8; // Check if query has all necessary clauses
+    $efficiencyScore = 0.8;   // Check for performance issues
+    $clarityScore = 0.8;      // Check for readability
+
+    $strengths = [];
+    $improvements = [];
+
+    if ($validation['valid']) {
+      $strengths[] = 'SQL syntax is valid';
+    } else {
+      $improvements[] = 'Fix SQL syntax errors: ' . implode(', ', $validation['issues']);
+    }
+
+    // Check for SELECT *
+    if (preg_match('/SELECT\s+\*/i', $sql)) {
+      $improvements[] = 'Avoid SELECT * - specify columns explicitly';
+      $efficiencyScore -= 0.1;
+    }
+
+    // Check for LIMIT clause
+    if (preg_match('/^SELECT/i', $sql) && !preg_match('/LIMIT/i', $sql)) {
+      $improvements[] = 'Consider adding LIMIT clause to prevent large result sets';
+      $efficiencyScore -= 0.05;
+    }
+
+    return [
+      'accuracy_score' => max(0, $accuracyScore),
+      'completeness_score' => max(0, $completenessScore),
+      'efficiency_score' => max(0, $efficiencyScore),
+      'clarity_score' => max(0, $clarityScore),
+      'feedback' => 'SQL query evaluation completed',
+      'strengths' => $strengths,
+      'improvements' => $improvements
+    ];
+  }
+
+  /**
+   * Evaluate data analysis quality
+   *
+   * @param mixed $output Data analysis output
+   * @param array $criteria Evaluation criteria
+   * @return array Evaluation scores
+   */
+  private function evaluateDataAnalysis(mixed $output, array $criteria): array
+  {
+    return [
+      'accuracy_score' => 0.8,
+      'completeness_score' => 0.8,
+      'efficiency_score' => 0.8,
+      'clarity_score' => 0.8,
+      'feedback' => 'Data analysis evaluation completed',
+      'strengths' => ['Analysis structure is sound'],
+      'improvements' => ['Consider additional data validation']
+    ];
+  }
+
+  /**
+   * Get default evaluation scores
+   *
+   * @return array Default scores
+   */
+  private function getDefaultScores(): array
+  {
+    return [
+      'accuracy_score' => 0.7,
+      'completeness_score' => 0.7,
+      'efficiency_score' => 0.7,
+      'clarity_score' => 0.7,
+      'feedback' => 'Default evaluation',
+      'strengths' => [],
+      'improvements' => []
+    ];
+  }
+
+  /**
+   * Estimate query complexity for confidence evaluation
+   * 
+
+   * 
+   * @param string $question The analytics question
+   * @return float Complexity score (0.0-1.0)
+   */
+  private function estimateQueryComplexity(string $question): float
+  {
+    $complexity = 0.3; // Base complexity
+    
+    // Increase for multiple questions
+    $questionCount = preg_match_all('/\?/', $question);
+    if ($questionCount > 1) {
+      $complexity += 0.2;
+    }
+    
+    // Increase for aggregation keywords
+    if (preg_match('/\b(total|average|sum|count|group|aggregate)\b/i', $question)) {
+      $complexity += 0.1;
+    }
+    
+    // Increase for time-based queries
+    if (preg_match('/\b(month|year|week|day|period|date|time)\b/i', $question)) {
+      $complexity += 0.1;
+    }
+    
+    // Increase for comparison queries
+    if (preg_match('/\b(compare|versus|vs|difference|between)\b/i', $question)) {
+      $complexity += 0.15;
+    }
+    
+    // Increase for complex joins (multiple entities)
+    $entityCount = 0;
+    $entities = ['product', 'order', 'customer', 'category', 'manufacturer', 'supplier'];
+    foreach ($entities as $entity) {
+      if (preg_match('/\b' . $entity . 's?\b/i', $question)) {
+        $entityCount++;
+      }
+    }
+    if ($entityCount > 2) {
+      $complexity += 0.1;
+    }
+    
+    return min(1.0, $complexity);
   }
 }

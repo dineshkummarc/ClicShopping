@@ -11,6 +11,7 @@
 namespace ClicShopping\AI\Agents\Planning;
 
 
+use ClicShopping\OM\Registry;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent;
@@ -23,7 +24,7 @@ use ClicShopping\AI\Agents\Planning\SubPlanExecutor\ToolExecutor;
 use ClicShopping\AI\Infrastructure\Metrics\CalculatorTool;
 use ClicShopping\AI\DomainsAI\WebSearch\Cache\SearchCacheManager;
 use ClicShopping\AI\DomainsAI\WebSearch\Tool\WebSearchTool;
-use ClicShopping\OM\Registry;
+use ClicShopping\AI\DomainsAI\WebSearch\Helper\Formatter\WebSearchFormatter;
 
 // 🆕 Refactored SubPlanExecutor components
 
@@ -159,6 +160,10 @@ class PlanExecutor
 
   /**
    * Exécute un plan d'exécution
+   * 
+   * - Continues execution even if some steps fail
+   * - Collects successful results
+   * - Returns partial results with failure information
    *
    * @param ExecutionPlan $plan Plan à exécuter
    * @return array Résultat de l'exécution
@@ -179,7 +184,7 @@ class PlanExecutor
       if ($this->debug) {
         $stepCount = count($plan->getSteps());
         $this->securityLogger->logSecurityEvent("Starting plan execution: {$stepCount} steps", 'info');
-        error_log("[time] [PERF] PlanExecutor: Starting execution of {$stepCount} steps");
+        error_log("[INFO : TIME] [PERF] PlanExecutor: Starting execution of {$stepCount} steps");
       }
 
       // Exécuter les étapes
@@ -190,20 +195,32 @@ class PlanExecutor
         try {
           // Déléguer l'exécution des étapes au StepExecutor
           $stepsStart = microtime(true);
+          
           $this->stepExecutor->executeSteps($currentPlan, function ($step, $plan) {
             return $this->executeStepByType($step, $plan);
           });
+          
           if ($this->debug) {
-            error_log("[time]️ [PERF] PlanExecutor: executeSteps took " . round((microtime(true) - $stepsStart), 2) . "s");
+            error_log("[INFO : TIME]️ [PERF] PlanExecutor: executeSteps took " . round((microtime(true) - $stepsStart), 2) . "s");
           }
 
-          // Si toutes les étapes sont complétées, synthétiser le résultat
-          if ($currentPlan->isComplete()) {
+          $allResults = $currentPlan->getAllStepResults();
+          $successfulResults = array_filter($allResults, function($result) {
+            return !isset($result['failed']) || $result['failed'] !== true;
+          });
+          
+          $failedResults = array_filter($allResults, function($result) {
+            return isset($result['failed']) && $result['failed'] === true;
+          });
+
+          // If we have at least some successful results, synthesize them
+          if (!empty($successfulResults) || $currentPlan->isComplete()) {
             $synthesizeStart = microtime(true);
             $finalResult = $this->synthesizeResults($currentPlan);
             if ($this->debug) {
-              error_log("[time] [PERF] PlanExecutor: synthesizeResults took " . round((microtime(true) - $synthesizeStart), 2) . "s");
+              error_log("[INFO : TIME] [PERF] PlanExecutor: synthesizeResults took " . round((microtime(true) - $synthesizeStart), 2) . "s");
             }
+            
             // synthesizeResults() returns an array, extract text_response for complete()
             $textResponse = is_array($finalResult) ? ($finalResult['text_response'] ?? json_encode($finalResult)) : $finalResult;
             $currentPlan->complete($textResponse);
@@ -214,15 +231,51 @@ class PlanExecutor
 
             $this->collector->recordHistogram('execution_time', microtime(true) - $startTime);
 
+            $hasFailures = !empty($failedResults);
+            
+            $this->securityLogger->logSecurityEvent(
+                "EXECUTION COMPLETE - Status: " . ($hasFailures ? 'PARTIAL SUCCESS' : 'SUCCESS') . 
+                " | Steps: " . count($successfulResults) . "/" . count($allResults) . 
+                " | Time: " . round($executionTime, 3) . "s",
+                $hasFailures ? 'warning' : 'info',
+                [
+                    'execution_status' => $hasFailures ? 'partial_success' : 'success',
+                    'total_steps' => count($allResults),
+                    'successful_steps' => count($successfulResults),
+                    'failed_steps' => count($failedResults),
+                    'execution_time_seconds' => round($executionTime, 3),
+                    'query' => $currentPlan->getQuery(),
+                    'intent_type' => $currentPlan->getIntent()['type'] ?? 'unknown',
+                    'is_hybrid' => isset($currentPlan->getIntent()['sub_queries']),
+                    'has_partial_failures' => $hasFailures,
+                    'failed_step_ids' => array_map(function($f) { return $f['step_id'] ?? 'unknown'; }, $failedResults),
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]
+            );
+            
             $array_execute = [
               'success' => true,
               'result' => $finalResult,
               'plan' => $currentPlan,
               'execution_time' => $executionTime,
+              'partial_failure' => $hasFailures, // Flag for partial failures
+              'failed_steps' => $hasFailures ? array_values($failedResults) : [], //Failed step details
+              'successful_steps' => count($successfulResults), // Count of successful steps
+              'total_steps' => count($allResults), // Total step count
             ];
 
             if ($this->debug) {
               $this->securityLogger->logSecurityEvent('result', 'info', $array_execute);
+              
+              if ($hasFailures) {
+                $this->securityLogger->logSecurityEvent(
+                  "Plan completed with partial failures: " . count($successfulResults) . "/" . count($allResults) . " steps succeeded",
+                  'warning',
+                  [
+                    'failed_steps' => array_map(function($f) { return $f['step_id'] ?? 'unknown'; }, $failedResults),
+                  ]
+                );
+              }
               
               // 🆕 Debug: Check if source_attribution is in finalResult
               error_log("[info] PlanExecutor: finalResult has source_attribution: " .
@@ -266,6 +319,25 @@ class PlanExecutor
       $plan->fail($e->getMessage());
       $this->planner->markPlanFailure();
 
+      $executionTime = microtime(true) - $startTime;
+
+      $this->securityLogger->logSecurityEvent(
+        "EXECUTION FAILED - Error: " . $e->getMessage() . 
+        " | Time: " . round($executionTime, 3) . "s",
+        'error',
+        [
+          'execution_status' => 'failed',
+          'error_message' => $e->getMessage(),
+          'exception_type' => get_class($e),
+          'execution_time_seconds' => round($executionTime, 3),
+          'query' => $plan->getQuery(),
+          'intent_type' => $plan->getIntent()['type'] ?? 'unknown',
+          'is_hybrid' => isset($plan->getIntent()['sub_queries']),
+          'total_steps' => count($plan->getSteps()),
+          'timestamp' => date('Y-m-d H:i:s')
+        ]
+      );
+
       $this->securityLogger->logSecurityEvent(
         "Plan execution failed: " . $e->getMessage(),
         'error'
@@ -275,13 +347,16 @@ class PlanExecutor
         'success' => false,
         'error' => $e->getMessage(),
         'plan' => $plan,
-        'execution_time' => microtime(true) - $startTime,
+        'execution_time' => $executionTime,
       ];
     }
   }
 
   /**
    * Exécute une étape selon son type
+   * 
+   * - Catches exceptions and marks step as failed
+   * - Returns error result instead of throwing
    *
    * @param TaskStep $step Étape à exécuter
    * @param ExecutionPlan $plan Plan parent
@@ -353,11 +428,26 @@ class PlanExecutor
       if ($this->debug) {
         $this->securityLogger->logSecurityEvent(
           "Step failed: {$step->getId()} - {$e->getMessage()}",
-          'error'
+          'error',
+          [
+            'step_type' => $step->getType(),
+            'description' => $step->getDescription(),
+            'exception' => get_class($e),
+          ]
         );
       }
 
-      throw $e;
+      $errorResult = [
+        'success' => false,
+        'error' => $e->getMessage(),
+        'step_id' => $step->getId(),
+        'step_type' => $step->getType(),
+        'failed' => true,
+      ];
+      
+      $plan->setStepResult($step->getId(), $errorResult);
+      
+      return $errorResult;
     }
   }
 
@@ -367,34 +457,37 @@ class PlanExecutor
    */
   private function executeAnalyticsQuery(TaskStep $step, array $context): array
   {
-    // 🔧 TASK 4.3.4.3: Add logging to trace query extraction
-    error_log(str_repeat("-", 100));
-    error_log("TASK 4.3.4.3: PlanExecutor.executeAnalyticsQuery() CALLED");
-    error_log("-" . str_repeat("-", 99));
-    error_log("Step ID: " . $step->getId());
-    error_log("Step Type: " . $step->getType());
-    error_log("Step Description: " . $step->getDescription());
-    
+    if ($this->debug) {
+	error_log(str_repeat("-", 100));
+	error_log("TASK 4.3.4.3: PlanExecutor.executeAnalyticsQuery() CALLED");
+	error_log("-" . str_repeat("-", 99));
+	error_log("Step ID: " . $step->getId());
+	error_log("Step Type: " . $step->getType());
+	error_log("Step Description: " . $step->getDescription());
+    }  
     // Try to get sub_query from metadata
     $subQuery = $step->getMeta('sub_query', null);
-    error_log("sub_query from metadata: " . ($subQuery ?? 'NULL'));
-    
+    if ($this->debug) {
+      error_log("sub_query from metadata: " . ($subQuery ?? 'NULL'));
+    }
     // Fallback to description
     $query = $step->getMeta('sub_query', $step->getDescription());
-    error_log("Final query (after fallback): '{$query}'");
-    error_log("Query length: " . strlen($query));
-    error_log("Query is empty: " . (empty($query) ? 'YES' : 'NO'));
+    if ($this->debug) {
+	error_log("Final query (after fallback): '{$query}'");
+	error_log("Query length: " . strlen($query));
+	error_log("Query is empty: " . (empty($query) ? 'YES' : 'NO'));
     
-    if (empty($query)) {
-      error_log("[error] WARNING: Query is EMPTY in PlanExecutor!");
-      error_log("This means either:");
-      error_log("  1. sub_query metadata is not set");
-      error_log("  2. step description is empty");
-      error_log("  3. Both are empty");
+	if (empty($query)) {
+	error_log("[error] WARNING: Query is EMPTY in PlanExecutor!");
+	error_log("This means either:");
+	error_log("  1. sub_query metadata is not set");
+	error_log("  2. step description is empty");
+	error_log("  3. Both are empty");
+	}
+    
+	error_log("Calling AnalyticsExecutor.executeAnalyticsQuery()...");
+	error_log("-" . str_repeat("-", 99) . "\n");
     }
-    
-    error_log("Calling AnalyticsExecutor.executeAnalyticsQuery()...");
-    error_log("-" . str_repeat("-", 99) . "\n");
     
     return $this->analyticsExecutor->executeAnalyticsQuery($query, $context);
   }
@@ -537,8 +630,14 @@ class PlanExecutor
         ];
       }
 
-      // Create text response using WebSearchResultFormatter
-      $textResponse = \ClicShopping\AI\Helper\Formatter\WebSearchResultFormatter::formatAsHtml($query, $formattedResults);
+      // Create text response using WebSearchFormatter
+      $formatter = new WebSearchFormatter($this->debug);
+      $formatted = $formatter->format([
+        'type' => 'web_search_response',
+        'query' => $query,
+        'results' => $formattedResults,
+      ]);
+      $textResponse = $formatted['content'] ?? '';
 
       if ($this->debug) {
         $this->securityLogger->logSecurityEvent(
@@ -557,7 +656,7 @@ class PlanExecutor
         'metadata' => $searchResult['metadata'] ?? [],
         'cached' => $searchResult['cached'] ?? false,
         'cache_source' => $searchResult['cache_source'] ?? 'none',
-        // 🔧 FIX: Add source_attribution for ResultSynthesizer validation
+        //  Add source_attribution for ResultSynthesizer validation
         'source_attribution' => [
           'source_type' => 'web_search',
           'primary_source' => 'Web Search',

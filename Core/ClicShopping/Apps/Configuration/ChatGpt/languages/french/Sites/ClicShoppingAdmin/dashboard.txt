@@ -532,6 +532,7 @@ tab11_loading_feedbacks = Chargement des feedbacks...
 # Onglet 12 - Exports
 tab12_title = Exports de Données
 tab12_download_metrics = Téléchargez les métriques et rapports dans différents formats:
+tab12_csv_export = Export CSV
 tab12_json_health = JSON - Rapport Santé
 tab12_json_metrics = JSON - Métriques
 tab12_json_alerts = JSON - Alertes
@@ -546,6 +547,87 @@ tab12_health_report = Rapport de santé système
 tab12_all_metrics_json = Toutes les métriques en JSON
 tab12_prometheus_metrics = Métriques au format Prometheus
 tab12_api_documentation = Documentation API Markdown
+
+# Onglet 12 - Exports Métriques Actor-Critic
+tab12_actor_critic_section = 📊 Métriques Actor-Critic
+tab12_actor_critic_dashboard = JSON - Tableau de Bord Actor-Critic
+tab12_actor_metrics = JSON - Métriques Acteurs
+tab12_critic_metrics = JSON - Métriques Critiques
+tab12_actor_critic_utilization = JSON - Métriques d'Utilisation
+tab12_actor_critic_alerts = JSON - Alertes Actor-Critic
+tab12_actor_critic_trends = JSON - Tendances de Performance
+tab12_actor_critic_prometheus = Prometheus - Métriques Actor-Critic
+tab12_actors_csv = CSV - Export Métriques Acteurs
+tab12_critics_csv = CSV - Export Métriques Critiques
+tab12_actor_critic_dashboard_desc = Données complètes du tableau de bord actor-critic
+tab12_actor_metrics_desc = Métriques de performance pour tous les acteurs
+tab12_critic_metrics_desc = Métriques de performance pour tous les critiques
+tab12_utilization_desc = Utilisation en temps réel des acteurs et critiques
+tab12_actor_critic_alerts_desc = Alertes actives de dégradation de performance
+tab12_trends_desc = Tendances historiques de performance
+tab12_actor_critic_prometheus_desc = Métriques au format Prometheus pour monitoring
+tab12_actors_csv_desc = Télécharger les métriques acteurs en CSV
+tab12_critics_csv_desc = Télécharger les métriques critiques en CSV
+
+# Métriques Actor-Critic - Général
+text_actor_critic_summary = Résumé Actor-Critic
+text_total_actors = Total Acteurs
+text_total_critics = Total Critiques
+text_separation_ratio = Ratio de Séparation
+text_total_agents = Total Agents
+text_actor_metrics_title = 🎭 Métriques de Performance Acteurs
+text_critic_metrics_title = 🔍 Métriques de Performance Critiques
+text_coordination_metrics = 🔄 Métriques de Coordination
+text_utilization_metrics = 📊 Métriques d'Utilisation
+text_performance_alerts = ⚠️ Alertes de Performance
+
+# Métriques Acteurs
+text_total_executions = Total Exécutions
+text_success_rate = Taux de Réussite
+text_avg_execution_time = Temps d'Exécution Moyen
+text_quality_score = Score de Qualité
+text_performance_score = Score de Performance
+text_actor_utilization = Utilisation Acteur
+text_by_action_type = Par Type d'Action
+
+# Métriques Critiques
+text_total_evaluations = Total Évaluations
+text_avg_evaluation_time = Temps d'Évaluation Moyen
+text_agreement_with_consensus = Accord avec Consensus
+text_evaluation_consistency = Cohérence d'Évaluation
+text_critic_utilization = Utilisation Critique
+text_by_output_type = Par Type de Sortie
+
+# Métriques de Coordination
+text_total_coordinations = Total Coordinations
+text_avg_coordination_time = Temps de Coordination Moyen
+text_avg_actor_execution_time = Temps d'Exécution Acteur Moyen
+text_avg_critic_evaluation_time = Temps d'Évaluation Critique Moyen
+
+# Types d'Alertes
+alert_type_low_success_rate = Taux de Réussite Faible
+alert_type_slow_execution = Exécution Lente
+alert_type_low_quality = Score de Qualité Faible
+alert_type_high_utilization = Utilisation Élevée
+alert_type_low_agreement = Accord Faible avec Consensus
+alert_type_slow_evaluation = Évaluation Lente
+alert_type_inconsistent_evaluations = Évaluations Incohérentes
+
+# Messages d'Alertes
+alert_actor_low_success = Acteur {actor_id} taux de réussite sous le seuil
+alert_actor_slow_execution = Acteur {actor_id} temps d'exécution dépasse le seuil
+alert_actor_low_quality = Acteur {actor_id} score de qualité sous le seuil
+alert_actor_high_utilization = Acteur {actor_id} utilisation dépasse le seuil
+alert_critic_low_agreement = Critique {critic_id} accord avec consensus sous le seuil
+alert_critic_slow_evaluation = Critique {critic_id} temps d'évaluation dépasse le seuil
+alert_critic_inconsistent = Critique {critic_id} cohérence d'évaluation sous le seuil
+alert_critic_high_utilization = Critique {critic_id} utilisation dépasse le seuil
+
+# Boutons d'Export
+button_export_actor_metrics = Exporter Métriques Acteurs
+button_export_critic_metrics = Exporter Métriques Critiques
+button_export_actor_critic_dashboard = Exporter Données Tableau de Bord
+button_view_actor_critic_metrics = Voir Métriques Actor-Critic
 
 # Recommandations Latence (texte codé en dur)
 latency_rec_low_usage_text = Seulement {percentage}% des requêtes utilisent le fast-lane. Envisagez d'élargir les critères de détection.
@@ -707,3 +789,36 @@ cache_response_time_label = Temps de Réponse
 cache_response_time_desc = Performance avec vs sans cache
 cache_size_label = Taille du Cache
 cache_size_desc = Utilisation du stockage par type de cache
+text_agent_monitoring_management = 🤖 Surveillance et gestion des agents
+button_agent_objectives = 📋 Objectifs des agents
+text_agent_objectives_help = Consulter et gerer les objectifs des agents
+button_agent_evaluations = 📊 Evaluations des agents
+text_agent_evaluations_help = Suivre les scores d'evaluation et le consensus
+button_agent_alerts = 🚨 Alertes agents
+text_agent_alerts_help = Voir les objectifs en retard et les problemes
+button_actor_critic = 🎭 Actor-Critic/Evaluation
+text_actor_critic_help = Suivre les metriques de separation actor-critic
+
+
+# Statistiques de Décomposition des Requêtes Hybrides
+decomposition_stats_title = Décomposition des Requêtes Hybrides
+decomposition_total = Décompositions Totales
+decomposition_avg_time = Temps Moyen
+decomposition_range = Plage
+decomposition_cache_hit_rate = Taux de Cache
+decomposition_cached_results = Résultats en Cache
+decomposition_error_rate = Taux d'Erreur
+decomposition_success_rate = Taux de Succès
+decomposition_performance_details = Détails de Performance
+decomposition_slow_operations = Opérations Lentes (>500ms)
+decomposition_threshold = Seuil
+decomposition_min_time = Temps Minimum
+decomposition_max_time = Temps Maximum
+decomposition_about = À Propos de la Décomposition
+decomposition_about_description = La décomposition des requêtes hybrides divise les requêtes complexes en sous-tâches séparées pour un traitement parallèle.
+decomposition_what = Quoi
+decomposition_what_description = Divise les requêtes hybrides en composants analytiques, sémantiques et de recherche web
+decomposition_why = Pourquoi
+decomposition_why_description = Permet le traitement parallèle et la gestion spécialisée de chaque type de requête
+decomposition_performance = Performance
+decomposition_performance_description = Objectif : <500ms par décomposition avec >60% de taux de cache

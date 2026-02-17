@@ -99,6 +99,14 @@ class ConversationMemory
   private int $languageId;
 
   private int $entityId;
+  private ?string $lastQueryType = null;
+  
+  // Entity tracking properties (for backward compatibility)
+  private ?int $lastEntityId = null;
+  private ?string $lastEntityType = null;
+  
+  // Database prefix
+  private string $prefix;
 
   // Configuration
   private int $maxHistorySize = 10; // Max number of messages in short-term memory
@@ -152,12 +160,10 @@ class ConversationMemory
 
     // 🆕 Initialize refactored components FIRST
     $this->shortTermManager = new ShortTermMemoryManager($this->maxHistorySize, $this->debug);
-    $this->longTermManager = new LongTermMemoryManager($this->vectorStore, $this->embeddingGenerator, $this->similarityThreshold, $this->debug);
+    $this->longTermManager = new LongTermMemoryManager($this->vectorStore, $this->embeddingGenerator, $this->similarityThreshold, $this->debug, $this->languageId);
     
-    // TASK 4.4.2.7: Initialize EntityTracker BEFORE ContextResolver
     $this->entityTracker = new EntityTracker($this->debug);
     
-    // TASK 4.4.2.7: Inject EntityTracker into ContextResolver (dependency injection)
     $this->contextResolver = new ContextResolver($this->languageId, $this->debug, $this->entityTracker);
     
     $this->memoryStats = new MemoryStatistics($this->debug);
@@ -183,7 +189,7 @@ class ConversationMemory
    *
    * @param string $userMessage User's message
    * @param string $systemResponse System's response
-   * @param array $metadata Additional metadata
+   * @param array $metadata Additional metadata (should include query_type, confidence, entities)
    * @return bool Success of the operation
    */
   public function addInteraction( string $userMessage, string $systemResponse, array $metadata = []): bool
@@ -191,6 +197,52 @@ class ConversationMemory
     $startTime = microtime(true);
     
     try {
+      
+      if (!isset($metadata['query_type'])) {
+        $metadata['query_type'] = 'unknown';
+        
+        if ($this->debug) {
+          $this->securityLogger->logSecurityEvent(
+            "TASK 6.1: query_type not provided in metadata, defaulting to 'unknown'",
+            'warning'
+          );
+        }
+      }
+      
+      if (!isset($metadata['classification_confidence'])) {
+        $metadata['classification_confidence'] = 0.0;
+      }
+      
+      if (!isset($metadata['detected_entities'])) {
+        $metadata['detected_entities'] = [];
+      }
+      
+      if ($this->debug) {
+        $this->securityLogger->logSecurityEvent(
+          "TASK 6.1: Storing interaction with metadata - query_type: {$metadata['query_type']}, " .
+          "confidence: {$metadata['classification_confidence']}, " .
+          "entities: " . json_encode($metadata['detected_entities']),
+          'info'
+        );
+      }
+      
+      if (isset($metadata['query_type'])) {
+        $contextSwitch = $this->detectContextSwitch($metadata['query_type']);
+        
+        if ($contextSwitch) {
+          $this->clearLastEntity();
+          
+          if ($this->debug) {
+            $this->securityLogger->logSecurityEvent(
+              "TASK 6.3: Context switch detected - clearing last entity",
+              'info'
+            );
+          }
+        }
+        
+        $this->lastQueryType = $metadata['query_type'];
+      }
+      
       // 1. Add to short-term memory via ShortTermMemoryManager
       $this->shortTermManager->addMessage(new Message('user', $userMessage));
       $this->shortTermManager->addMessage(new Message('assistant', $systemResponse));
@@ -250,17 +302,25 @@ class ConversationMemory
    * Retrieves the relevant conversational context for the current query.
    * 🆕 REFACTORED: Délègue à ShortTermMemoryManager et LongTermMemoryManager
    *
+   * Note: Type-aware filtering is not currently implemented because LLPhant Message objects
+   * don't natively support metadata. Query type tracking is done separately for context
+   * switch detection. Future enhancement could store metadata alongside messages.
+   *
    * @param string $currentQuery Current user query
    * @param int $limit Max number of long-term memory results
+   * @param string|null $currentQueryType Optional query type (for future use and context switch detection)
    * @return array Context containing short-term and long-term memories
    */
-  public function getRelevantContext(string $currentQuery, int $limit = 3): array
+  public function getRelevantContext(string $currentQuery, int $limit = 3, ?string $currentQueryType = null): array
   {
     $startTime = microtime(true);
     
     try {
       // 1. Get short-term history from ShortTermMemoryManager
       $recentMessages = $this->shortTermManager->getRecentMessages($this->maxContextWindow);
+      
+      // Note: Type-aware filtering would require storing metadata with messages
+      // Currently, we track query types separately for context switch detection only
       
       // Format for compatibility
       $shortTerm = [];
@@ -291,12 +351,26 @@ class ConversationMemory
       // 3. Get feedback context for learning
       $feedbackContext = $this->getFeedbackContext($currentQuery, 3);
 
+      
+      $contextSwitch = false;
+      if ($currentQueryType !== null) {
+        $contextSwitch = $this->detectContextSwitch($currentQueryType);
+        
+        if ($contextSwitch && $this->debug) {
+          $this->securityLogger->logSecurityEvent(
+            "TASK 6.5: Context switch detected in getRelevantContext() for query type '{$currentQueryType}'",
+            'info'
+          );
+        }
+      }
+
       // 4. Combine and structure the context
       $context = [
         'short_term_context' => $shortTerm,
         'long_term_context' => $longTerm,
         'feedback_context' => $feedbackContext,
         'has_context' => !empty($shortTerm) || !empty($longTerm),
+        'context_switch' => $contextSwitch, 
       ];
 
       $this->memoryStats->recordOperation('context_retrieved', true, microtime(true) - $startTime);
@@ -316,6 +390,7 @@ class ConversationMemory
         'long_term_context' => [],
         'feedback_context' => [],
         'has_context' => false,
+        'context_switch' => false, 
       ];
     }
   }
@@ -323,7 +398,6 @@ class ConversationMemory
   /**
    * Resolves contextual references ("it", "the previous one", etc.) in a query.
    * 🆕 REFACTORED: Délègue à ContextResolver
-   * 🆕 TASK 2.18: Added implicit context detection for follow-up queries
    *
    * @param string $query Query with potential references
    * @return array Resolved query and context used
@@ -333,7 +407,6 @@ class ConversationMemory
     $startTime = microtime(true);
     
     try {
-      // TASK 2.18: Detect both explicit and implicit contextual references
       $hasExplicitReferences = $this->contextResolver->detectContextualReferences($query);
       $hasImplicitContext = $this->contextResolver->detectImplicitContextualQuery($query);
       $hasReferences = $hasExplicitReferences || $hasImplicitContext;
@@ -348,7 +421,6 @@ class ConversationMemory
         ];
       }
 
-      // TASK 2.18: For implicit contextual queries, use last entity from memory
       if ($hasImplicitContext) {
         $lastEntity = $this->entityTracker->getLastEntity();
         
@@ -481,6 +553,108 @@ class ConversationMemory
     return 'high';
   }
 
+  /**
+   * 
+   * Compares the current query type with the last stored query type.
+   * Since LLPhant Message objects don't natively support metadata,
+   * we track query types separately in the ConversationMemory class.
+   * Hybrid queries are excluded from context switch detection as they can contain both types.
+   *
+   * @param string $currentQueryType Current query type (analytics, semantic, hybrid, web_search)
+   * @return bool True if context switch detected, false otherwise
+   */
+  private function detectContextSwitch(string $currentQueryType): bool
+  {
+    try {
+      // Check if we have a last query type stored
+      if ($this->lastQueryType === null) {
+        // No previous query type, so no switch
+        
+        if ($this->debug) {
+          $this->securityLogger->logStructured(
+            'info',
+            'ConversationMemory',
+            'first_query_in_conversation',
+            [
+              'current_query_type' => $currentQueryType,
+              'user_id' => $this->userId,
+              'language_id' => $this->languageId,
+              'note' => 'No previous query type - this is the first query in conversation'
+            ]
+          );
+        }
+        return false;
+      }
+      
+      $lastQueryType = $this->lastQueryType;
+      
+      // Context switch if types differ (excluding hybrid)
+      // Hybrid queries don't trigger context switches because they can contain both types
+      $isSwitch = $lastQueryType !== $currentQueryType && 
+                  $lastQueryType !== 'hybrid' && 
+                  $currentQueryType !== 'hybrid';
+      
+      
+      if ($isSwitch) {
+        if ($this->debug) {
+          $this->securityLogger->logStructured(
+            'info',
+            'ConversationMemory',
+            'context_switch_detected',
+            [
+              'previous_query_type' => $lastQueryType,
+              'current_query_type' => $currentQueryType,
+              'switch_direction' => "{$lastQueryType} → {$currentQueryType}",
+              'user_id' => $this->userId,
+              'language_id' => $this->languageId,
+              'entity_will_be_cleared' => true,
+              'timestamp' => date('Y-m-d H:i:s'),
+              'note' => 'Context switch detected - entity tracking will be cleared'
+            ]
+          );
+        }
+      } else {
+        
+        if ($this->debug) {
+          $this->securityLogger->logStructured(
+            'info',
+            'ConversationMemory',
+            'context_continuation',
+            [
+              'query_type' => $currentQueryType,
+              'previous_query_type' => $lastQueryType,
+              'user_id' => $this->userId,
+              'language_id' => $this->languageId,
+              'note' => 'No context switch - continuing with same query type'
+            ]
+          );
+        }
+      }
+      
+      return $isSwitch;
+      
+    } catch (\Exception $e) {
+      
+      if ($this->debug) {
+        $this->securityLogger->logStructured(
+          'error',
+          'ConversationMemory',
+          'context_switch_detection_error',
+          [
+            'current_query_type' => $currentQueryType,
+            'last_query_type' => $this->lastQueryType ?? 'null',
+            'error_message' => $e->getMessage(),
+            'error_file' => $e->getFile(),
+            'error_line' => $e->getLine(),
+            'user_id' => $this->userId,
+            'note' => 'Error detecting context switch - defaulting to no switch'
+          ]
+        );
+      }
+      return false;
+    }
+  }
+
    /**
    * Formats an interaction for vector store storage.
    *
@@ -587,12 +761,14 @@ class ConversationMemory
 
   /**
    * Clear the last entity from memory
-   * 🆕 TASK 2.18: Clear entity when context switches
    *
    * @return void
    */
   public function clearLastEntity(): void
   {
+    // Get entity info before clearing for logging
+    $previousEntity = $this->entityTracker->getLastEntity();
+    
     $this->entityTracker->clearLastEntity();
     
     // Also clear local properties for backward compatibility
@@ -600,9 +776,19 @@ class ConversationMemory
     $this->lastEntityType = null;
     
     if ($this->debug) {
-      $this->securityLogger->logSecurityEvent(
-        "TASK 2.18: Last entity cleared from memory",
-        'info'
+      $this->securityLogger->logStructured(
+        'info',
+        'ConversationMemory',
+        'entity_cleared',
+        [
+          'previous_entity_id' => $previousEntity['id'] ?? null,
+          'previous_entity_type' => $previousEntity['type'] ?? null,
+          'user_id' => $this->userId,
+          'language_id' => $this->languageId,
+          'timestamp' => date('Y-m-d H:i:s'),
+          'reason' => 'context_switch',
+          'note' => 'Last entity cleared from memory due to context switch'
+        ]
       );
     }
   }
@@ -878,7 +1064,6 @@ class ConversationMemory
       error_log("ConversationMemory::recordFeedback - Record prepared: " . json_encode($feedbackRecord));
       error_log("ConversationMemory::recordFeedback - Calling db->save()");
 
-      // 🔧 TASK 4.4.1 PHASE 2: Use DoctrineOrm instead of direct DB access
       $success = DoctrineOrm::insert('rag_feedback', $feedbackRecord);
       
       error_log("ConversationMemory::recordFeedback - Save result: " . ($success ? 'TRUE' : 'FALSE'));
@@ -1138,7 +1323,6 @@ class ConversationMemory
   public function getLastSQLQuery(): ?string
   {
     try {
-      // 🔧 TASK 4.4.1 PHASE 2: Use DoctrineOrm instead of direct DB access
       $prefix = CLICSHOPPING::getConfig('db_table_prefix');
       
       $sql = "

@@ -10,8 +10,6 @@
 
 namespace ClicShopping\AI\Rag;
 
-
-
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\HTML;
@@ -23,7 +21,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
-use ClicShopping\AI\Helper\Formatter\ResultFormatter;
+use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\ResultFormatter;
 use ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent;
 
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
@@ -86,7 +84,7 @@ class MultiDBRAGManager
     }
 
     $this->app = Registry::get('ChatGpt');
-    // 🔧 TASK 4.4.1 PHASE 7: Removed - no longer needed (using DoctrineOrm)
+    
     // $this->db = Registry::get('Db');
     $this->language = Registry::get('Language');
     $this->userId = AdministratorAdmin::getUserAdminId() ?? 0; // Default to 0 if no admin logged in
@@ -107,7 +105,7 @@ class MultiDBRAGManager
 
     // 🔥 DEBUG CRITIQUE
     if ($this->debug) {
-      error_log("═══════════════════════════════════════════════════════");
+      error_log("====================================================");
       error_log("[info] MultiDBRAGManager::__construct() START");
       error_log("Model: " . ($model ?? 'null'));
       error_log("TableNames provided: " . print_r($tableNames, true));
@@ -127,7 +125,7 @@ class MultiDBRAGManager
 
     // 🔥 APPEL CRITIQUE : Initialize vector stores
     if ($this->debug) {
-      error_log("───────────────────────────────────────────────────");
+      error_log("------------------------------------------------------------------------------");
       error_log("[info] About to call initializeVectorStores()...");
       error_log("TableNames param: " . (empty($tableNames) ? 'EMPTY (will auto-detect)' : implode(', ', $tableNames)));
     }
@@ -135,7 +133,7 @@ class MultiDBRAGManager
     $this->initializeVectorStores($tableNames);
 
     if ($this->debug) {
-      error_log("───────────────────────────────────────────────────");
+      error_log("------------------------------------------------------------------------------");
       error_log("[stats] After initializeVectorStores():");
       error_log("VectorStores count: " . count($this->vectorStores));
       error_log("VectorStores keys: " . implode(', ', array_keys($this->vectorStores)));
@@ -159,9 +157,7 @@ class MultiDBRAGManager
 
         // Create OpenAI chat instance for reranking
         $config = new OpenAIConfig();
-        $config->model = defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL')
-          ? CLICSHOPPING_APP_CHATGPT_CH_MODEL
-          : 'gpt-4o-mini';
+        $config->model = defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : Gpt::getTechnicalFallbackModel();
 
         $chat = new OpenAIChat($config);
 
@@ -241,7 +237,6 @@ class MultiDBRAGManager
               AND TABLE_NAME LIKE :pattern 
               ORDER BY TABLE_NAME";
 
-      // 🔧 TASK 4.4.1 PHASE 7: Migrated to DoctrineOrm
       $detectedTables = DoctrineOrm::select($sql, [
         'dbName' => $dbName,
         'pattern' => $prefix . '%_embedding'
@@ -385,8 +380,10 @@ class MultiDBRAGManager
    */
   private function initializeVectorStores(array $tableNames): void
   {
+    $startTime = microtime(true);
+
     if ($this->debug) {
-      error_log("═══════════════════════════════════════════════════════");
+      error_log("=========================================================");
       error_log("[info] initializeVectorStores() CALLED");
       error_log("Input tableNames: " . (empty($tableNames) ? 'EMPTY' : implode(', ', $tableNames)));
     }
@@ -417,7 +414,7 @@ class MultiDBRAGManager
     }
 
     if ($this->debug) {
-      error_log("──────────────────────────────────────────────────");
+      error_log("---------------------------------------------------");
       error_log("[stats] Tables to initialize: " . implode(", ", $tableNames));
     }
 
@@ -433,7 +430,7 @@ class MultiDBRAGManager
     foreach ($tableNames as $tableName) {
       try {
         if ($this->debug) {
-          error_log("──────────────────────────────────────────────────");
+          error_log("---------------------------------------------------");
           error_log("[info] Creating VectorStore for: {$tableName}");
         }
 
@@ -457,7 +454,7 @@ class MultiDBRAGManager
         $successCount++;
 
         if ($this->debug) {
-          error_log(" VectorStore created successfully");
+          error_log("VectorStore created successfully");
           error_log("Current vectorStores count: " . count($this->vectorStores));
         }
 
@@ -476,7 +473,7 @@ class MultiDBRAGManager
     }
 
     if ($this->debug) {
-      error_log("═══════════════════════════════════════════════════════");
+      error_log("=========================================================");
       error_log("[stats] INITIALIZATION COMPLETE");
       error_log("Tables attempted: " . count($tableNames));
       error_log("Success: {$successCount}");
@@ -489,7 +486,8 @@ class MultiDBRAGManager
       } else {
         error_log("SUCCESS: vectorStores initialized with " . count($this->vectorStores) . " stores ");
       }
-      error_log("═══════════════════════════════════════════════════════");
+      error_log("[timing] initializeVectorStores() took " . round((microtime(true) - $startTime) * 1000, 2) . "ms");
+      error_log("=========================================================");
     }
   }
 
@@ -870,35 +868,47 @@ class MultiDBRAGManager
     // Build UNION ALL query for all tables
     $unionQueries = [];
     $tables = $this->knownEmbeddingTable();
-    $sqlLimit = $limit * 5; // Request 5x more results to account for filtering
+    $sqlLimit = (int)($limit * 5); // Request 5x more results to account for filtering - cast to int
 
     foreach ($tables as $table) {
       if (isset($this->vectorStores[$table])) {
+        // Check if table has metadata column
+        $hasMetadata = DoctrineOrm::columnExists($table, 'metadata');
+        
+        // Build metadata/content SELECT clauses with forced collation to prevent UNION collation errors
+        $contentSelect = 'CONVERT(content USING utf8mb4) COLLATE utf8mb4_unicode_ci AS content';
+        $metadataSelect = $hasMetadata
+          ? 'CONVERT(metadata USING utf8mb4) COLLATE utf8mb4_unicode_ci AS metadata'
+          : "CONVERT(JSON_OBJECT() USING utf8mb4) COLLATE utf8mb4_unicode_ci AS metadata";
+        
         // Build sub-query for this table
+        // Use literal value instead of parameter for LIMIT
+        // Doctrine cannot bind the same parameter multiple times in UNION ALL
         $subQuery = "(
           SELECT 
             '{$table}' as source_table,
             id,
-            content,
+            {$contentSelect},
             embedding,
-            metadata,
-            (1 - (embedding <=> CAST(:queryEmbedding AS VECTOR(1536)))) as similarity_score
+            {$metadataSelect},
+            (1 / (1 + VEC_DISTANCE_COSINE(embedding, VEC_FromText(:queryEmbedding)))) as similarity_score
           FROM {$table}
-          WHERE (1 - (embedding <=> CAST(:queryEmbedding AS VECTOR(1536)))) >= :minScore";
+          HAVING similarity_score >= :minScore";
 
-        // Add language filter if specified
-        if ($languageId !== null) {
+        // Add language filter if specified (only if metadata column exists)
+        if ($languageId !== null && $hasMetadata) {
           $subQuery .= " AND JSON_EXTRACT(metadata, '$.language_id') = :languageId";
         }
 
-        // Add entity type filter if specified
-        if ($entityType !== null) {
+        // Add entity type filter if specified (only if metadata column exists)
+        if ($entityType !== null && $hasMetadata) {
           $subQuery .= " AND JSON_EXTRACT(metadata, '$.entity_type') = :entityType";
         }
 
+        // Use literal integer value for LIMIT (not quoted)
         $subQuery .= "
           ORDER BY similarity_score DESC
-          LIMIT :sqlLimit
+          LIMIT " . $sqlLimit . "
         )";
 
         $unionQueries[] = $subQuery;
@@ -918,14 +928,13 @@ class MultiDBRAGManager
 
     // Combine all sub-queries with UNION ALL
     $sql = implode(" UNION ALL ", $unionQueries);
-    $sql .= " ORDER BY similarity_score DESC LIMIT :finalLimit";
+    // Use literal integer for final LIMIT (not parameter to avoid quoting issues)
+    $sql .= " ORDER BY similarity_score DESC LIMIT " . $sqlLimit;
 
-    // Prepare parameters
+    // Prepare parameters (removed finalLimit parameter)
     $params = [
       'queryEmbedding' => $embeddingJson,
       'minScore' => max(0.01, $minScore - 0.15), // Same adjustment as sequential
-      'sqlLimit' => $sqlLimit,
-      'finalLimit' => $sqlLimit // Get more results for reranking
     ];
 
     if ($languageId !== null) {
@@ -1215,7 +1224,7 @@ class MultiDBRAGManager
    */
   private function logSearchQuery(string $query, array $params): void
   {
-    $logMessage = "=== SEARCH QUERY LOG ===\n";
+    $logMessage = "=== SEARCH QUERY LOG ===";
     $logMessage .= "Query: {$query}\n";
     $logMessage .= "Params:\n";
     $logMessage .= "  - limit: " . ($params['limit'] ?? 'N/A') . "\n";
@@ -1226,6 +1235,7 @@ class MultiDBRAGManager
     $logMessage .= "Vector stores keys: " . implode(', ', array_keys($this->vectorStores)) . "\n";
 
     error_log($logMessage);
+    
     if ($this->debug) {
       $this->securityLogger->logSecurityEvent($logMessage, 'info');
     }
@@ -1235,7 +1245,6 @@ class MultiDBRAGManager
   /**
    * Answer a question using RAG (Retrieval-Augmented Generation)
    *
-   * TASK 4.4.2 RESTORATION: This method was accidentally removed by autofix
    * Restored to fix semantic RAG regression
    *
    * This method:
@@ -1301,7 +1310,6 @@ class MultiDBRAGManager
       // Build context from documents (with priority handling)
       $context = $this->optimizeContext($documents, 3000);
 
-      // TASK 5.2.1.4: Collect document names for citation
       $documentNames = [];
       foreach ($documents as $doc) {
         $docName = $this->extractDocumentName($doc);
@@ -1317,7 +1325,6 @@ class MultiDBRAGManager
       // Generate answer using LLM with context
       $synthesisPrompt = "Based on the following information, answer this question: {$question}\n\nInformation:\n{$context}\n\n";
 
-      // 🔧 TASK 5.2.1.3 FIX: DO NOT ask LLM to cite sources - we display them separately
       // The formatter will display sources at the end in italic, so the LLM should not include them
 
       $synthesisPrompt .= "Answer:";
@@ -1402,7 +1409,6 @@ class MultiDBRAGManager
     };
 
     foreach ($documents as $i => $doc) {
-      // 🔧 TASK 3.5.2.3: Extract real document name from metadata
       $documentName = $this->extractDocumentName($doc);
 
       // Priority documents get FULL content (no truncation)
@@ -1449,7 +1455,6 @@ class MultiDBRAGManager
   /**
    * Extract document name from document metadata
    *
-   * 🔧 TASK 5.2.1.3: Extract real document names for citation
    *
    * This method extracts the document name from metadata to use in prompts
    * instead of generic "Document 1", "Document 2" labels.
@@ -1483,7 +1488,6 @@ class MultiDBRAGManager
     }
 
     // Try different metadata fields in priority order
-    // 🔧 TASK 5.2.1.3: Added brand_name and category_name based on diagnostic results
     $possibleFields = ['title', 'document_name', 'brand_name', 'product_name', 'category_name', 'name', 'page_title'];
 
     foreach ($possibleFields as $field) {
@@ -1521,7 +1525,7 @@ class MultiDBRAGManager
     }
 
     // Last resort: return generic name (changed from "Unknown Document" to "Document")
-    // 🔧 TASK 5.2.1.3: This prevents "(Unknown Document)" from appearing in LLM responses
+
     return "Document";
   }
 
@@ -1595,8 +1599,6 @@ class MultiDBRAGManager
     }
 
     try {
-      // 🔧 TASK 4.4.1 PHASE 7: Migrated to DoctrineOrm
-
       // Compter les documents
       $count = DoctrineOrm::selectOne("SELECT COUNT(*) as total FROM {$tableName}");
 
@@ -1712,7 +1714,6 @@ class MultiDBRAGManager
 
     // 2. Vérifier les tables d'embedding dans la base
     error_log("Step 2: Checking embedding tables in database");
-    // 🔧 TASK 4.4.1 PHASE 7: Migrated to DoctrineOrm
 
     foreach ($this->knownEmbeddingTable() as $tableName) {
       try {

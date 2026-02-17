@@ -27,9 +27,6 @@ use ClicShopping\AI\Agents\Memory\WorkingMemory;
  * - Track last entity (entity_id, entity_type)
  * - Resolve contextual references in queries
  * - Provide clean interface for memory operations
- *
- * TASK 2.4: Extracted from OrchestratorAgent (Phase 2 - Component Extraction)
- * Requirements: REQ-4.5, REQ-8.1
  */
 
 class MemoryManager
@@ -227,7 +224,7 @@ class MemoryManager
       'intent_confidence' => $intent['confidence'],
       'intent_type' => $intent['type'] ?? 'unknown',
       'execution_time' => $response['execution_time'],
-      'plan_steps' => $plan !== null ? count($plan->getSteps()) : 0, // TASK 5.2.1.1: Handle null plan
+      'plan_steps' => $plan !== null ? count($plan->getSteps()) : 0, 
       'validations_performed' => count($validationResults),
       'entity_id' => $entityId,
       'entity_type' => $entityType,

@@ -115,7 +115,6 @@ class WebSearchPatterns
   /**
    * Internal keywords (to exclude from external site detection)
    * 
-   * TASK 2026-01-09: Added promotion-related keywords to prevent false positives
    * - "promotion", "sale", "special", "discount" should not be treated as external sites
    * - Fixes issue where "count products on promotion" was incorrectly classified as web_search
    */

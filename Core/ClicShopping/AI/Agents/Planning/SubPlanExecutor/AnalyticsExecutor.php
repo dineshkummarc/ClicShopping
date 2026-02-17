@@ -10,10 +10,28 @@
 
 namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor;
 
-
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent;
 use ClicShopping\AI\DomainsAI\Analytics\Patterns\AnalyticsExecutorPatterns;
+use ClicShopping\AI\Agents\Orchestrator\SubActorCritic\ActionResult;
+use ClicShopping\AI\Agents\Orchestrator\SubActorCritic\Context;
+use ClicShopping\AI\Agents\Orchestrator\SubActorCritic\ConsensusBuilder;
+use ClicShopping\AI\Agents\Orchestrator\SubActorCritic\Critics\AnalyticsCritic;
+use ClicShopping\AI\Agents\Orchestrator\SubActorCritic\Critics\SqlQualityCritic;
+use ClicShopping\AI\Agents\Orchestrator\SubActorCritic\WeightingEngine\CriticDataCollector;
+use ClicShopping\AI\Agents\Orchestrator\SubActorCritic\WeightingEngine\LLMWeightingEngine;
+use ClicShopping\AI\Agents\Orchestrator\SubActorCritic\WeightingEngine\LLMPromptBuilder;
+use ClicShopping\AI\Agents\Orchestrator\SubActorCritic\WeightingEngine\WeightNormalizer;
+use ClicShopping\AI\Agents\Orchestrator\SubActorCritic\WeightingEngine\WeightAuditLogger;
+use ClicShopping\AI\Agents\Orchestrator\SubActorCritic\WeightingEngine\WeightedConsensusBuilder;
+use ClicShopping\AI\Agents\Orchestrator\SubReputation\ReputationStore;
+use ClicShopping\AI\Agents\Orchestrator\SubReputation\ReputationTracker;
+use ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AgentEvaluation;
+use ClicShopping\AI\Config\AgentSystemConfig;
+use ClicShopping\AI\RegistryAI\ActorRegistry;
+use ClicShopping\AI\RegistryAI\CriticRegistry;
+use ClicShopping\OM\Registry;
+use ClicShopping\OM\CLICSHOPPING;
 
 /**
  * AnalyticsExecutor Class
@@ -36,6 +54,8 @@ class AnalyticsExecutor
   private string $userId;
   private int $languageId;
 
+  private bool $debugRAManager;
+
   /**
    * Constructor
    *
@@ -49,9 +69,73 @@ class AnalyticsExecutor
     $this->userId = $userId;
     $this->languageId = $languageId;
     $this->debug = $debug;
+    $this->debugRAManager = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER')&& CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
 
     if ($this->debug) {
       $this->logger->logSecurityEvent("AnalyticsExecutor initialized", 'info');
+    }
+  }
+
+  /**
+   * Execute analytics query with temporal error handling
+   *
+   * **Requirement 8.4**: Execute query with proper error handling for temporal periods
+   *
+   * This method wraps executeAnalyticsQuery with additional error handling
+   * specific to temporal aggregations. It ensures that failures in one
+   * temporal period don't prevent other periods from being processed.
+   *
+   * @param string $query Query to execute
+   * @param array $context Context information including temporal_period
+   * @return array Result with success status and error handling
+   */
+  public function executeTemporalAnalyticsQuery(string $query, array $context = []): array
+  {
+    $temporalPeriod = $context['temporal_period'] ?? 'unknown';
+
+    try {
+      // Log the temporal query execution
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "Executing temporal analytics query for period: {$temporalPeriod}",
+          'info',
+          ['query' => substr($query, 0, 100), 'temporal_period' => $temporalPeriod]
+        );
+      }
+
+      // Execute the query
+      $result = $this->executeAnalyticsQuery($query, $context);
+
+      // Check if execution was successful
+      if (!isset($result['success']) || $result['success'] === false) {
+        // If there's an error but it's not a complete failure, still return partial result
+        if (!empty($result['results'])) {
+          $result['partial_success'] = true;
+          $result['temporal_period'] = $temporalPeriod;
+          return $result;
+        }
+
+        // Complete failure - use error handler
+        return $this->handleSqlGenerationFailure(
+          $query,
+          $temporalPeriod,
+          null,
+          $result['error'] ?? 'Query execution failed'
+        );
+      }
+
+      // **Requirement 8.5**: Check for no data and handle gracefully
+      if (empty($result['results'])) {
+        return $this->handleNoDataForTemporalPeriod($query, $temporalPeriod, $context);
+      }
+
+      // Add temporal period to successful result
+      $result['temporal_period'] = $temporalPeriod;
+      return $result;
+
+    } catch (\Exception $e) {
+      // Handle exception with temporal-specific error handling
+      return $this->handleSqlGenerationFailure($query, $temporalPeriod, $e);
     }
   }
 
@@ -64,20 +148,28 @@ class AnalyticsExecutor
    */
   public function executeAnalyticsQuery(string $query, array $context = []): array
   {
-    // 🔧 TASK 4.3.4.3: Add comprehensive logging to trace SQL generation
-    error_log(str_repeat("=", 100));
-    error_log("TASK 4.3.4.3: AnalyticsExecutor.executeAnalyticsQuery() CALLED");
-    error_log(str_repeat("=", 100));
-    error_log("Query received: '{$query}'");
-    error_log("Query length: " . strlen($query));
-    error_log("Query is empty: " . (empty($query) ? 'YES' : 'NO'));
-    
+    if ($this->debugRAManager) {
+      error_log(str_repeat("=", 100));
+      error_log("AnalyticsExecutor.executeAnalyticsQuery() CALLED");
+      error_log(str_repeat("=", 100));
+      error_log("Query received: '{$query}'");
+      error_log("Query length: " . strlen($query));
+      error_log("Query is empty: " . (empty($query) ? 'YES' : 'NO'));
+    }
+
+
     try {
       // Initialize analytics agent if needed
       if ($this->analyticsAgent === null) {
-        error_log("Initializing AnalyticsAgent...");
+        if ($this->debugRAManager) {
+          error_log("Initializing AnalyticsAgent...");
+        }
+
         $this->analyticsAgent = new AnalyticsAgent($this->languageId, true, $this->userId);
-        error_log("AnalyticsAgent initialized successfully");
+
+        if ($this->debugRAManager) {
+          error_log("AnalyticsAgent initialized successfully");
+        }
       }
 
       if ($this->debug) {
@@ -87,11 +179,12 @@ class AnalyticsExecutor
         );
       }
 
-      // 🔧 TASK 4.3.4.3: Check if query is empty before calling processBusinessQuery
       if (empty($query)) {
-        error_log("[error] ERROR: Query is EMPTY before calling processBusinessQuery!");
-        error_log("This is the root cause - query was lost somewhere in the pipeline");
-        
+        if ($this->debugRAManager) {
+          error_log("[error] ERROR: Query is EMPTY before calling processBusinessQuery!");
+          error_log("This is the root cause - query was lost somewhere in the pipeline");
+        }
+
         return [
           'type' => 'analytics_response',
           'success' => false,
@@ -103,29 +196,43 @@ class AnalyticsExecutor
         ];
       }
 
-      error_log("Calling AnalyticsAgent.processBusinessQuery()...");
-      
+      if ($this->debugRAManager) {
+        error_log("Calling AnalyticsAgent.processBusinessQuery()...");
+      }
+
+      $executionStart = microtime(true);
+
       // Execute query using processBusinessQuery for proper formatting
       $rawResult = $this->analyticsAgent->processBusinessQuery($query, true);
+      $executionTimeMs = (int)round((microtime(true) - $executionStart) * 1000);
 
-      error_log("processBusinessQuery() returned:");
-      error_log("  SQL query: " . ($rawResult['sql_query'] ?? 'EMPTY'));
-      error_log("  Results count: " . count($rawResult['results'] ?? []));
-      
-      // 🔧 FIX: Handle interpretation being an array or string
+      if ($this->debugRAManager) {
+        error_log("processBusinessQuery() returned:");
+        error_log("  SQL query: " . ($rawResult['sql_query'] ?? 'EMPTY'));
+        error_log("  Results count: " . count($rawResult['results'] ?? []));
+      }
+      //  Handle interpretation being an array or string
       $interpretation = $rawResult['interpretation'] ?? 'N/A';
+
       if (is_array($interpretation)) {
         $interpretationStr = json_encode($interpretation, JSON_UNESCAPED_UNICODE);
       } else {
         $interpretationStr = (string)$interpretation;
       }
-      error_log("  Interpretation: " . substr($interpretationStr, 0, 100));
-
+      if ($this->debugRAManager) {
+        error_log("  Interpretation: " . substr($interpretationStr, 0, 100));
+      }
       // Format result
       $formattedResult = $this->formatAnalyticsResult($rawResult);
 
-      error_log("Formatted result SQL: " . ($formattedResult['sql_query'] ?? 'EMPTY'));
-      error_log(str_repeat("=", 100) . "\n");
+      if ($this->debugRAManager) {
+        error_log("Formatted result SQL: " . ($formattedResult['sql_query'] ?? 'EMPTY'));
+        error_log(str_repeat("=", 100) . "\n");
+      }
+
+      // Record real analytics execution + critic evaluation (no synthetic data)
+      $this->recordAnalyticsEvaluation($query, $rawResult, $executionTimeMs);
+      $this->registerSlowQueryObjective($query, $executionTimeMs);
 
       return $formattedResult;
 
@@ -137,19 +244,6 @@ class AnalyticsExecutor
   }
 
   /**
-   * Extract table name from SQL query for source attribution
-   * 
-   * Pattern logic moved to AnalyticsExecutorPatterns class.
-   *
-   * @param string|null $sql SQL query
-   * @return string Table name or 'database'
-   */
-  private function extractTableNameFromSql(?string $sql): string
-  {
-    return AnalyticsExecutorPatterns::extractTableName($sql);
-  }
-
-  /**
    * Format analytics result
    *
    * @param array $rawResult Raw result from AnalyticsAgent
@@ -157,70 +251,85 @@ class AnalyticsExecutor
    */
   public function formatAnalyticsResult(array $rawResult): array
   {
-    // 🔍 DEBUG: Trace results through formatting
-    error_log("\n" . str_repeat("=", 100));
-    error_log("DEBUG: AnalyticsExecutor.formatAnalyticsResult() CALLED");
-    error_log(str_repeat("=", 100));
-    error_log("Raw result type: " . ($rawResult['type'] ?? 'unknown'));
-    error_log("Raw result has 'results' key: " . (isset($rawResult['results']) ? 'YES' : 'NO'));
-    
+    if ($this->debugRAManager) {
+      // 🔍 DEBUG: Trace results through formatting
+      error_log("\n" . str_repeat("=", 100));
+      error_log("DEBUG: AnalyticsExecutor.formatAnalyticsResult() CALLED");
+      error_log(str_repeat("=", 100));
+      error_log("Raw result type: " . ($rawResult['type'] ?? 'unknown'));
+      error_log("Raw result has 'results' key: " . (isset($rawResult['results']) ? 'YES' : 'NO'));
+    }
+
     if (isset($rawResult['results'])) {
-      error_log("Raw result 'results' count: " . count($rawResult['results']));
-      error_log("Raw result 'results' is_array: " . (is_array($rawResult['results']) ? 'YES' : 'NO'));
-      
+      if ($this->debugRAManager) {
+        error_log("Raw result 'results' count: " . count($rawResult['results']));
+        error_log("Raw result 'results' is_array: " . (is_array($rawResult['results']) ? 'YES' : 'NO'));
+      }
+
       if (!empty($rawResult['results']) && is_array($rawResult['results'])) {
         error_log("First row keys: " . implode(', ', array_keys($rawResult['results'][0])));
         error_log("First row data: " . json_encode($rawResult['results'][0]));
       }
     }
-    error_log(str_repeat("=", 100) . "\n");
-    
+    if ($this->debugRAManager) {
+      error_log(str_repeat("=", 100) . "\n");
+    }
     // 🔧 FIX: Handle ambiguous results type
     // When query is ambiguous, the system returns multiple interpretations
     // Instead of passing ambiguous results to UI (which doesn't handle them),
     // we select the best interpretation and return it as a normal result
     if (isset($rawResult['type']) && $rawResult['type'] === 'analytics_results_ambiguous') {
-      error_log("✅ Detected ambiguous results - selecting best interpretation");
-      
+      if ($this->debugRAManager) {
+        error_log("✅ Detected ambiguous results - selecting best interpretation");
+      }
       // Get the interpretation results
       $interpretationResults = $rawResult['interpretation_results'] ?? [];
-      
+
       if (!empty($interpretationResults)) {
         // Find the interpretation with the most results
         $bestInterpretation = null;
         $maxResults = 0;
-        
+
         foreach ($interpretationResults as $key => $interpretation) {
           $resultCount = count($interpretation['results'] ?? []);
-          error_log("  Interpretation '{$key}': {$resultCount} results");
-          error_log("    Has 'interpretation' key: " . (isset($interpretation['interpretation']) ? 'YES' : 'NO'));
+          if ($this->debugRAManager) {
+            error_log("  Interpretation '{$key}': {$resultCount} results");
+            error_log("    Has 'interpretation' key: " . (isset($interpretation['interpretation']) ? 'YES' : 'NO'));
+          }
+
           if (isset($interpretation['interpretation'])) {
             error_log("    Interpretation text: " . substr($interpretation['interpretation'], 0, 100));
           }
-          
+
           if ($resultCount > $maxResults) {
             $maxResults = $resultCount;
             $bestInterpretation = $interpretation;
           }
         }
-        
+
         // If we found a good interpretation, use it
         if ($bestInterpretation !== null && !empty($bestInterpretation['results'])) {
-          error_log("  Selected best interpretation with {$maxResults} results");
-          
+          if ($this->debugRAManager) {
+            error_log("  Selected best interpretation with {$maxResults} results");
+          }
           // Use the interpretation from the best result, or generate one
           $interpretation = $bestInterpretation['interpretation'] ?? null;
-          
+
           // If interpretation is empty or generic, generate a better one
           if (empty($interpretation) || $interpretation === 'Résultats trouvés' || $interpretation === 'Results found') {
-            error_log("  Interpretation is empty/generic, generating from results...");
+            if ($this->debugRAManager) {
+              error_log("  Interpretation is empty/generic, generating from results...");
+            }
+
             $interpretation = $this->generateInterpretationFromResults(
               $bestInterpretation['results'],
               $rawResult['query'] ?? ''
             );
-            error_log("  Generated interpretation: " . substr($interpretation, 0, 100));
+            if ($this->debugRAManager) {
+              error_log("  Generated interpretation: " . substr($interpretation, 0, 100));
+            }
           }
-          
+
           // Convert to standard analytics_response format
           return [
             'type' => 'analytics_response',
@@ -240,11 +349,13 @@ class AnalyticsExecutor
           ];
         }
       }
-      
-      // If no good interpretation found, fall through to generate default interpretation
-      error_log("  No good interpretation found, falling through");
+
+      if ($this->debugRAManager) {
+        // If no good interpretation found, fall through to generate default interpretation
+        error_log("  No good interpretation found, falling through");
+      }
     }
-    
+
     // Check if result is already properly formatted as analytics_response
     if (isset($rawResult['type']) && $rawResult['type'] === 'analytics_response') {
       // Already formatted, just ensure entity metadata and source attribution are preserved
@@ -254,7 +365,7 @@ class AnalyticsExecutor
           'entity_type' => $rawResult['entity_type'] ?? 'unknown',
         ];
       }
-      
+
       // 🆕 Add source attribution if not already present
       if (!isset($rawResult['source_attribution'])) {
         $rawResult['source_attribution'] = [
@@ -264,16 +375,16 @@ class AnalyticsExecutor
           'table_name' => $this->extractTableNameFromSql($rawResult['sql_query'] ?? null),
         ];
       }
-      
+
       return $rawResult;
     }
 
     // 🔧 FIX: Generate default interpretation if missing
     $interpretation = $rawResult['interpretation'] ?? null;
-    
+
     if (empty($interpretation) || $interpretation === 'Analytics result processed') {
       $interpretation = $this->generateDefaultInterpretation($rawResult);
-      
+
       if ($this->debug) {
         $this->logger->logSecurityEvent(
           "Generated default interpretation: {$interpretation}",
@@ -322,7 +433,7 @@ class AnalyticsExecutor
 
   /**
    * Generate interpretation from results
-   * 
+   *
    * NOTE: All messages in English per tech.md guidelines.
    * UI layer handles translation to user's language.
    *
@@ -335,50 +446,63 @@ class AnalyticsExecutor
     if (empty($results)) {
       return "No results found for: {$question}";
     }
-    
+
     $count = count($results);
     $firstResult = $results[0];
-    
+
     // Build interpretation based on the data
     $parts = [];
-    
+
     // Check for product name
     if (isset($firstResult['products_name'])) {
       $parts[] = "Product: {$firstResult['products_name']}";
     }
-    
+
     // Check for price
     if (isset($firstResult['catalog_price'])) {
       $parts[] = "Price: {$firstResult['catalog_price']}€";
     } elseif (isset($firstResult['products_price'])) {
       $parts[] = "Price: {$firstResult['products_price']}€";
     }
-    
+
     // Check for quantity
     if (isset($firstResult['products_quantity'])) {
       $parts[] = "Stock quantity: {$firstResult['products_quantity']}";
     } elseif (isset($firstResult['total_quantity'])) {
       $parts[] = "Total quantity: {$firstResult['total_quantity']}";
     }
-    
+
     // Check for SKU/model
     if (isset($firstResult['products_model'])) {
       $parts[] = "Model: {$firstResult['products_model']}";
     } elseif (isset($firstResult['sku'])) {
       $parts[] = "SKU: {$firstResult['sku']}";
     }
-    
+
     if (!empty($parts)) {
       return implode(', ', $parts);
     }
-    
+
     // Fallback
     return "{$count} result" . ($count > 1 ? 's' : '') . " found";
   }
 
   /**
+   * Extract table name from SQL query for source attribution
+   *
+   * Pattern logic moved to AnalyticsExecutorPatterns class.
+   *
+   * @param string|null $sql SQL query
+   * @return string Table name or 'database'
+   */
+  private function extractTableNameFromSql(?string $sql): string
+  {
+    return AnalyticsExecutorPatterns::extractTableName($sql);
+  }
+
+  /**
    * Generate default interpretation when none is provided
-   * 
+   *
    * NOTE: All messages in English per tech.md guidelines.
    * UI layer handles translation to user's language.
    *
@@ -387,47 +511,55 @@ class AnalyticsExecutor
    */
   private function generateDefaultInterpretation(array $rawResult): string
   {
-    // 🔍 DEBUG: Trace why "No results found" is generated
-    error_log("\n" . str_repeat("=", 100));
-    error_log("DEBUG: generateDefaultInterpretation() CALLED");
-    error_log(str_repeat("=", 100));
-    error_log("rawResult keys: " . implode(', ', array_keys($rawResult)));
-    error_log("rawResult['results'] isset: " . (isset($rawResult['results']) ? 'YES' : 'NO'));
-    
+    if ($this->debugRAManager) {
+      // 🔍 DEBUG: Trace why "No results found" is generated
+      error_log("\n" . str_repeat("=", 100));
+      error_log("DEBUG: generateDefaultInterpretation() CALLED");
+      error_log(str_repeat("=", 100));
+      error_log("rawResult keys: " . implode(', ', array_keys($rawResult)));
+      error_log("rawResult['results'] isset: " . (isset($rawResult['results']) ? 'YES' : 'NO'));
+    }
+
     $results = $rawResult['results'] ?? [];
-    error_log("results after ?? []: is_array=" . (is_array($results) ? 'YES' : 'NO'));
-    error_log("results count: " . count($results));
-    
+    if ($this->debugRAManager) {
+      error_log("results after ?? []: is_array=" . (is_array($results) ? 'YES' : 'NO'));
+      error_log("results count: " . count($results));
+    }
+
     $count = count($results);
     $question = $rawResult['question'] ?? 'your query';
-    
-    error_log("count: {$count}");
-    error_log("question: {$question}");
-    
+
+    if ($this->debugRAManager) {
+      error_log("count: {$count}");
+      error_log("question: {$question}");
+    }
     // No results
     if ($count === 0) {
-      error_log("[error] RETURNING: No results found (count === 0)");
-      error_log("This is the message user sees!");
-      error_log(str_repeat("=", 100) . "\n");
+      if ($this->debugRAManager) {
+        error_log("[error] RETURNING: No results found (count === 0)");
+        error_log("This is the message user sees!");
+        error_log(str_repeat("=", 100) . "\n");
+      }
       return "No results found for: {$question}";
     }
-    
-    error_log("✅ Has results, generating interpretation");
-    error_log(str_repeat("=", 100) . "\n");
-    
+
+    if ($this->debugRAManager) {
+      error_log("✅ Has results, generating interpretation");
+      error_log(str_repeat("=", 100) . "\n");
+    }
     // Single result
     if ($count === 1) {
       return "1 result found for: {$question}";
     }
-    
+
     // Multiple results - try to add more context
     $interpretation = "{$count} results found for: {$question}";
-    
+
     // Try to add a summary of the first result
     if (!empty($results[0]) && is_array($results[0])) {
       $firstResult = $results[0];
       $keys = array_keys($firstResult);
-      
+
       // If there's a name field, mention it
       $nameFields = ['name', 'manufacturers_name', 'products_name', 'categories_name', 'title'];
       foreach ($nameFields as $field) {
@@ -437,8 +569,315 @@ class AnalyticsExecutor
         }
       }
     }
-    
+
     return $interpretation;
+  }
+
+  /**
+   * Record analytics execution and critic evaluation based on real output.
+   * Uses AnalyticsCritic and records to rag_agent_actor_executions and rag_agent_critic_evaluations.
+   */
+  private function recordAnalyticsEvaluation(string $query, array $rawResult, int $executionTimeMs): void
+  {
+    $sql = $rawResult['sql_query'] ?? '';
+    if ($sql === '') {
+      return;
+    }
+
+    try {
+      $context = new Context(
+        $this->userId,
+        $this->languageId,
+        ['user_query' => $query, 'intent' => 'analytics'],
+        [],
+        ['source' => 'AnalyticsExecutor']
+      );
+
+      $actionId = 'analytics_query_' . uniqid('', true);
+      $producerId = 'analytics_agent';
+
+      $actionResult = new ActionResult(
+        $actionId,
+        $producerId,
+        [
+          'sql' => $sql,
+          'explanation' => $rawResult['interpretation'] ?? '',
+          'tables_used' => $rawResult['tables_used'] ?? [],
+          'query_type' => $rawResult['query_type'] ?? 'unknown'
+        ],
+        'sql_query',
+        [
+          'execution_time_ms' => $executionTimeMs,
+          'timestamp' => date('Y-m-d H:i:s')
+        ],
+        $context,
+        'success'
+      );
+
+      $actorRegistry = new ActorRegistry();
+      $actorRegistry->recordExecution(
+        $producerId,
+        $actionId,
+        $actionResult->getResultId(),
+        'analytics_query',
+        'success',
+        $executionTimeMs,
+        null,
+        'sql_query'
+      );
+
+      $criticRegistry = new CriticRegistry();
+      $critic = new AnalyticsCritic($this->languageId, $this->debug);
+
+      $evaluationStart = microtime(true);
+      $evaluation = $critic->evaluateAction($actionResult);
+      $secondCritic = new SqlQualityCritic($this->languageId, $this->debug);
+      $secondEvaluation = $secondCritic->evaluateAction($actionResult);
+      $evaluationTimeMs = (int)round((microtime(true) - $evaluationStart) * 1000);
+
+      $criticRegistry->recordEvaluation(
+        $critic->getCriticId(),
+        $evaluation->getEvaluationId(),
+        $actionResult->getResultId(),
+        $actionResult->getOutputType(),
+        $actionResult->getProducerAgentId(),
+        [
+          'accuracy' => $evaluation->getAccuracyScore(),
+          'completeness' => $evaluation->getCompletenessScore(),
+          'efficiency' => $evaluation->getEfficiencyScore(),
+          'clarity' => $evaluation->getClarityScore()
+        ],
+        $evaluation->getOverallScore(),
+        $evaluation->getFeedback(),
+        $evaluation->getStrengths(),
+        $evaluation->getImprovements(),
+        $evaluationTimeMs
+      );
+
+      $criticRegistry->recordEvaluation(
+        $secondCritic->getCriticId(),
+        $secondEvaluation->getEvaluationId(),
+        $actionResult->getResultId(),
+        $actionResult->getOutputType(),
+        $actionResult->getProducerAgentId(),
+        [
+          'accuracy' => $secondEvaluation->getAccuracyScore(),
+          'completeness' => $secondEvaluation->getCompletenessScore(),
+          'efficiency' => $secondEvaluation->getEfficiencyScore(),
+          'clarity' => $secondEvaluation->getClarityScore()
+        ],
+        $secondEvaluation->getOverallScore(),
+        $secondEvaluation->getFeedback(),
+        $secondEvaluation->getStrengths(),
+        $secondEvaluation->getImprovements(),
+        $evaluationTimeMs
+      );
+
+      $consensusBuilder = new ConsensusBuilder();
+      $consensus = $consensusBuilder->buildConsensus([$evaluation, $secondEvaluation]);
+
+      $consensusScore = $consensus->getScore();
+      if (AgentSystemConfig::isAdaptiveWeightingEnabled()) {
+        $adaptiveScore = $this->recordAdaptiveWeightingConsensus(
+          $actionResult,
+          [$evaluation, $secondEvaluation],
+          [$critic, $secondCritic]
+        );
+        if ($adaptiveScore !== null) {
+          $consensusScore = $adaptiveScore;
+        }
+      }
+
+      $this->storeCoordinationResult(
+        $actionResult,
+        $consensus,
+        $consensusScore,
+        2,
+        $executionTimeMs,
+        $evaluationTimeMs
+      );
+
+      if (AgentSystemConfig::isReputationSystemEnabled()) {
+        $this->recordReputationOutcomes(
+          [$evaluation, $secondEvaluation],
+          $consensusScore
+        );
+      }
+    } catch (\Exception $e) {
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "AnalyticsExecutor: Failed to record analytics evaluation - " . $e->getMessage(),
+          'warning'
+        );
+      }
+    }
+  }
+
+  private function recordAdaptiveWeightingConsensus(
+    ActionResult $actionResult,
+    array $evaluations,
+    array $critics
+  ): ?float {
+    try {
+      $criticRegistry = Registry::exists('CriticRegistry') ? Registry::get('CriticRegistry') : new CriticRegistry();
+
+      $criticDataCollector = new CriticDataCollector(
+        new ReputationStore(),
+        $criticRegistry
+      );
+
+      $weightingEngine = new LLMWeightingEngine(
+        $criticDataCollector,
+        new LLMPromptBuilder(),
+        new WeightNormalizer(),
+        new WeightAuditLogger()
+      );
+
+      $evaluationContext = [
+        'evaluation_id' => 'eval_' . $actionResult->getResultId(),
+        'output_type' => $actionResult->getOutputType(),
+        'priority' => 'medium',
+        'action_type' => 'analytics_query',
+        'required_domains' => ['analytics'],
+        'execution_metrics' => $actionResult->getExecutionMetrics(),
+        'special_requirements' => []
+      ];
+
+      $weightResult = $weightingEngine->calculateAdaptiveWeights($critics, $evaluationContext);
+
+      $weightedConsensusBuilder = new WeightedConsensusBuilder();
+      $consensusResult = $weightedConsensusBuilder->buildDynamicConsensus($evaluations, $weightResult);
+
+      return $consensusResult->getDynamicConsensus();
+    } catch (\Exception $e) {
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "AnalyticsExecutor: Adaptive weighting failed - " . $e->getMessage(),
+          'warning'
+        );
+      }
+      return null;
+    }
+  }
+
+  private function storeCoordinationResult(
+    ActionResult $actionResult,
+    $consensus,
+    float $consensusScore,
+    int $numCritics,
+    int $executionTimeMs,
+    int $evaluationTimeMs
+  ): void {
+    try {
+      if (!$this->tableExists('rag_agent_coordinated_results')) {
+        return;
+      }
+
+      $db = Registry::get('Db');
+      $totalTimeMs = $executionTimeMs + $evaluationTimeMs;
+
+      $sql = "INSERT INTO :table_rag_agent_coordinated_results
+              (coordination_id, action_id, result_id, actor_id, consensus_id,
+               consensus_score, num_evaluations, num_critics, execution_time_ms,
+               evaluation_time_ms, total_time_ms, created_at)
+              VALUES (:coordination_id, :action_id, :result_id, :actor_id, :consensus_id,
+                      :consensus_score, :num_evaluations, :num_critics, :execution_time_ms,
+                      :evaluation_time_ms, :total_time_ms, :created_at)";
+
+      $stmt = $db->prepare($sql);
+      $stmt->bindValue(':coordination_id', 'coord_' . uniqid('', true));
+      $stmt->bindValue(':action_id', $actionResult->getActionId());
+      $stmt->bindValue(':result_id', $actionResult->getResultId());
+      $stmt->bindValue(':actor_id', $actionResult->getProducerAgentId());
+      $stmt->bindValue(':consensus_id', $consensus->getConsensusId());
+      $stmt->bindValue(':consensus_score', $consensusScore);
+      $stmt->bindValue(':num_evaluations', $numCritics);
+      $stmt->bindValue(':num_critics', $numCritics);
+      $stmt->bindValue(':execution_time_ms', $executionTimeMs, \PDO::PARAM_INT);
+      $stmt->bindValue(':evaluation_time_ms', $evaluationTimeMs, \PDO::PARAM_INT);
+      $stmt->bindValue(':total_time_ms', $totalTimeMs, \PDO::PARAM_INT);
+      $stmt->bindValue(':created_at', date('Y-m-d H:i:s'));
+      $stmt->execute();
+    } catch (\Exception $e) {
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "AnalyticsExecutor: Failed to store coordination result - " . $e->getMessage(),
+          'warning'
+        );
+      }
+    }
+  }
+
+  private function tableExists(string $tableName): bool
+  {
+    try {
+      $db = Registry::get('Db');
+      $prefix = CLICSHOPPING::getConfig('db_table_prefix');
+      $fullTableName = $prefix . $tableName;
+      $stmt = $db->prepare('SHOW TABLES LIKE :table_name');
+      $stmt->bindValue(':table_name', $fullTableName);
+      $stmt->execute();
+      return $stmt->rowCount() > 0;
+    } catch (\Exception $e) {
+      return false;
+    }
+  }
+
+  private function recordReputationOutcomes(array $evaluations, float $consensusScore): void
+  {
+    try {
+      $tracker = new ReputationTracker();
+
+      foreach ($evaluations as $evaluation) {
+        $agentEvaluation = new AgentEvaluation(
+          $evaluation->getEvaluatorAgentId(),
+          $evaluation->getOutputId(),
+          [
+            'accuracy' => $evaluation->getAccuracyScore(),
+            'completeness' => $evaluation->getCompletenessScore(),
+            'efficiency' => $evaluation->getEfficiencyScore(),
+            'clarity' => $evaluation->getClarityScore()
+          ],
+          $evaluation->getFeedback(),
+          $evaluation->getStrengths(),
+          $evaluation->getImprovements()
+        );
+
+        $tracker->trackEvaluation($agentEvaluation, $consensusScore, false);
+      }
+    } catch (\Exception $e) {
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "AnalyticsExecutor: Failed to record reputation outcomes - " . $e->getMessage(),
+          'warning'
+        );
+      }
+    }
+  }
+
+  private function registerSlowQueryObjective(string $query, int $executionTimeMs): void
+  {
+    if ($executionTimeMs < 1500 || $this->analyticsAgent === null) {
+      return;
+    }
+
+    try {
+      $goalStatement = 'Optimize analytics query performance';
+      $successCriteria = [
+        'query' => $query,
+        'max_execution_time_ms' => 1000
+      ];
+      $priority = $executionTimeMs >= 5000 ? 'high' : 'medium';
+
+      $this->analyticsAgent->createLocalObjective($goalStatement, $successCriteria, $priority);
+    } catch (\Exception $e) {
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "AnalyticsExecutor: Failed to register autonomous objective - " . $e->getMessage(),
+          'warning'
+        );
+      }
+    }
   }
 
   /**
@@ -500,7 +939,7 @@ class AnalyticsExecutor
     ?string $errorMessage = null
   ): array {
     $errorMsg = $errorMessage ?? ($exception ? $exception->getMessage() : 'Unknown SQL generation error');
-    
+
     // Log detailed error for debugging
     $this->logger->logSecurityEvent(
       "SQL generation failed for temporal period '{$temporalPeriod}': {$errorMsg}",
@@ -572,69 +1011,6 @@ class AnalyticsExecutor
 
     // Default suggestion
     return "Try rephrasing your query or using a different temporal period. If the problem persists, contact support.";
-  }
-
-  /**
-   * Execute analytics query with temporal error handling
-   *
-   * **Requirement 8.4**: Execute query with proper error handling for temporal periods
-   *
-   * This method wraps executeAnalyticsQuery with additional error handling
-   * specific to temporal aggregations. It ensures that failures in one
-   * temporal period don't prevent other periods from being processed.
-   *
-   * @param string $query Query to execute
-   * @param array $context Context information including temporal_period
-   * @return array Result with success status and error handling
-   */
-  public function executeTemporalAnalyticsQuery(string $query, array $context = []): array
-  {
-    $temporalPeriod = $context['temporal_period'] ?? 'unknown';
-    
-    try {
-      // Log the temporal query execution
-      if ($this->debug) {
-        $this->logger->logSecurityEvent(
-          "Executing temporal analytics query for period: {$temporalPeriod}",
-          'info',
-          ['query' => substr($query, 0, 100), 'temporal_period' => $temporalPeriod]
-        );
-      }
-
-      // Execute the query
-      $result = $this->executeAnalyticsQuery($query, $context);
-
-      // Check if execution was successful
-      if (!isset($result['success']) || $result['success'] === false) {
-        // If there's an error but it's not a complete failure, still return partial result
-        if (!empty($result['results'])) {
-          $result['partial_success'] = true;
-          $result['temporal_period'] = $temporalPeriod;
-          return $result;
-        }
-
-        // Complete failure - use error handler
-        return $this->handleSqlGenerationFailure(
-          $query,
-          $temporalPeriod,
-          null,
-          $result['error'] ?? 'Query execution failed'
-        );
-      }
-
-      // **Requirement 8.5**: Check for no data and handle gracefully
-      if (empty($result['results'])) {
-        return $this->handleNoDataForTemporalPeriod($query, $temporalPeriod, $context);
-      }
-
-      // Add temporal period to successful result
-      $result['temporal_period'] = $temporalPeriod;
-      return $result;
-
-    } catch (\Exception $e) {
-      // Handle exception with temporal-specific error handling
-      return $this->handleSqlGenerationFailure($query, $temporalPeriod, $e);
-    }
   }
 
   /**
@@ -802,208 +1178,11 @@ class AnalyticsExecutor
   }
 
   /**
-   * Generate GROUP BY clause for temporal aggregation
-   * 
-   * This method generates the correct SQL GROUP BY clause based on the temporal period.
-   * It supports all standard temporal periods (month, quarter, semester, year, week, day)
-   * and custom periods (e.g., every 4 months).
-   * 
-   * **Requirements: 4.5, 4.6, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6**
-   * 
-   * @param string $temporalPeriod The temporal period (month, quarter, semester, year, week, day, custom)
-   * @param string $dateColumn The date column to use for grouping (default: 'orders_date')
-   * @param int|null $customMonths For custom periods, the number of months per period (e.g., 4 for quarterly-like)
-   * @return string The GROUP BY clause (e.g., "GROUP BY YEAR(orders_date), MONTH(orders_date)")
-   */
-  public function generateGroupByClause(
-    string $temporalPeriod,
-    string $dateColumn = 'orders_date',
-    ?int $customMonths = null
-  ): string {
-    // Sanitize date column to prevent SQL injection
-    $safeColumn = preg_replace('/[^a-zA-Z0-9_]/', '', $dateColumn);
-    
-    // Log temporal GROUP BY generation
-    if ($this->debug) {
-      $this->logger->logSecurityEvent(
-        "Generating GROUP BY clause for temporal period: {$temporalPeriod}, column: {$safeColumn}",
-        'info'
-      );
-    }
-    
-    $groupByClause = match (strtolower($temporalPeriod)) {
-      'month' => $this->generateMonthGroupBy($safeColumn),
-      'quarter' => $this->generateQuarterGroupBy($safeColumn),
-      'semester' => $this->generateSemesterGroupBy($safeColumn),
-      'year' => $this->generateYearGroupBy($safeColumn),
-      'week' => $this->generateWeekGroupBy($safeColumn),
-      'day' => $this->generateDayGroupBy($safeColumn),
-      'custom' => $this->generateCustomGroupBy($safeColumn, $customMonths ?? 4),
-      default => $this->generateMonthGroupBy($safeColumn), // Default to month
-    };
-    
-    // Log the generated clause
-    error_log("[AnalyticsExecutor] Generated temporal GROUP BY: {$groupByClause}");
-    
-    return $groupByClause;
-  }
-
-  /**
-   * Generate GROUP BY clause for monthly aggregation
-   * 
-   * **Requirement 6.1**: GROUP BY YEAR(date_column), MONTH(date_column)
-   * 
-   * @param string $dateColumn The date column name
-   * @return string GROUP BY clause for monthly aggregation
-   */
-  private function generateMonthGroupBy(string $dateColumn): string
-  {
-    return "GROUP BY YEAR({$dateColumn}), MONTH({$dateColumn})";
-  }
-
-  /**
-   * Generate GROUP BY clause for quarterly aggregation
-   * 
-   * **Requirement 6.2**: GROUP BY YEAR(date_column), QUARTER(date_column)
-   * 
-   * @param string $dateColumn The date column name
-   * @return string GROUP BY clause for quarterly aggregation
-   */
-  private function generateQuarterGroupBy(string $dateColumn): string
-  {
-    return "GROUP BY YEAR({$dateColumn}), QUARTER({$dateColumn})";
-  }
-
-  /**
-   * Generate GROUP BY clause for semester aggregation
-   * 
-   * **Requirement 6.3**: GROUP BY YEAR(date_column), CASE WHEN MONTH(date_column) <= 6 THEN 1 ELSE 2 END
-   * 
-   * @param string $dateColumn The date column name
-   * @return string GROUP BY clause for semester aggregation
-   */
-  private function generateSemesterGroupBy(string $dateColumn): string
-  {
-    return "GROUP BY YEAR({$dateColumn}), CASE WHEN MONTH({$dateColumn}) <= 6 THEN 1 ELSE 2 END";
-  }
-
-  /**
-   * Generate GROUP BY clause for yearly aggregation
-   * 
-   * **Requirement 6.4**: GROUP BY YEAR(date_column)
-   * 
-   * @param string $dateColumn The date column name
-   * @return string GROUP BY clause for yearly aggregation
-   */
-  private function generateYearGroupBy(string $dateColumn): string
-  {
-    return "GROUP BY YEAR({$dateColumn})";
-  }
-
-  /**
-   * Generate GROUP BY clause for weekly aggregation
-   * 
-   * **Requirement 6.5**: GROUP BY YEAR(date_column), WEEK(date_column)
-   * 
-   * @param string $dateColumn The date column name
-   * @return string GROUP BY clause for weekly aggregation
-   */
-  private function generateWeekGroupBy(string $dateColumn): string
-  {
-    return "GROUP BY YEAR({$dateColumn}), WEEK({$dateColumn})";
-  }
-
-  /**
-   * Generate GROUP BY clause for daily aggregation
-   * 
-   * **Requirement 6.6**: GROUP BY DATE(date_column)
-   * 
-   * @param string $dateColumn The date column name
-   * @return string GROUP BY clause for daily aggregation
-   */
-  private function generateDayGroupBy(string $dateColumn): string
-  {
-    return "GROUP BY DATE({$dateColumn})";
-  }
-
-  /**
-   * Generate GROUP BY clause for custom period aggregation
-   * 
-   * **Requirement 6.6**: GROUP BY YEAR(date_column), FLOOR((MONTH(date_column)-1)/N)
-   * 
-   * This allows grouping by custom periods like "every 4 months" or "every 2 months"
-   * 
-   * @param string $dateColumn The date column name
-   * @param int $monthsPerPeriod Number of months per period (e.g., 4 for every 4 months)
-   * @return string GROUP BY clause for custom period aggregation
-   */
-  private function generateCustomGroupBy(string $dateColumn, int $monthsPerPeriod): string
-  {
-    // Ensure monthsPerPeriod is valid (1-12)
-    $monthsPerPeriod = max(1, min(12, $monthsPerPeriod));
-    
-    return "GROUP BY YEAR({$dateColumn}), FLOOR((MONTH({$dateColumn})-1)/{$monthsPerPeriod})";
-  }
-
-  /**
-   * Detect temporal period from sub-query metadata
-   * 
-   * This method extracts the temporal period from the sub-query context array.
-   * It's used to determine which GROUP BY clause to generate.
-   * 
-   * @param array $context The sub-query context containing temporal metadata
-   * @return string|null The temporal period or null if not found
-   */
-  public function detectTemporalPeriod(array $context): ?string
-  {
-    // Check for explicit temporal_period in context
-    if (isset($context['temporal_period']) && !empty($context['temporal_period'])) {
-      return strtolower($context['temporal_period']);
-    }
-    
-    // Check for temporal_periods array (from multi-temporal queries)
-    if (isset($context['temporal_periods']) && is_array($context['temporal_periods']) && !empty($context['temporal_periods'])) {
-      return strtolower($context['temporal_periods'][0]);
-    }
-    
-    // Check for period in intent metadata
-    if (isset($context['intent']['temporal_period'])) {
-      return strtolower($context['intent']['temporal_period']);
-    }
-    
-    return null;
-  }
-
-  /**
-   * Detect custom period months from sub-query metadata
-   * 
-   * This method extracts the custom period months (e.g., 4 for "every 4 months")
-   * from the sub-query context array.
-   * 
-   * @param array $context The sub-query context containing temporal metadata
-   * @return int|null The number of months per period or null if not a custom period
-   */
-  public function detectCustomPeriodMonths(array $context): ?int
-  {
-    // Check for explicit custom_months in context
-    if (isset($context['custom_months']) && is_numeric($context['custom_months'])) {
-      return (int)$context['custom_months'];
-    }
-    
-    // Check for custom_period_months in intent metadata
-    if (isset($context['intent']['custom_period_months']) && is_numeric($context['intent']['custom_period_months'])) {
-      return (int)$context['intent']['custom_period_months'];
-    }
-    
-    return null;
-  }
-
-  /**
    * Apply temporal GROUP BY to an existing SQL query
-   * 
+   *
    * This method modifies an existing SQL query to add or replace the GROUP BY clause
    * based on the temporal period specified in the context.
-   * 
+   *
    * @param string $sql The original SQL query
    * @param array $context The sub-query context containing temporal metadata
    * @return string The modified SQL query with temporal GROUP BY
@@ -1012,21 +1191,21 @@ class AnalyticsExecutor
   {
     // Detect temporal period from context
     $temporalPeriod = $this->detectTemporalPeriod($context);
-    
+
     if ($temporalPeriod === null) {
       // No temporal period specified, return original SQL
       return $sql;
     }
-    
+
     // Detect date column from SQL or use default
     $dateColumn = $this->detectDateColumnFromSql($sql) ?? 'orders_date';
-    
+
     // Detect custom months if applicable
     $customMonths = $temporalPeriod === 'custom' ? $this->detectCustomPeriodMonths($context) : null;
-    
+
     // Generate the GROUP BY clause
     $groupByClause = $this->generateGroupByClause($temporalPeriod, $dateColumn, $customMonths);
-    
+
     // Check if SQL already has a GROUP BY clause
     if (preg_match('/\bGROUP\s+BY\b/i', $sql)) {
       // Replace existing GROUP BY clause
@@ -1040,7 +1219,7 @@ class AnalyticsExecutor
         $sql = rtrim($sql, ';') . " {$groupByClause}";
       }
     }
-    
+
     // Log the modification
     if ($this->debug) {
       $this->logger->logSecurityEvent(
@@ -1048,22 +1227,218 @@ class AnalyticsExecutor
         'info'
       );
     }
-    
+
     return $sql;
   }
 
   /**
+   * Detect temporal period from sub-query metadata
+   *
+   * This method extracts the temporal period from the sub-query context array.
+   * It's used to determine which GROUP BY clause to generate.
+   *
+   * @param array $context The sub-query context containing temporal metadata
+   * @return string|null The temporal period or null if not found
+   */
+  public function detectTemporalPeriod(array $context): ?string
+  {
+    // Check for explicit temporal_period in context
+    if (isset($context['temporal_period']) && !empty($context['temporal_period'])) {
+      return strtolower($context['temporal_period']);
+    }
+
+    // Check for temporal_periods array (from multi-temporal queries)
+    if (isset($context['temporal_periods']) && is_array($context['temporal_periods']) && !empty($context['temporal_periods'])) {
+      return strtolower($context['temporal_periods'][0]);
+    }
+
+    // Check for period in intent metadata
+    if (isset($context['intent']['temporal_period'])) {
+      return strtolower($context['intent']['temporal_period']);
+    }
+
+    return null;
+  }
+
+  /**
    * Detect date column from SQL query
-   * 
+   *
    * This method attempts to identify the date column used in the SQL query
    * by looking for common date column patterns.
    * Pattern logic moved to AnalyticsExecutorPatterns class.
-   * 
+   *
    * @param string $sql The SQL query
    * @return string|null The detected date column or null if not found
    */
   private function detectDateColumnFromSql(string $sql): ?string
   {
     return AnalyticsExecutorPatterns::detectDateColumn($sql);
+  }
+
+  /**
+   * Detect custom period months from sub-query metadata
+   *
+   * This method extracts the custom period months (e.g., 4 for "every 4 months")
+   * from the sub-query context array.
+   *
+   * @param array $context The sub-query context containing temporal metadata
+   * @return int|null The number of months per period or null if not a custom period
+   */
+  public function detectCustomPeriodMonths(array $context): ?int
+  {
+    // Check for explicit custom_months in context
+    if (isset($context['custom_months']) && is_numeric($context['custom_months'])) {
+      return (int)$context['custom_months'];
+    }
+
+    // Check for custom_period_months in intent metadata
+    if (isset($context['intent']['custom_period_months']) && is_numeric($context['intent']['custom_period_months'])) {
+      return (int)$context['intent']['custom_period_months'];
+    }
+
+    return null;
+  }
+
+  /**
+   * Generate GROUP BY clause for temporal aggregation
+   *
+   * This method generates the correct SQL GROUP BY clause based on the temporal period.
+   * It supports all standard temporal periods (month, quarter, semester, year, week, day)
+   * and custom periods (e.g., every 4 months).
+   *
+   *
+   * @param string $temporalPeriod The temporal period (month, quarter, semester, year, week, day, custom)
+   * @param string $dateColumn The date column to use for grouping (default: 'orders_date')
+   * @param int|null $customMonths For custom periods, the number of months per period (e.g., 4 for quarterly-like)
+   * @return string The GROUP BY clause (e.g., "GROUP BY YEAR(orders_date), MONTH(orders_date)")
+   */
+  public function generateGroupByClause(
+    string $temporalPeriod,
+    string $dateColumn = 'orders_date',
+    ?int $customMonths = null
+  ): string {
+    // Sanitize date column to prevent SQL injection
+    $safeColumn = preg_replace('/[^a-zA-Z0-9_]/', '', $dateColumn);
+
+    // Log temporal GROUP BY generation
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "Generating GROUP BY clause for temporal period: {$temporalPeriod}, column: {$safeColumn}",
+        'info'
+      );
+    }
+
+    $groupByClause = match (strtolower($temporalPeriod)) {
+      'month' => $this->generateMonthGroupBy($safeColumn),
+      'quarter' => $this->generateQuarterGroupBy($safeColumn),
+      'semester' => $this->generateSemesterGroupBy($safeColumn),
+      'year' => $this->generateYearGroupBy($safeColumn),
+      'week' => $this->generateWeekGroupBy($safeColumn),
+      'day' => $this->generateDayGroupBy($safeColumn),
+      'custom' => $this->generateCustomGroupBy($safeColumn, $customMonths ?? 4),
+      default => $this->generateMonthGroupBy($safeColumn), // Default to month
+    };
+
+    // Log the generated clause
+    error_log("[AnalyticsExecutor] Generated temporal GROUP BY: {$groupByClause}");
+
+    return $groupByClause;
+  }
+
+  /**
+   * Generate GROUP BY clause for monthly aggregation
+   *
+   * ** GROUP BY YEAR(date_column), MONTH(date_column)
+   *
+   * @param string $dateColumn The date column name
+   * @return string GROUP BY clause for monthly aggregation
+   */
+  private function generateMonthGroupBy(string $dateColumn): string
+  {
+    return "GROUP BY YEAR({$dateColumn}), MONTH({$dateColumn})";
+  }
+
+  /**
+   * Generate GROUP BY clause for quarterly aggregation
+   *
+   * **Requirement 6.2**: GROUP BY YEAR(date_column), QUARTER(date_column)
+   *
+   * @param string $dateColumn The date column name
+   * @return string GROUP BY clause for quarterly aggregation
+   */
+  private function generateQuarterGroupBy(string $dateColumn): string
+  {
+    return "GROUP BY YEAR({$dateColumn}), QUARTER({$dateColumn})";
+  }
+
+  /**
+   * Generate GROUP BY clause for semester aggregation
+   *
+   * **Requirement 6.3**: GROUP BY YEAR(date_column), CASE WHEN MONTH(date_column) <= 6 THEN 1 ELSE 2 END
+   *
+   * @param string $dateColumn The date column name
+   * @return string GROUP BY clause for semester aggregation
+   */
+  private function generateSemesterGroupBy(string $dateColumn): string
+  {
+    return "GROUP BY YEAR({$dateColumn}), CASE WHEN MONTH({$dateColumn}) <= 6 THEN 1 ELSE 2 END";
+  }
+
+  /**
+   * Generate GROUP BY clause for yearly aggregation
+   *
+   * **Requirement 6.4**: GROUP BY YEAR(date_column)
+   *
+   * @param string $dateColumn The date column name
+   * @return string GROUP BY clause for yearly aggregation
+   */
+  private function generateYearGroupBy(string $dateColumn): string
+  {
+    return "GROUP BY YEAR({$dateColumn})";
+  }
+
+  /**
+   * Generate GROUP BY clause for weekly aggregation
+   *
+   * **Requirement 6.5**: GROUP BY YEAR(date_column), WEEK(date_column)
+   *
+   * @param string $dateColumn The date column name
+   * @return string GROUP BY clause for weekly aggregation
+   */
+  private function generateWeekGroupBy(string $dateColumn): string
+  {
+    return "GROUP BY YEAR({$dateColumn}), WEEK({$dateColumn})";
+  }
+
+  /**
+   * Generate GROUP BY clause for daily aggregation
+   *
+   * **Requirement 6.6**: GROUP BY DATE(date_column)
+   *
+   * @param string $dateColumn The date column name
+   * @return string GROUP BY clause for daily aggregation
+   */
+  private function generateDayGroupBy(string $dateColumn): string
+  {
+    return "GROUP BY DATE({$dateColumn})";
+  }
+
+  /**
+   * Generate GROUP BY clause for custom period aggregation
+   *
+   * ** GROUP BY YEAR(date_column), FLOOR((MONTH(date_column)-1)/N)
+   *
+   * This allows grouping by custom periods like "every 4 months" or "every 2 months"
+   *
+   * @param string $dateColumn The date column name
+   * @param int $monthsPerPeriod Number of months per period (e.g., 4 for every 4 months)
+   * @return string GROUP BY clause for custom period aggregation
+   */
+  private function generateCustomGroupBy(string $dateColumn, int $monthsPerPeriod): string
+  {
+    // Ensure monthsPerPeriod is valid (1-12)
+    $monthsPerPeriod = max(1, min(12, $monthsPerPeriod));
+
+    return "GROUP BY YEAR({$dateColumn}), FLOOR((MONTH({$dateColumn})-1)/{$monthsPerPeriod})";
   }
 }

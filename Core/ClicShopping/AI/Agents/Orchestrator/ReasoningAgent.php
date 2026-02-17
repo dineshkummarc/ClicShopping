@@ -10,14 +10,14 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator;
 
-
-use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\AI\Infrastructure\Metrics\ReasoningAgentStats;
 use ClicShopping\AI\Config\DomainConfig;
+use ClicShopping\AI\Agents\Orchestrator\SubAbstention\AgentAbstentionManager;
+use ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AutonomousConfig;
 
 /**
  * ReasoningAgent Class
@@ -30,6 +30,8 @@ class ReasoningAgent
   private mixed $chat;
   private bool $debug;
   private ?ReasoningAgentStats $persistentStats = null;
+  private ?AutonomousConfig $autonomousConfig = null;
+  private ?AgentAbstentionManager $abstentionManager = null;
 
   // Configuration
   private string $reasoningMode = 'chain_of_thought'; // chain_of_thought, tree_of_thought, self_consistency
@@ -86,6 +88,8 @@ class ReasoningAgent
   {
     $this->securityLogger = new SecurityLogger();
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
+    $this->autonomousConfig = new AutonomousConfig($this->debug);
+    $this->abstentionManager = new AgentAbstentionManager();
 
     // Initialize persistent stats
     try {
@@ -165,6 +169,104 @@ class ReasoningAgent
   }
 
   /**
+   * Set reasoning mode
+   *
+   * @param string $mode Reasoning mode (default: 'chain_of_thought')
+   * @throws \InvalidArgumentException if mode is invalid
+   */
+  public function setReasoningMode(string $mode = 'chain_of_thought'): void
+  {
+    $validModes = ['chain_of_thought', 'tree_of_thought', 'self_consistency'];
+
+    if (!in_array($mode, $validModes, true)) {
+      throw new \InvalidArgumentException(
+        "Invalid reasoning mode '{$mode}'. Valid modes: " . implode(', ', $validModes)
+      );
+    }
+
+    $this->reasoningMode = $mode;
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "Reasoning mode changed to: {$mode}",
+        'info'
+      );
+    }
+  }
+
+  /**
+   * Set maximum reasoning steps
+   *
+   * @param int $max Maximum steps (default: 10, range: 1-50)
+   * @throws \InvalidArgumentException if value is out of range
+   */
+  public function setMaxReasoningSteps(int $max = 10): void
+  {
+    if ($max < 1 || $max > 50) {
+      throw new \InvalidArgumentException(
+        "Max reasoning steps must be between 1 and 50, got: {$max}"
+      );
+    }
+
+    $this->maxReasoningSteps = $max;
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "Max reasoning steps set to: {$max}",
+        'info'
+      );
+    }
+  }
+
+  /**
+   * Set self-consistency paths
+   *
+   * @param int $paths Number of paths (default: 3, range: 2-10)
+   * @throws \InvalidArgumentException if value is out of range
+   */
+  public function setSelfConsistencyPaths(int $paths = 3): void
+  {
+    if ($paths < 2 || $paths > 10) {
+      throw new \InvalidArgumentException(
+        "Self-consistency paths must be between 2 and 10, got: {$paths}"
+      );
+    }
+
+    $this->selfConsistencyPaths = $paths;
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "Self-consistency paths set to: {$paths}",
+        'info'
+      );
+    }
+  }
+
+  /**
+   * Set tree-of-thought paths
+   *
+   * @param int $paths Number of paths (default: 3, range: 2-10)
+   * @throws \InvalidArgumentException if value is out of range
+   */
+  public function setTreeOfThoughtPaths(int $paths = 3): void
+  {
+    if ($paths < 2 || $paths > 10) {
+      throw new \InvalidArgumentException(
+        "Tree-of-thought paths must be between 2 and 10, got: {$paths}"
+      );
+    }
+
+    $this->treeOfThoughtPaths = $paths;
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "Tree-of-thought paths set to: {$paths}",
+        'info'
+      );
+    }
+  }
+
+  /**
    * Log current configuration
    */
   private function logConfiguration(): void
@@ -177,8 +279,23 @@ class ReasoningAgent
   }
 
   /**
+   * Get current configuration
+   *
+   * @return array Configuration settings
+   */
+  public function getConfiguration(): array
+  {
+    return [
+      'reasoning_mode' => $this->reasoningMode,
+      'max_reasoning_steps' => $this->maxReasoningSteps,
+      'self_consistency_paths' => $this->selfConsistencyPaths,
+      'tree_of_thought_paths' => $this->treeOfThoughtPaths,
+    ];
+  }
+
+  /**
    * Reason about a problem using configured reasoning mode
-   * 
+   *
    * @param string $problem Problem to solve
    * @param array $context Additional context
    * @return array Reasoning result
@@ -189,6 +306,76 @@ class ReasoningAgent
     $startTime = microtime(true);
 
     try {
+
+      $complexity = $this->estimateReasoningComplexity($problem);
+
+      $confidence = $this->abstentionManager->evaluateConfidence(
+        'ReasoningAgent',
+        $problem,
+        array_merge($context, [
+          'task_type' => 'reasoning_' . $this->reasoningMode,
+          'description' => $problem,
+          'complexity' => $complexity
+        ])
+      );
+
+      $decision = $this->abstentionManager->getAbstentionDecision(
+        'ReasoningAgent',
+        $confidence,
+        'reasoning_' . $this->reasoningMode
+      );
+
+      if ($this->debug) {
+        $this->securityLogger->logSecurityEvent(
+          "ReasoningAgent confidence: {$confidence}, decision: {$decision['action']}",
+          'info'
+        );
+      }
+
+      if ($decision['action'] === 'abstain') {
+        // Log abstention to database
+        $this->abstentionManager->logAbstention(
+          'ReasoningAgent',
+          md5($problem),
+          'reasoning_' . $this->reasoningMode,
+          $confidence,
+          $decision['reason'],
+          'escalate_human'
+        );
+
+        $this->stats['failed_reasonings']++;
+
+        return [
+          'success' => false,
+          'error' => 'Confidence too low for autonomous reasoning. Human review required.',
+          'reason' => $decision['reason'],
+          'confidence' => $confidence,
+          'requires_human' => true,
+          'problem' => $problem
+        ];
+      }
+
+      if ($decision['action'] === 'delegate') {
+        // Log delegation intent
+        $this->abstentionManager->logAbstention(
+          'ReasoningAgent',
+          md5($problem),
+          'reasoning_' . $this->reasoningMode,
+          $confidence,
+          $decision['reason'],
+          'delegate_peer',
+          $decision['suggested_delegate']
+        );
+
+        // Proceed with execution but note delegation was considered
+        if ($this->debug) {
+          $this->securityLogger->logSecurityEvent(
+            "ReasoningAgent delegating to: " . ($decision['suggested_delegate'] ?? 'none'),
+            'info'
+          );
+        }
+      }
+
       $result = match($this->reasoningMode) {
         'chain_of_thought' => $this->chainOfThought($problem, $context),
         'tree_of_thought' => $this->treeOfThought($problem, $context),
@@ -198,13 +385,13 @@ class ReasoningAgent
 
       $this->stats['successful_reasonings']++;
       $this->updateAverageSteps($result['steps_count'] ?? 0);
-      
+
       // Calculate response time
       $responseTime = (int)round((microtime(true) - $startTime) * 1000);
-      
+
       // Update mode-specific statistics
       $this->updateModeStats($this->reasoningMode, $result, true);
-      
+
       // Save statistics to database via ReasoningAgentStats
       if ($this->persistentStats !== null) {
         $this->persistentStats->saveStatistics($this->reasoningMode, $result, $responseTime, true);
@@ -214,13 +401,13 @@ class ReasoningAgent
 
     } catch (\Exception $e) {
       $this->stats['failed_reasonings']++;
-      
+
       // Calculate response time
       $responseTime = (int)round((microtime(true) - $startTime) * 1000);
-      
+
       // Update mode-specific statistics for failure
       $this->updateModeStats($this->reasoningMode, [], false);
-      
+
       // Save failure statistics to database via ReasoningAgentStats
       if ($this->persistentStats !== null) {
         $this->persistentStats->saveStatistics($this->reasoningMode, ['error' => $e->getMessage()], $responseTime, false);
@@ -240,8 +427,53 @@ class ReasoningAgent
   }
 
   /**
+   * Estimate reasoning complexity for confidence evaluation
+   *
+
+   *
+   * @param string $problem The reasoning problem
+   * @return float Complexity score (0.0-1.0)
+   */
+  private function estimateReasoningComplexity(string $problem): float
+  {
+    $complexity = 0.3; // Base complexity
+
+    // Increase for word count (longer problems are more complex)
+    $wordCount = str_word_count($problem);
+    if ($wordCount > 50) {
+      $complexity += 0.15;
+    }
+    if ($wordCount > 100) {
+      $complexity += 0.1;
+    }
+
+    // Increase for multi-step indicators
+    if (preg_match('/\b(first|then|next|finally|step|stage|phase)\b/i', $problem)) {
+      $complexity += 0.15;
+    }
+
+    // Increase for conditional logic
+    if (preg_match('/\b(if|when|unless|provided|assuming|given)\b/i', $problem)) {
+      $complexity += 0.1;
+    }
+
+    // Increase for comparison/analysis requirements
+    if (preg_match('/\b(compare|analyze|evaluate|assess|determine|calculate)\b/i', $problem)) {
+      $complexity += 0.1;
+    }
+
+    // Increase for multiple questions
+    $questionCount = preg_match_all('/\?/', $problem);
+    if ($questionCount > 1) {
+      $complexity += 0.1;
+    }
+
+    return min(1.0, $complexity);
+  }
+
+  /**
    * Chain-of-Thought reasoning with step-by-step analysis
-   * 
+   *
    * @param string $problem Problem to solve
    * @param array $context Additional context
    * @return array Reasoning result with steps
@@ -261,13 +493,13 @@ class ReasoningAgent
 
     // Parser la réponse
     $parsed = $this->parseCoTResponse($response);
-    
+
     // Enforce max reasoning steps
     $truncated = false;
     if (count($parsed['steps']) > $this->maxReasoningSteps) {
       $parsed['steps'] = array_slice($parsed['steps'], 0, $this->maxReasoningSteps);
       $truncated = true;
-      
+
       if ($this->debug) {
         $this->securityLogger->logSecurityEvent(
           "Reasoning steps truncated to {$this->maxReasoningSteps}",
@@ -290,7 +522,7 @@ class ReasoningAgent
 
   /**
    * Build Chain-of-Thought prompt
-   * 
+   *
    * @param string $problem Problem to solve
    * @param array $context Additional context
    * @return string Formatted prompt
@@ -298,13 +530,13 @@ class ReasoningAgent
   private function buildCoTPrompt(string $problem, array $context): string
   {
     $CLICSHOPPING_Language = Registry::get('Language');
-    
+
     // Load language file in English for internal processing
     DomainConfig::loadLanguageFile('rag_reasoning_agent');
-    
+
     // Get the prompt template
     $prompt = $CLICSHOPPING_Language->getDef('text_reasoning_cot_prompt');
-    
+
     // Build context string
     $contextStr = '';
     if (!empty($context)) {
@@ -316,17 +548,17 @@ class ReasoningAgent
       }
       $contextStr = implode("\n", $contextParts);
     }
-    
+
     // Replace variables
     $prompt = str_replace('{{problem}}', $problem, $prompt);
     $prompt = str_replace('{{context}}', $contextStr, $prompt);
-    
+
     return $prompt;
   }
 
   /**
    * Parse Chain-of-Thought response
-   * 
+   *
    * @param string $response LLM response
    * @return array Parsed steps, answer, and confidence
    */
@@ -387,7 +619,7 @@ class ReasoningAgent
 
   /**
    * Tree-of-Thought reasoning exploring multiple reasoning paths
-   * 
+   *
    * @param string $problem Problem to solve
    * @param array $context Additional context
    * @return array Best reasoning path and all explored paths
@@ -434,7 +666,7 @@ class ReasoningAgent
 
   /**
    * Build Tree-of-Thought prompt
-   * 
+   *
    * @param string $problem Problem to solve
    * @param array $context Additional context
    * @param int $pathId Path identifier for approach variation
@@ -443,32 +675,32 @@ class ReasoningAgent
   private function buildToTPrompt(string $problem, array $context, int $pathId): string
   {
     $CLICSHOPPING_Language = Registry::get('Language');
-    
+
     // Load language file in English for internal processing
     DomainConfig::loadLanguageFile('rag_reasoning_agent');
-    
+
     // Get the prompt template
     $prompt = $CLICSHOPPING_Language->getDef('text_reasoning_tot_prompt');
-    
+
     // Get approach strings
     $approaches = [
       $CLICSHOPPING_Language->getDef('text_reasoning_tot_approach_data'),
       $CLICSHOPPING_Language->getDef('text_reasoning_tot_approach_logical'),
       $CLICSHOPPING_Language->getDef('text_reasoning_tot_approach_creative'),
     ];
-    
+
     $approach = $approaches[$pathId] ?? $approaches[0];
-    
+
     // Replace variables
     $prompt = str_replace('{{problem}}', $problem, $prompt);
     $prompt = str_replace('{{approach}}', $approach, $prompt);
-    
+
     return $prompt;
   }
 
   /**
    * Evaluate quality of reasoning path
-   * 
+   *
    * @param string $reasoning Reasoning text
    * @return float Quality score (0.0-1.0)
    */
@@ -501,7 +733,7 @@ class ReasoningAgent
 
   /**
    * Extract answer from reasoning text
-   * 
+   *
    * @param string $reasoning Reasoning text
    * @return string Extracted answer
    */
@@ -521,7 +753,7 @@ class ReasoningAgent
 
   /**
    * Self-Consistency reasoning generating multiple answers and voting
-   * 
+   *
    * @param string $problem Problem to solve
    * @param array $context Additional context
    * @return array Final answer with agreement rate
@@ -569,7 +801,7 @@ class ReasoningAgent
 
   /**
    * Vote for best answer from multiple attempts
-   * 
+   *
    * @param array $answers Array of answer attempts
    * @return array Best answer with confidence and agreement rate
    */
@@ -621,7 +853,7 @@ class ReasoningAgent
 
   /**
    * Normalize answer for comparison
-   * 
+   *
    * @param string $answer Answer text
    * @return string Normalized answer
    */
@@ -635,8 +867,90 @@ class ReasoningAgent
   }
 
   /**
-   * Decompose complex problem recursively
+   * Update average steps statistic
    * 
+   * @param int $steps Number of steps in current reasoning
+   */
+  private function updateAverageSteps(int $steps): void
+  {
+    $total = $this->stats['total_reasonings'];
+    $current = $this->stats['avg_steps'];
+
+    $this->stats['avg_steps'] = (($current * ($total - 1)) + $steps) / $total;
+  }
+
+  /**
+   * Update mode-specific statistics
+   *
+   * @param string $mode The reasoning mode used
+   * @param array $result The result from reasoning
+   * @param bool $success Whether the reasoning was successful
+   */
+  private function updateModeStats(string $mode, array $result, bool $success): void
+  {
+    if (!isset($this->stats['by_mode'][$mode])) {
+      return;
+    }
+
+    $this->stats['by_mode'][$mode]['count']++;
+
+    if ($success) {
+      $this->stats['by_mode'][$mode]['successful']++;
+
+      // Update mode-specific metrics
+      switch ($mode) {
+        case 'chain_of_thought':
+          if (isset($result['steps_count'])) {
+            $this->stats['by_mode'][$mode]['total_steps'] += $result['steps_count'];
+            $this->stats['by_mode'][$mode]['avg_steps'] =
+              $this->stats['by_mode'][$mode]['total_steps'] / $this->stats['by_mode'][$mode]['successful'];
+          }
+          if (isset($result['confidence'])) {
+            $this->stats['by_mode'][$mode]['total_confidence'] += $result['confidence'];
+            $this->stats['by_mode'][$mode]['avg_confidence'] =
+              $this->stats['by_mode'][$mode]['total_confidence'] / $this->stats['by_mode'][$mode]['successful'];
+          }
+          break;
+
+        case 'tree_of_thought':
+          if (isset($result['explored_paths'])) {
+            $this->stats['by_mode'][$mode]['total_paths'] += $result['explored_paths'];
+            $this->stats['by_mode'][$mode]['avg_paths'] =
+              $this->stats['by_mode'][$mode]['total_paths'] / $this->stats['by_mode'][$mode]['successful'];
+          }
+          if (isset($result['confidence'])) {
+            $this->stats['by_mode'][$mode]['total_confidence'] += $result['confidence'];
+            $this->stats['by_mode'][$mode]['avg_confidence'] =
+              $this->stats['by_mode'][$mode]['total_confidence'] / $this->stats['by_mode'][$mode]['successful'];
+          }
+          break;
+
+        case 'self_consistency':
+          if (isset($result['attempts'])) {
+            $this->stats['by_mode'][$mode]['total_attempts'] += $result['attempts'];
+            $this->stats['by_mode'][$mode]['avg_attempts'] =
+              $this->stats['by_mode'][$mode]['total_attempts'] / $this->stats['by_mode'][$mode]['successful'];
+          }
+          if (isset($result['confidence'])) {
+            $this->stats['by_mode'][$mode]['total_confidence'] += $result['confidence'];
+            $this->stats['by_mode'][$mode]['avg_confidence'] =
+              $this->stats['by_mode'][$mode]['total_confidence'] / $this->stats['by_mode'][$mode]['successful'];
+          }
+          if (isset($result['agreement_rate'])) {
+            $this->stats['by_mode'][$mode]['total_agreement'] += $result['agreement_rate'];
+            $this->stats['by_mode'][$mode]['avg_agreement'] =
+              $this->stats['by_mode'][$mode]['total_agreement'] / $this->stats['by_mode'][$mode]['successful'];
+          }
+          break;
+      }
+    } else {
+      $this->stats['by_mode'][$mode]['failed']++;
+    }
+  }
+
+  /**
+   * Decompose complex problem recursively
+   *
    * @param string $problem Complex problem
    * @param int $depth Current depth
    * @return array Hierarchical decomposition
@@ -684,29 +998,29 @@ class ReasoningAgent
 
   /**
    * Build decomposition prompt
-   * 
+   *
    * @param string $problem Problem to decompose
    * @return string Formatted prompt
    */
   private function buildDecomposePrompt(string $problem): string
   {
     $CLICSHOPPING_Language = Registry::get('Language');
-    
+
     // Load language file in English for internal processing
     DomainConfig::loadLanguageFile('rag_reasoning_agent');
-    
+
     // Get the prompt template
     $prompt = $CLICSHOPPING_Language->getDef('text_reasoning_decompose_prompt');
-    
+
     // Replace variables
     $prompt = str_replace('{{problem}}', $problem, $prompt);
-    
+
     return $prompt;
   }
 
   /**
    * Parse decomposition response
-   * 
+   *
    * @param string $response LLM response
    * @return array Parsed decomposition with atomic flag and subproblems
    */
@@ -739,7 +1053,7 @@ class ReasoningAgent
 
   /**
    * Verify solution consistency
-   * 
+   *
    * @param string $problem Original problem
    * @param string $solution Proposed solution
    * @return array Verification result
@@ -761,7 +1075,7 @@ class ReasoningAgent
 
   /**
    * Build verification prompt
-   * 
+   *
    * @param string $problem Original problem
    * @param string $solution Proposed solution
    * @return string Formatted prompt
@@ -769,23 +1083,23 @@ class ReasoningAgent
   private function buildVerificationPrompt(string $problem, string $solution): string
   {
     $CLICSHOPPING_Language = Registry::get('Language');
-    
+
     // Load language file in English for internal processing
     DomainConfig::loadLanguageFile('rag_reasoning_agent');
-    
+
     // Get the prompt template
     $prompt = $CLICSHOPPING_Language->getDef('text_reasoning_verification_prompt');
-    
+
     // Replace variables
     $prompt = str_replace('{{problem}}', $problem, $prompt);
     $prompt = str_replace('{{solution}}', $solution, $prompt);
-    
+
     return $prompt;
   }
 
   /**
    * Parse verification response
-   * 
+   *
    * @param string $response LLM response
    * @return array Parsed verification with correctness flag and issues
    */
@@ -816,220 +1130,6 @@ class ReasoningAgent
     }
 
     return $result;
-  }
-
-  /**
-   * Update average steps statistic
-   * 
-   * @param int $steps Number of steps in current reasoning
-   */
-  private function updateAverageSteps(int $steps): void
-  {
-    $total = $this->stats['total_reasonings'];
-    $current = $this->stats['avg_steps'];
-
-    $this->stats['avg_steps'] = (($current * ($total - 1)) + $steps) / $total;
-  }
-
-  /**
-   * Get statistics
-   * 
-   * @return array Statistics with success rate and configuration
-   */
-  public function getStats(): array
-  {
-    $total = $this->stats['successful_reasonings'] + $this->stats['failed_reasonings'];
-    $successRate = $total > 0
-      ? round(($this->stats['successful_reasonings'] / $total) * 100, 2)
-      : 0;
-
-    return array_merge($this->stats, [
-      'success_rate' => $successRate . '%',
-      'avg_steps' => round($this->stats['avg_steps'], 2),
-      'configuration' => $this->getConfiguration(),
-    ]);
-  }
-
-  /**
-   * Set reasoning mode
-   * 
-   * @param string $mode Reasoning mode (default: 'chain_of_thought')
-   * @throws \InvalidArgumentException if mode is invalid
-   */
-  public function setReasoningMode(string $mode = 'chain_of_thought'): void
-  {
-    $validModes = ['chain_of_thought', 'tree_of_thought', 'self_consistency'];
-    
-    if (!in_array($mode, $validModes, true)) {
-      throw new \InvalidArgumentException(
-        "Invalid reasoning mode '{$mode}'. Valid modes: " . implode(', ', $validModes)
-      );
-    }
-    
-    $this->reasoningMode = $mode;
-    
-    if ($this->debug) {
-      $this->securityLogger->logSecurityEvent(
-        "Reasoning mode changed to: {$mode}",
-        'info'
-      );
-    }
-  }
-
-  /**
-   * Set maximum reasoning steps
-   * 
-   * @param int $max Maximum steps (default: 10, range: 1-50)
-   * @throws \InvalidArgumentException if value is out of range
-   */
-  public function setMaxReasoningSteps(int $max = 10): void
-  {
-    if ($max < 1 || $max > 50) {
-      throw new \InvalidArgumentException(
-        "Max reasoning steps must be between 1 and 50, got: {$max}"
-      );
-    }
-    
-    $this->maxReasoningSteps = $max;
-    
-    if ($this->debug) {
-      $this->securityLogger->logSecurityEvent(
-        "Max reasoning steps set to: {$max}",
-        'info'
-      );
-    }
-  }
-
-  /**
-   * Set self-consistency paths
-   * 
-   * @param int $paths Number of paths (default: 3, range: 2-10)
-   * @throws \InvalidArgumentException if value is out of range
-   */
-  public function setSelfConsistencyPaths(int $paths = 3): void
-  {
-    if ($paths < 2 || $paths > 10) {
-      throw new \InvalidArgumentException(
-        "Self-consistency paths must be between 2 and 10, got: {$paths}"
-      );
-    }
-    
-    $this->selfConsistencyPaths = $paths;
-    
-    if ($this->debug) {
-      $this->securityLogger->logSecurityEvent(
-        "Self-consistency paths set to: {$paths}",
-        'info'
-      );
-    }
-  }
-
-  /**
-   * Set tree-of-thought paths
-   * 
-   * @param int $paths Number of paths (default: 3, range: 2-10)
-   * @throws \InvalidArgumentException if value is out of range
-   */
-  public function setTreeOfThoughtPaths(int $paths = 3): void
-  {
-    if ($paths < 2 || $paths > 10) {
-      throw new \InvalidArgumentException(
-        "Tree-of-thought paths must be between 2 and 10, got: {$paths}"
-      );
-    }
-
-    $this->treeOfThoughtPaths = $paths;
-
-    if ($this->debug) {
-      $this->securityLogger->logSecurityEvent(
-        "Tree-of-thought paths set to: {$paths}",
-        'info'
-      );
-    }
-  }
-
-  /**
-   * Get current configuration
-   * 
-   * @return array Configuration settings
-   */
-  public function getConfiguration(): array
-  {
-    return [
-      'reasoning_mode' => $this->reasoningMode,
-      'max_reasoning_steps' => $this->maxReasoningSteps,
-      'self_consistency_paths' => $this->selfConsistencyPaths,
-      'tree_of_thought_paths' => $this->treeOfThoughtPaths,
-    ];
-  }
-
-  /**
-   * Update mode-specific statistics
-   * 
-   * @param string $mode The reasoning mode used
-   * @param array $result The result from reasoning
-   * @param bool $success Whether the reasoning was successful
-   */
-  private function updateModeStats(string $mode, array $result, bool $success): void
-  {
-    if (!isset($this->stats['by_mode'][$mode])) {
-      return;
-    }
-
-    $this->stats['by_mode'][$mode]['count']++;
-
-    if ($success) {
-      $this->stats['by_mode'][$mode]['successful']++;
-
-      // Update mode-specific metrics
-      switch ($mode) {
-        case 'chain_of_thought':
-          if (isset($result['steps_count'])) {
-            $this->stats['by_mode'][$mode]['total_steps'] += $result['steps_count'];
-            $this->stats['by_mode'][$mode]['avg_steps'] = 
-              $this->stats['by_mode'][$mode]['total_steps'] / $this->stats['by_mode'][$mode]['successful'];
-          }
-          if (isset($result['confidence'])) {
-            $this->stats['by_mode'][$mode]['total_confidence'] += $result['confidence'];
-            $this->stats['by_mode'][$mode]['avg_confidence'] = 
-              $this->stats['by_mode'][$mode]['total_confidence'] / $this->stats['by_mode'][$mode]['successful'];
-          }
-          break;
-
-        case 'tree_of_thought':
-          if (isset($result['explored_paths'])) {
-            $this->stats['by_mode'][$mode]['total_paths'] += $result['explored_paths'];
-            $this->stats['by_mode'][$mode]['avg_paths'] = 
-              $this->stats['by_mode'][$mode]['total_paths'] / $this->stats['by_mode'][$mode]['successful'];
-          }
-          if (isset($result['confidence'])) {
-            $this->stats['by_mode'][$mode]['total_confidence'] += $result['confidence'];
-            $this->stats['by_mode'][$mode]['avg_confidence'] = 
-              $this->stats['by_mode'][$mode]['total_confidence'] / $this->stats['by_mode'][$mode]['successful'];
-          }
-          break;
-
-        case 'self_consistency':
-          if (isset($result['attempts'])) {
-            $this->stats['by_mode'][$mode]['total_attempts'] += $result['attempts'];
-            $this->stats['by_mode'][$mode]['avg_attempts'] = 
-              $this->stats['by_mode'][$mode]['total_attempts'] / $this->stats['by_mode'][$mode]['successful'];
-          }
-          if (isset($result['confidence'])) {
-            $this->stats['by_mode'][$mode]['total_confidence'] += $result['confidence'];
-            $this->stats['by_mode'][$mode]['avg_confidence'] = 
-              $this->stats['by_mode'][$mode]['total_confidence'] / $this->stats['by_mode'][$mode]['successful'];
-          }
-          if (isset($result['agreement_rate'])) {
-            $this->stats['by_mode'][$mode]['total_agreement'] += $result['agreement_rate'];
-            $this->stats['by_mode'][$mode]['avg_agreement'] = 
-              $this->stats['by_mode'][$mode]['total_agreement'] / $this->stats['by_mode'][$mode]['successful'];
-          }
-          break;
-      }
-    } else {
-      $this->stats['by_mode'][$mode]['failed']++;
-    }
   }
 
   /**
@@ -1064,5 +1164,268 @@ class ReasoningAgent
         'period_days' => $days,
       ];
     }
+  }
+
+  // ========================================
+  // AUTONOMOUS AGENT INTERFACE IMPLEMENTATION
+  // ========================================
+
+  /**
+   * Get statistics
+   *
+   * @return array Statistics with success rate and configuration
+   */
+  public function getStats(): array
+  {
+    $total = $this->stats['successful_reasonings'] + $this->stats['failed_reasonings'];
+    $successRate = $total > 0
+      ? round(($this->stats['successful_reasonings'] / $total) * 100, 2)
+      : 0;
+
+    return array_merge($this->stats, [
+      'success_rate' => $successRate . '%',
+      'avg_steps' => round($this->stats['avg_steps'], 2),
+      'configuration' => $this->getConfiguration(),
+    ]);
+  }
+
+  /**
+   * Create a local objective for reasoning improvements
+   *
+   * @param string $goalStatement Clear description of the goal
+   * @param array $successCriteria Measurable success criteria
+   * @param string $priority Priority level
+   * @return \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective
+   */
+  public function createLocalObjective(
+    string $goalStatement,
+    array $successCriteria,
+    string $priority
+  ): \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective {
+
+    if (!$this->autonomousConfig->canAgentCreateObjectives('ReasoningAgent')) {
+      throw new \RuntimeException('ReasoningAgent is not authorized to create objectives (disabled in configuration)');
+    }
+
+    $estimatedTime = match ($priority) {
+      'critical' => 300,
+      'high' => 900,
+      'medium' => 1800,
+      'low' => 3600,
+      default => 1800
+    };
+
+    $objective = new \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective(
+      'ReasoningAgent',
+      $goalStatement,
+      $successCriteria,
+      $priority,
+      $estimatedTime
+    );
+
+    $db = Registry::get('Db');
+    $objectiveRegistry = new \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\ObjectiveRegistry($db, $this->debug);
+    $objectiveRegistry->registerObjective($objective);
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "ReasoningAgent created objective: {$goalStatement}",
+        'info'
+      );
+    }
+
+    return $objective;
+  }
+
+  /**
+   * Execute a reasoning improvement objective
+   *
+   * @param \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective $objective
+   * @return mixed Execution results
+   */
+  public function executeObjective(\ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective $objective): mixed
+  {
+    $goalStatement = $objective->getGoalStatement();
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "ReasoningAgent executing objective: {$goalStatement}",
+        'info'
+      );
+    }
+
+    $objective->setStatus('active');
+
+    try {
+      $result = ['message' => 'Reasoning objective execution placeholder'];
+
+      $objective->markCompleted([
+        'execution_time' => time() - strtotime($objective->getCreatedAt()->format('Y-m-d H:i:s')),
+        'result' => $result
+      ]);
+
+      return $result;
+
+    } catch (\Exception $e) {
+      $objective->markFailed($e->getMessage());
+      throw $e;
+    }
+  }
+
+  /**
+   * Evaluate peer agent output (reasoning chains, logic)
+   *
+   * @param string $outputType Type of output
+   * @param mixed $output The output to evaluate
+   * @param array $criteria Evaluation criteria
+   * @return \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AgentEvaluation
+   */
+  public function evaluatePeerOutput(
+    string $outputType,
+    mixed $output,
+    array $criteria
+  ): \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AgentEvaluation {
+
+    if (!$this->autonomousConfig->canAgentEvaluatePeers('ReasoningAgent')) {
+      throw new \RuntimeException('ReasoningAgent is not authorized to evaluate peers (disabled in configuration)');
+    }
+
+    $capabilities = $this->getEvaluationCapabilities();
+    if (!isset($capabilities[$outputType])) {
+      throw new \InvalidArgumentException(
+        "ReasoningAgent cannot evaluate {$outputType}"
+      );
+    }
+
+    $scores = match ($outputType) {
+      'reasoning_chain' => $this->evaluateReasoningChain($output, $criteria),
+      default => $this->getDefaultScores()
+    };
+
+    return new \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AgentEvaluation(
+      'ReasoningAgent',
+      $output['output_id'] ?? uniqid('output_'),
+      $scores,
+      $scores['feedback'] ?? 'Evaluation completed',
+      $scores['strengths'] ?? [],
+      $scores['improvements'] ?? []
+    );
+  }
+
+  /**
+   * Get evaluation capabilities for ReasoningAgent
+   *
+   * @return array Mapping of output types to capability levels
+   */
+  public function getEvaluationCapabilities(): array
+  {
+    return [
+      'reasoning_chain' => 'expert',    // Expert in reasoning evaluation
+      'validation_result' => 'competent', // Competent in validation
+      'sql_query' => 'novice',          // Basic SQL understanding
+      'data_analysis' => 'competent'    // Competent in analysis
+    ];
+  }
+
+  /**
+   * Evaluate reasoning chain quality
+   *
+   * @param mixed $output Reasoning chain output
+   * @param array $criteria Evaluation criteria
+   * @return array Evaluation scores
+   */
+  private function evaluateReasoningChain(mixed $output, array $criteria): array
+  {
+    $chain = $output['reasoning_chain'] ?? [];
+    $stepCount = count($chain);
+
+    $accuracyScore = 0.8;
+    $completenessScore = $stepCount > 0 ? 0.9 : 0.5;
+    $efficiencyScore = $stepCount <= 10 ? 0.9 : 0.7;
+    $clarityScore = 0.8;
+
+    $strengths = [];
+    $improvements = [];
+
+    if ($stepCount > 0) {
+      $strengths[] = 'Reasoning chain has clear steps';
+    } else {
+      $improvements[] = 'Add explicit reasoning steps';
+    }
+
+    if ($stepCount > 10) {
+      $improvements[] = 'Consider simplifying reasoning chain';
+    }
+
+    return [
+      'accuracy_score' => $accuracyScore,
+      'completeness_score' => $completenessScore,
+      'efficiency_score' => $efficiencyScore,
+      'clarity_score' => $clarityScore,
+      'feedback' => 'Reasoning chain evaluation completed',
+      'strengths' => $strengths,
+      'improvements' => $improvements
+    ];
+  }
+
+  /**
+   * Get default evaluation scores
+   *
+   * @return array Default scores
+   */
+  private function getDefaultScores(): array
+  {
+    return [
+      'accuracy_score' => 0.7,
+      'completeness_score' => 0.7,
+      'efficiency_score' => 0.7,
+      'clarity_score' => 0.7,
+      'feedback' => 'Default evaluation',
+      'strengths' => [],
+      'improvements' => []
+    ];
+  }
+
+  /**
+   * Receive and process feedback from peer agents
+   *
+   * @param array $feedback Feedback from peer agent
+   */
+  public function receiveFeedback(array $feedback): void
+  {
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "ReasoningAgent received feedback from {$feedback['source_agent_id']}",
+        'info'
+      );
+    }
+
+    $db = Registry::get('Db');
+    $feedbackManager = new \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\FeedbackManager($db, $this->debug);
+    $feedbackManager->acknowledgeFeedback(
+      $feedback['feedback_id'],
+      'ReasoningAgent',
+      null
+    );
+  }
+
+  /**
+   * Check if ReasoningAgent can collaborate on an objective
+   *
+   * @param \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective $objective
+   * @return bool True if can collaborate
+   */
+  public function canCollaborate(\ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective $objective): bool
+  {
+    $goalStatement = strtolower($objective->getGoalStatement());
+    $keywords = ['reasoning', 'logic', 'analysis', 'thinking', 'problem', 'solution'];
+
+    foreach ($keywords as $keyword) {
+      if (str_contains($goalStatement, $keyword)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

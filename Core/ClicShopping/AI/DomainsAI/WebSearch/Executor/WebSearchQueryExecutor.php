@@ -26,7 +26,6 @@ use ClicShopping\AI\DomainsAI\WebSearch\Tool\WebSearchTool;
  *
  * Extracted from HybridQueryProcessor as part of refactoring (Task 2.11.2)
  *
- * TASK 2.19: Refactored to be domain-agnostic using EntityHelperInterface
  * instead of ProductHelper. This allows the executor to work with any domain
  * (Ecommerce, HR, Finance, Trading, etc.) by injecting the appropriate helper.
  */
@@ -75,7 +74,6 @@ class WebSearchQueryExecutor
         );
       }
 
-      // TASK 2.18: Resolve contextual references using ConversationMemory
       $resolvedQuery = $query;
       $contextUsed = null;
       $lastEntity = null;
@@ -85,8 +83,7 @@ class WebSearchQueryExecutor
         try {
           $resolutionResult = $this->conversationMemory->resolveContextualReferences($query);
           
-          if ($resolutionResult['has_references']) {
-            // TASK 2.18: Check if this is an implicit contextual query
+          if ($resolutionResult['has_references']) {    
             $isImplicitContext = $resolutionResult['is_implicit_context'] ?? false;
             $lastEntity = $resolutionResult['last_entity'] ?? null;
             
@@ -132,12 +129,9 @@ class WebSearchQueryExecutor
             );
           }
           
-          // TASK 2.18: Step 1 - Try to find product in database from query
-          // TASK 4.3.5: Pass language_id from context
           $languageId = $context['language_id'] ?? 1;
           $product = $webSearchTool->findProductInDatabase($resolvedQuery, $languageId);
           
-          // TASK 2.18: Step 1.5 - If no product found and we have last entity, use it
           if ($product === null && $lastEntity !== null && $lastEntity['type'] === 'product') {
             if ($this->debug) {
               $this->logger->logSecurityEvent(
@@ -204,8 +198,7 @@ class WebSearchQueryExecutor
                 
                 // Format the comparison result for display
                 $formattedComparison = $this->formatPriceComparison($comparison);
-                
-                // 🔧 TASK 4.3.7.2: Add entity metadata for EntityExtractor
+                            
                 $response = AgentResponseHelper::createWebSearchResponse(
                   $query,
                   [
@@ -225,8 +218,7 @@ class WebSearchQueryExecutor
                     'context_entity_name' => $product['name'] ?? null,
                   ]
                 );
-                
-                // 🔧 TASK 4.3.7.2: Add _step_entity_metadata for EntityExtractor
+                 
                 if (isset($product['entity_id']) && isset($product['entity_type'])) {
                   $response['_step_entity_metadata'] = [
                     'entity_id' => $product['entity_id'],
@@ -278,15 +270,12 @@ class WebSearchQueryExecutor
           }
         }
         
-        // Standard web search
-        // TASK 2.18: Try to find product in database first to store entity in memory
+        // Standard web search     
         $product = null;
-        try {
-          // TASK 4.3.5: Pass language_id from context
+        try {       
           $languageId = $context['language_id'] ?? 1;
           $product = $webSearchTool->findProductInDatabase($resolvedQuery, $languageId);
-          
-          // TASK 2.18: If no product found in query and we have last entity, use it
+                
           if ($product === null && $lastEntity !== null && $lastEntity['type'] === 'product') {
             if ($this->debug) {
               $this->logger->logSecurityEvent(
@@ -350,7 +339,6 @@ class WebSearchQueryExecutor
             ];
           }
 
-          // 🔧 TASK 4.3.7.2: Add entity metadata for EntityExtractor
           $response = AgentResponseHelper::createWebSearchResponse(
             $query,
             ['items' => $formattedResults],
@@ -368,7 +356,6 @@ class WebSearchQueryExecutor
             ]
           );
           
-          // 🔧 TASK 4.3.7.2: Add _step_entity_metadata for EntityExtractor
           if ($product !== null && isset($product['entity_id']) && isset($product['entity_type'])) {
             $response['_step_entity_metadata'] = [
               'entity_id' => $product['entity_id'],
@@ -463,7 +450,6 @@ class WebSearchQueryExecutor
    */
   private function isPriceComparisonQuery(string $query): bool
   {
-    // TASK 2.9.8.6.1: Check if pattern-based detection is enabled
     if (!defined('USE_PATTERN_BASED_DETECTION') || USE_PATTERN_BASED_DETECTION === 'False') {
       // Pure LLM mode: Price comparison detection disabled
       // LLM will handle price comparison queries through standard web search

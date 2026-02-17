@@ -10,10 +10,10 @@
 
 namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor;
 
-
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Planning\ExecutionPlan;
 use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\ResultValidator;
+use ClicShopping\AI\DomainsAI\WebSearch\Helper\Formatter\WebSearchFormatter;
 
 /**
  * ResultSynthesizer Class
@@ -53,8 +53,7 @@ class ResultSynthesizer
 
   /**
    * Synthesize results from execution plan
-   *
-   * TASK 4.1: Integrated ResultValidator to validate results before synthesis
+   
    *
    * @param ExecutionPlan $plan Execution plan
    * @return array Synthesized result
@@ -71,7 +70,6 @@ class ResultSynthesizer
     // Get all step results
     $stepResults = $plan->getAllStepResults();
 
-    // TASK 4.1: Validate step results before aggregation
     $validatedResults = $this->validateStepResults($stepResults);
 
     // Aggregate results
@@ -83,7 +81,9 @@ class ResultSynthesizer
     // Format final result
     $finalResult = $this->formatFinalResult($aggregated, $entityMetadata);
 
-    // TASK 4.1: Validate final result before returning
+    // Ensure final result always has source attribution before validation
+    $finalResult = $this->ensureSourceAttribution($finalResult);
+    
     $finalValidation = $this->validateFinalResult($finalResult);
     if (!$finalValidation['valid']) {
       // Log validation failure
@@ -93,11 +93,14 @@ class ResultSynthesizer
         ['result_type' => $finalResult['type'] ?? 'unknown']
       );
 
-      // Return error response instead of invalid result
+      // Generate user-friendly error message based on validation errors
+      $errorMessage = $this->generateUserFriendlyErrorMessage($finalValidation['errors']);
+
+      // Return error response with user-friendly message
       return [
         'success' => false,
         'type' => 'error',
-        'text_response' => 'Result validation failed. Please try again.',
+        'text_response' => $errorMessage,
         'error' => 'validation_failed',
         'validation_errors' => $finalValidation['errors'],
         'data' => []
@@ -117,9 +120,83 @@ class ResultSynthesizer
   }
 
   /**
+   * Ensure final result has source attribution.
+   *
+   * This prevents validation failures when upstream components
+   * omit source attribution due to edge cases or partial failures.
+   *
+   * @param array $finalResult Final synthesized result
+   * @return array Final result with source_attribution guaranteed
+   */
+  private function ensureSourceAttribution(array $finalResult): array
+  {
+    if (isset($finalResult['source_attribution']) && !empty($finalResult['source_attribution'])) {
+      return $finalResult;
+    }
+
+    // Try to build from source_attributions if present (hybrid combine path)
+    if (isset($finalResult['source_attributions']) && is_array($finalResult['source_attributions'])) {
+      $normalized = [];
+      foreach ($finalResult['source_attributions'] as $item) {
+        if (is_array($item) && isset($item['attribution']) && is_array($item['attribution'])) {
+          $normalized[] = $item['attribution'];
+        } elseif (is_array($item) && isset($item['source_type'])) {
+          $normalized[] = $item;
+        }
+      }
+
+      if (count($normalized) === 1) {
+        $finalResult['source_attribution'] = $normalized[0];
+        return $finalResult;
+      }
+
+      if (count($normalized) > 1) {
+        $sourceTypes = array_filter(array_map(function ($attr) {
+          return is_array($attr) ? ($attr['source_type'] ?? null) : null;
+        }, $normalized));
+
+        $finalResult['source_attribution'] = [
+          'source_type' => 'Hybrid',
+          'source_icon' => 'i',
+          'source_details' => 'Combined from multiple sources',
+          'sources' => array_values(array_unique($sourceTypes)),
+          'source_count' => count($normalized),
+          'fallback' => true,
+        ];
+
+        return $finalResult;
+      }
+    }
+
+    // Fallback attribution based on result structure
+    $type = $finalResult['type'] ?? 'unknown';
+    $sourceType = 'System';
+    $details = 'Fallback source attribution added by ResultSynthesizer';
+
+    if ($type === 'web_search_response' || !empty($finalResult['web_results'])) {
+      $sourceType = 'Web Search';
+      $details = 'Information retrieved from external web search';
+    } elseif ($type === 'analytics_response' || isset($finalResult['sql_query']) || isset($finalResult['results'])) {
+      $sourceType = 'Analytics Database';
+      $details = 'Information retrieved from internal database';
+    } elseif ($type === 'semantic_results' || !empty($finalResult['sources'])) {
+      $sourceType = 'RAG Knowledge Base';
+      $details = 'Information retrieved from knowledge base';
+    }
+
+    $finalResult['source_attribution'] = [
+      'source_type' => $sourceType,
+      'source_icon' => 'i',
+      'source_details' => $details,
+      'fallback' => true,
+    ];
+
+    return $finalResult;
+  }
+
+  /**
    * Validate step results before aggregation
    *
-   * TASK 4.1: Validate each step result according to its type
    *
    * @param array $stepResults Array of step results
    * @return array Validated step results (invalid results are filtered out)
@@ -197,7 +274,6 @@ class ResultSynthesizer
   /**
    * Validate final result before returning
    *
-   * TASK 4.1: Validate the final synthesized result
    * 
    * Validation Rules by Result Type:
    * 
@@ -239,7 +315,7 @@ class ResultSynthesizer
     $hasResponse = isset($finalResult['response']) && !empty($finalResult['response']);
 
     if (!$hasTextResponse && !$hasResponse) {
-      // TASK 2.3: Improved error message with field status
+      
       $textResponseStatus = isset($finalResult['text_response']) ? 'empty' : 'not set';
       $responseStatus = isset($finalResult['response']) ? 'empty' : 'not set';
       $errors[] = "Missing text_response or response field (text_response: {$textResponseStatus}, response: {$responseStatus})";
@@ -247,7 +323,7 @@ class ResultSynthesizer
 
     // Check for source attribution
     if (!isset($finalResult['source_attribution']) || empty($finalResult['source_attribution'])) {
-      // TASK 2.3: Improved error message with field status
+      
       $attributionStatus = isset($finalResult['source_attribution']) ? 'empty' : 'not set';
       $errors[] = "Missing source_attribution field (field {$attributionStatus})";
     }
@@ -267,22 +343,32 @@ class ResultSynthesizer
         break;
 
       case 'semantic_results':
-        // 🔧 TASK 4.4: Allow LLM fallback responses (they have text_response but no sources/data)
+        
         // LLM fallback is valid if it has a text_response, even without sources
         $hasTextResponse = !empty($finalResult['text_response']) || !empty($finalResult['response']);
         $hasSources = !empty($finalResult['sources']) || !empty($finalResult['data']);
         
-        // Semantic results MUST have sources OR data (not just text_response alone)
+        // Semantic results MUST have sources OR data, unless it's a valid LLM/memory fallback
         if (!$hasSources) {
-          $sourcesStatus = isset($finalResult['sources']) ? 'empty' : 'not set';
-          $dataStatus = isset($finalResult['data']) ? 'empty' : 'not set';
-          $errors[] = "Semantic result missing sources and data (sources: {$sourcesStatus}, data: {$dataStatus})";
+          $sourceType = strtolower($finalResult['source_attribution']['source_type'] ?? '');
+          $isLLMFallback = $hasTextResponse && (
+            strpos($sourceType, 'llm') !== false ||
+            strpos($sourceType, 'general knowledge') !== false ||
+            strpos($sourceType, 'conversation') !== false ||
+            strpos($sourceType, 'memory') !== false
+          );
+          
+          if (!$isLLMFallback) {
+            $sourcesStatus = isset($finalResult['sources']) ? 'empty' : 'not set';
+            $dataStatus = isset($finalResult['data']) ? 'empty' : 'not set';
+            $errors[] = "Semantic result missing sources and data (sources: {$sourcesStatus}, data: {$dataStatus})";
+          }
         }
         break;
 
       case 'mixed':
         // Mixed results should have data from multiple sources
-        // TASK 2.3: Improved error message with field status
+        
         $hasData = !empty($finalResult['data']);
         $hasSources = !empty($finalResult['sources']);
         
@@ -305,7 +391,6 @@ class ResultSynthesizer
   /**
    * Get validation metrics
    *
-   * TASK 4.1: Expose validation metrics for monitoring
    *
    * @return array Validation metrics
    */
@@ -316,6 +401,10 @@ class ResultSynthesizer
 
   /**
    * Aggregate step results
+   *
+   * - Filters out failed steps
+   * - Logs failed steps for debugging
+   * - Continues aggregation with successful results only
    *
    * @param array $stepResults Array of step results
    * @return array Aggregated result
@@ -333,14 +422,35 @@ class ResultSynthesizer
       'source_attributions' => [], // 🆕 Collect source attributions
     ];
 
+    $failedSteps = [];
+    $successfulSteps = [];
+
     foreach ($stepResults as $stepId => $result) {
       if (!is_array($result)) {
         continue;
       }
+      if (isset($result['failed']) && $result['failed'] === true) {
+        $failedSteps[] = [
+          'step_id' => $stepId,
+          'error' => $result['error'] ?? 'Unknown error',
+          'step_type' => $result['step_type'] ?? 'unknown',
+        ];
+        
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "Skipping failed step {$stepId} in aggregation: " . ($result['error'] ?? 'Unknown error'),
+            'warning'
+          );
+        }
+        
+        continue;
+      }
+
+      // Track successful step
+      $successfulSteps[] = $stepId;
 
       $type = $result['type'] ?? 'unknown';
 
-      // TASK 2.4: Debug logging for step result structure
       if ($this->debug) {
         $this->logger->logSecurityEvent(
           "Step {$stepId} result structure",
@@ -365,10 +475,9 @@ class ResultSynthesizer
       if (isset($result['text_response']) && !empty($result['text_response'])) {
         $aggregated['text_responses'][] = $result['text_response'];
       } elseif (isset($result['interpretation']) && !empty($result['interpretation'])) {
-        // 🔧 FIX: Also collect 'interpretation' field for analytics results
+        // Also collect 'interpretation' field for analytics results
         $aggregated['text_responses'][] = $result['interpretation'];
       } elseif (isset($result['result']['interpretation']) && !empty($result['result']['interpretation'])) {
-        // TASK 1.2: Also check result.interpretation for new structure
         $aggregated['text_responses'][] = $result['result']['interpretation'];
       }
 
@@ -420,8 +529,7 @@ class ResultSynthesizer
           break;
 
         case 'semantic':
-        case 'semantic_results':
-          // 🔧 TASK 2.17.2: Always collect semantic results (even if response is empty)
+        case 'semantic_results':  
           // This ensures we preserve the result structure for later processing
           $aggregated['semantic_results'][] = $result;
           
@@ -482,12 +590,264 @@ class ResultSynthesizer
     if ($this->debug) {
       $this->logger->logSecurityEvent(
         "Aggregated results - analytics: " . count($aggregated['analytics_results']) . 
-        ", semantic: " . count($aggregated['semantic_results']),
-        'info'
+        ", semantic: " . count($aggregated['semantic_results']) .
+        ", successful: " . count($successfulSteps) .
+        ", failed: " . count($failedSteps),
+        'info',
+        [
+          'failed_steps' => $failedSteps,
+        ]
       );
     }
 
     return $aggregated;
+  }
+
+  /**
+   * Combine analytics and semantic results intelligently
+   * 
+   * This method is critical for hybrid mode queries to display tables correctly.
+   * It merges analytics (structured data) and semantic (text/documents) results
+   * into a unified response that preserves the strengths of both:
+   * - Analytics: Precise numerical data, calculations, aggregations
+   * - Semantic: Contextual information, documents, explanations
+   * 
+   *    - The 'results' array is ALWAYS present in analytics_component
+   *    - Even when empty (no matching data), the array structure is preserved
+   *    - This prevents "No results found" messages from replacing table structures
+   * 
+   * 2. ADD TABLE FORMAT METADATA (Task 3.2):
+   *    - Extracts column definitions from first result row
+   *    - Adds row count and display type information
+   *    - Sets table_format.enabled = true for non-empty results
+   *    - This metadata tells the frontend to render a table
+   * 
+   * 3. ENSURE DATA FIELD CONTAINS STRUCTURED TABLE DATA (Task 3.1):
+   *    - The 'data' field at root level contains the actual table rows
+   *    - This is used by ResultFormatter to generate HTML/JSON tables
+   *    - Preserves all columns and values from SQL query results
+   * 
+   * 4. MAINTAIN COMPONENT SEPARATION (Task 3.3):
+   *    - analytics_component: Contains SQL query, results, table metadata
+   *    - semantic_component: Contains text response, sources, documents
+   *    - Both components are preserved in the final result
+   *    - This allows the frontend to display both table and text
+   * 
+   * The combination strategy:
+   * 1. Prioritizes analytics data for numerical/factual information
+   * 2. Enriches with semantic context and explanations
+   * 3. Preserves source attribution for each component (Requirement 5.3)
+   * 4. Creates a coherent narrative that answers the user's hybrid query
+   * 
+   * EXAMPLE RESULT STRUCTURE:
+   * {
+   *   "type": "hybrid",
+   *   "text_response": "Combined narrative...",
+   *   "data": [{...}],  // Table rows from analytics
+   *   "analytics_component": {
+   *     "results": [{...}],  // ALWAYS present
+   *     "table_format": {
+   *       "enabled": true,
+   *       "columns": ["ean", "price"],
+   *       "row_count": 1,
+   *       "display_type": "table"
+   *     }
+   *   },
+   *   "semantic_component": {...}
+   * }
+   * 
+   * @param array $analyticsResults Array of analytics results
+   * @param array $semanticResults Array of semantic results
+   * @return array Combined result with unified structure
+   */
+  private function combineAnalyticsAndSemantic(array $analyticsResults, array $semanticResults): array
+  {
+    $combined = [
+      'type' => 'hybrid', // Changed from 'mixed' to 'hybrid' for proper hybrid query identification
+      'text_response' => '',
+      'data' => [],
+      'sources' => [],
+      'source_attributions' => [],
+      'analytics_component' => null,
+      'semantic_component' => null,
+    ];
+    
+    // Process analytics results
+    if (!empty($analyticsResults)) {
+      $firstAnalytics = $analyticsResults[0];
+      
+      $analyticsResults = $firstAnalytics['results'] ?? [];
+      
+      // Extract analytics data
+      $combined['analytics_component'] = [
+        'type' => 'analytics_response',
+        'interpretation' => $firstAnalytics['interpretation'] ?? '',
+        'results' => $analyticsResults,  // ALWAYS present, even if empty
+        'sql_query' => $firstAnalytics['sql_query'] ?? '',
+        'question' => $firstAnalytics['question'] ?? '',
+      ];
+      
+      if (!empty($analyticsResults)) {
+        // Extract column definitions from first result
+        $columns = [];
+        if (is_array($analyticsResults[0])) {
+          $columns = array_keys($analyticsResults[0]);
+        }
+        
+        $combined['analytics_component']['table_format'] = [
+          'enabled' => true,
+          'columns' => $columns,
+          'row_count' => count($analyticsResults),
+          'display_type' => 'table',
+        ];
+        
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "Table display enabled for analytics results",
+            'info',
+            [
+              'row_count' => count($analyticsResults),
+              'column_count' => count($columns),
+              'columns' => $columns,
+              'display_type' => 'table',
+            ]
+          );
+        }
+      } else {
+        // Empty results - still add metadata but disabled
+        $combined['analytics_component']['table_format'] = [
+          'enabled' => false,
+          'columns' => [],
+          'row_count' => 0,
+          'display_type' => 'none',
+        ];
+        
+        if ($this->debug) {
+          $this->logger->logSecurityEvent(
+            "Table display disabled - no analytics results",
+            'info'
+          );
+        }
+      }
+      
+      // Preserve analytics source attribution
+      if (isset($firstAnalytics['source_attribution'])) {
+        $combined['source_attributions'][] = [
+          'component' => 'analytics',
+          'attribution' => $firstAnalytics['source_attribution'],
+        ];
+      }
+      
+      // Ensure data field contains structured table data
+      if (!empty($analyticsResults)) {
+        $combined['data'] = array_merge($combined['data'], $analyticsResults);
+      }
+      
+      // Add analytics interpretation to text response
+      if (!empty($firstAnalytics['interpretation'])) {
+        $combined['text_response'] .= $firstAnalytics['interpretation'];
+      } elseif (!empty($firstAnalytics['text_response'])) {
+        $combined['text_response'] .= $firstAnalytics['text_response'];
+      }
+    }
+
+    // Process semantic results
+    if (!empty($semanticResults)) {
+      $firstSemantic = $semanticResults[0];
+      
+      // Extract semantic data
+      $combined['semantic_component'] = [
+        'type' => 'semantic_results',
+        'response' => $firstSemantic['response'] ?? '',
+        'text_response' => $firstSemantic['text_response'] ?? '',
+        'sources' => $firstSemantic['sources'] ?? [],
+        'audit_metadata' => $firstSemantic['audit_metadata'] ?? [],
+      ];
+      
+      // Preserve semantic source attribution
+      if (isset($firstSemantic['source_attribution'])) {
+        $combined['source_attributions'][] = [
+          'component' => 'semantic',
+          'attribution' => $firstSemantic['source_attribution'],
+        ];
+      }
+      
+      // Add semantic sources to combined sources
+      if (isset($firstSemantic['sources']) && is_array($firstSemantic['sources'])) {
+        $combined['sources'] = array_merge($combined['sources'], $firstSemantic['sources']);
+      }
+      
+      // Add semantic documents to combined data
+      if (isset($firstSemantic['results']) && is_array($firstSemantic['results'])) {
+        $combined['data'] = array_merge($combined['data'], $firstSemantic['results']);
+      }
+      
+      // Add semantic response to text response
+      $semanticText = $firstSemantic['response'] ?? $firstSemantic['text_response'] ?? '';
+      if (!empty($semanticText)) {
+        // Add separator if analytics text exists
+        if (!empty($combined['text_response'])) {
+          $combined['text_response'] .= "\n\n";
+        }
+        $combined['text_response'] .= $semanticText;
+      }
+    }
+
+    
+    // If only one component has results, adjust type accordingly
+    // BUT: Keep 'hybrid' type if we have multiple results (even if same type)
+    $totalResults = count($analyticsResults) + count($semanticResults);
+    
+    if ($totalResults === 0) {
+      // No results at all - keep hybrid type
+      // This will be handled by error handling
+    } elseif ($totalResults === 1) {
+      // Only one result - adjust type to match the component
+      if (empty($analyticsResults) && !empty($semanticResults)) {
+        $combined['type'] = 'semantic_results';
+      } elseif (!empty($analyticsResults) && empty($semanticResults)) {
+        $combined['type'] = 'analytics_response';
+      }
+    }
+    // else: Multiple results - keep 'hybrid' type (even if both are same type)
+
+    // Create unified source attribution
+    if (count($combined['source_attributions']) === 1) {
+      // Single source - use component's attribution directly
+      $combined['source_attribution'] = $combined['source_attributions'][0]['attribution'];
+    } elseif (count($combined['source_attributions']) > 1) {
+      // Multiple sources - create merged attribution
+      $sourceTypes = [];
+      foreach ($combined['source_attributions'] as $attr) {
+        $sourceTypes[] = $attr['attribution']['source_type'] ?? 'Unknown';
+      }
+      
+      $combined['source_attribution'] = [
+        'source_type' => 'Hybrid',
+        'source_icon' => '🔀',
+        'source_details' => 'Combined from: ' . implode(' + ', array_unique($sourceTypes)),
+        'components' => $combined['source_attributions'],
+        'source_count' => count($combined['source_attributions']),
+      ];
+    }
+
+    if ($this->debug) {
+      $this->logger->logSecurityEvent(
+        "TASK 9: Combined analytics and semantic results",
+        'info',
+        [
+          'has_analytics' => !empty($analyticsResults),
+          'has_semantic' => !empty($semanticResults),
+          'combined_type' => $combined['type'],
+          'source_attributions_count' => count($combined['source_attributions']),
+          'text_response_length' => strlen($combined['text_response']),
+          'data_count' => count($combined['data']),
+          'sources_count' => count($combined['sources']),
+        ]
+      );
+    }
+
+    return $combined;
   }
 
   /**
@@ -512,10 +872,50 @@ class ResultSynthesizer
    */
   public function formatFinalResult(array $aggregated, array $entityMetadata): array
   {
+    $hasAnalytics = !empty($aggregated['analytics_results']);
+    $hasSemantic = !empty($aggregated['semantic_results']);
+    $hasWeb = !empty($aggregated['web_results']);
+    
+    // ALWAYS log this (not conditional on debug) to diagnose the issue
+    error_log("[INFO : ANALYSE] formatFinalResult: hasAnalytics=" . ($hasAnalytics ? 'YES' : 'NO') .
+      ", hasSemantic=" . ($hasSemantic ? 'YES' : 'NO') . 
+      ", hasWeb=" . ($hasWeb ? 'YES' : 'NO') .
+      ", analytics_count=" . count($aggregated['analytics_results'] ?? []) .
+      ", semantic_count=" . count($aggregated['semantic_results'] ?? []));
+    
+    // If we have both analytics and semantic results, use intelligent combination
+    if ($hasAnalytics && $hasSemantic && !$hasWeb) {
+      error_log("✅ CALLING combineAnalyticsAndSemantic()");
+      
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "TASK 9: Detected hybrid query with analytics + semantic, using combineAnalyticsAndSemantic()",
+          'info'
+        );
+      }
+      
+      $finalResult = $this->combineAnalyticsAndSemantic(
+        $aggregated['analytics_results'],
+        $aggregated['semantic_results']
+      );
+      
+      // Add entity metadata if present
+      if (!empty($entityMetadata['entity_id'])) {
+        $finalResult['entity_id'] = $entityMetadata['entity_id'];
+        $finalResult['entity_type'] = $entityMetadata['entity_type'];
+        $finalResult['_entity_metadata'] = [
+          'entity_id' => $entityMetadata['entity_id'],
+          'entity_type' => $entityMetadata['entity_type'],
+        ];
+      }
+      
+      return $finalResult;
+    }
+    
+    // Otherwise, use standard aggregation logic
     // Combine text responses
     $textResponse = implode("\n\n", array_filter($aggregated['text_responses']));
 
-    // TASK 2.1: Add fallback text response generation if empty
     // This is critical for hybrid query validation - ensures every result has a text response
     // even when sub-queries don't provide interpretations or text_response fields.
     // Fallback priority: data count > sources count > generic success message
@@ -558,7 +958,7 @@ class ResultSynthesizer
       'sources' => $aggregated['sources'],
     ];
 
-    // 🔧 TASK 2.17.2: Add 'response' field for semantic queries (critical for OrchestratorAgent extraction)
+
     // This ensures extractFinalResponse() can find the answer
     if (!empty($textResponse)) {
       $finalResult['response'] = $textResponse;
@@ -576,7 +976,7 @@ class ResultSynthesizer
         // Multiple sources - create merged attribution with all source types
         $sourceTypes = array_unique(array_column($aggregated['source_attributions'], 'source_type'));
         $finalResult['source_attribution'] = [
-          'source_type' => 'Mixed',
+          'source_type' => 'Hybrid',
           'source_icon' => '🔀',
           'source_details' => 'Information combined from multiple sources',
           'sources' => $sourceTypes,
@@ -603,7 +1003,7 @@ class ResultSynthesizer
     if (!empty($aggregated['semantic_results'])) {
       $firstSemantic = $aggregated['semantic_results'][0];
       
-      // 🔧 TASK 2.17.2: Preserve 'response' field from semantic result (highest priority)
+
       if (isset($firstSemantic['response']) && !empty($firstSemantic['response'])) {
         $finalResult['response'] = $firstSemantic['response'];
       }
@@ -643,7 +1043,7 @@ class ResultSynthesizer
     if (!empty($aggregated['web_results'])) {
       $finalResult['web_results'] = $aggregated['web_results'];
       
-      // 🔧 FIX: Generate text_response for web search results if not already present
+      // Generate text_response for web search results if not already present
       if (empty($textResponse)) {
         $firstWebResult = $aggregated['web_results'][0];
         
@@ -660,7 +1060,14 @@ class ResultSynthesizer
             $items = $firstWebResult['result']['items'];
             $query = $firstWebResult['query'] ?? 'votre recherche';
             
-            $formattedText = \ClicShopping\AI\Helper\Formatter\WebSearchResultFormatter::formatAsHtml($query, $items);
+            $formatter = new WebSearchFormatter($this->debug);
+            $formatted = $formatter->format([
+              'type' => 'web_search_response',
+              'query' => $query,
+              'results' => $items,
+            ]);
+	    
+            $formattedText = $formatted['content'] ?? '';
             
             $finalResult['text_response'] = $formattedText;
             $finalResult['response'] = $formattedText;
@@ -674,7 +1081,6 @@ class ResultSynthesizer
 
     // 🆕 Debug: Log if source_attribution is in final result
     if ($this->debug) {
-      // TASK 2.5: Debug logging for final result structure before validation
       $this->logger->logSecurityEvent(
         "Final result structure before validation",
         'info',
@@ -776,5 +1182,43 @@ class ResultSynthesizer
     }
 
     return $metadata;
+  }
+
+  /**
+   * Generate user-friendly error message from validation errors
+   *
+   * Converts technical validation errors into human-readable messages
+   * that explain what went wrong and what the user can do.
+   *
+   * @param array $errors Array of validation error messages
+   * @return string User-friendly error message
+   */
+  private function generateUserFriendlyErrorMessage(array $errors): string
+  {
+    // Check for common error patterns and generate appropriate messages
+    foreach ($errors as $error) {
+      // Pattern: "Semantic result missing sources and data"
+      if (strpos($error, 'Semantic result missing sources and data') !== false) {
+        return "I couldn't find any information about that in the database. The requested content (like terms and conditions) may not be available yet. Please try asking about something else or contact support to add this content.";
+      }
+      
+      // Pattern: "Analytics result missing data"
+      if (strpos($error, 'Analytics result missing data') !== false) {
+        return "I couldn't retrieve the requested data. This might be because there are no records matching your query, or the data hasn't been entered yet. Please try a different query or check if the data exists.";
+      }
+      
+      // Pattern: "Hybrid result missing"
+      if (strpos($error, 'Hybrid result missing') !== false) {
+        return "I couldn't complete your request because some of the required information is missing. Please try breaking your question into smaller parts or asking about something else.";
+      }
+      
+      // Pattern: "Empty response"
+      if (strpos($error, 'empty') !== false || strpos($error, 'Empty') !== false) {
+        return "I couldn't find any results for your query. The information you're looking for might not be available in the system yet. Please try rephrasing your question or asking about something else.";
+      }
+    }
+    
+    // Default fallback message
+    return "I encountered an issue processing your request. The information you're looking for might not be available, or there might be a problem with the query. Please try rephrasing your question or contact support if the issue persists.";
   }
 }

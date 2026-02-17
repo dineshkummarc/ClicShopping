@@ -22,8 +22,8 @@ use function is_null;
  */
 class DbStatement extends \PDOStatement
 {
-  protected $pdo;
   public mixed $page_set = null;
+  protected $pdo;
   protected bool $is_error = false;
   protected string $page_set_keyword = 'page';
   protected mixed $page_set_results_per_page;
@@ -37,37 +37,6 @@ class DbStatement extends \PDOStatement
   protected $result;
 
   /**
-   *
-   */
-  public function bindValue(string|int $parameter, mixed $value, int $data_type = PDO::PARAM_STR): bool
-  {
-    return parent::bindValue($parameter, $value, $data_type);
-  }
-
-  /**
-   * Binds an integer value to a parameter for use in a prepared statement.
-   *
-   * @param string|int $parameter The parameter identifier to bind the value to.
-   * @param string|int
-   */
-// force type to int (see http://bugs.php.net/bug.php?id=44639)
-  /**
-   * Binds a value to a parameter for use in a prepared statement.
-   *
-   * @param string|int $parameter The parameter identifier to bind the value to.
-   * @param string|int|null $value The value to bind.
-   * @return bool True on success, false on failure.
-   */
-  public function bindInt(string|int $parameter, string|int|null $value): bool
-  {
-    return $this->bindValue($parameter, (int)$value, PDO::PARAM_INT);
-  }
-
-  /**
-   *
-   */
-// force type to bool (see http://bugs.php.net/bug.php?id=44639)
-  /**
    * Binds a boolean value to a parameter for use in a prepared statement.
    *
    * @param string|int $parameter The parameter identifier to bind the value to.
@@ -80,6 +49,17 @@ class DbStatement extends \PDOStatement
   }
 
   /**
+   * Binds an integer value to a parameter for use in a prepared statement.
+   *
+   * @param string|int $parameter The parameter identifier to bind the value to.
+   * @param string|int
+   */
+  public function bindValue(string|int $parameter, mixed $value, int $data_type = PDO::PARAM_STR): bool
+  {
+    return parent::bindValue($parameter, $value, $data_type);
+  }
+
+   /**
    * Binds a string value to a parameter for use in a prepared statement.
    *
    * @param string|int $parameter The parameter identifier to bind the value to.
@@ -126,6 +106,18 @@ class DbStatement extends \PDOStatement
   }
 
   /**
+   * Binds a value to a parameter for use in a prepared statement.
+   *
+   * @param string|int $parameter The parameter identifier to bind the value to.
+   * @param string|int|null $value The value to bind.
+   * @return bool True on success, false on failure.
+   */
+  public function bindInt(string|int $parameter, string|int|null $value): bool
+  {
+    return $this->bindValue($parameter, (int)$value, PDO::PARAM_INT);
+  }
+
+  /**
    * Executes the prepared statement with optional input parameters.
    *
    * @param array|null $input_parameters An associative array of input parameters to bind to the statement.
@@ -141,7 +133,7 @@ class DbStatement extends \PDOStatement
       if ($this->cache->exists($this->cache_expire)) {
         $this->cache_data = $this->cache->get();
 
-        if (isset($this->cache_data['data']) && isset($this->cache_data['total'])) {
+        if (isset($this->cache_data['data'], $this->cache_data['total'])) {
           $this->page_set_total_rows = $this->cache_data['total'];
           $this->cache_data = $this->cache_data['data'];
         }
@@ -157,7 +149,14 @@ class DbStatement extends \PDOStatement
         $input_parameters = null;
       }
 
-      $this->is_error = !parent::execute($input_parameters);
+      try {
+        $result = parent::execute($input_parameters);
+        $this->is_error = ($result === false);
+      } catch (\PDOException $e) {
+        $this->is_error = true;
+        error_log($e->getMessage());
+        return false;
+      }
 
       if ($this->is_error === true) {
         trigger_error($this->queryString);
@@ -166,41 +165,14 @@ class DbStatement extends \PDOStatement
       if (str_contains($this->queryString, ' SQL_CALC_FOUND_ROWS ')) {
         $this->page_set_total_rows = $this->pdo->query('select found_rows()')->fetchColumn();
       } elseif (isset($this->page_set)) {
-        trigger_error('ClicShopping\OM\DbStatement::execute(): Page Set query does not contain SQL_CALC_FOUND_ROWS. Please add it to the query: ' . $this->queryString);
+        trigger_error(
+          'ClicShopping\OM\DbStatement::execute(): Page Set query does not contain SQL_CALC_FOUND_ROWS. Query: ' .
+          $this->queryString
+        );
       }
     }
 
-    return false;
-  }
-
-  /**
-   * Fetches the next row from the result set.
-   *
-   * @param int $fetch_style The fetch style to use (default: PDO::FETCH_DEFAULT).
-   * @param int $cursor_orientation The cursor orientation (default: PDO::FETCH_ORI_NEXT).
-   * @param int $cursor_offset The cursor offset (default: 0).
-   * @return bool|array The fetched row or false on failure.
-   */
-  public function fetch(
-    int $fetch_style = PDO::FETCH_DEFAULT, //FETCH_ASSOC,
-    int $cursor_orientation = PDO::FETCH_ORI_NEXT,
-    int $cursor_offset = 0): bool|array
-  {
-    if ($this->cache_read === true) {
-      $this->result = current($this->cache_data);
-    } else {
-      $this->result = parent::fetch($fetch_style, $cursor_orientation, $cursor_offset);
-
-      if (isset($this->cache) && ($this->result !== false)) {
-        if (!isset($this->cache_data)) {
-          $this->cache_data = [];
-        }
-
-        $this->cache_data[] = $this->result;
-      }
-    }
-
-    return $this->result;
+    return ($this->is_error === false);
   }
 
   /**
@@ -250,6 +222,36 @@ class DbStatement extends \PDOStatement
   }
 
   /**
+   * Fetches the next row from the result set.
+   *
+   * @param int $fetch_style The fetch style to use (default: PDO::FETCH_DEFAULT).
+   * @param int $cursor_orientation The cursor orientation (default: PDO::FETCH_ORI_NEXT).
+   * @param int $cursor_offset The cursor offset (default: 0).
+   * @return bool|array The fetched row or false on failure.
+   */
+  public function fetch(
+    int $fetch_style = PDO::FETCH_DEFAULT, //FETCH_ASSOC,
+    int $cursor_orientation = PDO::FETCH_ORI_NEXT,
+    int $cursor_offset = 0): bool|array
+  {
+    if ($this->cache_read === true) {
+      $this->result = current($this->cache_data);
+    } else {
+      $this->result = parent::fetch($fetch_style, $cursor_orientation, $cursor_offset);
+
+      if (isset($this->cache) && ($this->result !== false)) {
+        if (!isset($this->cache_data)) {
+          $this->cache_data = [];
+        }
+
+        $this->cache_data[] = $this->result;
+      }
+    }
+
+    return $this->result;
+  }
+
+  /**
    * Retrieves the result set as an array.
    *
    * @return array The result set as an array.
@@ -293,6 +295,17 @@ class DbStatement extends \PDOStatement
    * Retrieves the value of a specified column from the result set.
    *
    * @param string $column The name of the column to retrieve the value from.
+   * @return string The value of the specified column or false if not found.
+   */
+  public function value(string $column): string
+  {
+    return $this->valueMixed($column, 'string');
+  }
+
+  /**
+   * Retrieves the value of a specified column from the result set.
+   *
+   * @param string $column The name of the column to retrieve the value from.
    * @param string $type The type of value to retrieve (default: 'string').
    * @return mixed The value of the specified column or false if not found.
    */
@@ -329,17 +342,6 @@ class DbStatement extends \PDOStatement
     }
 
     return false;
-  }
-
-  /**
-   * Retrieves the value of a specified column from the result set.
-   *
-   * @param string $column The name of the column to retrieve the value from.
-   * @return string The value of the specified column or false if not found.
-   */
-  public function value(string $column): string
-  {
-    return $this->valueMixed($column, 'string');
   }
 
   /**
@@ -407,16 +409,6 @@ class DbStatement extends \PDOStatement
   }
 
   /**
-   * Sets the query call string.
-   *
-   * @param string $type The type of query call (e.g., 'prepare', 'execute').
-   */
-  public function setQueryCall(string $type)
-  {
-    $this->query_call = $type;
-  }
-
-  /**
    * Retrieves the stored query call string.
    *
    * @return string The query call string.
@@ -424,6 +416,16 @@ class DbStatement extends \PDOStatement
   public function getQueryCall(): string
   {
     return $this->query_call;
+  }
+
+  /**
+   * Sets the query call string.
+   *
+   * @param string $type The type of query call (e.g., 'prepare', 'execute').
+   */
+  public function setQueryCall(string $type)
+  {
+    $this->query_call = $type;
   }
 
   /**

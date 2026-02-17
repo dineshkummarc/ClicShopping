@@ -33,6 +33,110 @@ class SubTaskPlannerStandard
     {
         $steps = [];
 
+        // Check if this is a decomposed hybrid query with sub_queries
+        if (isset($intent['sub_queries']) && is_array($intent['sub_queries'])) {
+            
+            $stepTypes = array_map(function($sq) { return $sq['type'] ?? 'unknown'; }, $intent['sub_queries']);
+            
+            $this->logDebug(
+                "PLAN CREATION START - Creating " . count($intent['sub_queries']) . 
+                " steps for hybrid query | Step types: " . json_encode($stepTypes)
+            );
+            
+            if ($this->securityLogger) {
+                $this->securityLogger->logSecurityEvent(
+                    "Creating execution plan for hybrid query",
+                    'info',
+                    [
+                        'total_steps' => count($intent['sub_queries']),
+                        'step_types' => $stepTypes,
+                        'query' => $query,
+                        'plan_type' => 'hybrid_decomposed',
+                        'timestamp' => date('Y-m-d H:i:s')
+                    ]
+                );
+            }
+            
+            // Create one ExecutionStep per sub-query
+            foreach ($intent['sub_queries'] as $index => $subQuery) {
+                $stepId = 'step_' . ($index + 1);
+                
+                // Set step type based on sub-query type
+                // Map sub-query type to step type that PlanExecutor understands
+                $subQueryType = $subQuery['type'] ?? 'analytics';
+                $stepType = $this->mapSubQueryTypeToStepType($subQueryType);
+                
+                // Get sub-query text
+                $subQueryText = $subQuery['text'] ?? $query;
+                
+                // Create step with sub-query metadata
+                $step = new TaskStep(
+                    $stepId,
+                    $stepType,
+                    $subQueryText,
+                    [
+                        'sub_query' => $subQueryText,
+                        'original_query' => $query,
+                        'sub_query_type' => $subQueryType,
+                        'sub_query_index' => $index,
+                        'sub_query_confidence' => $subQuery['confidence'] ?? null,
+                        'intent' => $intent,
+                        'query_type' => 'hybrid_decomposed',
+                        'data_source' => 'internal_database',
+                        'tables' => $this->getTablesFromDomain(),
+                        'processing_mode' => 'direct_sql',
+                        'depends_on' => [],
+                        'can_run_parallel' => true, // Sub-queries can run in parallel
+                        'is_final' => ($index === count($intent['sub_queries']) - 1),
+                    ]
+                );
+                
+                $steps[] = $step;
+                
+                $this->logDebug(
+                    "Created step $stepId | Type: $stepType | Sub-query: " . 
+                    substr($subQueryText, 0, 100)
+                );
+                
+                if ($this->securityLogger) {
+                    $this->securityLogger->logSecurityEvent(
+                        "Execution step created: $stepId",
+                        'info',
+                        [
+                            'step_id' => $stepId,
+                            'step_type' => $stepType,
+                            'sub_query_type' => $subQueryType,
+                            'sub_query_text' => $subQueryText,
+                            'step_index' => $index,
+                            'can_run_parallel' => true,
+                            'is_final' => ($index === count($intent['sub_queries']) - 1)
+                        ]
+                    );
+                }
+            }
+            
+            $this->logDebug(
+                "PLAN CREATION COMPLETE - Created " . count($steps) . 
+                " steps from hybrid query decomposition"
+            );
+            
+            if ($this->securityLogger) {
+                $this->securityLogger->logSecurityEvent(
+                    "Execution plan created successfully",
+                    'info',
+                    [
+                        'total_steps_created' => count($steps),
+                        'step_ids' => array_map(function($s) { return $s->getId(); }, $steps),
+                        'step_types' => array_map(function($s) { return $s->getType(); }, $steps),
+                        'plan_type' => 'hybrid_decomposed'
+                    ]
+                );
+            }
+            
+            return $steps;
+        }
+        
+        // Existing single-step logic for non-hybrid queries
         $step1 = new TaskStep(
             'step_1',
             'analytics_query',
@@ -67,6 +171,25 @@ class SubTaskPlannerStandard
             'requires_external_data' => false,
             'is_fallback_planner' => true
         ];
+    }
+    
+    /**
+     * Map sub-query type to step type that PlanExecutor understands
+     * 
+     * @param string $subQueryType Sub-query type from HybridQueryDecomposer
+     * @return string Step type for PlanExecutor
+     */
+    private function mapSubQueryTypeToStepType(string $subQueryType): string
+    {
+        $mapping = [
+            'analytics' => 'analytics_query',
+            'semantic' => 'semantic_search',
+            'web_search' => 'web_search',
+            'web' => 'web_search',
+            'calculator' => 'calculator',
+        ];
+        
+        return $mapping[$subQueryType] ?? 'analytics_query'; // Default to analytics_query
     }
     
     private function getTablesFromDomain(): array

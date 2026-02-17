@@ -27,9 +27,7 @@ use ClicShopping\OM\HTTP;
  * - Result formatting
  * - Integration with SearchCacheManager (Learning RAG)
  * - Multi-engine support (Google, Bing, DuckDuckGo)
- * - Domain-agnostic product lookup via EntityHelperInterface (TASK 4.3)
  *
- * TASK 4.3: Updated to support EntityHelperInterface for domain-agnostic operations.
  * When an EntityHelper is provided, it will be used for product lookups instead of
  * direct SQL queries. This makes WebSearchTool work with any domain (Ecommerce, HR, etc.)
  * while maintaining backward compatibility with direct SQL fallback.
@@ -102,7 +100,6 @@ class WebSearchTool
     $this->cacheManager = new SearchCacheManager('rag_web_cache_embedding');
     $this->db = Registry::get('Db');
     
-    // TASK 4.3.5: Handle Language registry not being available in AJAX context
     try {
       $this->language = Registry::get('Language');
     } catch (\Exception $e) {
@@ -1000,9 +997,6 @@ class WebSearchTool
   /**
    * Find product in database before web search
    * 
-   * 🔧 TASK 4.3.7.2: Return entity_id and entity_type for memory tracking
-   * TASK 4.3.5: Added language_id parameter to handle AJAX context
-   * TASK 4.3: Updated to use EntityHelperInterface for domain-agnostic product lookup
    * 
    * Uses IntentAnalyzer.detectEntityFromEmbeddings() to find product
    * with embedding search first, then falls back to SQL LIKE search
@@ -1014,7 +1008,6 @@ class WebSearchTool
   public function findProductInDatabase(string $query, ?int $languageId = null): ?array
   {
     try {
-      // TASK 4.3.5: Get language_id from parameter, Language registry, or default to 1
       if ($languageId === null) {
         $languageId = $this->language !== null ? $this->language->getId() : 1;
       }
@@ -1038,7 +1031,6 @@ class WebSearchTool
           );
         }
 
-        // TASK 4.3: Use EntityHelper if available, otherwise fall back to direct SQL
         $product = null;
         if ($this->entityHelper !== null) {
           $product = $this->entityHelper::getEntityById($entityResult['entity_id'], $languageId);
@@ -1051,7 +1043,6 @@ class WebSearchTool
           $product['detection_method'] = 'embedding';
           $product['confidence'] = $entityResult['confidence'];
           
-          // 🔧 TASK 4.3.7.2: Add entity information for memory tracking
           $product['entity_id'] = $product['product_id'];
           $product['entity_type'] = 'product';
           
@@ -1074,7 +1065,6 @@ class WebSearchTool
         );
       }
 
-      // TASK 4.3: Use EntityHelper if available
       $product = null;
       if ($this->entityHelper !== null && method_exists($this->entityHelper, 'searchProductByName')) {
         $product = $this->entityHelper->searchProductByName($query, $languageId);
@@ -1087,7 +1077,6 @@ class WebSearchTool
         $product['detection_method'] = 'sql_like';
         $product['confidence'] = 0.6;
         
-        // 🔧 TASK 4.3.7.2: Add entity information for memory tracking
         $product['entity_id'] = $product['product_id'];
         $product['entity_type'] = 'product';
         
@@ -1130,7 +1119,6 @@ class WebSearchTool
   private function getProductById(int $productId, ?int $languageId = null): ?array
   {
     try {
-      // TASK 4.3.5: Get language_id from parameter, Language registry, or default to 1
       if ($languageId === null) {
         $languageId = $this->language !== null ? $this->language->getId() : 1;
       }
@@ -1181,7 +1169,6 @@ class WebSearchTool
   private function searchProductByName(string $query, ?int $languageId = null): ?array
   {
     try {
-      // TASK 4.3.5: Get language_id from parameter, Language registry, or default to 1
       if ($languageId === null) {
         $languageId = $this->language !== null ? $this->language->getId() : 1;
       }

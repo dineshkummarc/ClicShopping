@@ -17,7 +17,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
 
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\AI\Helper\Detection\ContextSwitchDetector;
+use ClicShopping\AI\DomainsAI\CoreAI\Helper\Detection\ContextSwitchDetector;
 use ClicShopping\AI\DomainsAI\Semantic\Helper\SemanticDomainDetector;
 
 

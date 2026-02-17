@@ -11,6 +11,7 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdmin\Dashboard;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
+use ClicShopping\AI\Infrastructure\Metrics\ApiCostCalculator;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
@@ -74,7 +75,6 @@ class TokenChartDataProvider
     }
 
     $monthlyMap = [];
-    // 🔧 UPDATED: Read from rag_statistics instead of gpt_usage
     $Qmonthly = $db->query(
       'select DATE_FORMAT(date_added, "%Y-%m") as month,
               sum(tokens_total) as total
@@ -97,35 +97,35 @@ class TokenChartDataProvider
       $monthlyData[] = $monthlyMap[$monthKey] ?? 0;
     }
 
-    $modelPrices = [
-      'gpt-5-nano' => 0.0005,
-      'gpt-5-mini' => 0.0025,
-      'gpt-5' => 0.0125,
-      'gpt-4.1-mini' => 0.0012,
-      'gpt-4.1-nano' => 0.0008,
-      'gpt-4o' => 0.0025,
-      'gpt-3.5-turbo' => 0.0005,
-    ];
-
     $modelColors = [
-      'gpt-5-nano' => 'rgba(255, 99, 132, 0.5)',
-      'gpt-5-mini' => 'rgba(54, 162, 235, 0.5)',
-      'gpt-5' => 'rgba(255, 206, 86, 0.5)',
-      'gpt-4.1-mini' => 'rgba(75, 192, 192, 0.5)',
-      'gpt-4.1-nano' => 'rgba(153, 102, 255, 0.5)',
-      'gpt-4o' => 'rgba(255, 159, 64, 0.5)',
-      'gpt-3.5-turbo' => 'rgba(100, 255, 218, 0.5)',
+      'gpt-5' => 'rgba(30, 64, 175, 0.55)',
+      'gpt-5.2' => 'rgba(37, 99, 235, 0.55)',
+      'gpt-5.2-pro' => 'rgba(17, 94, 89, 0.55)',
+      'gpt-5-mini' => 'rgba(14, 116, 144, 0.55)',
+      'gpt-5-nano' => 'rgba(14, 159, 110, 0.55)',
+      'gpt-4.1-mini' => 'rgba(13, 148, 136, 0.55)',
+      'gpt-4.1-nano' => 'rgba(99, 102, 241, 0.55)',
+      'gpt-4' => 'rgba(245, 158, 11, 0.55)',
+      'gpt-4-turbo' => 'rgba(251, 146, 60, 0.55)',
+      'gpt-3.5-turbo' => 'rgba(148, 163, 184, 0.55)',
+      'claude-3-opus' => 'rgba(190, 24, 93, 0.55)',
+      'claude-3-sonnet' => 'rgba(219, 39, 119, 0.55)',
+      'claude-3-haiku' => 'rgba(236, 72, 153, 0.55)',
+      'mistral-large' => 'rgba(234, 179, 8, 0.55)',
+      'mistral-medium' => 'rgba(202, 138, 4, 0.55)',
+      'mistral-small' => 'rgba(161, 98, 7, 0.55)',
+      'local' => 'rgba(34, 197, 94, 0.55)',
     ];
 
     $rawCostData = [];
-    // 🔧 UPDATED: Read from rag_statistics and use actual API cost instead of estimating
     $Qcost = $db->query(
       'select DATE_FORMAT(date_added, "%Y-%m") as month,
               model_used as model,
-              sum(api_cost_usd) as total_cost
+              sum(tokens_prompt) as prompt_tokens,
+              sum(tokens_completion) as completion_tokens
        from :table_rag_statistics
        where date_added >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-         and api_cost_usd is not null
+         and (tokens_prompt is not null or tokens_completion is not null)
        group by month, model
        order by month asc'
     );
@@ -133,7 +133,9 @@ class TokenChartDataProvider
     while ($Qcost->fetch()) {
       $model = $Qcost->value('model') ?: 'gpt-3.5-turbo';
       $month = $Qcost->value('month');
-      $cost = (float)$Qcost->value('total_cost');
+      $promptTokens = (int)$Qcost->value('prompt_tokens');
+      $completionTokens = (int)$Qcost->value('completion_tokens');
+      $cost = ApiCostCalculator::calculateCost($model, $promptTokens, $completionTokens);
       $rawCostData[$model][$month] = $cost;
     }
 
@@ -176,8 +178,8 @@ class TokenChartDataProvider
             'datasets' => [[
               'label' => 'GPT Tokens',
               'data' => $dailyData,
-              'backgroundColor' => 'rgba(255,0,255,0.2)',
-              'borderColor' => 'rgba(54, 162, 235, 1)',
+              'backgroundColor' => 'rgba(14, 116, 144, 0.18)',
+              'borderColor' => 'rgba(14, 116, 144, 1)',
               'borderWidth' => 1,
             ]],
           ],
@@ -208,8 +210,8 @@ class TokenChartDataProvider
             'datasets' => [[
               'label' => 'GPT Tokens',
               'data' => $monthlyData,
-              'backgroundColor' => 'rgba(255, 0, 255, 0.2)',
-              'borderColor' => 'rgba(54, 162, 235, 1)',
+              'backgroundColor' => 'rgba(14, 116, 144, 0.18)',
+              'borderColor' => 'rgba(14, 116, 144, 1)',
               'borderWidth' => 1,
               'fill' => true,
             ]],
@@ -266,4 +268,3 @@ class TokenChartDataProvider
     return self::$cache;
   }
 }
-

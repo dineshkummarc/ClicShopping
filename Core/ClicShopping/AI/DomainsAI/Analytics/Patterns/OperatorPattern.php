@@ -11,7 +11,6 @@
  * @Info : https://www.clicshopping.org/forum/trademark/
  *
  * REFACTORING: Extracted from QueryAnalyzer (2026-01-05)
- * TASK: Session 15 - Pattern extraction cleanup
  *
  * @deprecated Pattern-based logic superseded by Pure LLM Mode
  *             Scheduled for removal in Q3 2026

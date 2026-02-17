@@ -82,10 +82,6 @@ class ComplexQueryFormatter extends AbstractFormatter
    */
   public function format(array $results): array
   {
-    if ($this->debug) {
-      error_log('ComplexQueryFormatter: Formatting complex query results\n');
-    }
-
     $question = $results['question'] ?? $results['query'] ?? 'Unknown request';
 
     $output = "<div class='complex-query-results'>";
@@ -111,7 +107,6 @@ class ComplexQueryFormatter extends AbstractFormatter
     }
 
     if (!empty($interpretationText)) {
-      // ✅ TASK 5.3.2.1: Don't double-encode HTML content from text_response
       if ($isHtmlContent) {
         // text_response already contains formatted HTML - use as-is
         $output .= "<div class='overall-summary alert alert-primary' style='margin-top: 15px;'>";

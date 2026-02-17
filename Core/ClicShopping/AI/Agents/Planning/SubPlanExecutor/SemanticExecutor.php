@@ -81,7 +81,7 @@ class SemanticExecutor
   {
     // ALWAYS log entry (even if debug is off) to track execution
     $this->logger->logSecurityEvent(
-      "🔍 SemanticExecutor.executeSemanticSearch() CALLED - Query: {$query}",
+      "[INFO : ANALYSE] SemanticExecutor.executeSemanticSearch() CALLED - Query: {$query}",
       'info'
     );
     
@@ -89,7 +89,7 @@ class SemanticExecutor
       // Initialize orchestrator if needed (lazy loading)
       if ($this->orchestrator === null) {
         $this->logger->logSecurityEvent(
-          "🆕 Initializing SemanticSearchOrchestrator (userId: {$this->userId}, langId: {$this->languageId})",
+          "Initializing SemanticSearchOrchestrator (userId: {$this->userId}, langId: {$this->languageId})",
           'info'
         );
         
@@ -118,8 +118,8 @@ class SemanticExecutor
         'info'
       );
 
-      // 🔧 TASK 3.5.1.3: Hallucination detection and flagging
-      // 🔧 FIX 2025-12-28: Skip grounding verification for LLM fallback responses
+      
+      // 🔧 Skip grounding verification for LLM fallback responses
       // LLM fallback is used for general knowledge queries (e.g., "où est Paris?")
       // These don't need document grounding - they use the LLM's training data
       $source = $rawResult['source'] ?? 'documents';
@@ -127,7 +127,7 @@ class SemanticExecutor
       
       if ($this->enableHallucinationDetection && isset($rawResult['answer']) && !empty($rawResult['answer']) && !$skipGroundingVerification) {
         $this->logger->logSecurityEvent(
-          "🔍 Running hallucination detection on answer (source: {$source})",
+          "[INFO : ANALYSE] Running hallucination detection on answer (source: {$source})",
           'info'
         );
         
@@ -138,7 +138,7 @@ class SemanticExecutor
           $this->hallucinationHelper = new HallucinationDetector($this->debug);
         }
         
-        // 🔧 TASK 3.5.1.4: Calculate comprehensive confidence score
+        
         if ($this->confidenceCalculator === null) {
           $this->confidenceCalculator = new ConfidenceScoreCalculator($this->debug);
         }
@@ -187,7 +187,7 @@ class SemanticExecutor
         $rawResult['grounding_decision'] = $groundingResult['decision'];
         $rawResult['grounding_metadata'] = $this->hallucinationHelper->formatGroundingMetadata($groundingResult);
         
-        // 🔧 TASK 3.5.1.4: Add comprehensive confidence data
+        
         $rawResult['confidence_data'] = $confidenceData;
         $rawResult['confidence_score'] = $confidenceData['overall_confidence'];
         $rawResult['confidence_level'] = $confidenceData['confidence_level'];
@@ -226,7 +226,6 @@ class SemanticExecutor
   /**
    * Format semantic result
    *
-   * 🔧 TASK 4.3.7.1: Extract entity information from embedding metadata
    *
    * @param array $rawResult Raw result from MultiDBRAGManager
    * @return array Formatted result
@@ -240,7 +239,7 @@ class SemanticExecutor
       'type' => 'semantic',
       'success' => $rawResult['success'] ?? true,
       'text_response' => $answer,
-      'response' => $answer,  // 🔧 TASK 2.17.2: Add 'response' field for OrchestratorAgent extraction
+      'response' => $answer,  
       'sources' => $rawResult['sources'] ?? [],
     ];
 
@@ -254,7 +253,6 @@ class SemanticExecutor
       $formatted['audit_metadata'] = $rawResult['audit_metadata'];
     }
 
-    // 🔧 TASK 4.3.7.1: Extract entity information from embedding metadata
     $entityInfo = $this->extractEntityFromDocuments($rawResult);
     if ($entityInfo !== null) {
       // Add _step_entity_metadata for EntityExtractor to find
@@ -289,7 +287,6 @@ class SemanticExecutor
     }
 
     // 🆕 Add source attribution for semantic queries
-    // TASK 5.2.1.3: Extract document names from rawResult
     $documentNames = [];
     if (isset($rawResult['documents']) && is_array($rawResult['documents'])) {
       foreach ($rawResult['documents'] as $doc) {
@@ -304,7 +301,7 @@ class SemanticExecutor
         
         if ($metadata !== null) {
           // Try to extract document name from metadata
-          // 🔧 TASK 5.2.1.3: Added brand_name for pages_manager, category_name for categories
+ 
           $docName = null;
           $possibleFields = ['title', 'document_name', 'brand_name', 'product_name', 'category_name', 'name', 'page_title', 'pages_title'];
           
@@ -335,7 +332,6 @@ class SemanticExecutor
       }
     }
     
-    // 🔧 TASK 5.2.1.3: Remove duplicate document names and re-index array
     $documentNames = array_values(array_unique($documentNames));
     
     if ($this->debug && !empty($documentNames)) {
@@ -365,7 +361,7 @@ class SemanticExecutor
         'source_icon' => '💭',
         'source_details' => 'Information retrieved from recent conversation history',
         'document_count' => $documentCount,
-        'document_names' => $documentNames, // TASK 5.2.1.3
+        'document_names' => $documentNames, 
       ];
     } else {
       // From document stores (RAG)
@@ -374,7 +370,7 @@ class SemanticExecutor
         'source_icon' => '📚',
         'source_details' => 'Information retrieved from vector embeddings database',
         'document_count' => $documentCount,
-        'document_names' => $documentNames, // TASK 5.2.1.3
+        'document_names' => $documentNames, 
       ];
     }
 
@@ -384,7 +380,6 @@ class SemanticExecutor
   /**
    * Extract entity information from document metadata
    *
-   * 🔧 TASK 4.3.7.1: Extract entity_id and entity_type from embedding metadata
    *
    * This method examines the documents returned from semantic search and extracts
    * entity information from their metadata. It infers entity_type from the source table name.
@@ -455,8 +450,6 @@ class SemanticExecutor
   /**
    * Infer entity type from table name
    *
-   * 🔧 TASK 4.3.7.1: Map embedding table names to entity types
-   * 🔧 TASK 3.5.1.3: Use EntityTypeRegistry for dynamic mapping
    *
    * This method uses EntityTypeRegistry to dynamically convert table names
    * to entity types, avoiding code duplication.
@@ -537,8 +530,7 @@ class SemanticExecutor
 
   /**
    * Verify answer grounding using AnswerGroundingVerifier
-   *
-   * 🔧 TASK 3.5.1.3: Hallucination detection
+   
    *
    * @param array $rawResult Raw result from orchestrator
    * @return array Grounding verification result
@@ -560,8 +552,7 @@ class SemanticExecutor
       // Extract answer and source documents
       $answer = $rawResult['answer'] ?? $rawResult['response'] ?? '';
       $sourceDocuments = $rawResult['documents'] ?? [];
-
-      // 🔧 TASK 3.5.1.3: Debug logging for document extraction
+      
       if ($this->debug) {
         $documentCount = is_array($sourceDocuments) ? count($sourceDocuments) : 0;
         $this->logger->logSecurityEvent(

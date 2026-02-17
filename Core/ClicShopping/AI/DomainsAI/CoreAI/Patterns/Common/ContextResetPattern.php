@@ -26,7 +26,6 @@
  * - Helps determine when to clear conversation memory
  * 
  * RESTRUCTURATION: Relocated to Common (2026-01-22)
- * TASK: pattern-migration-domain-to-domainsai - Phase 2
  * 
  * @package ClicShopping\AI\DomainsAI\CoreAI\Patterns\Common
  * @subpackage AI\DomainsAI\CoreAI\Patterns

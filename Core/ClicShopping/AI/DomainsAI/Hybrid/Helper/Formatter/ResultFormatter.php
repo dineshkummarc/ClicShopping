@@ -161,7 +161,7 @@ class ResultFormatter
   public function formatWithMemory(array $results, array $memoryContext): array
   {
     // First, format the results normally
-    $formattedResults = $this->format($results . "\n");
+    $formattedResults = $this->format($results);
     
     // If memory context is empty or not relevant, return normal formatting
     if (empty($memoryContext) || !$this->hasRelevantMemoryContext($memoryContext)) {

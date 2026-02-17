@@ -10,7 +10,11 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubCorrectionAgent\Strategies;
 
+use ClicShopping\OM\Registry;
+
 use ClicShopping\AI\Agents\Orchestrator\CorrectionAgent;
+use ClicShopping\AI\Config\DomainConfig;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 
 /**
  * ColumnErrorStrategy Class
@@ -34,6 +38,7 @@ class ColumnErrorStrategy implements CorrectionStrategyInterface
   public function correct(array $errorContext, array $errorAnalysis, array $similarCases): array
   {
     $query = $errorContext['failed_query'];
+    $errorMessage = $errorContext['error_message'] ?? '';
     $unknownColumn = $errorAnalysis['details']['column_name'] ?? '';
 
     if (empty($unknownColumn)) {
@@ -44,6 +49,11 @@ class ColumnErrorStrategy implements CorrectionStrategyInterface
         'confidence' => 0.0,
         'suggestions' => ['Unable to identify unknown column name'],
       ];
+    }
+
+    // Check if this is an ORDER BY column reference error
+    if ($this->isOrderByError($query, $errorMessage)) {
+      return $this->correctOrderByError($query, $unknownColumn, $errorMessage);
     }
 
     // Find similar column in schema
@@ -71,6 +81,160 @@ class ColumnErrorStrategy implements CorrectionStrategyInterface
         "Verify table aliases are correct"
       ],
     ];
+  }
+
+  /**
+   * Check if error is related to ORDER BY clause
+   *
+   * @param string $query SQL query
+   * @param string $errorMessage Error message
+   * @return bool True if ORDER BY error
+   */
+  private function isOrderByError(string $query, string $errorMessage): bool
+  {
+    // Check if query contains ORDER BY and error mentions ORDER BY or column reference
+    return (stripos($query, 'ORDER BY') !== false) &&
+           (stripos($errorMessage, 'ORDER BY') !== false || 
+            stripos($errorMessage, 'order clause') !== false);
+  }
+
+  /**
+   * Correct ORDER BY column reference error using LLM
+   *
+   * @param string $query Original SQL query
+   * @param string $unknownColumn Unknown column name
+   * @param string $errorMessage Error message
+   * @return array Correction result
+   */
+  private function correctOrderByError(string $query, string $unknownColumn, string $errorMessage): array
+  {
+    try {
+      // Get language instance
+      $language = Registry::get('Language');
+      
+      // Load language definitions for SQL correction prompts using DomainConfig
+      DomainConfig::loadLanguageFile('rag_sql_correction');
+      
+      // Get ORDER BY correction prompt from language file
+      $prompt = $language->getDef('llm_prompt_order_by_correction', [
+        'query' => $query,
+        'unknown_column' => $unknownColumn,
+        'error_message' => $errorMessage
+      ]);
+
+      // Use LLM to generate corrected ORDER BY clause
+      $response = Gpt::getGptResponse($prompt, 300);
+
+      // Parse the response to extract corrected SQL
+      $correctedQuery = $this->parseOrderByCorrectionResponse($response, $query);
+
+      if ($correctedQuery && $correctedQuery !== $query) {
+        return [
+          'query' => $correctedQuery,
+          'method' => 'llm_order_by_correction',
+          'confidence' => 0.85,
+          'suggestions' => [
+            "ORDER BY clause corrected using LLM",
+            "Column reference '$unknownColumn' fixed"
+          ],
+        ];
+      }
+
+      // LLM correction failed
+      return [
+        'query' => $query,
+        'method' => 'order_by_correction_failed',
+        'confidence' => 0.0,
+        'suggestions' => [
+          "Unable to correct ORDER BY clause",
+          "Try using column position (ORDER BY 1, 2, etc.)",
+          "Or use the exact function expression from SELECT"
+        ],
+      ];
+
+    } catch (\Exception $e) {
+      return [
+        'query' => $query,
+        'method' => 'order_by_correction_error',
+        'confidence' => 0.0,
+        'suggestions' => [
+          "Error during ORDER BY correction: " . $e->getMessage()
+        ],
+      ];
+    }
+  }
+
+  /**
+   * Build ORDER BY correction prompt
+   * Uses English for internal processing as per domain agnosticism requirement
+   *
+   * @param string $query Original SQL query
+   * @param string $unknownColumn Unknown column name
+   * @param string $errorMessage Error message
+   * @return string Correction prompt
+   */
+  private function buildOrderByCorrectionPrompt(string $query, string $unknownColumn, string $errorMessage): string
+  {
+    $parts = [];
+    
+    $parts[] = "You are an SQL expert. Fix the ORDER BY column reference error in this query.";
+    $parts[] = "";
+    $parts[] = "## Error Details";
+    $parts[] = "Error: {$errorMessage}";
+    $parts[] = "Unknown Column: {$unknownColumn}";
+    $parts[] = "";
+    $parts[] = "## Failed SQL Query";
+    $parts[] = "```sql";
+    $parts[] = $query;
+    $parts[] = "```";
+    $parts[] = "";
+    $parts[] = "## ORDER BY Rules";
+    $parts[] = "When using aggregate functions (YEAR, QUARTER, MONTH, etc.) in GROUP BY:";
+    $parts[] = "";
+    $parts[] = "1. Use the SAME function expression in ORDER BY:";
+    $parts[] = "   ✅ CORRECT: GROUP BY YEAR(date) ORDER BY YEAR(date)";
+    $parts[] = "   ❌ WRONG: GROUP BY YEAR(date) ORDER BY year";
+    $parts[] = "";
+    $parts[] = "2. OR use column position numbers:";
+    $parts[] = "   ✅ CORRECT: SELECT YEAR(date), SUM(value) ... ORDER BY 1";
+    $parts[] = "";
+    $parts[] = "3. OR use the alias if you created one:";
+    $parts[] = "   ✅ CORRECT: SELECT YEAR(date) AS year_value ... ORDER BY year_value";
+    $parts[] = "";
+    $parts[] = "## Your Task";
+    $parts[] = "Fix ONLY the ORDER BY clause. Preserve the SELECT and GROUP BY clauses exactly as they are.";
+    $parts[] = "";
+    $parts[] = "Return ONLY the corrected SQL query, nothing else.";
+    
+    return implode("\n", $parts);
+  }
+
+  /**
+   * Parse ORDER BY correction response from LLM
+   *
+   * @param string $response LLM response
+   * @param string $originalQuery Original query
+   * @return string|null Corrected query or null if parsing failed
+   */
+  private function parseOrderByCorrectionResponse(string $response, string $originalQuery): ?string
+  {
+    // Try to extract SQL from code block
+    if (preg_match('/```sql\s*(.+?)\s*```/is', $response, $matches)) {
+      return trim($matches[1]);
+    }
+    
+    // Try to extract SQL without code block
+    if (preg_match('/SELECT\s+.+/is', $response, $matches)) {
+      return trim($matches[0]);
+    }
+    
+    // If response looks like a complete SQL query, return it
+    $trimmed = trim($response);
+    if (stripos($trimmed, 'SELECT') === 0 && stripos($trimmed, 'ORDER BY') !== false) {
+      return $trimmed;
+    }
+    
+    return null;
   }
 
   /**

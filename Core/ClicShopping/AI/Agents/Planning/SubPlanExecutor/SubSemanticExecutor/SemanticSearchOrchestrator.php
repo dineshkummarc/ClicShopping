@@ -24,12 +24,14 @@ use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\AI\Infrastructure\Cache\Cache;
+use ClicShopping\AI\Infrastructure\Cache\RagWarmupManager;
 use ClicShopping\AI\Helper\InsufficientInformationDetector;
 use ClicShopping\AI\Handler\Fallback\LLMFallbackHandler;
-use ClicShopping\AI\DomainsAI\WebSearch\Handler\WebSearchHandler;
+use ClicShopping\AI\DomainsAI\WebSearch\Tool\WebSearchTool;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Config\DomainConfig;
+use ClicShopping\AI\Config\AgentSystemConfig;
 
 /**
  * SemanticSearchOrchestrator Class
@@ -44,8 +46,9 @@ class SemanticSearchOrchestrator
   private bool $debug;
   private ?MultiDBRAGManager $ragManager = null;
   private ?LLMFallbackHandler $llmHandler = null;
-  private ?WebSearchHandler $webSearchHandler = null;
+  private ?WebSearchTool $webSearchHandler = null;
   private ?Cache $cache = null;
+  private ?RagWarmupManager $warmupManager = null;
   private string $userId;
   private int $languageId;
   private $language;
@@ -103,7 +106,13 @@ class SemanticSearchOrchestrator
     }
 
     try {
-      // Step 1: Check cache (optional, configurable) - TASK 4.3.2
+     // cold warm up
+      if ($this->warmupManager === null) {
+        $this->warmupManager = new RagWarmupManager($this->debug);
+      }
+      
+      $this->warmupManager->warmupIfNeeded($query);
+      
       $cacheStatus = 'disabled';
       if ($this->shouldUseCache($query, $context)) {
         $cacheStatus = 'checking';
@@ -168,7 +177,7 @@ class SemanticSearchOrchestrator
 
       $conversationResult = $this->searchConversationMemory($query, $options);
       
-      // 🔧 TASK 2.17.2 & 4.4: Only use conversation memory if documents have actual content
+      
       // Check if the documents have meaningful content (not just empty "Response: \n")
       $hasContent = false;
       if ($conversationResult !== null && !empty($conversationResult['documents'])) {
@@ -185,7 +194,7 @@ class SemanticSearchOrchestrator
           if (preg_match('/Response:\s*(.+)/s', $content, $matches)) {
             $responseContent = trim($matches[1]);
             
-            // 🔧 TASK 2.17.2: Ignore generic LLM responses that don't have actual information
+            
             // 🔧 FIX 2025-12-28: Use InsufficientInformationDetector helper
             $isGenericResponse = $this->infoDetector->isInsufficientInformation($responseContent);
             
@@ -374,7 +383,7 @@ class SemanticSearchOrchestrator
       }
 
       $limit = $options['limit'] ?? 5;
-      // 🔧 TASK 4.4: Use HIGHER threshold for conversation memory to avoid false matches
+      
       // Conversation memory should only match VERY similar queries (0.85+), not loosely related ones
       // This prevents "où est Paris" from matching "refund policy" (similarity 0.63)
       // Conversation memory is a FALLBACK, not primary source - it should only match near-exact repeats
@@ -440,7 +449,7 @@ class SemanticSearchOrchestrator
       }
 
       $limit = $options['limit'] ?? 5;
-      // 🔧 TASK 4.4: Use TechnicalConfig for RAG similarity threshold (0.25 for multilingual support)
+      
       $configuredMinScore = CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE;
       $minScore = $options['minScore'] ?? $configuredMinScore;
 
@@ -487,7 +496,6 @@ class SemanticSearchOrchestrator
               $answer['audit_metadata'] = $results['audit_metadata'];
             }
             
-            // 🔧 TASK 2.17.2: Ensure 'answer' field is set for backward compatibility
             if (!isset($answer['answer']) && isset($answer['response'])) {
               $answer['answer'] = $answer['response'];
             } elseif (!isset($answer['response']) && isset($answer['answer'])) {
@@ -499,8 +507,7 @@ class SemanticSearchOrchestrator
           if (!isset($answer['documents'])) {
             $answer['documents'] = $results['documents'];
           }
-          
-          // 🔧 TASK 4.4: Check if answer is generic "no information" message
+            
           // If RAG found documents but they're not relevant to the query, return null to trigger LLM fallback
           $responseText = $answer['response'] ?? $answer['answer'] ?? '';
           $isGenericNoInfo = $this->infoDetector->isInsufficientInformation($responseText);
@@ -585,7 +592,7 @@ class SemanticSearchOrchestrator
     try {
       // Initialize web search handler if needed
       if ($this->webSearchHandler === null) {
-        $this->webSearchHandler = new WebSearchHandler($this->userId, $this->languageId, $this->debug);
+        $this->webSearchHandler = new WebSearchTool($this->userId, $this->languageId, $this->debug);
       }
 
       // Perform web search with product database integration
@@ -608,7 +615,6 @@ class SemanticSearchOrchestrator
 
   /**
    * Determine if cache should be initialized
-   * TASK 4.3.2: Check if cache should be initialized at construction time
    *
    * @return bool True if cache should be initialized
    */
@@ -670,12 +676,36 @@ class SemanticSearchOrchestrator
   /**
    * Check if web search is enabled
    *
+   * Checks both global WebSearch status (AgentSystemConfig) and local configuration.
+   * WebSearch is only enabled if BOTH are true.
+   *
    * @return bool True if enabled
    */
   private function isWebSearchEnabled(): bool
   {
-    return defined('CLICSHOPPING_APP_CHATGPT_RA_ENABLE_WEB_FALLBACK') 
-           && CLICSHOPPING_APP_CHATGPT_RA_ENABLE_WEB_FALLBACK === 'True';
+    // Check global WebSearch status first (module configuration)
+    if (!AgentSystemConfig::isWebSearchGloballyEnabled()) {
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "WebSearch globally disabled via AgentSystemConfig",
+          'info'
+        );
+      }
+      return false;
+    }
+    
+    // Then check local configuration
+    $localEnabled = defined('CLICSHOPPING_APP_CHATGPT_RA_ENABLE_WEB_FALLBACK') 
+                    && CLICSHOPPING_APP_CHATGPT_RA_ENABLE_WEB_FALLBACK === 'True';
+    
+    if ($this->debug && !$localEnabled) {
+      $this->logger->logSecurityEvent(
+        "WebSearch disabled via local configuration (CLICSHOPPING_APP_CHATGPT_RA_ENABLE_WEB_FALLBACK)",
+        'info'
+      );
+    }
+    
+    return $localEnabled;
   }
 
   /**
@@ -703,19 +733,18 @@ class SemanticSearchOrchestrator
       }
     }
 
-    // 🔧 TASK 2.17.2: Extract answer from multiple possible fields
+    
     $answer = $result['answer'] ?? $result['response'] ?? $result['text_response'] ?? '';
 
     $formattedResult = [
       'success' => true,
       'type' => 'semantic',
-      'source' => $source,
-      'answer' => $answer,  // 🔧 TASK 2.17.2: Keep 'answer' for backward compatibility
-      'response' => $answer,  // 🔧 TASK 2.17.2: Add 'response' for consistency
-      'text_response' => $answer,  // 🔧 TASK 2.17.2: Keep 'text_response' for backward compatibility
-      'documents' => $result['documents'] ?? [],  // 🔧 TASK 3.5.1.3: Keep 'documents' for hallucination detection
+      'source' => $source, //Keep 'answer' for backward compatibility
+      'response' => $answer,  // Add 'response' for consistency
+      'text_response' => $answer,  // Keep 'text_response' for backward compatibility
+      'documents' => $result['documents'] ?? [],  //Keep 'documents' for hallucination detection
       'results' => $result['documents'] ?? [],
-      'sources' => $result['documents'] ?? [],  // 🔧 TASK 2.17.2: Add 'sources' alias
+      'sources' => $result['documents'] ?? [],  // Add 'sources' alias
       'metadata' => [
         'fallback_chain' => $fallbackChain,
         'cache_status' => $cacheStatus,
@@ -726,7 +755,6 @@ class SemanticSearchOrchestrator
       'audit_metadata' => $auditMetadata
     ];
 
-    // TASK 4.3.2: Cache the result if caching is enabled and this is not a cache hit
     if ($this->cache !== null && $cacheStatus !== 'hit' && $cacheStatus !== 'disabled' && !empty($query)) {
       try {
         // Cache the formatted result as JSON

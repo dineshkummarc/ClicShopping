@@ -76,7 +76,6 @@ class SemanticFormatter extends AbstractFormatter
     $output .= "<div class='mt-2'></div>";
     $responseContent = $results['response'] ?? $results['interpretation'] ?? '';
     
-    // 🔧 TASK 3.5.1.3 PHASE 2: Pass grounding metadata to checkGuardrails
     $groundingMetadata = [
       'grounding_score' => $results['grounding_score'] ?? null,
       'grounding_decision' => $results['grounding_decision'] ?? null,
@@ -107,7 +106,6 @@ class SemanticFormatter extends AbstractFormatter
               . Hash::displayDecryptedDataText($results['interpretation']) . "</div>";
     }
 
-    // TASK 5.2.1.3: Display document sources at the end
     if (isset($results['source_attribution']['document_names']) && !empty($results['source_attribution']['document_names'])) {
       $docNames = $results['source_attribution']['document_names'];
       
@@ -150,8 +148,7 @@ class SemanticFormatter extends AbstractFormatter
   }
 
   /**
-   * Format guardrails metrics for semantic responses
-   * 🔧 TASK 3.5.1.6: Only display metrics when there's a warning to avoid visual pollution
+   * Format guardrails metrics for semantic response
    *
    * @param array $guardrails Guardrails evaluation results
    * @param array $groundingMetadata Grounding metadata including hallucination detection
@@ -159,7 +156,6 @@ class SemanticFormatter extends AbstractFormatter
    */
   private function formatGuardrailsMetrics(array $guardrails, array $groundingMetadata = []): string
   {
-    // 🔧 TASK 3.5.1.6: Check if there are any warnings to display
     $hasWarnings = false;
     
     // Check for hallucination detection
@@ -178,7 +174,6 @@ class SemanticFormatter extends AbstractFormatter
       $hasWarnings = true;
     }
     
-    // 🔧 TASK 3.5.1.6: Return empty string if no warnings (don't pollute the visual)
     if (!$hasWarnings) {
       return '';
     }
@@ -187,7 +182,6 @@ class SemanticFormatter extends AbstractFormatter
     $output = "<div class='guardrails-metrics'>";
     $output .= '<h6>🔍 ' . $this->language->getDef('text_rag_semantic_quality_metrics') . '</h6>';
     
-    // 🔧 TASK 3.5.1.3: Display hallucination detection warning if answer was rejected
     if (!empty($groundingMetadata['hallucination_detected'])) {
       $output .= '<div class="alert alert-warning" style="margin-bottom: 10px; padding: 8px;">';
       $output .= '<strong>⚠️ ' . $this->language->getDef('text_rag_semantic_hallucination_detected') . '</strong> ';
@@ -195,7 +189,6 @@ class SemanticFormatter extends AbstractFormatter
       $output .= '</div>';
     }
     
-    // 🔧 TASK 3.5.1.3: Display grounding score if available (PRIORITY METRIC)
     if (isset($groundingMetadata['grounding_score']) && $groundingMetadata['grounding_score'] !== null) {
       $groundingScore = round($groundingMetadata['grounding_score'] * 100);
       $groundingDecision = $groundingMetadata['grounding_decision'] ?? 'UNKNOWN';

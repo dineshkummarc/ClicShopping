@@ -29,6 +29,7 @@ use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerWebSearch;
 use ClicShopping\AI\Agents\Planning\SubTaskPlanning\SubTaskPlannerStandard;
 use ClicShopping\AI\Agents\Planning\TaskPlannerPrompts;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\SubGpt\ResponseProcessor;
 use ClicShopping\OM\Registry;
 
 // Import SubTaskPlanners
@@ -117,10 +118,10 @@ class TaskPlanner
      */
     private function initializeChat(): void
     {
-        $model = defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : 'gpt-4';
+        $model = defined('CLICSHOPPING_APP_CHATGPT_CH_MODEL') ? CLICSHOPPING_APP_CHATGPT_CH_MODEL : 'gpt-5-mini';
 
         // Use getChat which automatically handles all model types
-        $this->chat = Gpt::getChat('', null, null, $model);
+        $this->chat = ResponseProcessor::getGptResponse('', null, null, $model);
 
         // Verify chat was initialized correctly
         if ($this->chat === false || $this->chat === null) {
@@ -179,7 +180,7 @@ class TaskPlanner
                 );
             }
 
-            // 1. Select appropriate SubTaskPlanner
+            // 1. Select appropriate SubTaskPlanner (pass intent by reference to preserve modifications)
             $selectedPlanner = $this->selectSubTaskPlanner($intent, $query);
 
             if ($this->debug) {
@@ -188,6 +189,14 @@ class TaskPlanner
                     "Selected SubTaskPlanner: $plannerName",
                     'info'
                 );
+                
+                // Log if sub_queries were added
+                if (isset($intent['sub_queries'])) {
+                    $this->securityLogger->logSecurityEvent(
+                        "Intent contains " . count($intent['sub_queries']) . " sub-queries",
+                        'info'
+                    );
+                }
             }
 
             // 2. Delegate plan creation to SubTaskPlanner
@@ -223,6 +232,31 @@ class TaskPlanner
           $this->collector->stopTimer('plan_creation');
           $plan->setPlanningTime(microtime(true) - $startTime);
 
+          $stepTypes = array_map(function($step) { return $step->getType(); }, $optimizedSteps);
+          $stepIds = array_map(function($step) { return $step->getId(); }, $optimizedSteps);
+          
+          $this->securityLogger->logSecurityEvent(
+              "PLAN CREATED - Steps: " . count($optimizedSteps) . 
+              " | Types: " . json_encode(array_unique($stepTypes)) . 
+              " | Time: " . round($plan->getPlanningTime(), 3) . "s",
+              'info',
+              [
+                  'total_steps' => count($optimizedSteps),
+                  'step_ids' => $stepIds,
+                  'step_types' => $stepTypes,
+                  'unique_step_types' => array_unique($stepTypes),
+                  'planning_time_seconds' => round($plan->getPlanningTime(), 3),
+                  'complexity_level' => $complexity['level'] ?? 'unknown',
+                  'complexity_score' => $complexity['score'] ?? 0,
+                  'planner_used' => $this->getSubTaskPlannerName($selectedPlanner),
+                  'has_dependencies' => !empty($dependencies),
+                  'query' => substr($query, 0, 100),
+                  'intent_type' => $intent['type'] ?? 'unknown',
+                  'is_hybrid' => isset($intent['sub_queries']),
+                  'timestamp' => date('Y-m-d H:i:s')
+              ]
+          );
+
           if ($this->debug) {
               $this->securityLogger->logSecurityEvent(
                   "Plan created with " . count($optimizedSteps) . " steps in " .
@@ -247,29 +281,71 @@ class TaskPlanner
     /**
      * SubTaskPlanner selector: Chooses appropriate planner
      * 
-     * @param array $intent Intent classification result
+     * @param array &$intent Intent classification result (passed by reference to preserve modifications)
      * @param string $query User query
      * @return object Selected SubTaskPlanner instance
      */
-    private function selectSubTaskPlanner(array $intent, string $query): object
+    private function selectSubTaskPlanner(array &$intent, string $query): object
     {
         $intentType = $intent['type'] ?? 'analytics';
         $confidence = $intent['confidence'] ?? 0.5;
 
-        // TASK 5.2.1.1: Check for hybrid queries FIRST (highest priority)
-        // Hybrid queries need special handling via HybridQueryProcessor
+        // Handle hybrid queries with decomposition
         if ($intentType === 'hybrid' || ($intent['is_hybrid'] ?? false)) {
-            if ($this->debug) {
+            $subTypes = $intent['sub_types'] ?? [];
+            $this->securityLogger->logSecurityEvent(
+                "HYBRID QUERY DETECTED - Query: " . substr($query, 0, 100) . 
+                " | Sub-types: " . json_encode($subTypes),
+                'info',
+                [
+                    'query' => $query,
+                    'intent_type' => $intentType,
+                    'sub_types' => $subTypes,
+                    'is_hybrid' => true,
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]
+            );
+            
+            // Decompose query into sub-queries using Pure LLM approach
+            $decomposer = new \ClicShopping\AI\Agents\Planning\SubTaskPlanning\HybridQueryDecomposer(
+                $this->debug,
+                $this->securityLogger
+            );
+            
+            $subQueries = $decomposer->decompose($query, $intent, []);
+            
+            // Store sub-queries in intent for plan creation
+            $intent['sub_queries'] = $subQueries;
+            
+            
+            $this->securityLogger->logSecurityEvent(
+                "Hybrid query decomposed into " . count($subQueries) . " sub-queries",
+                'info',
+                [
+                    'total_sub_queries' => count($subQueries),
+                    'sub_queries' => $subQueries,
+                    'original_query' => $query
+                ]
+            );
+            
+            // Log each sub-query individually for detailed tracking
+            foreach ($subQueries as $index => $subQuery) {
                 $this->securityLogger->logSecurityEvent(
-                    "HYBRID QUERY DETECTED - Routing to OrchestratorAgent.hybridQueryProcessor (NOT TaskPlanner)",
-                    'warning'
-                );
-                $this->securityLogger->logSecurityEvent(
-                    "BUG: TaskPlanner should NOT handle hybrid queries - they should be routed in OrchestratorAgent.handleFullOrchestration()",
-                    'error'
+                    "Sub-query " . ($index + 1) . "/" . count($subQueries) . 
+                    " - Type: " . ($subQuery['type'] ?? 'unknown') . 
+                    " | Text: " . substr($subQuery['text'] ?? '', 0, 100),
+                    'info',
+                    [
+                        'sub_query_index' => $index,
+                        'sub_query_type' => $subQuery['type'] ?? 'unknown',
+                        'sub_query_text' => $subQuery['text'] ?? '',
+                        'confidence' => $subQuery['confidence'] ?? null,
+                        'is_fallback' => $subQuery['is_fallback'] ?? false
+                    ]
                 );
             }
-            // Fallback to standard for now (this should never be reached after OrchestratorAgent fix)
+            
+            // Return standard planner (it will create steps from sub_queries)
             return $this->subTaskPlanners['standard'];
         }
 

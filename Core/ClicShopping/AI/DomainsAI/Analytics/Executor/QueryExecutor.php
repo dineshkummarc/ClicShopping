@@ -23,8 +23,6 @@ use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
  * Handles secure SQL query execution, deduplication, and entity extraction
  * Implements retry mechanisms and comprehensive error handling
  * 
- * 🔧 TASK 4.4.1 PHASE 4: Migrated to use DoctrineOrm internally
- * 🔧 TASK 6.8: Added QueryPerformanceMonitor integration
  */
 class QueryExecutor
 {
@@ -36,8 +34,6 @@ class QueryExecutor
   /**
    * Constructor
    * 
-   * 🔧 TASK 4.4.1 PHASE 4: PDO parameter now optional (uses DoctrineOrm internally)
-   * 🔧 TASK 6.8: Added performance monitoring
    *
    * @param \PDO|null $db Database connection (deprecated, kept for backward compatibility)
    * @param SecurityLogger $securityLogger Security logger instance
@@ -59,7 +55,6 @@ class QueryExecutor
     $this->dbSecurity = $dbSecurity ?? new DbSecurity();
     $this->debug = $debug;
     
-    // 🔧 TASK 6.8: Initialize performance monitor
     if ($enablePerformanceMonitoring) {
       $this->performanceMonitor = new QueryPerformanceMonitor(
         $this->securityLogger,
@@ -75,7 +70,6 @@ class QueryExecutor
    * Executes a SQL query and returns the results
    * Implements error handling, logging, and timeout protection
    * 
-   * 🔧 TASK 4.4.1 PHASE 4: Now uses DoctrineOrm internally
    *
    * @param string $sqlQuery SQL query to execute
    * @param array $parameters Optional parameters for prepared statement
@@ -89,8 +83,7 @@ class QueryExecutor
       if ($this->debug) {
         error_log("QueryExecutor: Executing query via DoctrineOrm...");
       }
-      
-      // 🔧 TASK 4.4.1 PHASE 4: Use DoctrineOrm instead of PDO
+       
       $rows = DoctrineOrm::select($sqlQuery, $parameters);
       
       // Apply deduplication
@@ -113,7 +106,6 @@ class QueryExecutor
         error_log("QueryExecutor: Query executed successfully, " . count($dedupedRows) . " rows returned in {$executionTime}ms");
       }
 
-      // 🔧 TASK 6.8: Monitor query performance
       $performanceAnalysis = null;
       if ($this->performanceMonitor !== null) {
         $performanceAnalysis = $this->performanceMonitor->monitorQuery(
@@ -399,7 +391,6 @@ class QueryExecutor
   /**
    * Get performance monitor instance
    * 
-   * 🔧 TASK 6.8: Access to performance monitoring data
    * 
    * @return QueryPerformanceMonitor|null Performance monitor instance
    */
@@ -411,7 +402,6 @@ class QueryExecutor
   /**
    * Get slow queries recorded during this session
    * 
-   * 🔧 TASK 6.8: Access to slow query data
    * 
    * @return array List of slow queries with analysis
    */
@@ -427,7 +417,6 @@ class QueryExecutor
   /**
    * Get performance summary
    * 
-   * 🔧 TASK 6.8: Access to performance statistics
    * 
    * @return array Performance summary
    */
@@ -449,7 +438,6 @@ class QueryExecutor
   /**
    * Analyze indexes for tables and get recommendations
    * 
-   * 🔧 TASK 6.8: Index analysis and recommendations
    * 
    * @param array $tables List of table names to analyze
    * @return array Index analysis and recommendations
@@ -468,7 +456,6 @@ class QueryExecutor
   /**
    * Generate performance report
    * 
-   * 🔧 TASK 6.8: Generate HTML performance report
    * 
    * @return string HTML report
    */

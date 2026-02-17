@@ -51,7 +51,7 @@ help_model_gpt41mini_name = GPT-4.1-mini
 help_model_gpt41mini_best = Best balance of speed and features
 help_model_gpt41mini_speed = Fastest
 help_model_gpt41mini_cost = Low
-help_model_gpt41mini_recommendation = ⭐ Best Value
+help_model_gpt41mini_recommendation = Best Value
 
 help_model_gpt4omini_name = GPT-4o-mini
 help_model_gpt4omini_best = High-volume, cost-effective
@@ -140,7 +140,7 @@ help_examples_analytics_6 = Give me the SKU for product X
 help_examples_analytics_7 = How many new customers this month?
 help_examples_analytics_8 = What's our average order value?
 
-help_examples_semantic_title = Semantic Queries (GPT-4o, GPT-4.1-mini, GPT-4o-mini, Mistral)
+help_examples_semantic_title = Semantic Queries (GPT-4.1-mini, Mistral)
 help_examples_semantic_1 = What is our return policy?
 help_examples_semantic_2 = How do I ship internationally?
 help_examples_semantic_3 = What are the warranty terms?
@@ -173,7 +173,7 @@ help_decision_title = Quick Decision Guide
 help_decision_subtitle = Choose Your Model in 3 Questions:
 
 help_decision_q1 = Do you need semantic search (policy/document questions)?
-help_decision_q1_yes = Yes → Choose GPT-4.1-mini, GPT-4o-mini, GPT-4o, or Mistral Large
+help_decision_q1_yes = Yes → Choose GPT-4.1-mini,or Mistral Large
 help_decision_q1_no = No → Microsoft Phi-4 is also an option
 
 help_decision_q2 = Is data privacy critical (healthcare, finance)?
@@ -182,7 +182,7 @@ help_decision_q2_no = No → Continue to question 3
 
 help_decision_q3 = What's your priority?
 help_decision_q3_value = Best value → GPT-4.1-mini
-help_decision_q3_cost = Lowest cost → GPT-4o-mini
+help_decision_q3_cost = Lowest cost → gpt-4.1-mini
 help_decision_q3_capability = Maximum capability → GPT-4o
 help_decision_q3_diversity = Vendor diversity → Mistral Large
 
@@ -191,7 +191,7 @@ help_technical_title = Technical Information
 
 help_embeddings_title = About Embeddings & Semantic Search
 help_embeddings_text = When we say a model "supports embeddings," it means the model can work with semantic search features. The system uses a separate embedding model (text-embedding-3-large) to convert your documents into searchable vectors, then the chat model uses these to find relevant information.
-help_embeddings_with = <strong>Models with embedding support:</strong> GPT-4o, GPT-4.1-mini, GPT-4o-mini, Mistral Large
+help_embeddings_with = <strong>Models with embedding support:</strong>GPT-4.1-mini, Mistral Large
 help_embeddings_without = <strong>Models without embedding support:</strong> Microsoft Phi-4 (analytics only)
 
 help_notes_title = Important Notes

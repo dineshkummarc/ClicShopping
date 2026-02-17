@@ -4,7 +4,6 @@
  * 
  * Validates and corrects SQL date logic, especially for year boundary issues
  * 
- * TASK 1.3: Detects and fixes incorrect date queries like:
  * - "last month" in January querying December of current year (should be previous year)
  * - YEAR()/MONTH() functions that fail at year boundaries
  * 

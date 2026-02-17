@@ -135,7 +135,6 @@ class SchemaRetriever
    * Uses embedding-based similarity search with fallback mechanisms
    * In Pure LLM mode (useEmbeddings=false), skips embeddings and uses only column matching
    * 
-   * TASK 5 - ITEM 1: Schema cache moved to Work/Cache/Rag/SchemaQuery/
    * 
    * @param string $query User query
    * @param int $maxTables Maximum number of tables to return
@@ -145,7 +144,6 @@ class SchemaRetriever
   {
     // Check cache first
     if ($this->useCache === 'True') {
-      // TASK 5 - ITEM 1: Use namespace to organize cache in subdirectory
       // This creates cache files in Work/Cache/Rag/SchemaQuery/*.cache
       $cacheKey = md5($query . '_' . $maxTables . '_' . ($this->useEmbeddings ? 'emb' : 'pure'));
       $cache = new OMCache($cacheKey, 'Rag/SchemaQuery');  // Namespace creates subdirectory structure
@@ -448,8 +446,7 @@ class SchemaRetriever
    * Reads schema directly from database using SHOW FULL COLUMNS
    * to include column comments. This approach is database-agnostic
    * and doesn't require embedding tables.
-   * 
-   * TASK 5.1: Load schema rules from domain configuration when available
+   *
    * 
    * @param array $tableNames Array of table names
    * @return string Schema text
@@ -458,7 +455,6 @@ class SchemaRetriever
   {
     $schemaParts = [];
     
-    // TASK 5.1: Load schema rules from domain configuration
     $schemaRules = $this->loadSchemaRules();
     if (!empty($schemaRules)) {
       $schemaParts[] = $schemaRules;
@@ -491,7 +487,6 @@ class SchemaRetriever
   /**
    * Load schema rules from domain configuration
    * 
-   * TASK 5.1: Load schema rules from domain configuration when available
    * Uses generic rules if no domain is configured
    * 
    * @return string Schema rules text

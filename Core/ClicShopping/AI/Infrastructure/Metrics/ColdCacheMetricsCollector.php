@@ -63,11 +63,13 @@ class ColdCacheMetricsCollector
       // Get cache state distribution from rag_statistics
       $query = "
         SELECT 
-          JSON_EXTRACT(metadata, '$.cache_state') as cache_state,
+          COALESCE(
+            JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.cache_state')),
+            IF(cache_hit = 1, 'warm', 'cold')
+          ) as cache_state,
           COUNT(*) as count
         FROM :table_rag_statistics
-        WHERE created_at >= :start_date
-          AND JSON_EXTRACT(metadata, '$.cache_state') IS NOT NULL
+        WHERE date_added >= :start_date
         GROUP BY cache_state
       ";
 
@@ -138,13 +140,15 @@ class ColdCacheMetricsCollector
       // Get average execution time by cache state
       $query = "
         SELECT 
-          JSON_EXTRACT(metadata, '$.cache_state') as cache_state,
-          AVG(response_time) as avg_time,
+          COALESCE(
+            JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.cache_state')),
+            IF(cache_hit = 1, 'warm', 'cold')
+          ) as cache_state,
+          AVG(response_time_ms) / 1000 as avg_time,
           COUNT(*) as count
         FROM :table_rag_statistics
-        WHERE created_at >= :start_date
-          AND JSON_EXTRACT(metadata, '$.cache_state') IS NOT NULL
-          AND response_time IS NOT NULL
+        WHERE date_added >= :start_date
+          AND response_time_ms IS NOT NULL
         GROUP BY cache_state
       ";
 
@@ -216,11 +220,14 @@ class ColdCacheMetricsCollector
       // Get timeout events from rag_statistics
       $query = "
         SELECT 
-          JSON_EXTRACT(metadata, '$.cache_state') as cache_state,
+          COALESCE(
+            JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.cache_state')),
+            IF(cache_hit = 1, 'warm', 'cold')
+          ) as cache_state,
           JSON_EXTRACT(metadata, '$.timeout_occurred') as timeout_occurred,
           COUNT(*) as count
         FROM :table_rag_statistics
-        WHERE created_at >= :start_date
+        WHERE date_added >= :start_date
           AND JSON_EXTRACT(metadata, '$.timeout_occurred') = true
         GROUP BY cache_state
       ";
@@ -292,7 +299,7 @@ class ColdCacheMetricsCollector
       // Get parallel execution metrics from rag_statistics
       $query = "
         SELECT 
-          query_type,
+          classification_type as query_type,
           JSON_EXTRACT(metadata, '$.parallel_execution') as parallel_execution,
           JSON_EXTRACT(metadata, '$.parallel_time') as parallel_time,
           JSON_EXTRACT(metadata, '$.sequential_time') as sequential_time,
@@ -300,7 +307,7 @@ class ColdCacheMetricsCollector
           JSON_EXTRACT(metadata, '$.percentage_faster') as percentage_faster,
           COUNT(*) as count
         FROM :table_rag_statistics
-        WHERE created_at >= :start_date
+        WHERE date_added >= :start_date
           AND JSON_EXTRACT(metadata, '$.parallel_execution') = true
         GROUP BY query_type
       ";
@@ -416,15 +423,15 @@ class ColdCacheMetricsCollector
         SELECT 
           COUNT(*) as total_count,
           AVG(JSON_EXTRACT(metadata, '$.subquery_count')) as avg_subqueries,
-          AVG(response_time) as avg_execution_time,
-          SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as success_count,
-          SUM(CASE WHEN response_time < 5 THEN 1 ELSE 0 END) as under_5s,
-          SUM(CASE WHEN response_time >= 5 AND response_time < 15 THEN 1 ELSE 0 END) as between_5_15s,
-          SUM(CASE WHEN response_time >= 15 AND response_time < 30 THEN 1 ELSE 0 END) as between_15_30s,
-          SUM(CASE WHEN response_time >= 30 THEN 1 ELSE 0 END) as over_30s
+          AVG(response_time_ms) / 1000 as avg_execution_time,
+          SUM(CASE WHEN error_occurred = 0 THEN 1 ELSE 0 END) as success_count,
+          SUM(CASE WHEN response_time_ms < 5000 THEN 1 ELSE 0 END) as under_5s,
+          SUM(CASE WHEN response_time_ms >= 5000 AND response_time_ms < 15000 THEN 1 ELSE 0 END) as between_5_15s,
+          SUM(CASE WHEN response_time_ms >= 15000 AND response_time_ms < 30000 THEN 1 ELSE 0 END) as between_15_30s,
+          SUM(CASE WHEN response_time_ms >= 30000 THEN 1 ELSE 0 END) as over_30s
         FROM :table_rag_statistics
-        WHERE created_at >= :start_date
-          AND query_type = 'hybrid'
+        WHERE date_added >= :start_date
+          AND classification_type = 'hybrid'
       ";
 
       $result = $this->db->prepare($query);
@@ -533,7 +540,7 @@ class ColdCacheMetricsCollector
       $query = "
         SELECT COUNT(*) as total
         FROM :table_rag_statistics
-        WHERE created_at >= :start_date
+        WHERE date_added >= :start_date
       ";
 
       $result = $this->db->prepare($query);

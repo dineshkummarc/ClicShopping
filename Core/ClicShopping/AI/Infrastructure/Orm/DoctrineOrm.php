@@ -46,7 +46,6 @@ use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\AnalyticsConfig;
  * @package ClicShopping\Apps\Configuration\ChatGpt\Classes\Rag
 */
 
-
 class DoctrineOrm
 {
   private static $debug = false;
@@ -430,8 +429,8 @@ class DoctrineOrm
   {
     try {
       if (self::$debug) {
-        error_log("═══════════════════════════════════════════════════════");
-        error_log("🔍 DoctrineOrm::getEmbeddingTables() START");
+        error_log("========================================================");
+        error_log("[INFO : ANALYSE] DoctrineOrm::getEmbeddingTables() START");
       }
 
       $entityManager = self::getEntityManager();
@@ -520,10 +519,10 @@ class DoctrineOrm
       }
 
       if (self::$debug) {
-        error_log("──────────────────────────────────────────────────");
+        error_log("-------------------------------------------------------");
         error_log(" FINAL RESULT: " . count($tables) . " tables found");
         error_log("Tables: " . implode(", ", $tables));
-        error_log("═══════════════════════════════════════════════════════");
+        error_log("========================================================");
       }
 
       return $tables;
@@ -573,7 +572,7 @@ class DoctrineOrm
 
   /**
    * Liste de fallback des tables d'embedding connues
-   * VERSION AMÉLIORÉE : Valide chaque table avant de la retourner
+   * Valide chaque table avant de la retourner
    *
    * @return array
    */

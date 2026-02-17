@@ -99,8 +99,7 @@ class ResultSynthesizer extends BaseQueryProcessor
 
   /**
    * Extract data from sub-query results
-   * 
-   * TASK 5.3.1.1: Added deduplication to prevent duplicate HTML in web search results
+   *
    */
   private function extractResultData(array $subQueryResults): array
   {
@@ -332,9 +331,8 @@ class ResultSynthesizer extends BaseQueryProcessor
 
   /**
    * Synthesize hybrid results (combine without LLM)
-   * REQ-4.5: Combine results with source attribution
-   * 
-   * TASK 5.2.1.1: Changed to direct concatenation instead of LLM synthesis
+   * Combine results with source attribution
+   *
    * The sub-queries already have formatted text_response fields, so we just
    * need to combine them with clear section headers. No LLM call needed.
    */

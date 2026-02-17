@@ -81,7 +81,6 @@ class AnalyticsFormatter extends AbstractFormatter
       }
     }
 
-    // TASK 6.2: Check if this is a multi-query result
     if (isset($results['multiple_results']) && is_array($results['multiple_results'])) {
       return $this->formatMultipleResults($results);
     }
@@ -91,7 +90,8 @@ class AnalyticsFormatter extends AbstractFormatter
 
     // Display source attribution
     if (isset($results['source_attribution'])) {
-      $output .= $this->formatSourceAttribution($results['source_attribution'] . "\n");
+      $sourceAttribution = $this->normalizeSourceAttribution($results['source_attribution']);
+      $output .= $this->formatSourceAttribution($sourceAttribution);
     }
 
     // SQL query display
@@ -112,9 +112,7 @@ class AnalyticsFormatter extends AbstractFormatter
     }
 
     if (!empty($interpretationText)) {
-      // ✅ TASK 5.3.2.1: Don't double-encode HTML content from text_response
       if ($isHtmlContent) {
-        // text_response already contains formatted HTML - use as-is
         $output .= "<div class='interpretation'>" . $interpretationText . "</div>";
       } else {
         // Plain text - apply HTML encoding
@@ -165,7 +163,6 @@ class AnalyticsFormatter extends AbstractFormatter
   /**
    * Format multiple query results with clear separation
    * 
-   * TASK 6.2: Display results for multiple queries with clear labels
    * Each sub-query gets its own section, even if one fails
    *
    * @param array $results Results containing multiple_results array
@@ -185,7 +182,8 @@ class AnalyticsFormatter extends AbstractFormatter
 
     // Display source attribution
     if (isset($results['source_attribution'])) {
-      $output .= $this->formatSourceAttribution($results['source_attribution']);
+      $sourceAttribution = $this->normalizeSourceAttribution($results['source_attribution']);
+      $output .= $this->formatSourceAttribution($sourceAttribution);
     }
 
     // Process each sub-query result
@@ -262,6 +260,25 @@ class AnalyticsFormatter extends AbstractFormatter
       'type' => 'formatted_results',
       'content' => $output
     ];
+  }
+
+  /**
+   * Normalize source_attribution into the expected array structure.
+   */
+  private function normalizeSourceAttribution(mixed $sourceAttribution): array
+  {
+    if (is_array($sourceAttribution)) {
+      return $sourceAttribution;
+    }
+
+    if (is_string($sourceAttribution) && $sourceAttribution !== '') {
+      return [
+        'source_type' => $sourceAttribution,
+        'source_icon' => '📊'
+      ];
+    }
+
+    return [];
   }
 
   private function formatSqlQuery(string $sql): string

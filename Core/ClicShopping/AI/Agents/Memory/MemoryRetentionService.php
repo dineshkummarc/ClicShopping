@@ -124,8 +124,7 @@ class MemoryRetentionService
 
       // Optional: persist a flat copy into rag_conversation_memory (non-embedding)
       try {
-        // 🔧 TASK 4.4.1 PHASE 2: Use DoctrineOrm instead of direct DB access
-        // 🔧 PHASE 5 FIX: Store entity_type in dedicated column (not just metadata)
+        // Store entity_type in dedicated column (not just metadata)
         $metadataArray = [
           'source' => 'chat_ajax',
           'agent_used' => $metadata['agent_used'] ?? 'unknown',
@@ -171,7 +170,6 @@ class MemoryRetentionService
 
       // ✅ NEW: Log to rag_memory_retention_log table
       try {
-        // 🔧 TASK 4.4.1 PHASE 2: Use DoctrineOrm instead of direct DB access
         $retentionLog = [
           'user_id' => $this->userId,
           'interaction_id' => $interactionId,
@@ -239,8 +237,7 @@ class MemoryRetentionService
       $migrated = 0;
       $now = time();
       
-      // ✅ NEW: Query database directly for old short-term interactions
-      // 🔧 TASK 4.4.1 PHASE 2: Use DoctrineOrm instead of direct DB access
+      // NEW: Query database directly for old short-term interactions
       $cutoffTime = date('Y-m-d H:i:s', $now - self::TTL_SHORT_TERM);
       $prefix = CLICSHOPPING::getConfig('db_table_prefix');
       
@@ -263,7 +260,6 @@ class MemoryRetentionService
         // Nothing more to do - it's persistent
 
         // Update rag_memory_retention_log to mark as long-term
-        // TASK 4.4.1 PHASE 2: Use DoctrineOrm instead of direct DB access
         try {
           $updateSql = "
             UPDATE {$prefix}rag_memory_retention_log 

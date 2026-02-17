@@ -76,12 +76,6 @@ class FeedbackAnalyzer
     return false;
   }
 
-
-  //****************************
-  //Not used
-  //****************************
-
-
   /**
    * Analyzes feedbacks to identify classification issues
    *
@@ -94,8 +88,6 @@ class FeedbackAnalyzer
     self::initLogger();
 
     try {
-      // 🔧 TASK 4.4.1 PHASE 10: Migrated to DoctrineOrm
-
       $sql = "SELECT 
                 f.id,
                 f.interaction_id,
@@ -192,8 +184,6 @@ class FeedbackAnalyzer
     self::initLogger();
 
     try {
-      // 🔧 TASK 4.4.1 PHASE 10: Migrated to DoctrineOrm
-
       $sql = "SELECT 
                 feedback_type,
                 COUNT(*) as count,

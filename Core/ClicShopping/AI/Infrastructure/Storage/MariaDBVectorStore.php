@@ -78,12 +78,12 @@ class MariaDBVectorStore extends VectorStoreBase
     $this->securityLogger = new SecurityLogger();
 
     if ($this->debug) {
-      error_log("═══════════════════════════════════════════════════════");
+      error_log("===================================================");
       error_log("[info] MariaDBVectorStore initialized");
       error_log("Input table name: {$tableName}");
       error_log("Final table name: {$this->tableName}");
       error_log("Prefix: {$prefix}");
-      error_log("═══════════════════════════════════════════════════════");
+      error_log("===================================================");
     }
   }
 
@@ -281,7 +281,7 @@ class MariaDBVectorStore extends VectorStoreBase
       );
     } else {
       $this->connection->executeStatement(
-        "INSERT INTO {$this->tableName} 
+        "INSERT INTO {$this->tableName}
           (content, 
 	  type, 
 	  sourcetype, 
@@ -506,24 +506,24 @@ class MariaDBVectorStore extends VectorStoreBase
       }
 
       if ($this->debug) {
-        error_log("═══════════════════════════════════════════════════════");
+        error_log("===================================================");
         error_log("[stats] FINAL RESULTS:");
         error_log("Raw SQL results: " . count($results));
         error_log("Below threshold: {$belowThresholdCount}");
         error_log("Filtered by custom filter: {$filteredCount}");
         error_log("Final documents returned: " . count($documents));
-        error_log("═══════════════════════════════════════════════════════");
+        error_log("===================================================");
       }
 
       return $documents;
 
     } catch (\Exception $e) {
       if ($this->debug) {
-        error_log("═══════════════════════════════════════════════════════");
+        error_log("===================================================");
         error_log("[error] EXCEPTION in similaritySearch()");
         error_log("Error: " . $e->getMessage());
         error_log("Trace: " . $e->getTraceAsString());
-        error_log("═══════════════════════════════════════════════════════");
+        error_log("===================================================");
       }
 
       $this->securityLogger->logSecurityEvent(
@@ -551,7 +551,6 @@ class MariaDBVectorStore extends VectorStoreBase
         [$id]
       );
 
-      // PHASE 3 - TASK 3.3: Invalidate semantic cache when embeddings are deleted
       $this->invalidateSemanticCache([]);
 
       return true;

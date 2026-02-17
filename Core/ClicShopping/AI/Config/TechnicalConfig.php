@@ -146,3 +146,43 @@ if (!defined('CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_TIMEOUT'))
 // Default: 5 concurrent calls
 if (!defined('CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_MAX_CONCURRENT'))
   define('CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_MAX_CONCURRENT', 5);
+
+// ============================================================================
+// QUERY EXECUTION TIMEOUT (1 constant)
+// ============================================================================
+
+// Maximum execution time for RAG queries (in seconds)
+// This timeout must be >= HybridQueryProcessor cold cache timeout (120s)
+// to allow hybrid queries to complete successfully
+// Default: 120 seconds (matches cold cache timeout)
+// BUG FIX 2026-02-09: Increased from 60s to 120s to fix hybrid query timeouts
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME'))
+  define('CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME', 120);
+
+// ============================================================================
+// HYBRID QUERY DECOMPOSITION (3 constants)
+// ============================================================================
+
+// Enable/Disable hybrid query decomposition
+// When enabled, hybrid queries are decomposed into separate sub-queries using LLM
+// When disabled, hybrid queries are processed as single-step queries
+// Default: True (enabled)
+// @see .kiro/specs/hybrid-query-decomposition/requirements.md (Requirement 12.1)
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_HYBRID_DECOMPOSITION_STATUS'))
+  define('CLICSHOPPING_APP_CHATGPT_RA_HYBRID_DECOMPOSITION_STATUS', 'True');
+
+// LLM provider for hybrid query decomposition
+// Uses the default LLM configuration from CLICSHOPPING_APP_CHATGPT_CH_MODEL
+// This constant is reserved for future use if we need a separate provider
+// Default: null (uses default LLM provider)
+// @see .kiro/specs/hybrid-query-decomposition/requirements.md (Requirement 12.2)
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_HYBRID_DECOMPOSITION_LLM_PROVIDER'))
+  define('CLICSHOPPING_APP_CHATGPT_RA_HYBRID_DECOMPOSITION_LLM_PROVIDER', null);
+
+// Debug mode for hybrid query decomposition
+// Uses the default RAG debug configuration from CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER
+// This constant is reserved for future use if we need separate debug control
+// Default: null (uses default RAG debug setting)
+// @see .kiro/specs/hybrid-query-decomposition/requirements.md (Requirement 12.3)
+if (!defined('CLICSHOPPING_APP_CHATGPT_RA_HYBRID_DECOMPOSITION_DEBUG'))
+  define('CLICSHOPPING_APP_CHATGPT_RA_HYBRID_DECOMPOSITION_DEBUG', null);

@@ -11,12 +11,18 @@
 namespace ClicShopping\AI\Agents\Orchestrator;
 
 
+use ClicShopping\AI\Agents\Orchestrator\SubAutonomous\FeedbackManager;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Security\InputValidator;
 use ClicShopping\AI\Security\DbSecurity;
+use ClicShopping\AI\Agents\Orchestrator\SubAbstention\AgentAbstentionManager;
+use ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AutonomousConfig;
+use ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective;
+use ClicShopping\AI\Agents\Orchestrator\SubAutonomous\ObjectiveRegistry;
+use ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AgentEvaluation;
 
 /**
  * ValidationAgent Class
@@ -31,6 +37,8 @@ class ValidationAgent
   private mixed $db;
   private bool $debug;
   private array $schemaCache = [];
+  private ?AutonomousConfig $autonomousConfig = null;
+  private ?AgentAbstentionManager $abstentionManager = null;
 
   private int $maxRowsWarning = 10000;
   private float $securityScoreThreshold = 0.4;
@@ -54,6 +62,8 @@ class ValidationAgent
     $this->dbSecurity = new DbSecurity();
     $this->db = Registry::get('Db');
     $this->debug = defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True';
+    $this->autonomousConfig = new AutonomousConfig($this->debug);
+    $this->abstentionManager = new AgentAbstentionManager();
 
     if ($this->debug) {
       $this->securityLogger->logSecurityEvent(
@@ -96,6 +106,81 @@ class ValidationAgent
         $this->stats['validations_passed']++;
         
         return $validation;
+      }
+
+      
+      $complexity = $this->estimateValidationComplexity($sql);
+      
+      $confidence = $this->abstentionManager->evaluateConfidence(
+        'ValidationAgent',
+        $sql,
+        array_merge($context, [
+          'task_type' => 'sql_validation',
+          'description' => 'Validate SQL query',
+          'parameters' => ['sql' => substr($sql, 0, 200)],
+          'complexity' => $complexity
+        ])
+      );
+      
+      $decision = $this->abstentionManager->getAbstentionDecision(
+        'ValidationAgent',
+        $confidence,
+        'sql_validation'
+      );
+      
+      if ($this->debug) {
+        $this->securityLogger->logSecurityEvent(
+          "ValidationAgent confidence: {$confidence}, decision: {$decision['action']}",
+          'info'
+        );
+      }
+      
+      if ($decision['action'] === 'abstain') {
+        // Log abstention to database
+        $this->abstentionManager->logAbstention(
+          'ValidationAgent',
+          md5($sql),
+          'sql_validation',
+          $confidence,
+          $decision['reason'],
+          'escalate_human'
+        );
+        
+        $this->stats['validations_failed']++;
+        
+        return [
+          'is_valid' => false,
+          'can_execute' => false,
+          'errors' => ['Validation confidence too low - requires human review'],
+          'warnings' => [],
+          'suggestions' => [],
+          'security_score' => 0.0,
+          'performance_score' => 0.0,
+          'confidence' => $confidence,
+          'requires_human' => true,
+          'reason' => $decision['reason']
+        ];
+      }
+      
+      if ($decision['action'] === 'delegate') {
+        // Log delegation intent
+        $this->abstentionManager->logAbstention(
+          'ValidationAgent',
+          md5($sql),
+          'sql_validation',
+          $confidence,
+          $decision['reason'],
+          'delegate_peer',
+          $decision['suggested_delegate']
+        );
+        
+        // Proceed with validation but note delegation was considered
+        if ($this->debug) {
+          $this->securityLogger->logSecurityEvent(
+            "ValidationAgent delegating to: " . ($decision['suggested_delegate'] ?? 'none'),
+            'info'
+          );
+        }
       }
 
       // 1. Validation syntaxique de base
@@ -248,8 +333,54 @@ class ValidationAgent
   }
 
   /**
+   * Estimate validation complexity for confidence evaluation
+   *
+
+   *
+   * @param string $sql The SQL query to validate
+   * @return float Complexity score (0.0-1.0)
+   */
+  private function estimateValidationComplexity(string $sql): float
+  {
+    $complexity = 0.3; // Base complexity
+
+    // Increase for subqueries
+    $subqueryCount = preg_match_all('/\(\s*SELECT\b/i', $sql);
+    $complexity += $subqueryCount * 0.1;
+
+    // Increase for joins
+    $joinCount = preg_match_all('/\bJOIN\b/i', $sql);
+    $complexity += $joinCount * 0.05;
+
+    // Increase for complex WHERE clauses
+    if (preg_match('/\bWHERE\b/i', $sql)) {
+      $andOrCount = preg_match_all('/\b(AND|OR)\b/i', $sql);
+      $complexity += $andOrCount * 0.03;
+    }
+
+    // Increase for GROUP BY and HAVING
+    if (preg_match('/\bGROUP\s+BY\b/i', $sql)) {
+      $complexity += 0.1;
+    }
+    if (preg_match('/\bHAVING\b/i', $sql)) {
+      $complexity += 0.1;
+    }
+
+    // Increase for UNION operations
+    $unionCount = preg_match_all('/\bUNION\b/i', $sql);
+    $complexity += $unionCount * 0.15;
+
+    // Increase for destructive operations (higher risk)
+    if (preg_match('/\b(UPDATE|DELETE|DROP|TRUNCATE)\b/i', $sql)) {
+      $complexity += 0.2;
+    }
+
+    return min(1.0, $complexity);
+  }
+
+  /**
    * Validate SQL syntax
-   * 
+   *
    * @param string $sql SQL query
    * @return array Validation result
    */
@@ -260,7 +391,7 @@ class ValidationAgent
 
   /**
    * Validate query security
-   * 
+   *
    * @param string $sql SQL query
    * @param array $context Additional context
    * @return array Security validation result
@@ -287,7 +418,7 @@ class ValidationAgent
     foreach ($injectionPatterns as $patternData) {
       $pattern = $patternData[0];
       $penalty = $patternData[1];
-      
+
       if (preg_match($pattern, $sql)) {
         $issues[] = "Suspicious pattern detected: " . $pattern;
         $score -= $penalty;
@@ -390,6 +521,217 @@ class ValidationAgent
         'suggestions' => [],
       ];
     }
+  }
+
+  /**
+   * Extract table names from query
+   */
+  private function extractTables(string $sql): array
+  {
+    $tables = [];
+
+    // FROM clause
+    if (preg_match('/\bFROM\s+([^\s,;]+)/i', $sql, $matches)) {
+      $tables[] = trim($matches[1], '`"\'');
+    }
+
+    // JOIN clauses
+    preg_match_all('/\bJOIN\s+([^\s,;]+)/i', $sql, $matches);
+    foreach ($matches[1] as $table) {
+      $tables[] = trim($table, '`"\'');
+    }
+
+    return array_unique($tables);
+  }
+
+  /**
+   * Normalise un nom de table
+   */
+  private function normalizeTableName(string $table): string
+  {
+    // Enlever les alias
+    if (preg_match('/^([^\s]+)/', $table, $matches)) {
+      $table = $matches[1];
+    }
+
+    // Ajouter le préfixe si nécessaire
+    $prefix = CLICSHOPPING::getConfig('db_prefix');
+    if (!empty($prefix) && strpos($table, $prefix) !== 0) {
+      $table = $prefix . $table;
+    }
+
+    return trim($table, '`"\'');
+  }
+
+  /**
+   * Check if table exists
+   */
+  private function tableExists(string $tableName): bool
+  {
+    if (isset($this->schemaCache['tables'][$tableName])) {
+      return $this->schemaCache['tables'][$tableName];
+    }
+
+    try {
+      $stmt = $this->db->prepare(
+        "SELECT COUNT(*) 
+         FROM information_schema.tables 
+         WHERE table_schema = DATABASE() 
+         AND table_name = ?"
+      );
+      $stmt->execute([$tableName]);
+      $exists = (int)$stmt->fetchColumn() > 0;
+
+      $this->schemaCache['tables'][$tableName] = $exists;
+
+      return $exists;
+
+    } catch (\Exception $e) {
+      return false;
+    }
+  }
+
+  /**
+   * Trouve des tables similaires
+   */
+  private function findSimilarTables(string $tableName): array
+  {
+    try {
+      $stmt = $this->db->prepare(
+        "SELECT table_name 
+         FROM information_schema.tables 
+         WHERE table_schema = DATABASE()"
+      );
+      $stmt->execute();
+      $allTables = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+
+      $similar = [];
+      foreach ($allTables as $table) {
+        similar_text(strtolower($tableName), strtolower($table), $percent);
+        if ($percent > 60) {
+          $similar[] = $table;
+        }
+      }
+
+      return array_slice($similar, 0, 3);
+
+    } catch (\Exception $e) {
+      return [];
+    }
+  }
+
+  /**
+   * Extract column names from query
+   */
+  private function extractColumns(string $sql): array
+  {
+    $columns = [];
+
+    // SELECT columns (simple extraction)
+    if (preg_match('/SELECT\s+(.*?)\s+FROM/is', $sql, $matches)) {
+      $selectPart = $matches[1];
+
+      // Ignorer SELECT *
+      if (trim($selectPart) === '*') {
+        return [];
+      }
+
+      $parts = explode(',', $selectPart);
+      foreach ($parts as $part) {
+        $part = trim($part);
+
+        // Extraire le nom de colonne (ignorer les alias)
+        if (preg_match('/([a-z_][a-z0-9_]*)\s+AS\s+/i', $part, $m)) {
+          $columns[] = $m[1];
+        } elseif (preg_match('/([a-z_][a-z0-9_]*)/i', $part, $m)) {
+          $columns[] = $m[1];
+        }
+      }
+    }
+
+    return array_unique($columns);
+  }
+
+  /**
+   * Check if column exists in tables
+   */
+  private function columnExistsInTables(string $column, array $tables): bool
+  {
+    foreach ($tables as $table) {
+      $tableName = $this->normalizeTableName($table);
+
+      if ($this->columnExistsInTable($column, $tableName)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if column exists in table
+   */
+  private function columnExistsInTable(string $column, string $table): bool
+  {
+    $cacheKey = "{$table}.{$column}";
+
+    if (isset($this->schemaCache['columns'][$cacheKey])) {
+      return $this->schemaCache['columns'][$cacheKey];
+    }
+
+    try {
+      $stmt = $this->db->prepare(
+        "SELECT COUNT(*) 
+        FROM information_schema.columns 
+        WHERE table_schema = DATABASE() 
+        AND table_name = ? 
+        AND column_name = ?"
+      );
+      $stmt->execute([$table, $column]);
+      $exists = (int)$stmt->fetchColumn() > 0;
+
+      $this->schemaCache['columns'][$cacheKey] = $exists;
+
+      return $exists;
+
+    } catch (\Exception $e) {
+      return false;
+    }
+  }
+
+  /**
+   * Trouve des colonnes similaires
+   */
+  private function findSimilarColumns(string $column, array $tables): array
+  {
+    $similar = [];
+
+    foreach ($tables as $table) {
+      $tableName = $this->normalizeTableName($table);
+
+      try {
+        $stmt = $this->db->prepare(
+          "SELECT column_name 
+           FROM information_schema.columns 
+           WHERE table_schema = DATABASE() 
+           AND table_name = ?"
+        );
+        $stmt->execute([$tableName]);
+        $columns = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+
+        foreach ($columns as $col) {
+          similar_text(strtolower($column), strtolower($col), $percent);
+          if ($percent > 60) {
+            $similar[] = "{$tableName}.{$col}";
+          }
+        }
+
+      } catch (\Exception $e) {
+        continue;
+      }
+    }
+
+    return array_slice($similar, 0, 3);
   }
 
   /**
@@ -508,216 +850,9 @@ class ValidationAgent
     ];
   }
 
-  /**
-   * Extract table names from query
-   */
-  private function extractTables(string $sql): array
-  {
-    $tables = [];
-
-    // FROM clause
-    if (preg_match('/\bFROM\s+([^\s,;]+)/i', $sql, $matches)) {
-      $tables[] = trim($matches[1], '`"\'');
-    }
-
-    // JOIN clauses
-    preg_match_all('/\bJOIN\s+([^\s,;]+)/i', $sql, $matches);
-    foreach ($matches[1] as $table) {
-      $tables[] = trim($table, '`"\'');
-    }
-
-    return array_unique($tables);
-  }
-
-  /**
-   * Extract column names from query
-   */
-  private function extractColumns(string $sql): array
-  {
-    $columns = [];
-
-    // SELECT columns (simple extraction)
-    if (preg_match('/SELECT\s+(.*?)\s+FROM/is', $sql, $matches)) {
-      $selectPart = $matches[1];
-
-      // Ignorer SELECT *
-      if (trim($selectPart) === '*') {
-        return [];
-      }
-
-      $parts = explode(',', $selectPart);
-      foreach ($parts as $part) {
-        $part = trim($part);
-
-        // Extraire le nom de colonne (ignorer les alias)
-        if (preg_match('/([a-z_][a-z0-9_]*)\s+AS\s+/i', $part, $m)) {
-          $columns[] = $m[1];
-        } elseif (preg_match('/([a-z_][a-z0-9_]*)/i', $part, $m)) {
-          $columns[] = $m[1];
-        }
-      }
-    }
-
-    return array_unique($columns);
-  }
-
-  /**
-   * Normalise un nom de table
-   */
-  private function normalizeTableName(string $table): string
-  {
-    // Enlever les alias
-    if (preg_match('/^([^\s]+)/', $table, $matches)) {
-      $table = $matches[1];
-    }
-
-    // Ajouter le préfixe si nécessaire
-    $prefix = CLICSHOPPING::getConfig('db_prefix');
-    if (!empty($prefix) && strpos($table, $prefix) !== 0) {
-      $table = $prefix . $table;
-    }
-
-    return trim($table, '`"\'');
-  }
-
-  /**
-   * Check if table exists
-   */
-  private function tableExists(string $tableName): bool
-  {
-    if (isset($this->schemaCache['tables'][$tableName])) {
-      return $this->schemaCache['tables'][$tableName];
-    }
-
-    try {
-      $stmt = $this->db->prepare(
-        "SELECT COUNT(*) 
-         FROM information_schema.tables 
-         WHERE table_schema = DATABASE() 
-         AND table_name = ?"
-      );
-      $stmt->execute([$tableName]);
-      $exists = (int)$stmt->fetchColumn() > 0;
-
-      $this->schemaCache['tables'][$tableName] = $exists;
-
-      return $exists;
-
-    } catch (\Exception $e) {
-      return false;
-    }
-  }
-
-  /**
-   * Trouve des tables similaires
-   */
-  private function findSimilarTables(string $tableName): array
-  {
-    try {
-      $stmt = $this->db->prepare(
-        "SELECT table_name 
-         FROM information_schema.tables 
-         WHERE table_schema = DATABASE()"
-      );
-      $stmt->execute();
-      $allTables = $stmt->fetchAll(\PDO::FETCH_COLUMN);
-
-      $similar = [];
-      foreach ($allTables as $table) {
-        similar_text(strtolower($tableName), strtolower($table), $percent);
-        if ($percent > 60) {
-          $similar[] = $table;
-        }
-      }
-
-      return array_slice($similar, 0, 3);
-
-    } catch (\Exception $e) {
-      return [];
-    }
-  }
-
-  /**
-   * Check if column exists in tables
-   */
-  private function columnExistsInTables(string $column, array $tables): bool
-  {
-    foreach ($tables as $table) {
-      $tableName = $this->normalizeTableName($table);
-
-      if ($this->columnExistsInTable($column, $tableName)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * Check if column exists in table
-   */
-  private function columnExistsInTable(string $column, string $table): bool
-  {
-    $cacheKey = "{$table}.{$column}";
-
-    if (isset($this->schemaCache['columns'][$cacheKey])) {
-      return $this->schemaCache['columns'][$cacheKey];
-    }
-
-    try {
-      $stmt = $this->db->prepare(
-        "SELECT COUNT(*) 
-        FROM information_schema.columns 
-        WHERE table_schema = DATABASE() 
-        AND table_name = ? 
-        AND column_name = ?"
-      );
-      $stmt->execute([$table, $column]);
-      $exists = (int)$stmt->fetchColumn() > 0;
-
-      $this->schemaCache['columns'][$cacheKey] = $exists;
-
-      return $exists;
-
-    } catch (\Exception $e) {
-      return false;
-    }
-  }
-
-  /**
-   * Trouve des colonnes similaires
-   */
-  private function findSimilarColumns(string $column, array $tables): array
-  {
-    $similar = [];
-
-    foreach ($tables as $table) {
-      $tableName = $this->normalizeTableName($table);
-
-      try {
-        $stmt = $this->db->prepare(
-          "SELECT column_name 
-           FROM information_schema.columns 
-           WHERE table_schema = DATABASE() 
-           AND table_name = ?"
-        );
-        $stmt->execute([$tableName]);
-        $columns = $stmt->fetchAll(\PDO::FETCH_COLUMN);
-
-        foreach ($columns as $col) {
-          similar_text(strtolower($column), strtolower($col), $percent);
-          if ($percent > 60) {
-            $similar[] = "{$tableName}.{$col}";
-          }
-        }
-
-      } catch (\Exception $e) {
-        continue;
-      }
-    }
-
-    return array_slice($similar, 0, 3);
-  }
+  // ========================================
+  // AUTONOMOUS AGENT INTERFACE IMPLEMENTATION
+  // ========================================
 
   /**
    * statistics
@@ -732,5 +867,289 @@ class ValidationAgent
     return array_merge($this->stats, [
       'success_rate' => $successRate . '%',
     ]);
+  }
+
+  /**
+   * Create a local objective for validation improvements
+   *
+   * @param string $goalStatement Clear description of the goal
+   * @param array $successCriteria Measurable success criteria
+   * @param string $priority Priority level
+   * @return \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective
+   */
+  public function createLocalObjective(
+    string $goalStatement,
+    array $successCriteria,
+    string $priority
+  ): LocalObjective {
+
+    if (!$this->autonomousConfig->canAgentCreateObjectives('ValidationAgent')) {
+      throw new \RuntimeException('ValidationAgent is not authorized to create objectives (disabled in configuration)');
+    }
+
+    $estimatedTime = match ($priority) {
+      'critical' => 300,
+      'high' => 900,
+      'medium' => 1800,
+      'low' => 3600,
+      default => 1800
+    };
+
+    $objective = new LocalObjective(
+      'ValidationAgent',
+      $goalStatement,
+      $successCriteria,
+      $priority,
+      $estimatedTime
+    );
+
+    $objectiveRegistry = new ObjectiveRegistry($this->db, $this->debug);
+    $objectiveRegistry->registerObjective($objective);
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "ValidationAgent created objective: {$goalStatement}",
+        'info'
+      );
+    }
+
+    return $objective;
+  }
+
+  /**
+   * Execute a validation improvement objective
+   *
+   * @param \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective $objective
+   * @return mixed Execution results
+   */
+  public function executeObjective(LocalObjective $objective): mixed
+  {
+    $goalStatement = $objective->getGoalStatement();
+
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "ValidationAgent executing objective: {$goalStatement}",
+        'info'
+      );
+    }
+
+    $objective->setStatus('active');
+
+    try {
+      $result = ['message' => 'Validation objective execution placeholder'];
+
+      $objective->markCompleted([
+        'execution_time' => time() - strtotime($objective->getCreatedAt()->format('Y-m-d H:i:s')),
+        'result' => $result
+      ]);
+
+      return $result;
+
+    } catch (\Exception $e) {
+      $objective->markFailed($e->getMessage());
+      throw $e;
+    }
+  }
+
+  /**
+   * Evaluate peer agent output (validation results, security checks)
+   *
+   * @param string $outputType Type of output
+   * @param mixed $output The output to evaluate
+   * @param array $criteria Evaluation criteria
+   * @return \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AgentEvaluation
+   */
+  public function evaluatePeerOutput(
+    string $outputType,
+    mixed $output,
+    array $criteria
+  ): AgentEvaluation {
+
+    if (!$this->autonomousConfig->canAgentEvaluatePeers('ValidationAgent')) {
+      throw new \RuntimeException('ValidationAgent is not authorized to evaluate peers (disabled in configuration)');
+    }
+
+    $capabilities = $this->getEvaluationCapabilities();
+    if (!isset($capabilities[$outputType])) {
+      throw new \InvalidArgumentException(
+        "ValidationAgent cannot evaluate {$outputType}"
+      );
+    }
+
+    $scores = match ($outputType) {
+      'validation_result' => $this->evaluateValidationResult($output, $criteria),
+      'security_check' => $this->evaluateSecurityCheck($output, $criteria),
+      'sql_query' => $this->evaluateSqlQuerySecurity($output, $criteria),
+      default => $this->getDefaultScores()
+    };
+
+    return new AgentEvaluation(
+      'ValidationAgent',
+      $output['output_id'] ?? uniqid('output_'),
+      $scores,
+      $scores['feedback'] ?? 'Evaluation completed',
+      $scores['strengths'] ?? [],
+      $scores['improvements'] ?? []
+    );
+  }
+
+  /**
+   * Get evaluation capabilities for ValidationAgent
+   *
+   * @return array Mapping of output types to capability levels
+   */
+  public function getEvaluationCapabilities(): array
+  {
+    return [
+      'validation_result' => 'expert',  // Expert in validation
+      'security_check' => 'expert',     // Expert in security
+      'sql_query' => 'competent',       // Competent in SQL validation
+      'reasoning_chain' => 'novice'     // Basic reasoning understanding
+    ];
+  }
+
+  /**
+   * Evaluate validation result quality
+   *
+   * @param mixed $output Validation result output
+   * @param array $criteria Evaluation criteria
+   * @return array Evaluation scores
+   */
+  private function evaluateValidationResult(mixed $output, array $criteria): array
+  {
+    $isValid = $output['is_valid'] ?? false;
+    $hasErrors = !empty($output['errors'] ?? []);
+    $hasWarnings = !empty($output['warnings'] ?? []);
+
+    $accuracyScore = $isValid && !$hasErrors ? 0.9 : 0.7;
+    $completenessScore = 0.8;
+    $efficiencyScore = 0.8;
+    $clarityScore = 0.8;
+
+    $strengths = [];
+    $improvements = [];
+
+    if ($isValid) {
+      $strengths[] = 'Validation passed successfully';
+    }
+
+    if ($hasWarnings) {
+      $improvements[] = 'Address validation warnings';
+    }
+
+    return [
+      'accuracy_score' => $accuracyScore,
+      'completeness_score' => $completenessScore,
+      'efficiency_score' => $efficiencyScore,
+      'clarity_score' => $clarityScore,
+      'feedback' => 'Validation result evaluation completed',
+      'strengths' => $strengths,
+      'improvements' => $improvements
+    ];
+  }
+
+  /**
+   * Evaluate security check quality
+   *
+   * @param mixed $output Security check output
+   * @param array $criteria Evaluation criteria
+   * @return array Evaluation scores
+   */
+  private function evaluateSecurityCheck(mixed $output, array $criteria): array
+  {
+    $securityScore = $output['security_score'] ?? 0.5;
+
+    return [
+      'accuracy_score' => $securityScore,
+      'completeness_score' => 0.8,
+      'efficiency_score' => 0.8,
+      'clarity_score' => 0.8,
+      'feedback' => 'Security check evaluation completed',
+      'strengths' => ['Security check performed'],
+      'improvements' => []
+    ];
+  }
+
+  /**
+   * Evaluate SQL query security
+   *
+   * @param mixed $output SQL query output
+   * @param array $criteria Evaluation criteria
+   * @return array Evaluation scores
+   */
+  private function evaluateSqlQuerySecurity(mixed $output, array $criteria): array
+  {
+    $sql = $output['sql_query'] ?? '';
+    $validation = $this->validateSecurity($sql, []);
+
+    return [
+      'accuracy_score' => $validation['score'],
+      'completeness_score' => 0.8,
+      'efficiency_score' => 0.8,
+      'clarity_score' => 0.8,
+      'feedback' => 'SQL security evaluation completed',
+      'strengths' => empty($validation['issues']) ? ['No security issues detected'] : [],
+      'improvements' => $validation['issues']
+    ];
+  }
+
+  /**
+   * Get default evaluation scores
+   *
+   * @return array Default scores
+   */
+  private function getDefaultScores(): array
+  {
+    return [
+      'accuracy_score' => 0.7,
+      'completeness_score' => 0.7,
+      'efficiency_score' => 0.7,
+      'clarity_score' => 0.7,
+      'feedback' => 'Default evaluation',
+      'strengths' => [],
+      'improvements' => []
+    ];
+  }
+
+  /**
+   * Receive and process feedback from peer agents
+   *
+   * @param array $feedback Feedback from peer agent
+   */
+  public function receiveFeedback(array $feedback): void
+  {
+    if ($this->debug) {
+      $this->securityLogger->logSecurityEvent(
+        "ValidationAgent received feedback from {$feedback['source_agent_id']}",
+        'info'
+      );
+    }
+
+    $feedbackManager = new FeedbackManager($this->db, $this->debug);
+    $feedbackManager->acknowledgeFeedback(
+      $feedback['feedback_id'],
+      'ValidationAgent',
+      null
+    );
+  }
+
+  /**
+   * Check if ValidationAgent can collaborate on an objective
+   *
+   * @param \ClicShopping\AI\Agents\Orchestrator\SubAutonomous\LocalObjective $objective
+   * @return bool True if can collaborate
+   */
+  public function canCollaborate(LocalObjective $objective): bool
+  {
+    $goalStatement = strtolower($objective->getGoalStatement());
+    $keywords = ['validation', 'security', 'verify', 'check', 'validate', 'sanitize'];
+
+    foreach ($keywords as $keyword) {
+      if (str_contains($goalStatement, $keyword)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

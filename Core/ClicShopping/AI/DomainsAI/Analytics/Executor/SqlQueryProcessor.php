@@ -53,7 +53,6 @@ class SqlQueryProcessor
    * Extracts SQL queries from a response string
    * Uses regex patterns to identify and validate SQL queries
    * Handles potential security issues and logs suspicious patterns
-   * TASK 4.3.4: Adds table prefix to extracted queries
    *
    * @param string $response The response string containing SQL queries
    * @param bool $allowAllPatterns Whether to allow all SQL patterns (default: false, only SELECT)
@@ -69,8 +68,6 @@ class SqlQueryProcessor
       $response = $safeResponse;
     }
 
-    // TASK 2.14.1: Clean markdown code blocks before extracting SQL
-    // Note: cleanSqlResponse now also adds table prefix (TASK 4.3.4)
     $response = $this->cleanSqlResponse($response);
 
     $allPatterns = [
@@ -109,11 +106,9 @@ class SqlQueryProcessor
             );
             continue;
           }
-
-          // TASK 4.3.4: Ensure table prefix is added (double-check after cleanSqlResponse)
+ 
           $query = $this->addTablePrefix($query);
-          
-          // TASK 4.4.1: Fix multi-word LIKE patterns
+     
           $query = $this->fixMultiWordLikePatterns($query);
           
           $queries[] = $query;
@@ -138,11 +133,8 @@ class SqlQueryProcessor
           );
         } else {
           $validation = InputValidator::validateSqlQuery($query);
-          if ($validation['valid']) {
-            // TASK 4.3.4: Ensure table prefix is added
-            $query = $this->addTablePrefix($query);
-            
-            // TASK 4.4.1: Fix multi-word LIKE patterns
+          if ($validation['valid']) {   
+            $query = $this->addTablePrefix($query);     
             $query = $this->fixMultiWordLikePatterns($query);
             
             $queries[] = $query;
@@ -165,8 +157,6 @@ class SqlQueryProcessor
    * Removes SQL code block markers
    * Strips HTML tags
    * Trims whitespace
-   * Adds table prefix if missing (TASK 4.3.4 - Fix regression)
-   * Fixes multi-word LIKE patterns (TASK 4.4.1)
    *
    * @param string $response Raw response from the model
    * @return string Cleaned SQL query ready for execution
@@ -182,10 +172,8 @@ class SqlQueryProcessor
     // These comments are legitimate but trigger security validation
     $cleaned = $this->removeSqlComments($cleaned);
 
-    // TASK 4.3.4: Add table prefix if missing (regression fix)
     $cleaned = $this->addTablePrefix($cleaned);
 
-    // TASK 4.4.1: Fix multi-word LIKE patterns
     $cleaned = $this->fixMultiWordLikePatterns($cleaned);
 
     return $cleaned;
@@ -193,7 +181,23 @@ class SqlQueryProcessor
 
   /**
    * Removes SQL comments from query
-   * Handles both single-line (--) and multi-line comments
+   * =============================================================
+   * This method is part of the error correction strategy for SQL generation.
+   * LLM sometimes adds explanatory comments like "-- Corrected: YEAR instead of MONTH"
+   * when regenerating SQL after errors. These comments are legitimate but trigger
+   * security validation that blocks SQL execution.
+   * 
+   * ERROR CORRECTION FLOW:
+   * 1. SQL generation fails with "Unknown column" error
+   * 2. CorrectionAgent uses LLM to regenerate corrected SQL
+   * 3. LLM adds helpful comments explaining the fix
+   * 4. This method removes comments BEFORE security validation
+   * 5. Clean SQL passes validation and executes successfully
+   * 
+   * This ensures that error correction works smoothly without triggering
+   * false positive security alerts.
+   * 
+   * Handles both single-line (--) and multi-line  comments.
    * 
    * @param string $sql SQL query with potential comments
    * @return string SQL query without comments
@@ -361,8 +365,31 @@ class SqlQueryProcessor
 
   /**
    * Generates SQL query from natural language query
-   * This is a wrapper method that provides a standardized interface
-   * for SQL generation. The actual generation is handled by AnalyticsAgent.
+   * ================================================================
+   * This method provides a standardized interface for SQL generation.
+   * The actual generation is handled by AnalyticsAgent which uses LLM prompts
+   * that have been enhanced to prevent common SQL errors:
+   * 
+   * CRITICAL RULES FOR ORDER BY (enforced in LLM prompts):
+   * 1. If you use YEAR(column) in GROUP BY, you MUST use one of:
+   *    - ORDER BY YEAR(column)  (repeat the function)
+   *    - ORDER BY 1  (use column position)
+   *    - Add alias: SELECT YEAR(column) AS year_value ... ORDER BY year_value
+   * 
+   * 2. If you use QUARTER(column) in GROUP BY, same rules apply
+   * 3. NEVER reference a column name that doesn't exist as an alias
+   * 
+   * CORRECT EXAMPLES:
+   * ✓ SELECT QUARTER(date) AS quarter ... GROUP BY QUARTER(date) ORDER BY QUARTER(date)
+   * ✓ SELECT YEAR(date) AS year_val ... GROUP BY year_val ORDER BY year_val
+   * ✓ SELECT MONTH(date) AS month ... GROUP BY 1 ORDER BY 1
+   * 
+   * INCORRECT EXAMPLES (will cause "Unknown column" errors):
+   * ✗ SELECT QUARTER(date) ... GROUP BY QUARTER(date) ORDER BY quarter
+   * ✗ SELECT YEAR(date) ... GROUP BY YEAR(date) ORDER BY year
+   * 
+   * These prompt enhancements ensure that hybrid mode queries generate valid SQL
+   * that executes successfully and returns data for table display.
    * 
    * This method is designed to be called by HybridQueryProcessor and other
    * components that need a consistent interface for SQL generation.
@@ -459,7 +486,6 @@ class SqlQueryProcessor
   /**
    * Fix date filters in SQL queries to include YEAR() when MONTH() is used
    * 
-   * TASK 10.6: Ensures that queries filtering by MONTH() also include YEAR() filter
    * to avoid returning data from all years.
    * 
    * Examples:
@@ -533,7 +559,6 @@ class SqlQueryProcessor
   /**
    * Fixes multi-word LIKE patterns by splitting them into multiple AND conditions
    * 
-   * TASK 4.4.1: Converts single-token multi-word LIKE patterns into multi-token patterns
    * for better search results that don't require exact word order.
    * 
    * Examples:

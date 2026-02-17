@@ -62,6 +62,7 @@ $aggregator = null;
 $alertManager = null;
 $orchestrator = null;
 $websearchStats = []; // WebSearch statistics
+$decompositionStats = []; // Hybrid query decomposition statistics
 
 // Only attempt to load Dashboard data if RAG is enabled
 if ($config['rag_enabled']) {
@@ -80,6 +81,7 @@ if ($config['rag_enabled']) {
         $advancedStats = $data['advanced_stats'] ?? [];
         $alertStats = $data['alert_stats'] ?? [];
         $websearchStats = $data['websearch_stats'] ?? []; // WebSearch statistics
+        $decompositionStats = $data['decomposition_stats'] ?? []; // Hybrid query decomposition statistics
 
         // Variables for compatibility
         $activeAlerts = $healthReport['active_alerts'] ?? [];
@@ -301,6 +303,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           class="nav-item"><?php echo '<a href="#tab12" role="tab" data-bs-toggle="tab" class="nav-link">📥 ' . $CLICSHOPPING_ChatGpt->getDef('tab_export_api') . '</a>'; ?></li>
         <?php endif; ?>
       </ul>
+      
+      <!-- Agent Monitoring Quick Access -->
+      <?php if ($config['rag_enabled']): ?>
+      <div class="mt-3 mb-3">
+        <div class="card">
+          <div class="card-header">
+            <h6 class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('text_agent_monitoring_management'); ?></h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-3">
+                <?php echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_agent_objectives'), null, $CLICSHOPPING_ChatGpt->link('AgentObjectives'), 'primary', ['params' => 'style="width: 100%;"']); ?>
+                <small class="text-muted d-block mt-1"><?php echo $CLICSHOPPING_ChatGpt->getDef('text_agent_objectives_help'); ?></small>
+              </div>
+              <div class="col-md-3">
+                <?php echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_agent_evaluations'), null, $CLICSHOPPING_ChatGpt->link('AgentEvaluations'), 'info', ['params' => 'style="width: 100%;"']); ?>
+                <small class="text-muted d-block mt-1"><?php echo $CLICSHOPPING_ChatGpt->getDef('text_agent_evaluations_help'); ?></small>
+              </div>
+              <div class="col-md-3">
+                <?php echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_agent_alerts'), null, $CLICSHOPPING_ChatGpt->link('AgentAlerts'), 'warning', ['params' => 'style="width: 100%;"']); ?>
+                <small class="text-muted d-block mt-1"><?php echo $CLICSHOPPING_ChatGpt->getDef('text_agent_alerts_help'); ?></small>
+              </div>
+              <div class="col-md-3">
+                <?php echo HTML::button($CLICSHOPPING_ChatGpt->getDef('button_actor_critic'), null, $CLICSHOPPING_ChatGpt->link('AgentActorCritic'), 'success', ['params' => 'style="width: 100%;"']); ?>
+                <small class="text-muted d-block mt-1"><?php echo $CLICSHOPPING_ChatGpt->getDef('text_actor_critic_help'); ?></small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <?php endif; ?>
+      
       <div class="tabsClicShopping">
         <div class="tab-content">
           <?php
@@ -2764,6 +2798,107 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
               </div>
               <?php endif; ?>
+
+              <!-- Hybrid Query Decomposition Statistics -->
+              <?php if (!empty($decompositionStats) && $decompositionStats['total_decompositions'] > 0): ?>
+              <div class="row mt-5">
+                <div class="col-md-12">
+                  <h5 class="mb-3">🔀 <?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_stats_title'); ?></h5>
+                  
+                  <!-- Decomposition Overview Cards -->
+                  <div class="row mb-4">
+                    <div class="col-md-3">
+                      <div class="card text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <div class="card-body">
+                          <h3><?php echo $decompositionStats['total_decompositions']; ?></h3>
+                          <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_total'); ?></p>
+                          <small><?php echo $CLICSHOPPING_ChatGpt->getDef('last'); ?> <?php echo $decompositionStats['period_days']; ?> <?php echo $CLICSHOPPING_ChatGpt->getDef('time_days'); ?></small>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="card text-center" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                        <div class="card-body">
+                          <h3><?php echo round($decompositionStats['avg_time_ms'], 0); ?> ms</h3>
+                          <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_avg_time'); ?></p>
+                          <small><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_range'); ?>: <?php echo $decompositionStats['min_time_ms']; ?>-<?php echo $decompositionStats['max_time_ms']; ?> ms</small>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="card text-center" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                        <div class="card-body">
+                          <h3><?php echo round($decompositionStats['cache_hit_rate'], 1); ?>%</h3>
+                          <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_cache_hit_rate'); ?></p>
+                          <small><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_cached_results'); ?></small>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="card text-center" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+                        <div class="card-body">
+                          <h3><?php echo round($decompositionStats['error_rate'], 1); ?>%</h3>
+                          <p class="mb-0"><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_error_rate'); ?></p>
+                          <small><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_success_rate'); ?>: <?php echo round(100 - $decompositionStats['error_rate'], 1); ?>%</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Performance Details -->
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_performance_details'); ?></h6>
+                        </div>
+                        <div class="card-body">
+                          <table class="table table-sm">
+                            <tr>
+                              <td><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_slow_operations'); ?>:</strong></td>
+                              <td class="text-end">
+                                <span class="badge <?php echo $decompositionStats['slow_operation_rate'] > 10 ? 'bg-warning' : 'bg-success'; ?>">
+                                  <?php echo round($decompositionStats['slow_operation_rate'], 1); ?>%
+                                </span>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_threshold'); ?>:</strong></td>
+                              <td class="text-end">500 ms</td>
+                            </tr>
+                            <tr>
+                              <td><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_min_time'); ?>:</strong></td>
+                              <td class="text-end"><?php echo $decompositionStats['min_time_ms']; ?> ms</td>
+                            </tr>
+                            <tr>
+                              <td><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_max_time'); ?>:</strong></td>
+                              <td class="text-end"><?php echo $decompositionStats['max_time_ms']; ?> ms</td>
+                            </tr>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_about'); ?></h6>
+                        </div>
+                        <div class="card-body">
+                          <div class="alert alert-info mb-0">
+                            <p class="mb-2"><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_about_description'); ?></p>
+                            <ul class="mb-0">
+                              <li><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_what'); ?>:</strong> <?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_what_description'); ?></li>
+                              <li><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_why'); ?>:</strong> <?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_why_description'); ?></li>
+                              <li><strong><?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_performance'); ?>:</strong> <?php echo $CLICSHOPPING_ChatGpt->getDef('decomposition_performance_description'); ?></li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <?php endif; ?>
             </div>
           </div>
 
@@ -3039,7 +3174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/severity_distribution.js'); ?>"></script>
 <script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/classification_chart.js'); ?>"></script>
 <script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/security_score_chart.js'); ?>"></script>
-<script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/agent_chart.js'); ?>"></script>
+<script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Agent/agent_chart.js'); ?>"></script>
 <script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/load_cache.js'); ?>"></script>
 <script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/get_cache_stats.js'); ?>"></script>
 <script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/flush_cache.js'); ?>"></script>

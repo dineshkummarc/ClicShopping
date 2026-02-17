@@ -53,7 +53,6 @@ class EntityExtractor
   /**
    * Extract entity ID from execution result
    *
-   * TASK 4.3.1: Enhanced to check analytics result structures
    * PHASE 4: Enhanced to check semantic result structures
    *
    * @param array $executionResult Execution result
@@ -112,7 +111,6 @@ class EntityExtractor
         }
       }
 
-      // TASK 4.3.1: Check _step_entity_metadata (from AnalyticsExecutor)
       if (isset($result['_step_entity_metadata']['entity_id']) && $result['_step_entity_metadata']['entity_id'] > 0) {
         if ($this->debug) {
           $this->logger->logSecurityEvent("✓ TASK 4.3.1: Found in result['_step_entity_metadata']['entity_id']: {$result['_step_entity_metadata']['entity_id']}", 'info');
@@ -127,7 +125,6 @@ class EntityExtractor
         return (int)$result['_entity_metadata']['entity_id'];
       }
 
-      // TASK 4.3.1: Check if result is an analytics_response with entity_id
       if (isset($result['type']) && $result['type'] === 'analytics_response' && isset($result['entity_id']) && $result['entity_id'] > 0) {
         if ($this->debug) {
           $this->logger->logSecurityEvent("✓ TASK 4.3.1: Found in analytics_response result['entity_id']: {$result['entity_id']}", 'info');
@@ -166,7 +163,6 @@ class EntityExtractor
   /**
    * Extract entity type from execution result
    *
-   * TASK 4.3.1: Enhanced to check analytics result structures
    * PHASE 4: Enhanced to check semantic result structures
    *
    * @param array $executionResult Execution result
@@ -221,7 +217,6 @@ class EntityExtractor
         }
       }
 
-      // TASK 4.3.1: Check _step_entity_metadata (from AnalyticsExecutor)
       if (isset($executionResult['result']['_step_entity_metadata']['entity_type'])) {
         if ($this->debug) {
           $this->logger->logSecurityEvent("✓ TASK 4.3.1: Found in result['_step_entity_metadata']['entity_type']: {$executionResult['result']['_step_entity_metadata']['entity_type']}", 'info');
@@ -236,7 +231,6 @@ class EntityExtractor
         return $executionResult['result']['_entity_metadata']['entity_type'];
       }
 
-      // TASK 4.3.1: Check if result is an analytics_response with entity_type
       if (isset($executionResult['result']['type']) && $executionResult['result']['type'] === 'analytics_response' && isset($executionResult['result']['entity_type'])) {
         if ($this->debug) {
           $this->logger->logSecurityEvent("✓ TASK 4.3.1: Found in analytics_response result['entity_type']: {$executionResult['result']['entity_type']}", 'info');

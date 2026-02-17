@@ -36,7 +36,6 @@ class SemanticProcessor
   /**
    * Cached pattern bypass check result
    * 
-   * TASK 6.4.5: Optimize pattern bypass checks
    * Cache the result once in constructor instead of checking repeatedly
    * 
    * @var bool True if Pure LLM mode (patterns disabled), False if Pattern mode
@@ -53,7 +52,7 @@ class SemanticProcessor
     $this->logger = new SecurityLogger();
     $this->debug = $debug;
     
-    // TASK 6.4.5: Cache pattern bypass check once (optimization)
+    
     // This eliminates 11 repeated checks throughout the class
     $this->usePureLlmMode = !defined('USE_PATTERN_BASED_DETECTION')  || USE_PATTERN_BASED_DETECTION === 'False';
   }
@@ -78,7 +77,6 @@ class SemanticProcessor
       error_log("Query: '{$query}'");
     }
 
-    // TASK 6.4.5: Use cached pattern bypass check (optimization)
     if ($this->usePureLlmMode) {
       // Pure LLM mode: Return low confidence
       // LLM handles semantic classification through prompts
@@ -123,7 +121,6 @@ class SemanticProcessor
    */
   public function requiresConversationContext(string $query): bool
   {
-    // TASK 6.4.5: Use cached pattern bypass check (optimization)
     if ($this->usePureLlmMode) {
       // Pure LLM mode: Context detection disabled
       // LLM handles context requirements through conversation analysis
@@ -168,7 +165,6 @@ class SemanticProcessor
       'search_intent' => null,
     ];
 
-    // TASK 6.4.5: Use cached pattern bypass check (optimization)
     if ($this->usePureLlmMode) {
       // Pure LLM mode: Return minimal metadata
       // LLM extracts metadata through prompts

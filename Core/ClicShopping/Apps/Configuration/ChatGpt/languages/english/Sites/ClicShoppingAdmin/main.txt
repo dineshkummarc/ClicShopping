@@ -19,6 +19,27 @@ Touse this functionality, you need to check if your database is compatible. It r
 MySQL server is not compatible with this feature.<br>
 
 
+module_ac_agent_critics_short_title = Agent Critics
+module_ac_agent_critics_title = Agent Critics
+module_ac_agent_critics_introduction = This module evaluates, compares, and critiques agent behaviors, outputs, and decision processes to identify strengths, weaknesses, and failure modes under defined criteria.
+
+module_aa_agent_actors_title = Agent Actors
+module_aa_agent_actors_short_title = Agent Actors
+module_aa_agent_actors_introduction = This module defines, orchestrates, and executes agent roles responsible for action generation, task execution, and environment interaction based on assigned objectives and constraints.
+
+module_asy_agent_system_title = Agent System
+module_asy_agent_system_short_title = Agent System
+module_asy_agent_system_introduction = This module specifies the structural, operational, and governance framework coordinating agents, defining system-level rules, interfaces, lifecycles, and interaction protocols.
+
+module_at_agent_technical_short_title = Agent Technical
+module_at_agent_technical_short_title = Agent Technical
+module_at_agent_technical_introduction = This module provides the technical foundations for agent operation, including architectures, runtimes, tooling, integrations, performance constraints, and reliability mechanisms.
+
+module_ad_agent_domains_title = Agent Domain
+module_ad_agent_domains_short_title = Agent Domain
+module_ad_agent_domains_introduction = This module defines and structures the knowledge domains (Ecommerce, HR, Finance), scopes, and contextual boundaries within which agents operate, including domain-specific rules, data models, constraints, and evaluation criteria.
+
+
 button_back = Back
 button_install_title = Install
 button_configure = Configure

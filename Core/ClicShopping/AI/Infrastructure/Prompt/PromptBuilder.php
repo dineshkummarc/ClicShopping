@@ -10,11 +10,12 @@
 
 namespace ClicShopping\AI\Infrastructure\Prompt;
 
-
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Cache as OMCache;
 use ClicShopping\AI\Infrastructure\Schema\SchemaRetriever;
 use ClicShopping\AI\Config\DomainConfig;
+
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 
 /**
  * PromptBuilder
@@ -41,7 +42,7 @@ class PromptBuilder
   private string $useCache;
   private ?SchemaRetriever $schemaRetriever = null;
   private string $currentQuery = '';
-  private string $modelName = 'gpt-4o-mini';
+  private string $modelName;
   private string $agentType = 'analytics';
   
   // Supported agent types
@@ -257,7 +258,7 @@ class PromptBuilder
     
     // Construct complete message in the correct order
     $completeSystemMessage = $baseSystemMessage . "\n\n" . // 1. Role and essential ID rules
-      $dateContext . "\n\n" .                                          // 2. TASK 1.1: Current date context (CRITICAL for relative dates)
+      $dateContext . "\n\n" .                                          // Current date context (CRITICAL for relative dates)
       $securityGuidelines . "\n\n" .                                 // 3. Security and prohibition rules
       $text_rag_system_analytics_rules . "\n\n" .                    // 4. Critical ambiguity rules
       $tableStructureInstructions . "\n\n" .                         // 5. Database schema (the playground)
@@ -546,7 +547,7 @@ class PromptBuilder
     $enrichedQuestion = $this->language->getDef('text_enrich_with_last_sql', $array);
     
     if ($this->debug) {
-      error_log("🔄 Question enriched with last SQL query");
+      error_log("[INFO SQL QUERY] Question enriched with last SQL query");
       error_log("Last SQL: " . substr($lastSQL, 0, 100) . "...");
     }
     
@@ -692,7 +693,6 @@ class PromptBuilder
   /**
    * Build current date context for analytics queries
    * 
-   * TASK 1.1: Provides current date information and relative date calculations
    * to help the LLM correctly interpret queries like "last month" across year boundaries.
    * 
    * This is CRITICAL for queries in January that reference "last month" (December of previous year).
@@ -724,77 +724,49 @@ class PromptBuilder
     $lastYear = $currentYear - 1;
     $lastYearStart = $lastYear . '-01-01';
     $lastYearEnd = $lastYear . '-12-31';
-    
-    // Build the date context section with VERY STRONG language
-    $context = "## 🚨 CRITICAL: CURRENT DATE CONTEXT (MANDATORY FOR ALL DATE QUERIES) 🚨\n\n";
-    $context .= "**YOU MUST READ AND APPLY THIS SECTION FOR ANY QUERY INVOLVING DATES OR TIME PERIODS**\n\n";
-    $context .= "**Today's Date**: {$currentDate} ({$currentMonthName} {$currentDayOfMonth}, {$currentYear})\n";
-    $context .= "**Current Year**: {$currentYear}\n";
-    $context .= "**Current Month**: {$currentMonth} ({$currentMonthName})\n\n";
-    
+
+    DomainConfig::loadLanguageFile('rag_context_builder');
+
+    $incorrectComment = ($currentMonth === 1)
+      ? "-- This would query December {$currentYear}, which doesn't exist yet!\n-- This will return ZERO RESULTS because December {$currentYear} is in the future!"
+      : "-- This is less efficient and can cause errors at year boundaries";
+
+    $array = [
+      'currentDate' => $currentDate,
+      'currentMonthName' => $currentMonthName,
+      'currentDayOfMonth' => $currentDayOfMonth,
+      'currentYear' =>  $currentYear,
+      'currentMonth' => $currentMonth,
+      'lastYear' => $lastYear,
+      'lastMonthStart' => $lastMonthStart,
+      'lastMonthEnd' => $lastMonthEnd,
+      'lastMonthName' => $lastMonthName,
+      'lastMonthNumber' => $lastMonthNumber,
+      'thisMonthStart' => $thisMonthStart,
+      'lastYearStart' => $lastYearStart,
+      'lastYearEnd' => $lastYearEnd,
+      'incorrectComment' => $incorrectComment,
+      'lastMonthYear' => $lastMonthYear
+    ];
+
+    $context = $this->language->getDef('rag_context_builder_text', $array);
+
     // Add critical warning for year boundaries FIRST
     if ($currentMonth === 1) {
-      $context .= "[WARN][WARN][WARN] **CRITICAL YEAR BOUNDARY WARNING** [WARN][WARN][WARN]\n\n";
-      $context .= "We are in January {$currentYear}. This means:\n";
-      $context .= "- \"last month\" = December {$lastYear} (NOT December {$currentYear}!)\n";
-      $context .= "- You MUST use year {$lastYear} for December queries\n";
-      $context .= "- Using year {$currentYear} for December will return NO DATA (December {$currentYear} hasn't happened yet!)\n\n";
-      $context .= "**ABSOLUTE RULE**: When in January, \"last month\" queries MUST use the PREVIOUS YEAR.\n\n";
+      $context .= "\n\n" . $this->language->getDef('rag_context_builder_text_warn', $array);
     }
-    
-    $context .= "### 🎯 MANDATORY Relative Date Mappings (USE THESE EXACT VALUES)\n\n";
-    $context .= "**When user says \"last month\"**:\n";
-    $context .= "- Means: **{$lastMonthName}**\n";
-    $context .= "- Start date: **{$lastMonthStart}**\n";
-    $context .= "- End date: **{$lastMonthEnd}**\n";
-    $context .= "- **REQUIRED SQL**: `date_column >= '{$lastMonthStart}' AND date_column < '{$thisMonthStart}'`\n";
+
+    $context .= "\n\n" . $this->language->getDef('rag_context_builder_relative_mappings', $array);
     if ($currentMonth === 1) {
-      $context .= "- [WARN] **NOTE**: This is December {$lastYear}, NOT December {$currentYear}!\n";
+      $context .= "\n" . $this->language->getDef('rag_context_builder_relative_mappings_warn_jan', $array);
     }
-    $context .= "\n";
-    
-    $context .= "**When user says \"this month\"**:\n";
-    $context .= "- Means: **{$currentMonthName} {$currentYear}**\n";
-    $context .= "- Start date: **{$thisMonthStart}**\n";
-    $context .= "- End date (today): **{$currentDate}**\n";
-    $context .= "- **REQUIRED SQL**: `date_column >= '{$thisMonthStart}' AND date_column <= '{$currentDate}'`\n\n";
-    
-    $context .= "**When user says \"last year\"**:\n";
-    $context .= "- Means: **{$lastYear}**\n";
-    $context .= "- Start date: **{$lastYearStart}**\n";
-    $context .= "- End date: **{$lastYearEnd}**\n";
-    $context .= "- **REQUIRED SQL**: `date_column >= '{$lastYearStart}' AND date_column <= '{$lastYearEnd}'`\n\n";
-    
-    $context .= "### [OK] SQL Date Best Practices (MANDATORY)\n\n";
-    $context .= "**ABSOLUTE RULE**: ALWAYS use explicit date ranges. NEVER use YEAR() or MONTH() functions.\n\n";
-    $context .= "[OK] **CORRECT** (use this approach):\n";
-    $context .= "```sql\n";
-    $context .= "WHERE date_purchased >= '{$lastMonthStart}' AND date_purchased < '{$thisMonthStart}'\n";
-    $context .= "-- This correctly queries {$lastMonthName}\n";
-    $context .= "```\n\n";
-    $context .= "[ERROR] **INCORRECT** (NEVER do this):\n";
-    $context .= "```sql\n";
-    $context .= "WHERE YEAR(date_purchased) = {$currentYear} AND MONTH(date_purchased) = {$lastMonthNumber}\n";
+
+    $context .= "\n\n" . $this->language->getDef('rag_context_builder_this_month', $array);
+    $context .= "\n\n" . $this->language->getDef('rag_context_builder_last_year', $array);
+    $context .= "\n\n" . $this->language->getDef('rag_context_builder_sql_best_practices', $array);
+
     if ($currentMonth === 1) {
-      $context .= "-- This would query December {$currentYear}, which doesn't exist yet!\n";
-      $context .= "-- This will return ZERO RESULTS because December {$currentYear} is in the future!\n";
-    } else {
-      $context .= "-- This is less efficient and can cause errors at year boundaries\n";
-    }
-    $context .= "```\n\n";
-    $context .= "**Why explicit date ranges are MANDATORY**:\n";
-    $context .= "1. [OK] Correctly handles year boundaries (December → January)\n";
-    $context .= "2. [OK] Better index usage (date columns can use indexes)\n";
-    $context .= "3. [OK] Avoids function calls on every row (YEAR(), MONTH())\n";
-    $context .= "4. [OK] More readable and maintainable SQL\n";
-    $context .= "5. [OK] Returns correct data (doesn't query future dates)\n\n";
-    
-    if ($currentMonth === 1) {
-      $context .= "### 🚨 FINAL REMINDER FOR JANUARY 🚨\n\n";
-      $context .= "If the user asks about \"last month\", you MUST:\n";
-      $context .= "1. Use dates from December {$lastYear} (NOT December {$currentYear})\n";
-      $context .= "2. Use the SQL: `date_column >= '{$lastMonthStart}' AND date_column < '{$thisMonthStart}'`\n";
-      $context .= "3. NEVER use YEAR() = {$currentYear} for December queries\n\n";
+      $context .= "\n\n" . $this->language->getDef('rag_context_builder_january_final', $array);
     }
     
     return $context;

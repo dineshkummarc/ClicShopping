@@ -10,8 +10,6 @@
 
 namespace ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\SubResultFormatters;
 
-
-
 use ClicShopping\OM\Hash;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Security\LlmGuardrails;
@@ -55,6 +53,12 @@ class HybridFormatter extends AbstractFormatter
   {
     $question = $results['query'] ?? $results['question'] ?? 'Unknown request';
 
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      if (isset($results['analytics_component'])) {
+        $analyticsComp = $results['analytics_component'];
+      }
+    }
+
     $output = "<div class='hybrid-results'>";
     $output .= "<h4>" . htmlspecialchars($this->language->getDef('results_for')) . " " . htmlspecialchars($question) . "</h4>";
 
@@ -80,14 +84,103 @@ class HybridFormatter extends AbstractFormatter
 
     $output .= "<div class='mt-2'></div>";
 
-    // Display the synthesized response
-    if (!empty($responseContent)) {
-      // Convert plain text to HTML with line breaks
+    // Instead of just showing text_response, render actual tables and structured data
+    
+    // Display analytics component with table
+    if (isset($results['analytics_component']) && is_array($results['analytics_component'])) {
+      $analyticsComp = $results['analytics_component'];
+      
+      $output .= "<div class='mt-4'>";
+      $output .= "<h5>📊 " . htmlspecialchars($this->language->getDef('analytics_results_title')) . "</h5>";
+
+      // SQL Query (always visible)
+      if (!empty($analyticsComp['sql_query'])) {
+        $output .= "<div class='mb-3' style='background:#f8f9fa; border-left:3px solid #0d6efd; padding:15px; border-radius:4px;'>";
+        $output .= "<div style='font-weight:bold; margin-bottom:8px; color:#0d6efd;'>🔍 Requête SQL :</div>";
+        $output .= "<pre style='margin:0; font-size:0.85em; white-space:pre-wrap; word-wrap:break-word; background:#fff; padding:10px; border-radius:3px; font-family:monospace;'>" . htmlspecialchars($this->formatSqlQuery($analyticsComp['sql_query'])) . "</pre>";
+        $output .= "</div>";
+      }
+
+      
+      // Display results as table
+      if (isset($analyticsComp['results']) && is_array($analyticsComp['results']) && !empty($analyticsComp['results'])) {
+        $output .= "<table class='table table-sm table-bordered table-striped'>";
+        
+        // Table header
+        $firstRow = $analyticsComp['results'][0];
+        if (is_array($firstRow)) {
+          $output .= "<thead class='table-light'><tr>";
+          foreach (array_keys($firstRow) as $column) {
+            $output .= "<th>" . htmlspecialchars(ucfirst(str_replace('_', ' ', $column))) . "</th>";
+          }
+          $output .= "</tr></thead>";
+          
+          // Table body
+          $output .= "<tbody>";
+          foreach ($analyticsComp['results'] as $row) {
+            $output .= "<tr>";
+            foreach ($row as $value) {
+              $output .= "<td>" . htmlspecialchars($value ?? '') . "</td>";
+            }
+            $output .= "</tr>";
+          }
+          $output .= "</tbody>";
+        }
+        
+        $output .= "</table>";
+      }
+      
+      $output .= "</div>";
+    }
+    
+    // Display semantic component
+    if (isset($results['semantic_component']) && is_array($results['semantic_component'])) {
+      $semanticComp = $results['semantic_component'];
+      
+      $output .= "<div class='mt-4'>";
+      $output .= "<h5>📚 " . htmlspecialchars($this->language->getDef('semantic_results_title')) . "</h5>";
+      
+      // Display semantic response
+      $semanticText = $semanticComp['response'] ?? $semanticComp['text_response'] ?? '';
+      if (!empty($semanticText)) {
+        $output .= "<div class='semantic-response'>" . nl2br(htmlspecialchars($semanticText)) . "</div>";
+      }
+      
+      // Display sources
+      if (isset($semanticComp['sources']) && is_array($semanticComp['sources']) && !empty($semanticComp['sources'])) {
+        $output .= "<div class='mt-3'>";
+        $output .= "<details>";
+        $output .= "<summary style='cursor: pointer; font-size: 0.9em; color: #666;'><strong>📖 " . htmlspecialchars($this->language->getDef('sources_label')) . " (" . count($semanticComp['sources']) . ")</strong></summary>";
+        $output .= "<ul class='mt-2'>";
+        foreach ($semanticComp['sources'] as $source) {
+          if (is_array($source)) {
+            $sourceText = $source['content'] ?? $source['text'] ?? '';
+            $sourceType = $source['type'] ?? '';
+            if (!empty($sourceText)) {
+              $output .= "<li style='margin-bottom: 10px;'>";
+              if (!empty($sourceType)) {
+                $output .= "<span class='badge bg-secondary'>" . htmlspecialchars($sourceType) . "</span> ";
+              }
+              $output .= htmlspecialchars(substr($sourceText, 0, 200)) . (strlen($sourceText) > 200 ? '...' : '');
+              $output .= "</li>";
+            }
+          }
+        }
+        $output .= "</ul>";
+        $output .= "</details>";
+        $output .= "</div>";
+      }
+      
+      $output .= "</div>";
+    }
+
+    // Display the synthesized response (optional, as summary)
+    if (!empty($responseContent) && (empty($results['analytics_component']) && empty($results['semantic_component']))) {
+      // Only show text_response if we don't have structured components
       $formattedResponse = nl2br(Hash::displayDecryptedDataText($responseContent));
       $output .= "<div class='response'><strong>" . htmlspecialchars($this->language->getDef('response_label')) . "</strong><br>" . $formattedResponse . "</div>";
     }
 
-    // ✅ TASK 5.4.2.1: Display sub-query results (especially web_search results)
     // Render actual results from sub-queries, not just metadata
     if (isset($results['sub_queries']) && is_array($results['sub_queries'])) {
       foreach ($results['sub_queries'] as $idx => $subQuery) {
@@ -124,6 +217,26 @@ class HybridFormatter extends AbstractFormatter
         // Format analytics results (if present)
         if ($subType === 'analytics' && isset($subQuery['results'])) {
           $output .= "<div class='mt-4'>";
+
+      // SQL Query toggle button (Bootstrap 5)
+      // does not seems to work, to check, update or remove
+	if (!empty($analyticsComp['sql_query'])) {
+	    $output .= "<div class='mb-3'>";
+	    $output .= "<button class='btn btn-outline-primary btn-sm' type='button' data-bs-toggle='collapse' data-bs-target='#sqlQueryCollapse' aria-expanded='false' aria-controls='sqlQueryCollapse'>";
+	    $output .= "Afficher / Masquer la requête SQL";
+	    $output .= "</button>";
+
+	    $output .= "<div class='collapse mt-2' id='sqlQueryCollapse'>";
+	    $output .= "<div class='card card-body'>";
+	    $output .= "<div class='fw-bold mb-2 text-primary'>Requête SQL :</div>";
+	    $output .= "<pre class='mb-0' style='font-size:0.85em; white-space:pre-wrap; word-wrap:break-word; font-family:monospace;'>";
+	    $output .= htmlspecialchars($this->formatSqlQuery($analyticsComp['sql_query']));
+	    $output .= "</pre>";
+	    $output .= "</div>";
+	    $output .= "</div>";
+	    $output .= "</div>";
+	}
+
           $output .= "<h5>" . htmlspecialchars($this->language->getDef('analytics_results_title')) . "</h5>";
           // Use existing analytics formatting logic
           $output .= $this->formatAnalyticsSubQuery($subQuery);
@@ -289,5 +402,46 @@ class HybridFormatter extends AbstractFormatter
     }
     
     return $output;
+  }
+
+  /**
+   * Format SQL query for better readability
+   * Adds line breaks and indentation to SQL keywords
+   *
+   * @param string $sql Raw SQL query
+   * @return string Formatted SQL query
+   */
+  private function formatSqlQuery(string $sql): string
+  {
+    // Keywords to put on new lines
+    $keywords = [
+      'SELECT', 'FROM', 'WHERE', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN',
+      'ORDER BY', 'GROUP BY', 'HAVING', 'LIMIT', 'OFFSET', 'UNION', 'AND', 'OR'
+    ];
+    
+    // Replace keywords with newline + keyword
+    $formatted = $sql;
+    foreach ($keywords as $keyword) {
+      // Add newline before keyword (case insensitive)
+      $formatted = preg_replace(
+        '/\s+(' . preg_quote($keyword, '/') . ')\s+/i',
+        "\n" . $keyword . ' ',
+        $formatted
+      );
+    }
+    
+    // Indent JOIN clauses
+    $formatted = preg_replace('/\n((?:LEFT |RIGHT |INNER )?JOIN)/i', "\n  $1", $formatted);
+    
+    // Indent WHERE conditions after first one
+    $formatted = preg_replace('/\n(AND|OR)\s+/i', "\n  $1 ", $formatted);
+    
+    // Clean up extra spaces
+    $formatted = preg_replace('/\s+/', ' ', $formatted);
+    
+    // Clean up spaces around newlines
+    $formatted = preg_replace('/\s*\n\s*/', "\n", $formatted);
+    
+    return trim($formatted);
   }
 }

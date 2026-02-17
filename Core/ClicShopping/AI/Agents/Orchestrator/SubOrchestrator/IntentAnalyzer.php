@@ -10,8 +10,6 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubOrchestrator;
 
-
-
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Cache;
@@ -207,7 +205,7 @@ class IntentAnalyzer
       'confidence' => $confidence,
       'metadata' => $metadata,
       'reasoning' => ['unified_analyzer'], // Unified mode doesn't provide detailed reasoning
-      'is_hybrid' => false,
+      'is_hybrid' => ($queryType === 'hybrid'), // Set based on actual query type
     ];
     
     $timings['translation'] = 0; // Included in unified call
@@ -222,7 +220,7 @@ class IntentAnalyzer
       
       // ✅ Log temporal metadata for debugging
       if (!empty($unifiedResult['is_multi_temporal']) && $unifiedResult['is_multi_temporal']) {
-        error_log("[time] TEMPORAL METADATA DETECTED:");
+        error_log("[INFO : TIME] TEMPORAL METADATA DETECTED:");
         error_log("  is_multi_temporal: true");
         error_log("  temporal_periods: " . implode(', ', $unifiedResult['temporal_periods'] ?? []));
         error_log("  temporal_connectors: " . implode(', ', $unifiedResult['temporal_connectors'] ?? []));
@@ -241,6 +239,7 @@ class IntentAnalyzer
     // ✅ CRITICAL FIX (2026-01-08): Include temporal metadata from UnifiedQueryAnalyzer
     // This ensures temporal_periods, temporal_connectors, base_metric, time_range are passed
     // to HybridQueryProcessor for proper temporal splitting
+    // This ensures hybrid queries have their sub_types preserved for decomposition
     $result = [
       'original_query' => $query,
       'translated_query' => $translatedQuery,
@@ -250,9 +249,10 @@ class IntentAnalyzer
       'metadata' => $enrichedMetadata,
       'reasoning' => $intentResult['reasoning'] ?? [],
       'is_hybrid' => $intentResult['is_hybrid'] ?? false, // Add is_hybrid flag
+      'sub_types' => $unifiedResult['sub_types'] ?? [], // Include sub_types for hybrid queries
       'from_cache' => false,
       'performance_timings' => $timings,
-      // ✅ TEMPORAL METADATA (from UnifiedQueryAnalyzer via MultiTemporalPostFilter)
+      // TEMPORAL METADATA (from UnifiedQueryAnalyzer via MultiTemporalPostFilter)
       'is_multi_temporal' => $unifiedResult['is_multi_temporal'] ?? false,
       'temporal_periods' => $unifiedResult['temporal_periods'] ?? [],
       'temporal_connectors' => $unifiedResult['temporal_connectors'] ?? [],
