@@ -9,6 +9,9 @@ text_insufficient_info_patterns = I don't have that information|I don't have eno
 # Minimum response length to be considered valid (not generic)
 text_min_response_length = 20
 
+# LLM Prompts for Language Detection (Pure LLM Mode)
+text_prompt_detect_language = Detect the language of this query and respond with ONLY the 2-letter language code (en, fr, es, de, it, pt, nl, ru, zh, ja, ko, ar). Query: "{{query}}"
+
 # Log messages
 text_log_conversation_memory_useful = Conversation memory document has useful content (length: {{length}})
 text_log_conversation_memory_generic = Conversation memory document has generic LLM response - skipping

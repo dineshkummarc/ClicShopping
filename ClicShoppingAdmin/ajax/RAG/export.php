@@ -7,8 +7,11 @@
  * @Info : https://www.clicshopping.org/forum/trademark/
  *
  */
-use ClicShopping\OM\CLICSHOPPING;
 
+use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\AI\Infrastructure\Metrics\ActorCriticDashboardAggregator;
+use ClicShopping\AI\Infrastructure\Metrics\ActorMetricsCollector;
+use ClicShopping\AI\Infrastructure\Metrics\CriticMetricsCollector;
 use ClicShopping\AI\Infrastructure\Monitoring\AlertManager;
 use ClicShopping\AI\Infrastructure\Monitoring\DocumentationGenerator;
 use ClicShopping\AI\Infrastructure\Monitoring\MetricsCollector;
@@ -113,11 +116,105 @@ if (isset($_GET['export'])) {
         $mimeType = 'text/markdown; charset=utf-8';
         break;
 
+      // ------------------------------------
+      // Actor-Critic Metrics Exports
+      // ------------------------------------
+      case 'actor_critic_dashboard':
+        $aggregator = new ActorCriticDashboardAggregator();
+        $days = isset($_GET['days']) ? (int)$_GET['days'] : 30;
+        $output = $aggregator->getDashboardData($days);
+        break;
+
+      case 'actor_metrics':
+        $aggregator = new ActorCriticDashboardAggregator();
+        $days = isset($_GET['days']) ? (int)$_GET['days'] : 30;
+        $output = $aggregator->getActorMetricsSummary($days);
+        break;
+
+      case 'critic_metrics':
+        $aggregator = new ActorCriticDashboardAggregator();
+        $days = isset($_GET['days']) ? (int)$_GET['days'] : 30;
+        $output = $aggregator->getCriticMetricsSummary($days);
+        break;
+
+      case 'actor_critic_utilization':
+        $aggregator = new ActorCriticDashboardAggregator();
+        $output = $aggregator->getUtilizationMetrics();
+        break;
+
+      case 'actor_critic_alerts':
+        $aggregator = new ActorCriticDashboardAggregator();
+        $output = $aggregator->getAlertsSummary();
+        break;
+
+      case 'actor_critic_trends':
+        $aggregator = new ActorCriticDashboardAggregator();
+        $days = isset($_GET['days']) ? (int)$_GET['days'] : 30;
+        $output = $aggregator->getTrends($days);
+        break;
+
+      case 'actor_critic_prometheus':
+        $aggregator = new ActorCriticDashboardAggregator();
+        $output = $aggregator->exportPrometheus();
+        $mimeType = 'text/plain; version=0.0.4; charset=utf-8';
+        break;
+
+      case 'actors_csv':
+        $actorMetrics = new ActorMetricsCollector();
+        $days = isset($_GET['days']) ? (int)$_GET['days'] : 30;
+        $metrics = $actorMetrics->getAllActorsMetrics($days);
+        
+        $csv = "Actor ID,Total Executions,Success Rate (%),Avg Execution Time (ms),Avg Quality Score,Performance Score\n";
+        foreach ($metrics as $actorId => $data) {
+          $csv .= sprintf(
+            "%s,%d,%.2f,%.2f,%.4f,%.4f\n",
+            $actorId,
+            $data['total_executions'],
+            $data['success_rate'],
+            $data['avg_execution_time_ms'],
+            $data['avg_quality_score'],
+            $data['performance_score']
+          );
+        }
+        $output = $csv;
+        $mimeType = 'text/csv; charset=utf-8';
+        header('Content-Disposition: attachment; filename="actor_metrics_' . date('Y-m-d_His') . '.csv"');
+        break;
+
+      case 'critics_csv':
+        $criticMetrics = new CriticMetricsCollector();
+        $days = isset($_GET['days']) ? (int)$_GET['days'] : 30;
+        $metrics = $criticMetrics->getAllCriticsMetrics($days);
+        
+        $csv = "Critic ID,Total Evaluations,Avg Evaluation Time (ms),Avg Agreement,Consistency,Performance Score\n";
+        foreach ($metrics as $criticId => $data) {
+          $csv .= sprintf(
+            "%s,%d,%.2f,%.4f,%.4f,%.4f\n",
+            $criticId,
+            $data['total_evaluations'],
+            $data['avg_evaluation_time_ms'],
+            $data['avg_agreement'],
+            $data['agreement_consistency'],
+            $data['performance_score']
+          );
+        }
+        $output = $csv;
+        $mimeType = 'text/csv; charset=utf-8';
+        header('Content-Disposition: attachment; filename="critic_metrics_' . date('Y-m-d_His') . '.csv"');
+        break;
+
       default:
         // Type d'exportation non reconnu
         header('HTTP/1.0 400 Bad Request');
         header('Content-Type: application/json');
-        echo json_encode(['error' => 'Type d\'exportation non valide', 'available_types' => ['csv', 'health', 'metrics', 'alerts', 'stats', 'prometheus', 'html_dashboard', 'documentation']]);
+        echo json_encode([
+          'error' => 'Type d\'exportation non valide', 
+          'available_types' => [
+            'csv', 'health', 'metrics', 'alerts', 'stats', 'prometheus', 'html_dashboard', 'documentation',
+            'actor_critic_dashboard', 'actor_metrics', 'critic_metrics', 'actor_critic_utilization',
+            'actor_critic_alerts', 'actor_critic_trends', 'actor_critic_prometheus', 'actors_csv', 'critics_csv'
+          ]
+        ]);
         exit;
     }
   } catch (\Exception $e) {

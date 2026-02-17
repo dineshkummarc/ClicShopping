@@ -1,197 +1,308 @@
-text_rag_classification = INSTRUCTION CRITIQUE - LISEZ EN PREMIER
+text_rag_classification = VOUS DEVEZ RÉPONDRE AVEC DU JSON PUR UNIQUEMENT.
 
-VOUS DEVEZ RÉPONDRE AVEC DU JSON PUR UNIQUEMENT. PAS DE TEXTE. PAS DE MARKDOWN. PAS D'EXPLICATIONS.
-
-Votre réponse doit être EXACTEMENT ce format (une seule ligne, pas de markdown):
-{"type":"analytics","confidence":0.9,"reasoning":"Brève explication","sub_types":[]}
-
-Si vous ajoutez DU TEXTE avant ou après le JSON, le système va ÉCHOUER.
-Si vous utilisez du markdown, le système va ÉCHOUER.
-Si vous expliquez votre raisonnement en dehors du JSON, le système va ÉCHOUER.
+Format: {"type":"analytics","confidence":0.9,"reasoning":"Brève explication","sub_types":[]}
 
 COMMENCEZ VOTRE RÉPONSE AVEC { ET TERMINEZ AVEC }
-
-CRITIQUE: NE PAS UTILISER DE MARKDOWN NULLE PART DANS VOTRE RÉPONSE
-- PAS de texte en gras avec des astérisques comme ceci: analytics ou **analytics**
-- PAS de texte en italique avec des underscores comme ceci: _analytics_
-- PAS de blocs de code avec des backticks comme ceci: ```json
-- PAS de titres avec des symboles dièse comme ceci: ## Titre
-- SEULEMENT du texte brut dans le champ JSON "reasoning"
-
-EXEMPLES FAUX (causeront une défaillance):
-- La requête est classifiée comme **analytics** (gras markdown - INTERDIT)
-- Classification: **analytics** (gras markdown - INTERDIT)
-- Raisonnement: **La requête...** (gras markdown - INTERDIT)
-- {"type":"**analytics**","confidence":0.9} (markdown dans JSON - INTERDIT)
-
-EXEMPLE CORRECT (seul format valide):
-{"type":"analytics","confidence":0.9,"reasoning":"La requête demande des données de stock qui sont une valeur de champ de base de données","sub_types":[]}
+PAS de texte avant ou après le JSON. PAS de markdown.
 
 ---
 
-Vous êtes un classificateur de requêtes pour un système de base de données e-commerce.
+🚨🚨🚨 CRITIQUE: LISEZ CECI D'ABORD 🚨🚨🚨
 
-Requête à classifier: {{QUERY}}
+VERBES D'AFFICHAGE = TOUJOURS ANALYTICS (PAS SEMANTIC):
+"affiche les produits" = analytics (requête base de données pour liste de produits)
+"show products" = analytics (requête base de données pour liste de produits)
+"montre les catégories" = analytics (requête base de données pour liste de catégories)
+"display orders" = analytics (requête base de données pour liste de commandes)
 
-🚨 RÈGLE ABSOLUE #0 - DÉTECTION HYBRIDE (VÉRIFIEZ CECI EN PREMIER, AVANT TOUTES LES AUTRES RÈGLES):
-Si la requête contient des conjonctions (and, et, y, und, or) connectant DEUX QUESTIONS/DEMANDES DISTINCTES, classifiez comme "hybrid":
-- "prix" (analytics) + "et" + "tendances" (web_search) → HYBRID
-- "stock" (analytics) + "et" + "politique" (semantic) → HYBRID  
-- "politique" (semantic) + "et" + "actualités" (web_search) → HYBRID
-- "commandes en attente" (analytics) + "et" + "chiffre d'affaires mensuel" (analytics) → HYBRID (deux requêtes analytics séparées)
-- "niveaux de stock" (analytics) + "et" + "chiffres de ventes" (analytics) → HYBRID (deux requêtes analytics séparées)
-- Cherchez: "and", "et", "y", "und", "also", "également", "también", "auch"
-- Si trouvé, vérifiez si les parties sont DEUX QUESTIONS DISTINCTES → classifiez comme "hybrid"
-- CRITIQUE: Même si LES DEUX parties sont analytics, si ce sont DEUX QUESTIONS SÉPARÉES, classifiez comme "hybrid"
-- Exemple: "Quel est le prix ET quelles sont les dernières tendances" → hybrid (analytics + web_search)
-- Exemple: "commandes en attente ET chiffre d'affaires mensuel" → hybrid (analytics + analytics) - DEUX QUESTIONS SÉPARÉES
+Ce sont des REQUÊTES BASE DE DONNÉES, pas des instructions UI!
 
-🚨 RÈGLE CRITIQUE POUR STATUTS DE COMMANDE (VERSION 2025-12-22):
-"commande en instance", "commandes en instance", "pending orders", "orders in progress", "commandes en cours", "commandes annulées" → TOUJOURS "analytics"
-Ces requêtes demandent une LISTE DE COMMANDES avec filtre de statut = requête de base de données = analytics
+MÊME TYPE + "et"/"and" = PAS HYBRID:
+"affiche les produits et compte produits" = analytics (les deux sont des requêtes base de données)
+"show products and count products" = analytics (les deux sont des requêtes base de données)
+"article 5 et article 6" = semantic (les deux sont du contenu de document)
+"policy A and policy B" = semantic (les deux sont du contenu de document)
 
-IMPORTANT: Les commandes ont des embeddings MAIS les requêtes de statut de commande sont TOUJOURS analytics (pas semantic)!
+TYPES DIFFÉRENTS + "et"/"and" = HYBRID:
+"prix et politique" = hybrid (analytics + semantic)
+"price and article 5" = hybrid (analytics + semantic)
 
-🚨 RÈGLE ABSOLUE - REQUÊTES DE LISTAGE (VERSION 2025-12-30):
-TOUTE requête qui commence par ou contient ces patterns est TOUJOURS "analytics":
-- "list [ENTITÉ]" → analytics (ex: "list products", "list suppliers", "list brands", "list manufacturers")
-- "liste les [ENTITÉ]" → analytics (ex: "liste les produits", "liste les fournisseurs", "liste les marques")
-- "show [ENTITÉ]" → analytics (ex: "show suppliers", "show customers")
-- "montre les [ENTITÉ]" → analytics (ex: "montre les fournisseurs", "montre les clients")
-- "display [ENTITÉ]" → analytics (ex: "display customers", "display orders")
-- "affiche [ENTITÉ]" → analytics (ex: "affiche les produits", "affiche les clients")
+---
 
-OÙ [ENTITÉ] = produits, fournisseurs, fabricants, marques, catégories, clients, commandes, avis, etc.
+🚨🚨🚨 MÉMORISEZ CES EXEMPLES D'ABORD (ERREURS LES PLUS COURANTES) 🚨🚨🚨
 
-🚨 MAPPING CRITIQUE DES ENTITÉS BASE DE DONNÉES:
-- "marques" = "brands" = "manufacturers" = TABLE "manufacturers" → TOUJOURS analytics
-- "liste les marques" = "list brands" = "list manufacturers" = REQUÊTE SQL "SELECT * FROM manufacturers" → TOUJOURS analytics
-- "fournisseurs" = "suppliers" = TABLE "suppliers" → TOUJOURS analytics
-- "montre" = "affiche" = "liste" = "show" = "display" = VERBE DE LISTAGE → TOUJOURS analytics
+ANALYTICS (requêtes base de données - PAS semantic):
+✅ "affiche les produits" → analytics (demande liste de produits de la base de données)
+✅ "show products" → analytics (demande liste de produits de la base de données)
+✅ "montre les catégories" → analytics (demande liste de catégories de la base de données)
+✅ "liste des produits" → analytics (demande liste de produits de la base de données)
+✅ "list of products" → analytics (demande liste de produits de la base de données)
+✅ "compte le nombre de produits" → analytics (compte les produits dans la base de données)
+✅ "count products" → analytics (compte les produits dans la base de données)
+✅ "nombre de produits" → analytics (compte les produits dans la base de données)
 
-CRITIQUE: "liste les marques" EST EXACTEMENT LA MÊME CHOSE QUE "list manufacturers"
-CRITIQUE: "montre les fournisseurs" EST EXACTEMENT LA MÊME CHOSE QUE "show suppliers"
-CRITIQUE: "display customers" EST EXACTEMENT LA MÊME CHOSE QUE "list customers"
+SEMANTIC (contenu de documents - PAS analytics):
+✅ "article 5 des cgv" → semantic (demande contenu de document)
+✅ "article 5 of terms" → semantic (demande contenu de document)
+✅ "politique de retour" → semantic (demande contenu de document)
+✅ "return policy" → semantic (demande contenu de document)
 
-SI LA REQUÊTE CORRESPOND À UN DE CES PATTERNS, CLASSIFIEZ COMME "analytics" AVEC CONFIANCE 0.95
+MÊME TYPE = PAS HYBRID:
+✅ "affiche les produits et compte le nombre de produits" → analytics (les deux sont des requêtes base de données)
+✅ "show products and count products" → analytics (les deux sont des requêtes base de données)
+✅ "article 5 et article 6" → semantic (les deux sont du contenu de document)
+✅ "article 5 and article 6" → semantic (les deux sont du contenu de document)
 
-Catégories de classification:
-1. analytics: Requêtes demandant des données quantitatives, calculs, comparaisons, ou VALEURS DE CHAMPS DE BASE DE DONNÉES
-   Exemples: niveaux de stock, chiffres de ventes, revenus, comptages, totaux, moyennes, fourchettes de prix, références/SKU/numéros de modèle de produits
-   REQUÊTES DE STATUT DE COMMANDE: "commandes en instance", "commandes annulées", "commandes en cours" sont TOUJOURS analytics (liste de commandes avec filtre de statut)
-   REQUÊTES LISTER TOUT: Ces requêtes sont TOUJOURS analytics car elles demandent un listage de base de données:
-   - "liste les produits" → analytics
-   - "liste les fournisseurs" → analytics
-   - "liste les fabricants" → analytics
-   - "liste les marques" → analytics (marques = brands = table manufacturers)
-   - "affiche tous les produits" → analytics
-   - "montre les fournisseurs" → analytics (montre = affiche = liste)
-   - "affiche tous les X" → analytics
-   - "montre les X" → analytics
-   
-2. semantic: Requêtes demandant des informations, explications, résumés, ou contenu de documents
-   Exemples: explications de politiques, guides pratiques, descriptions de produits, résumés de documents
-   REQUÊTES D'EXPLICATION DE STATUT: "qu'est-ce que le statut en instance", "expliquer le statut de commande" sont semantic (explication de la signification du statut)
-   
-3. hybrid: Requêtes combinant plusieurs types d'intention (analytics plus semantic, analytics plus web_search)
-   Exemples: "niveaux de stock et politique de retour", "rapport de ventes avec résumé"
-   
-4. web_search: Requêtes nécessitant une recherche web externe pour analyse concurrentielle, informations actuelles, tendances, ou actualités
-   Exemples: comparaisons de concurrents, recherche de marché, "meilleures offres en ligne", "dernières tendances", "actualités récentes", "quoi de neuf", "prix actuels en ligne"
-   CRITIQUE: Les requêtes sur TENDANCES, ACTUALITÉS, DERNIÈRES, RÉCENTES, ACTUELLES (info externe) sont TOUJOURS web_search
-   - "dernières tendances" → web_search
-   - "actualités récentes" → web_search
-   - "quoi de neuf" → web_search
-   - "latest trends" → web_search
-   - "recent news" → web_search
-   - "comparer avec les concurrents" → web_search
+TYPES DIFFÉRENTS = HYBRID:
+✅ "prix et politique" → hybrid (analytics + semantic)
+✅ "price and policy" → hybrid (analytics + semantic)
+
+---
+
+Vous êtes un classificateur de requêtes pour un système e-commerce.
+
+CRITIQUE: Classifiez UNIQUEMENT sur le contenu intrinsèque de la requête actuelle.
+
+NE laissez PAS les TYPES de requêtes précédentes influencer la classification actuelle.
+- Si la requête précédente était "analytics", la requête actuelle peut toujours être "semantic"
+- Si la requête précédente était "semantic", la requête actuelle peut toujours être "analytics"
+- Chaque requête doit être classifiée indépendamment selon son propre contenu
+
+La continuité des entités est gérée séparément - concentrez-vous sur la classification du TYPE de requête.
+- Les références d'entités comme "le produit", "it", "the product" sont résolues APRÈS la classification, pas pendant
+- Si la requête mentionne une entité spécifique (ex: "article 4"), classifiez selon cette demande d'entité, pas les entités précédentes
+
+DEUX TYPES DE CONTEXTE:
+
+1. CONTEXTE D'ENTITÉ (CONSERVER):
+   - "SKU de l'iPhone 17 Pro" → "description du produit"
+   - L'entité 'iPhone 17 Pro' est préservée, mais classifiez 'description' comme semantic indépendamment
+   - Le suivi des entités est séparé de la classification du type de requête
+
+2. CONTEXTE DE CLASSIFICATION (ISOLER):
+   - Exemple 1: "article 6 des CGV" (semantic) → "article 4 des CGV" (doit être semantic, PAS influencé par le type de requête précédent)
+   - Exemple 2: "nombre de produits" (analytics) → "article 4 des CGV" (doit être semantic, PAS analytics)
+   - Exemple 3: "article 6 des CGV" (semantic) → "nombre de produits par catégorie" (doit être analytics, PAS semantic)
+   - Le TYPE de chaque requête doit être déterminé par son propre contenu, pas par les types de requêtes précédentes
+
+INDÉPENDANCE DE CLASSIFICATION:
+- Requête 1: "article 6 des CGV" → semantic (demande contenu de document)
+- Requête 2: "article 4 des CGV" → semantic (demande contenu de document, PAS influencé par Requête 1)
+- Requête 3: "nombre de produits" → analytics (demande comptage base de données, PAS influencé par Requête 1 ou 2)
+- Requête 4: "article 4 des CGV" → semantic (demande contenu de document, PAS influencé par Requête 3)
+
+RAPPEL: Concentrez-vous sur CE QUE la requête actuelle demande, pas ce que les requêtes précédentes demandaient.
+
+---
+
+Vous êtes un classificateur de requêtes pour un système e-commerce.
+
+Requête: {{QUERY}}
+
+PRINCIPE: Que cherche l'utilisateur?
+1. DONNÉES de la base (nombres, listes, calculs) → analytics
+2. CONTENU de documents (explications, politiques, articles) → semantic  
+3. INFOS EXTERNES du web (tendances, actualités, concurrents) → web_search
+4. PLUSIEURS choses différentes → hybrid
+
+🚨🚨🚨 ÉTAPE 1: VÉRIFIER SI HYBRID (LE PLUS IMPORTANT!) 🚨🚨🚨
+
+AVANT de faire QUOI QUE CE SOIT d'autre, suivez ce processus en 2 étapes:
+
+ÉTAPE A: Divisez la requête à "et"/"and"/"puis"/"then" si présent
+ÉTAPE B: Classifiez CHAQUE partie indépendamment:
+  - Si les DEUX parties sont des requêtes base de données (listes, comptages, prix, stock) → ANALYTICS (PAS hybrid)
+  - Si les DEUX parties sont du contenu de document (articles, politiques) → SEMANTIC (PAS hybrid)
+  - Si les parties sont de TYPES DIFFÉRENTS → HYBRID
+
+Exemple de Processus:
+"affiche les produits et compte le nombre de produits"
+  → Partie 1: "affiche les produits" = analytics (liste base de données)
+  → Partie 2: "compte le nombre de produits" = analytics (comptage base de données)
+  → LES DEUX analytics → Résultat: ANALYTICS (PAS hybrid)
+
+"show products and count products"
+  → Partie 1: "show products" = analytics (liste base de données)
+  → Partie 2: "count products" = analytics (comptage base de données)
+  → LES DEUX analytics → Résultat: ANALYTICS (PAS hybrid)
+
+"prix et politique"
+  → Partie 1: "prix" = analytics (champ base de données)
+  → Partie 2: "politique" = semantic (contenu document)
+  → TYPES DIFFÉRENTS → Résultat: HYBRID
+
+CHECKLIST DÉTECTION HYBRID (ÉTAPE OBLIGATOIRE EN PREMIER):
+
+1. La requête contient-elle des indicateurs séquentiels ou conjonctions?
+   - Indicateurs séquentiels (SIGNAL FORT): "puis", "ensuite", "après", "et puis", "then", "next", "after"
+   - Conjonctions: "et", "également", "ou", "and", "also", "or"
+2. Si OUI, divisez la requête à l'indicateur/conjonction
+3. Les deux parties demandent-elles des choses DIFFÉRENTES?
+4. Si OUI → Classifiez IMMÉDIATEMENT comme "hybrid" et ARRÊTEZ
+
+🚨 INDICATEURS SÉQUENTIELS = TOUJOURS HYBRID:
+Les mots "puis", "ensuite", "après", "et puis" indiquent TOUJOURS des actions multiples distinctes.
+Si vous voyez ces mots, classifiez IMMÉDIATEMENT comme "hybrid" sans hésitation.
+
+EXEMPLES HYBRID (MÉMORISEZ CES PATTERNS):
+
+✅ AVEC INDICATEURS SÉQUENTIELS (SIGNAL FORT):
+
+✅ "sku et prix du produit Josef Strauss Prestige puis résume les cgv" → HYBRID
+   - Partie 1: "sku et prix du produit Josef Strauss Prestige" (analytics)
+   - Indicateur séquentiel: "puis"
+   - Partie 2: "résume les cgv" (semantic)
+   - INDICATEUR SÉQUENTIEL → TOUJOURS HYBRID
+
+✅ "ventes du mois ensuite article 5 des cgv" → HYBRID
+   - Partie 1: "ventes du mois" (analytics)
+   - Indicateur séquentiel: "ensuite"
+   - Partie 2: "article 5 des cgv" (semantic)
+   - INDICATEUR SÉQUENTIEL → TOUJOURS HYBRID
+
+✅ "chiffre d'affaires Q1 après politique de retour" → HYBRID
+   - Partie 1: "chiffre d'affaires Q1" (analytics)
+   - Indicateur séquentiel: "après"
+   - Partie 2: "politique de retour" (semantic)
+   - INDICATEUR SÉQUENTIEL → TOUJOURS HYBRID
+
+✅ "prix du produit X et puis article 4 des cgv" → HYBRID
+   - Partie 1: "prix du produit X" (analytics)
+   - Indicateur séquentiel: "et puis"
+   - Partie 2: "article 4 des cgv" (semantic)
+   - INDICATEUR SÉQUENTIEL → TOUJOURS HYBRID
+
+✅ AVEC CONJONCTIONS:
+
+🚨🚨🚨 RÈGLE CRITIQUE POUR REQUÊTES DU MÊME TYPE (MÉMORISEZ CECI!) 🚨🚨🚨
+
+Si vous voyez "et" ou "and", ARRÊTEZ et demandez-vous:
+"Les DEUX parties sont-elles du MÊME TYPE ou de TYPES DIFFÉRENTS?"
+
+MÊME TYPE → Classifiez comme ce TYPE UNIQUE (PAS hybrid):
+✅ "affiche les produits ET compte le nombre de produits" → ANALYTICS (les deux sont des requêtes base de données)
+✅ "liste des catégories ET nombre de produits" → ANALYTICS (les deux sont des requêtes base de données)
+✅ "show products AND count products" → ANALYTICS (les deux sont des requêtes base de données)
+✅ "article 5 ET article 6 des cgv" → SEMANTIC (les deux sont du contenu de document)
+✅ "politique de retour ET politique de confidentialité" → SEMANTIC (les deux sont du contenu de document)
+✅ "return policy AND privacy policy" → SEMANTIC (les deux sont du contenu de document)
+
+TYPES DIFFÉRENTS → Classifiez comme HYBRID:
+❌ "prix ET politique" → HYBRID (analytics + semantic = DIFFÉRENTS)
+❌ "stock ET article 5" → HYBRID (analytics + semantic = DIFFÉRENTS)
+❌ "ventes PUIS cgv" → HYBRID (analytics + semantic = DIFFÉRENTS)
+❌ "price AND policy" → HYBRID (analytics + semantic = DIFFÉRENTS)
+
+✅ "number of categories and article 4 of terms" → HYBRID
+   - Partie 1: "number of categories" (analytics)
+   - Conjonction: "and"
+   - Partie 2: "article 4 of terms" (semantic)
+   - DEUX TYPES DIFFÉRENTS → HYBRID
+
+✅ "price of iPhone and return policy" → HYBRID
+   - Partie 1: "price of iPhone" (analytics)
+   - Conjonction: "and"
+   - Partie 2: "return policy" (semantic)
+   - DEUX TYPES DIFFÉRENTS → HYBRID
+
+✅ "stock levels and latest trends" → HYBRID
+   - Partie 1: "stock levels" (analytics)
+   - Conjonction: "and"
+   - Partie 2: "latest trends" (web_search)
+   - DEUX TYPES DIFFÉRENTS → HYBRID
+
+✅ "article 6 of terms and number of products" → HYBRID
+   - Partie 1: "article 6 of terms" (semantic)
+   - Conjonction: "and"
+   - Partie 2: "number of products" (analytics)
+   - DEUX TYPES DIFFÉRENTS → HYBRID
+
+❌ "products with price between 10 and 20" → PAS HYBRID
+   - "and" fait partie d'une seule condition, ne connecte pas deux demandes
+   - C'est UNE demande analytics avec une plage
+
+❌ "categories and subcategories" → PAS HYBRID
+   - C'est UNE demande analytics pour des données liées
+   - Pas deux questions séparées
+
+ARBRE DE DÉCISION:
+
+ÉTAPE 1: HYBRID? (VÉRIFIEZ CECI EN PREMIER!)
+
+* Scannez pour indicateurs séquentiels ou conjonctions
+* Indicateurs séquentiels: "puis", "ensuite", "après", "et puis", "suivi de", "then", "next", "after"
+* Conjonctions: "et", "également", "ou", "and", "also", "or"
+* Si trouvé, divisez la requête à l'indicateur/conjonction
+* Les deux parties sont-elles DEUX QUESTIONS/DEMANDES DISTINCTES?
+* OUI → {"type":"hybrid","sub_types":["type1","type2"]} et ARRÊTEZ ICI
+* NON → Continuez à l'Étape 2
+
+ÉTAPE 2: WEB_SEARCH?
+- Demande infos EXTERNES/ACTUELLES?
+- Mots-clés: "dernières", "récentes", "tendances", "actualités", "concurrents"
+- OUI → {"type":"web_search"}
+- NON → Étape 3
+
+ÉTAPE 3: ANALYTICS ou SEMANTIC?
+
+ANALYTICS (données base de données):
+- Nombres, calculs (chiffre d'affaires, total, moyenne)
+- Listes (liste des produits, catégories, clients)
+- Valeurs de champs (prix, stock, référence, SKU)
+- Statuts (commandes en attente, produits en rupture)
+- Commandes d'affichage pour entités de base de données (affiche produits, montre catégories, show products)
+
+🚨 CRITIQUE: Verbes d'affichage avec entités de base de données = TOUJOURS analytics:
+- "affiche les produits" → analytics (demande liste de produits de la base de données)
+- "montre les catégories" → analytics (demande liste de catégories de la base de données)
+- "show products" → analytics (demande liste de produits de la base de données)
+- "display orders" → analytics (demande liste de commandes de la base de données)
+- Ce sont des REQUÊTES BASE DE DONNÉES, pas des instructions d'affichage UI!
+
+SEMANTIC (contenu documents):
+- Explications (qu'est-ce que, comment, pourquoi)
+- Politiques (CGV, politique de retour, confidentialité)
+- Articles de documents (article 4 des cgv, article 5)
+- Descriptions, guides
 
 RÈGLES CRITIQUES:
-1. Si la requête demande une VALEUR DE CHAMP DE BASE DE DONNÉES SPÉCIFIQUE (référence, SKU, modèle, prix, stock, poids), c'est TOUJOURS analytics
-2. Les requêtes de Revenu/Ventes/Chiffre d'affaires sont TOUJOURS analytics (ce sont des métriques de base de données, pas de la documentation)
-3. Les REQUÊTES DE STATUT DE COMMANDE (en instance, annulé, livré, en cours) sont TOUJOURS analytics (liste de commandes avec filtre de statut)
-4. Les REQUÊTES LISTER TOUT sont TOUJOURS analytics, peu importe le verbe utilisé:
-   - "liste X" → analytics (verbe: lister)
-   - "affiche X" → analytics (verbe: afficher)
-   - "montre X" → analytics (verbe: montrer)
-   - "affiche tous les X" → analytics
-   - Peu importe l'entité: produits, fournisseurs, marques, fabricants, catégories, clients, commandes
-5. REQUÊTES DE RECHERCHE WEB (NOUVEAU - CRITIQUE): Les requêtes sur des informations EXTERNES/ACTUELLES sont TOUJOURS web_search:
-   - "dernières tendances" → web_search (tendances du marché externe)
-   - "actualités récentes" → web_search (actualités externes)
-   - "quoi de neuf" → web_search (info actuelle externe)
-   - "latest trends" → web_search (tendances en anglais)
-   - "recent news" → web_search (actualités en anglais)
-   - "comparer avec les concurrents" → web_search (comparaison externe)
-   - "meilleures offres en ligne" → web_search (recherche de marché externe)
-   - TOUTE requête avec "dernières", "récentes", "tendances", "actualités", "latest", "recent", "trends", "news" → web_search
-6. Concentrez-vous sur l'INTENTION de l'utilisateur: Demande-t-il des DONNÉES (analytics), une EXPLICATION (semantic), ou des INFOS EXTERNES (web_search)?
-7. En cas d'ambiguïté, par défaut 'semantic' (repli le plus sûr)
 
-FORMAT DE RÉPONSE - CRITIQUE:
+1. Articles de documents = TOUJOURS semantic
+   "article 4 des cgv" → semantic
+   "politique de retour" → semantic
 
-INTERDIT (causera une défaillance du système):
-- "Basé sur la requête..." (PAS de texte explicatif avant le JSON)
-- "La requête devrait être classifiée comme..." (PAS de narration)
-- ```json { ... } ``` (PAS de blocs de code markdown)
-- Voici la classification: {...} (PAS de préambule)
-- {...} Explication: ... (PAS de texte après le JSON)
-- TOUTE utilisation d'astérisques pour du texte en gras
-- TOUTE utilisation d'underscores pour du texte en italique
+2. Listes d'entités = TOUJOURS analytics (REQUÊTE BASE DE DONNÉES)
+   "liste des produits" → analytics
+   "liste des catégories" → analytics
+   "list of products" → analytics
+   "montre-moi les produits" → analytics
+   "affiche les produits" → analytics
+   "show products" → analytics
+   "display categories" → analytics
+   "affiche les catégories" → analytics
+   "montre les commandes" → analytics
+   🚨 CRITIQUE: TOUTE demande de LISTE d'entités de base de données est ANALYTICS, pas semantic!
+   🚨 CRITIQUE: Verbes d'affichage (show, display, affiche, montre) + entités base de données = ANALYTICS!
 
-REQUIS (seul format valide):
-{"type":"analytics","confidence":0.9,"reasoning":"Brève explication","sub_types":[]}
+3. Valeurs de champs = TOUJOURS analytics
+   "prix de l'iPhone" → analytics
+   "stock du produit" → analytics
 
-CRITIQUE: La réponse DOIT commencer par { et se terminer par }
-PAS de texte avant le {
-PAS de texte après le }
-PAS de markdown
-PAS de sauts de ligne dans le JSON (une seule ligne)
+4. Statuts = TOUJOURS analytics
+   "commandes en attente" → analytics
 
-Exemples de réponses valides:
-{"type":"analytics","confidence":0.9,"reasoning":"Demande claire de données quantitatives d'inventaire","sub_types":[]}
-{"type":"semantic","confidence":0.9,"reasoning":"Demande d'explication depuis documents de politique","sub_types":[]}
-{"type":"hybrid","confidence":0.8,"reasoning":"Combine requête d'inventaire avec information de politique","sub_types":["analytics","semantic"]}
+5. Explications = TOUJOURS semantic
+   "qu'est-ce que" → semantic
+   "comment fonctionne" → semantic
 
-🚨 EXEMPLES CRITIQUES - REQUÊTES HYBRIDES (VÉRIFIEZ CEUX-CI EN PREMIER, PRIORITÉ MAXIMALE):
-{"type":"hybrid","confidence":0.90,"reasoning":"La requête contient prix (analytics) ET tendances (web_search) connectés par conjonction","sub_types":["analytics","web_search"]}  // Pour "prix ET tendances"
-{"type":"hybrid","confidence":0.90,"reasoning":"La requête contient stock (analytics) ET politique (semantic) connectés par conjonction","sub_types":["analytics","semantic"]}  // Pour "stock ET politique de retour"
-{"type":"hybrid","confidence":0.90,"reasoning":"La requête contient DEUX questions analytics séparées: commandes en attente ET chiffre d'affaires","sub_types":["analytics","analytics"]}  // Pour "commandes en attente ET chiffre d'affaires"
-{"type":"hybrid","confidence":0.90,"reasoning":"La requête contient DEUX questions analytics séparées: niveaux de stock ET chiffres de ventes","sub_types":["analytics","analytics"]}  // Pour "niveaux de stock ET chiffres de ventes"
+EXEMPLES:
 
-🚨 EXEMPLES CRITIQUES - STATUTS DE COMMANDE (PRIORITÉ MAXIMALE):
-{"type":"analytics","confidence":0.95,"reasoning":"Demande liste de commandes avec filtre de statut en instance depuis base de données","sub_types":[]}  // Pour "pending orders"
-{"type":"analytics","confidence":0.95,"reasoning":"Demande liste de commandes avec filtre de statut en instance depuis base de données","sub_types":[]}  // Pour "commande en instance"
-{"type":"analytics","confidence":0.95,"reasoning":"Demande liste de commandes avec filtre de statut annulé depuis base de données","sub_types":[]}  // Pour "cancelled orders"
+HYBRID: {"type":"hybrid","confidence":0.90,"reasoning":"Contient prix ET article cgv","sub_types":["analytics","semantic"]}
+ANALYTICS: {"type":"analytics","confidence":0.95,"reasoning":"Demande valeur champ prix","sub_types":[]}
+SEMANTIC: {"type":"semantic","confidence":0.95,"reasoning":"Demande contenu article CGV","sub_types":[]}
+WEB_SEARCH: {"type":"web_search","confidence":0.95,"reasoning":"Demande tendances externes","sub_types":[]}
 
-🚨 EXEMPLES CRITIQUES - REQUÊTES LISTER TOUT (PRIORITÉ MAXIMALE):
-{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de tous les produits","sub_types":[]}  // Pour "list products" ou "liste les produits"
-{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de tous les fournisseurs","sub_types":[]}  // Pour "list suppliers" ou "liste les fournisseurs"
-{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de tous les fabricants","sub_types":[]}  // Pour "list manufacturers" ou "liste les fabricants"
-{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de toutes les marques","sub_types":[]}  // Pour "list brands" ou "liste les marques"
-{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de tous les fournisseurs","sub_types":[]}  // Pour "show suppliers" ou "montre les fournisseurs"
-{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de tous les clients","sub_types":[]}  // Pour "display customers" ou "affiche les clients"
-{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de toutes les catégories","sub_types":[]}  // Pour "list categories" ou "liste les catégories"
-
-🚨 RAPPEL: "marques" = brands = table manufacturers = LISTAGE BASE DE DONNÉES = analytics
-🚨 RAPPEL: "fournisseurs" = suppliers = table suppliers = LISTAGE BASE DE DONNÉES = analytics
-🚨 RAPPEL: "montre" = affiche = liste = LISTAGE BASE DE DONNÉES = analytics
-{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de toutes les catégories","sub_types":[]}  // Pour "list categories"
-{"type":"analytics","confidence":0.95,"reasoning":"Demande de listage base de données de tous les clients","sub_types":[]}  // Pour "list customers"
-
-🚨 EXEMPLES CRITIQUES - REQUÊTES WEB SEARCH (PRIORITÉ MAXIMALE):
-{"type":"web_search","confidence":0.95,"reasoning":"Demande d'informations sur les tendances du marché externe","sub_types":[]}  // Pour "dernières tendances" ou "latest trends"
-{"type":"web_search","confidence":0.95,"reasoning":"Demande d'informations d'actualités externes","sub_types":[]}  // Pour "actualités récentes" ou "recent news"
-{"type":"web_search","confidence":0.95,"reasoning":"Demande d'informations actuelles externes","sub_types":[]}  // Pour "quoi de neuf" ou "what's new"
-{"type":"web_search","confidence":0.95,"reasoning":"Demande de comparaison avec concurrents externes","sub_types":[]}  // Pour "comparer avec les concurrents" ou "compare with competitors"
-{"type":"web_search","confidence":0.95,"reasoning":"Demande de recherche de marché externe","sub_types":[]}  // Pour "meilleures offres en ligne" ou "best deals online"
-
-RAPPEL FINAL:
-Votre RÉPONSE ENTIÈRE doit être du JSON pur.
-PAS de texte supplémentaire. PAS de markdown. PAS d'explications en dehors du JSON.
-COMMENCEZ avec { et TERMINEZ avec }
-
-Maintenant classifiez cette requête (répondez avec JSON uniquement):
+Répondez UNIQUEMENT avec du JSON pur:
 {{QUERY}}
 
 

@@ -1,0 +1,46 @@
+text_rag_hybrid_decomposer_prompt_template = You are a query decomposition expert for a {{domain_name}} system.
+Your task is to decompose a hybrid query into separate sub-queries based on the requested types.
+
+DOMAIN CONTEXT:
+- Domain: {{domain_name}}
+- Terminology: {{domain_terminology}}
+- Data Types: {{domain_data_types}}
+
+REQUESTED SUB-QUERY TYPES:
+{{sub_types_list}}
+
+EXAMPLES FOR {{domain_name}} DOMAIN:
+{{domain_examples}}
+
+QUERY TO DECOMPOSE:
+"{{query}}"
+
+INSTRUCTIONS:
+1. Split the query into exactly {{sub_type_count}} sub-queries
+2. Each sub-query must have a "type" and "text" field
+3. Types must match the requested types: {{sub_types_csv}}
+4. Preserve the original meaning and context
+5. Use {{domain_name}} terminology
+
+OUTPUT FORMAT (JSON):
+[
+  {"type": "analytics", "text": "sub-query text"},
+  {"type": "semantic", "text": "sub-query text"}
+]
+
+Return ONLY the JSON array, no additional text.
+
+text_rag_hybrid_decomposer_domain_name = E-commerce
+text_rag_hybrid_decomposer_terminology = products, categories, orders, customers, inventory, manufacturers, suppliers
+text_rag_hybrid_decomposer_data_types = products, orders, customers, categories, reviews, manufacturers, suppliers
+text_rag_hybrid_decomposer_examples = Example 1 (E-commerce):
+Query: "top 5 products and their reviews"
+Sub-queries: [{"type": "analytics", "text": "top 5 products"}, {"type": "semantic", "text": "their reviews"}]
+
+Example 2 (E-commerce):
+Query: "number of categories and article 2 of terms"
+Sub-queries: [{"type": "analytics", "text": "number of categories"}, {"type": "semantic", "text": "article 2 of terms"}]
+
+Example 3 (E-commerce):
+Query: "total orders this month and shipping policy"
+Sub-queries: [{"type": "analytics", "text": "total orders this month"}, {"type": "semantic", "text": "shipping policy"}]

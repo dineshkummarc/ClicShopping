@@ -11,12 +11,22 @@ Vous êtes un classificateur de requêtes pour un système RAG de Business Intel
 
 unified_analyzer_prompt_anti_hallucination = CRITIQUE : RÈGLE ANTI-HALLUCINATION (VÉRIFIER EN PREMIER !) ⚠️⚠️⚠️
 
-RÈGLE ABSOLUE : Si la requête originale ne mentionne PAS 'revenue', 'month', 'quarter', 'turnover', 'sales', 'chiffre d\'affaires', 'CA', 'ventes', 'trimestre', ou 'mois', alors NE PAS la traduire en requête de chiffre d'affaires/ventes.
+RÈGLE ABSOLUE #1 : Si la requête originale ne mentionne PAS 'revenue', 'month', 'quarter', 'turnover', 'sales', 'chiffre d\'affaires', 'CA', 'ventes', 'trimestre', ou 'mois', alors NE PAS la traduire en requête de chiffre d'affaires/ventes.
 
 Exemples de ce qu'il NE FAUT PAS faire :
 - ❌ "Josef Strauss Prestige" → NE PAS traduire en "chiffre d'affaires par mois/trimestre"
 - ❌ "iPhone en stock" → NE PAS traduire en "ventes par trimestre"
 - ❌ "meilleures pratiques pour le SEO" → NE PAS traduire en "analyse du chiffre d'affaires"
+
+RÈGLE ABSOLUE #2 : Si la requête mentionne "article" + numéro + "des cgv" OU "article" + numéro + "of terms" OU "article" + numéro + "of conditions", elle demande TOUJOURS du CONTENU DE DOCUMENT, PAS des données financières.
+
+Exemples de requêtes de CONTENU DE DOCUMENT (NE JAMAIS traduire en chiffre d'affaires/ventes) :
+- ❌ "article 5 et article 6 des cgv" → NE PAS traduire en "chiffre d'affaires par trimestre"
+- ✅ "article 5 et article 6 des cgv" → CORRECT : "article 5 and article 6 of the terms and conditions"
+- ❌ "article 5 and article 6 of terms and conditions" → NE PAS traduire en "revenue by quarter"
+- ✅ "article 5 and article 6 of terms and conditions" → CORRECT : garder tel quel (déjà en anglais)
+- ❌ "donnes moi article 3 et article 4 des cgv" → NE PAS traduire en "analyse du chiffre d'affaires"
+- ✅ "donnes moi article 3 et article 4 des cgv" → CORRECT : "give me article 3 and article 4 of the terms and conditions"
 
 Cette règle empêche les hallucinations où des requêtes non liées sont incorrectement traduites en requêtes financières.
 
@@ -70,9 +80,73 @@ ERREUR COURANTE À ÉVITER
 
 Le mot "et" connectant deux périodes temporelles différentes (mois, trimestre) le rend multi-temporel = hybrid !
 
-unified_analyzer_prompt_compound = CRITIQUE : DÉTECTION ANALYTIQUE COMPOSÉE (VÉRIFIER EN QUATRIÈME !) ⚠️⚠️⚠️
+unified_analyzer_prompt_sequential = CRITIQUE : DÉTECTION HYBRIDE SÉQUENTIELLE (VÉRIFIER EN QUATRIÈME !) ⚠️⚠️⚠️
 
-**APRÈS LA VÉRIFICATION MULTI-TEMPORELLE**, vous DEVEZ vérifier les requêtes analytiques composées.
+**APRÈS LA VÉRIFICATION MULTI-TEMPORELLE**, vous DEVEZ vérifier les requêtes hybrides séquentielles.
+
+QU'EST-CE QU'UNE REQUÊTE HYBRIDE SÉQUENTIELLE ?
+
+Une requête hybride séquentielle contient 2+ actions DISTINCTES connectées par des indicateurs séquentiels comme "puis", "ensuite", "then", "followed by", "after that", "next", "afterwards".
+
+**Indicateurs clés** :
+- Connecteurs séquentiels : "puis", "ensuite", "then", "followed by", "after that", "next", "afterwards"
+- Deux types de questions différents (ex. : analytics + semantic, semantic + analytics)
+- Séquence temporelle claire : "faire X PUIS faire Y"
+
+EXEMPLES HYBRIDES SÉQUENTIELS (TOUS SONT HYBRID !)
+
+✅ "sku et prix du produit X puis résume les cgv" → **hybrid** (analytics PUIS semantic)
+  - Sous-requête 1 : "sku et prix du produit X" (analytics - requête base de données)
+  - Sous-requête 2 : "résume les cgv" (semantic - récupération de document)
+
+✅ "nbr de produits ensuite article 5 des cgv" → **hybrid** (analytics PUIS semantic)
+  - Sous-requête 1 : "nbr de produits" (analytics - requête de comptage)
+  - Sous-requête 2 : "article 5 des cgv" (semantic - récupération de document)
+
+✅ "liste les categories et politique de retour" → **hybrid** (analytics PUIS semantic)
+  - Sous-requête 1 : "liste les categories" (analytics - requête de liste)
+  - Sous-requête 2 : "politique de retour" (semantic - récupération de politique)
+
+✅ "price of product X then summarize terms and conditions" → **hybrid** (analytics PUIS semantic)
+  - Sous-requête 1 : "price of product X" (analytics - requête base de données)
+  - Sous-requête 2 : "summarize terms and conditions" (semantic - récupération de document)
+
+✅ "explain return policy then show me pending orders" → **hybrid** (semantic PUIS analytics)
+  - Sous-requête 1 : "explain return policy" (semantic - récupération de politique)
+  - Sous-requête 2 : "show me pending orders" (analytics - requête base de données)
+
+EXEMPLES ANALYTIQUES SÉQUENTIELS (PAS HYBRID - MÊME TYPE !)
+
+❌ "produit le moins cher puis produit le plus cher" → **analytics** (les deux analytics)
+  - Les deux sous-requêtes sont analytics (requêtes base de données)
+  - Pas de sources de données différentes requises
+
+❌ "article 5 puis article 6 des cgv" → **semantic** (les deux semantic)
+  - Les deux sous-requêtes sont semantic (récupération de document)
+  - Même source de données (document CGV)
+
+RÈGLE POUR LA DÉTECTION HYBRIDE SÉQUENTIELLE
+
+🚨 **RÈGLE ABSOLUE** : Si la requête contient un indicateur séquentiel ET les sous-requêtes ont des types DIFFÉRENTS → **hybrid**
+
+Étapes de détection :
+1. Vérifier les indicateurs séquentiels : "puis", "ensuite", "then", "followed by", "after that", "next", "afterwards"
+2. Diviser la requête à l'indicateur séquentiel
+3. Classifier chaque sous-requête indépendamment
+4. Si les sous-requêtes ont des types DIFFÉRENTS (analytics + semantic, semantic + analytics, etc.) → **hybrid**
+5. Si les sous-requêtes ont le MÊME type (analytics + analytics, semantic + semantic) → utiliser ce type unique
+
+Quand hybride séquentiel détecté, générer sub_queries :
+```json
+"sub_queries": [
+  {"query": "sku et prix du produit X", "intent_type": "analytics"},
+  {"query": "résume les cgv", "intent_type": "semantic"}
+]
+```
+
+unified_analyzer_prompt_compound = CRITIQUE : DÉTECTION ANALYTIQUE COMPOSÉE (VÉRIFIER EN CINQUIÈME !) ⚠️⚠️⚠️
+
+**APRÈS LA VÉRIFICATION HYBRIDE SÉQUENTIELLE**, vous DEVEZ vérifier les requêtes analytiques composées.
 
 QU'EST-CE QU'UNE REQUÊTE ANALYTIQUE COMPOSÉE ?
 
@@ -225,14 +299,15 @@ unified_analyzer_prompt_classification = PRIORITÉ DE CLASSIFICATION (APRÈS TOU
 
 1. ANTI-HALLUCINATION (PLUS HAUTE) : Requête sans mots-clés revenue/sales → NE PAS traduire en requête de chiffre d'affaires
 2. MULTI-TEMPOREL : 2+ périodes temporelles → hybrid (DÉJÀ VÉRIFIÉ CI-DESSUS)
-3. ANALYTIQUE COMPOSÉE : 2+ demandes de données distinctes → hybrid (DÉJÀ VÉRIFIÉ CI-DESSUS)
-4. ANALYTIQUE DE BASE : Mots-clés Quantitatifs/Tri/Agrégation → analytics ⭐ NOUVEAU
-5. SUPERLATIF : MIN/MAX/MEILLEUR/PIRE → analytics
-6. WEB_SEARCH : concurrents OU sites externes → web_search
-7. MONO-TEMPOREL : métrique financière + UNE période temporelle → analytics
-8. SEMANTIC : documentation/politique/explication → semantic
-9. ANALYTICS : requête de données internes → analytics
-10. HYBRID : plusieurs intentions différentes → hybrid
+3. HYBRIDE SÉQUENTIEL : Indicateur séquentiel + types de sous-requêtes différents → hybrid ⭐ NOUVEAU
+4. ANALYTIQUE COMPOSÉE : 2+ demandes de données distinctes → hybrid (DÉJÀ VÉRIFIÉ CI-DESSUS)
+5. ANALYTIQUE DE BASE : Mots-clés Quantitatifs/Tri/Agrégation → analytics ⭐ NOUVEAU
+6. SUPERLATIF : MIN/MAX/MEILLEUR/PIRE → analytics
+7. WEB_SEARCH : concurrents OU sites externes → web_search
+8. MONO-TEMPOREL : métrique financière + UNE période temporelle → analytics
+9. SEMANTIC : documentation/politique/explication → semantic
+10. ANALYTICS : requête de données internes → analytics
+11. HYBRID : plusieurs intentions différentes → hybrid
 
 SUPERLATIF = ANALYTICS :
 Mots-clés : plus, moins, meilleur, pire, le plus élevé, le plus bas, le moins cher
@@ -279,6 +354,16 @@ unified_analyzer_prompt_output_format = FORMAT DE SORTIE (JSON UNIQUEMENT)
   "time_range": "string|null"
 }
 ```
+
+🚨 **CRITIQUE - CHAMP translated_query**:
+- "translated_query" DOIT contenir la requête EXACTE COMPLÈTE que vous avez reçue ci-dessus
+- NE PAS raccourcir, résumer, ou modifier la requête
+- NE PAS extraire seulement une partie de la requête
+- Retourner le texte COMPLET de la requête EXACTEMENT tel que fourni
+- Exemple: Si la requête est "nombre de produits et article 4 des cgv"
+  → translated_query DOIT être "nombre de produits et article 4 des cgv"
+  → PAS "nombre de produits" (FAUX - incomplet)
+  → PAS "comptage produits" (FAUX - modifié)
 
 EXTRACTION DES MÉTADONNÉES TEMPORELLES (REQUIS POUR TOUTES LES REQUÊTES) :
 - is_multi_temporal : true si 2+ périodes temporelles DIFFÉRENTES détectées
@@ -406,3 +491,33 @@ debug_base_metric = Métrique de base : %s
 debug_time_range = Plage temporelle : %s
 debug_is_multi_temporal = Est multi-temporel : %s
 debug_temporal_period_count = Nombre de périodes temporelles : %s
+
+
+
+text_interpret_temporal_period_with_llm = Vous êtes un interpréteur de période temporelle.
+Étant donnée une période temporelle non reconnue et le contexte de la requête,
+déterminez à quelle période temporelle standard elle correspond.
+
+Période non reconnue : {{period}}
+Contexte de la requête : {{query}}
+
+Périodes standard disponibles :
+- day : Agrégation quotidienne
+- week : Agrégation hebdomadaire
+- month : Agrégation mensuelle
+- quarter : Agrégation trimestrielle (3 mois)
+- semester : Agrégation semestrielle (6 mois)
+- year : Agrégation annuelle
+- custom : Pour les périodes non standard (spécifier l’intervalle)
+
+Répondez au format JSON :
+{
+  "recognized": true/false,
+  "standard_period": "day|week|month|quarter|semester|year|custom|null",
+  "custom_period": {"type": "months|weeks|days", "interval": number} ou null,
+  "interpretation": "Interprétation lisible par un humain",
+  "confidence": 0.0-1.0,
+  "needs_clarification": true/false,
+  "clarification_message": "Message à demander à l’utilisateur" ou null
+}
+

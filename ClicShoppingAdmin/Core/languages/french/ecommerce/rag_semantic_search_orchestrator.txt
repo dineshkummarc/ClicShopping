@@ -8,6 +8,9 @@ text_insufficient_info_patterns = I don't have that information|I don't have eno
 # Longueur minimale de réponse pour être considérée comme valide (non générique)
 text_min_response_length = 20
 
+# Prompts LLM pour la détection de langue (Mode LLM Pur)
+text_prompt_detect_language = Détectez la langue de cette requête et répondez UNIQUEMENT avec le code de langue à 2 lettres (en, fr, es, de, it, pt, nl, ru, zh, ja, ko, ar). Requête: "{{query}}"
+
 # Messages de log
 text_log_conversation_memory_useful = Le document de mémoire de conversation a un contenu utile (longueur: {{length}})
 text_log_conversation_memory_generic = Le document de mémoire de conversation a une réponse LLM générique - ignoré

@@ -1,5 +1,34 @@
 text_system_message = You are an e-commerce expert assistant specialized in data analysis.
 
+llm_prompt_order_by_correction = You are an SQL expert. Fix the ORDER BY column reference error in this query.
+
+## Error Details
+Error: {{error_message}}
+Unknown Column: {{unknown_column}}
+
+## Failed SQL Query
+```sql
+{{sql_query}}
+```
+
+## ORDER BY Rules
+When using aggregate functions (YEAR, QUARTER, MONTH, etc.) in GROUP BY:
+
+1. Use the SAME function expression in ORDER BY:
+   ✅ CORRECT: GROUP BY YEAR(date) ORDER BY YEAR(date)
+   ❌ WRONG: GROUP BY YEAR(date) ORDER BY year
+
+2. OR use column position numbers:
+   ✅ CORRECT: SELECT YEAR(date), SUM(value) ... ORDER BY 1
+
+3. OR use the alias if you created one:
+   ✅ CORRECT: SELECT YEAR(date) AS year_value ... ORDER BY year_value
+
+## Your Task
+Fix ONLY the ORDER BY clause. Preserve the SELECT and GROUP BY clauses exactly as they are.
+
+Return ONLY the corrected SQL query, nothing else.
+
 🚨🚨🚨 CRITICAL SQL DATE RULE - ABSOLUTE PRIORITY 🚨🚨🚨
 
 **YOU MUST NEVER USE YEAR() OR MONTH() FUNCTIONS IN WHERE CLAUSES**
@@ -633,6 +662,63 @@ text_sql_generation_rules = SQL GENERATION RULES:
 4. Optimize for performance
 5. Add appropriate ORDER BY clauses
 6. Limit results to reasonable number if necessary (LIMIT)
+
+6.1. ORDER BY SYNTAX RULES (CRITICAL - PREVENTS COLUMN REFERENCE ERRORS):
+
+   When using aggregate functions (YEAR, QUARTER, MONTH, etc.) in GROUP BY, you MUST follow these rules for ORDER BY:
+   
+   RULE 1: Use the SAME function expression in ORDER BY as in GROUP BY
+   ✅ CORRECT: SELECT YEAR(date) AS year_value ... GROUP BY YEAR(date) ORDER BY YEAR(date)
+   ✅ CORRECT: SELECT QUARTER(date) AS quarter ... GROUP BY QUARTER(date) ORDER BY QUARTER(date)
+   ✅ CORRECT: SELECT MONTH(date) AS month_num ... GROUP BY MONTH(date) ORDER BY MONTH(date)
+   
+   ❌ WRONG: SELECT YEAR(date) AS year_value ... GROUP BY YEAR(date) ORDER BY year
+   ❌ WRONG: SELECT QUARTER(date) AS quarter ... GROUP BY QUARTER(date) ORDER BY quarter
+   ❌ WRONG: SELECT MONTH(date) AS month_num ... GROUP BY MONTH(date) ORDER BY month
+   
+   RULE 2: OR use column position numbers (1, 2, 3, etc.)
+   ✅ CORRECT: SELECT YEAR(date), SUM(value) ... GROUP BY YEAR(date) ORDER BY 1
+   ✅ CORRECT: SELECT QUARTER(date), COUNT(*) ... GROUP BY QUARTER(date) ORDER BY 1
+   
+   RULE 3: OR use the alias name if you created one
+   ✅ CORRECT: SELECT YEAR(date) AS year_value ... GROUP BY year_value ORDER BY year_value
+   ✅ CORRECT: SELECT QUARTER(date) AS quarter_num ... GROUP BY quarter_num ORDER BY quarter_num
+   
+   RULE 4: NEVER reference a column name that doesn't exist as an alias
+   ❌ WRONG: SELECT YEAR(date) ... ORDER BY year (column 'year' doesn't exist!)
+   ❌ WRONG: SELECT QUARTER(date) ... ORDER BY quarter (column 'quarter' doesn't exist!)
+   
+   EXAMPLES OF CORRECT PATTERNS:
+   
+   Example 1 - Quarterly revenue (using function in ORDER BY):
+   SELECT QUARTER(o.date_purchased) AS quarter, SUM(ot.value) AS revenue
+   FROM clic_orders o
+   JOIN clic_orders_total ot ON o.orders_id = ot.orders_id
+   WHERE YEAR(o.date_purchased) = 2025 AND ot.class = 'ST'
+   GROUP BY QUARTER(o.date_purchased)
+   ORDER BY QUARTER(o.date_purchased)
+   
+   Example 2 - Monthly sales (using column position):
+   SELECT MONTH(o.date_purchased), COUNT(*) AS order_count
+   FROM clic_orders o
+   WHERE YEAR(o.date_purchased) = 2025
+   GROUP BY MONTH(o.date_purchased)
+   ORDER BY 1
+   
+   Example 3 - Yearly trends (using alias):
+   SELECT YEAR(o.date_purchased) AS year_value, SUM(ot.value) AS total_revenue
+   FROM clic_orders o
+   JOIN clic_orders_total ot ON o.orders_id = ot.orders_id
+   WHERE ot.class = 'ST'
+   GROUP BY year_value
+   ORDER BY year_value
+   
+   REMEMBER: The ORDER BY clause must reference either:
+   1. The exact function expression from SELECT/GROUP BY
+   2. A column position number (1, 2, 3...)
+   3. An alias you explicitly created in SELECT
+   
+   It CANNOT reference a column name that doesn't exist in the table or as an alias!
 
 7. TEXT FIELD SEARCHES: Use LIKE with wildcards (%)
    - Single name: WHERE pd.products_name LIKE '%ProductName%'

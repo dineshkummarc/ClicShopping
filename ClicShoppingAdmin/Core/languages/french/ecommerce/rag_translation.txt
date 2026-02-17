@@ -15,7 +15,15 @@ Sortie : Une seule chaîne de caractères en anglais professionnel.
 2. INTÉGRITÉ TECHNIQUE : Préserver strictement les termes techniques. Ne jamais modifier les acronymes, codes ou identifiants (ex. : EAN, SKU, UUID).
 3. VERBES D'ACTION : NE PAS modifier ou reformuler les verbes opérationnels (ex. : "Show", "Give", "Display", "Search").
 4. ZÉRO AJOUT : Ne pas ajouter d'informations comme "Prix non disponible" ou de métadonnées.
-5. DÉTECTION INTELLIGENTE DE REDONDANCE :
+5. RÉFÉRENCES D'ARTICLES DE DOCUMENT (CRITIQUE - NE PAS TRADUIRE EN TERMES FINANCIERS) :
+   - Si la requête mentionne "article" + numéro + "des cgv" OU "article" + numéro + "of terms" OU "article" + numéro + "of conditions", elle fait référence à un ARTICLE DE DOCUMENT, PAS à un terme financier.
+   - TOUJOURS traduire "article X des cgv" en "article X of the terms and conditions" (préserver "article" tel quel).
+   - NE JAMAIS traduire les références d'articles de document en "revenue", "sales", "quarter", ou tout terme financier.
+   - Exemples :
+     * "article 5 et article 6 des cgv" → "article 5 and article 6 of the terms and conditions" (PAS "revenue by quarter")
+     * "donnes moi article 3 des cgv" → "give me article 3 of the terms and conditions" (PAS "give me revenue")
+     * "article 4 of terms and conditions" → "article 4 of the terms and conditions" (déjà en anglais, garder tel quel)
+6. DÉTECTION INTELLIGENTE DE REDONDANCE :
    Appliquer cette logique de décision pour déterminer si deux parties d'une requête sont redondantes :
    
    **Étape 1 : Extraire les composants de chaque partie**

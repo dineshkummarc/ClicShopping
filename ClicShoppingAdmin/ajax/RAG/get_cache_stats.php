@@ -15,10 +15,7 @@ spl_autoload_register('ClicShopping\OM\CLICSHOPPING::autoload');
 
 use ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent;
 use ClicShopping\OM\CLICSHOPPING;
-
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
-
-
 
 CLICSHOPPING::initialize();
 CLICSHOPPING::loadSite('ClicShoppingAdmin');

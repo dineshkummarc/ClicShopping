@@ -8,14 +8,22 @@ You are a query classifier for an e-commerce Business Intelligence RAG system.
 
 unified_analyzer_prompt_anti_hallucination = CRITICAL: ANTI-HALLUCINATION RULE (CHECK FIRST!) ⚠️⚠️⚠️
 
-ABSOLUTE RULE: If the original query does NOT mention 'revenue', 'month', 'quarter', 'turnover', 'sales', 'chiffre d\'affaires', 'CA', 'ventes', 'trimestre', or 'mois', then DO NOT translate it to a revenue/sales query.
+ABSOLUTE RULE #1: If the original query does NOT mention 'revenue', 'month', 'quarter', 'turnover', or 'sales', then DO NOT translate it to a revenue/sales query.
 
 Examples of what NOT to do:
--  "Josef Strauss Prestige" → DO NOT translate to "revenue by month/quarter"
--  "iPhone in stock" → DO NOT translate to "sales by quarter"
--   "best practices for SEO" → DO NOT translate to "revenue analysis"
+- ❌ "Josef Strauss Prestige" → DO NOT translate to "revenue by month/quarter"
+- ❌ "iPhone in stock" → DO NOT translate to "sales by quarter"
+- ❌ "best practices for SEO" → DO NOT translate to "revenue analysis"
 
-This rule prevents hallucinations where unrelated queries are incorrectly translated to financial queries.
+ABSOLUTE RULE #2: If the query mentions "article" + number + "of terms" OR "article" + number + "of conditions", it is ALWAYS requesting DOCUMENT CONTENT, NOT financial data.
+
+Examples of DOCUMENT CONTENT queries (NEVER translate to revenue/sales):
+- ❌ "article 5 and article 6 of terms and conditions" → DO NOT translate to "revenue by quarter"
+- ✅ "article 5 and article 6 of terms and conditions" → CORRECT: keep as-is (already in English)
+- ❌ "give me article 3 and article 4 of terms and conditions" → DO NOT translate to "revenue analysis"
+- ✅ "give me article 3 and article 4 of terms and conditions" → CORRECT: keep as-is (already in English)
+
+These rules prevent hallucinations where unrelated queries are incorrectly translated to financial queries.
 
 unified_analyzer_prompt_multi_temporal = CRITICAL: MULTI-TEMPORAL DETECTION (CHECK THIRD!) ⚠️⚠️⚠️
 
@@ -67,9 +75,73 @@ COMMON MISTAKE TO AVOID
 
 The word "and" connecting two different temporal periods (month, quarter) makes it multi-temporal = hybrid!
 
-unified_analyzer_prompt_compound = CRITICAL: COMPOUND ANALYTICS DETECTION (CHECK FOURTH!) ⚠️⚠️⚠️
+unified_analyzer_prompt_sequential = CRITICAL: SEQUENTIAL HYBRID DETECTION (CHECK FOURTH!) ⚠️⚠️⚠️
 
-**AFTER MULTI-TEMPORAL CHECK**, you MUST check for compound analytics queries.
+**AFTER MULTI-TEMPORAL CHECK**, you MUST check for sequential hybrid queries.
+
+WHAT IS A SEQUENTIAL HYBRID QUERY?
+
+A sequential hybrid query contains 2+ DISTINCT actions connected by sequential indicators like "then", "puis", "ensuite", "followed by", "after that", "next", "afterwards".
+
+**Key indicators**:
+- Sequential connectors: "then", "puis", "ensuite", "followed by", "after that", "next", "afterwards"
+- Two different types of questions (e.g., analytics + semantic, semantic + analytics)
+- Clear temporal sequence: "do X THEN do Y"
+
+SEQUENTIAL HYBRID EXAMPLES (ALL ARE HYBRID!)
+
+✅ "sku et prix du produit X puis résume les cgv" → **hybrid** (analytics THEN semantic)
+  - Sub-query 1: "sku et prix du produit X" (analytics - database query)
+  - Sub-query 2: "résume les cgv" (semantic - document retrieval)
+
+✅ "nbr de produits ensuite article 5 des cgv" → **hybrid** (analytics THEN semantic)
+  - Sub-query 1: "nbr de produits" (analytics - count query)
+  - Sub-query 2: "article 5 des cgv" (semantic - document retrieval)
+
+✅ "liste les categories et politique de retour" → **hybrid** (analytics THEN semantic)
+  - Sub-query 1: "liste les categories" (analytics - list query)
+  - Sub-query 2: "politique de retour" (semantic - policy retrieval)
+
+✅ "price of product X then summarize terms and conditions" → **hybrid** (analytics THEN semantic)
+  - Sub-query 1: "price of product X" (analytics - database query)
+  - Sub-query 2: "summarize terms and conditions" (semantic - document retrieval)
+
+✅ "explain return policy then show me pending orders" → **hybrid** (semantic THEN analytics)
+  - Sub-query 1: "explain return policy" (semantic - policy retrieval)
+  - Sub-query 2: "show me pending orders" (analytics - database query)
+
+SEQUENTIAL ANALYTICS EXAMPLES (NOT HYBRID - SAME TYPE!)
+
+❌ "cheapest product then most expensive product" → **analytics** (both analytics)
+  - Both sub-queries are analytics (database queries)
+  - No different data sources required
+
+❌ "article 5 puis article 6 des cgv" → **semantic** (both semantic)
+  - Both sub-queries are semantic (document retrieval)
+  - Same data source (CGV document)
+
+RULE FOR SEQUENTIAL HYBRID DETECTION
+
+🚨 **ABSOLUTE RULE**: If query contains sequential indicator AND sub-queries have DIFFERENT types → **hybrid**
+
+Detection steps:
+1. Check for sequential indicators: "then", "puis", "ensuite", "followed by", "after that", "next", "afterwards"
+2. Split query at the sequential indicator
+3. Classify each sub-query independently
+4. If sub-queries have DIFFERENT types (analytics + semantic, semantic + analytics, etc.) → **hybrid**
+5. If sub-queries have SAME type (analytics + analytics, semantic + semantic) → use that single type
+
+When sequential hybrid detected, generate sub_queries:
+```json
+"sub_queries": [
+  {"query": "sku et prix du produit X", "intent_type": "analytics"},
+  {"query": "résume les cgv", "intent_type": "semantic"}
+]
+```
+
+unified_analyzer_prompt_compound = CRITICAL: COMPOUND ANALYTICS DETECTION (CHECK FIFTH!) ⚠️⚠️⚠️
+
+**AFTER SEQUENTIAL HYBRID CHECK**, you MUST check for compound analytics queries.
 
 WHAT IS A COMPOUND ANALYTICS QUERY?
 
@@ -222,14 +294,15 @@ unified_analyzer_prompt_classification = CLASSIFICATION PRIORITY (AFTER ALL CHEC
 
 1. ANTI-HALLUCINATION (HIGHEST): Query without revenue/sales keywords → DO NOT translate to revenue query
 2. MULTI-TEMPORAL: 2+ temporal periods → hybrid (ALREADY CHECKED ABOVE)
-3. COMPOUND ANALYTICS: 2+ distinct data requests → hybrid (ALREADY CHECKED ABOVE)
-4. BASIC ANALYTICS: Quantitative/Sorting/Aggregation keywords → analytics ⭐ NEW
-5. SUPERLATIVE: MIN/MAX/BEST/WORST → analytics
-6. WEB_SEARCH: competitors OR external sites → web_search
-7. SINGLE TEMPORAL: financial metric + ONE time period → analytics
-8. SEMANTIC: documentation/policy/explanation → semantic
-9. ANALYTICS: internal data query → analytics
-10. HYBRID: multiple different intents → hybrid
+3. SEQUENTIAL HYBRID: Sequential indicator + different sub-query types → hybrid ⭐ NEW
+4. COMPOUND ANALYTICS: 2+ distinct data requests → hybrid (ALREADY CHECKED ABOVE)
+5. BASIC ANALYTICS: Quantitative/Sorting/Aggregation keywords → analytics ⭐ NEW
+6. SUPERLATIVE: MIN/MAX/BEST/WORST → analytics
+7. WEB_SEARCH: competitors OR external sites → web_search
+8. SINGLE TEMPORAL: financial metric + ONE time period → analytics
+9. SEMANTIC: documentation/policy/explanation → semantic
+10. ANALYTICS: internal data query → analytics
+11. HYBRID: multiple different intents → hybrid
 
 SUPERLATIVE = ANALYTICS:
 Keywords: most, least, best, worst, highest, lowest, cheapest
@@ -276,6 +349,16 @@ unified_analyzer_prompt_output_format = OUTPUT FORMAT (JSON ONLY)
   "time_range": "string|null"
 }
 ```
+
+🚨 **CRITICAL - translated_query FIELD**:
+- "translated_query" MUST contain the EXACT COMPLETE query you received above
+- DO NOT shorten, summarize, or modify the query
+- DO NOT extract only part of the query
+- Return the FULL query text EXACTLY as provided
+- Example: If query is "number of products and article 4 of terms"
+  → translated_query MUST be "number of products and article 4 of terms"
+  → NOT "number of products" (WRONG - incomplete)
+  → NOT "product count" (WRONG - modified)
 
 TEMPORAL METADATA EXTRACTION (REQUIRED FOR ALL QUERIES):
 - is_multi_temporal: true if 2+ DIFFERENT temporal periods detected
@@ -403,3 +486,32 @@ debug_base_metric = Base Metric: %s
 debug_time_range = Time Range: %s
 debug_is_multi_temporal = Is Multi-Temporal: %s
 debug_temporal_period_count = Temporal Period Count: %s
+
+
+text_interpret_temporal_period_with_llm = You are a temporal period interpreter.
+Given an unrecognized temporal period and the query context,
+determine what standard time period it maps to.
+
+Unrecognized period: {{period}}
+Query context: {{query}}
+
+Standard periods available:
+- day: Daily aggregation
+- week: Weekly aggregation
+- month: Monthly aggregation
+- quarter: Quarterly aggregation (3 months)
+- semester: Semi-annual aggregation (6 months)
+- year: Yearly aggregation
+- custom: For non-standard periods (specify interval)
+
+Respond in JSON format:
+{
+"recognized": true/false,
+"standard_period": "day|week|month|quarter|semester|year|custom|null",
+"custom_period": {"type": "months|weeks|days", "interval": number} or null,
+"interpretation": "Human-readable interpretation",
+"confidence": 0.0-1.0,
+"needs_clarification": true/false,
+"clarification_message": "Message to ask user" or null
+}
+

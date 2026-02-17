@@ -8,10 +8,9 @@
  *
  */
 
-use ClicShopping\OM\CLICSHOPPING;
+  use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
-use ClicShopping\AI\Insfrastructure\Cache\QueryCache;
-
+use ClicShopping\AI\Infrastructure\Cache\QueryCache;
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
 define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/') . DIRECTORY_SEPARATOR);
