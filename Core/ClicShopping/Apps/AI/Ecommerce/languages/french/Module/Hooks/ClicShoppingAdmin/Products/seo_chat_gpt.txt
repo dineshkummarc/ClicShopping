@@ -1,14 +1,13 @@
 text_seo_page_title = SEO Page de Titre
 text_seo_action = Cliquez pour avoir une réponse de Gpt
 
-text_seo_expertise = Tu es un expert en e-commerce et en marketing SEO.
-text_seo_page_title_question = Donnes-moi en moins de 50 caractères le SEO Titre concernant ce produit : {{products_name}}. Supprime la réponse du prompt. Réponse brute uniquement, sans commentaire ni ajout.
-text_seo_page_tag_question = Donnes-moi juste en 7 mots clefs sèparès par une virgule concernant ce produit : {{products_name}}. Supprime la réponse du prompt. Réponse brute uniquement, sans commentaire ni ajout.
-text_seo_page_keywords_question = Donnes-moi juste en 7 mots clefs sèparès par une virgule concernant ce produit : {{products_name}}. Supprime la réponse du prompt. Réponse brute uniquement, sans commentaire ni ajout.
-text_seo_page_summary_description_question = Donnes-moi en moins de 50 mots une description trés courte concernant ce produit : {{products_name}}. Supprime la réponse du prompt. Réponse brute uniquement, sans commentaire ni ajout.
-text_seo_page_translate_language = Peux tu traduire la réponse en
-text_seo_page_summary_description_question = Donnes-moi en moins de 50 mots une description trés courte concernant ce produit : {{products_name}}.
+text_seo_expertise = Tu es un expert e-commerce, SEO et intention de recherche utilisateur.
+text_seo_page_title_question = Génère un titre SEO orienté conversion pour ce produit : {{products_name}}. Maximum 70 caractères, sans emoji, sans guillemets, sans point final. Réponse brute uniquement.
+text_seo_page_tag_question = Génère 8 tags SEO pertinents et actionnables pour ce produit : {{products_name}}. 1 à 3 mots par tag, séparés par des virgules, sans #. Réponse brute uniquement.
+text_seo_page_keywords_question = Génère 10 mots-clés SEO pertinents pour ce produit : {{products_name}}. Inclure un mélange de termes informationnels et transactionnels, séparés par des virgules. Réponse brute uniquement.
+text_seo_page_summary_description_question = Génère une meta description persuasive pour ce produit : {{products_name}}. Maximum 160 caractères, avec un bénéfice client et un appel à l'action léger. Réponse brute uniquement.
 
+text_seo_page_translate_language = Peux tu traduire la réponse en
 text_question_description = Ecris moi une longue description concernant ce produit : {{products_name}}.
 text_technical_question = Créés moi un nouveau paragraphe structuré avec des bullets points en html concernant les caractéristiques techniques concernant ce produit : {{products_name}}.
 

@@ -10,7 +10,6 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\Products;
 
-
 use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
@@ -18,7 +17,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
-
+use ClicShopping\Apps\Marketing\SEO\Classes\ClicShoppingAdmin\SeoAdmin;
 
 /**
  * Class Update
@@ -152,7 +151,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
             $seo_product_description = $item['products_head_desc_tag'];
             $seo_product_keywords = $item['products_head_keywords_tag'];
             $seo_product_tag = $item['products_head_tag'];
-            $products_description_summary = $item['products_head_tag'];
+            $products_description_summary = $item['products_description_summary'];
 
             $language_code = $this->lang->getLanguageCodeById((int)$item['language_id']);
 

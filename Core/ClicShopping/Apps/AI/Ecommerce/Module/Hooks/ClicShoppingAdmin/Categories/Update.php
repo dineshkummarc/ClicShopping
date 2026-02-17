@@ -28,7 +28,6 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
   /**
    * Class constructor.
-   *
    * Initializes the ChatGptApp instance in the Registry if it doesn't already exist,
    * and loads the necessary definitions for the application.
    *
@@ -76,7 +75,6 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
     if (!Gpt::checkGptStatus()) {
       return false;
     }
-
 
     $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
 

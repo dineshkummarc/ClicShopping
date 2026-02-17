@@ -10,7 +10,6 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\Products;
 
-
 use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
@@ -18,10 +17,10 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
+use ClicShopping\Apps\Marketing\SEO\Classes\ClicShoppingAdmin\SeoAdmin;
 
 /**
  * Class Insert
- * @package ClicShopping\Apps\Configuration\ChatGpt\Module\Hooks\ClicShoppingAdmin\Products
  *
  * This class handles the insertion of product data into the database.
  * It generates SEO metadata, summaries, and translations based on product information,
@@ -53,7 +52,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
     if (!Registry::exists('Semantics')) {
       Registry::set('Semantics', new SemanticAgent());
     }
-    
+
     $this->semantics = Registry::get('Semantics');
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Products/rag');
   }
@@ -142,7 +141,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
             $products_quantity_alert = $item['products_quantity_alert']; // alert stock fix
             $manufacturer_name = HTML::sanitize($_POST['manufacturers_name']);
             $products_description = $item['products_description'];
-            $products_description_summary = $item['products_head_tag'];
+            $products_description_summary = $item['products_description_summary'];
             $language_name = $this->lang->getLanguagesName($item['language_id']);
             $language_code = $this->lang->getLanguageCodeById((int)$item['language_id']);
 
@@ -158,6 +157,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
             $categories_name = $Qcategories->value('categories_name');
 
             $products_name_array = ['products_name' => $products_name];
+            $question_summary_description = $this->app->getDef('text_seo_page_summary_description_question', $products_name_array);
             //-------------------
             // products description
             //-------------------
@@ -179,14 +179,12 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
             //-------------------
             $summary_description = '';
             if (isset($_POST['option_gpt_summary_description'])) {
-              $question_summary_description = $this->app->getDef('text_seo_page_summary_description_question', $products_name_array);
-
               $summary_description = $translate_language . ' ' . $language_name . ' : ' . $question_summary_description;
               $summary_description = Gpt::getGptResponse($summary_description);
 
               if ($summary_description !== false) {
                 $sql_data_array = [
-                  'products_description_summary' => strip_tags($summary_description) ?? '',
+                  'products_description_summary' => SeoAdmin::normalizeSeoDescription($summary_description),
                 ];
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
@@ -201,15 +199,17 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               $seo_product_title = $translate_language . ' ' . $language_name . ' : ' . $question;
               $seo_product_title = Gpt::getGptResponse($seo_product_title);
-
+              $seo_product_title =  SeoAdmin::normalizeSeoTitle($seo_product_title);
+	       
               if ($seo_product_title !== false) {
                 $sql_data_array = [
-                  'products_head_title_tag' => strip_tags($seo_product_title) ?? '',
+                  'products_head_desc_tag' => SeoAdmin::normalizeSeoDescription($seo_product_description),
                 ];
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
             }
+
             //-------------------
             // Seo description
             //-------------------
@@ -238,7 +238,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               if ($seo_product_keywords !== false) {
                 $sql_data_array = [
-                  'products_head_keywords_tag' => strip_tags($seo_product_keywords) ?? '',
+                  'products_head_keywords_tag' => SeoAdmin::normalizeSeoKeywords($seo_product_keywords),
                 ];
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
@@ -256,8 +256,8 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               if ($seo_product_tag !== false) {
                 $sql_data_array = [
-                  'products_head_tag' => strip_tags($seo_product_tag) ?? '',
-                ];
+                  'products_head_tag' => SeoAdmin::normalizeSeoKeywords($seo_product_tag),
+                  ];
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
@@ -346,7 +346,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
               }
 
               if (!empty($products_description)) {
-	              $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
+	        c$embedding_data .= $this->app->getDef('text_product_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
                 $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($products_description), $language_code, null);
 
                 if (!empty($taxonomy)) {

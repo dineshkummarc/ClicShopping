@@ -14,10 +14,26 @@ use ClicShopping\OM\Registry;
 
 class SeoAdmin
 {
+  private const SEO_TITLE_MAX_LENGTH = 70;
+  private const SEO_DESCRIPTION_MAX_LENGTH = 160;
+  private const SEO_KEYWORDS_MAX_COUNT = 12;
+
   protected int $manufacturers_id;
   protected int $language_id;
   protected int $product_id;
   protected int $category_id;
+
+  /**
+   * Normalize the SEO Title
+   * @param string $value
+   * @return string
+   */
+  public static function normalizeSeoTitle(string $value): string
+  {
+    $title = trim(strip_tags($value));
+
+    return mb_substr($title, 0, self::SEO_TITLE_MAX_LENGTH);
+  }
 
   /**
    *
@@ -106,7 +122,6 @@ class SeoAdmin
     return $Qseo->value('seo_language_products_info_title');
   }
 
-
   /**
    * Retrieves the SEO product information description based on the given SEO ID and language ID.
    *
@@ -163,7 +178,6 @@ class SeoAdmin
 
     return $Qseo->value('seo_language_products_new_description');
   }
-
 
   /**
    * Retrieves the SEO keywords for new products based on the provided SEO ID and language ID.
@@ -337,7 +351,6 @@ class SeoAdmin
 
     return $Qseo->value('seo_language_featured_description');
   }
-
 
   /**
    * Retrieves the SEO featured keywords based on the provided SEO ID and language ID.
@@ -713,5 +726,32 @@ class SeoAdmin
     $Qseo = Registry::get('Db')->get('seo', 'seo_language_recommendations_keywords', ['seo_id' => $seo_id, 'language_id' => $language_id]);
 
     return $Qseo->value('seo_language_recommendations_keywords');
+  }
+
+  /**
+   * Normalize the SEO Description
+   * @param string $value
+   * @return string
+   */
+  public static function normalizeSeoDescription(string $value): string
+  {
+    $description = preg_replace('/\s+/u', ' ', trim(strip_tags($value)));
+
+    return mb_substr((string)$description, 0, self::SEO_DESCRIPTION_MAX_LENGTH);
+  }
+
+  /**
+   * Normalize the SEO Keywords
+   * @param string $value
+   * @return string
+   */
+  public static function normalizeSeoKeywords(string $value): string
+  {
+    $cleanValue = str_replace([';', '|'], ',', strip_tags($value));
+    $keywords = array_filter(array_map(static fn($keyword) => trim($keyword), explode(',', $cleanValue)));
+    $keywords = array_values(array_unique($keywords));
+    $keywords = array_slice($keywords, 0, self::SEO_KEYWORDS_MAX_COUNT);
+
+    return implode(', ', $keywords);
   }
 }

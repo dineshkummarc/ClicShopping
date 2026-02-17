@@ -10,21 +10,28 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\Categories;
 
-
 use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
+use ClicShopping\Apps\Marketing\SEO\Classes\ClicShoppingAdmin\SeoAdmin;
 
+/**
+ * Class Insert
+ *
+ * This class handles the insertion of product data into the database.
+ * It generates SEO metadata, summaries, and translations based on product information,
+ * and also creates categories-related images if specified.
+ */
 
 class Insert implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
   public mixed $lang;
   public mixed $semantics;
-  
+
   /**
    * Class constructor.
    * Initializes the ChatGptApp instance in the Registry if it doesn't already exist,
@@ -129,7 +136,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               if ($categories_description !== false) {
                 $sql_data_array = [
-                  'categories_description' => $categories_description ?? '',
+                  'categories_description' => SeoAdmin::normalizeSeoDescription($categories_description),
                 ];
 
                 $this->app->db->save('categories_description', $sql_data_array, $update_sql_data);
@@ -148,7 +155,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               if ($seo_categories_title !== false) {
                 $sql_data_array = [
-                  'categories_head_title_tag' => strip_tags($seo_categories_title) ?? '',
+                  'categories_head_title_tag' => SeoAdmin::normalizeSeoTitle($seo_categories_title),
                 ];
 
                 $this->app->db->save('categories_description', $sql_data_array, $update_sql_data);
@@ -187,7 +194,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               if ($seo_categories_keywords !== false) {
                 $sql_data_array = [
-                  'categories_head_keywords_tag' => strip_tags($seo_categories_keywords) ?? '',
+                  'categories_head_keywords_tag' => SeoAdmin::normalizeSeoKeywords($seo_categories_keywords),
                 ];
 
                 $this->app->db->save('categories_description', $sql_data_array, $update_sql_data);

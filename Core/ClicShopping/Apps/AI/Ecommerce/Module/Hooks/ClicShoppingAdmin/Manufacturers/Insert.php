@@ -17,6 +17,7 @@ use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
+use ClicShopping\Apps\Marketing\SEO\Classes\ClicShoppingAdmin\SeoAdmin;
 
 
 class Insert implements \ClicShopping\OM\Modules\HooksInterface
@@ -128,7 +129,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               if ($manufacturers_description !== false) {
                 $sql_data_array = [
-                  'manufacturer_description' => $manufacturers_description ?? '',
+                  'manufacturer_description' => SeoAdmin::normalizeSeoDescription($manufacturers_description),
                 ];
 
                 $this->app->db->save('manufacturers_info', $sql_data_array, $update_sql_data);
@@ -146,12 +147,13 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               if ($seo_manufacturer_title !== false) {
                 $sql_data_array = [
-                  'manufacturer_seo_title' => strip_tags($seo_manufacturer_title) ?? '',
+                  'manufacturer_seo_title' => SeoAdmin::normalizeSeoTitle($seo_manufacturer_title) ?? '',
                 ];
 
                 $this->app->db->save('manufacturers_info', $sql_data_array, $update_sql_data);
               }
              }
+
             //-------------------
             // Seo description
             //-------------------
@@ -180,7 +182,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               if ($seo_manufacturer_keywords !== false) {
                 $sql_data_array = [
-                  'manufacturer_seo_keyword' => strip_tags($seo_manufacturer_keywords) ?? '',
+                  'manufacturer_seo_keyword' => SeoAdmin::normalizeSeoKeywords($seo_manufacturer_keywords,
                 ];
 
                 $this->app->db->save('manufacturers_info', $sql_data_array, $update_sql_data);

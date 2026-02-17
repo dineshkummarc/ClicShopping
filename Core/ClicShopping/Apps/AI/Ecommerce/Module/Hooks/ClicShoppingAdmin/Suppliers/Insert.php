@@ -10,7 +10,6 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\Suppliers;
 
-
 use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
@@ -18,6 +17,13 @@ use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 
+/**
+ * Class Insert
+ *
+ * This class handles the insertion of product data into the database.
+ * It generates SEO metadata, summaries, and translations based on product information,
+ * and also creates categories-related images if specified.
+ */
 
 class Insert implements \ClicShopping\OM\Modules\HooksInterface
 {
