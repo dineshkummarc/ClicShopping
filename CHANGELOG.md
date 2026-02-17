@@ -1,15 +1,24 @@
+version4.21
+AI
+   - AI improvment and refactoring to be full agentic
+   - Agent - Actor - Critic - Objectives - Evaluation - Conversation
+   - App Ecommerce Domain with Insight (basic), ACP, UCP
+   - ACP Protocol Beta  refactored via Ecommerce AI app
+   - UCP Protocol Beta added via Ecommerce AI app
+   - App Ecommerce Domain with Insight (basic) aproach
+   - some fix (included deprecated)
+   - Librairies updated
+   - php9 compatibility
+
+---------------
 version4.20
 AI
    - OM Interfaces and Abstract refactored
    - Multi-Domain Agnostic AI Framework 
-   - App Ecommerce 
-   - ACP Protocol link refactored
-- some fix (included deprecated)
-- Librairies updated
-- Dynamic Pricing improved
-
-
-
+   - First php 9 compatibility   
+   - some fix (included deprecated)
+   - Librairies updated
+    - Dynamic Pricing improved
 
 ---------------
 version4.12

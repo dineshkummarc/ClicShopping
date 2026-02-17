@@ -20,7 +20,7 @@ class RA extends \ClicShopping\Apps\Configuration\ChatGpt\Module\ClicShoppingAdm
   protected $pm_code = 'rag';
 
   public bool $is_uninstallable = true;
-  public int|null $sort_order = 400;
+  public int|null $sort_order = 20;
 
   /**
    * Initializes the module by setting its title, short title, introduction, and installation status
