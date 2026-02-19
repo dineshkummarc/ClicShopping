@@ -191,14 +191,6 @@ abstract class AbstractDomainApp extends ConfigurableAppAbstract implements Doma
       $action
     );
     
-    // Log access attempt
-    $permissionManager->logAccess(
-      $agentId,
-      $this->getDomainId(),
-      $action,
-      $hasPermission
-    );
-    
     return $hasPermission;
   }
 

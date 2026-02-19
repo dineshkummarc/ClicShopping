@@ -105,9 +105,7 @@ class ActorCriticConfig
 
     /**
      * Check if Actor-Critic separation is enabled
-     *
-     * Requirement: 25.5
-     *
+
      * @return bool True if enabled, false otherwise
      */
     public static function isEnabled(): bool
@@ -204,9 +202,7 @@ class ActorCriticConfig
     
     /**
      * Get configuration value
-     *
-     * Requirements: 30.1, 30.2, 30.3, 30.4, 30.5
-     *
+
      * @param string $key Configuration key
      * @param mixed $default Default value if key not found
      * @return mixed Configuration value
@@ -249,9 +245,6 @@ class ActorCriticConfig
     
     /**
      * Set configuration value
-     *
-     * Requirements: 30.3
-     *
      * @param string $key Configuration key
      * @param mixed $value Configuration value
      * @return bool True if successful
@@ -310,9 +303,7 @@ class ActorCriticConfig
     
     /**
      * Validate configuration value
-     *
-     * Requirement: 30.4, 13.5
-     *
+
      * @param string $key Configuration key
      * @param mixed $value Value to validate
      * @return bool True if valid
@@ -431,9 +422,6 @@ class ActorCriticConfig
     
     /**
      * Get reputation decay configuration
-     * 
-     * Requirements: 4.2
-     * 
      * @return array Decay configuration with keys: enabled, decay_factor, period_seconds, recent_evaluation_count
      */
     public static function getReputationDecayConfig(): array
@@ -449,9 +437,6 @@ class ActorCriticConfig
     
     /**
      * Check if reputation decay is enabled
-     * 
-     * Requirements: 4.2
-     * 
      * @return bool True if enabled
      */
     public static function isReputationDecayEnabled(): bool
@@ -482,9 +467,6 @@ class ActorCriticConfig
     
     /**
      * Set reputation decay rate
-     *
-     * Requirements: 13.1, 13.5
-     *
      * @param float $rate Decay rate (0.0-1.0)
      * @return bool True if successful
      */
@@ -495,9 +477,7 @@ class ActorCriticConfig
     
     /**
      * Set reputation weights
-     *
-     * Requirements: 13.2, 13.5
-     *
+
      * @param float $consensus Consensus alignment weight
      * @param float $feedback Feedback quality weight
      * @param float $consistency Consistency weight
@@ -531,9 +511,7 @@ class ActorCriticConfig
     
     /**
      * Set minimum reputation threshold
-     *
-     * Requirements: 13.3, 13.5
-     *
+
      * @param float $threshold Minimum threshold (0.0-1.0)
      * @return bool True if successful
      */
@@ -544,9 +522,7 @@ class ActorCriticConfig
     
     /**
      * Set bootstrapping thresholds
-     *
-     * Requirements: 13.4, 13.5
-     *
+
      * @param int $low Low threshold for bootstrapping status
      * @param int $high High threshold for established status
      * @return bool True if successful
@@ -573,9 +549,7 @@ class ActorCriticConfig
     
     /**
      * Validate reputation configuration
-     *
-     * Requirements: 13.5
-     *
+
      * @return array Validation result with keys: valid (bool), errors (array)
      */
     public static function validateReputationConfig(): array
@@ -617,9 +591,7 @@ class ActorCriticConfig
     
     /**
      * Get reputation decay rate
-     *
-     * Requirements: 13.1
-     *
+
      * @return float Decay rate (default: 0.95)
      */
     public static function getReputationDecayRate(): float
@@ -630,9 +602,7 @@ class ActorCriticConfig
     
     /**
      * Get reputation weights
-     *
-     * Requirements: 13.2
-     *
+
      * @return array Weights with keys: consensus_alignment, feedback_quality, consistency, expertise_accuracy
      */
     public static function getReputationWeights(): array
@@ -648,9 +618,7 @@ class ActorCriticConfig
     
     /**
      * Get minimum reputation threshold
-     *
-     * Requirements: 13.3
-     *
+ 
      * @return float Minimum threshold (default: 0.5)
      */
     public static function getMinimumReputationThreshold(): float
@@ -661,9 +629,7 @@ class ActorCriticConfig
     
     /**
      * Get bootstrapping thresholds
-     *
-     * Requirements: 13.4
-     *
+
      * @return array Thresholds with keys: low (default: 10), high (default: 50)
      */
     public static function getBootstrappingThresholds(): array

@@ -42,6 +42,7 @@ CLICSHOPPING::initialize();
 CLICSHOPPING::loadSite('ClicShoppingAdmin');
 
 header('Content-Type: application/json; charset=UTF-8');
+AdministratorAdmin::hasUserAccess();
 
 try {
   Gpt::getEnvironment();

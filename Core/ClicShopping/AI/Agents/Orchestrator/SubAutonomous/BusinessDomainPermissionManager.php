@@ -64,6 +64,14 @@ class BusinessDomainPermissionManager
    */
   public function checkPermission(string $agentId, string $businessDomain, string $action): bool
   {
+    $action = strtolower(trim($action));
+    if ($action === '') {
+      $this->logAccess($agentId, $businessDomain, $action, false);
+      return false;
+    }
+
+    $businessDomain = $this->normalizeDomain($businessDomain);
+
     try {
       // Get agent's permission level for this domain
       $permissionLevel = $this->getAgentPermissionLevel($agentId, $businessDomain);
@@ -92,6 +100,7 @@ class BusinessDomainPermissionManager
    */
   private function getAgentPermissionLevel(string $agentId, string $businessDomain): string
   {
+    $businessDomain = $this->normalizeDomain($businessDomain);
     try {
       $Qperm = $this->db->prepare('
         SELECT permission_level
@@ -125,6 +134,8 @@ class BusinessDomainPermissionManager
    */
   private function isActionAllowed(string $permissionLevel, string $action): bool
   {
+    $action = strtolower(trim($action));
+
     // Define action mappings for each permission level
     $permissionActions = [
       self::PERMISSION_READ_ONLY => [
@@ -226,6 +237,7 @@ class BusinessDomainPermissionManager
    */
   public function setAgentPermission(string $agentId, string $businessDomain, string $permissionLevel): bool
   {
+    $businessDomain = $this->normalizeDomain($businessDomain);
     try {
       // Validate permission level
       if (!in_array($permissionLevel, $this->validPermissionLevels)) {
@@ -291,6 +303,13 @@ class BusinessDomainPermissionManager
   public function requiresApproval(string $agentId, string $businessDomain, string $action): bool
   {
     try {
+      $action = strtolower(trim($action));
+      if ($action === '') {
+        return true;
+      }
+
+      $businessDomain = $this->normalizeDomain($businessDomain);
+
       // Get agent's permission level
       $permissionLevel = $this->getAgentPermissionLevel($agentId, $businessDomain);
       
@@ -336,6 +355,7 @@ class BusinessDomainPermissionManager
    */
   public function logAccess(string $agentId, string $businessDomain, string $action, bool $granted): void
   {
+    $businessDomain = $this->normalizeDomain($businessDomain);
     try {
       $Qlog = $this->db->prepare('
         INSERT INTO :table_rag_agent_business_domain_access_log
@@ -403,6 +423,7 @@ class BusinessDomainPermissionManager
    */
   public function removeAgentPermission(string $agentId, string $businessDomain): bool
   {
+    $businessDomain = $this->normalizeDomain($businessDomain);
     try {
       $Qdelete = $this->db->prepare('
         DELETE FROM :table_rag_agent_business_domain_permissions
@@ -428,6 +449,7 @@ class BusinessDomainPermissionManager
    */
   public function getAgentsWithDomainAccess(string $businessDomain): array
   {
+    $businessDomain = $this->normalizeDomain($businessDomain);
     try {
       $agents = [];
       
@@ -488,5 +510,16 @@ class BusinessDomainPermissionManager
   public function getValidPermissionLevels(): array
   {
     return $this->validPermissionLevels;
+  }
+
+  /**
+   * Normalize business domain keys for consistent storage and lookup.
+   *
+   * @param string $businessDomain
+   * @return string
+   */
+  private function normalizeDomain(string $businessDomain): string
+  {
+    return strtolower(trim($businessDomain));
   }
 }

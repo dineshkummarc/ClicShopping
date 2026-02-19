@@ -3112,15 +3112,11 @@ INSERT INTO rag_agent_domain_permissions VALUES(12, 'OrchestratorAgent', 'object
 INSERT INTO rag_agent_domain_permissions VALUES(13, 'OrchestratorAgent', 'evaluations', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
 INSERT INTO rag_agent_domain_permissions VALUES(14, 'OrchestratorAgent', 'feedback', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
 
+INSERT INTO rag_agent_business_domain_permissions VALUES(1, 'OrchestratorAgent', 'ecommerce', 'execute_all', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+
 
 INSERT INTO rag_agent_roles VALUES(1, 'OrchestratorAgent', 'admin', 'active', NULL, NULL, '2026-01-28 20:02:44', '2026-01-28 20:02:44');
 INSERT INTO rag_agent_roles VALUES(2, 'AnalyticsAgent', 'autonomous_agent', 'active', NULL, NULL, '2026-01-28 20:02:44', '2026-01-28 20:02:44');
 INSERT INTO rag_agent_roles VALUES(3, 'ReasoningAgent', 'autonomous_agent', 'active', NULL, NULL, '2026-01-28 20:02:44', '2026-01-28 20:02:44');
 INSERT INTO rag_agent_roles VALUES(4, 'ValidationAgent', 'evaluator_agent', 'active', NULL, NULL, '2026-01-28 20:02:44', '2026-01-28 20:02:44');
 INSERT INTO rag_agent_roles VALUES(5, 'CorrectionAgent', 'evaluator_agent', 'active', NULL, NULL, '2026-01-28 20:02:44', '2026-01-28 20:02:44');
-
-
-
-
-
-
