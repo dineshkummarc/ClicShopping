@@ -1,17 +1,15 @@
 log_id int(11) not_null auto_increment comment(Auto-incrementing log ID)
 agent_id varchar(100) not_null comment(Agent that attempted access)
-domain_name varchar(100) not_null comment(Business domain accessed)
-action_type varchar(50) not_null comment(Type of action attempted read, propose, execute)
-permission_level varchar(20) not_null comment(Permission level at time of access)
-access_granted tinyint(1) not_null comment(Whether access was granted)
-denial_reason text DEFAULT NULL comment(Reason if access was denied)
+business_domain varchar(100) not_null comment(Business domain accessed = domain name)
+action varchar(50) not_null comment(Type of action attempted read, propose, execute)
+granted tinyint(1) not_null comment(Whether access was granted)
 accessed_at timestamp NULL DEFAULT current_timestamp() comment(When access was attempted)
 --
-primary  log_id
+primary log_id
 idx_agent_id agent_id
-idx_domain_name domain_name
+idx_business_domain business_domain
 idx_accessed_at accessed_at
-idx_access_granted access_granted
+idx_granted granted
 ##
 engine innodb
 character_set utf8mb4
