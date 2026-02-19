@@ -19,7 +19,7 @@ namespace ClicShopping\AI\InterfacesAI;
  * IMPORTANT DISTINCTION:
  * - Query Type Domains (THIS INTERFACE): Define HOW queries are processed
  *   Examples: Semantic search, SQL generation, hybrid processing, web search
- *   Location: Core/ClicShopping/AI/Domains/
+ *   Location: Core/ClicShopping/AI/DomainsAI
  *
  * - Business Domains (FUTURE - Apps/): Define WHAT data is queried
  *   Examples: Ecommerce (products, orders), Finance (transactions), HR (employees)

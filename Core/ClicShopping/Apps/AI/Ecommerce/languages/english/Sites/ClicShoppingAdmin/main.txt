@@ -37,14 +37,14 @@ text_welcome_message = This is the AI Ecommerce Domain management interface. Her
 module_ec_short_title = Ecommerce Agent Insight
 module_ec_title = Ecommerce Agent Insight
 
-module_acp_title = OpenAI ACP Ecommerce
-module_acp_short_title =  OpenAI ACP Ecommerce
-module_acp_introduction = OpenAi has developed a ecommerce protocol called Agentic Commerce Protocol.<br>
+module_acp_title = OpenAI ACP Beta Ecommerce
+module_acp_short_title =  OpenAI ACP Beta Ecommerce
+module_acp_introduction = OpenAI has developed a ecommerce protocol called Agentic Commerce Protocol.<br>
 It allows to display the product inside Gpt with a payment instant. This module implement this protocol, the payment and allow to follow the order accross ClicShopping.<br>
 You must be registred at OpenAI to use this ACP protocol.
 
-module_ucp_title = Google UCP Ecommerce
-module_ucp_short_title =  Google UCP Ecommerce
+module_ucp_title = Google UCP Beta Ecommerce
+module_ucp_short_title =  Google UCP Beta Ecommerce
 module_ucp_introduction = Google has developed an open ecommerce protocol called Universal Commerce Protocol (UCP).<br>
 It allows agents to retrieve products, create checkout sessions, and complete payments through standardized endpoints.
 

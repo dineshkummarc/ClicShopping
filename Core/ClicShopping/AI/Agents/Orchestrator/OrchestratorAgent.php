@@ -1592,13 +1592,13 @@ class OrchestratorAgent
     // DOMAIN-BASED ROUTING (PHASE 8: AI Architecture Domain Reorganization)
     // ===========================================================================
     //
-    // Current Implementation: Query Type Domains (Domains/)
+    // Current Implementation: Query Type Domains (DomainsAI)
     // -------------------------------------------------------
     // Routes queries to appropriate query type domain based on intent:
-    // - Semantic: Vector embeddings, similarity search (Domains/Semantic/)
-    // - Analytics: SQL generation, BI queries (Domains/Analytics/)
-    // - Hybrid: Combined semantic + analytics (Domains/Hybrid/)
-    // - WebSearch: External web search (Domains/WebSearch/)
+    // - Semantic: Vector embeddings, similarity search (DomainsAI/Semantic/)
+    // - Analytics: SQL generation, BI queries (DomainsAI/Analytics/)
+    // - Hybrid: Combined semantic + analytics (DomainsAI/Hybrid/)
+    // - WebSearch: External web search (DomainsAI/WebSearch/)
     //
     // Query Type Domains define HOW queries are processed.
     //
@@ -1617,7 +1617,7 @@ class OrchestratorAgent
     // User Query → OrchestratorAgent
     //   ├- Identifies Query Type (HOW): Analytics
     //   ├- Identifies Business Domain (WHAT): Ecommerce
-    //   ├- Routes to: Domains/Analytics/Agent/AnalyticsAgent (HOW to generate SQL)
+    //   ├- Routes to: DomainsAI/Analytics/Agent/AnalyticsAgent (HOW to generate SQL)
     //   +- Coordinates with: Apps/Ecommerce/Entities/ProductEntity (WHAT data to query)
     //
     // This separation enables:
@@ -2073,9 +2073,9 @@ class OrchestratorAgent
    * This method routes queries to the appropriate query type domain based on intent.
    *
    * IMPORTANT DISTINCTION:
-   * - Query Type Domains (Domains/): Define HOW queries are processed
+   * - Query Type Domains (DomainsAI): Define HOW queries are processed
    *   Examples: Semantic search, SQL generation, hybrid processing, web search
-   *   Location: Core/ClicShopping/AI/Domains/
+   *   Location: Core/ClicShopping/AI/DomainsAI
    *
    * - Business Domains (Apps/ - FUTURE): Define WHAT data is queried
    *   Examples: Ecommerce (products, orders), Finance (transactions), HR (employees)

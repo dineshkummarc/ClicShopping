@@ -30,15 +30,15 @@ tab_performance = Performance
 section_welcome = Bienvenue dans le Domaine IA E-Commerce
 text_welcome_message = Ceci est l'interface de gestion du Domaine IA E-Commerce. Vous pouvez ici surveiller et gérer toutes les opérations IA liées à l'e-commerce.
 
-module_acp_title = OpenAI ACP Ecommerce
-module_acp_short_title =  OpenAI ACP Ecommerce
+module_acp_title = OpenAI ACP Beta Ecommerce
+module_acp_short_title =  OpenAI ACP Beta Ecommerce
 module_acp_introduction = OpenAI a développé un protocole de commerce électronique appelé Agentic Commerce Protocol (ACP).
 Il permet d’afficher les produits directement dans GPT avec un paiement instantané.
 Ce module implémente ce protocole, gère le paiement et assure le suivi des commandes via ClicShopping.<br>
 Vous devez vous enregistrer auprés de OpenAi pour utiliser ce procol ACP.
 
-module_ucp_title = Google UCP Ecommerce
-module_ucp_short_title =  Google UCP Ecommerce
+module_ucp_title = Google UCP Beta Ecommerce
+module_ucp_short_title =  Google UCP Beta Ecommerce
 module_ucp_introduction = Google a développé un protocole de commerce électronique ouvert appelé Universal Commerce Protocol (UCP).<br>
 Il permet aux agents de récupérer les produits, de créer des sessions de paiement et de finaliser les paiements via des points d'accès standardisés.
 

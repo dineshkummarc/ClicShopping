@@ -52,7 +52,7 @@ use ClicShopping\OM\Domains\AbstractDomainApp;
  * 
  * Layer 3: Domain Guardrails (This Class)
  * - Context-aware security rules (Admin vs Shop)
- * - Abstract: Core/ClicShopping/OM/Domains/GuardrailsConfigAbstract.php
+ * - Abstract: Core/ClicShopping/OM/DomainsAIGuardrailsConfigAbstract.php
  * - Admin: Classes/ClicShoppingAdmin/GuardrailsConfig.php (permissive)
  * - Shop: Classes/Shop/GuardrailsConfig.php (restrictive - future)
  * 
@@ -127,10 +127,10 @@ class Ecommerce extends AbstractDomainApp
 
   /**
    * Initialize the Ecommerce domain app
-   * 
+   *
    * This method is called by the parent constructor after basic initialization.
    * It calls the parent init() method to register the domain app with the DomainRegistry.
-   * 
+   *
    * @return void
    */
   protected function init(): void
@@ -144,10 +144,10 @@ class Ecommerce extends AbstractDomainApp
 
   /**
    * Get the unique domain identifier
-   * 
+   *
    * Returns 'ecommerce' as the unique identifier for this domain.
    * This identifier is used for domain registration, routing, and cache keys.
-   * 
+   *
    * @return string The unique domain identifier 'ecommerce'
    */
   public function getDomainId(): string
@@ -157,10 +157,10 @@ class Ecommerce extends AbstractDomainApp
 
   /**
    * Get the human-readable domain name
-   * 
+   *
    * Returns 'E-Commerce' as the user-friendly name for this domain.
    * This name is displayed in admin interfaces, dashboards, and domain selection controls.
-   * 
+   *
    * @return string The human-readable domain name 'E-Commerce'
    */
   public function getDomainName(): string
