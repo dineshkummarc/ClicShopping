@@ -14,7 +14,7 @@ namespace ClicShopping\AI\DomainsAI\Hybrid\Processor;
 use ClicShopping\AI\DomainsAI\WebSearch\Tool\WebSearchTool;
 use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\ResultFormatter;
 use ClicShopping\AI\Config\DomainConfig;
-use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
+use ClicShopping\AI\Config\DomainFields;
 
 /**
  * ResultAggregator - Aggregates results from different query type combinations
@@ -243,7 +243,10 @@ class ResultAggregator extends BaseQueryProcessor
     // Get description fields for this entity type (if domain configured)
     $descriptionFields = [];
     if (!empty($entityType) && DomainConfig::getActivities() !== '') {
-      $descriptionFields = EntityConfig::getDescriptionFields($entityType);
+      $entityConfigClass = DomainFields::resolveAppClass(DomainConfig::getActivities(), 'EntityConfig');
+      if ($entityConfigClass !== null && method_exists($entityConfigClass, 'getDescriptionFields')) {
+        $descriptionFields = $entityConfigClass::getDescriptionFields($entityType);
+      }
     }
     
     // Extract fields using dynamic discovery with fallbacks
@@ -277,11 +280,16 @@ class ResultAggregator extends BaseQueryProcessor
     
     // Fallback: check if we can get entity types from EntityConfig
     if (DomainConfig::getActivities() !== '') {
-      $entityTypes = EntityConfig::getEntityTypes();
-      foreach ($entityTypes as $entityType) {
-        $idColumn = EntityConfig::getIdColumn($entityType);
-        if (isset($row[$idColumn])) {
-          return $entityType;
+      $entityConfigClass = DomainFields::resolveAppClass(DomainConfig::getActivities(), 'EntityConfig');
+      if ($entityConfigClass !== null && method_exists($entityConfigClass, 'getEntityTypes')) {
+        $entityTypes = $entityConfigClass::getEntityTypes();
+        foreach ($entityTypes as $entityType) {
+          if (method_exists($entityConfigClass, 'getIdColumn')) {
+            $idColumn = $entityConfigClass::getIdColumn($entityType);
+            if (isset($row[$idColumn])) {
+              return $entityType;
+            }
+          }
         }
       }
     }

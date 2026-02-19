@@ -1,0 +1,24 @@
+feedback_id bigint(20) auto_increment not_null
+target_actor_id varchar(100) not_null
+output_id varchar(100) not_null
+consensus_score decimal(32) not_null DEFAULT 0.00
+categorized_feedback longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin not_null CHECK (json_valid(categorized_feedback))
+strengths longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin not_null CHECK (json_valid(strengths))
+improvements longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin not_null CHECK (json_valid(improvements))
+acknowledged tinyint(1) DEFAULT 0
+created_at timestamp NULL DEFAULT current_timestamp()
+delivered_at timestamp NULL DEFAULT NULL
+acknowledged_at timestamp NULL DEFAULT NULL
+
+--
+primary feedback_id
+idx_target_actor target_actor_id
+idx_output_id output_id
+idx_acknowledged acknowledged
+idx_created_at created_at
+idx_consensus_score consensus_score
+
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci

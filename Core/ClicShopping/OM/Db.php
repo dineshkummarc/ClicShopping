@@ -786,7 +786,15 @@ class Db extends PDO
         $field_name = array_shift($details);
 
         if ($is_index === true) {
-          $schema['index'][$field_name] = array_values(array_filter($details, fn($v) => $v !== null && $v !== ''));
+          $details = array_values(array_filter($details, fn($v) => $v !== null && $v !== ''));
+
+          // Support "unique <index_name> <col> <col...>" while keeping legacy "unique <col> <col...>"
+          if ($field_name === 'unique' && count($details) >= 2) {
+            $index_name = array_shift($details);
+            $schema['index']['unique:' . $index_name] = $details;
+          } else {
+            $schema['index'][$field_name] = $details;
+          }
 
           continue;
         } elseif ($is_foreign === true) {
@@ -989,13 +997,30 @@ class Db extends PDO
 
     if (isset($schema['index'])) {
       foreach ($schema['index'] as $name => $fields) {
-        if ($name == 'primary') {
+        $name_normalized = mb_strtolower($name);
+        if ($name_normalized == 'primary') {
           $name = 'PRIMARY KEY';
+        } elseif ($name_normalized == 'unique') {
+          $name = 'UNIQUE KEY';
+        } elseif (str_starts_with($name_normalized, 'unique:')) {
+          $index_name = substr($name, strlen('unique:'));
+          $name = 'UNIQUE KEY ' . $index_name;
         } else {
           $name = 'KEY ' . $name;
         }
 
-        $row = '  ' . $name . ' (' . implode(', ', $fields) . ')';
+        // Support DESC/ASC tokens in index definitions (e.g., "created_at DESC")
+        $index_cols = [];
+        foreach ($fields as $field) {
+          $direction = mb_strtoupper($field);
+          if (($direction === 'ASC' || $direction === 'DESC') && !empty($index_cols)) {
+            $index_cols[count($index_cols) - 1] .= ' ' . $direction;
+            continue;
+          }
+          $index_cols[] = $field;
+        }
+
+        $row = '  ' . $name . ' (' . implode(', ', $index_cols) . ')';
 
         $rows[] = $row;
       }
@@ -1694,4 +1719,3 @@ class Db extends PDO
     }
   }
 }
-

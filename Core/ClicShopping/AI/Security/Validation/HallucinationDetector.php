@@ -223,7 +223,7 @@ class HallucinationDetector
    * configured domain. It does NOT use pattern matching.
    *
    * **Domain-Aware Behavior:**
-   * - When domain is configured (e.g., 'ecommerce'): Uses domain-specific context from language files
+   * - When domain is configured (e.g., 'Ecommerce'): Uses domain-specific context from language files
    * - When no domain configured: Uses generic business context
    *
    * **ONLY business-related questions are accepted:**

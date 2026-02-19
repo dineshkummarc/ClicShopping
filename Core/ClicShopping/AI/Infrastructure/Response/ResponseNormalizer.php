@@ -526,18 +526,18 @@ class ResponseNormalizer
    */
   private function applyModelSpecificAdjustments(array $response, string $model): array
   {
-    // GPT-4: May have truncated responses due to context limits
-    if ($model === 'gpt-4') {
+    // GPT-4.x series: May have truncated responses due to context limits
+    if (in_array($model, ['gpt-4', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano'])) {
       $response = $this->handleGpt4Truncation($response);
     }
 
-    // GPT-3.5-turbo: May have simpler JSON structures
-    if ($model === 'gpt-3.5-turbo') {
-      $response = $this->handleGpt35Simplification($response);
+    // GPT-5.x series: Newer models may also hit limits; handle truncation similarly
+    if (in_array($model, ['gpt-5.2', 'gpt-5.2-pro', 'gpt-5-mini'])) {
+      $response = $this->handleGpt5Truncation($response);
     }
 
-    // Local models (GPT-OSS, Phi-4): May have formatting variations
-    if (in_array($model, ['gpt-oss', 'phi-4', 'microsoft/phi-4-reasoning-plus'])) {
+    // Local models (GPT-OSS, Phi-4, Mistral): May have formatting variations
+    if (in_array($model, ['gpt-oss', 'phi-4', 'mistral-large', 'mistral-medium'])) {
       $response = $this->handleLocalModelVariations($response);
     }
 
@@ -571,24 +571,23 @@ class ResponseNormalizer
   }
 
   /**
-   * Handle GPT-3.5-turbo simplification
+   * Handle GPT-5 truncation issues
    *
-   * GPT-3.5-turbo may return simpler structures without all fields.
-   * Ensure all required fields are present.
+   * GPT-5 series has context limits; add indicators when truncation is detected.
    *
    * @param array $response Response array
    * @return array Adjusted response
    */
-  private function handleGpt35Simplification(array $response): array
+  private function handleGpt5Truncation(array $response): array
   {
-    // GPT-3.5 may not include source_attribution
-    if (!isset($response['source_attribution']) || empty($response['source_attribution'])) {
-      $response['source_attribution'] = [
-        'primary_source' => 'LLM',
-        'icon' => '🤖',
-        'details' => ['model' => 'gpt-3.5-turbo'],
-        'confidence' => 0.7
-      ];
+    if (isset($response['interpretation'])) {
+      $interpretation = $response['interpretation'];
+      $lastChar = substr($interpretation, -1);
+
+      if (!in_array($lastChar, ['.', '!', '?', ')', ']', '}'])) {
+        $response['interpretation'] .= ' [Response may be truncated due to context limit]';
+        $response['truncated'] = true;
+      }
     }
 
     return $response;

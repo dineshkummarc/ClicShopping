@@ -13,6 +13,7 @@
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
 define('PAGE_PARSE_START_TIME', microtime());
 define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/') . '/');
@@ -22,6 +23,8 @@ spl_autoload_register('ClicShopping\OM\CLICSHOPPING::autoload');
 
 CLICSHOPPING::initialize();
 CLICSHOPPING::loadSite('ClicShoppingAdmin');
+
+AdministratorAdmin::hasUserAccess();
 
 header('Content-Type: application/json');
 

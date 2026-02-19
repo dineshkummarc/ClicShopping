@@ -51,7 +51,7 @@ use ClicShopping\AI\Config\AgentActorsConfig;
 use ClicShopping\AI\Config\AgentCriticsConfig;
 use ClicShopping\AI\Config\AgentDomainsConfig;
 use ClicShopping\AI\Config\AgentActivationConfig;
-use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
+use ClicShopping\AI\Config\DomainFields;
 use ClicShopping\AI\Agents\Orchestrator\SubActorCritic\ActorCriticCoordinator;
 
 /**
@@ -1012,19 +1012,20 @@ class OrchestratorAgent
         $activeDomain = DomainConfig::getActivities();
         $errorMessage = "I'm sorry, but this question is not related to business operations.";
 
-        if ($activeDomain === 'ecommerce') {
+        $entityConfigClass = DomainFields::resolveAppClass($activeDomain, 'EntityConfig');
+        if ($entityConfigClass !== null) {
           // Use EntityConfig to get entity types dynamically
           try {
-            $entityTypes = EntityConfig::getEntityTypes();
+            $entityTypes = $entityConfigClass::getEntityTypes();
             if (!empty($entityTypes)) {
               $entityList = implode(', ', $entityTypes);
-              $errorMessage = "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about {$entityList}, revenue, analytics, and business operations.";
+              $errorMessage = "I'm sorry, but this question is not related to the configured business domain. I can only help with questions about {$entityList}, revenue, analytics, and business operations.";
             } else {
-              $errorMessage = "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about business data, revenue, analytics, and operations.";
+              $errorMessage = "I'm sorry, but this question is not related to the configured business domain. I can only help with questions about business data, revenue, analytics, and operations.";
             }
           } catch (\Exception $e) {
             // Fallback to generic message if EntityConfig fails
-            $errorMessage = "I'm sorry, but this question is not related to e-commerce business operations. I can only help with questions about business data, revenue, analytics, and operations.";
+            $errorMessage = "I'm sorry, but this question is not related to the configured business domain. I can only help with questions about business data, revenue, analytics, and operations.";
           }
         } else {
           // Generic message for other domains or no domain
@@ -1604,7 +1605,7 @@ class OrchestratorAgent
     // Future Enhancement: Business Domains (Apps/ - rag-multi-domain-evolution)
     // --------------------------------------------------------------------------
     // Will also route to business domains that define WHAT data is queried:
-    // - Ecommerce: Dynamic entity discovery via EntityConfig (Apps/Ecommerce/)
+    // - Domain apps: Dynamic entity discovery via EntityConfig (Apps/AI/<Domain>/)
     // - Finance: Transactions, invoices, payments (Apps/Finance/)
     // - HR: Employees, payroll, benefits (Apps/HR/)
     // - Trading: Stocks, portfolios, market data (Apps/Trading/)

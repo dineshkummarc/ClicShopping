@@ -57,7 +57,7 @@ class BusinessDomainPermissionManager
    * Check if agent has permission for a specific action on a business domain
    *
    * @param string $agentId Agent identifier
-   * @param string $businessDomain Business domain name (e.g., 'ecommerce', 'finance', 'hr')
+   * @param string $businessDomain Business domain name (e.g., 'Ecommerce', 'Finance', 'Hr')
    * @param string $action Action to perform (e.g., 'read', 'write', 'modify_rules')
    * @return bool True if agent has permission
    * @throws Exception If permission check fails

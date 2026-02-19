@@ -14,6 +14,7 @@ use ClicShopping\OM\Registry;
 use ClicShopping\OM\Cache;
 use ClicShopping\AI\Config\DomainConfig;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
+use ClicShopping\AI\Config\DomainFields;
 use ClicShopping\AI\DomainsAI\CoreAI\Helper\AgentResponseHelper;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Security\SecurityLogger;
@@ -258,23 +259,19 @@ class SemanticQueryExecutor
           // Try to extract document name from metadata
           $docName = null;
           
-          // TASK 11.3: Extensible field list for all entity types
-          // Priority order: specific names first, then generic names
-          $possibleFields = [
-            // Insights-specific (TASK 11.3)
-            'order_name',           // Order insights: "Order #123 Insights"
-            'product_name',         // Product insights: "Product #456 Insights"
-            'customer_name',        // Customer insights: "Customer #789 Insights"
-            'supplier_name',        // Supplier insights: "Supplier #012 Insights"
-            'category_name',        // Category insights: "Category #345 Insights"
-            // Document-specific
-            'title',                // General documents
-            'document_name',        // Explicit document name
-            'page_title',           // CMS pages
-            'pages_title',          // Legacy pages
-            // Generic fallback
-            'name',                 // Generic name field
-          ];
+          // Priority order: domain-specific names first, then generic names
+          $possibleFields = array_values(array_unique(array_merge(
+            DomainFields::getPossibleFields(),
+            [
+              // Document-specific
+              'title',                // General documents
+              'document_name',        // Explicit document name
+              'page_title',           // CMS pages
+              'pages_title',          // Legacy pages
+              // Generic fallback
+              'name',                 // Generic name field
+            ]
+          )));
           
           foreach ($possibleFields as $field) {
             if (isset($metadata[$field]) && !empty($metadata[$field])) {
@@ -329,7 +326,7 @@ class SemanticQueryExecutor
           
           if ($this->debug) {
             $this->logger->logSecurityEvent(
-              "TASK 4.4.2 FIX: Extracted entity_id from search: {$entityId}",
+              "Extracted entity_id from search: {$entityId}",
               'info'
             );
           }
@@ -340,7 +337,7 @@ class SemanticQueryExecutor
           
           if ($this->debug) {
             $this->logger->logSecurityEvent(
-              "TASK 4.4.2 FIX: Extracted entity_type from search: {$entityType}",
+              "Extracted entity_type from search: {$entityType}",
               'info'
             );
           }
@@ -349,7 +346,7 @@ class SemanticQueryExecutor
       
       if ($this->debug) {
         $this->logger->logSecurityEvent(
-          "TASK 4.4.2 FIX: After extraction - entity_id: " . ($entityId ?? 'NULL') . ", entity_type: " . ($entityType ?? 'NULL'),
+          "After extraction - entity_id: " . ($entityId ?? 'NULL') . ", entity_type: " . ($entityType ?? 'NULL'),
           'info'
         );
       }
@@ -430,7 +427,7 @@ class SemanticQueryExecutor
             
             if ($this->debug) {
               $this->logger->logSecurityEvent(
-                "TASK 4.4.2 FIX: Extracted entity_id from search result: {$entityId}",
+                "Extracted entity_id from search result: {$entityId}",
                 'info'
               );
             }
@@ -441,7 +438,7 @@ class SemanticQueryExecutor
             
             if ($this->debug) {
               $this->logger->logSecurityEvent(
-                "TASK 4.4.2 FIX: Extracted entity_type from search result: {$entityType}",
+                "Extracted entity_type from search result: {$entityType}",
                 'info'
               );
             }
@@ -454,7 +451,7 @@ class SemanticQueryExecutor
               
               if ($this->debug) {
                 $this->logger->logSecurityEvent(
-                  "TASK 4.4.2 FIX: Extracted entity_id from metadata: {$entityId}",
+                  "Extracted entity_id from metadata: {$entityId}",
                   'info'
                 );
               }
@@ -465,7 +462,7 @@ class SemanticQueryExecutor
               
               if ($this->debug) {
                 $this->logger->logSecurityEvent(
-                  "TASK 4.4.2 FIX: Extracted entity_type from metadata: {$entityType}",
+                  "Extracted entity_type from metadata: {$entityType}",
                   'info'
                 );
               }
@@ -476,7 +473,7 @@ class SemanticQueryExecutor
       
       if ($this->debug) {
         $this->logger->logSecurityEvent(
-          "TASK 4.4.2 FIX: Final entity info - entity_id: " . ($entityId ?? 'NULL') . ", entity_type: " . ($entityType ?? 'NULL'),
+          "Final entity info - entity_id: " . ($entityId ?? 'NULL') . ", entity_type: " . ($entityType ?? 'NULL'),
           'info'
         );
       }
@@ -558,7 +555,7 @@ class SemanticQueryExecutor
       $cacheDuration = (microtime(true) - $startTime) * 1000;
       
       $cacheCompleteMessage = sprintf(
-        "✅ Search completed and cached - Duration: %.2f ms | Query: %s | EntityType: %s | LanguageId: %s | ResultCount: %d",
+        "[SUCCESS] Search completed and cached - Duration: %.2f ms | Query: %s | EntityType: %s | LanguageId: %s | ResultCount: %d",
         $cacheDuration,
         $query,
         $entityType ?? 'null',

@@ -27,7 +27,7 @@ class EvaluationContext
     private array $requiredExpertise;     // Required expertise domains
     private string $priorityLevel;        // low, medium, high, critical
     private array $specialRequirements;   // security-sensitive, performance-critical, etc.
-    private ?string $domain;              // Business domain (ecommerce, analytics, etc.)
+    private ?string $domain;              // Business domain (Ecommerce, Analytics, etc.)
     private array $metadata;              // Additional context
     
     public function __construct(

@@ -1,0 +1,17 @@
+id int(11) NOT NULL auto_increment
+critic_id varchar(255) NOT NULL
+evaluation_id varchar(255) NOT NULL
+weight decimal(10,8) NOT NULL
+timestamp timestamp NULL DEFAULT current_timestamp()
+
+--
+primary id
+idx_critic critic_id
+idx_evaluation evaluation_id
+idx_timestamp timestamp
+idx_critic_timestamp critic_id timestamp
+
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci

@@ -1,0 +1,17 @@
+registry_id int(11) NOT NULL auto_increment
+critic_id varchar(100) NOT NULL
+output_type varchar(50) NOT NULL
+expertise_level decimal(3,2) NOT NULL
+domain varchar(50) DEFAULT NULL
+registered_at timestamp NULL DEFAULT current_timestamp()
+updated_at timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+
+--
+primary registry_id
+unique unique_critic_output critic_id output_type
+idx_critic_registry_composite output_type expertise_level DESC domain
+  
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci

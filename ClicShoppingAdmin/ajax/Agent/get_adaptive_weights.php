@@ -13,6 +13,7 @@
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
 define('PAGE_PARSE_START_TIME', microtime());
 define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/') . '/');
@@ -24,6 +25,8 @@ CLICSHOPPING::initialize();
 CLICSHOPPING::loadSite('ClicShoppingAdmin');
 
 header('Content-Type: application/json');
+
+AdministratorAdmin::hasUserAccess();
 
 try {
     $CLICSHOPPING_Db = Registry::get('Db');

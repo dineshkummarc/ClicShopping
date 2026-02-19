@@ -37,7 +37,7 @@ This directory contains MCP (Model Context Protocol) integration hooks specific 
 // Called when domain is activated
 Hooks::call('AI/Ecommerce/MCP', 'DomainContextProvider', [
     'action' => 'sync_domain_config',
-    'domain_id' => 'ecommerce'
+    'domain_id' => 'Ecommerce'
 ]);
 ```
 
@@ -227,7 +227,7 @@ class QueryProcessor implements \ClicShopping\OM\Modules\HooksInterface
             'method' => 'query/process',
             'params' => [
                 'query' => $params['query'],
-                'domain' => 'ecommerce',
+                'domain' => 'Ecommerce',
                 'prompts' => $prompts,
                 'entities' => $domain->getEntityConfig()
             ]

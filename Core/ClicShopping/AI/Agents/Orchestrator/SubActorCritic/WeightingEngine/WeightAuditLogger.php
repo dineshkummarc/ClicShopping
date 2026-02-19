@@ -127,7 +127,7 @@ class WeightAuditLogger
      * 
      * @param string $criticId Critic identifier
      * @param int $days Number of days of history to retrieve (default: 90)
-     * @param string|null $domainContext Optional domain filter (e.g., 'ecommerce', 'security')
+     * @param string|null $domainContext Optional domain filter (e.g., 'Ecommerce', 'Security')
      * @return array Array of weight history records
      */
     public function getWeightHistory(
@@ -199,7 +199,7 @@ class WeightAuditLogger
      * Requirements: 13.1, 13.2
      * 
      * @param string $criticId Critic identifier
-     * @param string $domain Domain to filter by (e.g., 'ecommerce', 'security', 'analytics')
+     * @param string $domain Domain to filter by (e.g., 'Ecommerce', 'Security', 'Analytics')
      * @param int $days Number of days of history to retrieve (default: 90)
      * @return array Array of weight history records for the specified domain
      */

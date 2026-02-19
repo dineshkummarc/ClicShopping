@@ -24,8 +24,7 @@ use ClicShopping\AI\DomainsAI\CoreAI\Embedding\VectorType;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Config\DomainConfig;
-use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
-use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\AnalyticsConfig;
+use ClicShopping\AI\Config\DomainFields;
 
 /**
 * Class DoctrineOrm
@@ -369,7 +368,7 @@ class DoctrineOrm
    * Used when dynamic discovery fails.
    * 
    * MIGRATION: Removed hardcoded e-commerce table list.
-   * Now uses EntityConfig when ecommerce domain is active,
+   * Now uses EntityConfig when Ecommerce domain is active,
    * or returns empty array for domain-agnostic mode.
    * 
    * @return array List of tables from domain configuration or empty array
@@ -381,27 +380,25 @@ class DoctrineOrm
       self::$prefixDb = CLICSHOPPING::getConfig('db_table_prefix');
     }
     
-    // Check if ecommerce domain is active
     $activeDomain = DomainConfig::getActivities();
-    
-    if ($activeDomain === 'ecommerce') {
-      // Use EntityConfig to get tables dynamically
+    $entityConfigClass = DomainFields::resolveAppClass($activeDomain, 'EntityConfig');
+    if ($entityConfigClass !== null) {
       try {
-        $entityConfig = EntityConfig::getConfig();
-        
+        $entityConfig = $entityConfigClass::getConfig();
+
         $tables = [];
         foreach ($entityConfig as $entityType => $config) {
           if (isset($config['table'])) {
             $tables[] = $config['table'];
           }
         }
-        
+
         if (self::$debug) {
           error_log("getFallbackRelevantTables: Using EntityConfig, found " . count($tables) . " tables");
         }
-        
+
         return $tables;
-        
+
       } catch (\Exception $e) {
         if (self::$debug) {
           error_log("getFallbackRelevantTables: EntityConfig failed: " . $e->getMessage());
@@ -1217,20 +1214,18 @@ class DoctrineOrm
    * Get fallback database fields (domain-agnostic)
    * 
    * MIGRATION: Removed hardcoded e-commerce field list.
-   * Now uses AnalyticsConfig when ecommerce domain is active,
+   * Now uses AnalyticsConfig when Ecommerce domain is active,
    * or returns empty array for domain-agnostic mode.
    * 
    * @return array List of database fields from domain configuration or empty array
    */
   private static function getFallbackDatabaseFields(): array
   {
-    // Check if ecommerce domain is active
     $activeDomain = \ClicShopping\AI\Config\DomainConfig::getActivities();
-    
-    if ($activeDomain === 'ecommerce') {
-      // Use AnalyticsConfig to get fields dynamically
+    $analyticsConfigClass = \ClicShopping\AI\Config\DomainFields::resolveAppClass($activeDomain, 'AnalyticsConfig');
+    if ($analyticsConfigClass !== null) {
       try {
-        return \ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\AnalyticsConfig::getFallbackDatabaseFields();
+        return $analyticsConfigClass::getFallbackDatabaseFields();
       } catch (\Exception $e) {
         if (self::$debug) {
           error_log("getFallbackDatabaseFields: AnalyticsConfig failed: " . $e->getMessage());
@@ -1250,20 +1245,18 @@ class DoctrineOrm
    * Get non-database words (domain-agnostic)
    * 
    * MIGRATION: Removed hardcoded e-commerce word list.
-   * Now uses AnalyticsConfig when ecommerce domain is active,
+   * Now uses AnalyticsConfig when Ecommerce domain is active,
    * or returns empty array for domain-agnostic mode.
    * 
    * @return array List of non-database words from domain configuration or empty array
    */
   private static function getNonDatabaseWords(): array
   {
-    // Check if ecommerce domain is active
     $activeDomain = DomainConfig::getActivities();
-    
-    if ($activeDomain === 'ecommerce') {
-      // Use AnalyticsConfig to get words dynamically
+    $analyticsConfigClass = DomainFields::resolveAppClass($activeDomain, 'AnalyticsConfig');
+    if ($analyticsConfigClass !== null) {
       try {
-        return AnalyticsConfig::getNonDatabaseWords();
+        return $analyticsConfigClass::getNonDatabaseWords();
       } catch (\Exception $e) {
         if (self::$debug) {
           error_log("getNonDatabaseWords: AnalyticsConfig failed: " . $e->getMessage());
@@ -1283,20 +1276,18 @@ class DoctrineOrm
    * Get field abbreviations mapping (domain-agnostic)
    * 
    * MIGRATION: Removed hardcoded e-commerce abbreviations.
-   * Now uses AnalyticsConfig when ecommerce domain is active,
+   * Now uses AnalyticsConfig when Ecommerce domain is active,
    * or returns empty array for domain-agnostic mode.
    * 
    * @return array Mapping of full name => abbreviation from domain configuration or empty array
    */
   private static function getFieldAbbreviations(): array
   {
-    // Check if ecommerce domain is active
     $activeDomain = DomainConfig::getActivities();
-    
-    if ($activeDomain === 'ecommerce') {
-      // Use AnalyticsConfig to get abbreviations dynamically
+    $analyticsConfigClass = DomainFields::resolveAppClass($activeDomain, 'AnalyticsConfig');
+    if ($analyticsConfigClass !== null) {
       try {
-        return AnalyticsConfig::getFieldAbbreviations();
+        return $analyticsConfigClass::getFieldAbbreviations();
       } catch (\Exception $e) {
         if (self::$debug) {
           error_log("getFieldAbbreviations: AnalyticsConfig failed: " . $e->getMessage());

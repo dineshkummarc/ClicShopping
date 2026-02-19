@@ -15,6 +15,15 @@
  */
 
 // ============================================================================
+// Active domain for RAG BI system (multi-domain support)
+// ============================================================================
+// Possible values: 'Ecommerce', 'Hr', 'Finance', 'Trading' ....
+// This determines which domain-specific prompts and configurations are loaded
+// Default: 'Ecommerce' (backward compatibility with AI app naming)
+  if (!defined('CLICSHOPPING_APP_CHATGPT_RA_ACTIVITIES')) define('CLICSHOPPING_APP_CHATGPT_RA_ACTIVITIES', 'Ecommerce');
+
+
+// ============================================================================
 // LIMITS & THRESHOLDS (7 constants)
 // ============================================================================
 

@@ -26,7 +26,7 @@ namespace ClicShopping\AI\Config;
  * Features:
  * - Enable/disable Agent Domains module
  * - Control domain-specific agent activation
- * - Support multiple business domains (ecommerce, hr, finance, trading)
+ * - Support multiple business domains (Ecommerce, Hr, Finance, Trading)
  * - Domain isolation and permission management
  *
  * Usage:
@@ -148,7 +148,7 @@ class AgentDomainsConfig
      * Check if domain-specific agents are enabled
      *
      * Controls whether agents are activated for specific business domains
-     * (e.g., ecommerce, hr, finance, trading).
+     * (e.g., Ecommerce, Hr, Finance, Trading).
      *
      * @return bool True if domain agents are enabled, false otherwise
      */

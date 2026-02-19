@@ -20,6 +20,7 @@ use ClicShopping\AI\Security\Validation\HallucinationDetector;
 use ClicShopping\AI\Security\Validation\ConfidenceScoreCalculator;
 use ClicShopping\AI\Agents\Memory\EntityTypeRegistry;
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\AI\Config\DomainFields;
 
 /**
  * SemanticExecutor Class
@@ -303,7 +304,10 @@ class SemanticExecutor
           // Try to extract document name from metadata
  
           $docName = null;
-          $possibleFields = ['title', 'document_name', 'brand_name', 'product_name', 'category_name', 'name', 'page_title', 'pages_title'];
+          $possibleFields = array_values(array_unique(array_merge(
+            DomainFields::getPossibleFields(),
+            ['title', 'document_name', 'page_title', 'pages_title', 'name']
+          )));
           
           foreach ($possibleFields as $field) {
             if (isset($metadata[$field]) && !empty($metadata[$field])) {

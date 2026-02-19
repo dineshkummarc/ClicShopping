@@ -57,7 +57,7 @@ class AgentActivationConfig
     private const AGENT_TYPE_ACTOR = 'actor';
     private const AGENT_TYPE_CRITIC = 'critic';
     private const AGENT_TYPE_HYBRID = 'hybrid';
-    private const AGENT_DOMAIN = 'ecommerce';
+    private const AGENT_DOMAIN = 'Ecommerce';
     /**
      * Default agent activation states
      *
@@ -338,6 +338,7 @@ class AgentActivationConfig
     {
         self::initialize();
         
+        $normalizedDomain = self::normalizeDomain($domain);
         $enabled = [];
         foreach (self::$config as $agentId => $config) {
             if (!$config['enabled']) {
@@ -348,8 +349,11 @@ class AgentActivationConfig
                 continue;
             }
             
-            if ($domain !== null && $config['domain'] !== $domain) {
-                continue;
+            if ($normalizedDomain !== null) {
+                $configDomain = self::normalizeDomain($config['domain'] ?? null);
+                if ($configDomain !== $normalizedDomain) {
+                    continue;
+                }
             }
             
             $enabled[] = $agentId;
@@ -516,6 +520,9 @@ class AgentActivationConfig
             }
             
             $domain = $config['domain'] ?? 'general';
+            if ($domain !== 'general') {
+                $domain = DomainFields::getModuleName($domain) ?? $domain;
+            }
             if (!isset($stats['by_domain'][$domain])) {
                 $stats['by_domain'][$domain] = ['total' => 0, 'enabled' => 0];
             }
@@ -526,5 +533,20 @@ class AgentActivationConfig
         }
         
         return $stats;
+    }
+
+    /**
+     * Normalize domain string for comparisons.
+     *
+     * @param string|null $domain
+     * @return string|null
+     */
+    private static function normalizeDomain(?string $domain): ?string
+    {
+        if ($domain === null) {
+            return null;
+        }
+        $domain = strtolower(trim((string)$domain));
+        return $domain === '' ? null : $domain;
     }
 }

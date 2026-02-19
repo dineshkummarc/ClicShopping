@@ -11,12 +11,12 @@
 namespace ClicShopping\AI\Infrastructure\Schema;
 
 use ClicShopping\AI\Config\DomainConfig;
+use ClicShopping\AI\Config\DomainFields;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Cache as OMCache;
 use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Infrastructure\Prompt\PromptOptimizer;
-use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\SchemaConfig;
 
 /**
  * SchemaRetriever
@@ -493,19 +493,16 @@ class SchemaRetriever
    */
   private function loadSchemaRules(): string
   {
-    // Check if ecommerce domain is active
     $activeDomain = DomainConfig::getActivities();
-    
-    if ($activeDomain === 'ecommerce') {
-      // Load schema rules from Ecommerce domain configuration
+    $schemaConfig = DomainFields::resolveAppClass($activeDomain, 'SchemaConfig');
+    if ($schemaConfig !== null) {
       try {
-        if (class_exists(SchemaConfig::class)) {
-          $schemaConfig = SchemaConfig::class;
+        if (method_exists($schemaConfig, 'getSchemaRulesString')) {
           return $schemaConfig::getSchemaRulesString();
         }
       } catch (\Exception $e) {
         if ($this->debug) {
-          error_log("[SchemaRetriever] Failed to load ecommerce schema rules: " . $e->getMessage());
+          error_log("[SchemaRetriever] Failed to load schema rules: " . $e->getMessage());
         }
       }
     }

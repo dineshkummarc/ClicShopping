@@ -6,3 +6,8 @@ categories_id INT(11) not_null comment(FK to categories table - category where p
 primary id
 idx_products_id products_id
 idx_categories_id categories_id
+
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci

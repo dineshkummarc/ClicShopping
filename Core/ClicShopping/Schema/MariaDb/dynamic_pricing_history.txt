@@ -1,5 +1,5 @@
 id INT auto_increment comment(Primary key - unique identifier for each pricing history entry)
-rules_id INT NOT NULL comment(FK to dynamic_pricing_rules table - rule that was applied)
+rules_id INT not_null comment(FK to dynamic_pricing_rules table - rule that was applied)
 products_id INT not_null comment(FK to products table - product that received dynamic pricing)
 base_price DECIMAL(10,2) not_null comment(Original product price before rule application)
 dynamic_price DECIMAL(10,2) not_null comment(Final price after rule application)

@@ -1,0 +1,35 @@
+id int(11) not_null auto_increment
+test_case_id varchar(255) not_null comment(Unique identifier for the test case)
+execution_time datetime not_null comment(When the test was executed)
+query_text text not_null comment(The query that was tested)
+complexity_level enum('simple','medium','complex','very_complex') not_null comment(Query complexity classification)
+expected_mode enum('semantic','analytics','websearch','hybrid') not_null comment(Expected RAG mode for this query)
+detected_mode enum('semantic','analytics','websearch','hybrid') default(NULL) comment(Actual detected RAG mode)
+source_type enum('database','llm_knowledge','web_search','hybrid') default(NULL) comment(Source of the response data)
+validation_passed tinyint(1) not_null comment(Whether validation passed)
+consistency_score decimal(3,2) default(NULL) comment(Consistency score (0.00 to 1.00))
+cache_enabled tinyint(1) not_null comment(Whether Memcached was enabled)
+llm_model varchar(100) default(NULL) comment(LLM model used (e.g., gpt-4, gpt-3.5-turbo))
+execution_time_ms int(11) default(NULL) comment(Total execution time in milliseconds)
+llm_response_time_ms int(11) default(NULL) comment(LLM response time in milliseconds)
+database_query_time_ms int(11) default(NULL) comment(Database query time in milliseconds)
+actual_result longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin default(NULL) CHECK (json_valid(`actual_result`)) comment(Actual result from RAG system)
+expected_result longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin default(NULL) CHECK (json_valid(`expected_result`)) comment(Expected result from ground truth)
+validation_errors longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin default(NULL) CHECK (json_valid(`validation_errors`)) comment(Array of validation errors if any)
+metadata longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin default(NULL) CHECK (json_valid(`metadata`)) comment(Additional metadata (prompts, memory state, etc.))
+created_at timestamp NULL default(current_timestamp)
+
+--
+primary id
+idx_test_case test_case_id
+idx_execution_time execution_time
+idx_complexity complexity_level
+idx_mode expected_mode detected_mode
+idx_validation validation_passed
+idx_cache cache_enabled
+idx_created created_at
+
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci

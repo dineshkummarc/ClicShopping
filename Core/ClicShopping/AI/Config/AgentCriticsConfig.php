@@ -26,7 +26,7 @@ namespace ClicShopping\AI\Config;
  * Features:
  * - Enable/disable Agent Critics module
  * - Control analytics expert critic activation
- * - Control ecommerce specialist critic activation
+ * - Control Ecommerce specialist critic activation
  * - Control security expert critic activation
  * - Control generalist critic activation
  *
@@ -166,7 +166,7 @@ class AgentCriticsConfig
     }
     
     /**
-     * Check if ecommerce specialist critic is enabled
+     * Check if Ecommerce specialist critic is enabled
      *
      * @return bool True if specialist critic is enabled
      */

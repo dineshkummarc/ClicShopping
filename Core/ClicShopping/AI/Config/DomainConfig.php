@@ -11,9 +11,9 @@
  * constructing paths with domain subdirectories (e.g., ClicShoppingAdmin/ecommerce).
  *
  * Key Features:
- * - Retrieves active domain identifier from configuration
+ * - Retrieves active domain identifier (app name) from configuration
  * - Constructs language paths with domain subdirectories
- * - Supports multiple domains: ecommerce, hr, finance, trading, etc.
+ * - Supports multiple domains: Ecommerce, Hr, Finance, Trading, etc.
  * - Maintains backward compatibility (empty activities = root directory)
  * - Used by all AI components for domain-specific prompt loading
  *
@@ -22,7 +22,7 @@
  * use ClicShopping\AI\Config\DomainConfig;
  *
  * // Get active domain identifier
- * $domain = DomainConfig::getActivities(); // Returns 'ecommerce'
+ * $domain = DomainConfig::getActivities(); // Returns 'Ecommerce'
  *
  * // Get language path with domain subdirectory
  * $path = DomainConfig::getLanguagePath(); // Returns 'ClicShoppingAdmin/ecommerce'
@@ -78,7 +78,7 @@ class DomainConfig
    * Get the active domain identifier from configuration
    *
    * Retrieves the CLICSHOPPING_APP_CHATGPT_RA_ACTIVITIES configuration constant
-   * which specifies the active domain (e.g., 'ecommerce', 'hr', 'finance', 'trading').
+   * which specifies the active domain (e.g., 'Ecommerce', 'Hr', 'Finance', 'Trading').
    *
    * This method is used by getLanguagePath() to construct domain-specific paths
    * and by other components that need to know the active domain context.
@@ -86,17 +86,17 @@ class DomainConfig
    * Configuration:
    * - Constant: CLICSHOPPING_APP_CHATGPT_RA_ACTIVITIES
    * - Default: '' (empty string if not defined - domain-agnostic)
-   * - Possible values: 'ecommerce', 'hr', 'finance', 'trading', etc.
+ * - Possible values: 'Ecommerce', 'Hr', 'Finance', 'Trading', etc.
    * - Location: Core/config_clicshopping.php or database configuration
    *
-   * @return string The active domain identifier (lowercase)
+   * @return string The active domain identifier (as configured)
    *                Returns empty string if not configured (domain-agnostic mode)
    *
    * @example
    * ```php
    * $domain = DomainConfig::getActivities();
    * // Returns: '' (empty string, no domain configured)
-   * // Or: 'ecommerce', 'hr', 'finance', 'trading' (if configured)
+   * // Or: 'Ecommerce', 'Hr', 'Finance', 'Trading' (if configured)
    * ```
    *
    * @since 1.0.0
@@ -105,8 +105,8 @@ class DomainConfig
   {
     // Check if the configuration constant is defined
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_ACTIVITIES')) {
-      // Return the configured domain identifier (lowercase for consistency)
-      return strtolower(CLICSHOPPING_APP_CHATGPT_RA_ACTIVITIES);
+      // Return the configured domain identifier as-is
+      return CLICSHOPPING_APP_CHATGPT_RA_ACTIVITIES;
     }
 
     // Return empty string for domain-agnostic mode (no default domain assumption)
@@ -120,13 +120,13 @@ class DomainConfig
    * when loading domain-specific prompts and language files.
    *
    * Path Construction:
-   * - If activities configured: {domain}
+   * - If activities configured: {domain} (lowercased for filesystem paths)
    * - If no activities: '' (empty string, root directory, backward compatible)
    *
    * Examples:
-   * - Domain 'ecommerce': 'ecommerce'
-   * - Domain 'hr': 'hr'
-   * - Domain 'finance': 'finance'
+   * - Domain 'Ecommerce': 'ecommerce'
+   * - Domain 'Hr': 'hr'
+   * - Domain 'Finance': 'finance'
    * - No domain: '' (empty string, fallback to root)
    *
    * The Language class will then load from:
@@ -141,7 +141,7 @@ class DomainConfig
    *
    * @example
    * ```php
-   * // Admin context with ecommerce domain
+   * // Admin context with Ecommerce domain
    * $path = DomainConfig::getLanguagePath();
    * // Returns: 'ecommerce'
    *
@@ -167,9 +167,9 @@ class DomainConfig
     }
 
     // Return just the domain subdirectory
-    // Format: {domain}
+    // Format: {domain} lowercased for filesystem paths
     // Example: 'ecommerce'
-    return $activities;
+    return strtolower($activities);
   }
 
   /**

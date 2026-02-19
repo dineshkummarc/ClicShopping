@@ -11,8 +11,8 @@
 namespace ClicShopping\AI\DomainsAI\Analytics\Processor;
 
 use ClicShopping\AI\Config\DomainConfig;
+use ClicShopping\AI\Config\DomainFields;
 use ClicShopping\AI\Security\SecurityLogger;
-use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
 
 /**
  * AnalyticsProcessor Class
@@ -173,7 +173,7 @@ class AnalyticsProcessor
    * Examples: "count all products", "show me sales", "list orders"
    *
    * 🔧 MIGRATION: Domain-agnostic implementation
-   * - Uses EntityConfig::getEntityTypes() when ecommerce domain is active
+   * - Uses EntityConfig::getEntityTypes() when Ecommerce domain is active
    * - Uses generic patterns when no domain is configured
    *
    * @param string $query Query to check
@@ -192,11 +192,11 @@ class AnalyticsProcessor
     
     // Build entity list dynamically based on domain
     $entityList = '';
-    if ($domain === 'ecommerce') {
+    $entityConfigClass = DomainFields::resolveAppClass($domain, 'EntityConfig');
+    if ($entityConfigClass !== null) {
       try {
-        $entityConfig = EntityConfig::class;
-        if (class_exists($entityConfig) && method_exists($entityConfig, 'getEntityTypes')) {
-          $entities = $entityConfig::getEntityTypes();
+        if (method_exists($entityConfigClass, 'getEntityTypes')) {
+          $entities = $entityConfigClass::getEntityTypes();
           if (!empty($entities)) {
             $entityList = implode('|', array_map('strtolower', $entities));
           }

@@ -165,15 +165,15 @@ class Ecommerce extends AbstractDomainApp
    */
   public function getDomainName(): string
   {
-    return 'E-Commerce';
+    return 'Ecommerce';
   }
 
   /**
    * Get the entity configuration for this domain
-   * 
+   *
    * Returns domain-specific entity definitions for e-commerce entities.
    * Uses DYNAMIC discovery via MultiDBRAGManager and EntityRegistry.
-   * 
+   *
    * Entity configuration includes:
    * - products: Product catalog with descriptions, prices, inventory
    * - orders: Customer orders with items, totals, status
@@ -181,7 +181,7 @@ class Ecommerce extends AbstractDomainApp
    * - categories: Product categories with hierarchy
    * - manufacturers: Product manufacturers/brands
    * - suppliers: Product suppliers
-   * 
+   *
    * @return array Associative array of entity configurations keyed by entity name
    */
   public function getEntityConfig(): array
@@ -191,17 +191,17 @@ class Ecommerce extends AbstractDomainApp
 
   /**
    * Get the helper classes for this domain
-   * 
+   *
    * Returns instantiated helper objects for e-commerce business logic.
    * Currently provides ProductHelper for WebSearch price comparison queries.
-   * 
+   *
    * Helpers include:
    * - product: ProductHelper for product-specific operations (used by WebSearch)
-   * 
+   *
    * Future helpers (to be added when needed):
    * - order: OrderHelper for order-specific operations (when OrderAnalyticsAgent is implemented)
    * - customer: CustomerHelper for customer-specific operations (when CustomerSegmentationAgent is implemented)
-   * 
+   *
    * @return array Associative array of helper instances keyed by helper name
    */
   public function getHelpers(): array
@@ -213,13 +213,13 @@ class Ecommerce extends AbstractDomainApp
 
   /**
    * Get the HybridPreFilter pattern class for this domain
-   * 
+   *
    * Returns the fully qualified class name for the domain-specific HybridPreFilter pattern.
    * This allows the framework to load patterns dynamically from the active domain without
    * hardcoding Ecommerce-specific imports.
-   * 
+   *
    * TASK 2026-01-23: Added for domain-agnostic pattern loading
-   * 
+   *
    * @return string|null Fully qualified class name or null if not available
    */
   public function getHybridPreFilterClass(): ?string
@@ -229,13 +229,13 @@ class Ecommerce extends AbstractDomainApp
 
   /**
    * Get the AnalyticsPatterns class for this domain
-   * 
+   *
    * Returns the fully qualified class name for the domain-specific AnalyticsPatterns.
    * This allows the framework to load patterns dynamically from the active domain without
    * hardcoding Ecommerce-specific imports.
-   * 
+   *
    * TASK 2026-01-23: Added for domain-agnostic pattern loading
-   * 
+   *
    * @return string|null Fully qualified class name or null if not available
    */
   public function getAnalyticsPatternsClass(): ?string

@@ -58,7 +58,7 @@ idx_products_weight_class_id products_weight_class_id
 idx_products_products_status products_status
 idx_products_products_archive products_archive
 idx_products_view products_view
-idy_has_children has_children
+idx_has_children has_children
 
 ##
 engine innodb

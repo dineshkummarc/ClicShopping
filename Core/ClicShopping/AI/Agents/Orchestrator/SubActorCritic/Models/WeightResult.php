@@ -22,9 +22,9 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubActorCritic\Models;
  */
 class WeightResult
 {
-    private string $evaluationId;
-    private array $weights;               // [criticId => weight]
-    private array $normalizedWeights;     // [criticId => normalized_weight]
+    public array $normalizedWeights;
+    private string $evaluationId;               // [criticId => weight]
+    private array $weights;     // [criticId => normalized_weight]
     private array $explanations;          // [criticId => explanation]
     private string $overallRationale;     // LLM's overall reasoning
     private array $factorAnalysis;        // Which factors were most important

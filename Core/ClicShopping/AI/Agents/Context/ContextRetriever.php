@@ -17,7 +17,7 @@ use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Memory\ConversationMemory;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Config\DomainConfig;
-use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\EntityConfig;
+use ClicShopping\AI\Config\DomainFields;
 
 /**
  * ContextRetriever Class
@@ -270,11 +270,11 @@ class ContextRetriever
       
       // Build entity list dynamically based on domain
       $entityList = '';
-      if ($domain === 'ecommerce') {
+      $entityConfigClass = DomainFields::resolveAppClass($domain, 'EntityConfig');
+      if ($entityConfigClass !== null) {
         try {
-          $entityConfig = EntityConfig::class;
-          if (class_exists($entityConfig) && method_exists($entityConfig, 'getEntityTypes')) {
-            $entities = $entityConfig::getEntityTypes();
+          if (method_exists($entityConfigClass, 'getEntityTypes')) {
+            $entities = $entityConfigClass::getEntityTypes();
             if (!empty($entities)) {
               $entityList = implode('|', array_map('strtolower', $entities));
             }

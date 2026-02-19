@@ -3068,3 +3068,59 @@ INSERT INTO zones_to_geo_zones VALUES(81, 38, 68, 14, NULL, '2015-02-09 16:12:03
 INSERT INTO zones_to_geo_zones VALUES(82, 38, 77, 14, NULL, '2015-02-09 16:12:14');
 INSERT INTO zones_to_geo_zones VALUES(83, 38, 76, 9, NULL, '2015-02-09 18:53:27');
 
+
+
+INSERT INTO rag_agent_activation_config VALUES('analytics_actor', 1, 'actor', ' Ecommerce', 'Analytics SQL generation and execution', '2026-01-31 11:41:11', '2026-01-31 11:41:11');
+INSERT INTO rag_agent_activation_config VALUES('analytics_critic', 1, 'critic', ' Ecommerce', 'SQL quality and performance evaluation', '2026-01-31 11:41:11', '2026-01-31 11:41:11');
+INSERT INTO rag_agent_activation_config VALUES('hybrid_agent', 1, 'hybrid', NULL, 'Legacy hybrid agent (actor + critic)', '2026-01-31 11:41:11', '2026-01-31 11:41:11');
+INSERT INTO rag_agent_activation_config VALUES('reasoning_actor', 1, 'actor', NULL, 'Logical reasoning and inference', '2026-01-31 11:41:11', '2026-01-31 11:41:11');
+INSERT INTO rag_agent_activation_config VALUES('reasoning_critic', 1, 'critic', NULL, 'Logic soundness evaluation', '2026-01-31 11:41:11', '2026-01-31 11:41:11');
+INSERT INTO rag_agent_activation_config VALUES('semantic_actor', 1, 'actor', ' Ecommerce', 'Semantic search and retrieval', '2026-01-31 11:41:11', '2026-01-31 11:41:11');
+INSERT INTO rag_agent_activation_config VALUES('semantic_critic', 1, 'critic', ' Ecommerce', 'Semantic relevance evaluation', '2026-01-31 11:41:11', '2026-01-31 11:41:11');
+INSERT INTO rag_agent_activation_config VALUES('validation_actor', 1, 'actor', NULL, 'Data validation and verification', '2026-01-31 11:41:11', '2026-01-31 11:41:11');
+INSERT INTO rag_agent_activation_config VALUES('validation_critic', 1, 'critic', NULL, 'Validation correctness evaluation', '2026-01-31 11:41:11', '2026-01-31 11:41:11');
+INSERT INTO rag_agent_activation_config VALUES('websearch_actor', 1, 'actor', NULL, 'Web search and external data retrieval', '2026-01-31 11:41:11', '2026-01-31 11:41:11');
+
+
+INSERT INTO rag_agent_actor_critic_config VALUES(1, 'actor_critic_enabled', '1', 'Feature flag: Enable Actor-Critic separation (0=disabled, 1=enabled)', '2026-01-31 14:42:05', '2026-02-15 16:35:43');
+INSERT INTO rag_agent_actor_critic_config VALUES(2, 'critics_per_evaluation', '3', 'Number of critics to select for each evaluation', '2026-01-31 14:42:05', '2026-01-31 14:42:05');
+INSERT INTO rag_agent_actor_critic_config VALUES(3, 'min_critics_required', '2', 'Minimum number of critics required for consensus', '2026-01-31 14:42:05', '2026-01-31 14:42:05');
+INSERT INTO rag_agent_actor_critic_config VALUES(4, 'actor_retry_attempts', '3', 'Maximum retry attempts for actor execution failures', '2026-01-31 14:42:05', '2026-01-31 14:42:05');
+INSERT INTO rag_agent_actor_critic_config VALUES(5, 'critic_evaluation_timeout', '30', 'Timeout in seconds for critic evaluation', '2026-01-31 14:42:05', '2026-01-31 14:42:05');
+INSERT INTO rag_agent_actor_critic_config VALUES(6, 'consensus_threshold', '0.15', 'Maximum standard deviation for consensus (0.0-1.0)', '2026-01-31 14:42:05', '2026-01-31 14:42:05');
+INSERT INTO rag_agent_actor_critic_config VALUES(7, 'max_concurrent_actions_per_actor', '5', 'Maximum concurrent actions per actor', '2026-01-31 14:42:05', '2026-01-31 14:42:05');
+INSERT INTO rag_agent_actor_critic_config VALUES(8, 'max_concurrent_evaluations_per_critic', '10', 'Maximum concurrent evaluations per critic', '2026-01-31 14:42:05', '2026-01-31 14:42:05');
+INSERT INTO rag_agent_actor_critic_config VALUES(9, 'fallback_to_hybrid_on_error', '1', 'Fallback to hybrid mode on error (0=no, 1=yes)', '2026-01-31 14:42:05', '2026-01-31 14:42:05');
+
+
+INSERT INTO rag_agent_autonomous_config VALUES(1, 'global', '{}', '2026-01-28 15:31:55', '2026-01-28 15:31:55');
+
+
+
+INSERT INTO rag_agent_domain_permissions VALUES(1, 'AnalyticsAgent', 'objectives', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+INSERT INTO rag_agent_domain_permissions VALUES(2, 'AnalyticsAgent', 'evaluations', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+INSERT INTO rag_agent_domain_permissions VALUES(3, 'AnalyticsAgent', 'feedback', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+INSERT INTO rag_agent_domain_permissions VALUES(4, 'ReasoningAgent', 'objectives', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+INSERT INTO rag_agent_domain_permissions VALUES(5, 'ReasoningAgent', 'evaluations', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+INSERT INTO rag_agent_domain_permissions VALUES(6, 'ReasoningAgent', 'feedback', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+INSERT INTO rag_agent_domain_permissions VALUES(7, 'ValidationAgent', 'objectives', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+INSERT INTO rag_agent_domain_permissions VALUES(8, 'ValidationAgent', 'evaluations', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+INSERT INTO rag_agent_domain_permissions VALUES(9, 'ValidationAgent', 'feedback', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+INSERT INTO rag_agent_domain_permissions VALUES(10, 'CorrectionAgent', 'evaluations', 'read', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+INSERT INTO rag_agent_domain_permissions VALUES(11, 'CorrectionAgent', 'feedback', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+INSERT INTO rag_agent_domain_permissions VALUES(12, 'OrchestratorAgent', 'objectives', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+INSERT INTO rag_agent_domain_permissions VALUES(13, 'OrchestratorAgent', 'evaluations', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+INSERT INTO rag_agent_domain_permissions VALUES(14, 'OrchestratorAgent', 'feedback', 'full', '2026-02-19 07:52:38', '2026-02-19 07:52:38');
+
+
+INSERT INTO rag_agent_roles VALUES(1, 'OrchestratorAgent', 'admin', 'active', NULL, NULL, '2026-01-28 20:02:44', '2026-01-28 20:02:44');
+INSERT INTO rag_agent_roles VALUES(2, 'AnalyticsAgent', 'autonomous_agent', 'active', NULL, NULL, '2026-01-28 20:02:44', '2026-01-28 20:02:44');
+INSERT INTO rag_agent_roles VALUES(3, 'ReasoningAgent', 'autonomous_agent', 'active', NULL, NULL, '2026-01-28 20:02:44', '2026-01-28 20:02:44');
+INSERT INTO rag_agent_roles VALUES(4, 'ValidationAgent', 'evaluator_agent', 'active', NULL, NULL, '2026-01-28 20:02:44', '2026-01-28 20:02:44');
+INSERT INTO rag_agent_roles VALUES(5, 'CorrectionAgent', 'evaluator_agent', 'active', NULL, NULL, '2026-01-28 20:02:44', '2026-01-28 20:02:44');
+
+
+
+
+
+

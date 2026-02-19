@@ -23,6 +23,7 @@ use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
 use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
 use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\ResultFormatter;
 use ClicShopping\AI\DomainsAI\Analytics\Agent\AnalyticsAgent;
+use ClicShopping\AI\Config\DomainFields;
 
 use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
@@ -1488,7 +1489,10 @@ class MultiDBRAGManager
     }
 
     // Try different metadata fields in priority order
-    $possibleFields = ['title', 'document_name', 'brand_name', 'product_name', 'category_name', 'name', 'page_title'];
+    $possibleFields = array_values(array_unique(array_merge(
+      DomainFields::getPossibleFields(),
+      ['title', 'document_name', 'page_title', 'name']
+    )));
 
     foreach ($possibleFields as $field) {
       if (isset($metadata[$field]) && !empty($metadata[$field])) {
