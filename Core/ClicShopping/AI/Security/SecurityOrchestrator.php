@@ -199,6 +199,44 @@ class SecurityOrchestrator
   }
   
   /**
+   * Load security configuration
+   *
+   * @return array Configuration array
+   */
+  private static function loadConfiguration(): array
+  {
+    // Handle both boolean and string 'True'/'False' formats (DB compatibility)
+    $llmEnabled = true; // default
+
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_USE_LLM_PRIMARY_SECURITY')) {
+      $configValue = CLICSHOPPING_APP_CHATGPT_RA_USE_LLM_PRIMARY_SECURITY;
+      $llmEnabled = ($configValue === true || $configValue == 'True' || $configValue === 'true' || $configValue === '1');
+    }
+
+    // Provide safe defaults when RAG/RA config is not installed
+    $patternFallbackEnabled = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_PATTERN_FALLBACK') ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_PATTERN_FALLBACK : false;
+    $threatThreshold = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_THREAT_THRESHOLD') ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_THREAT_THRESHOLD : 0.7;
+    $logAllQueries = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_ALL_QUERIES') ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_ALL_QUERIES : false;
+    $logBlockedOnly = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_BLOCKED_ONLY') ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_BLOCKED_ONLY : true;
+
+    return [
+      // LLM-based security (PRIMARY)
+      'llm_enabled' => $llmEnabled,
+      
+      // Pattern fallback (OPTIONAL - disabled by default)
+      'pattern_fallback_enabled' => $patternFallbackEnabled,
+      
+      // Threat threshold for blocking
+      'threat_threshold' => $threatThreshold,
+      
+      // Logging configuration
+      'log_all_queries' => $logAllQueries,
+      
+      'log_blocked_only' => $logBlockedOnly,
+    ];
+  }
+  
+  /**
    * Build standardized security result
    *
    * @param bool $shouldBlock Whether to block the query
@@ -220,7 +258,7 @@ class SecurityOrchestrator
     array $details = []
   ): array {
     $latency = round((microtime(true) - $startTime) * 1000, 2);
-    
+
     return [
       'blocked' => $shouldBlock,
       'is_malicious' => $shouldBlock,
@@ -231,38 +269,6 @@ class SecurityOrchestrator
       'latency_ms' => $latency,
       'timestamp' => date('Y-m-d H:i:s'),
       'details' => $details
-    ];
-  }
-  
-  /**
-   * Load security configuration
-   *
-   * @return array Configuration array
-   */
-  private static function loadConfiguration(): array
-  {
-    // Handle both boolean and string 'True'/'False' formats (DB compatibility)
-    $llmEnabled = true; // default
-    
-    if (defined('CLICSHOPPING_APP_CHATGPT_RA_USE_LLM_PRIMARY_SECURITY')) {
-      $configValue = CLICSHOPPING_APP_CHATGPT_RA_USE_LLM_PRIMARY_SECURITY;
-      $llmEnabled = ($configValue === true || $configValue == 'True' || $configValue === 'true' || $configValue === '1');
-    }
-    
-    return [
-      // LLM-based security (PRIMARY)
-      'llm_enabled' => $llmEnabled,
-      
-      // Pattern fallback (OPTIONAL - disabled by default)
-      'pattern_fallback_enabled' => CLICSHOPPING_APP_CHATGPT_RA_SECURITY_PATTERN_FALLBACK,
-      
-      // Threat threshold for blocking
-      'threat_threshold' => CLICSHOPPING_APP_CHATGPT_RA_SECURITY_THREAT_THRESHOLD,
-      
-      // Logging configuration
-      'log_all_queries' => CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_ALL_QUERIES,
-      
-      'log_blocked_only' => CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LOG_BLOCKED_ONLY,
     ];
   }
   
@@ -285,22 +291,22 @@ class SecurityOrchestrator
   {
     $config = self::loadConfiguration();
     $errors = [];
-    
+
     // Check if LLM is enabled
     if (!$config['llm_enabled']) {
       $errors[] = 'LLM security is disabled - this is not recommended';
     }
-    
+
     // Check threat threshold
     if ($config['threat_threshold'] < 0.0 || $config['threat_threshold'] > 1.0) {
       $errors[] = 'Threat threshold must be between 0.0 and 1.0';
     }
-    
+
     // Check if pattern fallback is enabled but not implemented
     if ($config['pattern_fallback_enabled']) {
       $errors[] = 'Pattern fallback is enabled but not yet implemented (Phase 2)';
     }
-    
+
     return [
       'valid' => empty($errors),
       'errors' => $errors,

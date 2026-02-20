@@ -480,7 +480,7 @@ class SemanticSecurityAnalyzer
       }
       
       // Check if response exceeds timeout threshold
-      $timeout = CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LLM_TIMEOUT;
+      $timeout = defined('CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LLM_TIMEOUT') ? CLICSHOPPING_APP_CHATGPT_RA_SECURITY_LLM_TIMEOUT : 5000;
       
       if ($latency > $timeout) {
         self::$logger->logSecurityEvent(
@@ -793,5 +793,4 @@ class SemanticSecurityAnalyzer
       'total_cache_size' => $cacheStats['total_size_formatted'] ?? '0 B'
     ];
   }
-
 }

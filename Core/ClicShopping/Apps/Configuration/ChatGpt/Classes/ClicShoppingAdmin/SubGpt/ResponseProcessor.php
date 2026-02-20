@@ -333,7 +333,7 @@ class ResponseProcessor
       throw new \Exception("Requête bloquée pour des raisons de sécurité");
     }
     
-    $maxPromptLength = CLICSHOPPING_APP_CHATGPT_RA_MAX_PROMPT_LENGTH;
+    $maxPromptLength = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_PROMPT_LENGTH') ? CLICSHOPPING_APP_CHATGPT_RA_MAX_PROMPT_LENGTH : 100000;
     
     if (strlen($prompt) > $maxPromptLength) {
       $prompt = substr($prompt, 0, $maxPromptLength);

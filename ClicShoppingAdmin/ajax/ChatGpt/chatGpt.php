@@ -14,6 +14,7 @@
  */
 
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
@@ -50,202 +51,258 @@ try {
   error_log("Warning: Could not load ChatGPT app/environment: " . $e->getMessage());
 }
 
-try {
-  // ============================================
-  // 1. CONFIGURE TIMEOUT
-  // ============================================
-  $enableTimeout = true;
-  $maxExecutionTime = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME') ? CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME : 120; // Default to 120 seconds if constant not defined
-  
-  RequestValidator::configureTimeout($maxExecutionTime, $enableTimeout);
-  $queryStartTime = microtime(true);
-  
-  // ============================================
-  // 2. VALIDATE REQUEST
-  // ============================================
-  $validation = RequestValidator::validateRequest($_POST);
-  
-  if (!$validation['valid']) {
+if (defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
+  try {
+    // ============================================
+    // 1. CONFIGURE TIMEOUT
+    // ============================================
+    $enableTimeout = true;
+    $maxExecutionTime = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME') ? CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME : 120; // Default to 120 seconds if constant not defined
+
+    RequestValidator::configureTimeout($maxExecutionTime, $enableTimeout);
+    $queryStartTime = microtime(true);
+
+    // ============================================
+    // 2. VALIDATE REQUEST
+    // ============================================
+    $validation = RequestValidator::validateRequest($_POST);
+
+    if (!$validation['valid']) {
+      if (ob_get_length()) ob_clean();
+      echo json_encode($validation['error'], JSON_UNESCAPED_UNICODE);
+      exit;
+    }
+
+    $userQuery = $validation['query'];
+    $userQueryDisplay = $validation['query_display'];
+
+    // ============================================
+    // 3. GET USER CONTEXT
+    // ============================================
+    $language = Registry::get('Language');
+    $languageId = $language->getId();
+    $userId = AdministratorAdmin::getUserAdminId();
+    $sessionId = session_id();
+
+    if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+      error_log('=== CHATGPT.PHP START  ===');
+      error_log('User Query: ' . substr($userQuery, 0, 100));
+      error_log('User ID: ' . $userId);
+      error_log('Language ID: ' . $languageId);
+    }
+
+    // ============================================
+    // 4. INITIALIZE SERVICES
+    // ============================================
+    $statsTracker = new StatisticsTracker($userId, $sessionId, $languageId);
+    $statsTracker->startTracking();
+
+    $memoryService = ContextManager::initializeMemoryService($userId, $languageId);
+
+    // ============================================
+    // 5. RETRIEVE CONTEXT
+    // ============================================
+    $context = ContextManager::retrieveContext($memoryService, $userQuery, 5);
+
+    // ============================================
+    // 6. PROCESS QUERY
+    // ============================================
+    $aiResponse = QueryProcessor::process($userQuery, $userId, $languageId, $statsTracker);
+
+    // Check timeout
+    if ($enableTimeout && RequestValidator::checkTimeout($queryStartTime, $maxExecutionTime)) {
+      if (ob_get_length()) ob_clean();
+      echo json_encode([
+        'success' => false,
+        'error' => 'La requête prend trop de temps, veuillez réessayer',
+        'error_code' => 'QUERY_TIMEOUT',
+        'timeout_seconds' => $maxExecutionTime,
+        'interaction_id' => null,
+        'timeout_error' => true
+      ], JSON_UNESCAPED_UNICODE);
+      exit;
+    }
+
+    // ============================================
+    // 7. EXTRACT ENTITY METADATA
+    // ============================================
+    $metadata = EntityExtractor::extractMetadata($aiResponse, $languageId);
+
+    // ============================================
+    // 8. RECORD IN MEMORY
+    // ============================================
+    MemoryManager::recordInteraction($memoryService, $userQuery, $aiResponse, $metadata);
+
+    // Trigger migration every 10 calls
+    static $callCounter = 0;
+    MemoryManager::triggerMigration($memoryService, ++$callCounter, 10);
+
+    // ============================================
+    // 9. FORMAT RESPONSE
+    // ============================================
+    $memoryContext = ContextManager::isMemoryDisplayEnabled() ? $context : null;
+    $formattedResponse = ResponseFormatter::format($aiResponse, $userQuery, $metadata, $memoryContext);
+    $formatted = $formattedResponse['content'];
+
+    // ============================================
+    // 10. TRACK STATISTICS
+    // ============================================
+    $responseTime = $statsTracker->stopTracking();
+
+    StatisticsManager::recordTokenUsage($statsTracker);
+
+    $metrics = StatisticsManager::calculateFallbackMetrics(
+      $aiResponse,
+      $formattedResponse['data_to_format'],
+      $formatted
+    );
+
+    // ============================================
+    // 11. PERSIST TO DATABASE
+    // ============================================
+    $responseText = MemoryManager::extractResponseText($aiResponse) ?? $formatted;
+
+    $interactionData = StatisticsManager::buildInteractionData(
+      $userQuery,
+      $responseText,
+      $aiResponse,
+      $metadata,
+      $userId,
+      $sessionId,
+      $languageId,
+      $responseTime,
+      $metrics,
+      $statsTracker
+    );
+
+    $dbInteractionId = StatisticsManager::persistInteraction($interactionData, $statsTracker);
+    $statsSaved = StatisticsManager::saveStatistics($statsTracker, $dbInteractionId);
+
+    // Log critical metrics
+    error_log(sprintf(
+      '[RAG] Query processed: type=%s, confidence=%.2f, agent=%s, time=%dms, stats_saved=%s',
+      $aiResponse['intent']['type'] ?? 'unknown',
+      $aiResponse['intent']['confidence'] ?? 0,
+      $aiResponse['agent_used'] ?? 'unknown',
+      $responseTime,
+      $statsSaved ? 'YES' : 'NO'
+    ));
+
+    // ============================================
+    // 12. BUILD JSON RESPONSE
+    // ============================================
+    $clientInteractionId = 'interaction_' . $userId . '_' . time() . '_' . substr(md5(uniqid()), 0, 8);
+
+    $jsonResponse = [
+      'success' => true,
+      'interaction_id' => $clientInteractionId,
+      'text_response' => nl2br($formatted),
+      'user_query_display' => $userQueryDisplay,
+      'type' => $aiResponse['intent']['type'] ?? 'semantic',
+      'confidence' => $aiResponse['intent']['confidence'] ?? 0,
+      'agent_used' => $aiResponse['agent_used'] ?? 'unknown',
+      'execution_time' => $aiResponse['execution_time'] ?? 0,
+      'entity_id' => $metadata['entity_id'],
+      'entity_type' => $metadata['entity_type'],
+      'language_id' => $languageId,
+      'metrics' => $metrics,
+      'metadata' => [
+        'query' => $userQuery,
+        'query_display' => $userQueryDisplay,
+        'timestamp' => time(),
+        'user_id' => $userId
+      ]
+    ];
+
+    // ============================================
+    // 13. VALIDATE & RETURN
+    // ============================================
+    $validation = ResponseValidator::validate($jsonResponse);
+
+    if (!$validation['valid']) {
+      error_log('[INFO : ALERT] RESPONSE VALIDATION FAILED:');
+      foreach ($validation['errors'] as $error) {
+        error_log('   - ' . $error);
+      }
+    }
+
+    if (!empty($validation['warnings'])) {
+      error_log('[INFO : ALERT] RESPONSE VALIDATION WARNINGS:');
+      foreach ($validation['warnings'] as $warning) {
+        error_log('   - ' . $warning);
+      }
+    }
+
+    // Clean output buffer and return JSON
     if (ob_get_length()) ob_clean();
-    echo json_encode($validation['error'], JSON_UNESCAPED_UNICODE);
+    echo json_encode($jsonResponse, JSON_UNESCAPED_UNICODE);
+
+    } catch (\Exception $e) {
+      error_log('[INFO : ERROR] AJAX HANDLER ERROR: ' . $e->getMessage());
+      error_log('Stack trace: ' . $e->getTraceAsString());
+
+      if (ob_get_length()) ob_clean();
+
+      echo json_encode([
+        'success' => false,
+        'error' => 'Une erreur est survenue lors du traitement de votre requête',
+        'error_code' => 'INTERNAL_ERROR',
+        'error_details' => $e->getMessage(),
+        'interaction_id' => null
+      ], JSON_UNESCAPED_UNICODE);
+    }
+  } else {
+    $rawInput = file_get_contents('php://input');
+    $jsonInput = json_decode($rawInput, true);
+    $jsonInput = HTML::sanitize($jsonInput);
+
+    if ($jsonInput && isset($jsonInput['message'])) {
+      $userQuery = trim($jsonInput['message']);
+    } else {
+      $userQuery = trim($_POST['message'] ?? $_GET['message'] ?? '');
+    }
+
+    RequestValidator::configureTimeout(30, false);
+    $queryStartTime = microtime(true);
+
+    if (Registry::exists('Language')) {
+      $language = Registry::get('Language');
+      $language->loadDefinitions('ecommerce');
+      $language->getDef('text_rag_security_analysis');
+    }
+
+    $model = CLICSHOPPING_APP_CHATGPT_CH_MODEL;
+
+    $response = GPT::callWithModel($userQuery, $model);
+
+    if (empty($userQuery)) {
+      if (ob_get_length()) ob_clean();
+      echo json_encode([
+        'success' => false,
+        'error' => 'Please add a question',
+        'error_code' => 'EMPTY_QUERY',
+        'interaction_id' => null,
+        'validation_error' => true
+      ], JSON_UNESCAPED_UNICODE);
+      exit;
+    }
+
+    $textResponse = $response['text_response']
+      ?? $response['response']
+      ?? $response['interpretation']
+      ?? $response['raw_response']
+      ?? '';
+
+    $jsonResponse = [
+      'success' => true,
+      'interaction_id' => 'interaction_' . time() . '_' . substr(md5(uniqid()), 0, 8),
+      'text_response' => is_string($textResponse) ? $textResponse : '',
+      'type' => $response['response_type'] ?? ($response['type'] ?? 'semantic'),
+      'confidence' => $response['confidence'] ?? 0,
+      'parse_error' => $response['parse_error'] ?? null
+    ];
+
+    if (ob_get_length()) ob_clean();
+    echo json_encode($jsonResponse, JSON_UNESCAPED_UNICODE);
     exit;
   }
-  
-  $userQuery = $validation['query'];
-  $userQueryDisplay = $validation['query_display'];
-  
-  // ============================================
-  // 3. GET USER CONTEXT
-  // ============================================
-  $language = Registry::get('Language');
-  $languageId = $language->getId();
-  $userId = AdministratorAdmin::getUserAdminId();
-  $sessionId = session_id();
-  
-  if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-    error_log('=== CHATGPT.PHP START  ===');
-    error_log('User Query: ' . substr($userQuery, 0, 100));
-    error_log('User ID: ' . $userId);
-    error_log('Language ID: ' . $languageId);
-  }
-  
-  // ============================================
-  // 4. INITIALIZE SERVICES
-  // ============================================
-  $statsTracker = new StatisticsTracker($userId, $sessionId, $languageId);
-  $statsTracker->startTracking();
-  
-  $memoryService = ContextManager::initializeMemoryService($userId, $languageId);
-  
-  // ============================================
-  // 5. RETRIEVE CONTEXT
-  // ============================================
-  $context = ContextManager::retrieveContext($memoryService, $userQuery, 5);
-  
-  // ============================================
-  // 6. PROCESS QUERY
-  // ============================================
-  $aiResponse = QueryProcessor::process($userQuery, $userId, $languageId, $statsTracker);
-  
-  // Check timeout
-  if ($enableTimeout && RequestValidator::checkTimeout($queryStartTime, $maxExecutionTime)) {
-    if (ob_get_length()) ob_clean();
-    echo json_encode([
-      'success' => false,
-      'error' => 'La requête prend trop de temps, veuillez réessayer',
-      'error_code' => 'QUERY_TIMEOUT',
-      'timeout_seconds' => $maxExecutionTime,
-      'interaction_id' => null,
-      'timeout_error' => true
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-  }
-  
-  // ============================================
-  // 7. EXTRACT ENTITY METADATA
-  // ============================================
-  $metadata = EntityExtractor::extractMetadata($aiResponse, $languageId);
-  
-  // ============================================
-  // 8. RECORD IN MEMORY
-  // ============================================
-  MemoryManager::recordInteraction($memoryService, $userQuery, $aiResponse, $metadata);
-  
-  // Trigger migration every 10 calls
-  static $callCounter = 0;
-  MemoryManager::triggerMigration($memoryService, ++$callCounter, 10);
-  
-  // ============================================
-  // 9. FORMAT RESPONSE
-  // ============================================
-  $memoryContext = ContextManager::isMemoryDisplayEnabled() ? $context : null;
-  $formattedResponse = ResponseFormatter::format($aiResponse, $userQuery, $metadata, $memoryContext);
-  $formatted = $formattedResponse['content'];
-  
-  // ============================================
-  // 10. TRACK STATISTICS
-  // ============================================
-  $responseTime = $statsTracker->stopTracking();
-  
-  StatisticsManager::recordTokenUsage($statsTracker);
-  
-  $metrics = StatisticsManager::calculateFallbackMetrics(
-    $aiResponse,
-    $formattedResponse['data_to_format'],
-    $formatted
-  );
-  
-  // ============================================
-  // 11. PERSIST TO DATABASE
-  // ============================================
-  $responseText = MemoryManager::extractResponseText($aiResponse) ?? $formatted;
-  
-  $interactionData = StatisticsManager::buildInteractionData(
-    $userQuery,
-    $responseText,
-    $aiResponse,
-    $metadata,
-    $userId,
-    $sessionId,
-    $languageId,
-    $responseTime,
-    $metrics,
-    $statsTracker
-  );
-  
-  $dbInteractionId = StatisticsManager::persistInteraction($interactionData, $statsTracker);
-  $statsSaved = StatisticsManager::saveStatistics($statsTracker, $dbInteractionId);
-  
-  // Log critical metrics
-  error_log(sprintf(
-    '[RAG] Query processed: type=%s, confidence=%.2f, agent=%s, time=%dms, stats_saved=%s',
-    $aiResponse['intent']['type'] ?? 'unknown',
-    $aiResponse['intent']['confidence'] ?? 0,
-    $aiResponse['agent_used'] ?? 'unknown',
-    $responseTime,
-    $statsSaved ? 'YES' : 'NO'
-  ));
-  
-  // ============================================
-  // 12. BUILD JSON RESPONSE
-  // ============================================
-  $clientInteractionId = 'interaction_' . $userId . '_' . time() . '_' . substr(md5(uniqid()), 0, 8);
-  
-  $jsonResponse = [
-    'success' => true,
-    'interaction_id' => $clientInteractionId,
-    'text_response' => nl2br($formatted),
-    'user_query_display' => $userQueryDisplay,
-    'type' => $aiResponse['intent']['type'] ?? 'semantic',
-    'confidence' => $aiResponse['intent']['confidence'] ?? 0,
-    'agent_used' => $aiResponse['agent_used'] ?? 'unknown',
-    'execution_time' => $aiResponse['execution_time'] ?? 0,
-    'entity_id' => $metadata['entity_id'],
-    'entity_type' => $metadata['entity_type'],
-    'language_id' => $languageId,
-    'metrics' => $metrics,
-    'metadata' => [
-      'query' => $userQuery,
-      'query_display' => $userQueryDisplay,
-      'timestamp' => time(),
-      'user_id' => $userId
-    ]
-  ];
-  
-  // ============================================
-  // 13. VALIDATE & RETURN
-  // ============================================
-  $validation = ResponseValidator::validate($jsonResponse);
-  
-  if (!$validation['valid']) {
-    error_log('[INFO : ALERT] RESPONSE VALIDATION FAILED:');
-    foreach ($validation['errors'] as $error) {
-      error_log('   - ' . $error);
-    }
-  }
-  
-  if (!empty($validation['warnings'])) {
-    error_log('[INFO : ALERT] RESPONSE VALIDATION WARNINGS:');
-    foreach ($validation['warnings'] as $warning) {
-      error_log('   - ' . $warning);
-    }
-  }
-  
-  // Clean output buffer and return JSON
-  if (ob_get_length()) ob_clean();
-  echo json_encode($jsonResponse, JSON_UNESCAPED_UNICODE);
-  
-} catch (\Exception $e) {
-  error_log('[INFO : ERROR] AJAX HANDLER ERROR: ' . $e->getMessage());
-  error_log('Stack trace: ' . $e->getTraceAsString());
-  
-  if (ob_get_length()) ob_clean();
-  
-  echo json_encode([
-    'success' => false,
-    'error' => 'Une erreur est survenue lors du traitement de votre requête',
-    'error_code' => 'INTERNAL_ERROR',
-    'error_details' => $e->getMessage(),
-    'interaction_id' => null
-  ], JSON_UNESCAPED_UNICODE);
-}
