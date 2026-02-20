@@ -16,7 +16,7 @@ module_ra_title = RAG BI
 module_ra_short_title = RAG BI
 module_ra_introduction = RAG BI (Business Intelligence) with Agent is a technique that combines the power of large language models (LLMs) with external knowledge sources to improve the accuracy and relevance of generated responses. By integrating RAG into your chatbot, you can provide more accurate and contextually relevant answers to user queries, enhancing the overall user experience.<br>
 Touse this functionality, you need to check if your database is compatible. It requires <strong>MariaDB version 11.7<\strong> or higher. It's a beta functional release.<br>
-MySQL server is not compatible with this feature.<br>
+MySQL server is not compatible with this feature.<br>Please, active the other module for a best analyse.
 
 
 module_ac_agent_critics_short_title = Agent Critics

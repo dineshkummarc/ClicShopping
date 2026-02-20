@@ -442,10 +442,12 @@ class AgentAbstentionManager
                 INSERT INTO {$tableName} (
                     config_key,
                     config_value,
+                    created_at,
                     updated_at
                 ) VALUES (
                     :config_key,
                     :config_value,
+                    NOW(),
                     NOW()
                 )
                 ON DUPLICATE KEY UPDATE

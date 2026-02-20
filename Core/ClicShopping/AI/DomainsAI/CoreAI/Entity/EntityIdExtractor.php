@@ -63,7 +63,7 @@ class EntityIdExtractor
     if (empty($sqlResults)) {
       if ($this->debug) {
         $this->logger->logSecurityEvent(
-          "TASK 4.3.1: No SQL results to extract entity from",
+          "No SQL results to extract entity from",
           'info'
         );
       }
@@ -88,7 +88,7 @@ class EntityIdExtractor
         if ($entityId > 0) {
           if ($this->debug) {
             $this->logger->logSecurityEvent(
-              "TASK 4.3.1: Extracted entity from SQL results - entity_id: {$entityId}, entity_type: {$entityType} (column: {$columnName})",
+              "Extracted entity from SQL results - entity_id: {$entityId}, entity_type: {$entityType} (column: {$columnName})",
               'info'
             );
           }
@@ -107,7 +107,7 @@ class EntityIdExtractor
       if ($inferredEntity['entity_id'] !== null) {
         if ($this->debug) {
           $this->logger->logSecurityEvent(
-            "TASK 4.3.1: Inferred entity from SQL query - entity_type: {$inferredEntity['entity_type']}",
+            "Inferred entity from SQL query - entity_type: {$inferredEntity['entity_type']}",
             'info'
           );
         }
@@ -117,7 +117,7 @@ class EntityIdExtractor
 
     if ($this->debug) {
       $this->logger->logSecurityEvent(
-        "TASK 4.3.1: No entity found in SQL results (columns: " . implode(', ', array_keys($firstRow)) . ")",
+        "No entity found in SQL results (columns: " . implode(', ', array_keys($firstRow)) . ")",
         'warning'
       );
     }

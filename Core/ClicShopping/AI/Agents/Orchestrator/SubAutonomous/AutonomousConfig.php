@@ -428,8 +428,8 @@ class AutonomousConfig
       // Save to database
       $configJson = json_encode($this->config);
 
-      $sql = "INSERT INTO :table_rag_agent_autonomous_config (config_key, config_value, updated_at)
-              VALUES ('global', :config_value, NOW())
+      $sql = "INSERT INTO :table_rag_agent_autonomous_config (config_key, config_value, created_at, updated_at)
+              VALUES ('global', :config_value, NOW(), NOW())
               ON DUPLICATE KEY UPDATE config_value = :config_value, updated_at = NOW()";
 
       $stmt = $this->db->prepare($sql);

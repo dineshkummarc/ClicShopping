@@ -203,7 +203,7 @@ class ConversationMemory
         
         if ($this->debug) {
           $this->securityLogger->logSecurityEvent(
-            "TASK 6.1: query_type not provided in metadata, defaulting to 'unknown'",
+            "[WARNING] query_type not provided in metadata, defaulting to 'unknown'",
             'warning'
           );
         }
@@ -219,7 +219,7 @@ class ConversationMemory
       
       if ($this->debug) {
         $this->securityLogger->logSecurityEvent(
-          "TASK 6.1: Storing interaction with metadata - query_type: {$metadata['query_type']}, " .
+          "[INFO] Storing interaction with metadata - query_type: {$metadata['query_type']}, " .
           "confidence: {$metadata['classification_confidence']}, " .
           "entities: " . json_encode($metadata['detected_entities']),
           'info'

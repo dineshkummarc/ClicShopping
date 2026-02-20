@@ -731,6 +731,9 @@ class SecurityLogger
             $detectionMethod = 'llm_semantic'; // default
         }
         
+        $safeContext = $context;
+        unset($safeContext['detection_method']);
+
         // Prepare event details
         $details = [
             'query' => $query,
@@ -741,7 +744,7 @@ class SecurityLogger
             'severity' => $severity,
             'action_taken' => $blocked ? 'blocked' : 'allowed',
             'detection_method' => $detectionMethod,
-            ...$context
+            ...$safeContext
         ];
         
         // Log to database
@@ -778,6 +781,9 @@ class SecurityLogger
             $detectionMethod = 'pattern_based'; // default for fallback
         }
         
+        $safeContext = $context;
+        unset($safeContext['detection_method']);
+
         // Log to database
         $details = [
             'query' => $query,
@@ -788,9 +794,9 @@ class SecurityLogger
                 'fallback_reason' => $reason,
                 'from_layer' => 'llm',
                 'to_layer' => 'pattern',
-                ...$context
+                ...$safeContext
             ],
-            ...$context
+            ...$safeContext
         ];
         
         return $this->logEvent('security_fallback', $details);
@@ -908,6 +914,9 @@ class SecurityLogger
             $detectionMethodEnum = 'response_validation';
         }
         
+        $safeContext = $context;
+        unset($safeContext['detection_method']);
+
         // Prepare event details
         $details = [
             'query' => $query,
@@ -918,7 +927,7 @@ class SecurityLogger
             'blocked' => 1,
             'action_taken' => 'blocked',
             'detection_method' => $detectionMethodEnum,
-            ...$context
+            ...$safeContext
         ];
         
         // Log to database

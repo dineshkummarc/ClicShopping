@@ -113,7 +113,7 @@ class EntityExtractor
 
       if (isset($result['_step_entity_metadata']['entity_id']) && $result['_step_entity_metadata']['entity_id'] > 0) {
         if ($this->debug) {
-          $this->logger->logSecurityEvent("✓ TASK 4.3.1: Found in result['_step_entity_metadata']['entity_id']: {$result['_step_entity_metadata']['entity_id']}", 'info');
+          $this->logger->logSecurityEvent("[INFO SUCCESS] Found in result['_step_entity_metadata']['entity_id']: {$result['_step_entity_metadata']['entity_id']}", 'info');
         }
         return (int)$result['_step_entity_metadata']['entity_id'];
       }
@@ -127,7 +127,7 @@ class EntityExtractor
 
       if (isset($result['type']) && $result['type'] === 'analytics_response' && isset($result['entity_id']) && $result['entity_id'] > 0) {
         if ($this->debug) {
-          $this->logger->logSecurityEvent("✓ TASK 4.3.1: Found in analytics_response result['entity_id']: {$result['entity_id']}", 'info');
+          $this->logger->logSecurityEvent("[INFO SUCCESS] Found in analytics_response result['entity_id']: {$result['entity_id']}", 'info');
         }
         return (int)$result['entity_id'];
       }
@@ -154,7 +154,7 @@ class EntityExtractor
     }
 
     if ($this->debug) {
-      $this->logger->logSecurityEvent("⚠ TASK 4.3.1: NO entity_id found anywhere!", 'warning');
+      $this->logger->logSecurityEvent("[WARNING] NO entity_id found anywhere!", 'warning');
     }
 
     return null;
@@ -219,7 +219,7 @@ class EntityExtractor
 
       if (isset($executionResult['result']['_step_entity_metadata']['entity_type'])) {
         if ($this->debug) {
-          $this->logger->logSecurityEvent("✓ TASK 4.3.1: Found in result['_step_entity_metadata']['entity_type']: {$executionResult['result']['_step_entity_metadata']['entity_type']}", 'info');
+          $this->logger->logSecurityEvent("[INFO SUCCESS] Found in result['_step_entity_metadata']['entity_type']: {$executionResult['result']['_step_entity_metadata']['entity_type']}", 'info');
         }
         return $executionResult['result']['_step_entity_metadata']['entity_type'];
       }
@@ -233,7 +233,7 @@ class EntityExtractor
 
       if (isset($executionResult['result']['type']) && $executionResult['result']['type'] === 'analytics_response' && isset($executionResult['result']['entity_type'])) {
         if ($this->debug) {
-          $this->logger->logSecurityEvent("✓ TASK 4.3.1: Found in analytics_response result['entity_type']: {$executionResult['result']['entity_type']}", 'info');
+          $this->logger->logSecurityEvent("[INFO SUCCESS] Found in analytics_response result['entity_type']: {$executionResult['result']['entity_type']}", 'info');
         }
         return $executionResult['result']['entity_type'];
       }
