@@ -38,8 +38,9 @@ module_ad_agent_domains_title = Agent Domaines
 module_ad_agent_domains_short_title = Agent Domaines
 module_ad_agent_domains_introduction = Ce module définit et structure les domaines de connaissance (commerce électronique, ressources humaines, finance), les périmètres et les frontières contextuelles dans lesquels les agents opèrent, incluant les règles spécifiques aux domaines, les modèles de données, les contraintes et les critères d’évaluation.
 
-
-
+module_at_agent_technical_title = Agent Technique
+module_at_agent_technical_short_title = Agent Technique
+module_at_agent_technical_introduction = Ce module fournit les bases techniques du fonctionnement des agents,
 
 
 

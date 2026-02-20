@@ -59,8 +59,8 @@ class ContextManager
     $context = $memoryService->retrieveContext($query, $limit);
     
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
-      error_log('📚 CONTEXT RETRIEVED:');
-      error_log('   Working Memory: ' . (empty($context['working_memory']) ? '∅' : '✓'));
+      error_log('CONTEXT RETRIEVED:');
+      error_log('   Working Memory: ' . (empty($context['working_memory']) ? 'No OK' : 'OK'));
       error_log('   Short-term: ' . count($context['short_term']) . ' items');
       error_log('   Long-term: ' . count($context['long_term']) . ' items');
     }

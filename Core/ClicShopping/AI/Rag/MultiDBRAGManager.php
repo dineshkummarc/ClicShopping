@@ -1543,7 +1543,7 @@ class MultiDBRAGManager
 
     // Working Memory
     if (!empty($context['working_memory']) && !empty($context['working_memory']['last_message'])) {
-      $formatted .= "## IMMEDIATE WORKING MEMORY\n";
+      $formatted .= "## IMMEDIATE WORKING MEMORY";
       $formatted .= "Last Question: " . substr($context['working_memory']['last_message'], 0, 200) . "\n";
       $formatted .= "Last Answer: " . substr($context['working_memory']['last_response'], 0, 200) . "\n";
       $formatted .= "---\n\n";

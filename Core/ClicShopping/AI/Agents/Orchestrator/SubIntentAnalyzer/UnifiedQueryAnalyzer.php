@@ -138,7 +138,7 @@ class UnifiedQueryAnalyzer
       if (!empty($preTranslatedQuery) && $preTranslatedQuery !== $query) {
         $query = $preTranslatedQuery;
         if ($this->debug) {
-          error_log("📝 Pre-translated query: {$query}");
+          error_log("[INFO translate] Pre-translated query: {$query}");
         }
       }
       

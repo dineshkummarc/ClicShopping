@@ -40,6 +40,11 @@ module_ad_agent_domains_short_title = Agent Domain
 module_ad_agent_domains_introduction = This module defines and structures the knowledge domains (Ecommerce, HR, Finance), scopes, and contextual boundaries within which agents operate, including domain-specific rules, data models, constraints, and evaluation criteria.
 
 
+module_at_agent_technical_title = Agent Technical
+module_at_agent_technical_short_title = Agent Technical
+module_at_agent_technical_introduction = This module provides the technical foundations for agent operation,
+
+
 button_back = Back
 button_install_title = Install
 button_configure = Configure

@@ -20,7 +20,7 @@ AI
    - First php 9 compatibility   
    - some fix (included deprecated)
    - Librairies updated
-    - Dynamic Pricing improved
+   - Dynamic Pricing improved
 
 ---------------
 version4.12
@@ -52,9 +52,9 @@ version4.11
    -  **Security** Check what's happen inside the prompt 
    -  **No micro service**
    -  **Simple installation one click**
-- Mcp server connector improvment
-  - remove data simulation
-  - add multi server capability
+   - Mcp server connector improvement
+   - remove data simulation
+   - add multi server capability
 
 
 ----------------

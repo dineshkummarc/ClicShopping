@@ -1712,7 +1712,7 @@ class OrchestratorAgent
     $planStart = microtime(true);
     $plan = $this->taskPlanner->createPlan($intent, $queryToProcess, $enrichedContext);
     if ($this->debug) {
-      error_log("[INFO : TIME]️ [PERF] createPlan took " . round((microtime(true) - $planStart), 2) . "s");
+      error_log("[INFO : TIME] [PERF] createPlan took " . round((microtime(true) - $planStart), 2) . "s");
     }
 
     $this->workingMemory->set('execution_plan', $plan->getSummary());

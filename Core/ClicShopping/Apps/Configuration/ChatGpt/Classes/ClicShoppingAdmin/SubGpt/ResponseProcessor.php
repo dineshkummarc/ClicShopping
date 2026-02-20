@@ -354,35 +354,47 @@ class ResponseProcessor
     }
 
     try {
-      error_log("[INFO SEARCH] [ResponseProcessor::getGptResponse] Starting provider detection for engine: {$engine}");
-      
+      $chatgpt_debug = defined('CLICSHOPPING_APP_CHATGPT_CH_DEBUG') && CLICSHOPPING_APP_CHATGPT_CH_DEBUG === 'True';
+
+      if ($chatgpt_debug) {
+        error_log("[INFO SEARCH] [ResponseProcessor::getGptResponse] Starting provider detection for engine: {$engine}");
+      }
+
       $providerName = self::detectProviderFromEngine($engine);
-      
-      error_log("[INFO VALIDATED] [ResponseProcessor::getGptResponse] Provider detected: {$providerName} for engine: {$engine}");
-      
-      error_log(sprintf(
-        "[INFO EDIT] [ResponseProcessor::getGptResponse] Request params - model: %s, max_tokens: %s, temperature: %s, prompt_length: %d",
-        $engine,
-        $maxtoken ?? 'null',
-        $temperature ?? 'null',
-        strlen($prompt)
-      ));
-      
+
+      if ($chatgpt_debug) {
+       error_log("[INFO VALIDATED] [ResponseProcessor::getGptResponse] Provider detected: {$providerName} for engine: {$engine}");
+
+        error_log(sprintf(
+          "[INFO EDIT] [ResponseProcessor::getGptResponse] Request params - model: %s, max_tokens: %s, temperature: %s, prompt_length: %d",
+          $engine,
+          $maxtoken ?? 'null',
+          $temperature ?? 'null',
+          strlen($prompt)
+        ));
+      }
+
       $factory = LLMProviderFactory::getInstance();
+
       $provider = $factory->create($providerName, [
         'model' => $engine,
         'max_tokens' => $maxtoken,
         'temperature' => $temperature,
       ]);
-      
-      error_log("[INFO VALIDATED] [ResponseProcessor::getGptResponse] Provider instance created successfully: " . get_class($provider));
+
+      if ($chatgpt_debug) {
+        error_log("[INFO VALIDATED] [ResponseProcessor::getGptResponse] Provider instance created successfully: " . get_class($provider));
+      }
 
       try {
-        error_log("[INFO SEARCH] [ResponseProcessor::getGptResponse] Attempting to get LLPhant chat instance from provider");
-        
+        if ($chatgpt_debug) {
+          error_log("[INFO SEARCH] [ResponseProcessor::getGptResponse] Attempting to get LLPhant chat instance from provider");
+        }
         $chat = $provider->getLLPhantChat();
-        
-        error_log("[INFO VALIDATED] [ResponseProcessor::getGptResponse] Using provider {$providerName} via getLLPhantChat()");
+
+        if ($chatgpt_debug) {
+          error_log("[INFO VALIDATED] [ResponseProcessor::getGptResponse] Using provider {$providerName} via getLLPhantChat()");
+        }
       } catch (\Exception $e) {
         error_log("[INFO WARNING] [ResponseProcessor::getGptResponse] Provider {$providerName} getLLPhantChat() failed: {$e->getMessage()}, falling back to getChat()");
         
@@ -390,24 +402,29 @@ class ResponseProcessor
         
         error_log("[INFO VALIDATED] [ResponseProcessor::getGptResponse] Fallback to getChat() successful");
       }
+      if ($chatgpt_debug) {
+        error_log(sprintf(
+          "[INFO SEARCH] [ResponseProcessor::getGptResponse] Calling generateText() with prompt (first 100 chars): %s",
+          substr($prompt, 0, 100)
+        ));
+      }
 
-      error_log(sprintf(
-        "[INFO SEARCH] [ResponseProcessor::getGptResponse] Calling generateText() with prompt (first 100 chars): %s",
-        substr($prompt, 0, 100)
-      ));
-      
       $result = $chat->generateText($prompt);
-      
-      error_log(sprintf(
-        "[INFO VALIDATED] [ResponseProcessor::getGptResponse] generateText() returned result - length: %d, first 100 chars: %s",
-        strlen($result),
-        substr($result, 0, 100)
-      ));
+
+      if ($chatgpt_debug) {
+        error_log(sprintf(
+          "[INFO VALIDATED] [ResponseProcessor::getGptResponse] generateText() returned result - length: %d, first 100 chars: %s",
+          strlen($result),
+          substr($result, 0, 100)
+        ));
+      }
 
       // Extract usage metrics
       if (method_exists($chat, 'getLastResponse')) {
-        error_log("[INFO SEARCH] [ResponseProcessor::getGptResponse] Attempting to extract token usage from last response");
-        
+        if ($chatgpt_debug) {
+          error_log("[INFO SEARCH] [ResponseProcessor::getGptResponse] Attempting to extract token usage from last response");
+        }
+
         $lastResponse = $chat->getLastResponse();
         
         if (!is_null($lastResponse) && isset($lastResponse['usage'])) {
@@ -416,46 +433,52 @@ class ResponseProcessor
             'completion_tokens' => $lastResponse['usage']['completion_tokens'] ?? 0,
             'total_tokens' => $lastResponse['usage']['total_tokens'] ?? 0
           ];
-          
-          error_log(sprintf(
-            '[INFO USAGE] [ResponseProcessor::getGptResponse] Token usage for model %s: prompt=%d, completion=%d, total=%d',
-            $engine,
-            self::$lastTokenUsage['prompt_tokens'],
-            self::$lastTokenUsage['completion_tokens'],
-            self::$lastTokenUsage['total_tokens']
-          ));
+          if ($chatgpt_debug) {
+            error_log(sprintf(
+              '[INFO USAGE] [ResponseProcessor::getGptResponse] Token usage for model %s: prompt=%d, completion=%d, total=%d',
+              $engine,
+              self::$lastTokenUsage['prompt_tokens'],
+              self::$lastTokenUsage['completion_tokens'],
+              self::$lastTokenUsage['total_tokens']
+            ));
+          }
         } else {
           self::$lastTokenUsage = null;
-          
-          error_log(sprintf(
-            '[INFO WARNING] [ResponseProcessor::getGptResponse] No token usage data in response for model %s',
-            $engine
-          ));
+          if ($chatgpt_debug) {
+            error_log(sprintf(
+              '[INFO WARNING] [ResponseProcessor::getGptResponse] No token usage data in response for model %s',
+              $engine
+            ));
+          }
         }
       } else {
-        error_log("[INFO SEARCH] [ResponseProcessor::getGptResponse] getLastResponse() not available, estimating token usage");
-        
+        if ($chatgpt_debug) {
+          error_log("[INFO SEARCH] [ResponseProcessor::getGptResponse] getLastResponse() not available, estimating token usage");
+        }
+
         $promptTokens = (int)ceil(strlen($prompt) / 4);
         $completionTokens = (int)ceil(strlen($result) / 4);
-        
+
         self::$lastTokenUsage = [
           'prompt_tokens' => $promptTokens,
           'completion_tokens' => $completionTokens,
           'total_tokens' => $promptTokens + $completionTokens
         ];
-        
-        error_log(sprintf(
-          '[INFO USAGE] Estimated token usage for model %s (provider: %s): prompt=%d, completion=%d, total=%d',
-          $engine,
-          get_class($chat),
-          $promptTokens,
-          $completionTokens,
-          $promptTokens + $completionTokens
-        ));
+
+        if ($chatgpt_debug) {
+          error_log(sprintf(
+            '[INFO USAGE] Estimated token usage for model %s (provider: %s): prompt=%d, completion=%d, total=%d',
+            $engine,
+            get_class($chat),
+            $promptTokens,
+            $completionTokens,
+            $promptTokens + $completionTokens
+          ));
+        }
+
+        error_log("[INFO VALIDATED] [ResponseProcessor::getGptResponse] Request completed successfully");
       }
 
-      error_log("[INFO VALIDATED] [ResponseProcessor::getGptResponse] Request completed successfully");
-      
       return $result;
       
     } catch (\Exception $e) {
