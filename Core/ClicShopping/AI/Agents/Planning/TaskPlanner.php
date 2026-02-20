@@ -312,7 +312,12 @@ class TaskPlanner
                 $this->securityLogger
             );
             
-            $subQueries = $decomposer->decompose($query, $intent, []);
+            $context = [
+                'translated_query' => $intent['translated_query'] ?? null,
+                'resolved_query' => $intent['resolved_query'] ?? null,
+            ];
+	    
+            $subQueries = $decomposer->decompose($query, $intent, $context);
             
             // Store sub-queries in intent for plan creation
             $intent['sub_queries'] = $subQueries;

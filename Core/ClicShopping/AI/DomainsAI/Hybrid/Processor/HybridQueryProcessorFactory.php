@@ -10,15 +10,11 @@
 
 namespace ClicShopping\AI\DomainsAI\Hybrid\Processor;
 
-
-
 /**
  * HybridQueryProcessorFactory - Factory for creating and orchestrating components
  *
  * Initializes all SubHybridQueryProcessor components with dependency injection
  * and provides unified interface for query processing orchestration.
- *
- * Requirements: REQ-1.3, REQ-6.1, REQ-6.2, REQ-6.3, REQ-6.4, REQ-6.5
  *
  * @package ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor
  * @since 2025-12-14

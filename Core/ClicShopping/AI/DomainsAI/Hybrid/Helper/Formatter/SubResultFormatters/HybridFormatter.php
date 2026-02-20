@@ -87,7 +87,10 @@ class HybridFormatter extends AbstractFormatter
     // Instead of just showing text_response, render actual tables and structured data
     
     // Display analytics component with table
-    if (isset($results['analytics_component']) && is_array($results['analytics_component'])) {
+    $hasAnalyticsComponent = isset($results['analytics_component']) && is_array($results['analytics_component']);
+    $hasSemanticComponent = isset($results['semantic_component']) && is_array($results['semantic_component']);
+
+    if ($hasAnalyticsComponent) {
       $analyticsComp = $results['analytics_component'];
       
       $output .= "<div class='mt-4'>";
@@ -104,7 +107,8 @@ class HybridFormatter extends AbstractFormatter
       
       // Display results as table
       if (isset($analyticsComp['results']) && is_array($analyticsComp['results']) && !empty($analyticsComp['results'])) {
-        $output .= "<table class='table table-sm table-bordered table-striped'>";
+        $tableParts = $this->buildTableOpenTag('table table-sm table-bordered table-striped');
+        $output .= $tableParts['toolbar'] . $tableParts['table'];
         
         // Table header
         $firstRow = $analyticsComp['results'][0];
@@ -119,9 +123,9 @@ class HybridFormatter extends AbstractFormatter
           $output .= "<tbody>";
           foreach ($analyticsComp['results'] as $row) {
             $output .= "<tr>";
-            foreach ($row as $value) {
-              $output .= "<td>" . htmlspecialchars($value ?? '') . "</td>";
-            }
+          foreach ($row as $column => $value) {
+            $output .= "<td>" . $this->formatCellValue((string)$column, $value) . "</td>";
+          }
             $output .= "</tr>";
           }
           $output .= "</tbody>";
@@ -134,7 +138,7 @@ class HybridFormatter extends AbstractFormatter
     }
     
     // Display semantic component
-    if (isset($results['semantic_component']) && is_array($results['semantic_component'])) {
+    if ($hasSemanticComponent) {
       $semanticComp = $results['semantic_component'];
       
       $output .= "<div class='mt-4'>";
@@ -185,6 +189,14 @@ class HybridFormatter extends AbstractFormatter
     if (isset($results['sub_queries']) && is_array($results['sub_queries'])) {
       foreach ($results['sub_queries'] as $idx => $subQuery) {
         $subType = $subQuery['type'] ?? 'unknown';
+
+        // Avoid duplicate rendering when hybrid components are already shown
+        if ($subType === 'analytics' && $hasAnalyticsComponent) {
+          continue;
+        }
+        if ($subType === 'semantic' && $hasSemanticComponent) {
+          continue;
+        }
         
         // Format web_search results with full HTML rendering
         if ($subType === 'web_search' && isset($subQuery['results']) && is_array($subQuery['results'])) {
@@ -220,22 +232,24 @@ class HybridFormatter extends AbstractFormatter
 
       // SQL Query toggle button (Bootstrap 5)
       // does not seems to work, to check, update or remove
-	if (!empty($analyticsComp['sql_query'])) {
-	    $output .= "<div class='mb-3'>";
-	    $output .= "<button class='btn btn-outline-primary btn-sm' type='button' data-bs-toggle='collapse' data-bs-target='#sqlQueryCollapse' aria-expanded='false' aria-controls='sqlQueryCollapse'>";
-	    $output .= "Afficher / Masquer la requête SQL";
-	    $output .= "</button>";
+        $analyticsSub = $subQuery;
 
-	    $output .= "<div class='collapse mt-2' id='sqlQueryCollapse'>";
-	    $output .= "<div class='card card-body'>";
-	    $output .= "<div class='fw-bold mb-2 text-primary'>Requête SQL :</div>";
-	    $output .= "<pre class='mb-0' style='font-size:0.85em; white-space:pre-wrap; word-wrap:break-word; font-family:monospace;'>";
-	    $output .= htmlspecialchars($this->formatSqlQuery($analyticsComp['sql_query']));
-	    $output .= "</pre>";
-	    $output .= "</div>";
-	    $output .= "</div>";
-	    $output .= "</div>";
-	}
+        if (!empty($analyticsSub['sql_query'])) {
+            $output .= "<div class='mb-3'>";
+            $output .= "<button class='btn btn-outline-primary btn-sm' type='button' data-bs-toggle='collapse' data-bs-target='#sqlQueryCollapse' aria-expanded='false' aria-controls='sqlQueryCollapse'>";
+            $output .= "Afficher / Masquer la requête SQL";
+            $output .= "</button>";
+
+            $output .= "<div class='collapse mt-2' id='sqlQueryCollapse'>";
+            $output .= "<div class='card card-body'>";
+            $output .= "<div class='fw-bold mb-2 text-primary'>Requête SQL :</div>";
+            $output .= "<pre class='mb-0' style='font-size:0.85em; white-space:pre-wrap; word-wrap:break-word; font-family:monospace;'>";
+            $output .= htmlspecialchars($this->formatSqlQuery($analyticsSub['sql_query']));
+            $output .= "</pre>";
+            $output .= "</div>";
+            $output .= "</div>";
+            $output .= "</div>";
+        }
 
           $output .= "<h5>" . htmlspecialchars($this->language->getDef('analytics_results_title')) . "</h5>";
           // Use existing analytics formatting logic
@@ -302,21 +316,44 @@ class HybridFormatter extends AbstractFormatter
   }
 
   /**
-   * Get icon for query type
+   * Format SQL query for better readability
+   * Adds line breaks and indentation to SQL keywords
    *
-   * @param string $type Query type
-   * @return string Icon emoji
+   * @param string $sql Raw SQL query
+   * @return string Formatted SQL query
    */
-  private function getIconForType(string $type): string
+  private function formatSqlQuery(string $sql): string
   {
-    $icons = [
-      'analytics' => '📊',
-      'semantic' => '📚',
-      'web_search' => '🌐',
-      'hybrid' => '🔀',
+    // Keywords to put on new lines
+    $keywords = [
+      'SELECT', 'FROM', 'WHERE', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN',
+      'ORDER BY', 'GROUP BY', 'HAVING', 'LIMIT', 'OFFSET', 'UNION', 'AND', 'OR'
     ];
 
-    return $icons[$type] ?? '🤖';
+    // Replace keywords with newline + keyword
+    $formatted = $sql;
+    foreach ($keywords as $keyword) {
+      // Add newline before keyword (case insensitive)
+      $formatted = preg_replace(
+        '/\s+(' . preg_quote($keyword, '/') . ')\s+/i',
+        "\n" . $keyword . ' ',
+        $formatted
+      );
+    }
+
+    // Indent JOIN clauses
+    $formatted = preg_replace('/\n((?:LEFT |RIGHT |INNER )?JOIN)/i', "\n  $1", $formatted);
+
+    // Indent WHERE conditions after first one
+    $formatted = preg_replace('/\n(AND|OR)\s+/i', "\n  $1 ", $formatted);
+
+    // Clean up extra spaces
+    $formatted = preg_replace('/\s+/', ' ', $formatted);
+
+    // Clean up spaces around newlines
+    $formatted = preg_replace('/\s*\n\s*/', "\n", $formatted);
+
+    return trim($formatted);
   }
 
   /**
@@ -332,9 +369,33 @@ class HybridFormatter extends AbstractFormatter
     if (isset($subQuery['results']) && is_array($subQuery['results'])) {
       $output .= "<div class='analytics-results'>";
       
+      // If results are already rows (associative arrays), render directly
+      if (!empty($subQuery['results']) && is_array($subQuery['results'][0])) {
+        $firstRow = $subQuery['results'][0];
+        $tableParts = $this->buildTableOpenTag('table table-sm table-bordered');
+        $output .= $tableParts['toolbar'] . $tableParts['table'];
+        $output .= "<thead><tr>";
+        foreach (array_keys($firstRow) as $column) {
+          $output .= "<th>" . htmlspecialchars($column) . "</th>";
+        }
+        $output .= "</tr></thead>";
+        $output .= "<tbody>";
+        foreach ($subQuery['results'] as $row) {
+          $output .= "<tr>";
+          foreach ($row as $column => $value) {
+            $output .= "<td>" . $this->formatCellValue((string)$column, $value) . "</td>";
+          }
+          $output .= "</tr>";
+        }
+        $output .= "</tbody></table>";
+        $output .= "</div>";
+        return $output;
+      }
+
       foreach ($subQuery['results'] as $result) {
         if (isset($result['rows']) && is_array($result['rows'])) {
-          $output .= "<table class='table table-sm table-bordered'>";
+          $tableParts = $this->buildTableOpenTag('table table-sm table-bordered');
+          $output .= $tableParts['toolbar'] . $tableParts['table'];
           
           // Table header
           if (!empty($result['rows'])) {
@@ -350,11 +411,11 @@ class HybridFormatter extends AbstractFormatter
               $output .= "<tbody>";
               foreach ($result['rows'] as $row) {
                 $output .= "<tr>";
-                foreach ($row as $value) {
-                  $output .= "<td>" . htmlspecialchars($value) . "</td>";
-                }
-                $output .= "</tr>";
-              }
+            foreach ($row as $column => $value) {
+              $output .= "<td>" . $this->formatCellValue((string)$column, $value) . "</td>";
+            }
+            $output .= "</tr>";
+          }
               $output .= "</tbody>";
             }
           }
@@ -405,43 +466,20 @@ class HybridFormatter extends AbstractFormatter
   }
 
   /**
-   * Format SQL query for better readability
-   * Adds line breaks and indentation to SQL keywords
+   * Get icon for query type
    *
-   * @param string $sql Raw SQL query
-   * @return string Formatted SQL query
+   * @param string $type Query type
+   * @return string Icon emoji
    */
-  private function formatSqlQuery(string $sql): string
+  private function getIconForType(string $type): string
   {
-    // Keywords to put on new lines
-    $keywords = [
-      'SELECT', 'FROM', 'WHERE', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN',
-      'ORDER BY', 'GROUP BY', 'HAVING', 'LIMIT', 'OFFSET', 'UNION', 'AND', 'OR'
+    $icons = [
+      'analytics' => '📊',
+      'semantic' => '📚',
+      'web_search' => '🌐',
+      'hybrid' => '🔀',
     ];
-    
-    // Replace keywords with newline + keyword
-    $formatted = $sql;
-    foreach ($keywords as $keyword) {
-      // Add newline before keyword (case insensitive)
-      $formatted = preg_replace(
-        '/\s+(' . preg_quote($keyword, '/') . ')\s+/i',
-        "\n" . $keyword . ' ',
-        $formatted
-      );
-    }
-    
-    // Indent JOIN clauses
-    $formatted = preg_replace('/\n((?:LEFT |RIGHT |INNER )?JOIN)/i', "\n  $1", $formatted);
-    
-    // Indent WHERE conditions after first one
-    $formatted = preg_replace('/\n(AND|OR)\s+/i', "\n  $1 ", $formatted);
-    
-    // Clean up extra spaces
-    $formatted = preg_replace('/\s+/', ' ', $formatted);
-    
-    // Clean up spaces around newlines
-    $formatted = preg_replace('/\s*\n\s*/', "\n", $formatted);
-    
-    return trim($formatted);
+
+    return $icons[$type] ?? '🤖';
   }
 }

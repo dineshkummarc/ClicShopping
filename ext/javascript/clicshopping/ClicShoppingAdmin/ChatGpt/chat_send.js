@@ -123,6 +123,25 @@ const ChatSanitizer = {
 
 document.addEventListener("DOMContentLoaded", function() {
   console.log('ChatSend: Initializing...');
+
+  const initBootstrapTables = (rootEl, attempts = 10) => {
+    if (typeof window.jQuery === 'undefined' || !window.jQuery.fn || !window.jQuery.fn.bootstrapTable) {
+      if (attempts > 0) {
+        setTimeout(() => initBootstrapTables(rootEl, attempts - 1), 300);
+      } else {
+        console.warn('ChatSend: bootstrapTable plugin not available after retries');
+      }
+      return;
+    }
+    const tables = rootEl.querySelectorAll('table[data-toggle="table"]');
+    tables.forEach(table => {
+      const $table = window.jQuery(table);
+      if ($table.data('bootstrap.table')) {
+        return;
+      }
+      $table.bootstrapTable();
+    });
+  };
   
   // Initialize HTML sanitizer
   const sanitizerReady = ChatSanitizer.init();
@@ -304,6 +323,9 @@ document.addEventListener("DOMContentLoaded", function() {
         });
         
         console.log('ChatSend: Rendered sanitized HTML content with', links.length, 'external links');
+
+        // Initialize bootstrap-table for dynamically inserted tables
+        initBootstrapTables(contentDiv);
       } else {
         // Fallback: If text_response is not a string, display error
         contentDiv.textContent = 'Erreur: Réponse invalide';

@@ -55,6 +55,10 @@ class ResponseFormatter
     } else {
       // For other types, use 'data' key
       $dataToFormat = $aiResponse['data'] ?? [];
+      // Hybrid responses may store structured data under 'result'
+      if (empty($dataToFormat) && (($aiResponse['type'] ?? '') === 'hybrid') && isset($aiResponse['result']) && is_array($aiResponse['result'])) {
+        $dataToFormat = $aiResponse['result'];
+      }
     }
     
     if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
@@ -62,6 +66,7 @@ class ResponseFormatter
       error_log('   Has hybrid components: ' . ($hasHybridComponents ? 'YES' : 'NO'));
       error_log('   Type: ' . gettype($dataToFormat));
       error_log('   Is array: ' . (is_array($dataToFormat) ? 'YES' : 'NO'));
+
       if (is_array($dataToFormat)) {
         error_log('   Keys: ' . implode(', ', array_keys($dataToFormat)));
         error_log('   Has analytics_component: ' . (isset($dataToFormat['analytics_component']) ? 'YES' : 'NO'));

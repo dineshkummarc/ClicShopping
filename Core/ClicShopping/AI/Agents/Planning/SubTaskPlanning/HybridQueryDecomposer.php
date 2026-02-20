@@ -138,10 +138,26 @@ class HybridQueryDecomposer
     }
     
     /**
+     * Log debug message
+     *
+     * @param string $message Debug message
+     */
+    private function logDebug(string $message): void
+    {
+        if ($this->securityLogger) {
+            $this->securityLogger->logSecurityEvent($message, 'info');
+        }
+
+        if ($this->debug) {
+            error_log("[HybridQueryDecomposer] " . $message);
+        }
+    }
+    
+    /**
      * Decompose hybrid query into sub-queries using LLM
-     * 
+     *
      * Requirements: 2.1, 2.2, 2.5, 11.1, 11.6, 7.3, 12.1
-     * 
+     *
      * @param string $query Original user query
      * @param array $intent Intent with sub_types array
      * @param array $context Conversation context
@@ -149,29 +165,31 @@ class HybridQueryDecomposer
      */
     public function decompose(string $query, array $intent, array $context = []): array
     {
+        $queryForDecomposition = $context['translated_query'] ?? $query;
+
         // Check if decomposition is enabled (Requirement 12.1)
         if (!$this->decompositionEnabled) {
             if ($this->debug) {
                 $this->logDebug("Decomposition disabled in configuration - falling back to single step");
             }
-            return $this->fallbackToSingleStep($query, $intent);
+            return $this->fallbackToSingleStep($queryForDecomposition, $intent, $context);
         }
-        
+
         // Start performance tracking (Requirement 7.1, 7.4)
         $operationId = $this->performanceMonitor->startDecomposition($query, $intent);
-        
+
         if ($this->debug) {
             $this->logDebug("Decomposing hybrid query: " . substr($query, 0, 100));
             $this->logDebug("Sub-types requested: " . json_encode($intent['sub_types'] ?? []));
         }
-        
+
         // Check cache before calling LLM (Requirement 7.3)
         $cachedResult = $this->cache->getCachedDecomposition($query, $intent);
         if ($cachedResult !== null) {
             if ($this->debug) {
                 $this->logDebug("Using cached decomposition result");
             }
-            
+
             // End performance tracking with cache hit
             $this->performanceMonitor->endDecomposition(
                 $operationId,
@@ -179,25 +197,25 @@ class HybridQueryDecomposer
                 true, // cache hit
                 true  // success
             );
-            
+
             return $cachedResult;
         }
-        
+
         // Retrieve active domain from DomainConfig (Requirement 11.1, 11.6)
         $domain = DomainConfig::getActivities();
-        
+
         if ($this->debug) {
             $this->logDebug("Active domain: " . ($domain ?: 'generic'));
         }
-        
+
         // Check if chat is available
         if ($this->chat === null) {
             if ($this->debug) {
                 $this->logDebug("Chat not available - falling back to single step");
             }
-            
-            $fallbackResult = $this->fallbackToSingleStep($query, $intent);
-            
+
+            $fallbackResult = $this->fallbackToSingleStep($queryForDecomposition, $intent, $context);
+
             // End performance tracking with error
             $this->performanceMonitor->endDecomposition(
                 $operationId,
@@ -206,21 +224,21 @@ class HybridQueryDecomposer
                 false, // failure
                 "Chat not available"
             );
-            
+
             return $fallbackResult;
         }
-        
+
         try {
             // Get sub_types from intent
             $subTypes = $intent['sub_types'] ?? [];
-            
+
             if (empty($subTypes)) {
                 if ($this->debug) {
                     $this->logDebug("No sub_types provided - falling back to single step");
                 }
-                
-                $fallbackResult = $this->fallbackToSingleStep($query, $intent);
-                
+
+                $fallbackResult = $this->fallbackToSingleStep($queryForDecomposition, $intent, $context);
+
                 // End performance tracking with error
                 $this->performanceMonitor->endDecomposition(
                     $operationId,
@@ -229,34 +247,34 @@ class HybridQueryDecomposer
                     false, // failure
                     "No sub_types provided"
                 );
-                
+
                 return $fallbackResult;
             }
-            
+
             // Build domain-aware LLM prompt (Requirement 2.2, 2.6, 11.1)
-            $prompt = $this->buildDecompositionPrompt($query, $subTypes, $domain);
-            
+            $prompt = $this->buildDecompositionPrompt($queryForDecomposition, $subTypes, $domain);
+
             if ($this->debug) {
                 $this->logDebug("Calling LLM for decomposition");
             }
-            
+
             // Call LLM to decompose query (Requirement 2.2)
             $response = $this->chat->generateText($prompt);
-            
+
             if ($this->debug) {
                 $this->logDebug("LLM response received: " . substr($response, 0, 200));
             }
-            
+
             // Parse JSON response
             $subQueries = $this->parseJsonResponse($response);
-            
+
             if ($subQueries === null) {
                 if ($this->debug) {
                     $this->logDebug("Failed to parse JSON response - falling back");
                 }
-                
-                $fallbackResult = $this->fallbackToSingleStep($query, $intent);
-                
+
+                $fallbackResult = $this->fallbackToSingleStep($queryForDecomposition, $intent, $context);
+
                 // End performance tracking with error
                 $this->performanceMonitor->endDecomposition(
                     $operationId,
@@ -265,18 +283,18 @@ class HybridQueryDecomposer
                     false, // failure
                     "Failed to parse JSON response"
                 );
-                
+
                 return $fallbackResult;
             }
-            
+
             // Validate response (Requirement 2.3)
             if (!$this->validateSubQueries($subQueries, $subTypes)) {
                 if ($this->debug) {
                     $this->logDebug("Validation failed - falling back");
                 }
-                
-                $fallbackResult = $this->fallbackToSingleStep($query, $intent);
-                
+
+                $fallbackResult = $this->fallbackToSingleStep($queryForDecomposition, $intent, $context);
+
                 // End performance tracking with error
                 $this->performanceMonitor->endDecomposition(
                     $operationId,
@@ -285,17 +303,17 @@ class HybridQueryDecomposer
                     false, // failure
                     "Validation failed"
                 );
-                
+
                 return $fallbackResult;
             }
-            
+
             if ($this->debug) {
                 $this->logDebug("Successfully decomposed into " . \count($subQueries) . " sub-queries");
             }
-            
+
             // Store decomposition results in cache (Requirement 7.3)
             $this->cache->cacheDecomposition($query, $intent, $subQueries);
-            
+
             // End performance tracking with success (Requirement 7.1, 7.4)
             $this->performanceMonitor->endDecomposition(
                 $operationId,
@@ -303,18 +321,18 @@ class HybridQueryDecomposer
                 false, // cache miss
                 true   // success
             );
-            
+
             // Return sub-queries array (Requirement 2.5)
             return $subQueries;
-            
+
         } catch (\Exception $e) {
             // Fallback on error (Requirement 2.4, 6.1, 6.2)
             if ($this->debug) {
                 $this->logDebug("Decomposition error: " . $e->getMessage());
             }
-            
-            $fallbackResult = $this->fallbackToSingleStep($query, $intent);
-            
+
+            $fallbackResult = $this->fallbackToSingleStep($queryForDecomposition, $intent, $context);
+
             // End performance tracking with error
             $this->performanceMonitor->endDecomposition(
                 $operationId,
@@ -323,252 +341,27 @@ class HybridQueryDecomposer
                 false, // failure
                 $e->getMessage()
             );
-            
+
             return $fallbackResult;
         }
     }
     
     /**
-     * Build LLM prompt for decomposition (domain-aware)
-     * 
-     * @param string $query Original query
-     * @param array $subTypes Sub-types from intent (e.g., ['analytics', 'semantic'])
-     * @param string $domain Active domain from DomainConfig
-     * @return string LLM prompt
-     */
-    private function buildDecompositionPrompt(string $query, array $subTypes, string $domain): string
-    {
-        // Get language instance
-        $language = Registry::get('Language');
-
-        // Load language definitions for SQL correction prompts using DomainConfig
-        DomainConfig::loadLanguageFile('rag_hybrid_query_decomposer');
-
-        $domainContext = $this->getDomainContext();
-        $domainExamples = $this->getDomainExamples();
-        
-        $subTypeLines = [];
-        foreach ($subTypes as $type) {
-            $subTypeLines[] = "- {$type}: " . $this->getTypeDescription($type);
-        }
-
-        $template = $language->getDef('text_rag_hybrid_decomposer_prompt_template', [
-            'domain_name' => $domainContext['name'],
-            'domain_terminology' => $domainContext['terminology'],
-            'domain_data_types' => $domainContext['data_types'],
-            'domain_examples' => $domainExamples,
-            'sub_types_list' => implode("\n", $subTypeLines),
-            'sub_types_csv' => implode(', ', $subTypes),
-            'sub_type_count' => (string)count($subTypes),
-            'query' => $query,
-        ]);
-
-        if (empty($template) || $template === 'text_rag_hybrid_decomposer_prompt_template') {
-            // Fallback to a minimal prompt if the language file is missing
-            return "You are a query decomposition expert for a {$domainContext['name']} system.\n\n"
-                . "DOMAIN CONTEXT:\n"
-                . "- Domain: {$domainContext['name']}\n"
-                . "- Terminology: {$domainContext['terminology']}\n"
-                . "- Data Types: {$domainContext['data_types']}\n\n"
-                . "REQUESTED SUB-QUERY TYPES:\n"
-                . implode("\n", $subTypeLines) . "\n\n"
-                . "EXAMPLES FOR {$domainContext['name']} DOMAIN:\n"
-                . $domainExamples . "\n\n"
-                . "QUERY TO DECOMPOSE:\n"
-                . "\"{$query}\"\n\n"
-                . "INSTRUCTIONS:\n"
-                . "1. Split the query into exactly " . count($subTypes) . " sub-queries\n"
-                . "2. Each sub-query must have a 'type' and 'text' field\n"
-                . "3. Types must match the requested types: " . implode(', ', $subTypes) . "\n"
-                . "4. Preserve the original meaning and context\n"
-                . "5. Use {$domainContext['name']} terminology\n\n"
-                . "OUTPUT FORMAT (JSON):\n"
-                . "[\n"
-                . "  {\"type\": \"analytics\", \"text\": \"sub-query text\"},\n"
-                . "  {\"type\": \"semantic\", \"text\": \"sub-query text\"}\n"
-                . "]\n\n"
-                . "Return ONLY the JSON array, no additional text.";
-        }
-
-        return $template;
-    }
-    
-    /**
-     * Get domain-specific context
-     * 
-
-     * Retrieves domain information from language definitions
-     * 
-     * Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6
-     * 
-     * @param string $domain Domain identifier
-     * @return array Domain context
-     */
-    private function getDomainContext(): array
-    {
-        $language = Registry::get('Language');
-
-        $domainName = $language->getDef('text_rag_hybrid_decomposer_domain_name');
-        $terminology = $language->getDef('text_rag_hybrid_decomposer_terminology');
-        $dataTypes = $language->getDef('text_rag_hybrid_decomposer_data_types');
-
-        return [
-            'name' => !empty($domainName) ? $domainName : 'Business',
-            'terminology' => !empty($terminology) ? $terminology : 'data, records, entities, metrics, reports',
-            'data_types' => !empty($dataTypes) ? $dataTypes : 'records, metrics, reports, entities',
-        ];
-    }
-
-    /**
-     * Get domain-specific examples
-     *
-
-     * Examples are tailored to each domain's terminology and use cases
-     *
-     * Requirements: 11.2, 11.3, 11.4
-     *
-     * @param string $domain Domain identifier
-     * @return string Examples text
-     */
-    private function getDomainExamples(): string
-    {
-        $language = Registry::get('Language');
-        $examples = $language->getDef('text_rag_hybrid_decomposer_examples');
-
-        if (!empty($examples)) {
-            return $examples;
-        }
-
-        return "Example (Generic):\n"
-            . "Query: \"total records and details for item X\"\n"
-            . "Sub-queries: [{\"type\": \"analytics\", \"text\": \"total records\"}, {\"type\": \"semantic\", \"text\": \"details for item X\"}]\n\n"
-            . "Example 2 (Generic):\n"
-            . "Query: \"count of entities and description of entity Y\"\n"
-            . "Sub-queries: [{\"type\": \"analytics\", \"text\": \"count of entities\"}, {\"type\": \"semantic\", \"text\": \"description of entity Y\"}]";
-    }
-
-    /**
-     * Get description for sub-query type
-     *
-     * @param string $type Sub-query type
-     * @return string Type description
-     */
-    private function getTypeDescription(string $type): string
-    {
-        $descriptions = [
-            'analytics' => 'Quantitative query requiring database aggregation (COUNT, SUM, AVG, etc.)',
-            'semantic' => 'Qualitative query requiring semantic search or document retrieval',
-            'web_search' => 'Query requiring external web search',
-        ];
-        
-        return $descriptions[$type] ?? 'Query of type ' . $type;
-    }
-    
-    /**
-     * Parse JSON response from LLM
-     * 
-     * @param string $response LLM response
-     * @return array|null Parsed sub-queries or null on error
-     */
-    private function parseJsonResponse(string $response): ?array
-    {
-        // Try to extract JSON from response
-        $response = trim($response);
-        
-        // Remove markdown code blocks if present
-        $response = preg_replace('/```json\s*/', '', $response);
-        $response = preg_replace('/```\s*$/', '', $response);
-        $response = trim($response);
-        
-        // Try to decode JSON
-        $decoded = json_decode($response, true);
-        
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            if ($this->debug) {
-                $this->logDebug("JSON decode error: " . json_last_error_msg());
-            }
-            return null;
-        }
-        
-        return $decoded;
-    }
-    
-    /**
-     * Validate sub-queries returned by LLM
-     * 
-     * Requirements: 2.3
-     * 
-     * @param array $subQueries Sub-queries from LLM
-     * @param array $requestedTypes Requested sub-types
-     * @return bool True if valid
-     */
-    private function validateSubQueries(array $subQueries, array $requestedTypes): bool
-    {
-        // Check if array
-        if (!is_array($subQueries)) {
-            if ($this->debug) {
-                $this->logDebug("Validation failed: not an array");
-            }
-            return false;
-        }
-        
-        // Check count matches requested types
-        if (count($subQueries) !== count($requestedTypes)) {
-            if ($this->debug) {
-                $this->logDebug("Validation failed: count mismatch (expected " . count($requestedTypes) . ", got " . count($subQueries) . ")");
-            }
-            return false;
-        }
-        
-        // Check each sub-query has 'type' and 'text' fields
-        foreach ($subQueries as $index => $subQuery) {
-            if (!isset($subQuery['type']) || !isset($subQuery['text'])) {
-                if ($this->debug) {
-                    $this->logDebug("Validation failed: sub-query {$index} missing 'type' or 'text' field");
-                }
-                return false;
-            }
-            
-            // Verify type matches requested types
-            if (!in_array($subQuery['type'], $requestedTypes)) {
-                if ($this->debug) {
-                    $this->logDebug("Validation failed: sub-query {$index} type '{$subQuery['type']}' not in requested types");
-                }
-                return false;
-            }
-            
-            // Ensure no empty query texts
-            if (empty(trim($subQuery['text']))) {
-                if ($this->debug) {
-                    $this->logDebug("Validation failed: sub-query {$index} has empty text");
-                }
-                return false;
-            }
-        }
-        
-        if ($this->debug) {
-            $this->logDebug("Validation passed");
-        }
-        
-        return true;
-    }
-    
-    /**
      * Fallback when decomposition fails
-     * 
+     *
      * Requirements: 2.4, 6.1, 6.2
-     * 
+     *
      * @param string $query Original query
      * @param array $intent Original intent
      * @return array Single sub-query array
      */
-    private function fallbackToSingleStep(string $query, array $intent): array
+    private function fallbackToSingleStep(string $query, array $intent, array $context = []): array
     {
         // Log fallback reason with full context (Requirement 6.1)
         $this->logDebug("FALLBACK: Decomposition failed, processing as single step");
         $this->logDebug("Original query: " . $query);
         $this->logDebug("Intent type: " . ($intent['type'] ?? 'unknown'));
-        
+
         if ($this->securityLogger) {
             $this->securityLogger->logSecurityEvent(
                 "HybridQueryDecomposer fallback triggered",
@@ -580,7 +373,7 @@ class HybridQueryDecomposer
                 ]
             );
         }
-        
+
         // If we have multiple requested sub_types, create a multi-step fallback
         $requestedTypes = $intent['sub_types'] ?? [];
         if (is_array($requestedTypes) && count($requestedTypes) > 1) {
@@ -589,7 +382,7 @@ class HybridQueryDecomposer
 
         // Create single sub-query from original query (Requirement 2.4)
         $fallbackType = $requestedTypes[0] ?? 'analytics';
-        
+
         return [
             [
                 'type' => $fallbackType,
@@ -696,7 +489,7 @@ class HybridQueryDecomposer
 
         return [$query];
     }
-
+    
     /**
      * Infer sub-query type from text using lightweight keyword heuristics.
      *
@@ -710,12 +503,26 @@ class HybridQueryDecomposer
 
         $analyticsKeywords = [
             'price', 'total', 'count', 'sum', 'avg',
-            'revenue', 'stock', 'quantity'
+            'revenue', 'stock', 'quantity',
+            'number', 'numbers'
         ];
+
+        $domainEntityKeywords = $this->getDomainEntityKeywords();
+
+        if (!empty($domainEntityKeywords)) {
+            $analyticsKeywords = array_merge($analyticsKeywords, $domainEntityKeywords);
+        }
+
         $semanticKeywords = [
             'article', 'terms', 'policy',
             'shipping', 'return', 'privacy', 'description'
         ];
+
+        $domainSemanticKeywords = $this->getDomainSemanticKeywords();
+
+        if (!empty($domainSemanticKeywords)) {
+            $semanticKeywords = array_merge($semanticKeywords, $domainSemanticKeywords);
+        }
 
         $analyticsMatch = $this->hasKeyword($lower, $analyticsKeywords);
         $semanticMatch = $this->hasKeyword($lower, $semanticKeywords);
@@ -728,6 +535,145 @@ class HybridQueryDecomposer
         }
 
         return null;
+    }
+    
+    /**
+     * Get domain-specific entity keywords dynamically (if available).
+     *
+     * @return array
+     */
+    private function getDomainEntityKeywords(): array
+    {
+        static $cache = null;
+
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        $cache = [];
+
+        try {
+            if (!class_exists('ClicShopping\\AI\\Config\\DomainConfig')) {
+                return $cache;
+            }
+
+            $domain = DomainConfig::getActivities();
+            if (empty($domain)) {
+                return $cache;
+            }
+
+            $domainCandidates = [
+                $domain,
+                ucfirst(strtolower($domain))
+            ];
+
+            foreach ($domainCandidates as $domainCandidate) {
+                $entityConfigClass = 'ClicShopping\\Apps\\AI\\' . $domainCandidate . '\\Classes\\ClicShoppingAdmin\\EntityConfig';
+                if (class_exists($entityConfigClass) && method_exists($entityConfigClass, 'getEntityTypes')) {
+                    $entityTypes = $entityConfigClass::getEntityTypes();
+                    $cache = $this->normalizeEntityKeywords($entityTypes);
+                    break;
+                }
+            }
+        } catch (\Exception $e) {
+            // Keep fallback behavior; do not block query decomposition.
+            $cache = [];
+        }
+
+        return $cache;
+    }
+
+    /**
+     * Normalize entity type names into keywords (singular/plural + underscore variants).
+     *
+     * @param array $entityTypes
+     * @return array
+     */
+    private function normalizeEntityKeywords(array $entityTypes): array
+    {
+        $keywords = [];
+
+        foreach ($entityTypes as $entityType) {
+            $entityType = strtolower((string)$entityType);
+            if ($entityType === '') {
+                continue;
+            }
+
+            $keywords[] = $entityType;
+            $keywords[] = str_replace('_', ' ', $entityType);
+
+            if (substr($entityType, -3) === 'ies') {
+                $keywords[] = substr($entityType, 0, -3) . 'y';
+            } elseif (substr($entityType, -1) === 's') {
+                $keywords[] = substr($entityType, 0, -1);
+            } else {
+                $keywords[] = $entityType . 's';
+            }
+        }
+
+        return array_values(array_unique(array_filter($keywords)));
+    }
+    
+    /**
+     * Get domain-specific semantic keywords dynamically (if available).
+     *
+     * @return array
+     */
+    private function getDomainSemanticKeywords(): array
+    {
+        static $cache = null;
+
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        $cache = [];
+
+        try {
+            if (!class_exists('ClicShopping\\AI\\Config\\DomainConfig')) {
+                return $cache;
+            }
+
+            $domain = \ClicShopping\AI\Config\DomainConfig::getActivities();
+            if (empty($domain)) {
+                return $cache;
+            }
+
+            $domainCandidates = [
+                $domain,
+                ucfirst(strtolower($domain))
+            ];
+
+            foreach ($domainCandidates as $domainCandidate) {
+                $analyticsConfigClass = 'ClicShopping\\Apps\\AI\\' . $domainCandidate . '\\Classes\\ClicShoppingAdmin\\AnalyticsConfig';
+                if (class_exists($analyticsConfigClass) && method_exists($analyticsConfigClass, 'getNonDatabaseWords')) {
+                    $cache = $analyticsConfigClass::getNonDatabaseWords();
+                    break;
+                }
+            }
+        } catch (\Exception $e) {
+            // Keep fallback behavior; do not block query decomposition.
+            $cache = [];
+        }
+
+        return $cache;
+    }
+
+    /**
+     * Check if any keyword exists in text.
+     *
+     * @param string $text
+     * @param array $keywords
+     * @return bool
+     */
+    private function hasKeyword(string $text, array $keywords): bool
+    {
+        foreach ($keywords as $keyword) {
+            if (strpos($text, $keyword) !== false) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -747,25 +693,227 @@ class HybridQueryDecomposer
     }
 
     /**
-     * Check if any keyword exists in text.
+     * Build LLM prompt for decomposition (domain-aware)
      *
-     * @param string $text
-     * @param array $keywords
-     * @return bool
+     * @param string $query Original query
+     * @param array $subTypes Sub-types from intent (e.g., ['analytics', 'semantic'])
+     * @param string $domain Active domain from DomainConfig
+     * @return string LLM prompt
      */
-    private function hasKeyword(string $text, array $keywords): bool
+    private function buildDecompositionPrompt(string $query, array $subTypes, string $domain): string
     {
-        foreach ($keywords as $keyword) {
-            if (strpos($text, $keyword) !== false) {
-                return true;
+        // Get language instance
+        $language = Registry::get('Language');
+
+        // Load language definitions for SQL correction prompts using DomainConfig
+        DomainConfig::loadLanguageFile('rag_hybrid_query_decomposer');
+
+        $domainContext = $this->getDomainContext();
+        $domainExamples = $this->getDomainExamples();
+
+        $subTypeLines = [];
+        foreach ($subTypes as $type) {
+            $subTypeLines[] = "- {$type}: " . $this->getTypeDescription($type);
+        }
+
+        $template = $language->getDef('text_rag_hybrid_decomposer_prompt_template', [
+            'domain_name' => $domainContext['name'],
+            'domain_terminology' => $domainContext['terminology'],
+            'domain_data_types' => $domainContext['data_types'],
+            'domain_examples' => $domainExamples,
+            'sub_types_list' => implode("\n", $subTypeLines),
+            'sub_types_csv' => implode(', ', $subTypes),
+            'sub_type_count' => (string)count($subTypes),
+            'query' => $query,
+        ]);
+
+        if (empty($template) || $template === 'text_rag_hybrid_decomposer_prompt_template') {
+            // Fallback to a minimal prompt if the language file is missing
+            return "You are a query decomposition expert for a {$domainContext['name']} system.\n\n"
+                . "DOMAIN CONTEXT:\n"
+                . "- Domain: {$domainContext['name']}\n"
+                . "- Terminology: {$domainContext['terminology']}\n"
+                . "- Data Types: {$domainContext['data_types']}\n\n"
+                . "REQUESTED SUB-QUERY TYPES:\n"
+                . implode("\n", $subTypeLines) . "\n\n"
+                . "EXAMPLES FOR {$domainContext['name']} DOMAIN:\n"
+                . $domainExamples . "\n\n"
+                . "QUERY TO DECOMPOSE:\n"
+                . "\"{$query}\"\n\n"
+                . "INSTRUCTIONS:\n"
+                . "1. Split the query into exactly " . count($subTypes) . " sub-queries\n"
+                . "2. Each sub-query must have a 'type' and 'text' field\n"
+                . "3. Types must match the requested types: " . implode(', ', $subTypes) . "\n"
+                . "4. Preserve the original meaning and context\n"
+                . "5. Use {$domainContext['name']} terminology\n"
+                . "6. If the query is multi-intent joined by 'and', separate the metric/COUNT intent into the analytics sub-query and the policy/article intent into the semantic sub-query\n"
+                . "7. Keep sub-queries concise and focused on their intent\n\n"
+                . "OUTPUT FORMAT (JSON):\n"
+                . "[\n"
+                . "  {\"type\": \"analytics\", \"text\": \"sub-query text\"},\n"
+                . "  {\"type\": \"semantic\", \"text\": \"sub-query text\"}\n"
+                . "]\n\n"
+                . "Return ONLY the JSON array, no additional text.";
+        }
+
+        return $template;
+    }
+
+    /**
+     * Get domain-specific context
+     *
+     * Retrieves domain information from language definitions
+     *
+     * @param string $domain Domain identifier
+     * @return array Domain context
+     */
+    private function getDomainContext(): array
+    {
+        $language = Registry::get('Language');
+
+        $domainName = $language->getDef('text_rag_hybrid_decomposer_domain_name');
+        $terminology = $language->getDef('text_rag_hybrid_decomposer_terminology');
+        $dataTypes = $language->getDef('text_rag_hybrid_decomposer_data_types');
+
+        return [
+            'name' => !empty($domainName) ? $domainName : 'Business',
+            'terminology' => !empty($terminology) ? $terminology : 'data, records, entities, metrics, reports',
+            'data_types' => !empty($dataTypes) ? $dataTypes : 'records, metrics, reports, entities',
+        ];
+    }
+
+    /**
+     * Get domain-specific examples
+     *
+     * Examples are tailored to each domain's terminology and use cases
+     *
+     * @param string $domain Domain identifier
+     * @return string Examples text
+     */
+    private function getDomainExamples(): string
+    {
+        $language = Registry::get('Language');
+        $examples = $language->getDef('text_rag_hybrid_decomposer_examples');
+
+        if (!empty($examples)) {
+            return $examples;
+        }
+
+        return "Example (Generic):\n"
+            . "Query: \"total records and details for item X\"\n"
+            . "Sub-queries: [{\"type\": \"analytics\", \"text\": \"total records\"}, {\"type\": \"semantic\", \"text\": \"details for item X\"}]\n\n"
+            . "Example 2 (Generic):\n"
+            . "Query: \"count of entities and description of entity Y\"\n"
+            . "Sub-queries: [{\"type\": \"analytics\", \"text\": \"count of entities\"}, {\"type\": \"semantic\", \"text\": \"description of entity Y\"}]";
+    }
+
+    /**
+     * Get description for sub-query type
+     *
+     * @param string $type Sub-query type
+     * @return string Type description
+     */
+    private function getTypeDescription(string $type): string
+    {
+        $descriptions = [
+            'analytics' => 'Quantitative query requiring database aggregation (COUNT, SUM, AVG, etc.)',
+            'semantic' => 'Qualitative query requiring semantic search or document retrieval',
+            'web_search' => 'Query requiring external web search',
+        ];
+
+        return $descriptions[$type] ?? 'Query of type ' . $type;
+    }
+
+    /**
+     * Parse JSON response from LLM
+     *
+     * @param string $response LLM response
+     * @return array|null Parsed sub-queries or null on error
+     */
+    private function parseJsonResponse(string $response): ?array
+    {
+        // Try to extract JSON from response
+        $response = trim($response);
+
+        // Remove markdown code blocks if present
+        $response = preg_replace('/```json\s*/', '', $response);
+        $response = preg_replace('/```\s*$/', '', $response);
+        $response = trim($response);
+
+        // Try to decode JSON
+        $decoded = json_decode($response, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            if ($this->debug) {
+                $this->logDebug("JSON decode error: " . json_last_error_msg());
+            }
+            return null;
+        }
+
+        return $decoded;
+    }
+    
+    /**
+     * Validate sub-queries returned by LLM
+     *
+     * @param array $subQueries Sub-queries from LLM
+     * @param array $requestedTypes Requested sub-types
+     * @return bool True if valid
+     */
+    private function validateSubQueries(array $subQueries, array $requestedTypes): bool
+    {
+        // Check if array
+        if (!is_array($subQueries)) {
+            if ($this->debug) {
+                $this->logDebug("Validation failed: not an array");
+            }
+            return false;
+        }
+
+        // Check count matches requested types
+        if (count($subQueries) !== count($requestedTypes)) {
+            if ($this->debug) {
+                $this->logDebug("Validation failed: count mismatch (expected " . count($requestedTypes) . ", got " . count($subQueries) . ")");
+            }
+            return false;
+        }
+
+        // Check each sub-query has 'type' and 'text' fields
+        foreach ($subQueries as $index => $subQuery) {
+            if (!isset($subQuery['type']) || !isset($subQuery['text'])) {
+                if ($this->debug) {
+                    $this->logDebug("Validation failed: sub-query {$index} missing 'type' or 'text' field");
+                }
+                return false;
+            }
+
+            // Verify type matches requested types
+            if (!in_array($subQuery['type'], $requestedTypes)) {
+                if ($this->debug) {
+                    $this->logDebug("Validation failed: sub-query {$index} type '{$subQuery['type']}' not in requested types");
+                }
+                return false;
+            }
+
+            // Ensure no empty query texts
+            if (empty(trim($subQuery['text']))) {
+                if ($this->debug) {
+                    $this->logDebug("Validation failed: sub-query {$index} has empty text");
+                }
+                return false;
             }
         }
-        return false;
+
+        if ($this->debug) {
+            $this->logDebug("Validation passed");
+        }
+
+        return true;
     }
     
     /**
      * Get performance statistics
-     * 
+     *
      * @param int $days Number of days to analyze (default: 7)
      * @return array Performance statistics
      */
@@ -776,7 +924,7 @@ class HybridQueryDecomposer
     
     /**
      * Check if decomposition is enabled
-     * 
+     *
      * @return bool True if decomposition is enabled
      */
     public function isDecompositionEnabled(): bool
@@ -786,7 +934,7 @@ class HybridQueryDecomposer
     
     /**
      * Get configured LLM provider
-     * 
+     *
      * @return string|null LLM provider or null for default
      */
     public function getLlmProvider(): ?string
@@ -796,27 +944,11 @@ class HybridQueryDecomposer
     
     /**
      * Get debug mode status
-     * 
+     *
      * @return bool True if debug mode is enabled
      */
     public function isDebugEnabled(): bool
     {
         return $this->debug;
-    }
-    
-    /**
-     * Log debug message
-     * 
-     * @param string $message Debug message
-     */
-    private function logDebug(string $message): void
-    {
-        if ($this->securityLogger) {
-            $this->securityLogger->logSecurityEvent($message, 'info');
-        }
-        
-        if ($this->debug) {
-            error_log("[HybridQueryDecomposer] " . $message);
-        }
     }
 }
