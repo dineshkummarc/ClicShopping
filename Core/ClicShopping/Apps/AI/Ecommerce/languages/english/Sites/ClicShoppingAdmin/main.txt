@@ -85,7 +85,7 @@ entity_reviews_sentiment = Review sentiment
 entity_reviews_sentiment_desc = Sentiment analysis of customer reviews
 
 
-
+text_info_message_warning = This module is not activate. Please activate it in the configuration page.
 
 
 text_query_capabilities = The e-commerce domain supports both semantic, analytics and hybrid queries:

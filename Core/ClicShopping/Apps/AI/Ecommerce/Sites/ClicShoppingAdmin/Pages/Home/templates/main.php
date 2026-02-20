@@ -14,8 +14,15 @@
   $CLICSHOPPING_Ecommerce = Registry::get('Ecommerce');
   $CLICSHOPPING_Page = Registry::get('Site')->getPage();
   $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
-?>
 
+  if (!defined('CLICSHOPPING_APP_ECOMMERCE_AI_STATUS')) {
+?>
+<div class="alert" role="alert" id="infoMessage">
+  <?php echo $CLICSHOPPING_Ecommerce->getDef('text_info_message'); ?>
+</div>
+<?php
+ }
+?>
 <div class="contentBody">
   <div class="row">
     <div class="col-md-12">

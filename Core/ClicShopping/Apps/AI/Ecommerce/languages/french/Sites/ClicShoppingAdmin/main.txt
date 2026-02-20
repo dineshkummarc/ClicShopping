@@ -81,6 +81,8 @@ entity_return_orders_desc = Demandes de retour de produits et informations de re
 entity_reviews_sentiment = Sentiment des avis
 entity_reviews_sentiment_desc = Analyse du sentiment des avis clients
 
+text_info_message_warning = Ce module n'est pas activé. Veuillez activer ce module dans la page de configuration.
+
 
 text_query_capabilities = Le domaine e-commerce supporte les requêtes sémantiques, analytiques et hybride:
 
