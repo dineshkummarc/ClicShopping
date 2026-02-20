@@ -61,11 +61,13 @@ class Save implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
-    error_log("=== PageManager Hook Execute START ===");
-    
     if (Gpt::checkGptStatus() === false || !defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') || CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'False' || !defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') || CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'False') {
-      error_log("PageManager: GPT or Embedding disabled, skipping");
+        error_log("PageManager: GPT or Embedding disabled, skipping");
       return false;
+    }
+    
+    if (Gpt::checkGptStatus() === false) {
+      error_log("=== PageManager Hook Execute START ===");
     }
 
     $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';

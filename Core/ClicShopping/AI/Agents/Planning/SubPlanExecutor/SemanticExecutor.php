@@ -474,6 +474,12 @@ class SemanticExecutor
       $this->entityRegistry->initialize(); // Ensure registry is initialized
     }
 
+    // First try full table name (with prefix/suffix) since registry stores full names
+    $entityType = $this->entityRegistry->getEntityTypeFromTable($tableName);
+    if ($entityType !== null) {
+      return $entityType;
+    }
+
     // Remove table prefix if present
     $prefix = CLICSHOPPING::getConfig('db_table_prefix');
     if (!empty($prefix) && strpos($tableName, $prefix) === 0) {
@@ -482,9 +488,6 @@ class SemanticExecutor
 
     // Remove '_embedding' suffix if present
     $tableName = str_replace('_embedding', '', $tableName);
-
-    // Use EntityTypeRegistry for mapping
-    $entityType = $this->entityRegistry->getEntityTypeFromTable($tableName);
 
     // If not found in registry, use table name as fallback
     if ($entityType === null) {
