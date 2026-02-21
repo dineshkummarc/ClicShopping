@@ -369,6 +369,8 @@ class UnifiedQueryAnalyzer
       $analysis['sub_types'] = $classification['sub_types'] ?? [];
       $analysis['classification_reasoning'] = $classification['reasoning'] ?? '';
       $analysis['detection_method'] = 'classification_engine'; // Mark as using ClassificationEngine
+      $analysis['action'] = $classification['action'] ?? null;
+      $analysis['action_params'] = $classification['action_params'] ?? [];
       
       if ($this->debug) {
         error_log("[INFO : ANALYSE] [UnifiedQueryAnalyzer] Merged Analysis:");

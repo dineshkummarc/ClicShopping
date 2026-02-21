@@ -1,6 +1,6 @@
 text_rag_classification = YOU MUST RESPOND WITH PURE JSON ONLY.
 
-Format: {"type":"analytics","confidence":0.9,"reasoning":"Brief explanation","sub_types":[]}
+Format: {"type":"analytics","confidence":0.9,"reasoning":"Brief explanation","sub_types":[],"action":null,"action_params":{}}
 
 START YOUR RESPONSE WITH { AND END WITH }
 NO text before or after the JSON. NO markdown.
@@ -17,6 +17,14 @@ PRINCIPLE: What is the user looking for?
 2. DOCUMENT CONTENT (explanations, policies, articles) → semantic
 3. EXTERNAL WEB INFORMATION (trends, news, competitors) → web_search
 4. MULTIPLE different things → hybrid
+
+OPTIONAL ACTION SELECTION (Pure LLM Tool Selection):
+- If the user is asking for stock forecast / replenishment probability / stockout risk / safety stock forecast,
+  set: "action":"inventory_forecast"
+- Provide best-effort parameters in action_params:
+  {"entity_id":123,"horizon_days":30,"lead_time_days":7,"history_days":90,"service_level":0.95}
+- If entity_id is not explicit, omit it and keep other defaults.
+- If horizon is described (e.g., "next month"), set horizon_days accordingly.
 
 
 🚨 CLASSIFICATION CONTEXT ISOLATION RULES 🚨
@@ -129,6 +137,9 @@ CRITICAL RULES:
 3. Field values = ALWAYS analytics
    "price of the iPhone" → analytics
    "product stock" → analytics
+   "stock forecast" → analytics
+   "inventory forecast" → analytics
+   "reorder probability" → analytics
 
 4. Statuses = ALWAYS analytics
    "pending orders" → analytics

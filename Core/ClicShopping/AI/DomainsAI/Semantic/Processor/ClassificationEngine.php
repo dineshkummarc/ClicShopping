@@ -286,6 +286,14 @@ class ClassificationEngine
       if (!isset($result['sub_types'])) {
         $result['sub_types'] = [];
       }
+
+      // Ensure action fields exist for tool selection
+      if (!isset($result['action'])) {
+        $result['action'] = null;
+      }
+      if (!isset($result['action_params']) || !is_array($result['action_params'])) {
+        $result['action_params'] = [];
+      }
       
       // Log successful classification
       if (self::$logger && defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
@@ -307,7 +315,9 @@ class ClassificationEngine
         'type' => $result['type'],
         'confidence' => $confidence,
         'reasoning' => $result['reasoning'] ?? '',
-        'sub_types' => $result['sub_types']
+        'sub_types' => $result['sub_types'],
+        'action' => $result['action'],
+        'action_params' => $result['action_params']
       ];
       
     } catch (\Exception $e) {

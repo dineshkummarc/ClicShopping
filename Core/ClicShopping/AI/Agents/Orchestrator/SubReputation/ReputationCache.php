@@ -82,11 +82,10 @@ class ReputationCache
    */
   public function __construct(?ReputationStore $reputationStore = null, bool $debug = false)
   {
-    $this->debug = $debug || (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && 
-                              CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True');
+    $this->debug = $debug || (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True');
 
     // Set cache directory
-    $this->cacheDir = CLICSHOPPING::BASE_DIR . 'Work/Cache/Reputation/';
+    $this->cacheDir = CLICSHOPPING::BASE_DIR . 'Work/Cache/Rag/Reputation/';
 
     // Create cache directory if it doesn't exist
     if (!is_dir($this->cacheDir)) {
@@ -115,124 +114,6 @@ class ReputationCache
   }
 
   /**
-   * Get reputation score from cache or database.
-   *
-   * @param string $criticId Critic identifier
-   * @return float|null Reputation score (0.5-1.0) or null if not found
-   */
-  public function get(string $criticId): ?float
-  {
-    try {
-      $cacheKey = $this->getCacheKey($criticId);
-
-      // Try to get from cache
-      $reputation = $this->cache->get($cacheKey, function (ItemInterface $item) use ($criticId) {
-        // Cache miss - fetch from database
-        $this->stats['misses']++;
-        
-        if ($this->debug) {
-          error_log("[ReputationCache] Cache MISS for critic: {$criticId}");
-        }
-
-        // Set TTL for this item
-        $item->expiresAfter($this->ttl);
-
-        // Fetch from database
-        $reputationScore = $this->reputationStore->getReputation($criticId);
-
-        if ($reputationScore !== null) {
-          if ($this->debug) {
-            error_log(sprintf(
-              "[ReputationCache] Loaded from database: critic=%s, reputation=%.3f",
-              $criticId,
-              $reputationScore->reputationScore
-            ));
-          }
-          return $reputationScore->reputationScore;
-        }
-
-        // Not found in database - return null (will not be cached)
-        return null;
-      });
-
-      if ($reputation !== null) {
-        $this->stats['hits']++;
-        
-        if ($this->debug) {
-          error_log(sprintf(
-            "[ReputationCache] Cache HIT for critic: %s, reputation=%.3f",
-            $criticId,
-            $reputation
-          ));
-        }
-      }
-
-      return $reputation;
-
-    } catch (\Exception $e) {
-      if ($this->debug) {
-        error_log("[ReputationCache] Error getting reputation for {$criticId}: " . $e->getMessage());
-      }
-      
-      // Fall back to database on cache error
-      $reputationScore = $this->reputationStore->getReputation($criticId);
-      return $reputationScore?->reputationScore;
-    }
-  }
-
-  /**
-   * Set reputation score in cache.
-   *
-   * @param string $criticId Critic identifier
-   * @param float $reputation Reputation score (0.5-1.0)
-   * @return bool True on success, false on failure
-   * @throws \InvalidArgumentException If reputation is out of bounds
-   */
-  public function set(string $criticId, float $reputation): bool
-  {
-    // Validate reputation bounds (throw exception before try block)
-    if ($reputation < 0.5 || $reputation > 1.0) {
-      throw new \InvalidArgumentException(
-        "Reputation must be between 0.5 and 1.0, got: {$reputation}"
-      );
-    }
-    
-    try {
-
-      $cacheKey = $this->getCacheKey($criticId);
-
-      // Get cache item
-      $item = $this->cache->getItem($cacheKey);
-      $item->set($reputation);
-      $item->expiresAfter($this->ttl);
-
-      // Save to cache
-      $success = $this->cache->save($item);
-
-      if ($success) {
-        $this->stats['sets']++;
-        
-        if ($this->debug) {
-          error_log(sprintf(
-            "[ReputationCache] Cached reputation: critic=%s, reputation=%.3f, TTL=%ds",
-            $criticId,
-            $reputation,
-            $this->ttl
-          ));
-        }
-      }
-
-      return $success;
-
-    } catch (\Exception $e) {
-      if ($this->debug) {
-        error_log("[ReputationCache] Error setting reputation for {$criticId}: " . $e->getMessage());
-      }
-      return false;
-    }
-  }
-
-  /**
    * Invalidate cache entry for a specific critic.
    *
    * @param string $criticId Critic identifier
@@ -246,7 +127,7 @@ class ReputationCache
 
       if ($success) {
         $this->stats['invalidations']++;
-        
+
         if ($this->debug) {
           error_log("[ReputationCache] Invalidated cache for critic: {$criticId}");
         }
@@ -263,8 +144,19 @@ class ReputationCache
   }
 
   /**
+   * Generate cache key for a critic.
+   *
+   * @param string $criticId Critic identifier
+   * @return string Cache key
+   */
+  private function getCacheKey(string $criticId): string
+  {
+    return 'reputation_' . $criticId;
+  }
+
+  /**
    * Batch warm cache for multiple critics.
-   * 
+   *
    * This method pre-loads reputation scores for multiple critics into the cache,
    * reducing database queries for frequently accessed critics.
    *
@@ -322,6 +214,58 @@ class ReputationCache
   }
 
   /**
+   * Set reputation score in cache.
+   *
+   * @param string $criticId Critic identifier
+   * @param float $reputation Reputation score (0.5-1.0)
+   * @return bool True on success, false on failure
+   * @throws \InvalidArgumentException If reputation is out of bounds
+   */
+  public function set(string $criticId, float $reputation): bool
+  {
+    // Validate reputation bounds (throw exception before try block)
+    if ($reputation < 0.5 || $reputation > 1.0) {
+      throw new \InvalidArgumentException(
+        "Reputation must be between 0.5 and 1.0, got: {$reputation}"
+      );
+    }
+
+    try {
+
+      $cacheKey = $this->getCacheKey($criticId);
+
+      // Get cache item
+      $item = $this->cache->getItem($cacheKey);
+      $item->set($reputation);
+      $item->expiresAfter($this->ttl);
+
+      // Save to cache
+      $success = $this->cache->save($item);
+
+      if ($success) {
+        $this->stats['sets']++;
+
+        if ($this->debug) {
+          error_log(sprintf(
+            "[ReputationCache] Cached reputation: critic=%s, reputation=%.3f, TTL=%ds",
+            $criticId,
+            $reputation,
+            $this->ttl
+          ));
+        }
+      }
+
+      return $success;
+
+    } catch (\Exception $e) {
+      if ($this->debug) {
+        error_log("[ReputationCache] Error setting reputation for {$criticId}: " . $e->getMessage());
+      }
+      return false;
+    }
+  }
+
+  /**
    * Get multiple reputation scores from cache or database.
    *
    * @param array $criticIds Array of critic identifiers
@@ -339,6 +283,72 @@ class ReputationCache
     }
 
     return $results;
+  }
+
+  /**
+   * Get reputation score from cache or database.
+   *
+   * @param string $criticId Critic identifier
+   * @return float|null Reputation score (0.5-1.0) or null if not found
+   */
+  public function get(string $criticId): ?float
+  {
+    try {
+      $cacheKey = $this->getCacheKey($criticId);
+
+      // Try to get from cache
+      $reputation = $this->cache->get($cacheKey, function (ItemInterface $item) use ($criticId) {
+        // Cache miss - fetch from database
+        $this->stats['misses']++;
+
+        if ($this->debug) {
+          error_log("[ReputationCache] Cache MISS for critic: {$criticId}");
+        }
+
+        // Set TTL for this item
+        $item->expiresAfter($this->ttl);
+
+        // Fetch from database
+        $reputationScore = $this->reputationStore->getReputation($criticId);
+
+        if ($reputationScore !== null) {
+          if ($this->debug) {
+            error_log(sprintf(
+              "[ReputationCache] Loaded from database: critic=%s, reputation=%.3f",
+              $criticId,
+              $reputationScore->reputationScore
+            ));
+          }
+          return $reputationScore->reputationScore;
+        }
+
+        // Not found in database - return null (will not be cached)
+        return null;
+      });
+
+      if ($reputation !== null) {
+        $this->stats['hits']++;
+
+        if ($this->debug) {
+          error_log(sprintf(
+            "[ReputationCache] Cache HIT for critic: %s, reputation=%.3f",
+            $criticId,
+            $reputation
+          ));
+        }
+      }
+
+      return $reputation;
+
+    } catch (\Exception $e) {
+      if ($this->debug) {
+        error_log("[ReputationCache] Error getting reputation for {$criticId}: " . $e->getMessage());
+      }
+
+      // Fall back to database on cache error
+      $reputationScore = $this->reputationStore->getReputation($criticId);
+      return $reputationScore?->reputationScore;
+    }
   }
 
   /**
@@ -386,17 +396,6 @@ class ReputationCache
       'ttl' => $this->ttl,
       'cache_dir' => $this->cacheDir
     ];
-  }
-
-  /**
-   * Generate cache key for a critic.
-   *
-   * @param string $criticId Critic identifier
-   * @return string Cache key
-   */
-  private function getCacheKey(string $criticId): string
-  {
-    return 'reputation_' . $criticId;
   }
 
   /**

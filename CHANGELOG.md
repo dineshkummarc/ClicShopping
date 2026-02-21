@@ -2,7 +2,8 @@ version4.21
 - AI
    - AI improvement and refactoring to be full agentic approach
    - Agent - Actor - Critic - Objectives - Evaluation - Conversation included
-   - Around 50 KPI for statistics
+   - Around 50 KPI for statistics (manager, programmer, data scientist)
+   - Domain Tools implementation with stock foercast example.
    - App Ecommerce Domain with Insight (basic) approach including ACP et UCP below
    - Refactoring ACP and add UCP Beta for AI Ecommerce App
      - ACP Protocol Beta refactored via Ecommerce AI app

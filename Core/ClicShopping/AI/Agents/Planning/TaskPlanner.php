@@ -202,6 +202,36 @@ class TaskPlanner
             // 2. Delegate plan creation to SubTaskPlanner
             $steps = $selectedPlanner->createPlan($intent, $query);
 
+            // 2.1 If LLM selected an explicit action, resolve via active domain tool registry
+            if (!empty($intent['action'])) {
+              $domainApp = \ClicShopping\AI\DomainsAI\DomainRegistry::getInstance()->getActiveApp();
+
+              if ($domainApp && method_exists($domainApp, 'getToolRegistryClass')) {
+                $registryClass = $domainApp->getToolRegistryClass();
+
+                if ($registryClass && class_exists($registryClass) && method_exists($registryClass, 'resolveAction')) {
+                  $toolStep = $registryClass::resolveAction(
+                    (string)$intent['action'],
+                    is_array($intent['action_params'] ?? null) ? $intent['action_params'] : [],
+                    $intent,
+                    $query
+                  );
+
+                  if (is_array($toolStep) && !empty($toolStep['step_type'])) {
+                    $meta = $toolStep['meta'] ?? [];
+                    $meta['intent'] = $intent;
+                    $meta['planner'] = $toolStep['planner'] ?? 'llm_action_domain_tool';
+                    $meta['data_source'] = $meta['data_source'] ?? 'internal_database';
+                    $meta['depends_on'] = $meta['depends_on'] ?? [];
+                    $meta['can_run_parallel'] = $meta['can_run_parallel'] ?? false;
+                    $meta['is_final'] = $meta['is_final'] ?? true;
+
+                    $steps = [new TaskStep('step_1', $toolStep['step_type'], $query, $meta)];
+                  }
+                }
+              }
+            }
+
           if($this->debug) {
             error_log("Steps created by SubTaskPlanner:");
           }

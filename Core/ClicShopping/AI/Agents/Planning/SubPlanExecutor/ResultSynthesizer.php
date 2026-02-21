@@ -585,6 +585,15 @@ class ResultSynthesizer
       $finalResult = [
         'type' => 'hybrid',
         'text_response' => $textResponse,
+        // Provide structured data at root for ResponseFormatter / HybridFormatter
+        'data' => [
+          'sub_queries' => $subQueries,
+          'synthesis' => $textResponse,
+          'sources_used' => array_unique(array_map(function ($a) {
+            return $a['source_type'] ?? 'Unknown';
+          }, $aggregated['source_attributions'] ?? [])),
+        ],
+        // Keep legacy 'result' for backward compatibility
         'result' => [
           'sub_queries' => $subQueries,
           'synthesis' => $textResponse,
@@ -592,6 +601,8 @@ class ResultSynthesizer
             return $a['source_type'] ?? 'Unknown';
           }, $aggregated['source_attributions'] ?? [])),
         ],
+        // Also expose sub_queries at top-level for hybrid formatter
+        'sub_queries' => $subQueries,
       ];
 
       if (!empty($textResponse)) {

@@ -405,6 +405,10 @@ class PlanExecutor
           $result = $this->executeSynthesis($step, $context);
           break;
 
+        case 'domain_tool':
+          $result = $this->executeDomainTool($step, $context);
+          break;
+
         default:
           throw new \Exception("Unknown step type: {$step->getType()}");
       }
@@ -526,6 +530,47 @@ class PlanExecutor
     }
 
     return $result;
+  }
+
+  /**
+   * Execute inventory forecast tool.
+   */
+  private function executeDomainTool(TaskStep $step, array $context): array
+  {
+    $meta = $step->getMeta();
+    $action = (string)($meta['action'] ?? '');
+    $params = is_array($meta['action_params'] ?? null) ? $meta['action_params'] : [];
+
+    if ($action === '') {
+      return [
+        'type' => 'domain_tool',
+        'success' => false,
+        'error' => 'Missing action for domain tool',
+        'text_response' => 'Missing action for domain tool.'
+      ];
+    }
+
+    $domainApp = \ClicShopping\AI\DomainsAI\DomainRegistry::getInstance()->getActiveApp();
+    if (!$domainApp || !method_exists($domainApp, 'getToolRegistryClass')) {
+      return [
+        'type' => 'domain_tool',
+        'success' => false,
+        'error' => 'Domain tool registry not available',
+        'text_response' => 'Domain tool registry not available.'
+      ];
+    }
+
+    $registryClass = $domainApp->getToolRegistryClass();
+    if (!$registryClass || !class_exists($registryClass) || !method_exists($registryClass, 'executeAction')) {
+      return [
+        'type' => 'domain_tool',
+        'success' => false,
+        'error' => 'Domain tool registry missing executeAction',
+        'text_response' => 'Domain tool registry missing executeAction.'
+      ];
+    }
+
+    return $registryClass::executeAction($action, $params, $context);
   }
 
   /**

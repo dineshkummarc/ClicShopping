@@ -190,6 +190,16 @@ class Ecommerce extends AbstractDomainApp
   }
 
   /**
+   * Get tool registry class for domain-specific tool resolution.
+   *
+   * @return string|null Fully qualified class name or null if not supported
+   */
+  public function getToolRegistryClass(): ?string
+  {
+    return \ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\Tools\ToolRegistry::class;
+  }
+
+  /**
    * Get the helper classes for this domain
    *
    * Returns instantiated helper objects for e-commerce business logic.
