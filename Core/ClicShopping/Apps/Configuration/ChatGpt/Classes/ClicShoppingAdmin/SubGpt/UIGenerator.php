@@ -109,6 +109,7 @@ class UIGenerator
       $languageId = (int)($_SESSION['languages_id'] ?? 1);
 
       $resetContextUrl = $httpServer . $httpPath . 'ajax/RAG/reset_context.php';
+      $maxLength = 1000;
 
       $script .='
 <script>
@@ -119,6 +120,47 @@ class UIGenerator
     ajaxUrl: " ' . $ajaxUrl . '",
     feedbackUrl: "' . $recordUrl . '",
     resetContextUrl: "' . $resetContextUrl . '",
+    i18n: {
+      loading_analyzing: "' . CLICSHOPPING::getDef('text_chat_loading_analyzing') . '",
+      loading_request: "' . CLICSHOPPING::getDef('text_chat_loading_request') . '",
+      validation_empty: "' . CLICSHOPPING::getDef('text_chat_validation_empty') . '",
+      validation_too_long: "' . CLICSHOPPING::getDef('text_chat_validation_too_long', ['maxLength' => $maxLength]) . '",
+      error_prefix: "' . CLICSHOPPING::getDef('text_chat_error_prefix') . '",
+      error_config_missing: "' . CLICSHOPPING::getDef('text_chat_error_config_missing') . '",
+      error_unknown: "' . CLICSHOPPING::getDef('text_chat_error_unknown') . '",
+      error_server: "' . CLICSHOPPING::getDef('text_chat_error_server') . '",
+      error_empty_response: "' . CLICSHOPPING::getDef('text_chat_error_empty_response') . '",
+      error_invalid_response: "' . CLICSHOPPING::getDef('text_chat_error_invalid_response') . '",
+      metrics_confidence_title: "' . CLICSHOPPING::getDef('text_chat_metrics_confidence_title') . '",
+      metrics_confidence_label: "' . CLICSHOPPING::getDef('text_chat_metrics_confidence_label') . '",
+      metrics_security_title: "' . CLICSHOPPING::getDef('text_chat_metrics_security_title') . '",
+      metrics_security_label: "' . CLICSHOPPING::getDef('text_chat_metrics_security_label') . '",
+      metrics_hallucination_title: "' . CLICSHOPPING::getDef('text_chat_metrics_hallucination_title') . '",
+      metrics_hallucination_label: "' . CLICSHOPPING::getDef('text_chat_metrics_hallucination_label') . '",
+      metrics_quality_title: "' . CLICSHOPPING::getDef('text_chat_metrics_quality_title') . '",
+      metrics_quality_label: "' . CLICSHOPPING::getDef('text_chat_metrics_quality_label') . '",
+      metrics_relevance_title: "' . CLICSHOPPING::getDef('text_chat_metrics_relevance_title') . '",
+      metrics_relevance_label: "' . CLICSHOPPING::getDef('text_chat_metrics_relevance_label') . '",
+      reset_confirm: "' . CLICSHOPPING::getDef('text_chat_reset_confirm') . '",
+      reset_loading: "' . CLICSHOPPING::getDef('text_chat_reset_loading') . '",
+      reset_success_title: "' . CLICSHOPPING::getDef('text_chat_reset_success_title') . '",
+      reset_success_body: "' . CLICSHOPPING::getDef('text_chat_reset_success_body') . '",
+      error_context_prefix: "' . CLICSHOPPING::getDef('text_chat_error_context_prefix') . '",
+      error_context_unknown: "' . CLICSHOPPING::getDef('text_chat_error_context_unknown') . '",
+      error_context_missing_output: "' . CLICSHOPPING::getDef('text_chat_error_context_missing_output') . '",
+      clarification_title: "' . CLICSHOPPING::getDef('text_chat_clarification_title') . '",
+      clarification_placeholder: "' . CLICSHOPPING::getDef('text_chat_clarification_placeholder') . '",
+      clarification_send: "' . CLICSHOPPING::getDef('text_chat_clarification_send') . '",
+      clarification_info: "' . CLICSHOPPING::getDef('text_chat_clarification_info') . '",
+      clarification_error_missing: "' . CLICSHOPPING::getDef('text_chat_clarification_error_missing') . '",
+      clarification_error_empty: "' . CLICSHOPPING::getDef('text_chat_clarification_error_empty') . '",
+      clarification_error_request: "' . CLICSHOPPING::getDef('text_chat_clarification_error_request') . '",
+      clarification_status_sending: "' . CLICSHOPPING::getDef('text_chat_clarification_status_sending') . '",
+      clarification_status_received: "' . CLICSHOPPING::getDef('text_chat_clarification_status_received') . '",
+      clarification_error_invalid_response: "' . CLICSHOPPING::getDef('text_chat_clarification_error_invalid_response') . '",
+      clarification_response_prefix: "' . CLICSHOPPING::getDef('text_chat_clarification_response_prefix') . '",
+      clarification_retry: "' . CLICSHOPPING::getDef('text_chat_clarification_retry') . '"
+    },
     userId: ' . $userId . ',
     languageId:  ' . $languageId . ',
     enableFeedback: true,

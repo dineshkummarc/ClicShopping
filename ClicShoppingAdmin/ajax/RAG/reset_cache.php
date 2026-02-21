@@ -9,12 +9,12 @@
  * @date 2025-11-17
  */
 
-  use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
-  use ClicShopping\OM\Cache as OMCache;
-use ClicShopping\AI\Infrastructure\Cache\TranslationCache;
-use ClicShopping\AI\Infrastructure\Cache\ClassificationCache;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
+use ClicShopping\OM\Cache as OMCache;
+use ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
+use ClicShopping\AI\Infrastructure\Cache\TranslationCache;
+use ClicShopping\AI\Infrastructure\Cache\ClassificationCache;
 
 // Bootstrap
 define('PAGE_PARSE_START_TIME', microtime());
