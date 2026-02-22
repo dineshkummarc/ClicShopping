@@ -17,9 +17,9 @@ use ClicShopping\OM\Registry;
 class Run extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   protected string $code;
-  protected string $app;
-  protected string $id;
-  protected string $hooks;
+  protected mixed $app;
+  protected int $id;
+  protected mixed $hooks;
 
   public function __construct()
   {
