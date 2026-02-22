@@ -117,6 +117,13 @@ class Github
 
     if ($versionCache->exists(30) !== false) {
       $result = $versionCache->get();
+      // Cached objects are stored as arrays to avoid unserialize class issues.
+      if ($result instanceof \__PHP_Incomplete_Class) {
+        $result = null;
+      }
+      if (is_array($result)) {
+        $result = (object)$result;
+      }
     } else {
       try {
         $response = HTTP::getResponse([
@@ -141,8 +148,13 @@ class Github
             throw new \Exception('Failed to fetch version content');
           }
 
-          $data = json_decode($url_download);
-          $result = $versionCache->save($data);
+          $data = json_decode($url_download, true);
+          if (!is_array($data)) {
+            throw new \Exception('Invalid version content');
+          }
+
+          $versionCache->save($data);
+          $result = (object)$data;
         } else {
           $result = false;
         }
