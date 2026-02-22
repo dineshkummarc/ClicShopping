@@ -403,6 +403,12 @@ feedback_optimal_ratio_description = (2 feedbacks for 5 interactions)
 
 # Performance & Cache Tab
 perf_cache_title = ⚡ Performance & Cache
+perf_cache_overview = Cache Overview
+perf_cache_details = Detailed Stats & Actions
+perf_cache_impact = Performance Impact
+perf_cache_files = File Cache Statistics
+perf_cache_websearch = WebSearch Cache
+perf_cache_charts = Performance Charts
 cache_hit_rate = Cache Hit Rate
 cache_requests_from_cache = Requests served from cache
 cache_about_title = 💡 About Cache
@@ -481,7 +487,8 @@ cache_type_reputation = ⭐ Reputation Cache
 cache_type_reputation_desc = Cached reputation signals in Work/Cache/Rag/Reputation/
 cache_type_config = ⚙️ Config Cache
 cache_type_config_desc = Cached technical config in Work/Cache/Rag/Config/
-websearch_cache_statistics = Statisques WebSearch
+websearch_cache_statistics = Web Search Cache Statistics
+websearch_no_data = No WebSearch cache data available.
 
 
 # File Caches

@@ -403,6 +403,12 @@ feedback_optimal_ratio_description = (2 feedbacks pour 5 interactions)
 
 # Onglet Performance & Cache
 perf_cache_title = ⚡ Performance & Cache
+perf_cache_overview = Vue d'ensemble du cache
+perf_cache_details = Statistiques & Actions
+perf_cache_impact = Impact sur les performances
+perf_cache_files = Statistiques des caches fichiers
+perf_cache_websearch = Cache WebSearch
+perf_cache_charts = Graphiques de performance
 cache_hit_rate = Taux de Hit Cache
 cache_requests_from_cache = Requêtes servies depuis le cache
 cache_about_title = 💡 À propos du Cache
@@ -485,7 +491,8 @@ cache_type_reputation = ⭐ Cache Réputation
 cache_type_reputation_desc = Signaux de réputation en cache dans Work/Cache/Rag/Reputation/
 cache_type_config = ⚙️ Cache Configuration
 cache_type_config_desc = Config technique en cache dans Work/Cache/Rag/Config/
-websearch_cache_statistics = Statisques WebSearch
+websearch_cache_statistics = Statistiques WebSearch
+websearch_no_data = Aucune donnée WebSearch en cache disponible.
 
 
 
