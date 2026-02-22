@@ -3284,6 +3284,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_context_desc'); ?></small>
               </label>
             </div>
+
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_memory" name="cache_types[]" value="memory" checked>
+              <label class="form-check-label" for="cache_memory">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_memory'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_memory_desc'); ?></small>
+              </label>
+            </div>
             
             <div class="form-check mb-2">
               <input class="form-check-input" type="checkbox" id="cache_embedding" name="cache_types[]" value="embeddings" checked>
@@ -3322,6 +3330,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <label class="form-check-label" for="cache_hybrid">
                 <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_hybrid') ?? 'Hybrid Query Cache'; ?></strong>
                 <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_hybrid_desc') ?? 'Multi-temporal query results cache'; ?></small>
+              </label>
+            </div>
+
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_security" name="cache_types[]" value="security" checked>
+              <label class="form-check-label" for="cache_security">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_security'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_security_desc'); ?></small>
+              </label>
+            </div>
+
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_reputation" name="cache_types[]" value="reputation" checked>
+              <label class="form-check-label" for="cache_reputation">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_reputation'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_reputation_desc'); ?></small>
+              </label>
+            </div>
+
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="cache_config" name="cache_types[]" value="config" checked>
+              <label class="form-check-label" for="cache_config">
+                <strong><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_config'); ?></strong>
+                <br><small class="text-muted"><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_type_config_desc'); ?></small>
               </label>
             </div>
           </div>
@@ -3412,6 +3444,36 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (data.details.translation_ambiguity !== undefined) {
               message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_translation_ambiguity_deleted'); ?> : ' + data.details.translation_ambiguity + '</li>';
+            }
+            if (data.details.context !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_context_deleted'); ?> : ' + data.details.context + '</li>';
+            }
+            if (data.details.embeddings !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_embeddings_deleted'); ?> : ' + data.details.embeddings + '</li>';
+            }
+            if (data.details.embedding_search !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_embedding_search_deleted'); ?> : ' + data.details.embedding_search + '</li>';
+            }
+            if (data.details.classification !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_classification_deleted'); ?> : ' + data.details.classification + '</li>';
+            }
+            if (data.details.hybrid !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_hybrid_deleted'); ?> : ' + data.details.hybrid + '</li>';
+            }
+            if (data.details.sql !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_sql_deleted'); ?> : ' + data.details.sql + '</li>';
+            }
+            if (data.details.memory !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_memory_deleted'); ?> : ' + data.details.memory + '</li>';
+            }
+            if (data.details.security !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_security_deleted'); ?> : ' + data.details.security + '</li>';
+            }
+            if (data.details.reputation !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_reputation_deleted'); ?> : ' + data.details.reputation + '</li>';
+            }
+            if (data.details.config !== undefined) {
+              message += '<li><?php echo $CLICSHOPPING_ChatGpt->getDef('cache_reset_config_deleted'); ?> : ' + data.details.config + '</li>';
             }
             message += '</ul>';
           }

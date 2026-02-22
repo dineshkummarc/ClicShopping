@@ -31,13 +31,6 @@ AdministratorAdmin::hasUserAccess();
 // Set JSON header
 header('Content-Type: application/json');
 
-// Security check - ensure user is authenticated
-// TODO: Add proper authentication check
-// if (!isset($_SESSION['admin_id'])) {
-//   echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-//   exit;
-// }
-
 try {
   // Get request data
   $input = file_get_contents('php://input');
@@ -441,6 +434,34 @@ try {
       error_log("Cache Reset Error (context): " . $e->getMessage());
     }
   }
+
+  // ============================================================================
+  // 8.5. Reset Memory Cache (file-based)
+  // ============================================================================
+  if (in_array('memory', $cacheTypes)) {
+    try {
+      $memoryCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Memory/';
+      $filesBefore = 0;
+
+      if (is_dir($memoryCacheDir)) {
+        $files = glob($memoryCacheDir . '*.json');
+        $filesBefore = count($files);
+
+        foreach ($files as $file) {
+          @unlink($file);
+        }
+      }
+
+      $filesAfter = is_dir($memoryCacheDir) ? count(glob($memoryCacheDir . '*.json')) : 0;
+      $results['memory'] = $filesBefore - $filesAfter;
+
+      error_log("Cache Reset: Memory cache flushed - {$results['memory']} files deleted");
+
+    } catch (Exception $e) {
+      $errors[] = "Memory cache: " . $e->getMessage();
+      error_log("Cache Reset Error (memory): " . $e->getMessage());
+    }
+  }
   
   // ============================================================================
   // 9. Reset Embedding Cache
@@ -644,6 +665,18 @@ try {
           $filesAfter = count($files);
         }
 
+        // Also clear old semantic cache files from root cache directory
+        $oldCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/';
+        if (is_dir($oldCacheDir)) {
+          $oldFiles = glob($oldCacheDir . 'semantic_*.cache');
+          $filesBefore += count($oldFiles);
+          foreach ($oldFiles as $file) {
+            @unlink($file);
+          }
+
+          $filesAfter += count(glob($oldCacheDir . 'semantic_*.cache'));
+        }
+
         $results['semantic'] = $filesBefore - $filesAfter;
 
         error_log("Cache Reset: Semantic query cache flushed - {$results['semantic']} files deleted");
@@ -670,7 +703,45 @@ try {
           }
         }
 
+        // Also clear legacy embedding cache directory
+        $legacyEmbeddingDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Embedding/';
+        if (is_dir($legacyEmbeddingDir)) {
+          $legacyFiles = glob($legacyEmbeddingDir . '*.cache');
+          $filesBefore += count($legacyFiles);
+          foreach ($legacyFiles as $file) {
+            @unlink($file);
+          }
+        }
+
+        // Also clear old embedding cache files from root cache directory (excluding embedding_search)
+        $oldCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/';
+        if (is_dir($oldCacheDir)) {
+          $oldFiles = array_merge(
+            glob($oldCacheDir . 'Rag_Embedding_*.cache'),
+            glob($oldCacheDir . 'embedding_*.cache')
+          );
+          $oldFiles = array_filter($oldFiles, function($file) {
+            return strpos(basename($file), 'embedding_search_') !== 0;
+          });
+          $filesBefore += count($oldFiles);
+          foreach ($oldFiles as $file) {
+            @unlink($file);
+          }
+        }
+
         $filesAfter = is_dir($embeddingsCacheDir) ? count(glob($embeddingsCacheDir . '*.cache')) : 0;
+        $filesAfter += is_dir($legacyEmbeddingDir) ? count(glob($legacyEmbeddingDir . '*.cache')) : 0;
+        if (is_dir($oldCacheDir)) {
+          $oldFilesAfter = array_merge(
+            glob($oldCacheDir . 'Rag_Embedding_*.cache'),
+            glob($oldCacheDir . 'embedding_*.cache')
+          );
+          $oldFilesAfter = array_filter($oldFilesAfter, function($file) {
+            return strpos(basename($file), 'embedding_search_') !== 0;
+          });
+          $filesAfter += count($oldFilesAfter);
+        }
+
         $results['embeddings'] = $filesBefore - $filesAfter;
 
         error_log("Cache Reset: Embeddings cache flushed - {$results['embeddings']} files deleted");
@@ -701,6 +772,81 @@ try {
         error_log("Cache Reset: SQL query cache flushed - {$results['sql']} files deleted");
       } catch (Exception $e) {
         $errors[] = "SQL cache: " . $e->getMessage();
+      }
+    }
+
+    // ============================================================================
+    // 15. Reset Security Cache
+    // ============================================================================
+    if (in_array('security', $cacheTypes)) {
+      try {
+        $securityCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Security/';
+        $filesBefore = 0;
+
+        if (is_dir($securityCacheDir)) {
+          $files = glob($securityCacheDir . '*.cache');
+          $filesBefore = count($files);
+          foreach ($files as $file) {
+            @unlink($file);
+          }
+        }
+
+        $filesAfter = is_dir($securityCacheDir) ? count(glob($securityCacheDir . '*.cache')) : 0;
+        $results['security'] = $filesBefore - $filesAfter;
+
+        error_log("Cache Reset: Security cache flushed - {$results['security']} files deleted");
+      } catch (Exception $e) {
+        $errors[] = "Security cache: " . $e->getMessage();
+      }
+    }
+
+    // ============================================================================
+    // 16. Reset Reputation Cache
+    // ============================================================================
+    if (in_array('reputation', $cacheTypes)) {
+      try {
+        $reputationCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Reputation/';
+        $filesBefore = 0;
+
+        if (is_dir($reputationCacheDir)) {
+          $files = glob($reputationCacheDir . '*.cache');
+          $filesBefore = count($files);
+          foreach ($files as $file) {
+            @unlink($file);
+          }
+        }
+
+        $filesAfter = is_dir($reputationCacheDir) ? count(glob($reputationCacheDir . '*.cache')) : 0;
+        $results['reputation'] = $filesBefore - $filesAfter;
+
+        error_log("Cache Reset: Reputation cache flushed - {$results['reputation']} files deleted");
+      } catch (Exception $e) {
+        $errors[] = "Reputation cache: " . $e->getMessage();
+      }
+    }
+
+    // ============================================================================
+    // 17. Reset Config Cache
+    // ============================================================================
+    if (in_array('config', $cacheTypes)) {
+      try {
+        $configCacheDir = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Cache/Rag/Config/';
+        $filesBefore = 0;
+
+        if (is_dir($configCacheDir)) {
+          $files = glob($configCacheDir . '*.cache');
+          $filesBefore = count($files);
+          foreach ($files as $file) {
+            @unlink($file);
+          }
+        }
+
+        $filesAfter = is_dir($configCacheDir) ? count(glob($configCacheDir . '*.cache')) : 0;
+        $results['config'] = $filesBefore - $filesAfter;
+
+        error_log("Cache Reset: Config cache flushed - {$results['config']} files deleted");
+      } catch (Exception $e) {
+        $errors[] = "Config cache: " . $e->getMessage();
       }
     }
   }
