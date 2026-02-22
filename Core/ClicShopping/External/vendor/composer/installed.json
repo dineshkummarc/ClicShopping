@@ -4972,17 +4972,17 @@
         },
         {
             "name": "theodo-group/llphant",
-            "version": "0.11.12",
-            "version_normalized": "0.11.12.0",
+            "version": "0.11.13",
+            "version_normalized": "0.11.13.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/LLPhant/LLPhant.git",
-                "reference": "d4d8de5efabe8eddb5f864fa718c71e5f3c7ca14"
+                "reference": "ab537131428ef4028220528a01f2bfe3ef155f5c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/LLPhant/LLPhant/zipball/d4d8de5efabe8eddb5f864fa718c71e5f3c7ca14",
-                "reference": "d4d8de5efabe8eddb5f864fa718c71e5f3c7ca14",
+                "url": "https://api.github.com/repos/LLPhant/LLPhant/zipball/ab537131428ef4028220528a01f2bfe3ef155f5c",
+                "reference": "ab537131428ef4028220528a01f2bfe3ef155f5c",
                 "shasum": ""
             },
             "require": {
@@ -5029,7 +5029,7 @@
                 "predis/predis": "This is required for the RedisVectoreStore.",
                 "symfony/cache": "This is one of the possible types of psr/cache needed by doctrine/orm"
             },
-            "time": "2026-01-25T15:11:50+00:00",
+            "time": "2026-02-22T10:15:59+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -5061,7 +5061,7 @@
             ],
             "support": {
                 "issues": "https://github.com/LLPhant/LLPhant/issues",
-                "source": "https://github.com/LLPhant/LLPhant/tree/0.11.12"
+                "source": "https://github.com/LLPhant/LLPhant/tree/0.11.13"
             },
             "install-path": "../theodo-group/llphant"
         },

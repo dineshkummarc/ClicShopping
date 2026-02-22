@@ -12,13 +12,28 @@
 // Example CURL commands for testing the API endpoints
 # TAuthorized actions: products, product, search, stats, categories, recommendations
 # Example CURL commands:
-# Note: Replace 'MyTokenToInsertHere' with a valid Base64 encoded token
-curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=products&limit=5" -H "Authorization: Basic MyTokenToInsertHere"
-curl -i -X GET "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=product&id=5" -H "Authorization: Basic MyTokenToInsertHere"
-curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=search&query=lavette" -H "Authorization: Basic MyTokenToInsertHere"
-curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=stats" -H "Authorization: Basic MyTokenToInsertHere"
-curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=categories" -H "Authorization: Basic MyTokenToInsertHere"
-curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=recommendations" -H "Authorization: Basic MyTokenToInsertHere"
+# Note: Use a valid Base64 encoded "username:key" (preferred)
+#   Example:
+
+Step 1 :
+ echo -n "USER_NAME:YOUR_KEY" | base64
+Step 2 :
+curl "http://localhost:3001/clicshopping_test/index.php?mcp&customersProducts&action=products&limit=5" \
+  -H "Authorization: Basic BASE64_USERNAME_COLON_KEY"
+curl -i -X GET "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=product&id=5" \
+  -H "Authorization: Basic BASE64_USERNAME_COLON_KEY"
+curl "http://localhost:3001/clicshopping_test/index.php?mcp&customersProducts&action=search&query=lavette" \
+  -H "Authorization: Basic BASE64_USERNAME_COLON_KEY"
+curl "http://localhost:3001/clicshopping_test/index.php?mcp&customersProducts&action=stats" \
+  -H "Authorization: Basic BASE64_USERNAME_COLON_KEY"
+curl "http://localhost:3001/clicshopping_test/index.php?mcp&customersProducts&action=categories" \
+  -H "Authorization: Basic BASE64_USERNAME_COLON_KEY"
+curl "http://localhost:3001/clicshopping_test/index.php?mcp&customersProducts&action=recommendations" \
+  -H "Authorization: Basic BASE64_USERNAME_COLON_KEY"
+
+# Legacy fallback still supported: raw key in Basic header (not recommended)
+# curl "http://localhost/clicshopping_test/index.php?mcp&customersProducts&action=products&limit=5" \
+#   -H "Authorization: Basic YOUR_RAW_KEY"
 */
 
 
@@ -70,20 +85,21 @@ class CustomersProducts extends \ClicShopping\OM\Domains\PagesAbstract
   public mixed $message;
   /** @var McpPermissions The McpPermissions instance for access control. */
   public McpPermissions $mcpPermissions;
-  /** @var string The username authenticated via session or key. */
-  private string $authenticatedUsername = '';
-
   /**
    * Determines if the site template should be used.
    * @var bool
    */
   protected bool $use_site_template = false;
-
   /**
    * The file name for the page.
    * @var string|null
    */
   protected ?string $file = null;
+  /** @var string The username authenticated via session or key. */
+  private string $authenticatedUsername = '';
+  /** @var string|null The username resolved from a key-only auth flow. */
+  private ?string $resolvedUsernameFromKey = null;
+
   /**
    * Initializes the class by setting up dependencies, headers, and request routing.
    * It handles all incoming API requests (GET, POST, OPTIONS) and routes them to the appropriate handler.
@@ -150,13 +166,25 @@ class CustomersProducts extends \ClicShopping\OM\Domains\PagesAbstract
     $authorizationHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
     if (empty($username) && empty($key) && !empty($authorizationHeader)) {
       if (preg_match('/Basic\s+(.*)/i', $authorizationHeader, $matches)) {
-        $decodedCredentials = base64_decode($matches[1]);
-        if (str_contains($decodedCredentials, ':')) {
+        $basicToken = trim($matches[1]);
+        $decodedCredentials = base64_decode($basicToken, true);
+        if ($decodedCredentials !== false && str_contains($decodedCredentials, ':')) {
           list($authUsername, $authKey) = explode(':', $decodedCredentials, 2);
           // Utiliser ces valeurs pour l'authentification
           $username = $authUsername;
           $key = $authKey;
+        } else {
+          // Fallback: allow raw key passed as Basic token (legacy/example usage)
+          $key = $basicToken;
         }
+      }
+    }
+
+    // Fallback: if only key is provided, attempt to resolve username by key
+    if (empty($username) && !empty($key)) {
+      $this->resolvedUsernameFromKey = $this->findUsernameByKey($key);
+      if (!empty($this->resolvedUsernameFromKey)) {
+        $username = $this->resolvedUsernameFromKey;
       }
     }
 
@@ -235,9 +263,7 @@ class CustomersProducts extends \ClicShopping\OM\Domains\PagesAbstract
 
     // --- Début de la logique métier (Après la validation réussie) ---
 
-    $isProductionMode = \defined(
-        'CLICSHOPPING_APP_MCP_MC_DISPLAY_BROWSER_JSON'
-      ) && CLICSHOPPING_APP_MCP_MC_DISPLAY_BROWSER_JSON == 'True';
+    $isProductionMode = \defined('CLICSHOPPING_APP_MCP_MC_DISPLAY_BROWSER_JSON') && CLICSHOPPING_APP_MCP_MC_DISPLAY_BROWSER_JSON == 'True';
 
     if ($isProductionMode && $_SERVER['REQUEST_METHOD'] == 'GET') {
       // En mode production, seule l'action 'search' est généralement autorisée via le navigateur.
@@ -273,10 +299,74 @@ class CustomersProducts extends \ClicShopping\OM\Domains\PagesAbstract
     }
   }
 
+  /**
+   * Resolve username from a raw MCP key.
+   *
+   * @param string $key
+   * @return string|null
+   */
+  private function findUsernameByKey(string $key): ?string
+  {
+    try {
+      $Quser = $this->db->prepare('SELECT username
+                                   FROM :table_mcp
+                                   WHERE mcp_key = :mcp_key AND status = 1
+                                   LIMIT 1
+                                  ');
+      $Quser->bindValue(':mcp_key', $key);
+      $Quser->execute();
+
+      if ($Quser->fetch()) {
+        return (string)$Quser->value('username');
+      }
+    } catch (\Exception $e) {
+      McpSecurity::logSecurityEvent('Failed to resolve username from key', [
+        'error' => $e->getMessage()
+      ]);
+    }
+
+    return null;
+  }
+
 
   // Suppression des anciennes méthodes de sécurité (validateMcpKey, validateSessionToken, etc.)
   // qui sont remplacées par le bloc de McpSecurity dans init().
   // Les méthodes de Chat et d'aide sont conservées.
+
+  /**
+   * Handles the main chat request, decoding the JSON input and routing to
+   * either the admin or client chat handler.
+   *
+   * @return void
+   */
+  private function handleChatRequest(): void
+  {
+    try {
+      $input = json_decode(file_get_contents('php://input'), true);
+      if (!$input) {
+        // L'appel sendError ici était déjà correct
+        $this->message->sendError('Invalid JSON input', 400);
+        return;
+      }
+
+      $message = $input['message'] ?? '';
+      $context = $input['context'] ?? [];
+
+      if (empty($message)) {
+        // L'appel sendError ici était déjà correct
+        $this->message->sendError('Message is required', 400);
+        return;
+      }
+
+      ($context['user_type'] ?? 'client') === 'admin'
+        ? $this->handleAdminChat($message, $context)
+        : $this->handleClientChat($message, $context);
+    } catch (\Exception $e) {
+      error_log('MCP Chat Error: ' . $e->getMessage());
+      // L'appel sendError ici était déjà correct
+      $this->message->sendError('Chat processing error: ' . $e->getMessage(), 500);
+    }
+  }
 
   /**
    * Handles chat requests for administrators (RAG BI).
@@ -328,41 +418,6 @@ class CustomersProducts extends \ClicShopping\OM\Domains\PagesAbstract
       error_log('Client chat error: ' . $e->getMessage());
       // L'appel sendError ici était déjà correct
       $this->message->sendError('Client chat error: ' . $e->getMessage(), 500);
-    }
-  }
-
-  /**
-   * Handles the main chat request, decoding the JSON input and routing to
-   * either the admin or client chat handler.
-   *
-   * @return void
-   */
-  private function handleChatRequest(): void
-  {
-    try {
-      $input = json_decode(file_get_contents('php://input'), true);
-      if (!$input) {
-        // L'appel sendError ici était déjà correct
-        $this->message->sendError('Invalid JSON input', 400);
-        return;
-      }
-
-      $message = $input['message'] ?? '';
-      $context = $input['context'] ?? [];
-
-      if (empty($message)) {
-        // L'appel sendError ici était déjà correct
-        $this->message->sendError('Message is required', 400);
-        return;
-      }
-
-      ($context['user_type'] ?? 'client') === 'admin'
-        ? $this->handleAdminChat($message, $context)
-        : $this->handleClientChat($message, $context);
-    } catch (\Exception $e) {
-      error_log('MCP Chat Error: ' . $e->getMessage());
-      // L'appel sendError ici était déjà correct
-      $this->message->sendError('Chat processing error: ' . $e->getMessage(), 500);
     }
   }
 

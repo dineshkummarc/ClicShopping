@@ -124,6 +124,35 @@ const ChatSanitizer = {
 document.addEventListener("DOMContentLoaded", function() {
   console.log('ChatSend: Initializing...');
 
+  const i18n = window.CHAT_CONFIG && window.CHAT_CONFIG.i18n
+    ? window.CHAT_CONFIG.i18n
+    : {};
+  const t = (key, fallback) => {
+    if (i18n && typeof i18n[key] === 'string' && i18n[key].length) {
+      return i18n[key];
+    }
+    if (typeof fallback === 'string') {
+      return fallback;
+    }
+    return key;
+  };
+  const format = (template, params) => {
+    if (!template || !params) return template;
+    let result = template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+      if (Object.prototype.hasOwnProperty.call(params, key)) {
+        return String(params[key]);
+      }
+      return match;
+    });
+    result = result.replace(/\{(\w+)\}/g, (match, key) => {
+      if (Object.prototype.hasOwnProperty.call(params, key)) {
+        return String(params[key]);
+      }
+      return match;
+    });
+    return result;
+  };
+
   const initBootstrapTables = (rootEl, attempts = 10) => {
     if (typeof window.jQuery === 'undefined' || !window.jQuery.fn || !window.jQuery.fn.bootstrapTable) {
       if (attempts > 0) {
@@ -203,14 +232,15 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // ✅ Validation 1: Empty query check
     if (!message.trim()) {
-      showValidationError('Veuillez entrer une question');
+      showValidationError(t('validation_empty'));
       return;
     }
     
     // ✅ Validation 2: Query length check (max 1000 characters)
     const maxLength = 1000;
     if (message.length > maxLength) {
-      showValidationError(`Votre question est trop longue (max ${maxLength} caractères)`);
+      const msg = format(t('validation_too_long'), { maxLength: maxLength });
+      showValidationError(msg);
       return;
     }
     
@@ -225,7 +255,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Afficher un indicateur de chargement
     const loadingDiv = document.createElement("div");
     loadingDiv.className = "chat-message loading";
-    loadingDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> <span>Analyse en cours...</span>';
+    loadingDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> <span>' + t('loading_analyzing') + '</span>';
     chatOutput.appendChild(loadingDiv);
     
     // Récupérer l'URL depuis la configuration
@@ -233,7 +263,7 @@ document.addEventListener("DOMContentLoaded", function() {
     
     if (!ajaxUrl) {
       console.error('ChatSend: AJAX URL not configured');
-      loadingDiv.innerHTML = '<div class="alert alert-danger">Erreur: Configuration manquante</div>';
+      loadingDiv.innerHTML = '<div class="alert alert-danger">' + t('error_prefix') + t('error_config_missing') + '</div>';
       return;
     }
     
@@ -255,7 +285,7 @@ document.addEventListener("DOMContentLoaded", function() {
       if (!response.ok) {
         return response.text().then(text => {
           console.error('ChatSend: Server error response:', text.substring(0, 500));
-          throw new Error(`Server error ${response.status}: ${text.substring(0, 100)}`);
+          throw new Error(`${t('error_server')} ${response.status}: ${text.substring(0, 100)}`);
         });
       }
       
@@ -274,14 +304,14 @@ document.addEventListener("DOMContentLoaded", function() {
       // Vérifier le succès
       if (!data.success) {
         console.error('ChatSend: Request failed:', data.error);
-        chatOutput.innerHTML += '<div class="alert alert-danger">Erreur: ' + (data.error || "Erreur inconnue") + '</div>';
+        chatOutput.innerHTML += '<div class="alert alert-danger">' + t('error_prefix') + (data.error || t('error_unknown')) + '</div>';
         return;
       }
       
       // ✅ VALIDATION: Ensure text_response exists
       if (!data.text_response) {
         console.error('ChatSend: Missing text_response in response');
-        chatOutput.innerHTML += '<div class="alert alert-danger">Erreur: Réponse vide du serveur</div>';
+        chatOutput.innerHTML += '<div class="alert alert-danger">' + t('error_prefix') + t('error_empty_response') + '</div>';
         return;
       }
       
@@ -328,7 +358,7 @@ document.addEventListener("DOMContentLoaded", function() {
         initBootstrapTables(contentDiv);
       } else {
         // Fallback: If text_response is not a string, display error
-        contentDiv.textContent = 'Erreur: Réponse invalide';
+        contentDiv.textContent = t('error_prefix') + t('error_invalid_response');
         console.error('ChatSend: Invalid text_response:', typeof data.text_response);
       }
       
@@ -368,20 +398,20 @@ document.addEventListener("DOMContentLoaded", function() {
         
         const metricsHTML = `
           <div class="d-flex flex-wrap gap-2">
-            <span class="badge bg-primary" title="Niveau de confiance de l'IA">
-              🎯 Confiance: ${Math.round(m.confidence * 100)}%
+            <span class="badge bg-primary" title="${t('metrics_confidence_title')}">
+              ${t('metrics_confidence_label')}: ${Math.round(m.confidence * 100)}%
             </span>
-            <span class="badge bg-success" title="Score de sécurité de la réponse">
-              🔒 Sécurité: ${Math.round(m.security * 100)}%
+            <span class="badge bg-success" title="${t('metrics_security_title')}">
+              ${t('metrics_security_label')}: ${Math.round(m.security * 100)}%
             </span>
-            <span class="badge bg-warning text-dark" title="Probabilité d'hallucination">
-              🎭 Hallucination: ${Math.round(m.hallucination * 100)}%
+            <span class="badge bg-warning text-dark" title="${t('metrics_hallucination_title')}">
+              ${t('metrics_hallucination_label')}: ${Math.round(m.hallucination * 100)}%
             </span>
-            <span class="badge bg-info" title="Qualité globale de la réponse">
-              ⭐ Qualité: ${Math.round(m.quality * 100)}%
+            <span class="badge bg-info" title="${t('metrics_quality_title')}">
+              ${t('metrics_quality_label')}: ${Math.round(m.quality * 100)}%
             </span>
-            <span class="badge bg-secondary" title="Pertinence par rapport à la question">
-              🎯 Pertinence: ${Math.round(m.relevance * 100)}%
+            <span class="badge bg-secondary" title="${t('metrics_relevance_title')}">
+              ${t('metrics_relevance_label')}: ${Math.round(m.relevance * 100)}%
             </span>
           </div>
         `;
@@ -411,7 +441,7 @@ document.addEventListener("DOMContentLoaded", function() {
         loadingDiv.parentNode.removeChild(loadingDiv);
       }
       
-      chatOutput.innerHTML += '<div class="alert alert-danger">Erreur: ' + error.message + '</div>';
+      chatOutput.innerHTML += '<div class="alert alert-danger">' + t('error_prefix') + error.message + '</div>';
     });
   });
   

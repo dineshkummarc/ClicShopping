@@ -6,15 +6,31 @@
  * @Licence GPL 2 & MIT
  * @Info : https://www.clicshopping.org/forum/trademark/
  *
- */
+*/
 
-namespace ClicShopping\Apps\Tools\MCP\Sites\Shop\Pages\RagBI;
+/*
+// Example CURL command for testing the RAG-BI API endpoint
+// Note: Use a valid Base64 encoded "username:key"
+//   Example: echo -n "RagBI:YOUR_KEY" | base64
+curl "http://localhost/clicshopping_test/index.php?mcp&ChatRagBI&action=analyze" \
+   -H "Authorization: Basic UmFnQkk6ZDBhMzZiODM5NzAwYjYwNzI3ZmUxMzk5OGUyMmFhMGFmMTk3YzYxZDhiMzcxZTI2MTE0YzEzM2NhNTFjNDg2NGJkMGRhNzNhZDZkMWU1MDkwYjAyYjU1Y2ZmNDJiOGEwY2QyMzg2NmU2NGU3OGZjODg4NGViNjIyOGQzMmY1ZTlkNzZiZWQ0Njg4NjlkZDg5ZWU2YmI4YTMyMDhjNTA3N2U4ODU2MGQwYmMyMzhmNjdjZmM3MzJlZmNmNTMxM2EwY2IzNjFlMjk3YzI5YzhkODJkMDUwZDc3MGVkN2RlZTk3MmFmNjQ0NWU4MDFmYTlhZjEyZTNkNDc4YmY1MzQ2YQ==" \
+   -H "Content-Type: application/json" \
+  -d '{"message":"liste les produits","queryType":"analytics"}'
+*/
+
+namespace ClicShopping\Apps\Tools\MCP\Sites\Shop\Pages\ChatRagBI;
 
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
-use ClicShopping\AI\Infrastructure\Orm\DoctrineOrm;
-use ClicShopping\AI\Infrastructure\Storage\MariaDBVectorStore;
-use ClicShopping\AI\Rag\MultiDBRAGManager;
+use ClicShopping\AI\Infrastructure\Metrics\StatisticsTracker;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\SubGpt\ContextManager;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\SubGpt\EntityExtractor;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\SubGpt\MemoryManager;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\SubGpt\QueryProcessor;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\SubGpt\RequestValidator;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\SubGpt\ResponseFormatter;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\SubGpt\ResponseValidator;
+use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\SubGpt\StatisticsManager;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\EndPoint\RagBIPermissions;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Authentification;
@@ -24,36 +40,70 @@ use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Message;
 use ClicShopping\Apps\Tools\MCP\MCP;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
-use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3LargeEmbeddingGenerator;
 
 
-class RagBI extends \ClicShopping\OM\Domains\PagesAbstract
+class ChatRagBI extends \ClicShopping\OM\Domains\PagesAbstract
 {
   public mixed $db;
-  protected mixed $lang;
   public mixed $app;
   public mixed $message;
-
- // private mixed $mcpConnector;
-  private mixed $ragBIPermissions;
-
   /** @var McpPermissions The McpPermissions instance for access control. */
   public McpPermissions $mcpPermissions;
 
-  /** @var string The username authenticated via session or key. */
-  private string $authenticatedUsername = '';
-
+ // private mixed $mcpConnector;
+  protected mixed $lang;
   /**
    * Determines if the site template should be used.
    * @var bool
    */
   protected bool $use_site_template = false;
-
   /**
    * The file name for the page.
    * @var string|null
    */
   protected ?string $file = null;
+  private mixed $ragBIPermissions;
+  /** @var string The username authenticated via session or key. */
+  private string $authenticatedUsername = '';
+  /** @var int|null MCP session ID from request (if provided). */
+  private ?string $authenticatedSessionId = null;
+
+  /**
+   * Valide une requête SQL pour RAG-BI
+   * Utilise les contrôles stricts de RagBIPermissions
+   *
+   * @param string $sqlQuery Requête SQL à valider
+   * @return bool True si autorisée, false sinon
+   */
+  public function validateRagBIQuery(string $sqlQuery): bool
+  {
+    // Utiliser l'utilisateur authentifié si la requête vient de l'intérieur de l'application
+    $username = $this->authenticatedUsername;
+
+    if (empty($username)) {
+      // Si l'utilisateur n'est pas encore défini (appel hors du flux API standard), rejeter ou gérer différemment
+      return false;
+    }
+
+    return $this->ragBIPermissions->canExecuteRagBIQuery($username, $sqlQuery);
+  }
+
+  /**
+   * Obtient un rapport de sécurité pour l'utilisateur RAG-BI actuel
+   *
+   * @return array|null Rapport de sécurité ou null si non authentifié
+   */
+  public function getRagBISecurityReport(): ?array
+  {
+    // Utiliser l'utilisateur authentifié si la requête vient de l'intérieur de l'application
+    $username = $this->authenticatedUsername;
+
+    if (empty($username)) {
+      return null;
+    }
+
+    return $this->ragBIPermissions->generateSecurityReport($username);
+  }
 
   /**
    * Initializes the class by setting up dependencies, headers, and request routing.
@@ -128,6 +178,7 @@ class RagBI extends \ClicShopping\OM\Domains\PagesAbstract
     $username = $_GET['user_name'] ?? $_POST['user_name'] ?? $_SERVER['HTTP_X_MCP_USER'] ?? $_SERVER['HTTP_MCP_USER'] ?? null;
     $key = $_GET['key'] ?? $_POST['key'] ?? $_SERVER['HTTP_X_MCP_KEY'] ?? $_SERVER['HTTP_MCP_KEY'] ?? null;
     $mcpSessionId = $_GET['token'] ?? $_POST['token'] ?? $_SERVER['HTTP_X_MCP_TOKEN'] ?? $_SERVER['HTTP_MCP_TOKEN'] ?? null;
+    $this->authenticatedSessionId = $mcpSessionId;
 
     // DÉCODAGE DE L'EN-TÊTE AUTHORIZATION BASIC (pour le premier appel curl)
     $authorizationHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
@@ -234,133 +285,121 @@ class RagBI extends \ClicShopping\OM\Domains\PagesAbstract
     try {
       Gpt::getEnvironment();
 
-      $prompt = HTML::sanitize($_POST['message']);
+      $enableTimeout = true;
+      $maxExecutionTime = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME')
+        ? CLICSHOPPING_APP_CHATGPT_RA_MAX_EXECUTION_TIME
+        : 120;
+      RequestValidator::configureTimeout($maxExecutionTime, $enableTimeout);
+      $queryStartTime = microtime(true);
+
+      $validation = RequestValidator::validateRequest($_POST);
+      if (!$validation['valid']) {
+        if (ob_get_length()) {
+          ob_clean();
+        }
+        echo json_encode($validation['error'], JSON_UNESCAPED_UNICODE);
+        exit;
+      }
+
+      $prompt = HTML::sanitize($validation['query']);
       //$prompt = 'donne moi un tableau de l evolution du chiffre d\'affaires par mois de l\'annéé 2025'; // test
 
       $languageId = Registry::get('Language')->getId();
+      $mcpUserId = $this->getMcpIdByUsername($this->authenticatedUsername);
+      $sessionId = $this->authenticatedSessionId ?? session_id();
 
-      $ragManager = new MultiDBRAGManager();
-
-      if (\defined('CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_RAG_MANAGER == 'True' && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
-        $queryType = isset($_POST['queryType']) ? HTML::sanitize($_POST['queryType']) : 'semantic';
-        //$queryType = 'analytics'; // test
-
-        if ($queryType === 'semantic') {
-          $queryType = SemanticAgent::classifyQuery($prompt);
+      if (\defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True') {
+        // Optional pre-check if client forces web_search/hybrid
+        $requestedType = HTML::sanitize($_POST['queryType'] ?? '');
+        if ($this->isWebSearchType($requestedType) && !$this->isLocalMcpServerUp()) {
+          if (ob_get_length()) {
+            ob_clean();
+          }
+          echo json_encode([
+            'status' => 'error',
+            'message' => 'Local MCP server (localhost:3001) is not reachable. Please start it before using web_search or hybrid.',
+            'code' => 'MCP_LOCAL_SERVER_DOWN'
+          ], JSON_UNESCAPED_UNICODE);
+          exit;
         }
 
-        if ($queryType === 'analytics') {
-          $analyticsResults = $ragManager->executeAnalyticsQuery($prompt);
-          $result = $ragManager->formatResults($analyticsResults);
+        $statsTracker = new StatisticsTracker($mcpUserId, $sessionId, $languageId);
+        $statsTracker->startTracking();
 
-          if (is_null($result)) {
-            error_log("Error: result is null for analytic query.");
+        $memoryService = ContextManager::initializeMemoryService($mcpUserId, $languageId);
+        $context = ContextManager::retrieveContext($memoryService, $prompt, 5);
+
+        $aiResponse = QueryProcessor::process($prompt, $mcpUserId, $languageId, $statsTracker);
+
+        if ($enableTimeout && RequestValidator::checkTimeout($queryStartTime, $maxExecutionTime)) {
+          if (ob_get_length()) {
+            ob_clean();
           }
-        } else {
-          if ($queryType === 'semantic') {
-            // Approach 2: Use the current aborescence
-
-            $embeddingGenerator = new OpenAI3LargeEmbeddingGenerator();
-            $entityManager = DoctrineOrm::getEntityManager();
-            $embeddingTables = [];
-
-            $knownTables = $ragManager->knownEmbeddingTable();
-
-            // Add first the known table
-            foreach ($knownTables as $tableName) {
-              try {
-                $vectorStore = new MariaDBVectorStore($embeddingGenerator, $tableName);
-                $embeddingTables[$tableName] = $vectorStore;
-              } catch (\Exception $e) {
-                if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
-                  error_log("Erreur lors de l'initialisation de la table {$tableName} : " . $e->getMessage());
-                  // Continuer avec les autres tables en cas d'erreur
-                }
-              }
-            }
-
-            // Other table search inside the DB
-            try {
-              $tables = DoctrineOrm::getEmbeddingTables();
-
-              foreach ($tables as $tableName) {
-                if (!in_array($tableName, $knownTables)) {
-                  try {
-                    $vectorStore = new MariaDBVectorStore($embeddingGenerator, $tableName);
-                    $embeddingTables[$tableName] = $vectorStore;
-                  } catch (\Exception $e) {
-                    if (\defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER' ) && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
-                      error_log("Erreur lors de l'initialisation de la table {$tableName} : " . $e->getMessage());
-                      // If error continue
-                    }
-                  }
-                }
-              }
-            } catch (\Exception $e) {
-              if (\defined( 'CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER' ) && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True') {
-                error_log("Erreur lors de la recherche des tables d'embedding : " . $e->getMessage());
-                // If error continue
-              }
-            }
-
-            // 4️ Search in all vector table inside the DB
-            $allResults = [];
-            $context = '';
-
-            foreach ($embeddingTables as $tableName => $vectorStore) {
-              // Check if the table is valid
-              try {
-                // Language filter if specified
-                $filter = null;
-
-                if ($languageId !== null) {
-                  $filter = function ($metadata) use ($languageId) {
-                    return isset($metadata['language_id']) && $metadata['language_id'] == $languageId;
-                  };
-                }
-
-                // USe similaritySearch signature
-                $results = $vectorStore->similaritySearch($prompt, 2, 0.5, $filter);
-
-                foreach ($results as $doc) {
-                  $entityInfo = '';
-                  if (isset($doc->metadata['entity_type']) && isset($doc->metadata['entity_id'])) {
-                    $entityInfo = " ({$doc->metadata['entity_type']} #{$doc->metadata['entity_id']})";
-                  }
-
-                  $context .= "Source: {$tableName}{$entityInfo}\n";
-                  $context .= $doc->content . "\n\n";
-                }
-              } catch (\Exception $e) {
-                error_log("Erreur lors de la recherche dans la table {$tableName} : " . $e->getMessage());
-                // If error continue
-              }
-            }
-
-            // 5️ Si des documents pertinents ont été trouvés, les envoyer à OpenAI pour une réponse enrichie
-            if (!empty($context)) {
-              $result = Gpt::getGptResponse($context . "\n\nQuestion : " . $prompt);
-            } else {
-              //If no information found, use openAI directly
-              $result = Gpt::getGptResponse($prompt);
-            }
-
-            $pos = strstr($result, ':');
-            if ($pos !== false) {
-              $result = substr($pos, 2);
-            }
-          }
+          echo json_encode([
+            'status' => 'error',
+            'message' => 'La requête prend trop de temps, veuillez réessayer',
+            'code' => 'QUERY_TIMEOUT'
+          ], JSON_UNESCAPED_UNICODE);
+          exit;
         }
 
-        Gpt::saveData($prompt, $result, null, true);
-        // Retourner du JSON pour l'API MCP
-        echo json_encode([
+        $metadata = EntityExtractor::extractMetadata($aiResponse, $languageId);
+        MemoryManager::recordInteraction($memoryService, $prompt, $aiResponse, $metadata);
+
+        $formattedResponse = ResponseFormatter::format($aiResponse, $prompt, $metadata, $context ?: null);
+        $formatted = $formattedResponse['content'];
+
+        $responseTime = $statsTracker->stopTracking();
+        StatisticsManager::recordTokenUsage($statsTracker);
+
+        $metrics = StatisticsManager::calculateFallbackMetrics(
+          $aiResponse,
+          $formattedResponse['data_to_format'] ?? [],
+          $formatted
+        );
+
+        $responseText = MemoryManager::extractResponseText($aiResponse);
+        if (empty($responseText)) {
+          $responseText = $formatted;
+        }
+
+        $interactionData = StatisticsManager::buildInteractionData(
+          $prompt,
+          $responseText,
+          $aiResponse,
+          $metadata,
+          $mcpUserId,
+          $sessionId,
+          $languageId,
+          $responseTime,
+          $metrics,
+          $statsTracker
+        );
+
+        $dbInteractionId = StatisticsManager::persistInteraction($interactionData, $statsTracker);
+        StatisticsManager::saveStatistics($statsTracker, $dbInteractionId);
+
+        $queryType = $aiResponse['intent']['type'] ?? 'semantic';
+        if ($this->isWebSearchType($queryType) && !$this->isLocalMcpServerUp()) {
+          if (ob_get_length()) {
+            ob_clean();
+          }
+          echo json_encode([
+            'status' => 'error',
+            'message' => 'Local MCP server (localhost:3001) is not reachable. Please start it before using web_search or hybrid.',
+            'code' => 'MCP_LOCAL_SERVER_DOWN'
+          ], JSON_UNESCAPED_UNICODE);
+          exit;
+        }
+        $confidence = $aiResponse['intent']['confidence'] ?? 0;
+
+        $jsonResponse = [
           'status' => 'success',
           'data' => [
-            'response' => $result,
-            'type' => 'rag-bi',
+            'response' => $responseText,
+            'type' => $queryType,
             'source' => 'clicshopping-ragbi',
-            'confidence' => 0.9,
+            'confidence' => $confidence,
             'metadata' => [
               'query_type' => $queryType,
               'language' => $languageId,
@@ -369,38 +408,66 @@ class RagBI extends \ClicShopping\OM\Domains\PagesAbstract
               'clicshopping_processed' => true
             ]
           ]
-        ]);
+        ];
 
-        exit;
-      } else {
-        $result = Gpt::getGptResponse($prompt);
-
-        $pos = strstr($result, ':');
-
-        if ($pos !== false) {
-          $result = substr($pos, 2); // Pour enlever les deux-points et l'espace
-        }
-
-        Gpt::saveData($prompt, $result, null, true);
-
-        // Retourner du JSON pour l'API MCP
-        echo json_encode([
-          'status' => 'success',
-          'data' => [
-            'response' => $result,
-            'type' => 'rag-bi',
-            'source' => 'clicshopping-ragbi',
-            'confidence' => 0.8,
-            'metadata' => [
-              'query_type' => 'semantic',
-              'language' => $languageId,
-              'processing_time' => microtime(true) - $_SERVER['REQUEST_TIME_FLOAT'],
-              'rag_enabled' => false,
-              'clicshopping_processed' => true
-            ]
+        $validation = ResponseValidator::validate([
+          'success' => true,
+          'interaction_id' => 'interaction_' . $mcpUserId . '_' . time() . '_' . substr(md5(uniqid('', true)), 0, 8),
+          'text_response' => is_string($responseText) ? $responseText : '',
+          'type' => $queryType,
+          'confidence' => $confidence,
+          'agent_used' => $aiResponse['agent_used'] ?? 'unknown',
+          'execution_time' => $aiResponse['execution_time'] ?? 0,
+          'entity_id' => $metadata['entity_id'] ?? 0,
+          'entity_type' => $metadata['entity_type'] ?? 'unknown',
+          'language_id' => $languageId,
+          'metrics' => $metrics,
+          'metadata' => [
+            'query' => $prompt,
+            'timestamp' => time(),
+            'user_id' => $mcpUserId
           ]
         ]);
+
+        if (!$validation['valid'] && defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+          error_log('[RAGBI MCP] Response validation failed: ' . json_encode($validation['errors']));
+        }
+
+        if (ob_get_length()) {
+          ob_clean();
+        }
+        echo json_encode($jsonResponse, JSON_UNESCAPED_UNICODE);
+        exit;
       }
+
+      // Fallback if RAG is disabled
+      $response = Gpt::callWithModel($prompt, CLICSHOPPING_APP_CHATGPT_CH_MODEL);
+      $textResponse = $response['text_response']
+        ?? $response['response']
+        ?? $response['interpretation']
+        ?? $response['raw_response']
+        ?? '';
+
+      if (ob_get_length()) {
+        ob_clean();
+      }
+      echo json_encode([
+        'status' => 'success',
+        'data' => [
+          'response' => is_string($textResponse) ? $textResponse : '',
+          'type' => $response['response_type'] ?? ($response['type'] ?? 'semantic'),
+          'source' => 'clicshopping-ragbi',
+          'confidence' => $response['confidence'] ?? 0,
+          'metadata' => [
+            'query_type' => $response['response_type'] ?? ($response['type'] ?? 'semantic'),
+            'language' => $languageId,
+            'processing_time' => microtime(true) - $_SERVER['REQUEST_TIME_FLOAT'],
+            'rag_enabled' => false,
+            'clicshopping_processed' => true
+          ]
+        ]
+      ], JSON_UNESCAPED_UNICODE);
+      exit;
       exit;
     } catch
     (\Exception $e) {
@@ -427,6 +494,24 @@ class RagBI extends \ClicShopping\OM\Domains\PagesAbstract
     }
   }
 
+  /**
+   * Sends an error response with the provided message.
+   *
+   * @param string $message The error message to be included in the response.
+   * @return void
+   */
+  private function sendErrorResponse(string $message): void
+  {
+    // Utiliser la méthode sendError de l'objet message pour le format JSON standard de l'API
+    if (isset($this->message)) {
+      $this->message->sendError($message, 500); // Code HTTP 500 par défaut si non spécifié
+    } else {
+      // Fallback si l'objet message n'est pas initialisé
+      http_response_code(500);
+      echo json_encode(['status' => 'error', 'message' => $message]);
+      exit;
+    }
+  }
 
   /**
    * Handle GET request
@@ -441,6 +526,18 @@ class RagBI extends \ClicShopping\OM\Domains\PagesAbstract
   }
 
   /**
+   * Sends a success response with the provided data.
+   *
+   * @param mixed $data The data to be included in the success response.
+   * @return void
+   */
+  private function sendSuccessResponse(mixed $data): void
+  {
+    echo json_encode(['status' => 'success', 'data' => $data]);
+    exit;
+  }
+
+  /**
    * Handle PUT request
    */
   private function handlePutRequest(array $statusCheck)
@@ -451,7 +548,6 @@ class RagBI extends \ClicShopping\OM\Domains\PagesAbstract
 
     return $this->sendSuccessResponse('Category updated successfully');
   }
-
 
   /**
    * Handle DELETE request
@@ -482,38 +578,6 @@ class RagBI extends \ClicShopping\OM\Domains\PagesAbstract
   }
 
   /**
-   * Sends a success response with the provided data.
-   *
-   * @param mixed $data The data to be included in the success response.
-   * @return void
-   */
-  private function sendSuccessResponse(mixed $data): void
-  {
-    echo json_encode(['status' => 'success', 'data' => $data]);
-    exit;
-  }
-
-  /**
-   * Sends an error response with the provided message.
-   *
-   * @param string $message The error message to be included in the response.
-   * @return void
-   */
-  private function sendErrorResponse(string $message): void
-  {
-    // Utiliser la méthode sendError de l'objet message pour le format JSON standard de l'API
-    if (isset($this->message)) {
-      $this->message->sendError($message, 500); // Code HTTP 500 par défaut si non spécifié
-    } else {
-      // Fallback si l'objet message n'est pas initialisé
-      http_response_code(500);
-      echo json_encode(['status' => 'error', 'message' => $message]);
-      exit;
-    }
-  }
-
-
-  /**
    * Checks the status based on the provided string and token.
    *
    * @param string $string The column name to be selected from the database.
@@ -537,40 +601,67 @@ class RagBI extends \ClicShopping\OM\Domains\PagesAbstract
   }
 
   /**
-   * Valide une requête SQL pour RAG-BI
-   * Utilise les contrôles stricts de RagBIPermissions
+   * Check if the request type relies on local MCP web search.
    *
-   * @param string $sqlQuery Requête SQL à valider
-   * @return bool True si autorisée, false sinon
+   * @param string $queryType
+   * @return bool
    */
-  public function validateRagBIQuery(string $sqlQuery): bool
+  private function isWebSearchType(string $queryType): bool
   {
-    // Utiliser l'utilisateur authentifié si la requête vient de l'intérieur de l'application
-    $username = $this->authenticatedUsername;
-
-    if (empty($username)) {
-      // Si l'utilisateur n'est pas encore défini (appel hors du flux API standard), rejeter ou gérer différemment
-      return false;
-    }
-
-    return $this->ragBIPermissions->canExecuteRagBIQuery($username, $sqlQuery);
+    $type = strtolower(trim($queryType));
+    return in_array($type, ['web_search', 'websearch', 'hybrid'], true);
   }
 
   /**
-   * Obtient un rapport de sécurité pour l'utilisateur RAG-BI actuel
+   * Check if local MCP server is reachable.
    *
-   * @return array|null Rapport de sécurité ou null si non authentifié
+   * @return bool
    */
-  public function getRagBISecurityReport(): ?array
+  private function isLocalMcpServerUp(): bool
   {
-    // Utiliser l'utilisateur authentifié si la requête vient de l'intérieur de l'application
-    $username = $this->authenticatedUsername;
+    $host = 'http://localhost:3001/';
+    $ch = curl_init($host);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+    curl_setopt($ch, CURLOPT_NOBODY, true);
+    curl_exec($ch);
+    $err = curl_errno($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
 
-    if (empty($username)) {
-      return null;
+    if ($err !== 0) {
+      return false;
     }
 
-    return $this->ragBIPermissions->generateSecurityReport($username);
+    return $code >= 200 && $code < 500;
+  }
+
+  /**
+   * Resolve MCP user ID by username.
+   *
+   * @param string $username
+   * @return int
+   */
+  private function getMcpIdByUsername(string $username): int
+  {
+    if (empty($username)) {
+      return 0;
+    }
+
+    $Qcheck = $this->db->prepare('SELECT mcp_id
+                                   FROM :table_mcp
+                                   WHERE username = :mcp_username
+                                   LIMIT 1
+                                  ');
+    $Qcheck->bindValue(':mcp_username', $username);
+    $Qcheck->execute();
+
+    if ($Qcheck->fetch()) {
+      return (int)$Qcheck->valueInt('mcp_id');
+    }
+
+    return 0;
   }
 
   // Les fonctions validateRagBIAccess() et getMcpAuthFromRequest() ont été supprimées.

@@ -12,6 +12,16 @@
 (function() {
   'use strict';
 
+  const i18n = window.CHAT_CONFIG && window.CHAT_CONFIG.i18n
+    ? window.CHAT_CONFIG.i18n
+    : {};
+  const t = (key, fallback) => {
+    if (i18n && typeof i18n[key] === 'string' && i18n[key].length) {
+      return i18n[key];
+    }
+    return fallback;
+  };
+
   /**
    * ChatClarification Class
    */
@@ -40,7 +50,7 @@
      */
     displayClarification(clarificationData, container, onOptionSelected) {
       if (!clarificationData || !clarificationData.clarification) {
-        console.error('Invalid clarification data');
+        console.error(t('clarification_error_invalid_response', 'Invalid clarification data'));
         return;
       }
 
@@ -134,7 +144,7 @@
       `;
 
       const manualLabel = document.createElement('div');
-      manualLabel.textContent = 'Ou saisissez votre réponse :';
+      manualLabel.textContent = t('clarification_info', 'Ou saisissez votre réponse :');
       manualLabel.style.cssText = `
         font-size: 12px;
         color: #856404;
@@ -151,14 +161,14 @@
       const input = document.createElement('input');
       input.type = 'text';
       input.className = 'form-control form-control-sm';
-      input.placeholder = 'Votre réponse...';
+      input.placeholder = t('clarification_placeholder', 'Votre réponse...');
       input.style.cssText = `
         flex: 1;
       `;
 
       const submitBtn = document.createElement('button');
       submitBtn.className = 'btn btn-sm btn-primary';
-      submitBtn.textContent = 'Envoyer';
+      submitBtn.textContent = t('clarification_send', 'Envoyer');
       submitBtn.addEventListener('click', () => {
         const value = input.value.trim();
         if (value) {

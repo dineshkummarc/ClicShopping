@@ -17,15 +17,14 @@
 namespace ClicShopping\Apps\Tools\MCP\Classes\Shop\EndPoint;
 
 
+use ClicShopping\AI\Infrastructure\Cache\TranslationCache;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-use ClicShopping\AI\Tools\Cache\TranslationCache;
+
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Message;
 use ClicShopping\Apps\Tools\MCP\MCP;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
-
-
 
 class Products
 {
@@ -41,7 +40,8 @@ class Products
   protected mixed $translationCache;
   /** @var array The rules for NLP intent analysis. */
   protected array $rules = [];
-
+  private mixed $mcpConnector;
+  
   /**
    * Class constructor. Initializes and registers necessary components.
    *
@@ -401,136 +401,6 @@ class Products
   }
 
   /**
-   * Executes a product search based on a structured intent.
-   *
-   * @param array $intent The structured intent derived from user input.
-   * @param mixed $context Additional context for the search.
-   * @return array The search results, total count, and applied filters.
-   */
-  public function executeProductSearch(array $intent, mixed $context): array
-  {
-    try {
-      $sql = "SELECT DISTINCT  p.products_id,
-                                pd.products_name,
-                                pd.products_description,
-                                p.products_model,
-                                p.products_price,
-                                p.products_quantity,
-                                p.products_status,
-                                p.products_image,
-                                p.products_weight,
-                                p.products_tax_class_id,
-                                p.products_date_added,
-                                p.products_last_modified,
-                                p.products_ean,
-                                p.products_sku,
-                                p.products_mpn,
-                                p.products_isbn,
-                                p.products_upc,
-                                p.products_jan,
-                                c.categories_id,
-                                cd.categories_name AS category_name
-                FROM :table_products p
-                INNER JOIN :table_products_to_categories p2c ON p.products_id = p2c.products_id
-                INNER JOIN :table_categories c ON p2c.categories_id = c.categories_id
-                INNER JOIN :table_categories_description cd ON c.categories_id = cd.categories_id
-                INNER JOIN :table_products_description pd ON p.products_id = pd.products_id
-                WHERE p.products_status = 1
-                  AND p.products_quantity > 0
-                  AND p.products_archive = 0
-                  AND p.products_view = 1
-                  AND p.orders_view = 1
-                  AND c.virtual_categories = 0
-                  AND c.status = 1
-                  AND cd.language_id = :language_id
-                  AND pd.language_id = :language_id
-        ";
-
-      $params = [':language_id' => (int)$this->lang->getId()];
-
-      // Filter by category
-      if (!empty($intent['entities']['category'])) {
-        $sql .= " AND cd.categories_name LIKE :cat_name";
-        $params[':cat_name'] = '%' . $intent['entities']['category'] . '%';
-      }
-
-      // Price filtering
-      if (!empty($intent['filters']['price_min'])) {
-        $sql .= " AND p.products_price >= :price_min";
-        $params[':price_min'] = (float)$intent['filters']['price_min'];
-      }
-      if (!empty($intent['filters']['price_max'])) {
-        $sql .= " AND p.products_price <= :price_max";
-        $params[':price_max'] = (float)$intent['filters']['price_max'];
-      }
-
-      // Multi-reference filtering (SKU, EAN, UPC, MPN, ISBN)
-      if (!empty($intent['filters']['reference'])) {
-        $sql .= " AND (p.products_model = :ref
-                       OR p.products_sku = :ref
-                       OR p.products_ean = :ref
-                       OR p.products_upc = :ref
-                       OR p.products_mpn = :ref
-                       OR p.products_isbn = :ref
-                       OR p.products_jan = :ref)
-                ";
-        $params[':ref'] = $intent['filters']['reference'];
-      }
-
-      // Quantity filtering
-      if (!empty($intent['filters']['quantity_min'])) {
-        $sql .= " AND p.products_quantity >= :qty_min";
-        $params[':qty_min'] = (int)$intent['filters']['quantity_min'];
-      }
-
-      // Keyword filtering (name / description / model)
-      if (!empty($intent['entities']['keywords']) && is_array($intent['entities']['keywords'])) {
-        $kIndex = 0;
-        $sql .= " AND (";
-        $conditions = [];
-
-        foreach ($intent['entities']['keywords'] as $kw) {
-          $like = '%' . $kw . '%';
-          $nameKey = ':kw_name_' . $kIndex;
-          $descKey = ':kw_desc_' . $kIndex;
-          $modelKey = ':kw_model_' . $kIndex;
-
-          $conditions[] = " (pd.products_name LIKE $nameKey
-                             OR pd.products_description LIKE $descKey
-                             OR p.products_model LIKE $modelKey)";
-
-          $params[$nameKey] = $like;
-          $params[$descKey] = $like;
-          $params[$modelKey] = $like;
-          $kIndex++;
-        }
-        $sql .= implode(' OR ', $conditions) . ")";
-      }
-
-      $sql .= " GROUP BY p.products_id ORDER BY pd.products_name DESC LIMIT 20";
-
-      $stmt = $this->db->prepare($sql);
-
-      foreach ($params as $key => $val) {
-        $stmt->bindValue($key, $val);
-      }
-
-      $stmt->execute();
-      $products = $stmt->fetchAll();
-
-      return [
-        'products' => $products,
-        'total' => count($products),
-        'filters_applied' => $intent['filters']
-      ];
-
-    } catch (\Exception $e) {
-      error_log('Product search error: ' . $e->getMessage());
-      return ['products' => [], 'total' => 0, 'error' => $e->getMessage()];
-    }
-  }
-
-  /**
    * Handles a GET request for a product search.
    * This method serves as an entry point for simplified, direct search queries.
    *
@@ -683,6 +553,136 @@ class Products
     }
 
     return $intent;
+  }
+
+  /**
+   * Executes a product search based on a structured intent.
+   *
+   * @param array $intent The structured intent derived from user input.
+   * @param mixed $context Additional context for the search.
+   * @return array The search results, total count, and applied filters.
+   */
+  public function executeProductSearch(array $intent, mixed $context): array
+  {
+    try {
+      $sql = "SELECT DISTINCT  p.products_id,
+                                pd.products_name,
+                                pd.products_description,
+                                p.products_model,
+                                p.products_price,
+                                p.products_quantity,
+                                p.products_status,
+                                p.products_image,
+                                p.products_weight,
+                                p.products_tax_class_id,
+                                p.products_date_added,
+                                p.products_last_modified,
+                                p.products_ean,
+                                p.products_sku,
+                                p.products_mpn,
+                                p.products_isbn,
+                                p.products_upc,
+                                p.products_jan,
+                                c.categories_id,
+                                cd.categories_name AS category_name
+                FROM :table_products p
+                INNER JOIN :table_products_to_categories p2c ON p.products_id = p2c.products_id
+                INNER JOIN :table_categories c ON p2c.categories_id = c.categories_id
+                INNER JOIN :table_categories_description cd ON c.categories_id = cd.categories_id
+                INNER JOIN :table_products_description pd ON p.products_id = pd.products_id
+                WHERE p.products_status = 1
+                  AND p.products_quantity > 0
+                  AND p.products_archive = 0
+                  AND p.products_view = 1
+                  AND p.orders_view = 1
+                  AND c.virtual_categories = 0
+                  AND c.status = 1
+                  AND cd.language_id = :language_id
+                  AND pd.language_id = :language_id
+        ";
+
+      $params = [':language_id' => (int)$this->lang->getId()];
+
+      // Filter by category
+      if (!empty($intent['entities']['category'])) {
+        $sql .= " AND cd.categories_name LIKE :cat_name";
+        $params[':cat_name'] = '%' . $intent['entities']['category'] . '%';
+      }
+
+      // Price filtering
+      if (!empty($intent['filters']['price_min'])) {
+        $sql .= " AND p.products_price >= :price_min";
+        $params[':price_min'] = (float)$intent['filters']['price_min'];
+      }
+      if (!empty($intent['filters']['price_max'])) {
+        $sql .= " AND p.products_price <= :price_max";
+        $params[':price_max'] = (float)$intent['filters']['price_max'];
+      }
+
+      // Multi-reference filtering (SKU, EAN, UPC, MPN, ISBN)
+      if (!empty($intent['filters']['reference'])) {
+        $sql .= " AND (p.products_model = :ref
+                       OR p.products_sku = :ref
+                       OR p.products_ean = :ref
+                       OR p.products_upc = :ref
+                       OR p.products_mpn = :ref
+                       OR p.products_isbn = :ref
+                       OR p.products_jan = :ref)
+                ";
+        $params[':ref'] = $intent['filters']['reference'];
+      }
+
+      // Quantity filtering
+      if (!empty($intent['filters']['quantity_min'])) {
+        $sql .= " AND p.products_quantity >= :qty_min";
+        $params[':qty_min'] = (int)$intent['filters']['quantity_min'];
+      }
+
+      // Keyword filtering (name / description / model)
+      if (!empty($intent['entities']['keywords']) && is_array($intent['entities']['keywords'])) {
+        $kIndex = 0;
+        $sql .= " AND (";
+        $conditions = [];
+
+        foreach ($intent['entities']['keywords'] as $kw) {
+          $like = '%' . $kw . '%';
+          $nameKey = ':kw_name_' . $kIndex;
+          $descKey = ':kw_desc_' . $kIndex;
+          $modelKey = ':kw_model_' . $kIndex;
+
+          $conditions[] = " (pd.products_name LIKE $nameKey
+                             OR pd.products_description LIKE $descKey
+                             OR p.products_model LIKE $modelKey)";
+
+          $params[$nameKey] = $like;
+          $params[$descKey] = $like;
+          $params[$modelKey] = $like;
+          $kIndex++;
+        }
+        $sql .= implode(' OR ', $conditions) . ")";
+      }
+
+      $sql .= " GROUP BY p.products_id ORDER BY pd.products_name DESC LIMIT 20";
+
+      $stmt = $this->db->prepare($sql);
+
+      foreach ($params as $key => $val) {
+        $stmt->bindValue($key, $val);
+      }
+
+      $stmt->execute();
+      $products = $stmt->fetchAll();
+
+      return [
+        'products' => $products,
+        'total' => count($products),
+        'filters_applied' => $intent['filters']
+      ];
+
+    } catch (\Exception $e) {
+      error_log('Product search error: ' . $e->getMessage());
+      return ['products' => [], 'total' => 0, 'error' => $e->getMessage()];
+    }
   }
 
   /**

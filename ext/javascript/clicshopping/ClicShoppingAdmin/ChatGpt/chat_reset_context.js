@@ -7,6 +7,16 @@
 
 document.addEventListener("DOMContentLoaded", function() {
   console.log('ChatResetContext: Initializing...');
+
+  const i18n = window.CHAT_CONFIG && window.CHAT_CONFIG.i18n
+    ? window.CHAT_CONFIG.i18n
+    : {};
+  const t = (key, fallback) => {
+    if (i18n && typeof i18n[key] === 'string' && i18n[key].length) {
+      return i18n[key];
+    }
+    return fallback;
+  };
   
   const resetContextButton = document.querySelector("#resetContextGpt");
   
@@ -21,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function() {
     console.log('ChatResetContext: Button clicked');
     
     // Confirm with user before resetting context
-    if (!confirm('Voulez-vous vraiment créer un nouveau contexte? Cela effacera l\'historique de la conversation actuelle.')) {
+    if (!confirm(t('reset_confirm', 'Voulez-vous vraiment créer un nouveau contexte? Cela effacera l\'historique de la conversation actuelle.'))) {
       console.log('ChatResetContext: User cancelled');
       return;
     }
@@ -38,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Show loading indicator
     const loadingDiv = document.createElement("div");
     loadingDiv.className = "alert alert-info";
-    loadingDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> <span>Création d\'un nouveau contexte...</span>';
+    loadingDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> <span>' + t('reset_loading', 'Création d\'un nouveau contexte...') + '</span>';
     chatOutput.appendChild(loadingDiv);
     
     // Get AJAX URL for resetting context
@@ -65,7 +75,7 @@ document.addEventListener("DOMContentLoaded", function() {
       if (!response.ok) {
         return response.text().then(text => {
           console.error('ChatResetContext: Server error response:', text.substring(0, 500));
-          throw new Error(`Server error ${response.status}: ${text.substring(0, 100)}`);
+          throw new Error(`${t('error_server', 'Erreur serveur')} ${response.status}: ${text.substring(0, 100)}`);
         });
       }
       
@@ -82,7 +92,7 @@ document.addEventListener("DOMContentLoaded", function() {
       // Check success
       if (!data.success) {
         console.error('ChatResetContext: Request failed:', data.error);
-        chatOutput.innerHTML += '<div class="alert alert-danger">Erreur: ' + (data.error || "Erreur inconnue") + '</div>';
+        chatOutput.innerHTML += '<div class="alert alert-danger">' + t('error_context_prefix', 'Erreur: ') + (data.error || t('error_context_unknown', 'Erreur inconnue')) + '</div>';
         return;
       }
       
@@ -99,7 +109,7 @@ document.addEventListener("DOMContentLoaded", function() {
       // Display success message
       const successDiv = document.createElement("div");
       successDiv.className = "alert alert-success";
-      successDiv.innerHTML = '<strong>✅ Nouveau contexte créé!</strong><br>Vous pouvez maintenant commencer une nouvelle conversation.';
+      successDiv.innerHTML = '<strong>' + t('reset_success_title', '✅ Nouveau contexte créé!') + '</strong><br>' + t('reset_success_body', 'Vous pouvez maintenant commencer une nouvelle conversation.');
       chatOutput.appendChild(successDiv);
       
       // Store new context ID if provided
@@ -121,7 +131,7 @@ document.addEventListener("DOMContentLoaded", function() {
         loadingDiv.parentNode.removeChild(loadingDiv);
       }
       
-      chatOutput.innerHTML += '<div class="alert alert-danger">Erreur: ' + error.message + '</div>';
+      chatOutput.innerHTML += '<div class="alert alert-danger">' + t('error_context_prefix', 'Erreur: ') + error.message + '</div>';
     });
   });
   

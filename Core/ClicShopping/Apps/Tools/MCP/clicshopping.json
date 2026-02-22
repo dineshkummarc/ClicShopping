@@ -30,7 +30,7 @@
   "routes": {
     "ClicShoppingAdmin": "Sites\\ClicShoppingAdmin\\Pages\\Home",
     "Shop": {
-      "mcp&ragBI": "Sites\\Shop\\Pages\\RagBI",
+      "mcp&ChatRagBI": "Sites\\Shop\\Pages\\ChatRagBI",
       "mcp&customersProducts": "Sites\\Shop\\Pages\\CustomersProducts",
       "mcp&auth": "Sites\\Shop\\Pages\\Auth"
     }

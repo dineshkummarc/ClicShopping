@@ -9,6 +9,7 @@ version4.21
      - ACP Protocol Beta refactored via Ecommerce AI app
      - UCP Protocol Beta added via Ecommerce AI app
    - SEO improvement
+   - MCP updated
 - Some fix (included deprecated)
 - Librairies updated
 - php9 compatibility
