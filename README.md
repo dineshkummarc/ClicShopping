@@ -90,6 +90,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
     - Semantic (RAG)
     - WebSearch
     - HYBRID
+    - Around 50 KPI for manaer, Developer, Data scientist
 - Generative Artificial Intelligence :
   - Generative artificial products customers recommendations
   - Generative artificial intelligence for All content (product,categories...)
@@ -102,6 +103,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
   - Generative artificial Intelligence Web Search
 - Real time safety stock predictive (AI)
 - Server MCP (model context Protocol) for ecommerce agentic approach
+  - Chat Rab - BI Connexion
 - Agentic Commerce Protocol (ACP) from OpenAI.
 - Universal Commerce Protocol (UCP) from Google.
 
@@ -113,9 +115,10 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 - Regular Security Updates: Community-driven security patches
 - Double authentication number
 - Security Headers: XSS protection and security hardening
+- Inforced security for AI.
 
 ##Internationalization
-- Included Languages: English, French
+- Multi-language includding Languages: English, French
 - Additional Language Packs: Available on GitHub
 - Multi-Currency Support: Configure multiple currencies with real-time exchange rates
 
@@ -163,7 +166,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 #Requirement (more information in the wiki)
  - Apache 2.x <br>
  - MYSQL 8.x / MariaDb 11.x but 11.7 (recommended for embeddings and vectors)<br>
- - PHP >= 8.3
+ - PHP >= 8.4
  - More information in the Github Wiki
 
 #Installation
