@@ -84,26 +84,63 @@ class ReputationUpdateProcessor implements \ClicShopping\OM\Modules\HooksInterfa
     }
     
     /**
-     * Runs the reputation update queue processor
-     * 
-     * This method processes pending reputation update jobs from the queue.
-     * 
+     * Handles the execution of the cron job
+     *
+     * This method checks for a 'cronId' parameter, validates it, and if it matches
+     * the reputation update processor cron code, it triggers the processing logic.
+     *
      * Requirements: 15.1, 15.3
-     * 
+     *
+     * @return void
+     */
+    private function cronJob(): void
+    {
+        $cron_id_reputation_update = Cronjob::getCronCode('reputationUpdateProcessor');
+
+        if (isset($_GET['cronId'])) {
+            $cron_id = HTML::sanitize($_GET['cronId']);
+
+            if ($cron_id !== null && !empty($cron_id) && is_int($cron_id)) {
+                Cronjob::updateCron($cron_id);
+
+                if ($cron_id_reputation_update == $cron_id) {
+                    $this->runReputationUpdateProcessor();
+                }
+            } else {
+                // Log invalid cronId attempt for security monitoring
+                error_log('[ReputationUpdateProcessor] Invalid cronId parameter detected: ' .
+                         (isset($_GET['cronId']) ? htmlspecialchars($_GET['cronId']) : 'empty'));
+            }
+        } else {
+            Cronjob::updateCron($cron_id_reputation_update);
+
+            if (isset($cron_id_reputation_update)) {
+                $this->runReputationUpdateProcessor();
+            }
+        }
+    }
+    
+    /**
+     * Runs the reputation update queue processor
+     *
+     * This method processes pending reputation update jobs from the queue.
+     *
+     * Requirements: 15.1, 15.3
+     *
      * @return void
      */
     private function runReputationUpdateProcessor(): void
     {
         try {
             error_log('[ReputationUpdateProcessor] Starting queue processing');
-            
+
             // Configuration
             $batchSize = 50; // Process up to 50 jobs per run
             $maxAttempts = 3; // Maximum retry attempts
-            
+
             // Process pending jobs
             $results = $this->evaluationMonitor->processPendingJobs($batchSize, $maxAttempts);
-            
+
             // Log results
             error_log(sprintf(
                 '[ReputationUpdateProcessor] Completed: processed=%d, failed=%d, skipped=%d, time=%dms',
@@ -112,58 +149,21 @@ class ReputationUpdateProcessor implements \ClicShopping\OM\Modules\HooksInterfa
                 $results['skipped'],
                 $results['processing_time_ms']
             ));
-            
+
             if (isset($results['error'])) {
                 error_log('[ReputationUpdateProcessor] Error: ' . $results['error']);
             }
-            
+
             // Cleanup old completed jobs (keep last 7 days)
             if ($results['processed'] > 0) {
                 $deleted = $this->evaluationMonitor->cleanupOldJobs(daysToKeep: 7);
                 error_log("[ReputationUpdateProcessor] Cleaned up {$deleted} old jobs");
             }
-            
+
         } catch (\Exception $e) {
             // Log any unhandled exceptions during processing
             error_log('[ReputationUpdateProcessor] Failed with error: ' . $e->getMessage());
             error_log('[ReputationUpdateProcessor] Stack trace: ' . $e->getTraceAsString());
-        }
-    }
-    
-    /**
-     * Handles the execution of the cron job
-     * 
-     * This method checks for a 'cronId' parameter, validates it, and if it matches
-     * the reputation update processor cron code, it triggers the processing logic.
-     * 
-     * Requirements: 15.1, 15.3
-     * 
-     * @return void
-     */
-    private function cronJob(): void
-    {
-        $cron_id_reputation_update = Cronjob::getCronCode('reputation_update_processor');
-        
-        if (isset($_GET['cronId'])) {
-            $cron_id = HTML::sanitize($_GET['cronId']);
-            
-            if ($cron_id !== null && !empty($cron_id) && is_int($cron_id)) {
-                Cronjob::updateCron($cron_id);
-                
-                if ($cron_id_reputation_update == $cron_id) {
-                    $this->runReputationUpdateProcessor();
-                }
-            } else {
-                // Log invalid cronId attempt for security monitoring
-                error_log('[ReputationUpdateProcessor] Invalid cronId parameter detected: ' . 
-                         (isset($_GET['cronId']) ? htmlspecialchars($_GET['cronId']) : 'empty'));
-            }
-        } else {
-            Cronjob::updateCron($cron_id_reputation_update);
-            
-            if (isset($cron_id_reputation_update)) {
-                $this->runReputationUpdateProcessor();
-            }
         }
     }
 }
