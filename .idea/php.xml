@@ -63,7 +63,6 @@
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/http-client" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/http-client-contracts" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/mattketmo/email-checker" />
-      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/stripe/stripe-php" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/phpoffice/math" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/smalot/pdfparser" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/phpoffice/phpword" />
@@ -71,6 +70,7 @@
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/openai-php/client" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/theodo-group/llphant" />
       <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/php-http/multipart-stream-builder" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/stripe/stripe-php" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.5">
