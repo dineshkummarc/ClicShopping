@@ -657,7 +657,7 @@ class OrchestratorAgent
     $kept = $objectives[0];
     $cancelled = [];
 
-    for ($i = 1; $i < count($objectives); $i++) {
+    for ($i = 1, $iMax = count($objectives); $i < $iMax; $i++) {
       $obj = $objectives[$i];
       $registry->cancelObjective($obj->getId(), 'Cancelled due to conflict with higher priority objective');
       $cancelled[] = $obj->getId();

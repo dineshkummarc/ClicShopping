@@ -573,8 +573,8 @@ class ReasoningActor implements ActorAgentInterface
         $inconsistencies = [];
         
         // Simple contradiction detection
-        for ($i = 0; $i < count($statements); $i++) {
-            for ($j = $i + 1; $j < count($statements); $j++) {
+        for ($i = 0, $iMax = count($statements); $i < $iMax; $i++) {
+            for ($j = $i + 1, $jMax = count($statements); $j < $jMax; $j++) {
                 if ($this->areContradictory($statements[$i], $statements[$j])) {
                     $inconsistencies[] = [
                         'statement1' => $statements[$i],
