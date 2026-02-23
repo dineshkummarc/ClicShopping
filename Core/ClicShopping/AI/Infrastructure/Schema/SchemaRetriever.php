@@ -497,7 +497,8 @@ class SchemaRetriever
     $schemaConfig = DomainFields::resolveAppClass($activeDomain, 'SchemaConfig');
     if ($schemaConfig !== null) {
       try {
-        if (method_exists($schemaConfig, 'getSchemaRulesString')) {
+        if (is_subclass_of($schemaConfig, \ClicShopping\AI\InterfacesAI\SchemaConfigInterface::class)
+          && method_exists($schemaConfig, 'getSchemaRulesString')) {
           return $schemaConfig::getSchemaRulesString();
         }
       } catch (\Exception $e) {

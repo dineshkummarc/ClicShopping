@@ -10,6 +10,8 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin;
 
+use ClicShopping\AI\InterfacesAI\SchemaConfigInterface;
+
 /**
  * SchemaConfig Class
  *
@@ -27,7 +29,7 @@ namespace ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin;
  * $rules = SchemaConfig::getSchemaRules();
  * ```
  */
-class SchemaConfig
+class SchemaConfig implements SchemaConfigInterface
 {
   /**
    * Get schema rules for the Ecommerce domain

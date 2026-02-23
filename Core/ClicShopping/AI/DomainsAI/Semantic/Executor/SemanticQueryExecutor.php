@@ -19,6 +19,7 @@ use ClicShopping\AI\DomainsAI\CoreAI\Helper\AgentResponseHelper;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Agents\Memory\ConversationMemory;
+use ClicShopping\AI\InterfacesAI\SemanticConfigInterface;
 
 /**
  * SemanticQueryExecutor Class
@@ -194,12 +195,17 @@ class SemanticQueryExecutor
       $entityId = $context['entity_id'] ?? null;
       
       // Use global constants (loaded from TechnicalConfig in config_clicshopping.php)
-      $minScore = defined('CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE') 
-                  ? (float)CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE 
-                  : 0.25;
-      $limit = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_RESULTS_PER_STORE')
-               ? (int)CLICSHOPPING_APP_CHATGPT_RA_MAX_RESULTS_PER_STORE
-               : 5;
+      $minScore = defined('CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE') ? (float)CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE : 0.25;
+      $limit = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_RESULTS_PER_STORE') ? (int)CLICSHOPPING_APP_CHATGPT_RA_MAX_RESULTS_PER_STORE : 5;
+
+      // Apply domain-specific semantic config overrides if available
+      $semanticConfig = $this->getSemanticDomainConfig();
+      if ($semanticConfig['min_score'] !== null) {
+        $minScore = (float)$semanticConfig['min_score'];
+      }
+      if ($semanticConfig['limit'] !== null) {
+        $limit = (int)$semanticConfig['limit'];
+      }
       
       // Override with context if provided
       $minScore = $context['min_score'] ?? $minScore;
@@ -232,7 +238,7 @@ class SemanticQueryExecutor
 
       // Use MultiDBRAGManager's answerQuestion() which implements LLPhant QuestionAnswering
       // This is the PRIMARY method for semantic queries (not Gpt::getGptResponse)
-      $ragManager = new MultiDBRAGManager();
+      $ragManager = new MultiDBRAGManager(null, $semanticConfig['tables']);
       
       if ($this->debug) {
         $this->logger->logSecurityEvent(
@@ -590,5 +596,40 @@ class SemanticQueryExecutor
         ]
       );
     }
+  }
+
+  /**
+   * Load semantic config for active domain.
+   *
+   * @return array{min_score: float|null, limit: int|null, tables: array}
+   */
+  private function getSemanticDomainConfig(): array
+  {
+    $activeDomain = DomainConfig::getActivities();
+    $semanticConfigClass = DomainFields::resolveAppClass($activeDomain, 'SemanticConfig');
+    
+    if ($semanticConfigClass === null) {
+      return ['min_score' => null, 'limit' => null, 'tables' => []];
+    }
+    
+    try {
+      if (is_subclass_of($semanticConfigClass, SemanticConfigInterface::class)) {
+        $tables = $semanticConfigClass::getEmbeddingTables();
+        return [
+          'min_score' => $semanticConfigClass::getSimilarityThreshold(),
+          'limit' => $semanticConfigClass::getMaxResultsPerStore(),
+          'tables' => is_array($tables) ? $tables : []
+        ];
+      }
+    } catch (\Exception $e) {
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "Failed to load SemanticConfig: " . $e->getMessage(),
+          'warning'
+        );
+      }
+    }
+    
+    return ['min_score' => null, 'limit' => null, 'tables' => []];
   }
 }

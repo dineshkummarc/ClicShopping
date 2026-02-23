@@ -26,6 +26,8 @@ use ClicShopping\AI\DomainsAI\Semantic\Processor\TranslationHandler;
 use ClicShopping\AI\Infrastructure\Cache\TranslationCache;
 use ClicShopping\AI\DomainsAI\Semantic\Processor\ThresholdManager;
 use ClicShopping\AI\Config\DomainConfig;
+use ClicShopping\AI\Config\DomainFields;
+use ClicShopping\AI\InterfacesAI\SemanticConfigInterface;
 
 /*
  * This class is responsible for semantic analysis and classification of queries.
@@ -726,8 +728,8 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
    *
    *
    * @param string $query Search query
-   * @param int $limit Maximum number of results to return (default: 5)
-   * @param float $minScore Minimum similarity score threshold 0.0-1.0 (default: 0.5)
+   * @param int|null $limit Maximum number of results to return (null uses admin/domain config)
+   * @param float|null $minScore Minimum similarity score threshold 0.0-1.0 (null uses admin/domain config)
    * @param int|null $languageId Language ID for filtering results (optional)
    * @param string|null $entityType Entity type for filtering results (optional)
    * @param int|null $entityId Entity ID for context (optional, for memory integration)
@@ -748,8 +750,8 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
    */
   public static function search(
     string $query,
-    int $limit = 5,
-    float $minScore = 0.5,
+    ?int $limit = null,
+    ?float $minScore = null,
     int|null $languageId = null,
     string|null $entityType = null,
     int|null $entityId = null,
@@ -758,13 +760,15 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
   {
     // Start timing for statistics
     $startTime = microtime(true);
+    $finalMinScore = null;
+    $finalLimit = null;
     
     try {
       self::initializeLogger();
 
       if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
         self::logSecurityEvent(
-          "SemanticAgent::search() called with query: {$query}, limit: {$limit}, minScore: {$minScore}",
+          "SemanticAgent::search() called with query: {$query}, limit: " . ($limit ?? 'null') . ", minScore: " . ($minScore ?? 'null'),
           'info'
         );
       }
@@ -778,11 +782,35 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
         ];
       }
 
+      // Apply admin defaults first
+      $defaultMinScore = defined('CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE') ? (float)CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE : 0.25;
+      $defaultLimit = defined('CLICSHOPPING_APP_CHATGPT_RA_MAX_RESULTS_PER_STORE') ? (int)CLICSHOPPING_APP_CHATGPT_RA_MAX_RESULTS_PER_STORE : 5;
+
+      $finalMinScore = $defaultMinScore;
+      $finalLimit = $defaultLimit;
+
+      // Apply domain overrides if present
+      $semanticConfig = self::getSemanticDomainConfig();
+      if ($semanticConfig['min_score'] !== null) {
+        $finalMinScore = (float)$semanticConfig['min_score'];
+      }
+      if ($semanticConfig['limit'] !== null) {
+        $finalLimit = (int)$semanticConfig['limit'];
+      }
+
+      // Apply explicit call overrides last
+      if ($minScore !== null) {
+        $finalMinScore = $minScore;
+      }
+      if ($limit !== null) {
+        $finalLimit = $limit;
+      }
+
       // Ensure limit is reasonable
-      $limit = max(1, min($limit, 20));
+      $finalLimit = max(1, min($finalLimit, 20));
       
       // Ensure minScore is in valid range
-      $minScore = max(0.0, min($minScore, 1.0));
+      $finalMinScore = max(0.0, min($finalMinScore, 1.0));
 
       // Get language ID from Registry if not provided
       if ($languageId === null && Registry::exists('Language')) {
@@ -791,10 +819,10 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
 
       // Create MultiDBRAGManager instance
       // Pass empty array for tableNames to use all embedding tables
-      $ragManager = new MultiDBRAGManager(null, []);
+      $ragManager = new MultiDBRAGManager(null, $semanticConfig['tables']);
 
       // Perform semantic search
-      $searchResult = $ragManager->searchDocuments($query, $limit, $minScore, $languageId, $entityType);
+      $searchResult = $ragManager->searchDocuments($query, $finalLimit, $finalMinScore, $languageId, $entityType);
 
       // Extract documents from search result
       $documents = $searchResult['documents'] ?? [];
@@ -833,7 +861,9 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
         true,
         count($formattedResults),
         $languageId,
-        $interactionId
+        $interactionId,
+        $finalMinScore,
+        $finalLimit
       );
 
       return [
@@ -857,7 +887,9 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
         false,
         0,
         $languageId,
-        $interactionId
+        $interactionId,
+        $finalMinScore,
+        $finalLimit
       );
 
       return [
@@ -866,6 +898,36 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
         'error' => $e->getMessage()
       ];
     }
+  }
+
+  /**
+   * Load semantic config for active domain.
+   *
+   * @return array{min_score: float|null, limit: int|null, tables: array}
+   */
+  private static function getSemanticDomainConfig(): array
+  {
+    $activeDomain = DomainConfig::getActivities();
+    $semanticConfigClass = DomainFields::resolveAppClass($activeDomain, 'SemanticConfig');
+    
+    if ($semanticConfigClass === null) {
+      return ['min_score' => null, 'limit' => null, 'tables' => []];
+    }
+    
+    try {
+      if (is_subclass_of($semanticConfigClass, SemanticConfigInterface::class)) {
+        $tables = $semanticConfigClass::getEmbeddingTables();
+        return [
+          'min_score' => $semanticConfigClass::getSimilarityThreshold(),
+          'limit' => $semanticConfigClass::getMaxResultsPerStore(),
+          'tables' => is_array($tables) ? $tables : []
+        ];
+      }
+    } catch (\Exception $e) {
+      self::logSecurityEvent("Failed to load SemanticConfig: " . $e->getMessage(), 'warning');
+    }
+    
+    return ['min_score' => null, 'limit' => null, 'tables' => []];
   }
 
   /**
@@ -886,7 +948,9 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
     bool $success,
     int $resultsCount,
     ?int $languageId,
-    ?string $interactionId
+    ?string $interactionId,
+    ?float $minScore,
+    ?int $limit
   ): void
   {
     try {
@@ -908,8 +972,8 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
         'source' => 'documents',
         'query' => $query,
         'results_count' => $resultsCount,
-        'min_score' => 0.25,
-        'limit' => 5
+        'min_score' => $minScore,
+        'limit' => $limit
       ]);
       
       // Insert statistics

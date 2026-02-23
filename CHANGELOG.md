@@ -1,4 +1,6 @@
 version4.22
+- AI
+  - AI interface improvement
 
 ---------------
 version4.21
