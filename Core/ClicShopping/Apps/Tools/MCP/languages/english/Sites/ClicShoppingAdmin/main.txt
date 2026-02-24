@@ -22,6 +22,7 @@ button_cancel = Cancel
 button_mcp_data = MCP
 button_process =  Launch the migration
 button_continue = Continue
+button_insert = Insert
 
 ble_heading_mcp_id = Id
 table_heading_mcp_username = Username
@@ -66,7 +67,7 @@ text_delete_data = Delete Data
 text_delete_data_desc = Delete data from the database
 text_create_db = Create Table in Database
 text_create_db_desc = Create a table in the database
-
+text_last_24 = 24
 text_monitoring_alerts = Monitoring Alerts
 text_alert_threshold = Alert Threshold
 text_latency_threshold = Latency Threshold

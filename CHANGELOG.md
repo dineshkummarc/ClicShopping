@@ -1,7 +1,9 @@
 version4.22
 - AI
   - AI interface improvement
-
+  - MCP improvement
+- Some fix
+- Librairies updated
 ---------------
 version4.21
 - AI

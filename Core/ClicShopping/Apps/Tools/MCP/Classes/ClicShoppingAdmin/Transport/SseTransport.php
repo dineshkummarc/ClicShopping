@@ -246,8 +246,7 @@ class SseTransport implements TransportInterface
    */
   final public function send(array $message): ?array
   {
-    $endpoint = '/api/ai/chat/process';
-    $this->baseUrl = "http://localhost:3001";
+    $endpoint = $this->config['mcp_endpoint'] ?? '/api/ai/chat/process';
     $url = $this->baseUrl . $endpoint;
 
     $ch = curl_init();

@@ -22,6 +22,7 @@ button_cancel = Annuler
 button_mcp_data = MCP
 button_process =  Lancer la migration
 button_continue = Continuer
+button_insert = Insérer
 
 dialog_uninstall_title = Désinstaller
 dialog_uninstall_body = Souhaitez-vous installer cette App ?
@@ -72,7 +73,7 @@ text_delete_data = Supprimer les données
 text_delete_data_desc = Supprimer les données de la base de données
 text_create_db = Créer une table dans la base de données
 text_create_db_desc = Créer une table dans la base de données
-
+text_last_24 = 24
 text_monitoring_alerts = Alertes de Surveillance
 text_alert_threshold = Seuil d'Alerte
 text_latency_threshold = Seuil de Latence

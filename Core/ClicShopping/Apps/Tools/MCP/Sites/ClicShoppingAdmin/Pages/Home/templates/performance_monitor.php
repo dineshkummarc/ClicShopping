@@ -226,6 +226,6 @@ $CLICSHOPPING_Hooks = Registry::get('Hooks');
 <script defer>
   var GetPerformanceData = "<?php echo $ajax_get_performance_data_url; ?>";
   var ExportPerformanceData = "<?php echo $ajax_export_url; ?>";
-  var mcpToken = "<?php echo $mcp_token; ?>";
+  var mcpToken = <?php echo json_encode($mcp_token); ?>;
 </script>
 <script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/MCP/performance_monitor.js'); ?>"></script>

@@ -43,6 +43,29 @@ header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
 header('Connection: keep-alive');
 header('X-Accel-Buffering: no');
+header('Content-Encoding: none');
+
+// Keep the connection open for SSE
+set_time_limit(0);
+ignore_user_abort(true);
+
+// Disable output buffering/compression for real-time streaming
+if (function_exists('apache_setenv')) {
+  @apache_setenv('no-gzip', '1');
+  @apache_setenv('dont-vary', '1');
+}
+@ini_set('zlib.output_compression', '0');
+@ini_set('output_buffering', 'off');
+@ini_set('implicit_flush', '1');
+while (ob_get_level() > 0) {
+  ob_end_flush();
+}
+@ob_implicit_flush(true);
+
+// Avoid session locking during SSE
+if (session_status() === PHP_SESSION_ACTIVE) {
+  session_write_close();
+}
 
 // Récupérer la plage de temps demandée
 $range = isset($_GET['range']) ? HTML::sanitize($_GET['range']) : '24h';
@@ -99,7 +122,8 @@ try {
     'instructions' => [
       'Start the MCP server: cd mcp && node src/server.js',
       'Or check your MCP configuration in the database',
-      'Verify server_host and server_port settings'
+      'Verify server_host and server_port settings',
+      'Works only if MCP server.js exist, not with LmStudio for example'
     ],
     'config' => [
       'host' => $config['server_host'] ?? 'unknown',
@@ -113,6 +137,15 @@ try {
   // Exit immediately - do not loop
   exit();
 }
+
+// Send an initial event to confirm the stream is open
+echo "event: status\n";
+echo "data: " . json_encode([
+  'status' => 'open',
+  'message' => 'Performance stream opened. Waiting for MCP response...'
+]) . "\n\n";
+ob_flush();
+flush();
 
 // Boucle infinie pour l'envoi des événements
 while (true) {

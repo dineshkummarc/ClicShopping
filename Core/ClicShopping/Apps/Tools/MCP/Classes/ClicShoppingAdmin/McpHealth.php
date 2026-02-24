@@ -13,6 +13,7 @@ namespace ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\Exceptions\McpConnectionException;
+use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
 
 /**
  * Class McpHealth
@@ -140,6 +141,23 @@ class McpHealth
 
       return $result;
     } catch (McpConnectionException $e) {
+      // Fallback: raw TCP connectivity check to avoid endpoint-specific failures
+      $config = MCPConnector::getInstance()->getConfig();
+      $host = $config['server_host'] ?? 'localhost';
+      $port = (int)($config['server_port'] ?? 0);
+      $timeout = 2;
+
+      $socket = @fsockopen($host, $port, $errno, $errstr, $timeout);
+      if (is_resource($socket)) {
+        fclose($socket);
+        return [
+          'connected' => true,
+          'latency' => null,
+          'status' => 'warning',
+          'error' => 'Ping failed, but TCP connection to MCP server succeeded.'
+        ];
+      }
+
       return [
         'connected' => false,
         'error' => $e->getMessage(),

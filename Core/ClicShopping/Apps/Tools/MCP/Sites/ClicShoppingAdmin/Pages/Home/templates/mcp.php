@@ -158,18 +158,5 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
     ?>
     </tbody>
   </table>
-  <?php
-  if ($listingTotalRow > 0) {
-    ?>
-    <div class="row">
-      <div class="col-md-12">
-        <div
-          class="col-md-6 float-start pagenumber hidden-xs TextDisplayNumberOfLink"><?php echo $Qmcp->getPageSetLabel($CLICSHOPPING_MCP->getDef('text_display_number_of_link')); ?></div>
-        <div
-          class="float-end text-end"><?php echo $Qmcp->getPageSetLinks(CLICSHOPPING::getAllGET(array('page', 'info', 'x', 'y'))); ?></div>
-      </div>
-    </div>
-    <?php
-  }
-  ?>
 </div>
+<div class="py-4"></div>

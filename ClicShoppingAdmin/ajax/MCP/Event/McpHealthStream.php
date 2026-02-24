@@ -25,6 +25,7 @@
  * - Adjust the sleep duration as needed for your application's requirements.
  */
 use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\McpHealth;
+use ClicShopping\Apps\Tools\MCP\Classes\ClicShoppingAdmin\MCPConnector;
 use ClicShopping\OM\CLICSHOPPING;
 use \ClicShopping\Apps\Configuration\Administrators\Classes\ClicShoppingAdmin\AdministratorAdmin;
 
@@ -45,6 +46,30 @@ AdministratorAdmin::hasUserAccess();
 header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
 header('Connection: keep-alive');
+header('X-Accel-Buffering: no');
+header('Content-Encoding: none');
+
+// Keep the connection open for SSE
+set_time_limit(0);
+ignore_user_abort(true);
+
+// Disable output buffering/compression for real-time streaming
+if (function_exists('apache_setenv')) {
+  @apache_setenv('no-gzip', '1');
+  @apache_setenv('dont-vary', '1');
+}
+@ini_set('zlib.output_compression', '0');
+@ini_set('output_buffering', 'off');
+@ini_set('implicit_flush', '1');
+while (ob_get_level() > 0) {
+  ob_end_flush();
+}
+@ob_implicit_flush(true);
+
+// Avoid session locking during SSE
+if (session_status() === PHP_SESSION_ACTIVE) {
+  session_write_close();
+}
 
 // Disable output buffering to allow real-time streaming
 if (ob_get_level() > 0) {
@@ -66,6 +91,21 @@ function sendEvent(string $event, array $data): void
 }
 
 try {
+  // If a specific MCP server is requested, update connector config for this stream
+  $requestedMcpId = isset($_GET['mcp_id']) ? (int)$_GET['mcp_id'] : null;
+  if (!empty($requestedMcpId)) {
+    $config = MCPConnector::getConfigDb($requestedMcpId);
+    MCPConnector::getInstance()->updateConfig($config);
+  }
+
+  // Send an initial event to confirm the stream is open
+  sendEvent('healthcheck', [
+    'status' => 'unknown',
+    'message' => 'Health stream opened. Waiting for MCP response...',
+    'timestamp' => date('Y-m-d H:i:s'),
+    'details' => []
+  ]);
+
   // Get the MCP Health service
   $mcpHealth = McpHealth::getInstance();
   $counter = 0;
@@ -91,5 +131,3 @@ try {
   sendEvent('error', ['message' => $e->getMessage()]);
   exit;
 }
-
-

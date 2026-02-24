@@ -11,7 +11,6 @@
 
 namespace ClicShopping\Apps\Tools\MCP\Classes\Shop\EndPoint;
 
-
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpPermissions;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpSecurity;
 use ClicShopping\OM\Registry;
@@ -78,6 +77,31 @@ class RagBIPermissions
     }
 
     /**
+     * Vérifie si une action RAG-BI est autorisée
+     *
+     * @param string $username Nom d'utilisateur MCP
+     * @param string $action Action demandée
+     * @return bool True si autorisé, false sinon
+     */
+    public function canPerformRagBIAction(string $username, string $action): bool
+    {
+        if (!$this->canAccessRagBI($username)) {
+            return false;
+        }
+
+        if (!in_array($action, self::ALLOWED_ACTIONS, true)) {
+            McpSecurity::logSecurityEvent('RAG-BI action denied - action not in whitelist', [
+                'username' => $username,
+                'action' => $action,
+                'allowed_actions' => self::ALLOWED_ACTIONS
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Vérifie si un utilisateur peut accéder au système RAG-BI
      *
      * @param string $username Nom d'utilisateur MCP
@@ -122,31 +146,6 @@ class RagBIPermissions
 
     return true;
   }
-
-    /**
-     * Vérifie si une action RAG-BI est autorisée
-     *
-     * @param string $username Nom d'utilisateur MCP
-     * @param string $action Action demandée
-     * @return bool True si autorisé, false sinon
-     */
-    public function canPerformRagBIAction(string $username, string $action): bool
-    {
-        if (!$this->canAccessRagBI($username)) {
-            return false;
-        }
-
-        if (!in_array($action, self::ALLOWED_ACTIONS, true)) {
-            McpSecurity::logSecurityEvent('RAG-BI action denied - action not in whitelist', [
-                'username' => $username,
-                'action' => $action,
-                'allowed_actions' => self::ALLOWED_ACTIONS
-            ]);
-            return false;
-        }
-
-        return true;
-    }
 
     /**
      * Vérifie si une requête SQL est autorisée pour RAG-BI
@@ -200,24 +199,24 @@ class RagBIPermissions
     }
 
     /**
-     * Vérifie si une table est autorisée pour RAG-BI
+     * Détermine le type d'une requête SQL
      *
-     * @param string $tableName Nom de la table
-     * @return bool True si autorisée, false sinon
+     * @param string $query Requête SQL
+     * @return string Type de requête
      */
-    private function isTableAllowedForRagBI(string $tableName): bool
+    private function getSQLQueryType(string $query): string
     {
-        // Supprimer le préfixe si présent
-        $cleanTableName = str_replace('clic_', '', strtolower($tableName));
-        $fullTableName = 'clic_' . $cleanTableName;
+        $query = strtoupper(trim($query));
 
-        // Vérifier si la table est explicitement interdite
-        if (in_array($fullTableName, self::FORBIDDEN_TABLES, true)) {
-            return false;
-        }
+        if (preg_match('/^SELECT\s+/', $query)) return 'SELECT';
+        if (preg_match('/^UPDATE\s+/', $query)) return 'UPDATE';
+        if (preg_match('/^INSERT\s+/', $query)) return 'INSERT';
+        if (preg_match('/^DELETE\s+/', $query)) return 'DELETE';
+        if (preg_match('/^CREATE\s+/', $query)) return 'CREATE';
+        if (preg_match('/^DROP\s+/', $query)) return 'DROP';
+        if (preg_match('/^ALTER\s+/', $query)) return 'ALTER';
 
-        // Vérifier si la table est dans la liste autorisée
-        return in_array($fullTableName, self::ALLOWED_TABLES, true);
+        return 'UNKNOWN';
     }
 
     /**
@@ -245,6 +244,27 @@ class RagBIPermissions
         }
 
         return array_unique($tables);
+    }
+
+    /**
+     * Vérifie si une table est autorisée pour RAG-BI
+     *
+     * @param string $tableName Nom de la table
+     * @return bool True si autorisée, false sinon
+     */
+    private function isTableAllowedForRagBI(string $tableName): bool
+    {
+        // Supprimer le préfixe si présent
+        $cleanTableName = str_replace('clic_', '', strtolower($tableName));
+        $fullTableName = 'clic_' . $cleanTableName;
+
+        // Vérifier si la table est explicitement interdite
+        if (in_array($fullTableName, self::FORBIDDEN_TABLES, true)) {
+            return false;
+        }
+
+        // Vérifier si la table est dans la liste autorisée
+        return in_array($fullTableName, self::ALLOWED_TABLES, true);
     }
 
     /**
@@ -276,27 +296,6 @@ class RagBIPermissions
         }
 
         return false;
-    }
-
-    /**
-     * Détermine le type d'une requête SQL
-     *
-     * @param string $query Requête SQL
-     * @return string Type de requête
-     */
-    private function getSQLQueryType(string $query): string
-    {
-        $query = strtoupper(trim($query));
-        
-        if (preg_match('/^SELECT\s+/', $query)) return 'SELECT';
-        if (preg_match('/^UPDATE\s+/', $query)) return 'UPDATE';
-        if (preg_match('/^INSERT\s+/', $query)) return 'INSERT';
-        if (preg_match('/^DELETE\s+/', $query)) return 'DELETE';
-        if (preg_match('/^CREATE\s+/', $query)) return 'CREATE';
-        if (preg_match('/^DROP\s+/', $query)) return 'DROP';
-        if (preg_match('/^ALTER\s+/', $query)) return 'ALTER';
-        
-        return 'UNKNOWN';
     }
 
     /**

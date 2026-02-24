@@ -39,8 +39,8 @@ use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpSecurity;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Message;
 use ClicShopping\Apps\Tools\MCP\MCP;
 use ClicShopping\OM\HTML;
+use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
-
 
 class ChatRagBI extends \ClicShopping\OM\Domains\PagesAbstract
 {
@@ -265,6 +265,7 @@ class ChatRagBI extends \ClicShopping\OM\Domains\PagesAbstract
     }
 
     // Vérification de la permission MCP principale pour l'action demandée
+    // Use the MCP context key expected by McpPermissions
     if (!$this->mcpPermissions->hasPermissionForEndpoint($this->authenticatedUsername, 'RagBI', $action)) {
       McpSecurity::logSecurityEvent('API Access Denied - Permission check failed', [
         'username' => $this->authenticatedUsername,
@@ -514,6 +515,103 @@ class ChatRagBI extends \ClicShopping\OM\Domains\PagesAbstract
   }
 
   /**
+   * Resolve MCP user ID by username.
+   *
+   * @param string $username
+   * @return int
+   */
+  private function getMcpIdByUsername(string $username): int
+  {
+    if (empty($username)) {
+      return 0;
+    }
+
+    $Qcheck = $this->db->prepare('SELECT mcp_id
+                                   FROM :table_mcp
+                                   WHERE username = :mcp_username
+                                   LIMIT 1
+                                  ');
+    $Qcheck->bindValue(':mcp_username', $username);
+    $Qcheck->execute();
+
+    if ($Qcheck->fetch()) {
+      return (int)$Qcheck->valueInt('mcp_id');
+    }
+
+    return 0;
+  }
+
+  /**
+   * Check if the request type relies on local MCP web search.
+   *
+   * @param string $queryType
+   * @return bool
+   */
+  private function isWebSearchType(string $queryType): bool
+  {
+    $type = strtolower(trim($queryType));
+    return in_array($type, ['web_search', 'websearch', 'hybrid'], true);
+  }
+
+  /**
+   * Check if local MCP server is reachable.
+   *
+   * @return bool
+   */
+  private function isLocalMcpServerUp(): bool
+  {
+    $host = 'http://localhost:3001/';
+    $mcpId = 0;
+
+    // 1) Resolve MCP id from active session
+    if (!empty($this->authenticatedSessionId)) {
+      $Qsession = $this->db->prepare('select mcp_id
+                                        from :table_mcp_session
+                                       where session_id = :session_id
+                                       order by date_modified desc
+                                       limit 1
+                                      ');
+      $Qsession->bindValue(':session_id', $this->authenticatedSessionId);
+      $Qsession->execute();
+      if ($Qsession->fetch()) {
+        $mcpId = (int)$Qsession->valueInt('mcp_id');
+      }
+    }
+
+    // 2) Fallback to username mapping
+    if ($mcpId === 0 && !empty($this->authenticatedUsername)) {
+      $mcpId = $this->getMcpIdByUsername($this->authenticatedUsername);
+    }
+
+    // 3) Resolve host/port/ssl for the selected MCP id
+    if ($mcpId > 0) {
+      try {
+        // Enforce IP restrictions for this MCP config
+        if (!McpSecurity::validateIp($mcpId)) {
+          return false;
+        }
+
+        $config = MCPConnector::getConfigDb($mcpId);
+        $protocol = !empty($config['ssl']) ? 'https' : 'http';
+        $serverHost = $config['server_host'] ?? 'localhost';
+        $serverPort = (int)($config['server_port'] ?? 3001);
+        $host = "{$protocol}://{$serverHost}:{$serverPort}/";
+      } catch (\Throwable $e) {
+        // keep fallback host
+      }
+    }
+
+    $response = HTTP::getResponse([
+      'url' => $host,
+      'method' => 'get',
+      'header' => ['Accept: */*'],
+      'parameters' => ''
+    ]);
+
+    return $response !== false;
+  }
+
+  /**
    * Handle GET request
    */
   private function handleGetRequest(array $statusCheck)
@@ -598,70 +696,6 @@ class ChatRagBI extends \ClicShopping\OM\Domains\PagesAbstract
     $QstatusCheck->execute();
 
     return $QstatusCheck->valueInt($string);
-  }
-
-  /**
-   * Check if the request type relies on local MCP web search.
-   *
-   * @param string $queryType
-   * @return bool
-   */
-  private function isWebSearchType(string $queryType): bool
-  {
-    $type = strtolower(trim($queryType));
-    return in_array($type, ['web_search', 'websearch', 'hybrid'], true);
-  }
-
-  /**
-   * Check if local MCP server is reachable.
-   *
-   * @return bool
-   */
-  private function isLocalMcpServerUp(): bool
-  {
-    $host = 'http://localhost:3001/';
-    $ch = curl_init($host);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 2);
-    curl_setopt($ch, CURLOPT_NOBODY, true);
-    curl_exec($ch);
-    $err = curl_errno($ch);
-    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($err !== 0) {
-      return false;
-    }
-
-    return $code >= 200 && $code < 500;
-  }
-
-  /**
-   * Resolve MCP user ID by username.
-   *
-   * @param string $username
-   * @return int
-   */
-  private function getMcpIdByUsername(string $username): int
-  {
-    if (empty($username)) {
-      return 0;
-    }
-
-    $Qcheck = $this->db->prepare('SELECT mcp_id
-                                   FROM :table_mcp
-                                   WHERE username = :mcp_username
-                                   LIMIT 1
-                                  ');
-    $Qcheck->bindValue(':mcp_username', $username);
-    $Qcheck->execute();
-
-    if ($Qcheck->fetch()) {
-      return (int)$Qcheck->valueInt('mcp_id');
-    }
-
-    return 0;
   }
 
   // Les fonctions validateRagBIAccess() et getMcpAuthFromRequest() ont été supprimées.

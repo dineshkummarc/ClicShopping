@@ -209,7 +209,7 @@ class McpService
   {
     $issues = [];
     $config = $this->connector->getConfig();
-    $array_connexion = ['server_host', 'server_port', 'token'];
+    $array_connexion = ['server_host', 'server_port'];
 
     // Check required fields
     foreach ($array_connexion as $field) {
@@ -218,12 +218,16 @@ class McpService
       }
     }
 
-    // Test connection if basic config is present
+    // Test basic TCP connectivity if basic config is present
     if (empty($issues)) {
-      try {
-        $this->connector->request('ping');
-      } catch (\Exception $e) {
-        $issues[] = "Connection test failed: " . $e->getMessage();
+      $host = $config['server_host'] ?? 'localhost';
+      $port = (int)($config['server_port'] ?? 0);
+      $timeout = 2;
+      $socket = @fsockopen($host, $port, $errno, $errstr, $timeout);
+      if (is_resource($socket)) {
+        fclose($socket);
+      } else {
+        $issues[] = "Connection test failed: {$errstr} ({$errno})";
       }
     }
 

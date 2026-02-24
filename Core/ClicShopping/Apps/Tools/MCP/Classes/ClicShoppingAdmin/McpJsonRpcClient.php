@@ -212,7 +212,8 @@ class McpJsonRpcClient
       return $this->transport->send($frame);
     } catch (\Throwable $e) {
       $this->stats['errors']++;
-      throw new McpProtocolException('Transport send() failed', $this->config, $frame, 0, $e);
+      $protocolVersion = isset($frame['jsonrpc']) ? (string)$frame['jsonrpc'] : '';
+      throw new McpProtocolException('Transport send() failed', $protocolVersion, $frame, [], 0, $e);
     }
   }
 
