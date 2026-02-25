@@ -1,14 +1,77 @@
 const alertsPerPage = 10;
 let currentPage = 1;
 
+function initAlertViewer() {
+  // Basic signal to confirm the script runs
+  console.log('Alert viewer initialized');
+
+  const filterEl = document.getElementById('alertFilter');
+  const clearBtn = document.getElementById('clearAlerts');
+
+  if (filterEl) {
+    filterEl.addEventListener('change', function () {
+      console.log('Alert filter changed to:', this.value);
+      loadAlerts(1, this.value);
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function () {
+      if (!confirm('Are you sure you want to clear all alerts?')) return;
+      fetch(clearAlerts, {
+        method: 'POST',
+        body: JSON.stringify({ 'clear': true }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            return response.json().then(errorData => {
+              throw new Error(errorData.message || 'Server returned an error.');
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.success) {
+            loadAlerts();
+            alert(data.message);
+          } else {
+            alert(data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Failed to clear alerts:', error);
+          alert('Failed to clear alerts. See console for details.');
+        });
+    });
+  }
+
+  loadAlerts();
+  setInterval(() => {
+    const filter = filterEl ? filterEl.value : 'all';
+    loadAlerts(currentPage, filter);
+  }, 60000);
+}
+
 function loadAlerts(page = 1, filter = 'all') {
-  fetch(`${gptAlerts}?page=${page}&filter=${filter}&per_page=${alertsPerPage}`)
+  if (!gptAlerts) {
+    console.error('Missing alerts endpoint.');
+    return;
+  }
+
+  const url = `${gptAlerts}?page=${page}&filter=${filter}&per_page=${alertsPerPage}`;
+  console.log('Loading alerts:', url);
+
+  fetch(url)
     .then(response => response.json())
     .then(data => {
       const alertsList = document.getElementById('mcpAlertsList');
+      if (!alertsList) return;
       alertsList.innerHTML = '';
 
-      if (data.alerts.length === 0) {
+      if (!data || !Array.isArray(data.alerts) || data.alerts.length === 0) {
         alertsList.innerHTML = `<tr><td colspan="4" class="text-center">${text_no_alert}</td></tr>`;
         return;
       }
@@ -40,7 +103,7 @@ function loadAlerts(page = 1, filter = 'all') {
 
         // Build server info display
         let serverDisplay = '<span class="badge bg-secondary">N/A</span>';
-        if (alert.server) {
+        if (alert.server && alert.server.server_url) {
           serverDisplay = `<span class="badge bg-info">${alert.server.server_url}</span>`;
         }
 
@@ -55,18 +118,23 @@ function loadAlerts(page = 1, filter = 'all') {
       });
 
       updatePagination(data.total_pages, page);
+      currentPage = page;
     })
     .catch(error => {
       console.error('Failed to load alerts:', error);
-      document.getElementById('mcpAlertsList').innerHTML =
-        '<tr><td colspan="4" class="text-center text-danger">Failed to load alerts</td></tr>';
+      const alertsList = document.getElementById('mcpAlertsList');
+      if (alertsList) {
+        alertsList.innerHTML =
+          '<tr><td colspan="4" class="text-center text-danger">Failed to load alerts</td></tr>';
+      }
     });
 }
 
 function updatePagination(totalPages, currentPage) {
   const pagination = document.getElementById('mcpAlertsPagination');
+  if (!pagination) return;
   pagination.innerHTML = '';
-  if (totalPages <= 1) return;
+  if (!totalPages || totalPages <= 1) return;
 
   const nav = document.createElement('nav');
   const ul = document.createElement('ul');
@@ -94,46 +162,19 @@ function updatePagination(totalPages, currentPage) {
 
   ul.addEventListener('click', (e) => {
     e.preventDefault();
-    const page = e.target.dataset.page;
-    if (page) loadAlerts(parseInt(page), document.getElementById('alertFilter').value);
+    const target = e.target;
+    if (!target || !target.dataset) return;
+    const page = target.dataset.page;
+    if (page) {
+      const filterEl = document.getElementById('alertFilter');
+      const filter = filterEl ? filterEl.value : 'all';
+      loadAlerts(parseInt(page, 10), filter);
+    }
   });
 }
 
-loadAlerts();
-
-document.getElementById('alertFilter').addEventListener('change', function () {
-  loadAlerts(1, this.value);
-});
-
-document.getElementById('clearAlerts').addEventListener('click', function () {
-  if (!confirm('Are you sure you want to clear all alerts?')) return;
-  fetch(clearAlerts, {
-    method: 'POST',
-    body: JSON.stringify({ 'clear': true }),
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-    .then(response => {
-      if (!response.ok) {
-        return response.json().then(errorData => {
-          throw new Error(errorData.message || 'Server returned an error.');
-        });
-      }
-      return response.json();
-    })
-    .then(data => {
-      if (data.success) {
-        loadAlerts();
-        alert(data.message);
-      } else {
-        alert(data.message);
-      }
-    })
-    .catch(error => {
-      console.error('Failed to clear alerts:', error);
-      alert('Failed to clear alerts. See console for details.');
-    });
-});
-
-setInterval(() => loadAlerts(currentPage, document.getElementById('alertFilter').value), 60000);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAlertViewer);
+} else {
+  initAlertViewer();
+}

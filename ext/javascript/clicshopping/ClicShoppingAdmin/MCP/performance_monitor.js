@@ -29,7 +29,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function initEventSource() {
     if (eventSource) eventSource.close();
-    //const baseUrl = GetPerformanceData;
+    if (!GetPerformanceData) {
+      showError('Missing performance endpoint. Please reload the page.');
+      return;
+    }
+    if (!mcpToken) {
+      showError('Missing MCP token. Please re-login to the admin.');
+      return;
+    }
     eventSource = new EventSource(GetPerformanceData + '?' + buildParams());
     
     eventSource.onmessage = function(event) {
@@ -58,12 +65,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     eventSource.onerror = function(error) {
       console.error('EventSource failed:', error);
+      showError('Performance stream error. Check server logs or re-login.');
       eventSource.close();
       // Don't auto-retry if server is not running
       // User needs to start the server first
     };
   }
   
+  function showError(message) {
+    const container = document.getElementById('performanceMetrics');
+    if (container) {
+      container.innerHTML = `<div class="alert alert-danger" role="alert">${message}</div>`;
+    }
+    const recommendations = document.getElementById('recommendations');
+    if (recommendations) {
+      recommendations.innerHTML = `<div class="alert alert-info">${message}</div>`;
+    }
+  }
+
   function showServerNotRunningWarning(data) {
     // Clear existing content
     const container = document.getElementById('performanceMetrics');
@@ -277,5 +296,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  initEventSource();
+  // Do not auto-start monitoring to avoid long-lived SSE connections by default.
+  // The user can trigger it by changing filters or applying thresholds.
 });

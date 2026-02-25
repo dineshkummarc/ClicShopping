@@ -684,11 +684,31 @@ class ChatRagBI extends \ClicShopping\OM\Domains\PagesAbstract
    */
   private function statusCheck(string $string, string $token): int
   {
-    $QstatusCheck = $this->db->prepare( // Correction: use $this->db instead of $this->Db
+    // Resolve MCP primary key column (mcp_id or id) to avoid schema mismatches
+    $mcpIdColumn = 'mcp_id';
+    try {
+      $table = CLICSHOPPING::getConfig('db_table_prefix') . 'mcp';
+      $Qcol = $this->db->prepare('SELECT COLUMN_NAME
+                                    FROM INFORMATION_SCHEMA.COLUMNS
+                                   WHERE TABLE_SCHEMA = DATABASE()
+                                     AND TABLE_NAME = :table
+                                     AND COLUMN_NAME IN ("mcp_id", "id")
+                                   LIMIT 1
+                                 ');
+      $Qcol->bindValue(':table', $table);
+      $Qcol->execute();
+      if ($Qcol->fetch()) {
+        $mcpIdColumn = $Qcol->value('COLUMN_NAME');
+      }
+    } catch (\Throwable $e) {
+      // Fallback to default column name
+    }
+
+    $QstatusCheck = $this->db->prepare(
       'select a.' . $string . '
              from :table_mcp a,
                   :table_mcp_session ase
-             where a.mcp_id = ase.mcp_id
+             where a.' . $mcpIdColumn . ' = ase.mcp_id
              and ase.session_id = :session_id
            '
     );

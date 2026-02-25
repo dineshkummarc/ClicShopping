@@ -372,8 +372,6 @@ class HealthMonitor {
 document.addEventListener('DOMContentLoaded', function() {
   const monitor = new HealthMonitor(eventUrl);
 
-  // Auto-start monitoring
-  setTimeout(() => {
-    monitor.startMonitoring();
-  }, 1000);
+  // Do not auto-start monitoring to avoid long-lived SSE connections by default.
+  // User can start explicitly with the Start button.
 });
