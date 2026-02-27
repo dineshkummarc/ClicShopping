@@ -220,6 +220,9 @@ INSERT INTO administrator_menu VALUES(810, '', 2, 50, 2, '', 0, NULL, 1);
 INSERT INTO administrator_menu VALUES(811, 'index.php?A&AI\\Ecommerce', 810, 5, 1, '', 0, 'app_ai_ecommerce', 1);
 
 
+
+
+
 INSERT INTO administrator_menu_description VALUES(0, '', 1);
 INSERT INTO administrator_menu_description VALUES(0, '', 2);
 INSERT INTO administrator_menu_description VALUES(1, 'Home', 1);
@@ -607,6 +610,7 @@ INSERT INTO administrator_menu_description VALUES(810, 'AI', 1);
 INSERT INTO administrator_menu_description VALUES(810, 'IA', 2);
 INSERT INTO administrator_menu_description VALUES(811, 'Ecommerce Agent', 1);
 INSERT INTO administrator_menu_description VALUES(811, 'Agent Ecommerce', 2);
+
 
 
 INSERT INTO api VALUES(1, 'Default', 'd0a36b839700b60727fe13998e22aa0af197c61d8b371e26114c133ca51c4864bd0da73ad6d1e5090b02b55cff42b8a0cd23866e64e78fc8884eb6228d32f5e9d76bed468869dd89ee6bb8a3208c5077e88560d0bc238f67cfc732efcf5313a0cb361e297c29c8d82d050d770ed7dee972af6445e801fa9af12e3d478bf5346a', 0, '2022-09-18 14:25:54', '2022-09-18 14:25:54', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -1742,8 +1746,6 @@ INSERT INTO configuration VALUES(1773, 'Utiliser Redis', 'USE_REDIS', 'False', '
 INSERT INTO configuration VALUES(1774, 'Pondération des ventes', 'CLICSHOPPING_APP_RECOMMENDATIONS_PR_WEIGHT_SALES', '0.4', 'Poids appliqué au score issu des ventes. Contrôle l\'influence des ventes produit (normalisées par le maximum commandé) dans la stratégie Multiple.', 6, 0, NULL, '2025-09-15 17:07:51', NULL, NULL);
 INSERT INTO configuration VALUES(1775, 'Pondération des sources externes', 'CLICSHOPPING_APP_RECOMMENDATIONS_PR_WEIGHT_EXTERNAL', '0.3', 'Poids appliqué au score issu des recommandations externes (moyenne des scores de recommandations normalisée entre min et max). Utilisé dans la stratégie Multiple.', 6, 0, NULL, '2025-09-15 17:07:51', NULL, NULL);
 
-
-
 INSERT INTO configuration VALUES(1776, 'Sort Order', 'CLICSHOPPING_APP_MCP_MC_SORT_ORDER', '500', 'The sort order position of the module shown in the available methods list (lowest is displayed first).', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
 INSERT INTO configuration VALUES(1777, 'Status', 'CLICSHOPPING_APP_MCP_MC_STATUS', 'True', 'Set to True to enable the module, or False to disable it.', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
 INSERT INTO configuration VALUES(1778, 'Parameter [MCP App]', 'MODULE_MODULES_MCP_INSTALLED', 'Tools\\MCP\\MC', 'Parameter [MCP App]', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
@@ -2086,9 +2088,10 @@ INSERT INTO manufacturers_info VALUES(4, 2, '', 0, NULL, NULL, NULL, NULL, NULL)
 INSERT INTO manufacturers_info VALUES(5, 1, '', 0, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO manufacturers_info VALUES(5, 2, '', 0, NULL, NULL, NULL, NULL, NULL);
 
-
 INSERT INTO mcp VALUES(1, 'RagBI', 'd0a36b839700b60727fe13998e22aa0af197c61d8b371e26114c133ca51c4864bd0da73ad6d1e5090b02b55cff42b8a0cd23866e64e78fc8884eb6228d32f5e9d76bed468869dd89ee6bb8a3208c5077e88560d0bc238f67cfc732efcf5313a0cb361e297c29c8d82d050d770ed7dee972af6445e801fa9af12e3d478bf5346a', 1, '2025-10-05 13:02:04', NULL, 1, 0, 0, 0, 0, 'localhost', 3001, 0, 20, 1000, 300, 7, 0);
 INSERT INTO mcp_ip VALUES(1, 1, '127.0.0.1', 'localhost');
+
+
 
 
 INSERT INTO orders_status VALUES(1, 1, 'Pending', 1, 0, 0, 1);

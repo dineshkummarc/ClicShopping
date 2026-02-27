@@ -3179,7 +3179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/get_cache_stats.js'); ?>"></script>
 <script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/flush_cache.js'); ?>"></script>
 <script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/feedback.js'); ?>"></script>
-<script defer src="<?php echo CLICSHOPPING::link('Shop/sources/javascript/clicshopping/ClicShoppingAdmin/Rag/latency_charts.js'); ?>"></script>
+<script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/latency_charts.js'); ?>"></script>
 <script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/Rag/cache_performance_charts.js'); ?>"></script>
 <?php endif; ?>
 

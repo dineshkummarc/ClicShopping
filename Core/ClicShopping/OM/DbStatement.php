@@ -517,7 +517,11 @@ class DbStatement extends \PDOStatement
     }
 
     if (!empty($parameters)) {
-      parse_str($parameters, $p);
+      if (is_array($parameters)) {
+        $p = $parameters;
+      } else {
+        parse_str($parameters, $p);
+      }
 
       if (isset($p[$this->page_set_keyword])) {
         unset($p[$this->page_set_keyword]);
@@ -525,11 +529,22 @@ class DbStatement extends \PDOStatement
 
       // Manually build the query string
       $queryString = '';
+
       foreach ($p as $key => $value) {
-        if ($value !== '') {
-          $queryString .= $key . '=' . urlencode($value) . '&';
+        if (is_array($value)) {
+          foreach ($value as $v) {
+            if ($v !== '') {
+              $queryString .= $key . '[]=' . urlencode((string)$v) . '&';
+            } else {
+              $queryString .= $key . '[]&';
+            }
+          }
         } else {
-          $queryString .= $key . '&';
+          if ($value !== '') {
+            $queryString .= $key . '=' . urlencode((string)$value) . '&';
+          } else {
+            $queryString .= $key . '&';
+          }
         }
       }
 
