@@ -10,8 +10,6 @@
 
 namespace ClicShopping\AI\Infrastructure\Storage;
 
-
-
 use ClicShopping\OM\CLICSHOPPING;
 use Doctrine\DBAL\ParameterType;
 use LLPhant\Embeddings\Document;
@@ -114,7 +112,7 @@ class MariaDBVectorStore extends VectorStoreBase
          AND COLUMN_NAME = ?",
         [$this->tableName, $columnName]
       );
-      
+
       $row = $result->fetchAssociative();
       return ($row['count'] ?? 0) > 0;
     } catch (\Exception $e) {
@@ -122,7 +120,7 @@ class MariaDBVectorStore extends VectorStoreBase
       return false;
     }
   }
-
+  
   /**
    * Validates the format of the embedding
    *
@@ -202,17 +200,17 @@ class MariaDBVectorStore extends VectorStoreBase
       'chunkNumber' => $document->chunkNumber ?? 0,
       'hash' => $document->hash ?? '',
     ];
-    
+
     if (!empty($metadata) && is_array($metadata)) {
       $documentMetadata = array_merge($documentMetadata, $metadata);
     }
-    
+
     $metadataJson = json_encode($documentMetadata);
 
     $hasUserIdColumn = $this->hasColumn('user_id');
     $hasInteractionIdColumn = $this->hasColumn('interaction_id');
     $hasEntityTypeColumn = $this->hasColumn('entity_type');
-    
+
     if ($hasUserIdColumn && empty($preparedData['user_id'])) {
       $this->securityLogger->logSecurityEvent('Warning: user_id is empty when inserting into ' . $this->tableName, 'warning');
     }
@@ -220,7 +218,7 @@ class MariaDBVectorStore extends VectorStoreBase
     if ($hasInteractionIdColumn && empty($preparedData['interaction_id'])) {
       $this->securityLogger->logSecurityEvent( 'Warning: interaction_id is empty when inserting into ' . $this->tableName, 'warning');
     }
-    
+
     if ($hasUserIdColumn || $hasInteractionIdColumn || $hasEntityTypeColumn) {
       $columns = "(content, 
       type, 
@@ -252,29 +250,29 @@ class MariaDBVectorStore extends VectorStoreBase
         $preparedData['entity_id'],
         $preparedData['language_id'],
       ];
-      
+
       if ($hasEntityTypeColumn) {
         $columns .= ", entity_type";
         $values .= ", ?";
         $params[] = $preparedData['entity_type'];
       }
-      
+
       if ($hasUserIdColumn) {
         $columns .= ", user_id";
         $values .= ", ?";
         $params[] = $preparedData['user_id'];
       }
-      
+
       if ($hasInteractionIdColumn) {
         $columns .= ", interaction_id";
         $values .= ", ?";
         $params[] = $preparedData['interaction_id'];
       }
-      
+
       $columns .= ", metadata)";
       $values .= ", ?)";
       $params[] = $metadataJson;
-      
+
       $this->connection->executeStatement(
         "INSERT INTO {$this->tableName} {$columns} VALUES {$values}",
         $params

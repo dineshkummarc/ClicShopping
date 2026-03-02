@@ -596,7 +596,19 @@ class RagCache
    */
   private function unserialize(string $value): mixed
   {
-    return unserialize($value);
+    // Security: prevent object injection via cached payloads
+    $unserialized = @unserialize($value, ['allowed_classes' => false]);
+    if ($unserialized !== false || $value === 'b:0;') {
+      return $unserialized;
+    }
+
+    // Fallback for future JSON-based cache payloads
+    $decoded = json_decode($value, true);
+    if (json_last_error() === JSON_ERROR_NONE) {
+      return $decoded;
+    }
+
+    return null;
   }
 
   /**

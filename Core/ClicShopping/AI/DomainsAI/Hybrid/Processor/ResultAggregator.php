@@ -253,7 +253,7 @@ class ResultAggregator extends BaseQueryProcessor
     return [
       'product_id' => $this->extractField($row, ['id', 'product_id'], $entityType, 0),
       'name' => $this->extractField($row, ['name', 'title', 'description'], $entityType, 'Unknown Item'),
-      'price' => floatval($this->extractField($row, ['price', 'cost', 'amount'], $entityType, 0)),
+      'price' => (float)$this->extractField($row, ['price', 'cost', 'amount'], $entityType, 0),
       'model' => $this->extractField($row, ['model', 'sku', 'code', 'reference'], $entityType, ''),
       'entity_type' => $entityType,
       'available_fields' => array_keys($row)
@@ -358,14 +358,14 @@ class ResultAggregator extends BaseQueryProcessor
   private function buildBasicPriceComparison(?array $productData, ?array $webSearchResults, array $sources, array $successfulResults, array $failedResults): array
   {
     $text = "";
-    
+
     // Display product information with fallback strategies
     if ($productData !== null) {
       $text .= $this->formatProductDisplay($productData);
     } else {
       $text .= "Product information not available.\n\n";
     }
-    
+
     // Display competitor information
     $competitorInfo = [];
     if ($webSearchResults !== null) {
@@ -374,72 +374,72 @@ class ResultAggregator extends BaseQueryProcessor
         $competitorInfo[] = $response;
       }
     }
-    
+
     if (!empty($competitorInfo)) {
       $text .= "Competitor Information:\n" . implode("\n", $competitorInfo) . "\n";
     }
-    
+
     $text = $this->addFailedQueryWarning($text, $failedResults);
-    
+
     return $this->formatAggregatedResult(
-      'price_comparison', 
-      trim($text), 
+      'price_comparison',
+      trim($text),
       [
         'product' => $productData,
         'competitor_info' => $competitorInfo
-      ], 
-      $sources, 
-      $successfulResults, 
+      ],
+      $sources,
+      $successfulResults,
       $failedResults
     );
   }
 
   /**
    * Format product display with fallback strategies for missing fields
-   * 
+   *
    * This method provides intelligent display formatting that adapts to
    * available fields instead of assuming specific field names.
-   * 
+   *
    * Display strategy:
    * 1. Show name/title if available
    * 2. Show price if available
    * 3. Show model/SKU if available
    * 4. Show entity type if detected
    * 5. Gracefully handle missing fields
-   * 
+   *
    * @param array $productData Product data from extractProductDataFromRow()
    * @return string Formatted product display text
    */
   private function formatProductDisplay(array $productData): string
   {
     $lines = [];
-    
+
     // Display name/title
     if (!empty($productData['name']) && $productData['name'] !== 'Unknown Item') {
       $lines[] = "Item: " . $productData['name'];
     }
-    
+
     // Display price
     if (!empty($productData['price'])) {
       $lines[] = "Our Price: $" . number_format($productData['price'], 2);
     }
-    
+
     // Display model/SKU
     if (!empty($productData['model'])) {
       $lines[] = "Model: " . $productData['model'];
     }
-    
+
     // Display entity type if detected (helps with debugging)
     if ($this->debug && !empty($productData['entity_type'])) {
       $lines[] = "Type: " . $productData['entity_type'];
     }
-    
+
     // Fallback if no useful information
     if (empty($lines)) {
       return "Item information available but fields not recognized.\n" .
              "Available fields: " . implode(', ', $productData['available_fields'] ?? []) . "\n\n";
     }
-    
+
     return implode("\n", $lines) . "\n\n";
   }
 
@@ -467,9 +467,11 @@ class ResultAggregator extends BaseQueryProcessor
     }
 
     $aggregatedText = $semanticResponse;
+    
     if (!empty($analyticsData)) {
       $aggregatedText .= "\n\n📊 Related Data:\n- " . implode("\n- ", $analyticsData) . "\n";
     }
+    
     $aggregatedText = $this->addFailedQueryWarning($aggregatedText, $failedResults);
 
     if ($this->debug) {

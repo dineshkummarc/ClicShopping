@@ -153,8 +153,8 @@ class NewVector
    * @return array|null The generated embeddings or null on error
    * @throws ClientExceptionInterface
    */
- public static function createEmbedding(string|null $path_file_upload, string|null $text_description, ?int $token_length = null)
- {
+  public static function createEmbedding(string|null $path_file_upload, string|null $text_description, ?int $token_length = null)
+  {
     $embeddingGenerator = self::gptEmbeddingsModel();
 
     if ($embeddingGenerator === null) {
@@ -215,9 +215,11 @@ class NewVector
 
         if ($cache->exists(1440)) { // 1440 minutes = 24h
           $cachedData = $cache->get();
-          if ($cachedData !== null) {
-            error_log("✅ EMBEDDING CACHE HIT (file) - Duration: < 10ms - Model: {$model}");
-            return $cachedData;
+          $hydrated = self::hydrateCachedEmbeddings($cachedData);
+
+          if ($hydrated !== null) {
+            error_log("[INFO TIME] EMBEDDING CACHE HIT (file) - Duration: < 10ms - Model: {$model}");
+           return $hydrated;
           }
         }
 
@@ -236,8 +238,8 @@ class NewVector
         $embeddedDocuments = $embeddingGenerator->embedDocuments($formattedDocuments);
 
         // Save to cache (24h)
-        $cache->save($embeddedDocuments);
-        error_log("✅ EMBEDDING CACHED (file) - TTL: 24h - Model: {$model}");
+        $cache->save(self::serializeEmbeddings($embeddedDocuments));
+        error_log("[INFO TIME] EMBEDDING CACHED (file) - TTL: 24h - Model: {$model}");
 
         return $embeddedDocuments;
 
@@ -263,9 +265,10 @@ class NewVector
 
           if ($cache->exists(1440)) { // 1440 minutes = 24h
             $cachedData = $cache->get();
-            if ($cachedData !== null) {
-              error_log("✅ EMBEDDING CACHE HIT (text-multi) - Duration: < 10ms - Model: {$model}");
-              return $cachedData;
+            $hydrated = self::hydrateCachedEmbeddings($cachedData);
+	    if ($cachedData !== null) {
+              error_log("[INFO TIME] EMBEDDING CACHE HIT (text-multi) - Duration: < 10ms - Model: {$model}");
+              return $hydrated;
             }
           }
 
@@ -283,8 +286,8 @@ class NewVector
           $embeddedDocuments = $embeddingGenerator->embedDocuments($formattedDocuments);
 
           // Save to cache (24h)
-          $cache->save($embeddedDocuments);
-          error_log("✅ EMBEDDING CACHED (text-multi) - TTL: 24h - Model: {$model}");
+          $cache->save(self::serializeEmbeddings($embeddedDocuments));
+          error_log("[INFO TIME] EMBEDDING CACHED (text-multi) - TTL: 24h - Model: {$model}");
 
           return $embeddedDocuments;
 
@@ -298,9 +301,10 @@ class NewVector
 
           if ($cache->exists(1440)) { // 1440 minutes = 24h
             $cachedData = $cache->get();
-            if ($cachedData !== null) {
-              error_log("✅ EMBEDDING CACHE HIT (text-single) - Duration: < 10ms - Model: {$model}");
-              return $cachedData;
+            $hydrated = self::hydrateCachedEmbeddings($cachedData);
+           if ($hydrated !== null) {
+              error_log("[INFO TIME] EMBEDDING CACHE HIT (text-single) - Duration: < 10ms - Model: {$model}");
+             return $hydrated;
             }
           }
 
@@ -318,8 +322,8 @@ class NewVector
           $embeddedDocuments = [$document];
 
           // Save to cache (24h)
-          $cache->save($embeddedDocuments);
-          error_log("✅ EMBEDDING CACHED (text-single) - TTL: 24h - Model: {$model}");
+          $cache->save(self::serializeEmbeddings($embeddedDocuments));
+          error_log("[INFO TIME] EMBEDDING CACHED (text-single) - TTL: 24h - Model: {$model}");
 
           return $embeddedDocuments;
         }
@@ -341,6 +345,78 @@ class NewVector
 
       return null;
     }
+  }
+
+  /**
+   * Serialize embeddings to array form to avoid caching objects (unserialize safety).
+   */
+  private static function serializeEmbeddings(array $embeddedDocuments): array
+  {
+    $serialized = [];
+
+    foreach ($embeddedDocuments as $doc) {
+      if ($doc instanceof Document) {
+        $serialized[] = [
+          'content' => $doc->content ?? '',
+          'embedding' => $doc->embedding ?? null,
+          'sourceName' => $doc->sourceName ?? null,
+          'sourceType' => $doc->sourceType ?? null,
+          'chunkNumber' => $doc->chunkNumber ?? null,
+          'metadata' => $doc->metadata ?? null,
+          'id' => $doc->id ?? null,
+        ];
+      }
+    }
+
+    return $serialized;
+  }
+
+  /**
+   * Hydrate cached embeddings into Document objects.
+   *
+   * Returns null if cache is invalid or contains incomplete objects.
+   */
+  private static function hydrateCachedEmbeddings($cachedData): ?array
+  {
+    if (!is_array($cachedData)) {
+      return null;
+    }
+
+    $hydrated = [];
+
+    foreach ($cachedData as $item) {
+      if ($item instanceof Document) {
+        $hydrated[] = $item;
+        continue;
+      }
+
+      if (is_object($item)) {
+        // Incomplete objects from unserialize should invalidate the cache.
+        if (get_class($item) === '__PHP_Incomplete_Class') {
+          return null;
+        }
+
+        // Unknown object type -> invalidate
+        return null;
+      }
+
+      if (!is_array($item) || !isset($item['embedding']) || !is_array($item['embedding'])) {
+        return null;
+      }
+
+      $doc = new Document();
+      $doc->content = $item['content'] ?? '';
+      $doc->embedding = $item['embedding'];
+      $doc->sourceName = $item['sourceName'] ?? null;
+      $doc->sourceType = $item['sourceType'] ?? null;
+      $doc->chunkNumber = $item['chunkNumber'] ?? null;
+      $doc->metadata = $item['metadata'] ?? null;
+      $doc->id = $item['id'] ?? null;
+
+      $hydrated[] = $doc;
+    }
+
+    return $hydrated;
   }
 
   /**

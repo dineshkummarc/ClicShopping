@@ -12,7 +12,6 @@ namespace ClicShopping\AI\Rag;
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Hash;
-use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt;
@@ -188,11 +187,7 @@ class MultiDBRAGManager
     }
   }
 
-  /**
-   * Return known Embedding table
-   *
-   * @return array
-   */
+
   /**
    * Returns all known embedding tables (fully dynamic)
    *
@@ -445,7 +440,6 @@ class MultiDBRAGManager
           continue;
         }
 
-
         // Création du VectorStore
         $vectorStore = new MariaDBVectorStore($this->getEmbeddingGenerator(), $tableName);
 
@@ -505,7 +499,7 @@ class MultiDBRAGManager
    * @param int|null $languageId Language ID
    * @return bool True if successful, false otherwise
    */
-  public function addDocument(string $content, string $tableName, string $type = 'text', string $sourceType = 'manual', string $sourceName = 'manual', string|null $entityType = null, int|null $entityId = null, int|null $languageId = null): bool
+  public function addDocument(string $content, string $tableName, string $type = 'text', string $sourceType = 'manual', string $sourceName = 'manual', string|null $entityType = null, int|null $entityId = null, int|null $languageId = null, ?array $metadata = []): bool
   {
     try {
       // Check the table if the vector exist
@@ -529,13 +523,16 @@ class MultiDBRAGManager
       $document->sourceName = $sourceName;
       $document->chunkNumber = 128;
 
-      $document->metadata = [
+       $array_data = [
         'type' => $type,
         'entity_type' => $entityType,
         'entity_id' => $entityId,
         'language_id' => $languageId,
         'date_modified' => 'now()'
       ];
+      
+      
+      $document->metadata = array_merge($array_data, $metadata);
 
       $this->vectorStores[$tableName]->addDocument($document);
 
@@ -573,8 +570,7 @@ class MultiDBRAGManager
       $this->logSearchQuery($query, $array_log);
 
       // Check if parallel search is enabled
-      $parallelEnabled = defined('CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_ENABLED') 
-        && CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_ENABLED === 'True';
+      $parallelEnabled = defined('CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_ENABLED') && CLICSHOPPING_APP_CHATGPT_RA_PARALLEL_ENABLED === 'True';
 
       if ($parallelEnabled) {
         try {
@@ -875,13 +871,13 @@ class MultiDBRAGManager
       if (isset($this->vectorStores[$table])) {
         // Check if table has metadata column
         $hasMetadata = DoctrineOrm::columnExists($table, 'metadata');
-        
+
         // Build metadata/content SELECT clauses with forced collation to prevent UNION collation errors
         $contentSelect = 'CONVERT(content USING utf8mb4) COLLATE utf8mb4_unicode_ci AS content';
         $metadataSelect = $hasMetadata
           ? 'CONVERT(metadata USING utf8mb4) COLLATE utf8mb4_unicode_ci AS metadata'
           : "CONVERT(JSON_OBJECT() USING utf8mb4) COLLATE utf8mb4_unicode_ci AS metadata";
-        
+
         // Build sub-query for this table
         // Use literal value instead of parameter for LIMIT
         // Doctrine cannot bind the same parameter multiple times in UNION ALL
@@ -1075,7 +1071,7 @@ class MultiDBRAGManager
       try {
         // Parse metadata JSON
         $metadata = json_decode($row['metadata'], true) ?? [];
-        
+
         // Add similarity score to metadata
         $metadata['score'] = $row['similarity_score'];
         $metadata['source_table'] = $row['source_table'];
@@ -1236,12 +1232,11 @@ class MultiDBRAGManager
     $logMessage .= "Vector stores keys: " . implode(', ', array_keys($this->vectorStores)) . "\n";
 
     error_log($logMessage);
-    
+
     if ($this->debug) {
       $this->securityLogger->logSecurityEvent($logMessage, 'info');
     }
   }
-
 
   /**
    * Answer a question using RAG (Retrieval-Augmented Generation)
