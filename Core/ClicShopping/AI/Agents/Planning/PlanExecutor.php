@@ -675,38 +675,50 @@ class PlanExecutor
         ];
       }
 
+      // Extract AI Overview data from search result
+      $aiOverview = $searchResult['ai_overview'] ?? null;
+      $hasAiOverview = $searchResult['metadata']['has_ai_overview'] ?? false;
+
       // Create text response using WebSearchFormatter
       $formatter = new WebSearchFormatter($this->debug);
       $formatted = $formatter->format([
         'type' => 'web_search_response',
         'query' => $query,
+        'ai_overview' => $aiOverview,  // Pass AI Overview to formatter
         'results' => $formattedResults,
       ]);
       $textResponse = $formatted['content'] ?? '';
 
       if ($this->debug) {
         $this->securityLogger->logSecurityEvent(
-          "Web search completed: " . count($formattedResults) . " results found",
+          "Web search completed: " . count($formattedResults) . " results found" . 
+          ($hasAiOverview ? " (with AI Overview)" : ""),
           'info'
         );
       }
+
+      // Dynamic source attribution based on AI Overview presence
+      $primarySource = $hasAiOverview ? 'Google AI Overview' : 'Web Search';
+      $sourceIcon = $hasAiOverview ? '🤖' : '🌐';
 
       return [
         'type' => 'web_search_response',
         'success' => true,
         'query' => $query,
+        'ai_overview' => $aiOverview,  // Include AI Overview in result structure
         'results' => $formattedResults,
         'total_results' => $searchResult['total_results'] ?? count($formattedResults),
         'text_response' => $textResponse,
         'metadata' => $searchResult['metadata'] ?? [],
         'cached' => $searchResult['cached'] ?? false,
         'cache_source' => $searchResult['cache_source'] ?? 'none',
-        //  Add source_attribution for ResultSynthesizer validation
+        // Dynamic source_attribution based on AI Overview presence
         'source_attribution' => [
           'source_type' => 'web_search',
-          'primary_source' => 'Web Search',
-          'source_icon' => '🌐',
+          'primary_source' => $primarySource,
+          'source_icon' => $sourceIcon,
           'details' => [
+            'has_ai_overview' => $hasAiOverview,  // Flag for AI Overview presence
             'url_count' => count($formattedResults),
             'cache_source' => $searchResult['cache_source'] ?? 'none',
             'cached' => $searchResult['cached'] ?? false,

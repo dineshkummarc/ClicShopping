@@ -49,6 +49,10 @@ class SeoChatGpt implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
+    if (!isset($_GET['cID'])) {
+      return false;
+    }
+
     $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Categories/seo_chat_gpt');
 
     if (isset($_GET['cID'])) {

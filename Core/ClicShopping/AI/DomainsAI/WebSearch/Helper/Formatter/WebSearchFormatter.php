@@ -95,6 +95,11 @@ class WebSearchFormatter extends AbstractFormatter
     $output = "<div class='web-search-results'>";
     $output .= "<h4>" . $this->language->getDef('text_rag_web_search_results_for') . " " . htmlspecialchars($question) . "</h4>";
 
+    // Display AI Overview first if present
+    if (isset($results['ai_overview']) && !empty($results['ai_overview'])) {
+      $output .= $this->formatAIOverview($results['ai_overview']);
+    }
+
     // Display source attribution
     if (isset($results['source_attribution'])) {
       $output .= $this->formatSourceAttribution($results['source_attribution']);
@@ -168,7 +173,8 @@ class WebSearchFormatter extends AbstractFormatter
       'web_results' => $results['web_results'] ?? [],
       'sources' => $results['sources'] ?? [],
       'price_comparison' => $results['price_comparison'] ?? [],
-      'processing_chain' => $results['processing_chain'] ?? []
+      'processing_chain' => $results['processing_chain'] ?? [],
+      'ai_overview' => $results['ai_overview'] ?? []
     ];
     Gpt::saveData($question, $output, $auditExtra);
 
@@ -176,6 +182,52 @@ class WebSearchFormatter extends AbstractFormatter
       'type' => 'formatted_results',
       'content' => $output
     ];
+  }
+
+  /**
+   * Format AI Overview section
+   * 
+   * Displays Google AI Overview with summary and sources
+   * 
+   * @param array $aiOverview AI Overview data
+   * @return string Formatted HTML
+   */
+  private function formatAIOverview(array $aiOverview): string
+  {
+    $output = "<div class='ai-overview alert alert-primary' style='border-left: 4px solid #007bff; margin-bottom: 20px;'>";
+    $output .= "<h5>🤖 " . $this->language->getDef('text_rag_ai_overview') . "</h5>";
+
+    // Display full summary
+    if (!empty($aiOverview['full_summary'])) {
+      $output .= "<div class='ai-summary' style='margin: 10px 0;'>";
+      $output .= nl2br(htmlspecialchars($aiOverview['full_summary']));
+      $output .= "</div>";
+    }
+
+    // Display sources
+    if (!empty($aiOverview['sources'])) {
+      $output .= "<div class='ai-sources' style='margin-top: 10px;'>";
+      $output .= "<strong>" . $this->language->getDef('text_rag_ai_sources') . "</strong>";
+      $output .= "<ul>";
+      foreach ($aiOverview['sources'] as $source) {
+        $title = is_array($source) ? ($source['title'] ?? 'Source') : $source;
+        $url = is_array($source) ? ($source['url'] ?? '') : '';
+
+        $output .= "<li>";
+        if (!empty($url)) {
+          $output .= "<a href='" . htmlspecialchars($url) . "' target='_blank' rel='noopener noreferrer'>";
+          $output .= htmlspecialchars($title) . " 🔗</a>";
+        } else {
+          $output .= htmlspecialchars($title);
+        }
+        $output .= "</li>";
+      }
+      $output .= "</ul>";
+      $output .= "</div>";
+    }
+
+    $output .= "</div>";
+    return $output;
   }
 
   /**

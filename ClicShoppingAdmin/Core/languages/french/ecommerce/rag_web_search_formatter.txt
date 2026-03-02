@@ -10,3 +10,5 @@ text_rag_web_search_result = Résultat
 text_rag_web_search_external_sources = Sources externes consultées :
 text_rag_web_search_external_links = Liens externes :
 text_rag_web_search_comparison_table = Tableau comparatif
+text_rag_ai_overview = Aperçu IA
+text_rag_ai_sources = Sources :

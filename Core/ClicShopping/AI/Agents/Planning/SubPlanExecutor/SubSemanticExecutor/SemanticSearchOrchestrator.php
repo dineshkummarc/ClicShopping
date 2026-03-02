@@ -19,7 +19,6 @@
 
 namespace ClicShopping\AI\Agents\Planning\SubPlanExecutor\SubSemanticExecutor;
 
-
 use ClicShopping\AI\Security\SecurityLogger;
 use ClicShopping\AI\Rag\MultiDBRAGManager;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
@@ -54,6 +53,8 @@ class SemanticSearchOrchestrator
   private $language;
   private InsufficientInformationDetector $infoDetector;
 
+  private string $prefix;
+  
   /**
    * Constructor
    *
@@ -110,9 +111,9 @@ class SemanticSearchOrchestrator
       if ($this->warmupManager === null) {
         $this->warmupManager = new RagWarmupManager($this->debug);
       }
-      
+
       $this->warmupManager->warmupIfNeeded($query);
-      
+
       $cacheStatus = 'disabled';
       if ($this->shouldUseCache($query, $context)) {
         $cacheStatus = 'checking';
@@ -125,7 +126,7 @@ class SemanticSearchOrchestrator
         if ($cachedResponse !== null) {
           $executionTime = microtime(true) - $startTime;
           $cacheStatus = 'hit';
-          
+
           if ($this->debug) {
             $this->logger->logSecurityEvent(
               "✓ Cache HIT - Returning cached response (time: {$executionTime}s)",
@@ -145,6 +146,7 @@ class SemanticSearchOrchestrator
         }
 
         $cacheStatus = 'miss';
+
         if ($this->debug) {
           $this->logger->logSecurityEvent("Cache MISS - Proceeding with search", 'info');
         }
@@ -176,8 +178,8 @@ class SemanticSearchOrchestrator
       }
 
       $conversationResult = $this->searchConversationMemory($query, $options);
-      
-      
+
+
       // Check if the documents have meaningful content (not just empty "Response: \n")
       $hasContent = false;
       if ($conversationResult !== null && !empty($conversationResult['documents'])) {
@@ -189,19 +191,19 @@ class SemanticSearchOrchestrator
           } elseif (is_array($doc) && isset($doc['content'])) {
             $content = $doc['content'];
           }
-          
+
           // Extract the response part after "Response: "
           if (preg_match('/Response:\s*(.+)/s', $content, $matches)) {
             $responseContent = trim($matches[1]);
-            
-            
+
+
             // 🔧 FIX 2025-12-28: Use InsufficientInformationDetector helper
             $isGenericResponse = $this->infoDetector->isInsufficientInformation($responseContent);
-            
+
             // Check if response has actual content (not empty, not generic)
             if (!$isGenericResponse) {
               $hasContent = true;
-              
+
               if ($this->debug) {
                 $logMessage = $this->language->getDef('text_log_conversation_memory_useful');
                 $logMessage = str_replace('{{length}}', strlen($responseContent), $logMessage);
@@ -218,7 +220,7 @@ class SemanticSearchOrchestrator
             }
           }
         }
-        
+
         // If we found useful content, extract and use it directly
         if ($hasContent) {
           // Extract the response from the first document with useful content
@@ -230,18 +232,18 @@ class SemanticSearchOrchestrator
             } elseif (is_array($doc) && isset($doc['content'])) {
               $content = $doc['content'];
             }
-            
+
             // Extract the response part after "Response: "
             if (preg_match('/Response:\s*(.+)/s', $content, $matches)) {
               $responseContent = trim($matches[1]);
-              
+
               // Check if this is the useful response (not generic)
               // 🔧 FIX 2025-12-28: Use InsufficientInformationDetector helper
               $isGenericResponse = $this->infoDetector->isInsufficientInformation($responseContent);
-              
+
               if (!$isGenericResponse) {
                 $extractedResponse = $responseContent;
-                
+
                 if ($this->debug) {
                   $logMessage = $this->language->getDef('text_log_extracted_response');
                   $logMessage = str_replace('{{length}}', strlen($extractedResponse), $logMessage);
@@ -251,13 +253,13 @@ class SemanticSearchOrchestrator
               }
             }
           }
-          
+
           // Use the extracted response directly (don't regenerate)
           if (!empty($extractedResponse)) {
             $conversationResult['answer'] = $extractedResponse;
             $conversationResult['response'] = $extractedResponse;
             $conversationResult['text_response'] = $extractedResponse;
-            
+
             if ($this->debug) {
               $this->logger->logSecurityEvent(
                 "Using extracted response from conversation memory directly",
@@ -267,7 +269,7 @@ class SemanticSearchOrchestrator
           } else {
             // No useful response found, don't use conversation memory
             $hasContent = false;
-            
+
             if ($this->debug) {
               $this->logger->logSecurityEvent(
                 "Could not extract useful response from conversation memory",
@@ -284,7 +286,7 @@ class SemanticSearchOrchestrator
           }
         }
       }
-      
+
       if ($hasContent) {
         $executionTime = microtime(true) - $startTime;
         if ($this->debug) {
@@ -383,7 +385,7 @@ class SemanticSearchOrchestrator
       }
 
       $limit = $options['limit'] ?? 5;
-      
+
       // Conversation memory should only match VERY similar queries (0.85+), not loosely related ones
       // This prevents "où est Paris" from matching "refund policy" (similarity 0.63)
       // Conversation memory is a FALLBACK, not primary source - it should only match near-exact repeats
@@ -449,7 +451,7 @@ class SemanticSearchOrchestrator
       }
 
       $limit = $options['limit'] ?? 5;
-      
+
       $configuredMinScore = CLICSHOPPING_APP_CHATGPT_RA_MIN_SIMILARITY_SCORE;
       $minScore = $options['minScore'] ?? $configuredMinScore;
 
@@ -495,23 +497,23 @@ class SemanticSearchOrchestrator
             if (!isset($answer['audit_metadata']) && isset($results['audit_metadata'])) {
               $answer['audit_metadata'] = $results['audit_metadata'];
             }
-            
+
             if (!isset($answer['answer']) && isset($answer['response'])) {
               $answer['answer'] = $answer['response'];
             } elseif (!isset($answer['response']) && isset($answer['answer'])) {
               $answer['response'] = $answer['answer'];
             }
           }
-          
+
           // Add documents to answer for source attribution
           if (!isset($answer['documents'])) {
             $answer['documents'] = $results['documents'];
           }
-            
+
           // If RAG found documents but they're not relevant to the query, return null to trigger LLM fallback
           $responseText = $answer['response'] ?? $answer['answer'] ?? '';
           $isGenericNoInfo = $this->infoDetector->isInsufficientInformation($responseText);
-          
+
           if ($isGenericNoInfo) {
             if ($this->debug) {
               $logMessage = $this->language->getDef('text_log_rag_generic_response');
@@ -520,7 +522,7 @@ class SemanticSearchOrchestrator
             // Return null to trigger LLM fallback
             return null;
           }
-          
+
           return $answer;
         } catch (\Throwable $e) {
           if ($this->debug) {
@@ -547,6 +549,7 @@ class SemanticSearchOrchestrator
       return null;
     }
   }
+
 
   /**
    * Fallback to LLM
@@ -659,7 +662,7 @@ class SemanticSearchOrchestrator
     if ($this->debug) {
       $this->logger->logSecurityEvent("Cache bypassed for semantic query (default behavior)", 'info');
     }
-    
+
     return false;
   }
 
@@ -723,7 +726,7 @@ class SemanticSearchOrchestrator
   {
     // Preserve audit_metadata and add priority_table if present
     $auditMetadata = $result['audit_metadata'] ?? [];
-    
+
     // Ensure priority_table is set (use from result or default to source-based value)
     if (!isset($auditMetadata['priority_table'])) {
       if ($source === 'conversation_memory') {
@@ -733,7 +736,6 @@ class SemanticSearchOrchestrator
       }
     }
 
-    
     $answer = $result['answer'] ?? $result['response'] ?? $result['text_response'] ?? '';
 
     $formattedResult = [
@@ -759,12 +761,10 @@ class SemanticSearchOrchestrator
       try {
         // Cache the formatted result as JSON
         // Use global constant (loaded from TechnicalConfig in config_clicshopping.php)
-        $cacheTTL = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_TTL') 
-                    ? (int)CLICSHOPPING_APP_CHATGPT_RA_CACHE_TTL 
-                    : 2592000;
-        
+        $cacheTTL = defined('CLICSHOPPING_APP_CHATGPT_RA_CACHE_TTL') ? (int)CLICSHOPPING_APP_CHATGPT_RA_CACHE_TTL: 2592000;
+
         $this->cache->cacheResponse($query, json_encode($formattedResult), $cacheTTL);
-        
+
         if ($this->debug) {
           $this->logger->logSecurityEvent(
             "✓ Cached semantic query result (query: \"{$query}\", TTL: {$cacheTTL}s)",

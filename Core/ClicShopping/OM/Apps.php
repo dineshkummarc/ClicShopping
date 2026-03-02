@@ -184,10 +184,29 @@ class Apps
     if (str_contains($app, '\\')) {
       [$vendor, $app] = explode('\\', $app, 2);
 
-      $metafile = CLICSHOPPING::BASE_DIR . 'Apps/' . basename($vendor) . DIRECTORY_SEPARATOR . basename($app) . '/clicshopping.json';
+      $vendorDir = CLICSHOPPING::BASE_DIR . 'Apps/' . basename($vendor);
+      $appDir = basename($app);
+      $metafile = $vendorDir . DIRECTORY_SEPARATOR . $appDir . '/clicshopping.json';
 
       if (is_file($metafile) && (($json = json_decode(file_get_contents($metafile), true)) !== null)) {
         return $json;
+      }
+
+      // Fallback: case-insensitive app directory lookup
+      if (is_dir($vendorDir)) {
+        if ($dir = new DirectoryIterator($vendorDir)) {
+          foreach ($dir as $entry) {
+            if ($entry->isDot() || !$entry->isDir()) {
+              continue;
+            }
+            if (strtolower($entry->getFilename()) === strtolower($appDir)) {
+              $metafile = $vendorDir . DIRECTORY_SEPARATOR . $entry->getFilename() . '/clicshopping.json';
+              if (is_file($metafile) && (($json = json_decode(file_get_contents($metafile), true)) !== null)) {
+                return $json;
+              }
+            }
+          }
+        }
       }
 
       trigger_error('ClicShopping\OM\Apps::getInfo(): ' . $vendor . '\\' . $app . ' - Could not read App information in ' . $metafile . '.');

@@ -260,6 +260,14 @@ class Hooks
     }
 
     foreach ($modules as $k => $class) {
+      if (is_string($k) && str_contains($k, '\\')) {
+        $parts = explode('\\', $k);
+        $code = end($parts);
+        if ($code !== $hook) {
+          continue;
+        }
+      }
+
       if (method_exists($class, $action)) {
         $this->hooks[$this->site][$group][$hook][$action][] = $k;
       }
