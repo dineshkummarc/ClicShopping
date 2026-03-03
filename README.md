@@ -88,7 +88,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
   - AI Agentic Agent via Multi Domain Approach and Actors expertise
     - Analytics (BI)
     - Semantic (RAG)
-    - WebSearch
+    - WebSearch with google SERP API AI Overview
     - HYBRID
     - Around 50 KPI for manaer, Developer, Data scientist
 - Generative Artificial Intelligence :
@@ -103,9 +103,10 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
   - Generative artificial Intelligence Web Search
 - Real time safety stock predictive (AI)
 - Server MCP (model context Protocol) for ecommerce agentic approach
-  - Chat Rab - BI Connexion
+  - Chat Rab - BI - WebSearch Connexion
 - Agentic Commerce Protocol (ACP) from OpenAI.
 - Universal Commerce Protocol (UCP) from Google.
+- Agentic SEO Analysis
 
 ##Security & Compliance
 - GDPR Ready: Built-in compliance tools and data protection

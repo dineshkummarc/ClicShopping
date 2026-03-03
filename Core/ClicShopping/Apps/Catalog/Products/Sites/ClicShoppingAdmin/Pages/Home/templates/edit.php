@@ -90,29 +90,28 @@ $parameters = [
 $pInfo = new ObjectInfo($parameters);
 
 if (isset($_GET['pID']) && isset($_POST)) {
-// products_view : Affichage Produit Grand Public - orders_view : Autorisation Commande - Referencement
   $data_products = $CLICSHOPPING_ProductsAdmin->get($_GET['pID']);
   $pInfo->ObjectInfo($data_products);
 
-  $Qimages = $CLICSHOPPING_Products->db->get('products_images', [
-    'id',
-    'image',
-    'htmlcontent',
-    'sort_order'
-  ], [
-    'products_id' => (int)$pInfo->products_id
-  ],
+  $Qimages = $CLICSHOPPING_Products->db->get(
+    'products_images',
+    ['id', 'image', 'htmlcontent', 'sort_order'],
+    ['products_id' => (int)$pInfo->products_id],
     'sort_order'
   );
 
+  $larger_images = (array)$pInfo->products_larger_images;
+
   while ($Qimages->fetch()) {
-    $pInfo->products_larger_images[] = [
+    $larger_images[] = [
       'id' => $Qimages->valueInt('id'),
       'image' => $Qimages->value('image'),
       'htmlcontent' => $Qimages->value('htmlcontent'),
       'sort_order' => $Qimages->valueInt('sort_order')
     ];
   }
+
+  $pInfo->products_larger_images = $larger_images;
 }
 
 $cPath = 0;

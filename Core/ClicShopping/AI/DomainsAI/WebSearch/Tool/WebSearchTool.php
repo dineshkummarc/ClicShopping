@@ -8,14 +8,16 @@
 
   namespace ClicShopping\AI\DomainsAI\WebSearch\Tool;
 
+  use ClicShopping\OM\Registry;
+  use ClicShopping\OM\HTTP;
+  use ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\IntentAnalyzer;
   use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
   use ClicShopping\AI\Infrastructure\Cache\Cache;
   use ClicShopping\AI\DomainsAI\WebSearch\Cache\SearchCacheManager;
   use ClicShopping\AI\Security\SecurityLogger;
   use ClicShopping\AI\DomainsAI\WebSearch\Logger\WebSearchLogger;
   use ClicShopping\AI\InterfacesAI\EntityHelperInterface;
-  use ClicShopping\OM\Registry;
-  use ClicShopping\OM\HTTP;
+
 
   /**
    * WebSearchTool Class
@@ -92,9 +94,7 @@
       }
 
       if (empty($this->apiKey)) {
-        throw new \RuntimeException(
-          'SerpApi key not configured. Set CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI in configuration.'
-        );
+         error_log('SerpApi key not configured. Set CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI in configuration.');
       }
 
       $this->logger = new SecurityLogger();
@@ -120,6 +120,127 @@
           'info'
         );
       }
+    }
+
+    /**
+     * Get comprehensive cache statistics including both memory and DB cache
+     */
+    public function getComprehensiveCacheStats(): array
+    {
+      $stats = $this->getStats();
+      $ragStats = $this->cacheManager->getCacheStats();
+
+      return [
+        'memory_cache' => [
+          'total_requests' => $stats['total_requests'],
+          'cache_hits' => $stats['cache_hits'],
+          'cache_hit_rate' => $stats['cache_hit_rate'],
+          'short_term_hits' => $stats['cache_hits_short_term'],
+          'rag_learning_hits' => $stats['cache_hits_rag_learning'],
+        ],
+        'rag_learning_cache' => $ragStats,
+        'api_costs' => [
+          'total_spent' => $stats['api_cost_spent'],
+          'total_saved' => $stats['api_cost_saved'],
+          'total_cost' => $stats['total_api_cost'],
+          'savings_rate' => $stats['cost_savings_rate'],
+        ],
+        'performance' => [
+          'api_calls' => $stats['api_calls'],
+          'errors' => $stats['errors'],
+          'error_rate' => $stats['error_rate'],
+        ],
+      ];
+    }
+
+    /**
+     * Get statistics
+     */
+    public function getStats(): array
+    {
+      $cacheHitRate = $this->stats['total_requests'] > 0 ? ($this->stats['cache_hits'] / $this->stats['total_requests']) * 100 : 0;
+      $totalApiCost = $this->stats['api_cost_saved'] + $this->stats['api_cost_spent'];
+      $costSavingsRate = $totalApiCost > 0 ? ($this->stats['api_cost_saved'] / $totalApiCost) * 100 : 0;
+
+      return array_merge($this->stats, [
+        'cache_hit_rate' => round($cacheHitRate, 2) . '%',
+        'api_call_rate' => ($this->stats['total_requests'] - $this->stats['cache_hits']),
+        'error_rate' => $this->stats['total_requests'] > 0 ? round(($this->stats['errors'] / $this->stats['total_requests']) * 100, 2) . '%' : '0%',
+        'total_api_cost' => round($totalApiCost, 4),
+        'cost_savings_rate' => round($costSavingsRate, 2) . '%',
+        'cache_breakdown' => [
+          'short_term' => $this->stats['cache_hits_short_term'],
+          'rag_learning' => $this->stats['cache_hits_rag_learning'],
+        ],
+      ]);
+    }
+
+    /**
+     * Reset statistics
+     */
+    public function resetStats(): void
+    {
+      $this->stats = [
+        'total_requests' => 0,
+        'cache_hits' => 0,
+        'cache_hits_short_term' => 0,
+        'cache_hits_rag_learning' => 0,
+        'api_calls' => 0,
+        'errors' => 0,
+        'api_cost_saved' => 0.0,
+        'api_cost_spent' => 0.0,
+      ];
+    }
+
+    /**
+     * Set default search engine
+     */
+    public function setDefaultEngine(string $engine): void
+    {
+      $allowed = ['google', 'bing', 'duckduckgo', 'yahoo'];
+
+      if (!in_array($engine, $allowed)) {
+        throw new \InvalidArgumentException("Engine must be one of: " . implode(', ', $allowed));
+      }
+
+      $this->defaultEngine = $engine;
+    }
+
+    /**
+     * Set max results
+     */
+    public function setMaxResults(int $max): void
+    {
+      $this->maxResults = max(1, min(20, $max));
+    }
+
+    /**
+     * Set rate limit per hour
+     */
+    public function setRateLimitPerHour(int $limit): void
+    {
+      $this->rateLimitPerHour = max(10, $limit);
+    }
+
+    /**
+     * Helper for price comparison logic using AI Overview insights
+     */
+    public function comparePriceWithAI(string $productName): array
+    {
+      $query = "What is the current market price for {$productName} and how does it compare to competitors?";
+
+      $results = $this->search($query, [
+        'gl' => 'us'
+      ]);
+
+      if ($results['metadata']['has_ai_overview']) {
+        return [
+          'summary' => $results['ai_overview']['full_summary'],
+          'sources' => $results['ai_overview']['sources']
+        ];
+      }
+
+      return ['error' => 'AI Overview not available for this comparison'];
     }
 
     /**
@@ -358,6 +479,111 @@
     }
 
     /**
+     * Generate unique cache key
+     */
+    private function generateCacheKey(string $query, array $options): string
+    {
+      $normalized = strtolower(trim($query));
+      $optionsHash = md5(json_encode([
+        'engine' => $options['engine'] ?? $this->defaultEngine,
+        'max_results' => $options['max_results'] ?? $this->maxResults,
+        'language' => $options['language'] ?? 'en',
+        'location' => $options['location'] ?? '',
+      ]));
+
+      return "websearch_" . md5($normalized) . "_{$optionsHash}";
+    }
+
+    /**
+     * Estimate API cost
+     */
+    private function estimateApiCost(array $results): float
+    {
+      return 0.002; // SerpApi average cost per request
+    }
+
+    /**
+     * Convert RAG cache format to standard format
+     */
+    private function convertRagCacheToStandardFormat(array $ragCached): array
+    {
+      $firstResult = $ragCached[0] ?? [];
+      $content = $firstResult['content'] ?? '';
+
+      return [
+        'success' => true,
+        'query' => $firstResult['original_query'] ?? '',
+        'items' => $this->parseRagContentToItems($content),
+        'total_results' => 0,
+        'metadata' => [
+          'search_engine' => 'rag_cache',
+          'timestamp' => time(),
+          'quality_score' => $firstResult['quality_score'] ?? 0,
+          'usage_count' => $firstResult['usage_count'] ?? 0,
+        ],
+      ];
+    }
+
+    /**
+     * Parse RAG content to extract items with URLs
+     */
+    private function parseRagContentToItems(string $content): array
+    {
+      $items = [];
+      $pattern = '/(\d+)\.\s+(.+?)\n\s+(.+?)\n\s+Source:\s+(https?:\/\/[^\s\n]+|[^\s\n]+?)(?:\n|$)/s';
+
+      if (preg_match_all($pattern, $content, $matches, PREG_SET_ORDER)) {
+        foreach ($matches as $match) {
+          $sourceOrLink = trim($match[4]);
+          $link = '';
+          $source = $sourceOrLink;
+
+          if (preg_match('/^https?:\/\//', $sourceOrLink)) {
+            $link = $sourceOrLink;
+            $parsed = parse_url($sourceOrLink);
+            $source = $parsed['host'] ?? $sourceOrLink;
+            $source = preg_replace('/^www\./', '', $source);
+          }
+
+          $items[] = [
+            'position' => (int)$match[1],
+            'title' => trim($match[2]),
+            'snippet' => trim($match[3]),
+            'source' => $source,
+            'link' => $link,
+            'relevance_score' => 0.8,
+          ];
+        }
+      }
+
+      return $items;
+    }
+
+    /**
+     * Check rate limiting
+     */
+    private function checkRateLimit(): void
+    {
+      $key = 'serpapi_rate_limit_' . date('YmdH');
+      $count = (int)($this->cache->getCachedResponse($key) ?? 0);
+
+      if ($count >= $this->rateLimitPerHour) {
+        throw new \RuntimeException(
+          "SerpApi rate limit exceeded ({$this->rateLimitPerHour} requests/hour). Try again later."
+        );
+      }
+
+      $this->cache->cacheResponse($key, (string)($count + 1), 3600);
+
+      if ($this->debug) {
+        $this->logger->logSecurityEvent(
+          "Rate limit check: {$count}/{$this->rateLimitPerHour} requests this hour",
+          'info'
+        );
+      }
+    }
+
+    /**
      * Wrapper for SerpApi calls
      */
     private function callSerpApi(string $query, array $options): array
@@ -503,232 +729,6 @@
       }
 
       return min(1.0, $score);
-    }
-
-    /**
-     * Generate unique cache key
-     */
-    private function generateCacheKey(string $query, array $options): string
-    {
-      $normalized = strtolower(trim($query));
-      $optionsHash = md5(json_encode([
-        'engine' => $options['engine'] ?? $this->defaultEngine,
-        'max_results' => $options['max_results'] ?? $this->maxResults,
-        'language' => $options['language'] ?? 'en',
-        'location' => $options['location'] ?? '',
-      ]));
-
-      return "websearch_" . md5($normalized) . "_{$optionsHash}";
-    }
-
-    /**
-     * Estimate API cost
-     */
-    private function estimateApiCost(array $results): float
-    {
-      return 0.002; // SerpApi average cost per request
-    }
-
-    /**
-     * Convert RAG cache format to standard format
-     */
-    private function convertRagCacheToStandardFormat(array $ragCached): array
-    {
-      $firstResult = $ragCached[0] ?? [];
-      $content = $firstResult['content'] ?? '';
-
-      return [
-        'success' => true,
-        'query' => $firstResult['original_query'] ?? '',
-        'items' => $this->parseRagContentToItems($content),
-        'total_results' => 0,
-        'metadata' => [
-          'search_engine' => 'rag_cache',
-          'timestamp' => time(),
-          'quality_score' => $firstResult['quality_score'] ?? 0,
-          'usage_count' => $firstResult['usage_count'] ?? 0,
-        ],
-      ];
-    }
-
-    /**
-     * Parse RAG content to extract items with URLs
-     */
-    private function parseRagContentToItems(string $content): array
-    {
-      $items = [];
-      $pattern = '/(\d+)\.\s+(.+?)\n\s+(.+?)\n\s+Source:\s+(https?:\/\/[^\s\n]+|[^\s\n]+?)(?:\n|$)/s';
-
-      if (preg_match_all($pattern, $content, $matches, PREG_SET_ORDER)) {
-        foreach ($matches as $match) {
-          $sourceOrLink = trim($match[4]);
-          $link = '';
-          $source = $sourceOrLink;
-
-          if (preg_match('/^https?:\/\//', $sourceOrLink)) {
-            $link = $sourceOrLink;
-            $parsed = parse_url($sourceOrLink);
-            $source = $parsed['host'] ?? $sourceOrLink;
-            $source = preg_replace('/^www\./', '', $source);
-          }
-
-          $items[] = [
-            'position' => (int)$match[1],
-            'title' => trim($match[2]),
-            'snippet' => trim($match[3]),
-            'source' => $source,
-            'link' => $link,
-            'relevance_score' => 0.8,
-          ];
-        }
-      }
-
-      return $items;
-    }
-
-    /**
-     * Check rate limiting
-     */
-    private function checkRateLimit(): void
-    {
-      $key = 'serpapi_rate_limit_' . date('YmdH');
-      $count = (int)($this->cache->getCachedResponse($key) ?? 0);
-
-      if ($count >= $this->rateLimitPerHour) {
-        throw new \RuntimeException(
-          "SerpApi rate limit exceeded ({$this->rateLimitPerHour} requests/hour). Try again later."
-        );
-      }
-
-      $this->cache->cacheResponse($key, (string)($count + 1), 3600);
-
-      if ($this->debug) {
-        $this->logger->logSecurityEvent(
-          "Rate limit check: {$count}/{$this->rateLimitPerHour} requests this hour",
-          'info'
-        );
-      }
-    }
-
-    /**
-     * Get statistics
-     */
-    public function getStats(): array
-    {
-      $cacheHitRate = $this->stats['total_requests'] > 0 ? ($this->stats['cache_hits'] / $this->stats['total_requests']) * 100 : 0;
-      $totalApiCost = $this->stats['api_cost_saved'] + $this->stats['api_cost_spent'];
-      $costSavingsRate = $totalApiCost > 0 ? ($this->stats['api_cost_saved'] / $totalApiCost) * 100 : 0;
-
-      return array_merge($this->stats, [
-        'cache_hit_rate' => round($cacheHitRate, 2) . '%',
-        'api_call_rate' => ($this->stats['total_requests'] - $this->stats['cache_hits']),
-        'error_rate' => $this->stats['total_requests'] > 0 ? round(($this->stats['errors'] / $this->stats['total_requests']) * 100, 2) . '%' : '0%',
-        'total_api_cost' => round($totalApiCost, 4),
-        'cost_savings_rate' => round($costSavingsRate, 2) . '%',
-        'cache_breakdown' => [
-          'short_term' => $this->stats['cache_hits_short_term'],
-          'rag_learning' => $this->stats['cache_hits_rag_learning'],
-        ],
-      ]);
-    }
-
-    /**
-     * Get comprehensive cache statistics including both memory and DB cache
-     */
-    public function getComprehensiveCacheStats(): array
-    {
-      $stats = $this->getStats();
-      $ragStats = $this->cacheManager->getCacheStats();
-
-      return [
-        'memory_cache' => [
-          'total_requests' => $stats['total_requests'],
-          'cache_hits' => $stats['cache_hits'],
-          'cache_hit_rate' => $stats['cache_hit_rate'],
-          'short_term_hits' => $stats['cache_hits_short_term'],
-          'rag_learning_hits' => $stats['cache_hits_rag_learning'],
-        ],
-        'rag_learning_cache' => $ragStats,
-        'api_costs' => [
-          'total_spent' => $stats['api_cost_spent'],
-          'total_saved' => $stats['api_cost_saved'],
-          'total_cost' => $stats['total_api_cost'],
-          'savings_rate' => $stats['cost_savings_rate'],
-        ],
-        'performance' => [
-          'api_calls' => $stats['api_calls'],
-          'errors' => $stats['errors'],
-          'error_rate' => $stats['error_rate'],
-        ],
-      ];
-    }
-
-    /**
-     * Reset statistics
-     */
-    public function resetStats(): void
-    {
-      $this->stats = [
-        'total_requests' => 0,
-        'cache_hits' => 0,
-        'cache_hits_short_term' => 0,
-        'cache_hits_rag_learning' => 0,
-        'api_calls' => 0,
-        'errors' => 0,
-        'api_cost_saved' => 0.0,
-        'api_cost_spent' => 0.0,
-      ];
-    }
-
-    /**
-     * Set default search engine
-     */
-    public function setDefaultEngine(string $engine): void
-    {
-      $allowed = ['google', 'bing', 'duckduckgo', 'yahoo'];
-
-      if (!in_array($engine, $allowed)) {
-        throw new \InvalidArgumentException("Engine must be one of: " . implode(', ', $allowed));
-      }
-
-      $this->defaultEngine = $engine;
-    }
-
-    /**
-     * Set max results
-     */
-    public function setMaxResults(int $max): void
-    {
-      $this->maxResults = max(1, min(20, $max));
-    }
-
-    /**
-     * Set rate limit per hour
-     */
-    public function setRateLimitPerHour(int $limit): void
-    {
-      $this->rateLimitPerHour = max(10, $limit);
-    }
-
-    /**
-     * Helper for price comparison logic using AI Overview insights
-     */
-    public function comparePriceWithAI(string $productName): array
-    {
-      $query = "What is the current market price for {$productName} and how does it compare to competitors?";
-
-      $results = $this->search($query, [
-        'gl' => 'us'
-      ]);
-
-      if ($results['metadata']['has_ai_overview']) {
-        return [
-          'summary' => $results['ai_overview']['full_summary'],
-          'sources' => $results['ai_overview']['sources']
-        ];
-      }
-
-      return ['error' => 'AI Overview not available for this comparison'];
     }
 
     /**
@@ -957,7 +957,7 @@
         }
 
         // Try embedding search using IntentAnalyzer
-        $intentAnalyzer = new \ClicShopping\AI\Agents\Orchestrator\SubOrchestrator\IntentAnalyzer(null, $this->debug);
+        $intentAnalyzer = new IntentAnalyzer(null, $this->debug);
         $entityResult = $intentAnalyzer->detectEntityFromEmbeddings($query, 'product');
 
         if ($entityResult !== null && isset($entityResult['entity_id'])) {
