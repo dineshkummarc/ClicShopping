@@ -60,6 +60,16 @@ class SeoShop
   }
 
   /**
+   * Nettoie et assemble les segments SEO
+   * @param array $parts
+   * @return string
+   */
+  private function clean(array $parts): string
+  {
+    return implode(', ', array_unique(array_filter(array_map('trim', $parts))));
+  }
+  
+  /**
    * Retrieves the default SEO settings for the current language.
    *
    * @return void Sets the default SEO title, description, and keywords properties for the application.
@@ -434,8 +444,7 @@ class SeoShop
     $this->seoDefaultFeaturedDescription = $Qseo->value('seo_language_featured_description');
     $this->seoDefaultFeaturedKeywords = $Qseo->value('seo_language_featured_keywords');
   }
-
-
+  
   /**
    * Retrieves the SEO featured title for a page, combining either the default SEO title
    * or a fallback text with the store name.
@@ -562,7 +571,6 @@ class SeoShop
 
     return $Qseo->value('categories_seo_url');
   }
-
 
   /**
    * Retrieves the SEO URL for a specific product based on its ID and language ID.

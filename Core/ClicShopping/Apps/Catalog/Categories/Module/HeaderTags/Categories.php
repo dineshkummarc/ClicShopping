@@ -17,8 +17,9 @@ use ClicShopping\OM\Registry;
 
 class Categories extends \ClicShopping\OM\Modules\HeaderTagsAbstract
 {
-  private mixed $lang;
   public mixed $app;
+  public mixed $group;
+  private mixed $lang;
   private mixed $template;
 
   protected function init()
@@ -88,49 +89,54 @@ class Categories extends \ClicShopping\OM\Modules\HeaderTagsAbstract
         $Qcategories->bindInt(':language_id', (int)$this->lang->getId());
         $Qcategories->execute();
 
-        if ($Qcategories->rowCount() > 0) {
-          $categories_name_clean = HTML::sanitize($Qcategories->value('categories_name'));
+      if ($Qcategories->rowCount() > 0) {
+        $cat_name = HTML::sanitize($Qcategories->value('categories_name'));
+        $store_name = HTML::outputProtected(STORE_NAME);
 
-          if (empty($Qcategories->value('categories_head_title_tag'))) {
-            if (empty($Qsubmit->value('seo_defaut_language_title'))) {
-              $title = $categories_name_clean . ', ' . HTML::outputProtected(STORE_NAME);
-            } else {
-              $title = $categories_name_clean . ',  ' . HTML::sanitize($Qsubmit->value('seo_defaut_language_title')) . ', ' . HTML::outputProtected(STORE_NAME);
-            }
-          } else {
-            $title = HTML::sanitize($Qcategories->value('categories_head_title_tag')) . ', ' . $categories_name_clean . ', ' . HTML::outputProtected(STORE_NAME);
-          }
+        // --- Traitement du Titre ---
+        $title_parts = [];
+        if (!empty($Qcategories->value('categories_head_title_tag'))) {
+          $title_parts[] = HTML::sanitize($Qcategories->value('categories_head_title_tag'));
+        }
+        $title_parts[] = $cat_name;
+        if (!empty($Qsubmit->value('seo_defaut_language_title'))) {
+          $title_parts[] = HTML::sanitize($Qsubmit->value('seo_defaut_language_title'));
+        }
+        $title_parts[] = $store_name;
+        // Nettoyage et fusion
+        $final_title = implode(', ', array_unique(array_filter(array_map('trim', $title_parts))));
+        $this->template->setTitle($final_title);
 
-          if (empty($Qcategories->value('categories_head_desc_tag'))) {
-            if (empty($Qsubmit->value('seo_defaut_language_description'))) {
-              $description = $categories_name_clean . ', ' . HTML::outputProtected(STORE_NAME);
-            } else {
-              $description = $categories_name_clean . ', ' . HTML::sanitize($Qsubmit->value('seo_defaut_language_description')) . ', ' . HTML::outputProtected(STORE_NAME);
-            }
-          } else {
-            $description = HTML::sanitize($Qcategories->value('categories_head_desc_tag')) . ', ' . $categories_name_clean . ', ' . HTML::outputProtected(STORE_NAME);
-          }
+        // --- Traitement de la Description ---
+        $desc_parts = [];
+        if (!empty($Qcategories->value('categories_head_desc_tag'))) {
+          $desc_parts[] = HTML::sanitize($Qcategories->value('categories_head_desc_tag'));
+        }
+        $desc_parts[] = $cat_name;
+        if (!empty($Qsubmit->value('seo_defaut_language_description'))) {
+          $desc_parts[] = HTML::sanitize($Qsubmit->value('seo_defaut_language_description'));
+        }
+        $desc_parts[] = $store_name;
+        $final_desc = implode(', ', array_unique(array_filter(array_map('trim', $desc_parts))));
+        $this->template->setDescription($final_desc);
 
-          if (empty($Qcategories->value('categories_head_keywords_tag'))) {
-            if (empty($Qsubmit->value('seo_defaut_language_keywords'))) {
-              $keywords = $categories_name_clean;
-            } else {
-              $keywords = $categories_name_clean . ', ' . HTML::sanitize($Qsubmit->value('seo_defaut_language_keywords'));
-            }
-          } else {
-            $keywords = $Qcategories->value('categories_head_keywords_tag') . ', ' . $categories_name_clean;
-          }
+        // --- Traitement des Mots-clés ---
+        $key_parts = [];
+        if (!empty($Qcategories->value('categories_head_keywords_tag'))) {
+          $key_parts[] = $Qcategories->value('categories_head_keywords_tag');
+        }
+        $key_parts[] = $cat_name;
+        if (!empty($Qsubmit->value('seo_defaut_language_keywords'))) {
+          $key_parts[] = HTML::sanitize($Qsubmit->value('seo_defaut_language_keywords'));
+        }
+        $final_keywords = implode(', ', array_unique(array_filter(array_map('trim', $key_parts))));
+        $this->template->setKeywords($final_keywords);
 
-          $title = $this->template->setTitle($title) . ' ' . $this->template->getTitle();
-          $description = $this->template->setDescription($description) . ' ' . $this->template->getDescription();
-          $keywords = $this->template->setKeywords($keywords) . ', ' . $this->template->getKeywords();
-
-          $output =
-            <<<EOD
-    <title>{$title}</title>
-    <meta name="description" content="{$description}" />
-    <meta name="keywords"  content="{$keywords}" />
-    <meta name="news_keywords" content="{$keywords}" />
+        $output = <<<EOD
+    <title>{$this->template->getTitle()}</title>
+    <meta name="description" content="{$this->template->getDescription()}" />
+    <meta name="keywords" content="{$this->template->getKeywords()}" />
+    <meta name="news_keywords" content="{$this->template->getKeywords()}" />
 EOD;
 
           return $output;

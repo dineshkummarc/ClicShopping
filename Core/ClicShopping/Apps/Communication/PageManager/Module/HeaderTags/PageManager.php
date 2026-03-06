@@ -17,11 +17,11 @@ use ClicShopping\Apps\Communication\PageManager\PageManager as PageManagerApp;
 
 class PageManager extends \ClicShopping\OM\Modules\HeaderTagsAbstract
 {
-  private mixed $lang;
   public mixed $app;
   public mixed $template;
   public mixed $group;
-  
+  private mixed $lang;
+
   /**
    * Initializes the PageManager module by setting up necessary configurations,
    * loading language definitions, and determining the module's status and sort order.
@@ -103,57 +103,32 @@ class PageManager extends \ClicShopping\OM\Modules\HeaderTagsAbstract
       $QpageManager->bindInt(':pages_id', (int)$_GET['pagesId']);
       $QpageManager->execute();
 
-      if (empty($QpageManager->value('page_manager_head_title_tag'))) {
-        $pages_title = HTML::sanitize($QpageManager->value('pages_title'));
-      } else {
-        $head_title = HTML::sanitize($QpageManager->value('page_manager_head_title_tag'));
-        $pages_title_name = HTML::sanitize($QpageManager->value('pages_title'));
-        $pages_title = $head_title . ', ' . $pages_title_name;
-      }
+      $p_title = HTML::sanitize($QpageManager->value('pages_title'));
 
-      if (empty($QpageManager->value('page_manager_head_title_tag'))) {
-        if (empty($Qsubmit->value('page_manager_head_title_tag'))) {
-          $title = $pages_title . ', ' . HTML::sanitize($Qsubmit->value('seo_defaut_language_title'));
-        } else {
-          $title = $pages_title;
-        }
-      } else {
-        $title = $pages_title . ', ' . HTML::sanitize($Qsubmit->value('seo_defaut_language_title'));
-      }
+      $title = implode(', ', array_unique(array_filter(array_map('trim', [
+        $QpageManager->value('page_manager_head_title_tag'),
+        $p_title,
+        $Qsubmit->value('seo_defaut_language_title')
+      ]))));
 
-      if (empty($QpageManager->value('page_manager_head_desc_tag'))) {
-        if (empty($Qsubmit->value('page_manager_head_desc_tag'))) {
-          $description = $pages_title . ', ' . HTML::sanitize($Qsubmit->value('seo_defaut_language_description'));
-        } else {
-          $description = $pages_title . ', ' . $QpageManager->value('page_manager_head_desc_tag');
-        }
-      } else {
-        $description = $pages_title . ', ' . HTML::sanitize($Qsubmit->value('seo_defaut_language_description'));
-      }
+      $description = implode(', ', array_unique(array_filter(array_map('trim', [
+        $QpageManager->value('page_manager_head_desc_tag'),
+        $p_title,
+        $Qsubmit->value('seo_defaut_language_description')
+      ]))));
 
-      if (empty($QpageManager->value('page_manager_head_keywords_tag'))) {
-        if (empty($Qsubmit->value('page_manager_head_keywords_tag'))) {
-          $keywords = $pages_title . ', ' . HTML::sanitize($Qsubmit->value('seo_defaut_language_keywords'));
-        } else {
-          $keywords = $pages_title . ', ' . $QpageManager->value('page_manager_head_keywords_tag');
-        }
-      } else {
-        $keywords = $pages_title . ', ' . HTML::sanitize($Qsubmit->value('seo_defaut_language_keywords'));
-      }
+      $keywords = implode(', ', array_unique(array_filter(array_map('trim', [
+        $QpageManager->value('page_manager_head_keywords_tag'),
+        $p_title,
+        $Qsubmit->value('seo_defaut_language_keywords')
+      ]))));
 
-      $title = $this->template->setTitle($title) . ' ' . $this->template->getTitle();
-      $description = $this->template->setDescription($description) . ' ' . $this->template->getDescription();
-      $keywords = $this->template->setKeywords($keywords) . ', ' . $this->template->getKeywords();
-
-      $output =
-        <<<EOD
+      return <<<EOD
     <title>{$title}</title>
     <meta name="description" content="{$description}" />
     <meta name="keywords"  content="{$keywords}" />
     <meta name="news_keywords" content="{$keywords}" />
 EOD;
-
-      return $output;
     }
   }
 

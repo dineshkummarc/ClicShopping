@@ -39,7 +39,7 @@
     private string $apiKey;
     private SecurityLogger $logger;
     private Cache $cache;
-    private ?object $processor = null;
+    private ?object $processor ;
     private SearchCacheManager $cacheManager;
     private WebSearchLogger $searchLogger;
     private bool $debug;
@@ -74,24 +74,9 @@
      */
     public function __construct(?EntityHelperInterface $entityHelper = null)
     {
-      // Try multiple sources for SERAPI key
-      $this->apiKey = '';
-
-      // 1. Try constant from config_clicshopping.php
-      if (defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI') && !empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI)) {
-        $this->apiKey = CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI;
-      }
-      // 2. Try environment variable
-      elseif (!empty(getenv('SERP_API_KEY'))) {
-        $this->apiKey = getenv('SERP_API_KEY');
-      }
-      // 3. Try Gpt class method if it exists
-      elseif (method_exists('ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt', 'getSerpApiKey')) {
-        $key = Gpt::getSerpApiKey();
-        if (!empty($key)) {
-          $this->apiKey = $key;
-        }
-      }
+      $key = Gpt::getSerpApiKey();
+      $this->apiKey = $key;
+      
 
       if (empty($this->apiKey)) {
          error_log('SerpApi key not configured. Set CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI in configuration.');
@@ -592,11 +577,25 @@
       $maxResults = $options['max_results'] ?? $this->maxResults;
 
       $params = [
-        'q' => $query,
         'api_key' => $this->apiKey,
-        'num' => $maxResults,
         'engine' => $engine,
       ];
+
+      if ($engine !== 'google_ai_overview') {
+        $params['q'] = $query;
+        $params['num'] = $maxResults;
+      } else {
+        $pageToken = $options['page_token'] ?? $options['ai_overview_page_token'] ?? null;
+        if (empty($pageToken)) {
+          throw new \InvalidArgumentException(
+            'SerpApi google_ai_overview requires page_token (ai_overview.page_token).'
+          );
+        }
+        $params['page_token'] = $pageToken;
+        if (!empty($query)) {
+          $params['q'] = $query;
+        }
+      }
 
       if (isset($options['language'])) {
         $params['hl'] = $options['language'];
@@ -619,8 +618,23 @@
       }
 
       $params['safe'] = 'active';
+      $params['output'] = $options['output'] ?? 'json';
 
-      $url = 'https://serpapi.com/search.json?' . http_build_query($params);
+      if (isset($options['no_cache'])) {
+        $params['no_cache'] = $options['no_cache'];
+      }
+      if (isset($options['async'])) {
+        $params['async'] = $options['async'];
+      }
+      if (isset($options['zero_trace'])) {
+        $params['zero_trace'] = $options['zero_trace'];
+      }
+      if (isset($options['json_restrictor'])) {
+        $params['json_restrictor'] = $options['json_restrictor'];
+      }
+
+      // Single SerpApi endpoint for all engines (including google_ai_overview)
+      $url = 'https://serpapi.com/search?' . http_build_query($params);
 
       if ($this->debug) {
         $this->logger->logSecurityEvent(
@@ -1014,17 +1028,16 @@
           $languageId = $this->language !== null ? $this->language->getId() : 1;
         }
 
-        $Qproduct = $this->db->prepare('
-          SELECT p.products_id as product_id,
-                 pd.products_name as name,
-                 p.products_price as price,
-                 p.products_model as model
-          FROM :table_products p
-          INNER JOIN :table_products_description pd ON p.products_id = pd.products_id
-          WHERE p.products_id = :product_id
-            AND pd.language_id = :language_id
-          LIMIT 1
-        ');
+        $Qproduct = $this->db->prepare('SELECT p.products_id as product_id,
+                                               pd.products_name as name,
+                                               p.products_price as price,
+                                               p.products_model as model
+                                        FROM :table_products p
+                                        INNER JOIN :table_products_description pd ON p.products_id = pd.products_id
+                                        WHERE p.products_id = :product_id
+                                          AND pd.language_id = :language_id
+                                        LIMIT 1
+                                      ');
 
         $Qproduct->bindInt(':product_id', $productId);
         $Qproduct->bindInt(':language_id', $languageId);
@@ -1067,25 +1080,24 @@
           return null;
         }
 
-        $Qproduct = $this->db->prepare('
-          SELECT p.products_id as product_id,
-                 pd.products_name as name,
-                 p.products_price as price,
-                 p.products_model as model
-          FROM :table_products p
-          INNER JOIN :table_products_description pd ON p.products_id = pd.products_id
-          WHERE (pd.products_name LIKE :search_term
-             OR p.products_model LIKE :search_term)
-            AND pd.language_id = :language_id
-            AND p.products_status = 1
-          ORDER BY 
-            CASE 
-              WHEN pd.products_name = :exact_term THEN 1
-              WHEN pd.products_name LIKE :starts_with THEN 2
-              ELSE 3
-            END
-          LIMIT 1
-        ');
+        $Qproduct = $this->db->prepare(' SELECT p.products_id as product_id,
+                                                 pd.products_name as name,
+                                                 p.products_price as price,
+                                                 p.products_model as model
+                                          FROM :table_products p
+                                          INNER JOIN :table_products_description pd ON p.products_id = pd.products_id
+                                          WHERE (pd.products_name LIKE :search_term
+                                             OR p.products_model LIKE :search_term)
+                                            AND pd.language_id = :language_id
+                                            AND p.products_status = 1
+                                          ORDER BY 
+                                            CASE 
+                                              WHEN pd.products_name = :exact_term THEN 1
+                                              WHEN pd.products_name LIKE :starts_with THEN 2
+                                              ELSE 3
+                                            END
+                                          LIMIT 1
+                                        ');
 
         $searchTerm = '%' . $cleanQuery . '%';
         $startsWith = $cleanQuery . '%';

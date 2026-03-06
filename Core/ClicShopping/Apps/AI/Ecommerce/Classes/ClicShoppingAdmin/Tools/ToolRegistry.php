@@ -12,6 +12,8 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\Tools;
 
+use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\StockForecastService;
+
 class ToolRegistry
 {
   /**
@@ -115,7 +117,7 @@ class ToolRegistry
       ];
     }
 
-    $forecast = \ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\StockForecastService::forecastForProduct(
+    $forecast = StockForecastService::forecastForProduct(
       $entityId,
       $horizonDays,
       $leadTimeDays,
@@ -138,7 +140,7 @@ class ToolRegistry
       'entity_id' => $forecast['products_id'],
       'entity_type' => 'products',
       'data' => $forecast,
-      'text_response' => \ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\StockForecastService::buildSummary($forecast)
+      'text_response' => StockForecastService::buildSummary($forecast)
     ];
   }
 }

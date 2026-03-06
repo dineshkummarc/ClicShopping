@@ -120,50 +120,56 @@ class ProductsDescription extends \ClicShopping\OM\Modules\HeaderTagsAbstract
         $QcategoryInfo->bindInt(':language_id', $CLICSHOPPING_Language->getId());
         $QcategoryInfo->execute();
 
-        $products_name_clean = HTML::sanitize($CLICSHOPPING_ProductsCommon->getProductsName($products_id)) . ', ';
-        $products_name_replace = HTML::sanitize($QproductInfo->value('products_head_title_tag')) . ', ';
-        $categories_name_clean = ', ' . HTML::sanitize($QcategoryInfo->value('categories_name'));
-
+        // Préparation des variables de base
+        $products_name = HTML::sanitize($CLICSHOPPING_ProductsCommon->getProductsName($products_id));
+        $categories_name = HTML::sanitize($QcategoryInfo->value('categories_name'));
         $store_name = HTML::sanitize(STORE_NAME);
 
-        $seo_language_products_info_title = HTML::sanitize($Qsubmit->value('seo_language_products_info_title')) . ', ';
-
-        if (empty($QproductInfo->value('products_head_title_tag'))) {
-          if (empty($seo_language_products_info_title)) {
-            $title = $products_name_clean . $categories_name_clean . HTML::sanitize($Qsubmit->value('seo_defaut_language_title')) . ', ' . $store_name;
-          } else {
-            $title = $CLICSHOPPING_ProductsCommon->getProductsName($products_id) . $categories_name_clean . $seo_language_products_info_title . $store_name;
-          }
-        } else {
-          $title = $products_name_replace . ', ' . $categories_name_clean . $seo_language_products_info_title . $store_name;
+        // --- TITRE ---
+        $title_parts = [];
+        if (!empty($QproductInfo->value('products_head_title_tag'))) {
+          $title_parts[] = HTML::sanitize($QproductInfo->value('products_head_title_tag'));
         }
+        $title_parts[] = $products_name;
+        $title_parts[] = $categories_name;
 
-        if (empty($QproductInfo->value('products_head_desc_tag'))) {
-          if (empty($Qsubmit->value('seo_language_products_info_description'))) {
-            $description = $products_name_clean . $products_name_replace . $categories_name_clean . HTML::sanitize($Qsubmit->value('seo_defaut_language_description'));
-          } else {
-            $description = $products_name_clean . $products_name_replace . $categories_name_clean . HTML::sanitize($Qsubmit->value('seo_language_products_info_description'));
-          }
-        } else {
-          $description = $QproductInfo->value('products_head_desc_tag') . ', ' . $products_name_clean . $products_name_replace . $categories_name_clean;
+        $seo_title_custom = $Qsubmit->value('seo_language_products_info_title');
+        $title_parts[] = !empty($seo_title_custom) ? HTML::sanitize($seo_title_custom) : HTML::sanitize($Qsubmit->value('seo_defaut_language_title'));
+        $title_parts[] = $store_name;
+
+        $final_title = implode(', ', array_unique(array_filter(array_map('trim', $title_parts))));
+
+        // --- DESCRIPTION ---
+        $desc_parts = [];
+        if (!empty($QproductInfo->value('products_head_desc_tag'))) {
+          $desc_parts[] = HTML::sanitize($QproductInfo->value('products_head_desc_tag'));
         }
+        $desc_parts[] = $products_name;
+        $desc_parts[] = $categories_name;
 
-        if (empty($QproductInfo->value('products_head_keywords_tag'))) {
-          if (empty($Qsubmit->value('seo_language_products_info_keywords'))) {
-            $keywords = $products_name_clean . $products_name_replace . $categories_name_clean . HTML::sanitize($Qsubmit->value('seo_defaut_language_keywords'));
-          } else {
-            $keywords = $products_name_clean . $products_name_replace . $categories_name_clean . HTML::sanitize($Qsubmit->value('seo_language_products_info_keywords'));
-          }
-        } else {
-          $keywords = $QproductInfo->value('products_head_keywords_tag') . ', ' . $products_name_clean . $products_name_replace . $categories_name_clean;
+        $seo_desc_custom = $Qsubmit->value('seo_language_products_info_description');
+        $desc_parts[] = !empty($seo_desc_custom) ? HTML::sanitize($seo_desc_custom) : HTML::sanitize($Qsubmit->value('seo_defaut_language_description'));
+
+        $final_description = implode(', ', array_unique(array_filter(array_map('trim', $desc_parts))));
+
+        // --- MOTS-CLÉS ---
+        $key_parts = [];
+        if (!empty($QproductInfo->value('products_head_keywords_tag'))) {
+          $key_parts[] = HTML::sanitize($QproductInfo->value('products_head_keywords_tag'));
         }
+        $key_parts[] = $products_name;
+        $key_parts[] = $categories_name;
 
-        $output =
-          <<<EOD
-    <title>{$title}</title>
-    <meta name="description" content="{$description}" />
-    <meta name="keywords"  content="{$keywords}" />
-    <meta name="news_keywords" content="{$keywords}" />
+        $seo_key_custom = $Qsubmit->value('seo_language_products_info_keywords');
+        $key_parts[] = !empty($seo_key_custom) ? HTML::sanitize($seo_key_custom) : HTML::sanitize($Qsubmit->value('seo_defaut_language_keywords'));
+
+        $final_keywords = implode(', ', array_unique(array_filter(array_map('trim', $key_parts))));
+
+        $output = <<<EOD
+    <title>{$final_title}</title>
+    <meta name="description" content="{$final_description}" />
+    <meta name="keywords"  content="{$final_keywords}" />
+    <meta name="news_keywords" content="{$final_keywords}" />
 EOD;
         return $output;
       }

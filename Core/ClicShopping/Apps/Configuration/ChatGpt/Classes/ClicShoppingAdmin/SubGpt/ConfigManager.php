@@ -11,6 +11,7 @@
 namespace ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\SubGpt;
 
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\AI\Security\SecurityLogger;
 use function defined;
 
 /**
@@ -108,10 +109,20 @@ class ConfigManager
   public static function getSerpApiKey(): string
   {
     if (!defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI') || empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI)) {
+      self::logSerpApiWarning('SerpApi key not configured (CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI is undefined or empty)');
       return '';
     }
 
-    return CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI;
+    $key = trim(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI);
+
+    if (!self::isValidSerpApiKey($key)) {
+      self::logSerpApiWarning('SerpApi key invalid format', [
+        'key_masked' => self::maskKey($key)
+      ]);
+      return '';
+    }
+
+    return $key;
   }
 
   /**
@@ -122,5 +133,67 @@ class ConfigManager
   public static function isSerpApiAvailable(): bool
   {
     return !empty(self::getSerpApiKey());
+  }
+
+  /**
+   * Returns a masked SerpApi key for safe logging/display.
+   *
+   * @return string Masked key or empty string if not configured
+   */
+  public static function getSerpApiKeyMasked(): string
+  {
+    if (!defined('CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI') || empty(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI)) {
+      return '';
+    }
+
+    return self::maskKey(trim(CLICSHOPPING_APP_CHATGPT_CH_API_KEY_SERPAPI));
+  }
+
+  /**
+   * Validate SerpApi key format.
+   *
+   * @param string $key
+   * @return bool
+   */
+  private static function isValidSerpApiKey(string $key): bool
+  {
+    $len = strlen($key);
+    if ($len < 20 || $len > 128) {
+      return false;
+    }
+
+    return (bool)preg_match('/^[A-Za-z0-9_-]+$/', $key);
+  }
+
+  /**
+   * Mask a key for safe logging.
+   *
+   * @param string $key
+   * @return string
+   */
+  private static function maskKey(string $key): string
+  {
+    $len = strlen($key);
+    if ($len <= 8) {
+      return str_repeat('*', $len);
+    }
+
+    return substr($key, 0, 4) . str_repeat('*', $len - 8) . substr($key, -4);
+  }
+
+  /**
+   * Log SerpApi warnings with security logger.
+   *
+   * @param string $message
+   * @param array $context
+   */
+  private static function logSerpApiWarning(string $message, array $context = []): void
+  {
+    try {
+      $logger = new SecurityLogger();
+      $logger->logSecurityEvent($message, 'warning', $context);
+    } catch (\Throwable $e) {
+      error_log('SerpApi key warning: ' . $message);
+    }
   }
 }

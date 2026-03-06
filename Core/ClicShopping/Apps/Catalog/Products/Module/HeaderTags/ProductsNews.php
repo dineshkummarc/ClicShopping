@@ -19,7 +19,8 @@ class ProductsNews extends \ClicShopping\OM\Modules\HeaderTagsAbstract
 {
   public mixed $lang;
   public mixed $app;
-
+  public mixed $group;
+  
   /**
    * Initializes the module by setting up required dependencies, loading definitions,
    * and configuring properties such as title, description, sort order, and status.
@@ -117,8 +118,8 @@ class ProductsNews extends \ClicShopping\OM\Modules\HeaderTagsAbstract
       $output =
         <<<EOD
     <title>{$title}</title>
-    <meta name="Description" content="{$description}" />
-    <meta name="Keywords" content="{$keywords}" />
+    <meta name="description" content="{$description}" />
+    <meta name="keywords"  content="{$keywords}" />
     <meta name="news_keywords" content="{$keywords}" />
 EOD;
 

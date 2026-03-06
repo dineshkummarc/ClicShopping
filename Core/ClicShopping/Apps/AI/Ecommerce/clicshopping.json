@@ -23,7 +23,11 @@
     },
     "Hooks": {
       "ClicShoppingAdmin/Categories": {
+
+        "PageContent": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\CategoriesSerp",
         "CategoriesContentTab3": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\SeoChatGpt",
+
+
         "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\Insert",
         "Update": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\Update",
         "DeleteConfirm": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\DeleteConfirm"
@@ -35,6 +39,7 @@
         "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Manufacturers\\DeleteAll"
       },
       "ClicShoppingAdmin/Products": {
+        "ProductsContentTab7": "Module\\Hooks\\ClicShoppingAdmin\\Products\\ProductsSerp",
         "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\Products\\SeoChatGpt",
         "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Insert",
         "Update": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Update",

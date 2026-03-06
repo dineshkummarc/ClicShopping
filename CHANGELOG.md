@@ -1,7 +1,9 @@
 version4.22
 - AI
-  - AI interface improvement
-  - MCP improvement
+    - SerpApi refactored and using new AI agentic approach with Google AI Overview Results API
+    - Add new check SEO for categories and products based on AI agentic approach with SerpApi
+    - AI interface improvement
+    - MCP improvement
 - Some fix
 - Librairies updated
 
@@ -13,7 +15,7 @@ version4.21
    - AI improvement and refactoring to be full agentic approach
    - Agent - Actor - Critic - Objectives - Evaluation - Conversation included
    - Around 50 KPI for statistics (manager, programmer, data scientist)
-   - Domain Tools implementation with stock foercast example.
+   - Domain Tools implementation with stock forecast example.
    - App Ecommerce Domain with Insight (basic) approach including ACP et UCP below
    - Refactoring ACP and add UCP Beta for AI Ecommerce App
      - ACP Protocol Beta refactored via Ecommerce AI app

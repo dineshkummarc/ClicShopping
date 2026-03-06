@@ -463,20 +463,20 @@ class FeedbackManager
                 }
                 return 'unknown';
             }
-            
+
             $sql = "SELECT actor_id 
-                    FROM :table_rag_agent_actor_executions 
+                    FROM :table_rag_agent_actor_executions
                     WHERE result_id = :output_id 
                     LIMIT 1";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':output_id', $outputId);
             $stmt->execute();
-            
+
             $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-            
+
             return $result['actor_id'] ?? 'unknown';
-            
+
         } catch (Exception $e) {
             if ($this->debug) {
                 error_log("FeedbackManager: Failed to get producer actor ID - " . $e->getMessage());
@@ -530,6 +530,25 @@ class FeedbackManager
             throw new Exception('Failed to persist feedback: ' . $e->getMessage());
         }
     }
+    
+    /**
+     * Check if a database table exists
+     *
+     * @param string $tableName The table name (without prefix)
+     * @return bool True if table exists
+     */
+  private function tableExists(string $tableName): bool
+  {
+    try {
+      $prefix = CLICSHOPPING::getConfig('db_table_prefix');
+      $fullTableName = $prefix . $tableName;
+      $stmt = $this->db->prepare("SHOW TABLES LIKE '" . $fullTableName . "'");
+      $stmt->execute();
+      return $stmt->rowCount() > 0;
+    } catch (\Throwable $e) {
+      return false;
+    }
+  }
     
     /**
      * Extract content from strengths array
@@ -614,27 +633,6 @@ class FeedbackManager
                 error_log("FeedbackManager: Failed to calculate trend - " . $e->getMessage());
             }
             return 'stable';
-        }
-    }
-    
-    /**
-     * Check if a database table exists
-     *
-     * @param string $tableName The table name (without prefix)
-     * @return bool True if table exists
-     */
-    private function tableExists(string $tableName): bool
-    {
-        try {
-            $prefix = CLICSHOPPING::getConfig('db_table_prefix');
-            $fullTableName = $prefix . $tableName;
-            $sql = "SHOW TABLES LIKE :table_name";
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(':table_name', $fullTableName);
-            $stmt->execute();
-            return $stmt->rowCount() > 0;
-        } catch (Exception $e) {
-            return false;
         }
     }
 }
