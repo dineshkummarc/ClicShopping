@@ -146,5 +146,97 @@ EOD;
       // Create vector index
       $CLICSHOPPING_Db->exec('CREATE VECTOR INDEX embedding_index ON :table_rag_agent_order_insights_embedding (embedding)');
     }
+
+    // Create SEO SERP reports table
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_seo_serp_reports"');
+
+    if ($Qcheck->fetch() === false) {
+      $sql = <<<EOD
+CREATE TABLE IF NOT EXISTS :table_seo_serp_reports (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  entity_type varchar(50) NOT NULL,
+  entity_id int(11) NOT NULL,
+  language_id int(11) NOT NULL,
+  url varchar(512) DEFAULT NULL,
+  serp_source varchar(50) DEFAULT NULL,
+  serp_query varchar(512) DEFAULT NULL,
+  serp_data longtext DEFAULT NULL,
+  seo_before longtext DEFAULT NULL,
+  seo_after longtext DEFAULT NULL,
+  proposed_changes longtext DEFAULT NULL,
+  audit_result longtext DEFAULT NULL,
+  summary text DEFAULT NULL,
+  seo_score_before int(11) DEFAULT 0,
+  seo_score_after int(11) DEFAULT 0,
+  status varchar(50) DEFAULT NULL,
+  triggered_by varchar(50) DEFAULT NULL,
+  created_at datetime NOT NULL DEFAULT NOW(),
+  updated_at datetime NOT NULL DEFAULT NOW() ON UPDATE NOW(),
+  pipeline_metrics JSON NULL DEFAULT NULL,
+  PRIMARY KEY (id),
+  KEY idx_entity (entity_type, entity_id, language_id),
+  KEY idx_status (status),
+  KEY idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+EOD;
+      $CLICSHOPPING_Db->exec($sql);
+    }
+
+    // Create products_seo_embedding table
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_products_seo_embedding"');
+
+    if ($Qcheck->fetch() === false) {
+      $sql = <<<EOD
+    CREATE TABLE IF NOT EXISTS :table_products_seo_embedding (
+     id              INT(11)       NOT NULL AUTO_INCREMENT COMMENT 'Primary key - unique identifier for each SEO embedding chunk',
+     content         TEXT          COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Text content embedded - serialized SEO report data (title, meta, H1-H3, keywords, scores)',
+     type            TEXT          COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Type of SEO content: initial_report | optimized_report | audit_summary | suggestion',
+     sourcetype      TEXT          COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Trigger origin: manual | hook | cron',
+     sourcename      TEXT          COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Source identifier: SeoReport | AgentSeo | AgentAuditSeo | AgentSerp',
+     embedding       VECTOR(3072)  NOT NULL COMMENT 'Vector embedding 3072 dimensions - OpenAI text-embedding-3-large',
+     chunknumber     INT(11)       DEFAULT 128 COMMENT 'Chunk number for large reports - default 128 tokens per chunk',
+     date_modified   DATETIME      DEFAULT NULL COMMENT 'Timestamp of last modification',
+     entity_id       INT(11)       NOT NULL COMMENT 'FK - references the entity (category, product, cms page)',
+      entity_type     VARCHAR(50)   COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Entity type: category | product | cms',
+     language_id     INT(11)       NOT NULL COMMENT 'FK to languages table',
+     metadata        LONGTEXT      COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'JSON: url, page_type, seo_score_before, seo_score_after, status, report_raw, suggestions, audit_result, serp_data',
+      PRIMARY KEY (id),
+      KEYidx_entity_lang    (entity_id,language_id),
+      KEYidx_type           (type(50)),
+      KEYidx_sourcetype     (sourcetype(50)),
+      KEYidx_date_modified  (date_modified)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    EOD;
+      $CLICSHOPPING_Db->exec($sql);
+    }
+
+
+    // Create products_seo_embedding table
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_categories_seo_embedding"');
+
+    if ($Qcheck->fetch() === false) {
+      $sql = <<<EOD
+    CREATE TABLE IF NOT EXISTS :table_categories_seo_embedding (
+      id              INT(11)       NOT NULL AUTO_INCREMENT COMMENT 'Primary key - unique identifier for each SEO embedding chunk',
+      content         TEXT          COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Text content embedded - serialized SEO report data (title, meta, H1-H3, keywords, scores)',
+      type            TEXT          COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Type of SEO content: initial_report | optimized_report | audit_summary | suggestion',
+      sourcetype      TEXT          COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Trigger origin: manual | hook | cron',
+      sourcename      TEXT          COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Source identifier: SeoReport | AgentSeo | AgentAuditSeo | AgentSerp',
+      embedding       VECTOR(3072)  NOT NULL COMMENT 'Vector embedding 3072 dimensions - OpenAI text-embedding-3-large',
+      chunknumber     INT(11)       DEFAULT 128 COMMENT 'Chunk number for large reports - default 128 tokens per chunk',
+      date_modified   DATETIME      DEFAULT NULL COMMENT 'Timestamp of last modification',
+      entity_id       INT(11)       NOT NULL COMMENT 'FK - references the entity (category, product, cms page)',
+        entity_type     VARCHAR(50)   COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Entity type: category | product | cms',
+      language_id     INT(11)       NOT NULL COMMENT 'FK to languages table',
+      metadata        LONGTEXT      COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'JSON: url, page_type, seo_score_before, seo_score_after, status, report_raw, suggestions, audit_result, serp_data',
+      PRIMARY KEY (id),
+      KEY idx_entity_lang    (entity_id, language_id),
+      KEY idx_type           (type(50)),
+      KEY idx_sourcetype     (sourcetype(50)),
+      KEY idx_date_modified  (date_modified)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    EOD;
+      $CLICSHOPPING_Db->exec($sql);
+    }
   }
 }
