@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '5ab9569a562557148a75e1f793a54e2ced859d34',
+        'reference' => '54727e79f402e00b312b30efa06510ad915f0f14',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '5ab9569a562557148a75e1f793a54e2ced859d34',
+            'reference' => '54727e79f402e00b312b30efa06510ad915f0f14',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => '258001d8c6f3310f9731d8987139aa64cccd8dc9',
+            'reference' => '68e4c6721ef8cd2c366bd5e2290baf007d3f0e6d',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
@@ -385,9 +385,9 @@
             'dev_requirement' => false,
         ),
         'stripe/stripe-php' => array(
-            'pretty_version' => 'v19.4.0',
-            'version' => '19.4.0.0',
-            'reference' => 'a8c9db819f86ec47e603b92f9be99661e6a62cf4',
+            'pretty_version' => 'v19.4.1',
+            'version' => '19.4.1.0',
+            'reference' => '095384404587d07de2ad1154c389c4051c5ed92f',
             'type' => 'library',
             'install_path' => __DIR__ . '/../stripe/stripe-php',
             'aliases' => array(),
@@ -550,9 +550,9 @@
             'dev_requirement' => false,
         ),
         'theodo-group/llphant' => array(
-            'pretty_version' => '0.11.14',
-            'version' => '0.11.14.0',
-            'reference' => 'ae927c8d0df14994d0832d602c744a472afb4617',
+            'pretty_version' => '0.11.15',
+            'version' => '0.11.15.0',
+            'reference' => '6f95f01684c94cad6d6fad2f4ea73310ec05d3ee',
             'type' => 'library',
             'install_path' => __DIR__ . '/../theodo-group/llphant',
             'aliases' => array(),
