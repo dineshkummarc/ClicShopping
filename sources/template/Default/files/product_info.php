@@ -21,28 +21,8 @@ $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
 
 if ($CLICSHOPPING_ProductsCommon->getProductsCount() < 1 || (\is_null($CLICSHOPPING_ProductsCommon->getID())) || $CLICSHOPPING_ProductsCommon->getID() === false) {
   http_response_code(404);
-  ?>
-  <section class="product" id="product">
-    <div class="contentContainer">
-      <div class="contentText">
-        <div class="mt-1"></div>
-        <div class="mt-1"></div>
-        <div class="alert alert-warning text-center" role="alert">
-          <h3><?php echo CLICSHOPPING::getDef('text_product_not_found'); ?></h3>
-        </div>
-        <div class="mt-1"></div>
-        <div class="control-group">
-          <div>
-            <div class="buttonSet">
-              <span class="float-end"><label
-                  for="buttonContinue"><?php echo HTML::button(CLICSHOPPING::getDef('button_continue'), null, CLICSHOPPING::link(), 'success'); ?></label></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-  <?php
+  require 'error_documents/404.php';
+  exit;
 } elseif ($CLICSHOPPING_ProductsCommon->getProductsGroupView() == 1 || $CLICSHOPPING_ProductsCommon->getProductsView() == 1) {
 // ----------------------------------------------------------------
 // ---- Display products with autorization  ----

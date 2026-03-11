@@ -19,7 +19,7 @@ final class Header
         static $trimmed = "\"'  \n\t\r";
         $params = $matches = [];
 
-        foreach ( $header as $value) {
+        foreach ((array) $header as $value) {
             foreach (self::splitList($value) as $val) {
                 $part = [];
                 foreach (preg_split('/;(?=([^"]*"[^"]*")*[^"]*$)/', $val) ?: [] as $kvp) {
@@ -52,7 +52,7 @@ final class Header
     public static function normalize($header): array
     {
         $result = [];
-        foreach ( $header as $value) {
+        foreach ((array) $header as $value) {
             foreach (self::splitList($value) as $parsed) {
                 $result[] = $parsed;
             }

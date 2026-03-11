@@ -6,7 +6,7 @@ version4.22
     - MCP improvement
 - Some fix
 - Librairies updated
-
+- add AGENTS.md to help the ai agents
 
 
 ---------------
