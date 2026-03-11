@@ -10,7 +10,8 @@
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
-use ClicShopping\OM\Registry;
+  use ClicShopping\OM\HTTP;
+  use ClicShopping\OM\Registry;
 
 $CLICSHOPPING_Template = Registry::get('Template');
 $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
@@ -21,8 +22,7 @@ $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
 
 if ($CLICSHOPPING_ProductsCommon->getProductsCount() < 1 || (\is_null($CLICSHOPPING_ProductsCommon->getID())) || $CLICSHOPPING_ProductsCommon->getID() === false) {
   http_response_code(404);
-  require 'error_documents/404.php';
-  exit;
+  HTTP::redirect(CLICSHOPPING::getConfig('http_server', 'Shop') . CLICSHOPPING::getConfig('http_path', 'Shop') . 'error_documents/404.php');
 } elseif ($CLICSHOPPING_ProductsCommon->getProductsGroupView() == 1 || $CLICSHOPPING_ProductsCommon->getProductsView() == 1) {
 // ----------------------------------------------------------------
 // ---- Display products with autorization  ----
