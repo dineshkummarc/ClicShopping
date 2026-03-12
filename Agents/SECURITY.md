@@ -1,169 +1,171 @@
 # SECURITY.md — ClicShopping AI v4.20+
 
-> Sécurité transversale — s'applique au framework, aux modules, aux agents AI et aux APIs.
-> Règles opérationnelles agents : `AGENTS.md`
+> Transversal security — applies to the framework, modules, AI agents and APIs.
+> Agent operational rules: `AGENTS.md`
 
 ---
 
-## 1. Principe général
+## 1. General principle
 
-La sécurité de ClicShopping AI est organisée en **10 couches indépendantes**.
-Chaque couche doit rester active. Ne jamais en contourner une, même en développement.
-
----
-
-## 2. Architecture en 10 couches
-
-| # | Couche | Mécanisme | Portée |
-|---|---|---|---|
-| 1 | **Web server** | Apache `.htaccess` : headers sécurité, blocage bots, restriction chemins | Toutes requêtes HTTP |
-| 2 | **Sanitisation** | Module `SecurityPro` : filtrage XSS, prévention SQLi | Inputs utilisateur |
-| 3 | **Authentification** | `Hash::verify`, session sécurisée, tokens | Login admin et shop |
-| 4 | **2FA email** | Codes 4-8 chiffres, expiry 5 min | Login admin |
-| 5 | **Rate limiting** | Fenêtre 900s, max 20 requêtes par identifiant | APIs et endpoints AI |
-| 6 | **Verrouillage compte** | 5 tentatives échouées → lock 30 min | Authentification |
-| 7 | **Guardrails AI** | Détection injection de prompt, scan obfuscation, scoring | Endpoints LLM |
-| 8 | **Chiffrement** | AES-256 pour les données sensibles | Stockage données |
-| 9 | **GDPR** | Export/suppression données, audit log | Données personnelles |
-| 10 | **Monitoring** | Table `rag_security_events`, health scoring, MCP | Observabilité |
+ClicShopping AI security is organized into **10 independent layers**.
+Each layer must remain active. Never bypass one, even in development.
 
 ---
 
-## 3. Règles obligatoires pour tout code
+## 2. Architecture in 10 layers
+
+| # | Layer | Mechanism                                                           | Scope |
+|---|---|---------------------------------------------------------------------|---|
+| 1 | **Webserver** | Apache `.htaccess`: security headers, bot blocking, path restriction | All HTTP requests |
+| 2 | **Sanitization** | `SecurityPro` module: XSS filtering, SQLi prevention                | User Inputs |
+| 3 | **Authentication** | `Hash::verify`, secure session, tokens                              | Admin and shop login |
+| 4 | **2FA email** | Codes 4-8 digits, expiry 5 min                                      | Admin Login |
+| 5 | **Rate limiting** | Window 900s, max 20 requests per identifier                         | APIs and AI endpoints |
+| 6 | **Account lock** | 5 failed attempts → lock 30 min                                     | Authentication |
+| 7 | **AI Guardrails** | Prompt injection detection, Obfuscation scan, detection, scoring        | Endpoints LLM |
+| 8 | **Encryption** | AES-256 for sensitive data                                          | Data storage |
+| 9 | **GDPR** | Data export/deletion, audit log                                     | Personal data |
+| 10 | **Monitoring** | Table `clic_rag_security_events`, health scoring, MCP               | Observability |
+
+---
+
+## 3. Mandatory rules for any code
 
 ### Inputs
-- Valider **toutes** les entrées utilisateur côté serveur
-- Utiliser les helpers de sanitisation existants — ne pas écrire de filtrage custom
-- Ne jamais faire confiance aux données de `$_GET`, `$_POST`, `$_COOKIE` sans traitement
+- Validate **all** user inputs on the server side
+- Use existing sanitation helpers — do not write custom filtering
+- Never trust data from `$_GET`, `$_POST`, `$_COOKIE` without processing
 
 ### Outputs
-- Échapper toutes les sorties HTML (`htmlspecialchars` ou helpers existants)
-- Ne jamais afficher de données brutes issues de la base ou de l'utilisateur
-- Les templates ne peuvent pas recevoir de données non préparées
+- Escape all HTML output (`htmlspecialchars` or existing helpers)
+- Never display raw data from the database or the user
+- Templates cannot receive unprepared data
 
-### Credentials et secrets
+### Credentials and secrets
 ```
-✗ Jamais de clé API hardcodée dans le code
-✗ Jamais de credential dans un fichier versionné
-✗ Jamais de chemin interne exposé dans les messages d'erreur
-✗ Jamais de données personnelles non chiffrées dans les logs
+✗ Never hardcoded API key in the code
+✗ Never credential in a versioned file
+✗ Never internal path exposed in error messages
+✗ Never unencrypted personal data in logs
 ```
 
-Toujours utiliser les **constantes de configuration** définies via l'interface admin.
+Always use **configuration constants** defined via the admin interface.
 
 ---
 
-## 4. Sécurité des endpoints admin
+## 4. Admin Endpoint Security
 
-- Tout endpoint admin doit vérifier la session admin active
-- Ne jamais exposer un endpoint admin sans authentification
-- Les actions destructives (suppression, modification de config) doivent vérifier le token CSRF
-- Respecter la couche de rate limiting pour les endpoints API
+- Any admin endpoint must check the active admin session
+- Never expose an admin endpoint without authentication
+- Destructive actions (deletion, config modification) must check the CSRF token
+- Respect the rate limiting layer for API endpoints
 
 ---
 
-## 5. Sécurité AI — Guardrails
+## 5. AI Security — Guardrails
 
-### Détection d'injection de prompt
+### Prompt injection detection
 
-Tout input envoyé à un LLM passe par le système de scoring avant traitement :
-- Scan des patterns d'injection connus
-- Détection d'obfuscation (encodage, homoglyphes, etc.)
-- Score de menace calculé — requête bloquée si seuil dépassé
+Any input sent to an LLM goes through the scoring system before processing:
+- Scan of known injection patterns
+- Obfuscation scan, detection (encoding, homoglyphs, etc.)
+- Calculated threat score — request blocked if threshold exceeded
 
-**Ne jamais contourner cette validation**, même pour des tests de développement.  
-Utiliser les environnements de staging dédiés pour les tests AI.
+**Never bypass this validation**, even for development tests.
+Use dedicated staging environments for AI testing.
 
 ### Rate limiting AI
 
-| Constante | Valeur | Rôle |
+| Constant | Value | Role |
 |---|---|---|
-| `CLICSHOPPING_APP_API_AI_RATE_LIMIT_WINDOW` | 900s | Fenêtre de temps |
-| `CLICSHOPPING_APP_API_AI_MAX_REQUEST_PER_WINDOW` | 20 | Requêtes max par identifiant |
-| `CLICSHOPPING_APP_API_AI_MAX_LOGIN_ATTEMPTS` | 5 | Tentatives avant lock |
-| `CLICSHOPPING_APP_API_AI_ACCOUNT_LOCK_DURATION` | 1800s | Durée du verrouillage |
+| `CLICSHOPPING_APP_API_AI_RATE_LIMIT_WINDOW` | 900s | Time window |
+| `CLICSHOPPING_APP_API_AI_MAX_REQUEST_PER_WINDOW` | 20 | Max queries per identifier |
+| `CLICSHOPPING_APP_API_AI_MAX_LOGIN_ATTEMPTS` | 5 | Attempts before lock |
+| `CLICSHOPPING_APP_API_AI_ACCOUNT_LOCK_DURATION` | 1800s | Lockdown duration |
 
-Tables associées :
-- `clic_api_rate_limit` — suivi des requêtes par identifiant + timestamp
-- `clic_api_failed_attempts` — suivi des tentatives échouées
-- `rag_security_events` — audit des événements de sécurité AI
+Related tables:
+- `clic_api_rate_limit` — tracking requests by identifier + timestamp
+- `clic_api_failed_attempts` — tracking failed attempts
+- `clic_rag_security_events` — auditing AI security events
 
 ---
-
-## 6. Authentification et sessions
+## 6. Authentication and sessions
 
 ### Sessions
-- Backend préféré : Redis (prefix `sess_`, TTL basé sur `session.gc_maxlifetime`)
-- Fallback : Database → File
-- Ne jamais stocker de données sensibles en clair dans la session
+
+Four backends with automatic fallback:
+1. **Database** — persistent, table storage
+2. **File** — native PHP fallback
+3. **Memcached** — option to be activated - distributed cache, TTL = `session.gc_maxlifetime`
+4. **Redis** — option to be activated - `localhost:6379`, prefix `sess_`, TTL = `session.gc_maxlifetime`
+
 
 ### 2FA (Two-Factor Authentication email)
-- Activé sur l'interface admin
-- Code : 4 à 8 chiffres, expiry 5 minutes
-- Résistant aux attaques par rejeu (code à usage unique)
+- Enabled on the admin interface
+- Code: 4 to 8 digits, expires 5 minutes
+- Resistant to replay attacks (one-time code)
 
 ### TOTP (admin)
-- Configuration : voir wiki `How-to-set-Double-authentification-for-Catalog-and-Administration-Login-by-TOTP`
+- Configuration: see wiki `How-to-set-Double-authentication-for-Catalog-and-Administration-Login-by-TOTP`
 
 ---
 
-## 7. Chiffrement et GDPR
+## 7. Encryption and GDPR
 
-### Chiffrement des données sensibles
-- Algorithme : AES-256 pour les données personnelles critiques
-- Ne pas implémenter de chiffrement custom — utiliser les helpers existants du core
+### Encryption of sensitive data
+- Algorithm: AES-256 for critical personal data
+- Do not implement custom encryption — use existing core helpers
 
-### Conformité GDPR
-- Export de données personnelles : fonctionnalité native à ne pas contourner
-- Suppression de données : cascade gérée par les scripts existants
-- Audit log : ne pas désactiver les tables d'audit
-
----
-
-## 8. Configuration Apache (.htaccess)
-
-Le fichier `.htaccess` est une couche de sécurité critique.
-
-Règles :
-- Ne pas affaiblir les directives de sécurité existantes
-- Ne pas exposer les répertoires `Core/`, `Core/ClicShopping/Work/`, `install/` via HTTP
-- Maintenir les headers de sécurité (`X-Frame-Options`, `X-Content-Type-Options`, etc.)
-- Les règles de réécriture SEO ne doivent pas créer de failles de traversée de chemin
+### GDPR Compliance
+- Export of personal data: native functionality not to be bypassed
+- Data deletion: cascade managed by existing scripts
+- Audit log: do not deactivate audit tables
 
 ---
 
-## 9. Ce qu'il ne faut jamais exposer
+## 8. Apache configuration (.htaccess)
+
+The `.htaccess` file is a critical security layer.
+
+Rules:
+- Do not weaken existing security guidelines
+- Do not expose the `Core/`, `Core/ClicShopping/Work/`, `install/` directories via HTTP
+- Maintain security headers (`X-Frame-Options`, `X-Content-Type-Options`, etc.)
+- SEO rewrite rules must not create path traversal flaws
+
+---
+
+## 9. What you should never expose
 
 ```
-✗ Fichiers de configuration (config.php, .env, composer.json via HTTP)
-✗ Répertoire Core/ClicShopping/Work/ (cache et fichiers temporaires)
-✗ Répertoire install/ après installation
-✗ Credentials, clés API, mots de passe
-✗ Chemins internes du serveur dans les messages d'erreur
-✗ Stack traces PHP en production
-✗ Données personnelles non anonymisées dans les logs
-```
-
----
-
-## 10. Checklist sécurité avant commit
-
-```
-[ ] Inputs validés côté serveur
-[ ] Outputs échappés dans tous les templates
-[ ] Aucun credential ou clé API dans le code
-[ ] Endpoints admin protégés par vérification de session
-[ ] Guardrails AI non contournés
-[ ] Aucune table d'audit ou de rate limiting supprimée
-[ ] .htaccess non affaibli
-[ ] Aucune donnée personnelle en clair dans les logs
+✗ Configuration files (config.php, .env, composer.json via HTTP)
+✗ Core/ClicShopping/Work/ directory (cache and temporary files)
+✗ install/ directory (must be removed or blocked after deployment)
+✗ Credentials, API keys, passwords
+✗ Internal server paths in error messages
+✗ Stack traces PHP in production
+✗ Non-anonymized personal data in logs
 ```
 
 ---
 
-## 11. Références
+## 10. Security checklist before commit
 
-- Architecture framework : `ARCHITECTURE.md`
-- Sécurité AI guardrails : `AI_SYSTEM.md` §7
-- Wiki sécurité : https://github.com/ClicShopping/ClicShopping_V3/wiki/Secure-ClicShopping
-- DeepWiki sécurité : https://deepwiki.com/ClicShopping/ClicShopping/7-security-architecture
+```
+[ ] Inputs validated on the server side
+[ ] Outputs escaped in all templates
+[ ] No credential or API key in the code
+[ ] Admin endpoints protected by session verification
+[ ] AI guardrails not bypassed
+[ ] No audit or rate limiting tables deleted
+[ ] .htaccess not weakened
+[ ] No clear personal data in the logs
+```
+
+---
+
+## 11. References
+
+- Architecture framework: `ARCHITECTURE.md`
+- AI guardrails security: `AI_SYSTEM.md`
+- DeepWiki security: https://deepwiki.com/ClicShopping/ClicShopping/7-security-architecture

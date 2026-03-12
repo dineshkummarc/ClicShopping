@@ -1,217 +1,217 @@
 # DATABASE.md — ClicShopping AI v4.20+
 
-> Couche base de données : moteur, schéma, SQL routing, embeddings vectoriels, migrations.
-> Règles opérationnelles agents : `AGENTS.md` — Embeddings AI : `AI_SYSTEM.md`
+> Database layer: engine, schema, SQL routing, vector embeddings, migrations.
+> Agent operational rules: `AGENTS.md` — AI Embeddings: `AI_SYSTEM.md`
 
 ---
 
-## 1. Moteur requis
+## 1. Engine required
 
-**MariaDB ≥ 11.7 — obligatoire.**
+**MariaDB ≥ 11.7 — required.**
 
-MySQL 9.x est **incompatible** avec les fonctionnalités vectorielles natives du projet.
+MySQL 9.x is **incompatible** with the project's native vector features.
 
-| Fonctionnalité | Exigence |
+| Feature | Requirement |
 |---|---|
-| Type vectoriel | `VECTOR` natif MariaDB |
-| Index vectoriel | `VECTOR INDEX` natif MariaDB |
-| JSON | Colonne `metadata` JSON (v4.11+) |
-| Dimensions | Respecter les dimensions existantes par table (3072 ou 1536) |
+| Vector type | MariaDB native `VECTOR` |
+| Vector index | `VECTOR INDEX` native MariaDB |
+| JSON | JSON `metadata` column (v4.11+) |
+| Dimensions | Respect the existing dimensions per table (3072) |
 
-Environnements cloud ou PaaS : vérifier explicitement la version MariaDB avant tout déploiement.
-En cas de doute, interroger `SELECT VERSION();` et valider ≥ 11.7.
+Cloud or PaaS environments: explicitly check the MariaDB version before any deployment.
+If in doubt, query `SELECT VERSION();` and validate ≥ 11.7.
 
 ---
 
-## 2. Accès base de données
+## 2. Database access
 
-Toujours passer par le service `Db` du Registry — jamais de connexion PDO directe.
+Always go through the Registry `Db` service — never a direct PDO connection.
 
 ```php
-// Accès correct
+// Correct access
 $db = \ClicShopping\OM\Registry::get('Db');
 $result = $db->query('SELECT ...');
 
-// Interdit
-$pdo = new \PDO('mysql:host=...'); // connexion parallèle hors Registry
+// Forbidden
+$pdo = new \PDO('mysql:host=...'); // parallel connection outside Registry
 ```
 
-Le service `Db` est basé sur `\ClicShopping\OM\Db` (extends `PDO`). Il gère :
-- La connexion unique par requête
-- Le typage des paramètres
-- La compatibilité MariaDB
+The `Db` service is based on `\ClicShopping\OM\Db` (extends `PDO`). It manages:
+- Single connection per request
+- Parameter typing
+- MariaDB compatibility
 
 ---
 
-## 3. Routing SQL — Quel fichier, où
+## 3. SQL Routing — Which file, where
 
-Quatre emplacements distincts avec des rôles non interchangeables :
+Five distinct slots with non-interchangeable roles:
 
-| Emplacement | Rôle | Accès agent |
-|---|---|---|
-| `Core/ClicShopping/Schema/MariaDb/` | Schéma canonique de toutes les tables — référence de vérité | Lecture seule |
-| `install/Db/*.sql` | Données initiales de peuplement pour installation fraîche | Lecture seule |
-| `Core/ClicShopping/Apps/{Vendor}/{AppName}/Sql/MariaDb/` | SQL applicatif propre à l'App (CREATE, INSERT initiaux) | **Écriture** |
-| `Core/ClicShopping/Custom/Schema/` | Tables supplémentaires liées aux surcharges Custom/ (fichiers *.txt) | **Écriture** |
-| `sql_upgrade/` | Guide de migration **pour l'utilisateur final** — documentation uniquement | Lecture seule |
+| Location | Role                                                         | Agent access |
+|---|--------------------------------------------------------------|---|
+| `Core/ClicShopping/Schema/MariaDb/` | Canonical schema of all tables — truth reference             | Read only |
+| `install/Db/*.sql` | Initial seed data for fresh installation populate the db  | Read only |
+| `Core/ClicShopping/Apps/{Vendor}/{AppName}/Sql/MariaDb/` | Application SQL specific to the App (initial CREATE, INSERT) | **Writing** |
+| `Core/ClicShopping/Custom/Schema/` | Additional tables related to Custom overloads/ (*.txt files) | **Writing** |
+| `sql_upgrade/` | Migration guide **for end user** — documentation only        | Read only |
 
-### Règle de décision
+### Decision rule
 
 ```
-Nouvelle table pour une App         → Core/ClicShopping/Apps/{Vendor}/{AppName}/Sql/MariaDb/
-Nouvelle table pour une surcharge   → Core/ClicShopping/Custom/Schema/
-Comprendre le schéma existant       → Core/ClicShopping/Schema/MariaDb/ (lecture)
-Migration d'une version à l'autre   → sql_upgrade/ (documentation, pas de code)
+New table for an App → Core/ClicShopping/Apps/{Vendor}/{AppName}/Sql/MariaDb/
+New table for an overload → Core/ClicShopping/Custom/Schema/
+Understanding the existing schema → Core/ClicShopping/Schema/MariaDb/ (reading)
+Migrating from one version to another → sql_upgrade/ (documentation, no code)
 ```
 
-**Ne jamais écrire de SQL applicatif dans `sql_upgrade/`.**  
-Ce répertoire est un guide documentaire pour que l'utilisateur comprenne les changements
-entre versions — il n'est pas exécuté automatiquement par le système.
+**Never write application SQL in `sql_upgrade/`.**
+This directory is a documentary guide for the user to understand the changes
+between versions — it is not executed automatically by the system.
 
 ---
 
-## 4. Scripts SQL d'une App — Structure réelle observée
+## 4. SQL Scripts of an App — Actual Structure Observed
 
-Les Apps utilisent principalement :
+The Apps mainly use:
 
 ```
 Core/ClicShopping/Apps/{Vendor}/{AppName}/Sql/MariaDb/
-├── MariaDb.php                 # installation/migration principale
-├── *.sql                       # migrations ciblées (si nécessaire)
-└── scripts utilitaires *.php   # install/repair ciblé selon App
+├── MariaDb.php # main installation/migration when the app is activated
+├── *.sql # targeted migrations (if necessary)
+└── utility scripts *.php # install/repair targeted according to App
 ```
 
-Règles de rédaction :
-- Utiliser `CREATE TABLE IF NOT EXISTS` — jamais `CREATE TABLE` seul
-- Encapsuler les suppressions destructives dans des scripts explicitement dédiés
-- Schéma rétrocompatible — pas de `DROP COLUMN` sans migration explicite
-- Prefix de table : `clic_` (convention projet)
-- Encoding : `CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
-
-Exemple minimal de création :
+Writing rules:
+- Use `CREATE TABLE IF NOT EXISTS` — never `CREATE TABLE` alone
+- Encapsulate destructive deletions in explicitly dedicated scripts
+- Backwards compatible schema — no `DROP COLUMN` without explicit migration
+- Table prefix: `clic_` (project convention)
+- Encoding: `CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+  Minimal example of creation:
 ```sql
-CREATE TABLE IF NOT EXISTS `clic_my_feature` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `label` VARCHAR(255) NOT NULL DEFAULT '',
-  `status` TINYINT(1) NOT NULL DEFAULT 1,
-  `date_added` DATETIME NOT NULL,
-  `date_modified` DATETIME,
-  PRIMARY KEY (`id`)
+CREATE TABLE IF NOT EXISTS `clic_my_feature` ( 
+`id` INT UNSIGNED NOT NULL AUTO_INCREMENT, 
+`label` VARCHAR(255) NOT NULL DEFAULT '', 
+`status` TINYINT(1) NOT NULL DEFAULT 1, 
+`date_added` DATETIME NOT NULL, 
+`date_modified` DATETIME, 
+PRIMARY KEY (`id`)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 ---
 
-## 5. Schéma canonique — Core/ClicShopping/Schema/MariaDb/
+## 5. Canonical schema — Core/ClicShopping/Schema/MariaDb/
 
-`Core/ClicShopping/Schema/MariaDb/` contient la définition complète de toutes les tables pour
-une installation fraîche. C'est la **source de vérité** du schéma global.
+`Core/ClicShopping/Schema/MariaDb/` contains the complete definition of all tables for
+a fresh installation. This is the **source of truth** of the overall schema.
 
-Usage pour les agents :
-- Lire avant de créer une nouvelle table (éviter les doublons ou conflits de nommage)
-- Vérifier la structure des tables existantes avant d'écrire des requêtes
-- Ne jamais modifier ces fichiers sans accord du propriétaire
+Use for agents:
+- Read before creating a new table (avoid duplicates or naming conflicts)
+- Check the structure of existing tables before writing queries
+- Never modify these files without the human coder consent
 
 ---
 
-## 6. Tables d'embedding AI
+## 6. AI embedding tables
 
-Ces tables sont gérées par le pipeline AI — ne pas les modifier manuellement.
+These tables are managed by the AI pipeline — do not modify them manually.
 
-### Tables d'embedding présentes dans le schéma
+### Embedding tables present in the schema
 
-| Table | Entité |
+| Table | Entity |
 |---|---|
-| `clic_products_embedding` | Produits |
-| `clic_categories_embedding` | Catégories |
-| `clic_reviews_embedding` | Avis clients |
-| `clic_reviews_sentiment_embedding` | Sentiment des avis |
-| `clic_orders_embedding` | Commandes |
-| `clic_pages_manager_embedding` | Pages CMS |
-| `clic_manufacturers_embedding` | Fabricants |
-| `clic_suppliers_embedding` | Fournisseurs |
-| `clic_return_orders_embedding` | Retours commandes |
-| `clic_conversation_memory_embedding` | Mémoire conversationnelle |
-| `clic_correction_pattern_embedding` | Patterns de correction |
+| `clic_products_embedding` | Products |
+| `clic_categories_embedding` | Categories |
+| `clic_reviews_embedding` | Customer reviews |
+| `clic_reviews_sentiment_embedding` | Review Sentiment |
+| `clic_orders_embedding` | Orders |
+| `clic_pages_manager_embedding` | CMS Pages |
+| `clic_manufacturers_embedding` | Manufacturers |
+| `clic_suppliers_embedding` | Suppliers |
+| `clic_return_orders_embedding` | Order returns |
+| `clic_conversation_memory_embedding` | Conversational memory |
+| `clic_correction_pattern_embedding` | Correction Patterns |
 
-### Structure commune
+### Common structure
 
 ```sql
-CREATE TABLE `clic_*_embedding` (
-  `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `entity_id`     INT UNSIGNED NOT NULL,        -- FK vers table source
-  `embedding`     VECTOR(3072) NOT NULL,         -- vecteur sémantique (certaines tables sont en 1536)
-  `content`       TEXT NOT NULL,                 -- texte original indexé
-  `metadata`      JSON,                          -- enrichissement (v4.11+)
-  `chunknumber`   INT UNSIGNED NOT NULL DEFAULT 0, -- numéro de chunk (128 tokens)
-  `date_modified` DATETIME NOT NULL,
-  PRIMARY KEY (`id`),
-  VECTOR INDEX `vec_idx` (`embedding`)
+CREATE TABLE `clic_*_embedding` ( 
+`id` INT UNSIGNED NOT NULL AUTO_INCREMENT, 
+`entity_id` INT UNSIGNED NOT NULL, -- FK to source table 
+`embedding` VECTOR(3072) NOT NULL, -- semantic vector
+`content` TEXT NOT NULL, -- indexed original text 
+`metadata` JSON, -- enrichment (v4.11+) 
+`chunknumber` INT UNSIGNED NOT NULL DEFAULT 0, -- Sequential index of this chunk within the entity (chunk size = 128 tokens) 
+`date_modified` DATETIME NOT NULL, 
+PRIMARY KEY (`id`), 
+VECTOR INDEX `vec_idx` (`embedding`)
 ) ENGINE=InnoDB;
 ```
 
-### Règles embedding
+### Embedding rules
 
-- Dimensions vectorielles : respecter le schéma existant (3072 et 1536 selon table)
-- Génération via les crons existants — ne pas recréer ce pipeline
-- Ne pas modifier la structure sans accord du propriétaire
-- `metadata` JSON est optionnel mais doit rester présent dans le schéma
-
----
-
-## 7. Migrations et mises à jour de schéma
-
-### Règles générales
-
-- Tout changement de schéma doit être **rétrocompatible**
-- Ne jamais supprimer une colonne sans vérifier toutes les dépendances
-- Ne jamais renommer une table ou colonne existante sans script de migration
-- Préférer `ADD COLUMN` + migration de données plutôt que `MODIFY COLUMN` destructif
-
-### sql_upgrade/ — usage correct
-
-`sql_upgrade/` contient des fichiers texte **documentaires** listant les changements SQL
-entre deux versions. Ce n'est pas un répertoire de scripts exécutables automatiquement.
-
-Usage attendu :
-- L'utilisateur lit `sql_upgrade/updateX_XX.txt` pour comprendre quels ALTER TABLE appliquer
-- L'agent ne doit **jamais** générer de fichier dans ce répertoire
+- Vector dimensions: respect the existing diagram (3072)
+- Generation via existing crons — do not recreate this pipeline
+- Do not modify the sql structure without agreement from the human coder
+- `metadata` JSON is optional but must remain present in the schema
 
 ---
 
-## 8. Tables de sécurité et monitoring
+## 7. Migrations and Schema Updates
 
-Ces tables sont gérées par les couches sécurité et monitoring — ne pas les modifier :
+### General rules
 
-| Table | Rôle |
-|---|---|
-| `clic_api_rate_limit` | Suivi des requêtes par identifiant + timestamp |
-| `clic_api_failed_attempts` | Tentatives de login échouées |
-| `rag_security_events` | Audit des événements de sécurité AI |
-| `clic_mcp_performance_history` | Métriques MCP (latence, uptime, erreurs) |
+- Any schema change must be **backwards compatible**
+- Never delete a column without checking all dependencies
+- Never rename an existing table or column without a migration script
+- Prefer `ADD COLUMN` + data migration rather than destructive `MODIFY COLUMN`
+
+### sql_upgrade/ — correct usage
+
+`sql_upgrade/` contains **documentary** text files listing SQL changes
+between two versions. This is not a directory of automatically executable scripts.
+
+Expected use:
+- User reads `sql_upgrade/updateX_XX.txt` to understand which ALTER TABLEs to apply
+- The agent must **never** generate a file in this directory
 
 ---
 
-## 9. Interdictions absolues
+## 8. Security and monitoring tables
+
+These tables are managed by the security and monitoring layers — do not modify them:
+
+| Table                          | Role |
+|--------------------------------|---|
+| `clic_api_rate_limit`          | Tracking requests by identifier + timestamp |
+| `clic_api_failed_attempts`     | Failed login attempts |
+| `clic_rag_security_events`     | AI Security Event Audit |
+| `clic_mcp_performance_history` | MCP metrics (latency, uptime, errors) |
+
+---
+
+## 9. Absolute prohibitions
 
 ```
-✗ Connexion PDO directe hors du service Db du Registry
-✗ MySQL 9.x (incompatible VECTOR)
+✗ Direct PDO connection outside the Registry Db service
+✗ MySQL 9.x (VECTOR incompatible)
 ✗ MariaDB < 11.7
-✗ DROP TABLE automatique hors script de maintenance explicite
-✗ SQL applicatif dans sql_upgrade/
-✗ Modifier la structure des tables *_embedding sans accord
-✗ Modifier une dimension vectorielle existante sans validation propriétaire
-✗ CREATE TABLE sans IF NOT EXISTS
-✗ Schéma non rétrocompatible
-✗ Prefix de table différent de clic_
+✗ Automatic DROP TABLE outside explicit maintenance script
+✗ Application SQL in sql_upgrade/
+✗ Modify the structure of *_embedding tables without human coder agreement
+✗ Modify an existing vector dimension without without human coder agreement
+✗ CREATE TABLE without IF NOT EXISTS
+✗ Schema not backwards compatible
+✗ Table prefix different from clic_
 ```
 
 ---
 
-## 10. Références
+## 10. References
 
-- Architecture framework : `ARCHITECTURE.md`
-- Pipeline embeddings : `AI_SYSTEM.md` §6
-- Sécurité tables audit : `SECURITY.md` §5
-- DeepWiki DB : https://deepwiki.com/ClicShopping/ClicShopping/2.2-database-schema-and-version-migrations
+- Architecture framework: `ARCHITECTURE.md`
+- Pipeline embeddings: `AI_SYSTEM.md` §6
+- Security audit tables: `SECURITY.md` §5
+- DeepWiki DB: https://deepwiki.com/ClicShopping/ClicShopping/2.2-database-schema-and-version-migrations
+- Db architecture : https://github.com/ClicShopping/ClicShopping/wiki/Tech-Database

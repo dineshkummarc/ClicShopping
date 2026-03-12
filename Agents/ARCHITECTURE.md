@@ -1,231 +1,274 @@
 # ARCHITECTURE.md — ClicShopping AI v4.20+
 
-> Architecture core du framework PHP.
-> Règles agents : `AGENTS.md` | AI : `AI_SYSTEM.md` | DB : `DATABASE.md` | Sécurité : `SECURITY.md`
+> Core architecture of the PHP framework.
+> Agent rules: `AGENTS.md` | AI: `AI_SYSTEM.md` | DB: `DATABASE.md` | Security: `SECURITY.md`
 
 ---
 
-## 1. Vue d'ensemble
+## 1. Overview
 
-ClicShopping AI est organisé en deux sites applicatifs (`Shop` et `ClicShoppingAdmin`)
-partageant un core commun. La couche AI est agnostique et organisé pour utiliser l approche par domaine métier — voir `AI_SYSTEM.md`.
+ClicShopping AI is organized into two application sites (`Shop` and `ClicShoppingAdmin`)
+sharing a common core. The AI ​​layer is agnostic and organized to use the business domain approach — see `AI_SYSTEM.md`.
 
 ```
-AGENTS.md          ← règles opérationnelles pour agents LLM
-ARCHITECTURE.md    ← framework core, bootstrap, hooks, templates, namespaces
-AI_SYSTEM.md       ← agents, RAG, LLM providers, embeddings
-DATABASE.md        ← MariaDB, schéma SQL, routing, migrations
-SECURITY.md        ← 10 couches sécurité, guardrails, GDPR
+AGENTS.md ← operational rules for LLM agents
+ARCHITECTURE.md ← framework core, bootstrap, hooks, templates, namespaces
+AI_SYSTEM.md ← agents, RAG, LLM providers, embeddings
+DATABASE.md ← MariaDB, SQL schema, routing, migrations
+SECURITY.md ← 10 layers of security, guardrails, GDPR
 ```
 
 ---
 
-## 2. Bootstrap et routing
+## 2. Bootstrap and routing
 
-Flux d'initialisation — NE PAS altérer :
+Initialization flow — DO NOT tamper with:
 
 ```
-index.php
-  → CLICSHOPPING::initialize()
-  → Détermination du site (Shop | ClicShoppingAdmin)
-  → Services core : Db, Session, Language
-  → setPage()  — résolution du contrôleur via paramètre URL
-  → Exécution contrôleur (implémente PagesInterface)
+index.php 
+→ CLICSHOPPING::initialize() 
+→ Site determination (Shop | ClicShoppingAdmin) 
+→ Core services: Db, Session, Language 
+→ setPage() — controller resolution via URL parameter 
+→ Controller execution (implements PagesInterface)
 ```
 
-Structure d'une page contrôleur :
+Application Structure
+
+```
+clicshoppingAI/
+├── ClicShoppingAdmin/        # Administrative backend interface
+├── Core/                     # Core application framework
+├── api/                      # REST API endpoints
+├── unit_test/                # Comprehensive testing suite
+├── install/                  # Installation and setup scripts
+├── docs/                     # Documentation about ClicShopping
+├── ext/                      # Asset - javascript for all application...
+├── sources/                  # front office templates and assets for templates
+├── sql_upgrade/                  # sql update for human to update only sql change inside the db
+├── composer.json             # PHP dependencies
+└── index.php                 # Main application entry point
+
+```
+
+Structure of a controller page:
 ```
 Core/ClicShopping/Sites/{Site}/Pages/{PageName}/
-├── {PageName}.php     # Implémente PagesInterface
-└── Actions/           # Actions de la page (POST, traitements)
+├── {PageName}.php # Implements PagesInterface
+└── Actions/ # Page actions (POST, processing)
 ```
 
 ---
 
-## 3. Registry de services
+## 3. Service Registry
 
-Pattern de registre central — accès uniforme à tous les services.
+Central Registry Pattern — uniform access to all services.
 
 ```php
-$db  = \ClicShopping\OM\Registry::get('Db');
-\ClicShopping\OM\Registry::set('MonService', new MonService());
+$db = \ClicShopping\OM\Registry::get('Db');
+\ClicShopping\OM\Registry::set('MyService', new MyService());
 ```
 
-Services core disponibles :
+Core services available:
 
-| Clé | Rôle |
+| Key | Role |
 |---|---|
-| `Db` | Service DB basé sur `\ClicShopping\OM\Db` (extends `PDO`) |
+| `Db` | DB service based on `\ClicShopping\OM\Db` (extends `PDO`) |
 | `Session` | Redis / Database / File |
-| `Language` | Support multilingue |
-| `Cookies` | Gestion cookies |
-| `Hooks` | Système d'événements |
-| `Service` | Conteneur modulaire |
-| `Template` | Rendu front-office (Shop) |
-| `TemplateAdmin` | Rendu back-office (ClicShoppingAdmin) |
+| `Language` | Multilingual support |
+| `Cookies` | Cookie management |
+| `Hooks` | Events system |
+| `Service` | Modular container |
+| `Template` | Front-office rendering (Shop) |
+| `TemplateAdmin` | Back-office rendering (ClicShoppingAdmin) |
 
-> **Registry vs DI :** ClicShopping utilise le Registry comme service locator.
-> Ne pas créer de conteneur DI alternatif — utiliser `Registry::set/get`.
+> **Registry vs DI:** ClicShopping uses the Registry as a locator service.
+> Do not create an alternative DI container — use `Registry::set/get`.
 
 ---
 
-## 4. Système de Hooks
+## 4. Hooks system
 
-Mécanisme principal d'extensibilité. Toujours évaluer les hooks avant toute autre approche.
+Primary scalability mechanism. Always evaluate hooks before any other approach.
 
 ```php
 // Core/ClicShopping/Apps/{Vendor}/{App}/Module/Hooks/{Site}/{HookName}/{HookName}.php
 namespace ClicShopping\Apps\Vendor\App\Module\Hooks\Shop\MyHook;
 
 class MyHook
-{
-    public function execute(): string
-    {
-        return '<!-- contenu injecté -->';
-    }
+{ 
+public function execute(): string 
+{ 
+return '<!-- injected content -->'; 
+}
 }
 ```
 
-Règles :
-- Enregistrement via le mécanisme existant — pas d'appel manuel
-- Ne pas court-circuiter le loader de hooks
-- Documenter les points d'extension utilisés dans le commit
+Rules:
+- Registration via existing mechanism included — no manual call - Core/ClicShopping/OM/Hooks.php
+- Do not short-circuit the hook loader
+- Document the extension points used in the commit
 
-Découvrir les hooks disponibles dans une portée :
+Discover the hooks available in a scope:
 ```bash
 grep -r "Hooks" Core/ClicShopping/Sites/{Site}/ --include="*.php" -l
 ```
 
 ---
-
-## 5. Namespaces et autoload
+## 5. Namespaces and autoload
 
 ```
-ClicShopping\OM\                   → Core/ClicShopping/OM/
-ClicShopping\Apps\{Vendor}\{App}\  → Core/ClicShopping/Apps/{Vendor}/{App}/
-ClicShopping\Custom\               → Core/ClicShopping/Custom/
+ClicShopping\OM\ → Core/ClicShopping/OM/
+ClicShopping\Apps\{Vendor}\{App}\ → Core/ClicShopping/Apps/{Vendor}/{App}/
+ClicShopping\Custom\ → Core/ClicShopping/Custom/
 ```
 
-Le chargement des classes est assuré par `CLICSHOPPING::autoload` (core) et Composer pour `External/vendor`.
-Ne jamais créer de mécanisme d'autoload alternatif.
+Class loading is handled by `CLICSHOPPING::autoload` (core) and Composer for `External/vendor`.
+Never create an alternative autoload mechanism.
 
 ---
 
 ## 6. Templates — Front-office vs Back-office
 
-Documentation complète : **`TEMPLATES.md`**
+Complete documentation: **`TEMPLATES.md`**
 
-Résumé des points clés pour la navigation dans ARCHITECTURE.md :
+Summary of key points for navigating ARCHITECTURE.md:
 
-| Aspect | Shop (Front-office) | ClicShoppingAdmin (Back-office) |
+| Appearance | Shop (Front office) | ClicShoppingAdmin (Back-office) |
 |---|---|---|
 | Service Registry | `Template` | `TemplateAdmin` |
-| Résolution | App → thème global (fallback) | App uniquement — pas de fallback |
-| Cache | Oui — pages catalogue | Non — données fraîches |
-| SEO | Critique | Non applicable |
+| Resolution | App → global theme (fallback) | App only — no fallback |
+| Cache | Yes — catalog pages | No — fresh data |
+| SEO | Review | Not applicable |
 
-Règle cible pour tout nouveau code : **aucune logique métier, aucun accès DB, aucune chaîne hardcodée.**  
-Note : certains templates de pages historiques (`Sites/*/Pages/*/templates`) contiennent de la logique d'orchestration.
-Voir `TEMPLATES.md` pour les structures, helpers, SEO, i18n et checklist complète.
+The business logic for FrontOffice are (`Sites/*/Pages/`) and contain orchestration logic. the html templates are (`sources/`) and contain the visual logic and modules
+See `TEMPLATES.md` for structures, helpers, SEO, i18n and complete checklist.
 
 ---
 
-## 7. Langues — Résolution des couches
+## 7. Languages — Layer Resolution
 
-| Couche | Chemin | Portée |
+| Layer | Path | Scope |
 |---|---|---|
-| **App / Module** | `Core/ClicShopping/Apps/*/languages/{lang}/` | Priorité haute pour les Apps (Shop et Admin) |
-| **Admin core** | `ClicShoppingAdmin/Core/languages/{lang}/` | Libellés globaux du back-office |
-| **Global / Thème** | `sources/languages/{lang}/` | Textes transversaux et fallback front-office |
+| **App / Module** | `Core/ClicShopping/Apps/*/languages/{lang}/` | High priority for Apps (Shop and Admin) |
+| **Admin core** | `ClicShoppingAdmin/Core/languages/{lang}/` | Back office global labels |
+| **Overall / Theme** | `sources/languages/{lang}/` | Transversal texts and front-office fallback |
 
-Règles :
-- Aucune chaîne visible hardcodée dans PHP ou templates
-- Compatibilité minimum : EN + FR
-- Format conforme aux fichiers existants dans la portée cible
+Rules:
+- No visible hardcoded string in PHP or templates
+- Minimum compatibility: EN + FR
+- Format consistent with existing files in target scope
 
 ---
 
 ## 8. Custom/ — Override core
 
-`Core/ClicShopping/Custom/` permet de surcharger `OM/` sans le modifier directement.
+`Core/ClicShopping/Custom/` allows you to override `OM/` without modifying it directly.
 
-### Ordre de priorité d'extensibilité
+### Scalability Priority Order
 
 ```
-1. Hook existant     → solution prioritaire
-2. Module            → Core/ClicShopping/Apps/*/Module/, auto-contenu
-3. Nouvelle App      → Core/ClicShopping/Apps/{Vendor}/{AppName}/
-4. Custom/           → override core, si 1-3 impossibles
-5. OM/ direct        → INTERDIT sans accord du propriétaire
+1. Existing hook → priority solution
+2. Module → Core/ClicShopping/Apps/*/Module/, self-content
+3. New App → Core/ClicShopping/Apps/{Vendor}/{AppName}/
+4. Custom/ → override core, if 1-3 impossible
+5. OM/ direct → PROHIBITED without agreement from the human coder
 ```
 
 ### Structure
 
 ```
 Core/ClicShopping/Custom/
-├── OM/      # Surcharge classes kernel (extends obligatoire)
-├── Conf/    # Configuration custom
-├── Sites/   # Surcharge bootstrap Shop ou Admin
-└── Schema/  # Tables supplémentaires (fichiers *.txt)
+├── OM/ # Overloading kernel classes (extends required)
+├── Conf/ # Custom configuration
+├── Sites/ # Overload bootstrap Shop or Admin
+└── Schema/ # Additional tables (*.txt files)
 ```
 
-### Exemple
+A db schema example used during the installation:
+```
+api_ip_id int(11) not_null auto_increment comment(Primary key - unique identifier for each API IP whitelist entry)
+api_id int(11) not_null comment(FK to api table - API configuration this IP is allowed for)
+ip varchar(40) not_null comment(Whitelisted IP address - IPv4 or IPv6 format)
+comment varchar(255) default null comment(Optional description of this IP whitelist entry)
+--
+primary api_ip_id
+idx_api_ip_id api_ip_id
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci
+comment IP address whitelist for API access control and security
+```
+
+
+
+### Example
 
 ```php
 namespace ClicShopping\Custom\OM;
 
 class Http extends \ClicShopping\OM\Http
-{
-    public private(set) string $status = 'idle'; // PHP 8.4
+{ 
+public private(set) string $status = 'idle'; //PHP 8.4 
 
-    public function get(string $url, array $options = []): string
-    {
-        return parent::get($url, $options);
-    }
+public function get(string $url, array $options = []): string 
+{ 
+return parent::get($url, $options); 
+}
 }
 
-// Enregistrement
+// Registration
 \ClicShopping\OM\Registry::set('Http', new \ClicShopping\Custom\OM\Http());
 ```
 
-Règles Custom/ :
-- `extends` obligatoire — jamais de copier-coller de code core
-- Namespace : `ClicShopping\Custom\{Sous-espace}\{Classe}`
-- Ne pas briser la rétrocompatibilité des modules existants
+Custom Rules/:
+- `extends` required — never copy and paste core code
+- Namespace: `ClicShopping\Custom\{Subspace}\{Class}`
+- Do not break backward compatibility of existing modules
 
 ---
 
-## 9. Cache — Architecture 5 tiers
+## 9. Cache — 5-tier architecture
 
-| Tier | Technologie | Portée |
+| Tier | Technology | Scope |
 |---|---|---|
 | 1 | OpCache | Bytecode PHP |
-| 2 | Cache statique | Pages catalogue Shop pré-rendues |
-| 3 | Memcached | Cache distribué multi-serveurs |
-| 4 | Redis | Sessions + données applicatives |
-| 5 | APCu | Cache espace utilisateur |
+| 2 | Static cache | Pre-rendered Shop catalog pages |
+| 3 | Memcached | Multi-server distributed cache |
+| 4 | Redis | Sessions + application data |
+| 5 | APCu | User space cache |
 
-Ne pas introduire de sixième mécanisme sans accord explicite.
+Do not introduce a sixth mechanism without explicit agreement.
 
 ---
 
 ## 10. Sessions
 
-Trois backends avec fallback automatique :
-1. **Redis** — préféré. `localhost:6379`, prefix `sess_`, TTL = `session.gc_maxlifetime`
-2. **Database** — persistant, stockage en table
-3. **File** — fallback PHP natif
+Four backends with automatic fallback:
+1 **Database** — persistent, table storage
+2 **File** — native PHP fallback
+3 **Memcached** — option to be activated - distributed cache, TTL = `session.gc_maxlifetime`
+4 **Redis** — option to be activated - `localhost:6379`, prefix `sess_`, TTL = `session.gc_maxlifetime`
+
 
 ---
 
-## 11. Références croisées
+## 11. Cross-references
 
-| Sujet | Fichier |
-|---|---|
-| Règles opérationnelles agents | `AGENTS.md` |
-| Système AI, agents, RAG, LLM | `AI_SYSTEM.md` |
-| Base de données, SQL, embeddings | `DATABASE.md` |
-| Sécurité, guardrails, GDPR | `SECURITY.md` |
-| Templates, rendu, SEO, i18n | `TEMPLATES.md` |
-| Wiki officiel | https://github.com/ClicShopping/ClicShopping/wiki |
-| DeepWiki | https://deepwiki.com/ClicShopping/ClicShopping |
+| Subject                                               | File |
+|-------------------------------------------------------|---|
+| Agent operational rules                               | `AGENTS.md` |
+| AI system, agents, RAG, LLM                           | `AI_SYSTEM.md` |
+| Database, SQL, embeddings                             | `DATABASE.md` |
+| Security, guardrails, GDPR                            | `SECURITY.md` |
+| Templates, rendering, SEO, i18n                       | `TEMPLATES.md` |
+| Official Wiki                                         | https://github.com/ClicShopping/ClicShopping/wiki |
+| DeepWiki                                              | https://deepwiki.com/ClicShopping/ClicShopping |
+| Tech Framework - Core framework architecture          | https://github.com/ClicShopping/ClicShopping/wiki/Tech--Framework |
+| Modern App Architecture - Modern development patterns | https://github.com/ClicShopping/ClicShopping/wiki/Tech-Modern-App-Architecture |
+| Tech Configuration - Configuration management system  | https://github.com/ClicShopping/ClicShopping/wiki/Tech-Configuration |
+| Tech Database - Database layer and ORM                | https://github.com/ClicShopping/ClicShopping/wiki/Tech-Database |
+| Tech Registry - Service locator pattern               | https://github.com/ClicShopping/ClicShopping/wiki/Tech-Registry |
+| Tech Hooks - Hook system architecture (technical)     | https://github.com/ClicShopping/ClicShopping/wiki/Tech-Hooks |
+| Tech Cache - Multi-layer caching system               | https://github.com/ClicShopping/ClicShopping/wiki/Tech-Cache  |

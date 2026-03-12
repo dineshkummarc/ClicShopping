@@ -1,340 +1,386 @@
 # TEMPLATES.md — ClicShopping v4.20+
 
-> Architecture de rendu — front-office (Shop) et back-office (ClicShoppingAdmin).  
-> Les deux contextes ont des philosophies fondamentalement différentes.  
-> Règles agents : `AGENTS.md` — Architecture core : `ARCHITECTURE.md`
+> Rendering architecture — front-office (Shop) and back-office (ClicShoppingAdmin).
+> The two contexts have fundamentally different philosophies.
+> Agent rules: `AGENTS.md` — Core architecture: `ARCHITECTURE.md`
 
 ---
 
-## 1. Principe fondamental
+## 1. Fundamental principle
 
-**Un template ne fait que rendre.** Aucune logique métier, aucun accès DB, aucune chaîne
-hardcodée. Toutes les données arrivent préparées depuis le contrôleur ou le module.
+**A template only renders.** No business logic, no DB access, no strings
+hardcoded. All data arrives prepared from the controller or module.
 
-Note de lecture du core actuel : certains templates de pages historiques sous
-`Core/ClicShopping/Sites/*/Pages/*/templates` incluent de la logique d'orchestration.
-Pour tout nouveau développement, conserver la règle "render-only".
+Reading note of the current core: certain historical page templates under
+`Core/ClicShopping/Sites/*/Pages/*/templates` include orchestration logic.
+For any new development, keep the "render-only" rule.
 
 ```
-✗ Logique métier ou calcul
-✗ Accès direct à la base de données
-✗ Chaînes visibles hardcodées
-✗ Redirection, manipulation de session
-✗ Appel LLM ou service AI
-✓ Affichage de variables préparées
-✓ Boucles d'affichage sur tableaux construits en amont
-✓ Includes de sous-composants via le moteur
-✓ Échappement systématique des sorties
+✗ Business logic or calculation
+✗ Direct access to the database
+✗ Hardcoded visible channels
+✗ Redirection, session manipulation
+✗ LLM call or AI service
+✓ Display of prepared variables
+✓ Display loops on tables built upstream
+✓ Includes sub-components via the engine
+✓ Systematic escapement of outputs
 ```
 
 ---
 
-## 2. Vue d'ensemble — séparation volontaire HTML / logique
+## 2. Overview — voluntary HTML/logical separation
 
-La séparation entre les fichiers HTML et la logique applicative est **architecturalement
-intentionnelle** pour permettre à l'utilisateur de créer ou modifier des thèmes librement,
-sans toucher au code PHP métier.
+The separation between HTML files and application logic is **architecturally
+intentional** to allow the user to create or modify themes freely,
+without touching the business PHP code.
 
 ```
-Core/ClicShopping/Sites/Shop/        ← controllers et templates de pages
-                                      (Pages/*/templates)
+Core/ClicShopping/Sites/Shop/ ← controllers and page templates 
+(Pages/*/templates)
 
-sources/template/{Theme}/   ← fichiers HTML du thème choisi par l'utilisateur
-                              totalement séparé de la logique
+sources/template/{Theme}/ ← HTML files of the theme chosen by the user 
+totally separated from logic
 
-Core/ClicShopping/Apps/{Vendor}/{App}/  ← une App peut exposer des pages Shop
-                                          via Sites/Shop/ (déclaré en JSON)
+Core/ClicShopping/Apps/{Vendor}/{App}/ ← an App can expose Shop pages 
+via Sites/Shop/ (declared in JSON)
+```
+json example:
+
+
+```
+{
+  "title": "Categories App",
+  "app": "Categories",
+  "vendor": "Catalog",
+  "version": "1.0.3",
+  "req_core_version": "4.0",
+  "license": "GPL-2",
+  "authors": [
+    {
+      "name": "ClicShopping",
+      "company": "ClicShopping",
+      "email": "admin@clicshopping.org",
+      "website": "https://www.clicshopping.org"
+    }
+  ],
+  "modules": {
+    "HeaderTags": {
+      "Categories": "Module\\HeaderTags\\Categories"
+    },
+    "Hooks": {
+      "ClicShoppingAdmin/Langues": {
+        "DeleteConfirm": "Module\\Hooks\\ClicShoppingAdmin\\Langues\\DeleteConfirm",
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Langues\\Insert"
+      },
+      "ClicShoppingAdmin/Stats": {
+        "StatsCategories": "Module\\Hooks\\ClicShoppingAdmin\\Stats\\StatsCategories"
+      },
+      "ClicShoppingAdmin/Products": {
+        "ProductsContentTab1": "Module\\Hooks\\ClicShoppingAdmin\\Products\\ProductsContentTab1",
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Update"
+      },
+      "ClicShoppingAdmin/DashboardShortCut": {
+        "DashboardShortCut": "Module\\Hooks\\ClicShoppingAdmin\\DashboardShortCut\\DashboardShortCutCategories"
+      }
+    }
+  },
+  "routes": {
+    "ClicShoppingAdmin": "Sites\\ClicShoppingAdmin\\Pages\\Home"
+  }
+}
 ```
 
-**Ne jamais déplacer des templates de thème (`sources/template/`) dans `Core/ClicShopping/Sites/Shop/`.**  
-**Ne jamais mettre de logique applicative dans `sources/template/`.**
+**Never move theme templates (`sources/template/`) to `Core/ClicShopping/Sites/Shop/`.**
+**Never put application logic in `sources/template/`.**
 
 ---
 
-## 3. Front-office (Shop) — architecture détaillée
+## 3. Front office (Shop) — detailed architecture
 
-### 3.1 Rôle de `sources/template/` — Default et thèmes custom
+### 3.1 Role of `sources/template/` — Default and custom themes
 
-`Default` est le **thème de base livré avec le core**. Tout autre thème **surcharge
-`Default` fichier par fichier** : si un fichier n'existe pas dans le thème custom,
-le système utilise automatiquement le fichier correspondant de `Default`.
-`Default` devient donc le **fallback** dès qu'un thème custom est actif.
+`Default` is the **basic theme delivered with core**. Any other theme **overload
+`Default` file by file**: if a file does not exist in the custom theme,
+the system automatically uses the corresponding `Default` file.
+`Default` therefore becomes the **fallback** as soon as a custom theme is active.
 
-Le choix du thème actif est contrôlé par l'utilisateur via l'interface admin.
+The choice of active theme is controlled by the user via the admin interface.
 
 ```
 sources/template/
-├── Default/                       ← thème de base — fallback universel
-│   ├── header.php                 # Header global ← racine de Default/
-│   ├── footer.php                 # Footer global ← racine de Default/
-│   ├── css/                       # CSS organisé par langue
-│   │   └── {lang}/               # Répertoire par langue (ex: en/, fr/)
-│   │       ├── compressed_css.php # Point d'entrée — lit les sous-répertoires et compresse
-│   │       ├── general/           # Styles globaux : stylesheet, bootstrap, appels généraux
-│   │       └── modules_{module_name}/ # CSS spécifique à un module — nommé selon le module
-│   │           └── {module_name}.css  # ex: pi_products_info_also_purchased.css
-│   ├── javascript/                # JavaScript du thème
-│   │   └── *.js
-│   ├── files/                     # Gabarit de la page (structure HTML globale)
-│   │   └── *.php
-│   ├── modules/                   # Templates HTML des modules
-│   │   ├── {module_name}/
-│   │   │   ├── content/           # HTML du module (template fixe)
-│   │   │   │   └── {module_name}.php
-│   │   │   └── template_html/    # HTML listing — uniquement si le module affiche une liste
-│   │   │       └── {module_name}.php
-│   │   └── ...
-│   └── images/
+├── Default/ ← basic theme — universal fallback
+│ ├── header.php # Global header ← root of Default/
+│ ├── footer.php # Footer global ← root of Default/
+│ ├── css/ # CSS organized by language
+│ │ └── {lang}/ # Directory by language (e.g.: en/, fr/)
+│ │ ├── compressed_css.php # Entry point — reads subdirectories and compresses
+│ │ ├── general/ # Global styles: stylesheet, bootstrap, general calls
+│ │ └── modules_{module_name}/ # Module-specific CSS — named according to the module
+│ │ └── {module_name}.css # ex: pi_products_info_also_purchased.css
+│ ├── javascript/ # Theme JavaScript
+│ │ └── *.js
+│ ├── files/ # Page template (global HTML structure)
+│ │ └── *.php
+│ ├── modules/ # HTML templates for modules
+│ │ ├── {module_name}/
+│ │ │ ├── content/ # HTML of the module (fixed template)
+│ │ │ │ └── {module_name}.php
+│ │ │ └── template_html/ # HTML listing — only if the module displays a list
+│ │ │ └── {module_name}.php
+│ │ └── ...
+│ └── images/
 │
-└── {CustomTheme}/                 ← thème custom choisi par l'utilisateur
-    ├── header.php                 # Si présent, surcharge Default/header.php
-    ├── footer.php                 # Si présent, surcharge Default/footer.php
-    ├── css/                       # Surcharge le CSS de Default par langue
-    ├── javascript/                # Surcharge le JS de Default
-    ├── files/                     # Surcharge le gabarit de Default
-    ├── modules/                   # Surcharge les modules de Default
-    │   └── ...                    # Tout fichier absent → fallback sur Default/
-    └── images/
+└── {CustomTheme}/ ← custom theme chosen by the user 
+├── header.php # If present, overload Default/header.php 
+├── footer.php # If present, overload Default/footer.php 
+├── css/ # Override Default CSS by language 
+├── javascript/ # Override Default JS 
+├── files/ # Overrides the Default template 
+├── modules/ # Override Default modules 
+│ └── ... # Any file missing → fallback to Default/ 
+└── images/
+```
+**Resolution rule:**
+```
+1. sources/template/{CustomTheme}/{file} ← priority — active custom theme
+2. sources/template/Default/{file} ← automatic fallback if missing from custom
 ```
 
-**Règle de résolution :**
-```
-1. sources/template/{CustomTheme}/{fichier}   ← priorité — thème custom actif
-2. sources/template/Default/{fichier}         ← fallback automatique si absent du custom
-```
+A custom theme should only contain the files that it actually overloads.
+Do not copy the entire `Default/` into a custom theme.
 
-Un thème custom ne doit contenir que les fichiers qu'il surcharge réellement.
-Ne pas copier l'intégralité de `Default/` dans un thème custom.
+### 3.2 Critical distinction: fixed template vs listing
 
-### 3.2 Distinction critique : template fixe vs listing
+Each module in `modules/` has its own subdirectory, with two subfolders
+depending on the type of rendering — do not confuse them.
 
-Chaque module dans `modules/` a son propre sous-répertoire, avec deux sous-dossiers
-selon le type de rendu — ne pas les confondre.
-
-| Type | Sous-répertoire | Usage |
+| Type | Subdirectory | Usage |
 |---|---|---|
-| **Header / Footer** | `Default/header.php` et `Default/footer.php` | À la **racine de `Default/`** — hors `modules/` |
-| **Template fixe** | `modules/{module_name}/content/` | HTML du module — rendu d'un bloc unique |
-| **Template listing** | `modules/{module_name}/template_html/` | HTML listing — uniquement quand le module affiche une liste |
+| **Header / Footer** | `Default/header.php` and `Default/footer.php` | At the **root of `Default/`** — outside `modules/` |
+| **Fixed template** | `modules/{module_name}/content/` | Module HTML — single block rendering |
+| **Template listing** | `modules/{module_name}/template_html/` | HTML listing — only when the module displays a list |
 
-Le sous-répertoire `template_html/` n'est présent que si le module gère un listing.
-Un module simple n'a que `content/`. Ne pas créer `template_html/` par défaut.
+The `template_html/` subdirectory is only present if the module manages a listing.
+A simple module only has `content/`. Do not create `template_html/` by default.
 
-Un agent qui place le HTML de listing dans `content/` au lieu de `template_html/` cassera le rendu.
-Un agent qui place header.php dans `modules/` au lieu de la racine de `Default/` cassera le rendu.
+An agent that places listing HTML in `content/` instead of `template_html/` will break rendering.
+An agent that places header.php in `modules/` instead of the root of `Default/` will break rendering.
 
-### 3.3 Rôle des modules dans `Apps/`
+### 3.3 Role of modules in `Apps/`
 
-Les modules dans `Core/ClicShopping/Apps/{Vendor}/{AppName}/Module/` définissent :
-- Les **settings** et la configuration du module
-- Le script d'**installation / désinstallation**
-- Les **fonctions PHP** qui préparent les données
-- L'**appel au template HTML** correspondant dans `sources/template/{Theme}/modules/`
+The modules in `Core/ClicShopping/Apps/{Vendor}/{AppName}/Module/` define:
+- **settings** and module configuration
+- The **installation/uninstallation** script
+- The **PHP functions** that prepare the data
+- The **call to the corresponding HTML template** in `sources/template/{Theme}/modules/`
 
-Le module PHP **appelle** le template HTML — il ne le contient pas.
+The PHP module **calls** the HTML template — it does not contain it.
 
 ```
 Core/ClicShopping/Apps/{Vendor}/{AppName}/Module/{Type}/{ModuleName}/
-├── {ModuleName}.php    ← settings, install, fonctions, appel du template HTML
-└── languages/          ← constantes de langue utilisées par le module
+├── {ModuleName}.php ← settings, install, functions, call the HTML template
+└── languages/ ← language constants used by the module
 ```
 
-Le fichier HTML rendu est résolu dans cet ordre :
-1. `sources/template/{CustomTheme}/modules/{module_name}/content/{module_name}.php` si présent
-2. `sources/template/Default/modules/{module_name}/content/{module_name}.php` sinon (fallback)
+The rendered HTML file is resolved in this order:
+1. `sources/template/{CustomTheme}/modules/{module_name}/content/{module_name}.php` if present
+2. `sources/template/Default/modules/{module_name}/content/{module_name}.php` otherwise (fallback)
 
-Pour un listing, le même ordre s'applique avec `template_html/` à la place de `content/`.
+For a listing, the same order applies with `template_html/` instead of `content/`.
 
-### 3.4 Templates HTML d'une App via Sites/Shop/ et JSON
+### 3.4 HTML Templates for an App via Sites/Shop/ and JSON
 
-Une App peut aussi exposer ses propres templates HTML directement depuis son répertoire,
-sans passer par `sources/template/`. Ce cas est déclaré en JSON dans l'App.
+An App can also expose its own HTML templates directly from its directory,
+without going through `sources/template/`. This case is declared in JSON in the App.
 
 ```
 Core/ClicShopping/Apps/{Vendor}/{AppName}/
-├── Sites/Shop/         ← pages et templates propres à l'App
-│   └── Pages/{PageName}/templates/
-└── clicshopping.json   ← déclare les pages/templates exposés par l'App
+├── Sites/Shop/ ← pages and templates specific to the App
+│ └── Pages/{PageName}/templates/
+└── clicshopping.json ← declares the pages/templates exposed by the App
 ```
 
-Règle : si une App expose ses templates via `Sites/Shop/` + `clicshopping.json`, ces templates
-suivent les mêmes règles que tous les autres templates HTML (pas de logique métier,
-pas d'accès DB, échappement obligatoire).
+Rule: if an App exposes its templates via `Sites/Shop/` + `clicshopping.json`, these templates
+follow the same rules as all other HTML templates (no business logic,
+no DB access, escaping required).
 
-### 3.5 Controllers et classes — où ils sont
+### 3.5 Controllers and classes — where they are
 
 ```
 Core/ClicShopping/Sites/Shop/
-├── Pages/              ← controllers de page (implémentent PagesInterface)
-│   └── {PageName}/
-│       ├── {PageName}.php
-│       └── Actions/
-└── Classes/            ← classes métier du Shop
+├── Pages/ ← page controllers (implement PagesInterface)
+│ └── {PageName}/
+│ ├── {PageName}.php
+│ └── Actions/
+└── Classes/ ← job classes from the Shop
 ```
 
-Ces fichiers ne contiennent **aucun HTML**. Ils préparent les données et les passent
-au moteur de template.
+These files contain **no HTML**. They prepare the data and pass it
+to the template engine.
 
-### 3.6 Flux de rendu complet (Shop)
+### 3.6 Full Rendering Flow (Shop)
 
 ```
-Requête HTTP
-  → Core/ClicShopping/Sites/Shop/Pages/{ModuleName}/{ModuleName}.php   (controller — logique, prépare données)
-  → Core/ClicShopping/Sites/Shop/Pages/{ModuleName}/Actions/           (si action POST)
-  → Core/ClicShopping/Apps/*/Module/{Type}/{Module}.php                (module — settings, fonctions, appel template)
-  → sources/template/{Custom}/modules/{mod}/content/{mod}.php   ← si présent
-    ou sources/template/Default/modules/{mod}/content/{mod}.php  ← fallback
-  → sources/template/{Custom ou Default}/files/      (gabarit de page)
-  → sources/template/{Custom ou Default}/header.php  (header global — racine Default/)
-  → sources/template/{Custom ou Default}/footer.php  (footer global — racine Default/)
+HTTP request 
+→ Core/ClicShopping/Sites/Shop/Pages/{ModuleName}/{ModuleName}.php (controller — logic, prepares data) 
+→ Core/ClicShopping/Sites/Shop/Pages/{ModuleName}/Actions/ (if POST action) 
+→ Core/ClicShopping/Apps/*/Module/{Type}/{Module}.php (module — settings, functions, template call) 
+→ sources/template/{Custom}/modules/{mod}/content/{mod}.php ← if present 
+or sources/template/Default/modules/{mod}/content/{mod}.php ← fallback 
+→ sources/template/{Custom or Default}/files/ (page template) 
+→ sources/template/{Custom or Default}/header.php (global header — root Default/) 
+→ sources/template/{Custom or Default}/footer.php (global footer — root Default/)
 ```
 
 ### 3.7 SEO
 
-- Balises `<title>` et `<meta>` — injectées via des **modules dédiés** (ex: module header tags)
-  qui poussent leur code dans le header ou le footer via le système de modules
-  — jamais hardcodées directement dans les fichiers de template
-- `<h1>` unique par page, hiérarchie `h1 > h2 > h3` respectée
-- Attribut `alt` sur toutes les images — valeur issue des données préparées
-- URLs via helpers de routing existants — jamais hardcodées
-- Cache statique actif sur les pages catalogue — invalider `Core/ClicShopping/Work/` après modification
+- `<title>` and `<meta>` tags — injected via **dedicated modules** (e.g. module header tags)
+  who push their code into the header or footer via the module system
+  — never hardcoded directly in template files
+- unique `<h1>` per page, hierarchy `h1 > h2 > h3` respected
+- `alt` attribute on all images — value from prepared data via `HTML::image()`
+- URLs via existing routing helpers — never hardcoded
+- Static cache active on catalog pages
 
 ---
+## 4. Back office (ClicShoppingAdmin) — separate architecture
 
-## 4. Back-office (ClicShoppingAdmin) — architecture distincte
+### 4.1 Principle
 
-### 4.1 Principe
+The admin is **entirely managed by Apps**. There is no overall theme
+interchangeable, no `sources/template/` for the admin.
 
-L'admin est **entièrement géré par les Apps**. Il n'y a pas de thème global
-interchangeable, pas de `sources/template/` pour l'admin.
+The logic and admin templates are in `Core/ClicShopping/Sites/ClicShoppingAdmin/`.
 
-La logique et les templates admin sont dans `Core/ClicShopping/Sites/ClicShoppingAdmin/`.
+### 4.2 Structure of `Sites/`
 
-### 4.2 Structure de `Sites/`
-
-Les deux contextes ont leur propre arborescence sous `Sites/` :
+Both contexts have their own tree under `Sites/`:
 
 ```
 Core/ClicShopping/Sites/
 ├── ClicShoppingAdmin/
-│   └── Pages/
-│       └── {PageName}/               ← ex: Home
-│           ├── Actions/              # Actions du contrôleur (POST, traitements)
-│           ├── templates/            # Templates HTML de la page admin
-│           └── {PageName}.php        # Contrôleur principal de la page
+│ └── Pages/
+│ └── {PageName}/ ← ex: Home
+│ ├── Actions/ # Controller actions (POST, processing)
+│ ├── templates/ # HTML templates of the admin page
+│ └── {PageName}.php # Main page controller
 │
-└── Shop/
-    └── Pages/
-        └── {ModuleName}/             ← nom du module/page
-            ├── Actions/              # Actions du contrôleur
-            ├── templates/            # Templates HTML de la page Shop
-            └── {ModuleName}.php      # Contrôleur principal
+└── Shop/ 
+└──Pages/ 
+└── {ModuleName}/ ← module/page name 
+├── Actions/ # Controller actions 
+├── templates/ # Shop page HTML templates 
+└── {ModuleName}.php # Main controller
 ```
 
-**Les templates front-office principaux restent dans `sources/template/Default/` ou le thème custom.**  
-`Core/ClicShopping/Sites/*/Pages/*/templates` contient des templates de pages ; viser une logique minimale côté template.
+**The main front-office templates remain in `sources/template/Default/` or the custom theme.**
+`Core/ClicShopping/Sites/*/Pages/*/templates` contains page templates; aim for minimal logic on the template side.
 
-### 4.3 Philosophie admin
+### 4.3 Admin philosophy
 
-- Orienté productivité : tableaux, formulaires CRUD, confirmations, retours d'état
-- Données reçues déjà validées et préparées par le contrôleur
-- Aucune décision métier dans le template
-- Vérification de session dans le **contrôleur**, jamais dans le template
-- Token CSRF obligatoire sur chaque formulaire via helper existant
-- Pas de cache statique — données fraîches à chaque rendu
+- Productivity oriented: tables, CRUD forms, confirmations, status returns
+- Data received already validated and prepared by the controller
+- No business decisions in the template
+- Session verification in the **controller**, never in the template
+- CSRF token required on each form via existing helper
+- No static cache — fresh data on every render
 
 ---
 
-## 5. Langues — règles communes
+## 5. Languages — common rules
 
-| Couche | Chemin | Portée |
+
+| Layer | Path | Scope |
 |---|---|---|
-| App / Module | `Core/ClicShopping/Apps/*/languages/{lang}/` | Textes propres à l'App — priorité |
-| Global / Thème | `sources/languages/{lang}/` | Textes transversaux — fallback |
+| **App / Module** | `Core/ClicShopping/Apps/*/languages/{lang}/` | High priority for Apps (Shop and Admin) |
+| **Admin core** | `ClicShoppingAdmin/Core/languages/{lang}/` | Back office global labels |
+| **Overall / Theme** | `sources/languages/{lang}/` | Transversal texts and front-office fallback |
 
-- Aucune chaîne visible hardcodée — toujours via `getDef()`
-- Compatibilité minimum : EN + FR
-- Les clés suivent le format existant dans la portée cible
+
+- No visible hardcoded string — always via `getDef()`
+- Minimum compatibility: EN + FR
+- Keys follow the existing format in the target scope
 
 ```php
-// ✓ Correct — lecture via getDef()
+// ✓ Correct — reading via getDef()
 echo $CLICSHOPPING->getDef('text_add_to_cart');
 
-// ✗ Interdit — chaîne hardcodée
-echo 'Ajouter au panier';
+// ✗ Prohibited — hardcoded channel
+echo 'Add to cart';
 ```
 
 ---
 
-## 6. Règles communes aux deux contextes
+## 6. Rules common to both contexts
 
-### Formulaires — CSRF
+### Forms — CSRF
 
-Le token CSRF est obligatoire sur tout formulaire, **Shop (catalog) et Admin**.
-Il est géré via le paramètre `['tokenize' => true]` dans `HTML::form()` :
+The CSRF token is mandatory on all forms, **Shop (catalog) and Admin**.
+It is managed via the `['tokenize' => true]` parameter in `HTML::form()`:
 
 ```php
 $form = HTML::form('cart_quantity', CLICSHOPPING::link(null, 'Cart&Add'), 'post', 'class="justify-content-center"', ['tokenize' => true]) . "\n";
 ```
 
-Ne jamais construire un formulaire `<form>` HTML brut sans passer par `HTML::form()` avec `tokenize`.
+Never build a raw HTML `<form>` form without going through `HTML::form()` with `tokenize`.
 
 ```php
-echo HTML::outputProtected($variable);          // chaîne HTML
-echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); // URL ou attribut
+echo HTML::outputProtected($variable); // HTML string
+echo HTML::link('Configure&Process&module=' . $current_module); //url 
+echo CLICSHOPPING::link(null, 'A&Tools\ActionsRecorder&Configure'); //url
 ```
 
-Ne jamais afficher une variable sans échappement, même en contexte admin.
+Never display a variable without escape, even in admin context.
 
-### Ce qu'un template ne doit jamais contenir
+### What a template should never contain
 
 ```php
-// ✗ Accès DB
+// ✗ DB access
 Registry::get('Db')->query('SELECT ...');
 
-// ✗ Logique métier
+// ✗ Business logic
 if ($price * $tax > $threshold) { ... }
 
-// ✗ Chaîne hardcodée
+// ✗ Hardcoded channel
 echo 'Add to cart';
 
-// ✗ Session ou redirection
+// ✗ Session or redirection
 header('Location: ...');
 $_SESSION['key'] = 'value';
 
-// ✗ Appel LLM
+// ✗ LLM call
 $ai->generate('...');
 ```
 
 ---
 
-## 7. Checklist avant de soumettre un template
+## 7. Checklist before submitting a template
 
 ```
-[ ] Aucune logique métier ni accès DB dans le template
-[ ] Toutes les sorties échappées (HTML::outputProtected)
-[ ] Aucune chaîne visible hardcodée — toujours via $CLICSHOPPING->getDef('clé')
-[ ] URLs via helpers de routing, pas hardcodées
-[ ] Emplacement correct du template :
-      header/footer  → racine de Default/ (pas dans modules/)
-      module fixe    → modules/{module_name}/content/
-      module listing → modules/{module_name}/template_html/ (si le module gère une liste)
-[ ] template_html/ créé uniquement si le module gère effectivement un listing
-[ ] Thème custom : ne contient que les fichiers surchargés — pas de copie de Default/
-[ ] Nouveau template destiné à tous les thèmes → le créer dans Default/
-[ ] Balises SEO (title, meta) → via modules dédiés qui injectent dans header/footer
-[ ] Front : h1 unique par page, alt sur toutes les images
-[ ] Front : invalidation cache Core/ClicShopping/Work/ prévue si template catalogue modifié
-[ ] Token CSRF sur chaque formulaire Shop et Admin — HTML::form() avec ['tokenize' => true]
-[ ] Admin : vérification session dans le contrôleur (Core/ClicShopping/Sites/ClicShoppingAdmin/Pages/), pas dans le template
-[ ] App avec Sites/Shop/ + clicshopping.json : templates déclarés correctement dans le JSON
+[ ] No business logic or DB access in the template
+[ ] All output escaped (HTML::outputProtected)
+[ ] No visible hardcoded string — always via $CLICSHOPPING->getDef('key')
+[ ] URLs via routing helpers, not hardcoded
+[ ] Correct location of the template: 
+header/footer → root of Default/ (not in modules/) 
+fixed module → modules/{module_name}/content/ 
+module listing → modules/{module_name}/template_html/ (if the module manages a list)
+[ ] template_html/ created only if the module actually manages a listing
+[ ] Custom theme: only contains overloaded files — no copy of Default/
+[ ] New template intended for all themes → create it in Default/
+[ ] SEO tags (title, meta) → via dedicated modules which inject into header/footer
+[ ] Front: unique h1 per page, alt on all images
+[ ] Front: Core/ClicShopping/Work/ cache invalidation planned via the administration
+[ ] CSRF token on each Shop and Admin form — HTML::form() with ['tokenize' => true]
+[ ] Admin: session verification in the controller (Core/ClicShopping/Sites/ClicShoppingAdmin/Pages/), not in the template
+[ ] App with Sites/Shop/ + clicshopping.json: templates declared correctly in JSON
 ```
-
 ---
 
-## 8. Références
-
-- Architecture core, controllers, routing : `ARCHITECTURE.md`
-- Sécurité et échappement : `SECURITY.md`
-- Wiki affichage template : https://github.com/ClicShopping/ClicShopping/wiki/How-to-display-information-inside-a-template
-- DeepWiki templates : https://deepwiki.com/ClicShopping/ClicShopping/8-template-and-module-system
+## 8. References
+- Architecture core, controllers, routing: `ARCHITECTURE.md`
+- Security and escape: `SECURITY.md`
+- Wiki front office display template: https://github.com/ClicShopping/ClicShopping/wiki/How-to-display-information-inside-a-template
+- DeepWiki templates: https://deepwiki.com/ClicShopping/ClicShopping/8-template-and-module-system

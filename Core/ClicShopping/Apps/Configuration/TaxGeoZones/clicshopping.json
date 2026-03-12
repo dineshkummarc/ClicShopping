@@ -3,7 +3,7 @@
   "app": "TaxGeoZones",
   "vendor": "Configuration",
   "version": "1.0.0",
-  "req_core_version": "3.0",
+  "req_core_version": "4.0",
   "license": "GPL-2",
   "authors": [
     {
