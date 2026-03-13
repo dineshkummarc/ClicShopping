@@ -41,6 +41,45 @@ The `Db` service is based on `\ClicShopping\OM\Db` (extends `PDO`). It manages:
 - Parameter typing
 - MariaDB compatibility
 
+
+### Except the directory Core/ClicShopping/AI
+PARADIGM SHIFT:
+    Inside Core/ClicShopping/AI/: Use Doctrine ORM only.
+    Everywhere else: Use \ClicShopping\OM\Db (Registry).
+    NEVER mix both paradigms in the same file. If a script moves data from AI to Core, use the Registry for the final insertion.
+
+- Example:
+  - save data :
+```
+    $sql_data_array = [
+    'parent_id' => (int)$new_parent_id,
+    'sort_order' => (int)$sort_order
+    ];
+
+    $update_sql_data = ['last_modified' => 'now()'];
+    $sql_data_array = array_merge($sql_data_array, $update_sql_data);
+    $this->app->db->save('categories', $sql_data_array, ['categories_id' => (int)$categories_id]);
+```
+- insert data :
+```
+    $sql_data_array = [
+      'parent_id' => (int)$new_parent_id,
+      'sort_order' => (int)$sort_order
+      'last_modified' => 'now()'
+     ];
+
+    $this->app->db->save('categories', $sql_data_array);
+```
+
+### Only the directory Core/ClicShopping/AI
+PARADIGM SHIFT:
+Inside Core/ClicShopping/AI/: Use Doctrine ORM only.
+Everywhere else: Use \ClicShopping\OM\Db (Registry).
+NEVER mix both paradigms in the same file. If a script moves data from AI to Core, use the Registry for the final insertion.
+
+it's only exception because the AI directory must be stay agnostic
+- use the convention from Doctrine ORM framework defined in AI directory
+
 ---
 
 ## 3. SQL Routing — Which file, where

@@ -35,6 +35,7 @@ This project **is not** osCommerce nor a legacy ClicShopping V2/V3 fork.
 ```
 PROHIBITED: Generating code without reading existing files in the target scope.
 PROHIBITED: assuming a structure without verification in the actual repository.
+IMPORTANT: Self-Correction Protocol: Before delivering any code, the Agent MUST verify its output against the Absolute Prohibitions list of ALL six .md files. If a conflict is found, the Agent MUST prioritize AGENTS.md and SECURITY.md
 ```
 
 Before any code: read existing files → check hooks → minimal modification.
@@ -63,6 +64,7 @@ All technical documentation is in the `Agents/` directory.
 3. New App → Core/ClicShopping/Apps/{Vendor}/{AppName}/
 4. Core/ClicShopping/Custom/ → override core without modifying Core/ClicShopping/OM/
 5. Core/ClicShopping/OM/ direct → PROHIBITED without agreement from the human coder
+6. IF you cannot list the directory content in real-time, YOU MUST ASK the user to provide the file list of Core/ClicShopping/Apps/ or Custom/ before suggesting any file creation to avoid path collisions
 ```
 
 ---

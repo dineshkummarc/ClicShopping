@@ -64,6 +64,7 @@ Reasoning is implemented in `ReasoningAgent` with configurable modes:
 - `tree_of_thought`
 - `self_consistency`
 
+The ReasoningAgent exists as a logic block; however, if ReasoningInterface is not yet present in the codebase, the Agent MUST implement the reasoning logic internally using CoT (Chain of Thought) before outputting PHP code.
 These modes are orchestrated by `OrchestratorAgent` and used depending on the request context.
 
 ---
@@ -178,6 +179,7 @@ Do not modify the MCP protocol without agreement from the human coder.
 ✗ Edit existing vector dimensions without proprietary validation
 ✗ Bypass guardrails for testing
 ✗ Instantiate agents directly from PHP Apps
+✗ WARNING: Data transformation to Vector(3072) is strictly delegated to LLPhant. The Agent MUST NOT attempt to generate vector arrays manually in PHP
 ```
 
 ---

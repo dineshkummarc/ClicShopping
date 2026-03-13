@@ -160,6 +160,7 @@ Rules:
 [ ] No audit or rate limiting tables deleted
 [ ] .htaccess not weakened
 [ ] No clear personal data in the logs
+[ ] use always the sanitization helpers : HTML::sanitize()
 ```
 
 ---

@@ -84,7 +84,7 @@ Core services available:
 
 > **Registry vs DI:** ClicShopping uses the Registry as a locator service.
 > Do not create an alternative DI container — use `Registry::set/get`.
-
+> STRICT ENFORCEMENT: Direct instantiation of Core services (e.g., $db = new Db()) is PROHIBITED. You MUST use Registry::get('Db'), Registry::get('Language'), etc. No exceptions for 'quick fixes'.
 ---
 
 ## 4. Hooks system
