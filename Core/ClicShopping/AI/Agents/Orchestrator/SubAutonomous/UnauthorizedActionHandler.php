@@ -94,7 +94,7 @@ class UnauthorizedActionHandler
     
     try {
       $Qinsert = $this->db->prepare('
-        INSERT INTO :table_rag_security_incidents
+        INSERT INTO :table_rag_agent_security_incidents
         (incident_id, agent_id, action_type, denial_reason, context, severity, status, created_at)
         VALUES
         (:incident_id, :agent_id, :action_type, :denial_reason, :context, :severity, "open", NOW())
@@ -118,6 +118,145 @@ class UnauthorizedActionHandler
   }
   
   /**
+   * Generate unique incident ID
+   *
+   * @return string Incident identifier
+   */
+  private function generateIncidentId(): string
+  {
+    return 'INC-' . date('Ymd') . '-' . uniqid();
+  }
+  
+  /**
+   * Calculate severity of security incident
+   *
+   * @param string $actionType Type of action attempted
+   * @param array $context Additional context
+   * @return string Severity level (low, medium, high, critical)
+   */
+  private function calculateSeverity(string $actionType, array $context): string
+  {
+    // Critical actions
+    $criticalActions = [
+      'modify_permissions',
+      'delete_agent',
+      'modify_security_settings',
+      'access_sensitive_data'
+    ];
+
+    if (in_array($actionType, $criticalActions)) {
+      return 'critical';
+    }
+
+    // High severity actions
+    $highSeverityActions = [
+      'approve_objective',
+      'cancel_objective',
+      'modify_agent_role'
+    ];
+
+    if (in_array($actionType, $highSeverityActions)) {
+      return 'high';
+    }
+
+    // Check context for severity indicators
+    if (isset($context['repeated_attempt']) && $context['repeated_attempt'] === true) {
+      return 'high';
+    }
+
+    // Default to medium severity
+    return 'medium';
+  }
+  
+  /**
+   * Check if alert should be generated
+   *
+   * @param string $agentId Agent identifier
+   * @param string $actionType Type of action attempted
+   * @return bool True if alert should be generated
+   */
+  private function shouldGenerateAlert(string $agentId, string $actionType): bool
+  {
+    // Always alert for critical actions
+    $criticalActions = [
+      'modify_permissions',
+      'delete_agent',
+      'modify_security_settings',
+      'access_sensitive_data'
+    ];
+
+    if (in_array($actionType, $criticalActions)) {
+      return true;
+    }
+
+    // Check for repeated violations
+    $recentViolations = $this->getRecentViolationCount($agentId);
+    if ($recentViolations >= $this->alertThresholds['repeated_violations']) {
+      return true;
+    }
+
+    // Alert on first violation for new agents
+    if ($this->isNewAgent($agentId)) {
+      return true;
+    }
+
+    return false;
+  }
+  
+  /**
+   * Get recent violation count for agent
+   *
+   * @param string $agentId Agent identifier
+   * @param int $hours Number of hours to look back (default 1)
+   * @return int Number of violations
+   */
+  private function getRecentViolationCount(string $agentId, int $hours = 1): int
+  {
+    $Qcount = $this->db->prepare('
+      SELECT COUNT(*) as count
+      FROM :table_rag_agent_security_incidents
+      WHERE agent_id = :agent_id
+        AND created_at >= DATE_SUB(NOW(), INTERVAL :hours HOUR)
+    ');
+
+    $Qcount->bindValue(':agent_id', $agentId);
+    $Qcount->bindInt(':hours', $hours);
+    $Qcount->execute();
+
+    if ($Qcount->fetch()) {
+      return $Qcount->valueInt('count');
+    }
+
+    return 0;
+  }
+  
+  /**
+   * Check if agent is new (created within last 24 hours)
+   *
+   * @param string $agentId Agent identifier
+   * @return bool True if agent is new
+   */
+  private function isNewAgent(string $agentId): bool
+  {
+    $Qcheck = $this->db->prepare('
+      SELECT created_at
+      FROM :table_rag_agent_roles
+      WHERE agent_id = :agent_id
+    ');
+
+    $Qcheck->bindValue(':agent_id', $agentId);
+    $Qcheck->execute();
+
+    if ($Qcheck->fetch()) {
+      $createdAt = strtotime($Qcheck->value('created_at'));
+      $hoursSinceCreation = (time() - $createdAt) / 3600;
+      return $hoursSinceCreation < 24;
+    }
+
+    return true; // Treat unknown agents as new
+  }
+  
+  /**
    * Generate administrator alert
    *
    * @param string $agentId Agent identifier
@@ -137,7 +276,7 @@ class UnauthorizedActionHandler
     try {
       $alertId = $this->generateAlertId();
       $severity = $this->calculateSeverity($actionType, $context);
-      
+
       $message = sprintf(
         "Unauthorized action attempt by agent '%s': %s. Reason: %s. Incident ID: %s",
         $agentId,
@@ -145,14 +284,14 @@ class UnauthorizedActionHandler
         $reason,
         $incidentId
       );
-      
+
       $Qinsert = $this->db->prepare('
         INSERT INTO :table_rag_administrator_alerts
         (alert_id, alert_type, severity, message, agent_id, incident_id, context, status, created_at)
         VALUES
         (:alert_id, "unauthorized_action", :severity, :message, :agent_id, :incident_id, :context, "pending", NOW())
       ');
-      
+
       $Qinsert->bindValue(':alert_id', $alertId);
       $Qinsert->bindValue(':severity', $severity);
       $Qinsert->bindValue(':message', $message);
@@ -160,10 +299,10 @@ class UnauthorizedActionHandler
       $Qinsert->bindValue(':incident_id', $incidentId);
       $Qinsert->bindValue(':context', json_encode($context));
       $Qinsert->execute();
-      
+
       // Also log to system error log for immediate visibility
       error_log("SECURITY ALERT: $message");
-      
+
       return true;
     } catch (Exception $e) {
       error_log("Failed to generate administrator alert: " . $e->getMessage());
@@ -172,91 +311,13 @@ class UnauthorizedActionHandler
   }
   
   /**
-   * Check if alert should be generated
+   * Generate unique alert ID
    *
-   * @param string $agentId Agent identifier
-   * @param string $actionType Type of action attempted
-   * @return bool True if alert should be generated
+   * @return string Alert identifier
    */
-  private function shouldGenerateAlert(string $agentId, string $actionType): bool
+  private function generateAlertId(): string
   {
-    // Always alert for critical actions
-    $criticalActions = [
-      'modify_permissions',
-      'delete_agent',
-      'modify_security_settings',
-      'access_sensitive_data'
-    ];
-    
-    if (in_array($actionType, $criticalActions)) {
-      return true;
-    }
-    
-    // Check for repeated violations
-    $recentViolations = $this->getRecentViolationCount($agentId);
-    if ($recentViolations >= $this->alertThresholds['repeated_violations']) {
-      return true;
-    }
-    
-    // Alert on first violation for new agents
-    if ($this->isNewAgent($agentId)) {
-      return true;
-    }
-    
-    return false;
-  }
-  
-  /**
-   * Get recent violation count for agent
-   *
-   * @param string $agentId Agent identifier
-   * @param int $hours Number of hours to look back (default 1)
-   * @return int Number of violations
-   */
-  private function getRecentViolationCount(string $agentId, int $hours = 1): int
-  {
-    $Qcount = $this->db->prepare('
-      SELECT COUNT(*) as count
-      FROM :table_rag_security_incidents
-      WHERE agent_id = :agent_id
-        AND created_at >= DATE_SUB(NOW(), INTERVAL :hours HOUR)
-    ');
-    
-    $Qcount->bindValue(':agent_id', $agentId);
-    $Qcount->bindInt(':hours', $hours);
-    $Qcount->execute();
-    
-    if ($Qcount->fetch()) {
-      return $Qcount->valueInt('count');
-    }
-    
-    return 0;
-  }
-  
-  /**
-   * Check if agent is new (created within last 24 hours)
-   *
-   * @param string $agentId Agent identifier
-   * @return bool True if agent is new
-   */
-  private function isNewAgent(string $agentId): bool
-  {
-    $Qcheck = $this->db->prepare('
-      SELECT created_at
-      FROM :table_rag_agent_roles
-      WHERE agent_id = :agent_id
-    ');
-    
-    $Qcheck->bindValue(':agent_id', $agentId);
-    $Qcheck->execute();
-    
-    if ($Qcheck->fetch()) {
-      $createdAt = strtotime($Qcheck->value('created_at'));
-      $hoursSinceCreation = (time() - $createdAt) / 3600;
-      return $hoursSinceCreation < 24;
-    }
-    
-    return true; // Treat unknown agents as new
+    return 'ALT-' . date('Ymd') . '-' . uniqid();
   }
   
   /**
@@ -275,7 +336,7 @@ class UnauthorizedActionHandler
       $agentId,
       $violationCount
     );
-    
+
     try {
       $Qinsert = $this->db->prepare('
         INSERT INTO :table_rag_administrator_alerts
@@ -283,14 +344,14 @@ class UnauthorizedActionHandler
         VALUES
         (:alert_id, "repeated_violations", "high", :message, :agent_id, "pending", NOW())
       ');
-      
+
       $Qinsert->bindValue(':alert_id', $alertId);
       $Qinsert->bindValue(':message', $message);
       $Qinsert->bindValue(':agent_id', $agentId);
       $Qinsert->execute();
-      
+
       error_log("SECURITY ALERT: $message");
-      
+
       // Consider auto-suspending agent if violations exceed threshold
       if ($violationCount >= 5) {
         $this->suspendAgent($agentId, "Automatic suspension due to repeated unauthorized actions");
@@ -317,80 +378,19 @@ class UnauthorizedActionHandler
             suspended_at = NOW()
         WHERE agent_id = :agent_id
       ');
-      
+
       $Qupdate->bindValue(':agent_id', $agentId);
       $Qupdate->bindValue(':reason', $reason);
       $Qupdate->execute();
-      
+
       // Log suspension
       $this->auditLogger->logAction($agentId, 'agent_suspended', 'success', ['reason' => $reason]);
-      
+
       return true;
     } catch (Exception $e) {
       error_log("Failed to suspend agent: " . $e->getMessage());
       return false;
     }
-  }
-  
-  /**
-   * Calculate severity of security incident
-   *
-   * @param string $actionType Type of action attempted
-   * @param array $context Additional context
-   * @return string Severity level (low, medium, high, critical)
-   */
-  private function calculateSeverity(string $actionType, array $context): string
-  {
-    // Critical actions
-    $criticalActions = [
-      'modify_permissions',
-      'delete_agent',
-      'modify_security_settings',
-      'access_sensitive_data'
-    ];
-    
-    if (in_array($actionType, $criticalActions)) {
-      return 'critical';
-    }
-    
-    // High severity actions
-    $highSeverityActions = [
-      'approve_objective',
-      'cancel_objective',
-      'modify_agent_role'
-    ];
-    
-    if (in_array($actionType, $highSeverityActions)) {
-      return 'high';
-    }
-    
-    // Check context for severity indicators
-    if (isset($context['repeated_attempt']) && $context['repeated_attempt'] === true) {
-      return 'high';
-    }
-    
-    // Default to medium severity
-    return 'medium';
-  }
-  
-  /**
-   * Generate unique incident ID
-   *
-   * @return string Incident identifier
-   */
-  private function generateIncidentId(): string
-  {
-    return 'INC-' . date('Ymd') . '-' . uniqid();
-  }
-  
-  /**
-   * Generate unique alert ID
-   *
-   * @return string Alert identifier
-   */
-  private function generateAlertId(): string
-  {
-    return 'ALT-' . date('Ymd') . '-' . uniqid();
   }
   
   /**
@@ -413,7 +413,7 @@ class UnauthorizedActionHandler
         status,
         created_at,
         resolved_at
-      FROM :table_rag_security_incidents
+      FROM :table_rag_agent_security_incidents
       WHERE agent_id = :agent_id
       ORDER BY created_at DESC
       LIMIT :limit
@@ -534,7 +534,7 @@ class UnauthorizedActionHandler
   {
     try {
       $Qupdate = $this->db->prepare('
-        UPDATE :table_rag_security_incidents
+        UPDATE :table_rag_agent_security_incidents
         SET status = "resolved",
             resolution = :resolution,
             resolved_at = NOW()

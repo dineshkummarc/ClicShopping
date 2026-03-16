@@ -24,7 +24,8 @@
   CLICSHOPPING::loadSite('ClicShoppingAdmin');
 
   header('Content-Type: application/json; charset=utf-8');
-//AdministratorAdmin::hasUserAccess();
+  AdministratorAdmin::hasUserAccess();
+  
   if (!Gpt::checkGptStatus()) {
     echo json_encode(['success' => false, 'error' => 'ChatGPT is not enabled.']);
     exit;

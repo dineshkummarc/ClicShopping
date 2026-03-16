@@ -33,6 +33,7 @@ This project **is not** osCommerce nor a legacy ClicShopping V2/V3 fork.
 ## Absolute rule
 
 ```
+CRITICAL : Before any code generation, you MUST run a 'Constraint Check' phase: compare your plan against the PROHIBITED sections of AGENTS.md and the PARADIGM SHIFT of DATABASE.md. If a violation is found, auto-correct your plan before writing code.
 PROHIBITED: Generating code without reading existing files in the target scope.
 PROHIBITED: assuming a structure without verification in the actual repository.
 IMPORTANT: Self-Correction Protocol: Before delivering any code, the Agent MUST verify its output against the Absolute Prohibitions list of ALL six .md files. If a conflict is found, the Agent MUST prioritize AGENTS.md and SECURITY.md

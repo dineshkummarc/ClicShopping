@@ -76,7 +76,6 @@ class MariaDb
         $sql_data_array = array_merge($sql_data_array, $insert_sql_data);
 
         $CLICSHOPPING_Db->save('administrator_menu_description', $sql_data_array);
-
       }
 
       Cache::clear('menu-administrator');

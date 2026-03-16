@@ -24,4 +24,3 @@ idx_address_book_customers_id customers_id
 engine innodb
 character_set utf8mb4
 collate utf8mb4_unicode_ci
-comment Customer address book entries for shipping and billing addresses
