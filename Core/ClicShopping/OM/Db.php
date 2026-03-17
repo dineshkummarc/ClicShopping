@@ -792,6 +792,10 @@ class Db extends PDO
           if ($field_name === 'unique' && count($details) >= 2) {
             $index_name = array_shift($details);
             $schema['index']['unique:' . $index_name] = $details;
+          } elseif ($field_name === 'fulltext' && count($details) >= 2) {
+            // Support "fulltext <index_name> <col> <col...>"
+            $index_name = array_shift($details);
+            $schema['index']['fulltext:' . $index_name] = $details;
           } else {
             $schema['index'][$field_name] = $details;
           }
@@ -1005,6 +1009,9 @@ class Db extends PDO
         } elseif (str_starts_with($name_normalized, 'unique:')) {
           $index_name = substr($name, strlen('unique:'));
           $name = 'UNIQUE KEY ' . $index_name;
+        } elseif (str_starts_with($name_normalized, 'fulltext:')) {
+          $index_name = substr($name, strlen('fulltext:'));
+          $name = 'FULLTEXT KEY ' . $index_name;
         } else {
           $name = 'KEY ' . $name;
         }

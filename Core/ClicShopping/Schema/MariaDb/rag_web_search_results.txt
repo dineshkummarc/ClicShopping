@@ -1,0 +1,23 @@
+id INT(11) not_null auto_increment
+search_request_id INT(11) not_null comment(Link to rag_web_search_requests (handled by code))
+position INT default (0) comment(Position in results (1, 2, 3...))
+title TEXT null comment(Title of the result)
+link TEXT null comment(Result URL)
+snippet TEXT null comment(Snippet of descriptive text)
+source_domain VARCHAR(255) null comment(Source domain (google.com, wikipedia.org, etc.))
+relevance_score FLOAT default (0.0) comment(Calculated relevance score (0-1))
+date_added DATETIME default (CURRENT_TIMESTAMP)
+
+--
+primary id
+idx_search_request_id search_request_id
+idx_relevance_score relevance_score
+idx_source_domain source_domain
+idx_request_relevance search_request_id relevance_score
+idx_domain_relevance source_domain relevance_score
+
+
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci
