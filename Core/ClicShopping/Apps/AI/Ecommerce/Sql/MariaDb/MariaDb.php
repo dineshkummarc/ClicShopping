@@ -118,6 +118,163 @@ EOD;
       $CLICSHOPPING_Db->exec($sql);
     }
 
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_categories_embedding"');
+
+    if ($Qcheck->fetch() === false) {
+      $sql = <<<EOD
+      CREATE TABLE IF NOT EXISTS :table_categories_embedding (
+        id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each category embedding',
+          content longtext DEFAULT NULL COMMENT 'Category content for embedding generation - description, metadata, etc.',
+          type text DEFAULT NULL COMMENT 'Type of content - description, metadata, full_text',
+          sourcetype text default 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename text default 'manual' COMMENT 'Name of the source system or process',
+          embedding vector(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber int default 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified datetime DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to categories table - category ID',
+          language_id INT COMMENT 'FK to languages table - language identifier',
+          metadata longtext DEFAULT NULL COMMENT 'Additional metadata about the embedding - structure varies by type',
+          KEY idx_entity_id (entity_id),
+          KEY idx_language_id (language_id),
+          KEY idx_entity_lang (entity_id, language_id),
+          KEY idx_date_modified (date_modified)
+      ) COMMENT='Vector embeddings for categories - enables semantic category search and recommendations';
+
+      CREATE VECTOR INDEX embedding_index ON :table_categories_embedding (embedding);
+
+       CREATE TABLE IF NOT EXISTS :table_products_embedding (
+          id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each product embedding',
+          content longtext DEFAULT NULL COMMENT 'Product content for embedding generation - name, description, specifications, etc.',
+          type text DEFAULT NULL COMMENT 'Type of content - description, specifications, reviews, full_text',
+          sourcetype text default 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename text default 'manual' COMMENT 'Name of the source system or process',
+          embedding vector(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber int default 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified datetime DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to products table - product ID',
+          language_id INT COMMENT 'FK to languages table - language identifier',
+          metadata longtext DEFAULT NULL COMMENT 'Additional metadata about the embedding - may include price, category, manufacturer info',
+          KEY idx_entity_id (entity_id),
+          KEY idx_language_id (language_id),
+          KEY idx_entity_lang (entity_id, language_id),
+          KEY idx_date_modified (date_modified)
+        ) COMMENT='Vector embeddings for products - enables semantic product search and recommendations';
+
+      CREATE VECTOR INDEX embedding_index ON :table_products_embedding (embedding);
+      
+      CREATE TABLE IF NOT EXISTS :table_manufacturers_embedding (
+          id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each manufacturer embedding',
+          content longtext DEFAULT NULL COMMENT 'Manufacturer content for embedding generation - name, description, history, etc.',
+          type TEXT DEFAULT NULL COMMENT 'Type of content - description, history, metadata, full_text',
+          sourcetype TEXT DEFAULT 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename TEXT DEFAULT 'manual' COMMENT 'Name of the source system or process',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to manufacturers table - manufacturer ID',
+          language_id INT COMMENT 'FK to languages table - language identifier',
+          metadata longtext DEFAULT NULL COMMENT 'Additional metadata about the embedding - may include product count, supplier info',
+          KEY idx_entity_id (entity_id),
+          KEY idx_language_id (language_id),
+          KEY idx_entity_lang (entity_id, language_id),
+          KEY idx_date_modified (date_modified)
+      ) COMMENT='Vector embeddings for manufacturers - enables semantic manufacturer search and brand discovery';
+
+      CREATE VECTOR INDEX embedding_index ON :table_manufacturers_embedding (embedding);
+
+      CREATE TABLE IF NOT EXISTS :table_suppliers_embedding (
+          id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each supplier embedding',
+          content longtext DEFAULT NULL COMMENT 'Supplier content for embedding generation - name, description, capabilities, etc.',
+          type TEXT DEFAULT NULL COMMENT 'Type of content - description, capabilities, metadata, full_text',
+          sourcetype TEXT DEFAULT 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename TEXT DEFAULT 'manual' COMMENT 'Name of the source system or process',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to suppliers table - supplier ID',
+          metadata longtext DEFAULT NULL COMMENT 'Additional metadata about the embedding - may include product count, contact details',                  
+          KEY idx_entity_id (entity_id),
+          KEY idx_date_modified (date_modified)
+      ) COMMENT='Vector embeddings for suppliers - enables semantic supplier search and sourcing recommendations';
+
+      CREATE VECTOR INDEX embedding_index ON :table_suppliers_embedding (embedding);
+
+      CREATE TABLE IF NOT EXISTS :table_reviews_embedding (
+          id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each review embedding',
+          content longtext DEFAULT NULL COMMENT 'Review content for embedding generation - review text, title, etc.',
+          type TEXT DEFAULT NULL COMMENT 'Type of content - review_text, summary, full_text',
+          sourcetype TEXT DEFAULT 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename TEXT DEFAULT 'manual' COMMENT 'Name of the source system or process',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to reviews table - review ID',
+          language_id INT COMMENT 'FK to languages table - language identifier',
+          metadata longtext DEFAULT NULL COMMENT 'Additional metadata about the embedding - may include rating, product_id, customer_id',
+          KEY idx_entity_id (entity_id),
+          KEY idx_language_id (language_id),
+          KEY idx_entity_lang (entity_id, language_id),
+          KEY idx_date_modified (date_modified)
+      ) COMMENT='Vector embeddings for product reviews - enables semantic review search and sentiment analysis';
+
+      CREATE VECTOR INDEX embedding_index ON :table_reviews_embedding (embedding);
+
+      CREATE TABLE IF NOT EXISTS :table_reviews_sentiment_embedding (
+          id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each sentiment embedding',
+          content longtext DEFAULT NULL COMMENT 'Sentiment-analyzed review content with emotional context',
+          type TEXT DEFAULT NULL COMMENT 'Type of content - sentiment_analysis, emotional_context, full_text',
+          sourcetype TEXT DEFAULT 'manual' COMMENT 'Source type - manual, automated, ai_analyzed',
+          sourcename TEXT DEFAULT 'manual' COMMENT 'Name of the source system or AI model',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for sentiment-aware semantic search',
+          chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to reviews table - review ID',
+          language_id INT COMMENT 'FK to languages table - language identifier',
+          metadata longtext DEFAULT NULL COMMENT 'Additional metadata about the embedding - may include sentiment_score, review_id, product_id',
+          KEY idx_entity_id (entity_id),
+          KEY idx_language_id (language_id),
+          KEY idx_entity_lang (entity_id, language_id),
+          KEY idx_date_modified (date_modified)
+      ) COMMENT='Vector embeddings for review sentiment analysis - enables emotion-aware search and trend detection';
+
+      CREATE VECTOR INDEX embedding_index ON :table_reviews_sentiment_embedding (embedding);
+
+      CREATE TABLE IF NOT EXISTS :table_return_orders_embedding (
+          id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each return order embedding',
+          content longtext DEFAULT NULL COMMENT 'Return order content for embedding generation - reason, description, notes, etc.',
+          type TEXT DEFAULT NULL COMMENT 'Type of content - return_reason, customer_notes, full_text',
+          sourcetype TEXT DEFAULT 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename TEXT DEFAULT 'manual' COMMENT 'Name of the source system or process',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to return_orders table - return order ID',
+          metadata longtext DEFAULT NULL COMMENT 'Additional metadata about the embedding - may include order_status, total, customer_id',
+          KEY idx_entity_id (entity_id),
+          KEY idx_date_modified (date_modified)
+      ) COMMENT='Vector embeddings for return orders - enables semantic return analysis and pattern detection';
+
+      CREATE VECTOR INDEX embedding_index ON :table_return_orders_embedding (embedding);
+
+      CREATE TABLE IF NOT EXISTS :table_orders_embedding (
+          id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each order embedding',
+          content longtext DEFAULT NULL COMMENT 'Order content for embedding generation - items, notes, customer info, etc.',
+          type TEXT DEFAULT NULL COMMENT 'Type of content - order_details, customer_notes, full_text',
+          sourcetype TEXT DEFAULT 'manual' COMMENT 'Source type - manual, automated, imported',
+          sourcename TEXT DEFAULT 'manual' COMMENT 'Name of the source system or process',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+          chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+          entity_id INT COMMENT 'FK to orders table - order ID',
+          metadata longtext DEFAULT NULL COMMENT 'Additional metadata about the embedding - may include order_status, total, customer_id',
+          KEY idx_entity_id (entity_id),
+          KEY idx_date_modified (date_modified)
+      ) COMMENT='Vector embeddings for orders - enables semantic order search and pattern analysis';
+
+      CREATE VECTOR INDEX embedding_index ON :table_orders_embedding (embedding);    
+    EOD;
+      $CLICSHOPPING_Db->exec($sql);
+    }
     // Create embeddings table for order insights
     $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_rag_agent_order_insights_embedding"');
 
