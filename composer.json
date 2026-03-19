@@ -25,7 +25,7 @@
         "symfony/http-client": "^8.0",
         "mattketmo/email-checker": "^3.0",
         "theodo-group/llphant": "^0.11.13",
-        "stripe/stripe-php": "^19.3"
+        "stripe/stripe-php": "^19.4"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"
