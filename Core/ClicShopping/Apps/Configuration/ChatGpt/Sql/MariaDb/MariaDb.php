@@ -525,7 +525,4 @@ class MariaDb
 
     return $validation;
   }
-
-
-  }
 }
