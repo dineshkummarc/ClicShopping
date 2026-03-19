@@ -1,4 +1,8 @@
-version4.22
+version4.23
+
+
+
+---------------
 - AI
     - SerpApi refactored and using new AI agentic approach with Google AI Overview Results API
     - Add new check SEO for categories and products based on AI agentic approach with SerpApi
