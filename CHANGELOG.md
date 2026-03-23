@@ -1,13 +1,16 @@
 version4.23
 
-
+- Some fix
+- Librairies updated
+- update AGENTS.md to help the AI agents
 
 ---------------
+version4.22
 - AI
     - SerpApi refactored and using new AI agentic approach with Google AI Overview Results API
     - Add new check SEO for categories and products based on AI agentic approach with SerpApi
     - AI interface improvement
-    - MCP improvement (tested with LmStudio)
+    - MCP improvement
 - Some fix
 - Librairies updated
 - add AGENTS.md to help the AI agents

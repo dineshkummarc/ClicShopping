@@ -198,6 +198,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
   -  [![php](https://img.shields.io/badge/Php-%3E%3D8.3-green])](https://img.shields.io/badge/Php-%3E%3D8.3-green)
   -  ![GitHub repo size](https://img.shields.io/github/repo-size/ClicShopping/ClicShopping_v3)
   -  ![GitHub top language](https://img.shields.io/github/languages/top/ClicShopping/ClicShopping_v3)
+  -  [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ClicShopping/ClicShopping)
 
 #documentation
 

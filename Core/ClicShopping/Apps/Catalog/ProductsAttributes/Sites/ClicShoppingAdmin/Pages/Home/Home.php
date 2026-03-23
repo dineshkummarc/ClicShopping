@@ -10,8 +10,8 @@
 
 namespace ClicShopping\Apps\Catalog\ProductsAttributes\Sites\ClicShoppingAdmin\Pages\Home;
 
-use ClicShopping\Apps\Catalog\ProductsAttributes\ProductsAttributes;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\Catalog\ProductsAttributes\ProductsAttributes;
 
 class Home extends \ClicShopping\OM\Domains\PagesAbstract
 {
