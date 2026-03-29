@@ -39,7 +39,7 @@
       // Vérification et création du répertoire de cache avant d'instancier OM\Cache
       $this->ensureCacheDirectoryExists();
 
-      $this->cache = new Cache('SEO', 'Work/Log/Cache/SEO');
+      $this->cache = new Cache('SEO', 'SEO');
 
       // Nettoyage automatique (1 chance sur 50)
       if (mt_rand(1, 50) === 1) {

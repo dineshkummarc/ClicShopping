@@ -3,6 +3,8 @@ version4.23
 - Some fix
 - Librairies updated
 - update AGENTS.md to help the AI agents
+- Small AI SEO improvment
+- LLM model updated for OpenAI and add Gemini
 
 ---------------
 version4.22

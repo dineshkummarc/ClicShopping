@@ -29,72 +29,6 @@ use function defined;
 class ModelManager
 {
   /**
-   * Retrieves an array of GPT models with their corresponding IDs and textual descriptions.
-   * 
-   * Model Capability Legend:
-   * - Embeddings: Supports vector embeddings for semantic search
-   * - Reasoning: Advanced reasoning capabilities for complex queries
-   * - Analytics: SQL generation and data analysis
-   * - Web Search: Can perform web searches
-   * - Context: Maximum context window size
-   * 
-   * REMOVED MODELS (Do not meet criteria):
-   * - gpt-4: 8K context limit (too small for RAG BI prompts)
-   * - gpt-3.5-turbo: No embeddings, limited capabilities
-   * - gpt-oss (openai/gpt-oss-20b): 8K context, no embeddings, inconsistent SQL generation
-   * - Ollama models: Excluded per requirements (use LM Studio instead)
-   *
-   * @return array An array of GPT models, where each model is represented as an associative array containing 'id' and 'text' keys.
-   */
-  public static function getGptModel(): array
-  {
-    $array = [
-      // ============================================
-      // GPT-5 SERIES (Future - Best Performance)
-      // ============================================
-      // Context: 200K+ | Embeddings: Yes | Reasoning: Yes | Analytics: Yes | Web Search: Yes
-      ['id' => 'gpt-5', 'text' => 'OpenAI GPT-5 (200K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
-      ['id' => 'gpt-5.2', 'text' => 'OpenAI GPT-5.2 (200K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
-      ['id' => 'gpt-5.2-pro',  'text' => 'OpenAI GPT-5.2-pro (200K context, embeddings, reasoning, web search, highest precision)', 'provider' => 'openai'],
-      ['id' => 'gpt-5-mini', 'text' => 'OpenAI GPT-5-mini (200K context, embeddings, reasoning)', 'provider' => 'openai'],
-      ['id' => 'gpt-5-nano', 'text' => 'OpenAI GPT-5-nano (128K context, no embeddings, reasoning)', 'provider' => 'openai'],
-      
-      // ============================================
-      // GPT-4.1 SERIES (Latest Stable)
-      // ============================================
-      // Context: 128K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
-      ['id' => 'gpt-4.1-mini', 'text' => 'OpenAI GPT-4.1-mini (128K context, embeddings, reasoning) (recommended)', 'provider' => 'openai'],
-      ['id' => 'gpt-4.1-nano', 'text' => 'OpenAI GPT-4.1-nano (128K context, embeddings, reasoning)', 'provider' => 'openai'],
-
-      // ============================================
-      // ANTHROPIC MODELS (Alternative Provider)
-      // ============================================
-      // Context: 200K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
-      ['id' => 'anth-sonnet', 'text' => 'Anthropic Claude Sonnet 3.5 (200K context, embeddings, reasoning)', 'provider' => 'anthropic'],
-      ['id' => 'anth-opus', 'text' => 'Anthropic Claude Opus (200K context, embeddings, reasoning)', 'provider' => 'anthropic'],
-      ['id' => 'anth-haiku', 'text' => 'Anthropic Claude Haiku (200K context, embeddings, fast)', 'provider' => 'anthropic'],
-      
-      // ============================================
-      // MISTRAL MODELS (Alternative Provider)
-      // ============================================
-      // Context: 128K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
-      ['id' => 'mistral-large-latest', 'text' => 'Mistral Large Latest (128K context, embeddings, reasoning)', 'provider' => 'mistral'],
-      
-      // ============================================
-      // LM STUDIO MODELS (Local Deployment)
-      // ============================================
-      // Context: 16K | Embeddings: No | Reasoning: Yes | Analytics: Limited
-      // NOTE: Local models have limited capabilities but provide privacy and cost benefits
-      ['id' => 'openai/gpt-oss-20b', 'text' => 'LM Studio openai/gpt-oss-20b (16K context, reasoning, local)', 'provider' => 'lmstudio'],
-      ['id' => 'openai/gpt-oss-120b', 'text' => 'LM Studio openai/gpt-oss-120b (120K context, reasoning, local)', 'provider' => 'lmstudio'],
-      ['id' => 'qwen/qwen3-4b', 'text' => 'LM Studio qwen3-4b (16K context, no reasoning, local)', 'provider' => 'lmstudio'],
-      ['id' => 'microsoft/phi-4', 'text' => 'LM Studio phi 4 (16K context, no reasoning, local)', 'provider' => 'lmstudio'],
-    ];
-
-    return $array;
-  }
-
-  /**
    * Returns the GPT model to use as a technical fallback in case
    * the primary model fails due to API errors, timeouts, or rate limits.
    * This model should have similar capabilities to the primary model
@@ -120,7 +54,6 @@ class ModelManager
     return 'gpt-5-mini';
   }
 
-
   /**
    * Generates and returns an HTML select field for GPT model options.
    *
@@ -133,6 +66,81 @@ class ModelManager
     $menu = HTML::selectField('engine', $array, null, 'id="engine"');
 
     return $menu;
+  }
+
+  /**
+   * Retrieves an array of GPT models with their corresponding IDs and textual descriptions.
+   *
+   * Model Capability Legend:
+   * - Embeddings: Supports vector embeddings for semantic search
+   * - Reasoning: Advanced reasoning capabilities for complex queries
+   * - Analytics: SQL generation and data analysis
+   * - Web Search: Can perform web searches
+   * - Context: Maximum context window size
+   *
+   * REMOVED MODELS (Do not meet criteria):
+   * - gpt-4: 8K context limit (too small for RAG BI prompts)
+   * - gpt-3.5-turbo: No embeddings, limited capabilities
+   * - gpt-oss (openai/gpt-oss-20b): 8K context, no embeddings, inconsistent SQL generation
+   * - Ollama models: Excluded per requirements (use LM Studio instead)
+   *
+   * @return array An array of GPT models, where each model is represented as an associative array containing 'id' and 'text' keys.
+   */
+  public static function getGptModel(): array
+  {
+    $array = [
+      // ============================================
+      // GPT-5 SERIES (Future - Best Performance)
+      // ============================================
+      // Context: 200K+ | Embeddings: Yes | Reasoning: Yes | Analytics: Yes | Web Search: Yes
+      ['id' => 'gpt-5.4', 'text' => 'OpenAI GPT-5 (1.05M context, embeddings, reasoning, web search)', 'provider' => 'openai'],
+      ['id' => 'gpt-5.4-mini', 'text' => 'OpenAI GPT-5.4 mini (400K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
+      ['id' => 'gpt-5.4-nano', 'text' => 'OpenAI GPT-5.4 nano (400K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
+      ['id' => 'gpt-5.2', 'text' => 'OpenAI GPT-5.2 (200K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
+      ['id' => 'gpt-5.1', 'text' => 'OpenAI GPT-5.1 (200K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
+      ['id' => 'gpt-5-mini', 'text' => 'OpenAI GPT-5-mini (200K context, embeddings, reasoning)', 'provider' => 'openai'],
+      ['id' => 'gpt-5-nano', 'text' => 'OpenAI GPT-5-nano (128K context, no embeddings, reasoning)', 'provider' => 'openai'],
+
+      // ============================================
+      // GPT-4.1 SERIES (Latest Stable)
+      // ============================================
+      // Context: 128K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
+      ['id' => 'gpt-4.1-mini', 'text' => 'OpenAI GPT-4.1-mini (128K context, embeddings, reasoning) (recommended)', 'provider' => 'openai'],
+      ['id' => 'gpt-4.1-nano', 'text' => 'OpenAI GPT-4.1-nano (128K context, embeddings, reasoning)', 'provider' => 'openai'],
+
+      // ============================================
+      // ANTHROPIC MODELS (Alternative Provider)
+      // ============================================
+      // Context: 200K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
+      ['id' => 'anth-sonnet', 'text' => 'Anthropic Claude Sonnet 3.5 (200K context, embeddings, reasoning)', 'provider' => 'anthropic'],
+      ['id' => 'anth-opus', 'text' => 'Anthropic Claude Opus (200K context, embeddings, reasoning)', 'provider' => 'anthropic'],
+      ['id' => 'anth-haiku', 'text' => 'Anthropic Claude Haiku (200K context, embeddings, fast)', 'provider' => 'anthropic'],
+
+      // ============================================
+      // MISTRAL MODELS (Alternative Provider)
+      // ============================================
+      // Context: 128K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
+      ['id' => 'mistral-large-latest', 'text' => 'Mistral Large Latest (128K context, embeddings, reasoning)', 'provider' => 'mistral'],
+
+      // ============================================
+      // GEMINI MODELS (Alternative Provider)
+      // ============================================
+      // Context: 1M | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
+      ['id' => 'gemini-2.5-flash', 'text' => 'gemini-2.5-flash  (1M context, embeddings, reasoning)', 'provider' => 'gemini'],
+
+
+      // ============================================
+      // LM STUDIO MODELS (Local Deployment)
+      // ============================================
+      // Context: 16K | Embeddings: No | Reasoning: Yes | Analytics: Limited
+      // NOTE: Local models have limited capabilities but provide privacy and cost benefits
+      ['id' => 'openai/gpt-oss-20b', 'text' => 'LM Studio openai/gpt-oss-20b (16K context, reasoning, local)', 'provider' => 'lmstudio'],
+      ['id' => 'openai/gpt-oss-120b', 'text' => 'LM Studio openai/gpt-oss-120b (120K context, reasoning, local)', 'provider' => 'lmstudio'],
+      ['id' => 'qwen/qwen3-4b', 'text' => 'LM Studio qwen3-4b (16K context, no reasoning, local)', 'provider' => 'lmstudio'],
+      ['id' => 'microsoft/phi-4', 'text' => 'LM Studio phi 4 (16K context, no reasoning, local)', 'provider' => 'lmstudio'],
+    ];
+
+    return $array;
   }
 
   /**

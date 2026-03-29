@@ -160,7 +160,7 @@ class LLMServiceWrapper
    */
   private function getFromCache(string $key): ?string
   {
-    $cache = new Cache($key);
+    $cache = new Cache($key, 'SEO');
 
     $expireMinutes = (int)ceil(self::CACHE_TTL / 60);
     if ($cache->exists((string)$expireMinutes)) {
@@ -276,7 +276,7 @@ class LLMServiceWrapper
    */
   private function saveToCache(string $key, string $value): void
   {
-    $cache = new Cache($key);
+    $cache = new Cache($key, 'SEO');
     $cache->save($value, ['ttl_seconds' => self::CACHE_TTL]);
   }
 

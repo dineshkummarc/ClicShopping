@@ -1504,6 +1504,8 @@ echo HTML::button($CLICSHOPPING_Products->getDef('button_cancel'), null, $CLICSH
         </div>
       </div>
       <?php echo $CLICSHOPPING_Hooks->output('Products', 'ProductsContentTab7', null, 'display'); ?>
+      <?php echo $CLICSHOPPING_Hooks->output('Products', 'ProductsContentTab8', null, 'display'); ?>
+
     </div>
     <?php
     //***********************************

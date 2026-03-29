@@ -58,6 +58,25 @@ class TranslationServiceWrapper
   }
 
   /**
+   * Translate multiple texts in batch
+   *
+   * @param array $texts Array of texts to translate
+   * @param string $fromLang Source language code
+   * @param string $toLang Target language code
+   * @return array Array of translated texts (same order as input)
+   */
+  public function translateBatch(array $texts, string $fromLang, string $toLang): array
+  {
+    $translated = [];
+
+    foreach ($texts as $text) {
+      $translated[] = $this->translate($text, $fromLang, $toLang);
+    }
+
+    return $translated;
+  }
+
+  /**
    * Translate text from one language to another
    *
    * @param string $text Text to translate
@@ -75,7 +94,7 @@ class TranslationServiceWrapper
     // Check cache first
     $cacheKey = $this->getCacheKey($text, $fromLang, $toLang);
     $cached = $this->getFromCache($cacheKey);
-    
+
     if ($cached !== null) {
       if ($this->debug) {
         error_log("[TranslationServiceWrapper] Cache HIT: {$fromLang} -> {$toLang}");
@@ -118,45 +137,41 @@ class TranslationServiceWrapper
       // Log error and fallback to original text
       error_log("[TranslationServiceWrapper] Translation FAILED: " . $e->getMessage());
       error_log("[TranslationServiceWrapper] Falling back to original text");
-      
+
       return $text; // Fallback to original
     }
   }
 
   /**
-   * Translate multiple texts in batch
+   * Generate cache key for translation
    *
-   * @param array $texts Array of texts to translate
-   * @param string $fromLang Source language code
-   * @param string $toLang Target language code
-   * @return array Array of translated texts (same order as input)
+   * @param string $text Text to translate
+   * @param string $fromLang Source language
+   * @param string $toLang Target language
+   * @return string Cache key
    */
-  public function translateBatch(array $texts, string $fromLang, string $toLang): array
+  private function getCacheKey(string $text, string $fromLang, string $toLang): string
   {
-    $translated = [];
-
-    foreach ($texts as $text) {
-      $translated[] = $this->translate($text, $fromLang, $toLang);
-    }
-
-    return $translated;
+    $hash = md5($text);
+    return self::CACHE_PREFIX . "{$fromLang}_{$toLang}_{$hash}";
   }
 
   /**
-   * Get language code from language_id using OM/Language
+   * Get translation from cache
    *
-   * @param int $languageId Language ID from database
-   * @return string Language code (e.g., 'fr', 'en', 'es')
+   * @param string $key Cache key
+   * @return string|null Cached translation or null if not found
    */
-  public function getLanguageCode(int $languageId): string
+  private function getFromCache(string $key): ?string
   {
-    try {
-      $language = Registry::get('Language');
-      return $language->getLanguageCodeById($languageId);
-    } catch (\Exception $e) {
-      error_log("[TranslationServiceWrapper] Failed to get language code for ID {$languageId}: " . $e->getMessage());
-      return 'en'; // Fallback to English
+    $cache = new Cache($key, 'SEO');
+
+    $expireMinutes = (int)ceil(self::CACHE_TTL / 60);
+    if ($cache->exists((string)$expireMinutes)) {
+      return $cache->get();
     }
+
+    return null;
   }
 
   /**
@@ -221,13 +236,13 @@ class TranslationServiceWrapper
   {
     try {
       $language = Registry::get('Language');
-      
+
       // Get language name from OM/Language
       // The get() method returns language data by code
       $languageName = $language->get('name', $code);
-      
+
       return $languageName ?? 'English';
-      
+
     } catch (\Exception $e) {
       error_log("[TranslationServiceWrapper] Failed to get language name for code '{$code}': " . $e->getMessage());
       return 'English'; // Fallback
@@ -264,38 +279,6 @@ class TranslationServiceWrapper
   }
 
   /**
-   * Generate cache key for translation
-   *
-   * @param string $text Text to translate
-   * @param string $fromLang Source language
-   * @param string $toLang Target language
-   * @return string Cache key
-   */
-  private function getCacheKey(string $text, string $fromLang, string $toLang): string
-  {
-    $hash = md5($text);
-    return self::CACHE_PREFIX . "{$fromLang}_{$toLang}_{$hash}";
-  }
-
-  /**
-   * Get translation from cache
-   *
-   * @param string $key Cache key
-   * @return string|null Cached translation or null if not found
-   */
-  private function getFromCache(string $key): ?string
-  {
-    $cache = new Cache($key);
-
-    $expireMinutes = (int)ceil(self::CACHE_TTL / 60);
-    if ($cache->exists((string)$expireMinutes)) {
-      return $cache->get();
-    }
-
-    return null;
-  }
-
-  /**
    * Save translation to cache
    *
    * @param string $key Cache key
@@ -304,7 +287,24 @@ class TranslationServiceWrapper
    */
   private function saveToCache(string $key, string $value): void
   {
-    $cache = new Cache($key);
+    $cache = new Cache($key, 'SEO');
     $cache->save($value, ['ttl_seconds' => self::CACHE_TTL]);
+  }
+
+  /**
+   * Get language code from language_id using OM/Language
+   *
+   * @param int $languageId Language ID from database
+   * @return string Language code (e.g., 'fr', 'en', 'es')
+   */
+  public function getLanguageCode(int $languageId): string
+  {
+    try {
+      $language = Registry::get('Language');
+      return $language->getLanguageCodeById($languageId);
+    } catch (\Exception $e) {
+      error_log("[TranslationServiceWrapper] Failed to get language code for ID {$languageId}: " . $e->getMessage());
+      return 'en'; // Fallback to English
+    }
   }
 }

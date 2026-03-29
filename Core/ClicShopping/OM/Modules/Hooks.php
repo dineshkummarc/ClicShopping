@@ -32,6 +32,10 @@ class Hooks extends \ClicShopping\OM\Domains\ModulesAbstract
     $result = [];
 
     foreach ($data as $code => $class) {
+      if (!is_string($class)) {
+        continue;
+      }
+
       $class = $this->ns . $app . '\\' . $class;
 
       if (is_subclass_of($class, 'ClicShopping\OM\Modules\\' . $this->code . 'Interface')) {

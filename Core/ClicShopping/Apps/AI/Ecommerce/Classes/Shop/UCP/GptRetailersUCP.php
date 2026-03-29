@@ -125,295 +125,6 @@ class GptRetailersUCP
   }
 
   /**
-   * Returns the base shop URL.
-   *
-   * @return string
-   */
-  private function getBaseShopUrl(): string
-  {
-    return CLICSHOPPING::getConfig('http_server', 'Shop') . CLICSHOPPING::getConfig('http_path', 'Shop');
-  }
-
-  /**
-   * Build absolute URL for shop assets and pages.
-   *
-   * @param string $path
-   * @return string
-   */
-  private function buildAbsoluteUrl(string $path): string
-  {
-    if ($path === '') {
-      return '';
-    }
-
-    if (preg_match('#^https?://#i', $path)) {
-      return $path;
-    }
-
-    $baseUrl = $this->getBaseShopUrl();
-    return rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
-  }
-
-  /**
-   * Returns the store country ISO-3166-1 alpha-2 code.
-   *
-   * @return string
-   */
-  private function getStoreCountryIso(): string
-  {
-    if (\defined('STORE_COUNTRY')) {
-      $country = Address::getCountries((int)STORE_COUNTRY, true);
-      if (!empty($country['countries_iso_code_2'])) {
-        return $country['countries_iso_code_2'];
-      }
-    }
-
-    return 'US';
-  }
-
-  /**
-   * Convert major currency amount to minor units.
-   *
-   * @param float $amount
-   * @return int
-   */
-  private function toMinorUnits(float $amount): int
-  {
-    return (int)round($amount * 100);
-  }
-
-  /**
-   * Returns RFC3339 date from relative time string.
-   *
-   * @param string $time
-   * @return string
-   */
-  private function toRfc3339(string $time): string
-  {
-    return gmdate('c', strtotime($time));
-  }
-
-  /**
-   * Build UCP line items from input items.
-   *
-   * @param array $items
-   * @param float $taxRate
-   * @return array
-   */
-  private function buildLineItems(array $items, float $taxRate): array
-  {
-    $lineItems = [];
-
-    foreach ($items as $item) {
-      $quantity = (int)($item['quantity'] ?? 1);
-      $unitPrice = (float)($item['unit_price'] ?? $item['price'] ?? 0);
-      $baseAmount = $this->toMinorUnits($unitPrice * $quantity);
-      $discount = 0;
-      $subtotal = $baseAmount - $discount;
-      $tax = (int)round($subtotal * $taxRate);
-      $total = $subtotal + $tax;
-
-      $lineItems[] = [
-        'id' => uniqid('li_'),
-        'item' => [
-          'id' => (string)($item['id'] ?? ''),
-          'quantity' => $quantity
-        ],
-        'base_amount' => $baseAmount,
-        'discount' => $discount,
-        'subtotal' => $subtotal,
-        'tax' => $tax,
-        'total' => $total
-      ];
-    }
-
-    return $lineItems;
-  }
-
-  /**
-   * Build totals array for UCP checkout session.
-   *
-   * @param array $lineItems
-   * @param int $fulfillmentSubtotal
-   * @param int $fulfillmentTax
-   * @return array
-   */
-  private function buildTotals(array $lineItems, int $fulfillmentSubtotal, int $fulfillmentTax): array
-  {
-    $itemsBaseAmount = 0;
-    $itemsDiscount = 0;
-    $itemsTax = 0;
-
-    foreach ($lineItems as $lineItem) {
-      $itemsBaseAmount += (int)($lineItem['base_amount'] ?? 0);
-      $itemsDiscount += (int)($lineItem['discount'] ?? 0);
-      $itemsTax += (int)($lineItem['tax'] ?? 0);
-    }
-
-    $subtotal = $itemsBaseAmount - $itemsDiscount;
-    $discount = 0;
-    $tax = $itemsTax + $fulfillmentTax;
-    $fee = 0;
-    $total = $itemsBaseAmount - $itemsDiscount - $discount + $fulfillmentSubtotal + $tax + $fee;
-
-    $totals = [];
-
-    $totals[] = [
-      'type' => 'items_base_amount',
-      'display_text' => 'Item(s) total',
-      'amount' => $itemsBaseAmount
-    ];
-
-    if ($itemsDiscount > 0) {
-      $totals[] = [
-        'type' => 'items_discount',
-        'display_text' => 'Items discount',
-        'amount' => $itemsDiscount
-      ];
-    }
-
-    $totals[] = [
-      'type' => 'subtotal',
-      'display_text' => 'Subtotal',
-      'amount' => $subtotal
-    ];
-
-    if ($discount > 0) {
-      $totals[] = [
-        'type' => 'discount',
-        'display_text' => 'Discount',
-        'amount' => $discount
-      ];
-    }
-
-    $totals[] = [
-      'type' => 'fulfillment',
-      'display_text' => 'Fulfillment',
-      'amount' => $fulfillmentSubtotal
-    ];
-
-    $totals[] = [
-      'type' => 'tax',
-      'display_text' => 'Tax',
-      'amount' => $tax
-    ];
-
-    if ($fee > 0) {
-      $totals[] = [
-        'type' => 'fee',
-        'display_text' => 'Fees',
-        'amount' => $fee
-      ];
-    }
-
-    $totals[] = [
-      'type' => 'total',
-      'display_text' => 'Total',
-      'amount' => $total
-    ];
-
-    return $totals;
-  }
-
-  /**
-   * Build fulfillment options.
-   *
-   * @param int $shippingSubtotal
-   * @param int $shippingTax
-   * @return array
-   */
-  private function buildFulfillmentOptions(int $shippingSubtotal, int $shippingTax, array $deliveryAddress = []): array
-  {
-    $earliest = \defined('CLICSHOPPING_APP_ECOMMERCE_UCP_DELIVERY_EARLIEST') ? CLICSHOPPING_APP_ECOMMERCE_UCP_DELIVERY_EARLIEST : '+3 days';
-    $latest = \defined('CLICSHOPPING_APP_ECOMMERCE_UCP_DELIVERY_LATEST') ? CLICSHOPPING_APP_ECOMMERCE_UCP_DELIVERY_LATEST : '+5 days';
-    $defaultDelivery = \defined('CLICSHOPPING_APP_ECOMMERCE_UCP_DEFAULT_DELIVERY') ? CLICSHOPPING_APP_ECOMMERCE_UCP_DEFAULT_DELIVERY : '3-5 business days';
-    $options = [];
-
-    if (\defined('MODULE_SHIPPING_INSTALLED') && !empty(MODULE_SHIPPING_INSTALLED)) {
-      try {
-        if (!Registry::exists('Shipping')) {
-          Registry::set('Shipping', new \ClicShopping\Sites\Shop\Shipping());
-        }
-
-        $shipping = Registry::get('Shipping');
-        $quotes = $shipping->getQuote();
-
-        foreach ($quotes as $quote) {
-          $methods = $quote['methods'] ?? [];
-          foreach ($methods as $method) {
-            $cost = (float)($method['cost'] ?? 0);
-            $subtotal = $this->toMinorUnits($cost);
-            $taxRate = (float)($quote['tax'] ?? 0);
-            $tax = $taxRate > 0 ? (int)round($subtotal * ($taxRate / 100)) : 0;
-            $total = $subtotal + $tax;
-            $moduleId = $quote['id'] ?? 'shipping';
-            $methodId = $method['id'] ?? 'standard';
-
-            $options[] = [
-              'type' => 'shipping',
-              'id' => str_replace('\\', '_', $moduleId . '_' . $methodId),
-              'title' => $method['title'] ?? ($quote['module'] ?? 'Shipping'),
-              'subtitle' => $defaultDelivery,
-              'carrier' => $quote['module'] ?? 'Shipping',
-              'earliest_delivery_time' => $this->toRfc3339($earliest),
-              'latest_delivery_time' => $this->toRfc3339($latest),
-              'subtotal' => $subtotal,
-              'tax' => $tax,
-              'total' => $total
-            ];
-          }
-        }
-      } catch (\Throwable $e) {
-        $this->logger->error('UCP fulfillment options error', ['error' => $e->getMessage()]);
-      }
-    }
-
-    if (empty($options)) {
-      $total = $shippingSubtotal + $shippingTax;
-      $options[] = [
-        'type' => 'shipping',
-        'id' => 'shipping_standard',
-        'title' => 'Standard',
-        'subtitle' => $defaultDelivery,
-        'carrier' => 'Standard',
-        'earliest_delivery_time' => $this->toRfc3339($earliest),
-        'latest_delivery_time' => $this->toRfc3339($latest),
-        'subtotal' => $shippingSubtotal,
-        'tax' => $shippingTax,
-        'total' => $total
-      ];
-    }
-
-    return $options;
-  }
-
-  /**
-   * Normalize address input into UCP format.
-   *
-   * @param array $address
-   * @return array
-   */
-  private function normalizeAddress(array $address): array
-  {
-    $normalized = [
-      'name' => $address['name'] ?? ($address['full_name'] ?? ''),
-      'line_one' => $address['line_one'] ?? ($address['street_address'] ?? ''),
-      'line_two' => $address['line_two'] ?? ($address['suburb'] ?? ''),
-      'city' => $address['city'] ?? '',
-      'state' => $address['state'] ?? ($address['province'] ?? ''),
-      'postal_code' => $address['postal_code'] ?? ($address['postcode'] ?? ''),
-      'country' => $address['country'] ?? ($address['country_code'] ?? ''),
-      'phone_number' => $address['phone_number'] ?? ($address['phone'] ?? '')
-    ];
-
-    if (!empty($normalized['country'])) {
-      $normalized['country'] = strtoupper($normalized['country']);
-    }
-
-    return $normalized;
-  }
-
-  /**
    * Validate basic UCP input for session creation/update.
    *
    * @param array $input
@@ -447,23 +158,6 @@ class GptRetailersUCP
   }
 
   /**
-   * Build standardized field error entry.
-   *
-   * @param string $code
-   * @param string $field
-   * @param string $message
-   * @return array
-   */
-  private function buildFieldError(string $code, string $field, string $message): array
-  {
-    return [
-      'code' => $code,
-      'field' => $field,
-      'message' => $message
-    ];
-  }
-
-  /**
    * Validate items input payload.
    *
    * @param array $items
@@ -489,6 +183,23 @@ class GptRetailersUCP
     }
 
     return $messages;
+  }
+
+  /**
+   * Build standardized field error entry.
+   *
+   * @param string $code
+   * @param string $field
+   * @param string $message
+   * @return array
+   */
+  private function buildFieldError(string $code, string $field, string $message): array
+  {
+    return [
+      'code' => $code,
+      'field' => $field,
+      'message' => $message
+    ];
   }
 
   /**
@@ -543,18 +254,65 @@ class GptRetailersUCP
   }
 
   /**
-   * Determine session status based on required fields.
+   * Returns the UCP product feed.
    *
-   * @param array $session
-   * @return string
+   * @param array $filters
+   * @return array
    */
-  private function determineSessionStatus(array $session): string
+  public function getProducts(array $filters = []): array
   {
-    if (empty($session['items']) || empty($session['fulfillment_address'])) {
-      return 'not_ready_for_payment';
+    $cacheKey = $this->buildProductCacheKey($filters);
+    $cache = new Cache($cacheKey, 'UCP');
+
+
+    $cacheTtlMinutes = 5;
+    if ($cache->exists($cacheTtlMinutes)) {
+      $cached = $cache->get();
+      if (is_array($cached)) {
+        return $cached;
+      }
     }
 
-    return 'ready_for_payment';
+    if (!Registry::exists('ProductsCommon')) {
+      Registry::set('ProductsCommon', new ProductsCommon());
+    }
+
+    $productsCommon = Registry::get('ProductsCommon');
+    $result = $this->fetchProductsUsingClasses($filters);
+
+    $products = [];
+    foreach ($result['rows'] as $row) {
+      $products[] = $this->formatProductForUCP($row, $productsCommon);
+    }
+
+    $payload = [
+      'products' => $products,
+      'pagination' => $result['pagination']
+    ];
+
+    $cache->save($payload, ['ttl_minutes' => $cacheTtlMinutes]);
+
+    return $payload;
+  }
+
+  /**
+   * Build cache key for product feed.
+   *
+   * @param array $filters
+   * @return string
+   */
+  private function buildProductCacheKey(array $filters): string
+  {
+    $keyData = [
+      'page' => $filters['page'] ?? 1,
+      'limit' => $filters['limit'] ?? 100,
+      'category' => $filters['category'] ?? '',
+      'min_price' => $filters['min_price'] ?? '',
+      'max_price' => $filters['max_price'] ?? '',
+      'in_stock' => $filters['in_stock'] ?? ''
+    ];
+
+    return 'products_' . md5(json_encode($keyData));
   }
 
   /**
@@ -740,63 +498,65 @@ class GptRetailersUCP
   }
 
   /**
-   * Returns the UCP product feed.
+   * Retrieves data for "special" (sale) products.
    *
-   * @param array $filters
+   * @param int $id
    * @return array
    */
-  public function getProducts(array $filters = []): array
+  private function getSpecial(int $id): array
   {
-    $cacheKey = $this->buildProductCacheKey($filters);
-    $cache = new Cache($cacheKey, 'UCP');
-    $cacheTtlMinutes = 5;
-    if ($cache->exists((string)$cacheTtlMinutes)) {
-      $cached = $cache->get();
-      if (is_array($cached)) {
-        return $cached;
-      }
+    $Qspecials = $this->db->prepare('select specials_id,
+                                             scheduled_date,
+                                             expires_date,
+                                             specials_new_products_price,
+                                             flash_discount
+                                        from :table_specials
+                                       where status = 1
+                                         and products_id = :products_id
+                                     ');
+    $Qspecials->bindInt(':products_id', $id);
+    $Qspecials->execute();
+
+    if (!empty($Qspecials->valueInt('specials_id'))) {
+      return [
+        'scheduled_date' => $Qspecials->value('scheduled_date'),
+        'expires_date' => $Qspecials->value('expires_date'),
+        'specials_new_products_price' => $Qspecials->value('specials_new_products_price'),
+        'flash_discount' => $Qspecials->value('flash_discount')
+      ];
     }
 
-    if (!Registry::exists('ProductsCommon')) {
-      Registry::set('ProductsCommon', new ProductsCommon());
-    }
-
-    $productsCommon = Registry::get('ProductsCommon');
-    $result = $this->fetchProductsUsingClasses($filters);
-
-    $products = [];
-    foreach ($result['rows'] as $row) {
-      $products[] = $this->formatProductForUCP($row, $productsCommon);
-    }
-
-    $payload = [
-      'products' => $products,
-      'pagination' => $result['pagination']
-    ];
-
-    $cache->save($payload, ['ttl_minutes' => $cacheTtlMinutes]);
-
-    return $payload;
+    return [];
   }
 
   /**
-   * Build cache key for product feed.
+   * Build absolute URL for shop assets and pages.
    *
-   * @param array $filters
+   * @param string $path
    * @return string
    */
-  private function buildProductCacheKey(array $filters): string
+  private function buildAbsoluteUrl(string $path): string
   {
-    $keyData = [
-      'page' => $filters['page'] ?? 1,
-      'limit' => $filters['limit'] ?? 100,
-      'category' => $filters['category'] ?? '',
-      'min_price' => $filters['min_price'] ?? '',
-      'max_price' => $filters['max_price'] ?? '',
-      'in_stock' => $filters['in_stock'] ?? ''
-    ];
+    if ($path === '') {
+      return '';
+    }
 
-    return 'products_' . md5(json_encode($keyData));
+    if (preg_match('#^https?://#i', $path)) {
+      return $path;
+    }
+
+    $baseUrl = $this->getBaseShopUrl();
+    return rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
+  }
+
+  /**
+   * Returns the base shop URL.
+   *
+   * @return string
+   */
+  private function getBaseShopUrl(): string
+  {
+    return CLICSHOPPING::getConfig('http_server', 'Shop') . CLICSHOPPING::getConfig('http_path', 'Shop');
   }
 
   /**
@@ -853,38 +613,6 @@ class GptRetailersUCP
     }
 
     return $variants;
-  }
-
-  /**
-   * Retrieves data for "special" (sale) products.
-   *
-   * @param int $id
-   * @return array
-   */
-  private function getSpecial(int $id): array
-  {
-    $Qspecials = $this->db->prepare('select specials_id,
-                                             scheduled_date,
-                                             expires_date,
-                                             specials_new_products_price,
-                                             flash_discount
-                                        from :table_specials
-                                       where status = 1
-                                         and products_id = :products_id
-                                     ');
-    $Qspecials->bindInt(':products_id', $id);
-    $Qspecials->execute();
-
-    if (!empty($Qspecials->valueInt('specials_id'))) {
-      return [
-        'scheduled_date' => $Qspecials->value('scheduled_date'),
-        'expires_date' => $Qspecials->value('expires_date'),
-        'specials_new_products_price' => $Qspecials->value('specials_new_products_price'),
-        'flash_discount' => $Qspecials->value('flash_discount')
-      ];
-    }
-
-    return [];
   }
 
   /**
@@ -973,6 +701,327 @@ class GptRetailersUCP
     $this->sessionManager->update($sessionId, $session);
 
     return $session;
+  }
+
+  /**
+   * Normalize address input into UCP format.
+   *
+   * @param array $address
+   * @return array
+   */
+  private function normalizeAddress(array $address): array
+  {
+    $normalized = [
+      'name' => $address['name'] ?? ($address['full_name'] ?? ''),
+      'line_one' => $address['line_one'] ?? ($address['street_address'] ?? ''),
+      'line_two' => $address['line_two'] ?? ($address['suburb'] ?? ''),
+      'city' => $address['city'] ?? '',
+      'state' => $address['state'] ?? ($address['province'] ?? ''),
+      'postal_code' => $address['postal_code'] ?? ($address['postcode'] ?? ''),
+      'country' => $address['country'] ?? ($address['country_code'] ?? ''),
+      'phone_number' => $address['phone_number'] ?? ($address['phone'] ?? '')
+    ];
+
+    if (!empty($normalized['country'])) {
+      $normalized['country'] = strtoupper($normalized['country']);
+    }
+
+    return $normalized;
+  }
+
+  /**
+   * Build UCP line items from input items.
+   *
+   * @param array $items
+   * @param float $taxRate
+   * @return array
+   */
+  private function buildLineItems(array $items, float $taxRate): array
+  {
+    $lineItems = [];
+
+    foreach ($items as $item) {
+      $quantity = (int)($item['quantity'] ?? 1);
+      $unitPrice = (float)($item['unit_price'] ?? $item['price'] ?? 0);
+      $baseAmount = $this->toMinorUnits($unitPrice * $quantity);
+      $discount = 0;
+      $subtotal = $baseAmount - $discount;
+      $tax = (int)round($subtotal * $taxRate);
+      $total = $subtotal + $tax;
+
+      $lineItems[] = [
+        'id' => uniqid('li_'),
+        'item' => [
+          'id' => (string)($item['id'] ?? ''),
+          'quantity' => $quantity
+        ],
+        'base_amount' => $baseAmount,
+        'discount' => $discount,
+        'subtotal' => $subtotal,
+        'tax' => $tax,
+        'total' => $total
+      ];
+    }
+
+    return $lineItems;
+  }
+
+  /**
+   * Convert major currency amount to minor units.
+   *
+   * @param float $amount
+   * @return int
+   */
+  private function toMinorUnits(float $amount): int
+  {
+    return (int)round($amount * 100);
+  }
+
+  /**
+   * Build fulfillment options.
+   *
+   * @param int $shippingSubtotal
+   * @param int $shippingTax
+   * @return array
+   */
+  private function buildFulfillmentOptions(int $shippingSubtotal, int $shippingTax, array $deliveryAddress = []): array
+  {
+    $earliest = \defined('CLICSHOPPING_APP_ECOMMERCE_UCP_DELIVERY_EARLIEST') ? CLICSHOPPING_APP_ECOMMERCE_UCP_DELIVERY_EARLIEST : '+3 days';
+    $latest = \defined('CLICSHOPPING_APP_ECOMMERCE_UCP_DELIVERY_LATEST') ? CLICSHOPPING_APP_ECOMMERCE_UCP_DELIVERY_LATEST : '+5 days';
+    $defaultDelivery = \defined('CLICSHOPPING_APP_ECOMMERCE_UCP_DEFAULT_DELIVERY') ? CLICSHOPPING_APP_ECOMMERCE_UCP_DEFAULT_DELIVERY : '3-5 business days';
+    $options = [];
+
+    if (\defined('MODULE_SHIPPING_INSTALLED') && !empty(MODULE_SHIPPING_INSTALLED)) {
+      try {
+        if (!Registry::exists('Shipping')) {
+          Registry::set('Shipping', new \ClicShopping\Sites\Shop\Shipping());
+        }
+
+        $shipping = Registry::get('Shipping');
+        $quotes = $shipping->getQuote();
+
+        foreach ($quotes as $quote) {
+          $methods = $quote['methods'] ?? [];
+          foreach ($methods as $method) {
+            $cost = (float)($method['cost'] ?? 0);
+            $subtotal = $this->toMinorUnits($cost);
+            $taxRate = (float)($quote['tax'] ?? 0);
+            $tax = $taxRate > 0 ? (int)round($subtotal * ($taxRate / 100)) : 0;
+            $total = $subtotal + $tax;
+            $moduleId = $quote['id'] ?? 'shipping';
+            $methodId = $method['id'] ?? 'standard';
+
+            $options[] = [
+              'type' => 'shipping',
+              'id' => str_replace('\\', '_', $moduleId . '_' . $methodId),
+              'title' => $method['title'] ?? ($quote['module'] ?? 'Shipping'),
+              'subtitle' => $defaultDelivery,
+              'carrier' => $quote['module'] ?? 'Shipping',
+              'earliest_delivery_time' => $this->toRfc3339($earliest),
+              'latest_delivery_time' => $this->toRfc3339($latest),
+              'subtotal' => $subtotal,
+              'tax' => $tax,
+              'total' => $total
+            ];
+          }
+        }
+      } catch (\Throwable $e) {
+        $this->logger->error('UCP fulfillment options error', ['error' => $e->getMessage()]);
+      }
+    }
+
+    if (empty($options)) {
+      $total = $shippingSubtotal + $shippingTax;
+      $options[] = [
+        'type' => 'shipping',
+        'id' => 'shipping_standard',
+        'title' => 'Standard',
+        'subtitle' => $defaultDelivery,
+        'carrier' => 'Standard',
+        'earliest_delivery_time' => $this->toRfc3339($earliest),
+        'latest_delivery_time' => $this->toRfc3339($latest),
+        'subtotal' => $shippingSubtotal,
+        'tax' => $shippingTax,
+        'total' => $total
+      ];
+    }
+
+    return $options;
+  }
+
+  /**
+   * Returns RFC3339 date from relative time string.
+   *
+   * @param string $time
+   * @return string
+   */
+  private function toRfc3339(string $time): string
+  {
+    return gmdate('c', strtotime($time));
+  }
+
+  /**
+   * Build totals array for UCP checkout session.
+   *
+   * @param array $lineItems
+   * @param int $fulfillmentSubtotal
+   * @param int $fulfillmentTax
+   * @return array
+   */
+  private function buildTotals(array $lineItems, int $fulfillmentSubtotal, int $fulfillmentTax): array
+  {
+    $itemsBaseAmount = 0;
+    $itemsDiscount = 0;
+    $itemsTax = 0;
+
+    foreach ($lineItems as $lineItem) {
+      $itemsBaseAmount += (int)($lineItem['base_amount'] ?? 0);
+      $itemsDiscount += (int)($lineItem['discount'] ?? 0);
+      $itemsTax += (int)($lineItem['tax'] ?? 0);
+    }
+
+    $subtotal = $itemsBaseAmount - $itemsDiscount;
+    $discount = 0;
+    $tax = $itemsTax + $fulfillmentTax;
+    $fee = 0;
+    $total = $itemsBaseAmount - $itemsDiscount - $discount + $fulfillmentSubtotal + $tax + $fee;
+
+    $totals = [];
+
+    $totals[] = [
+      'type' => 'items_base_amount',
+      'display_text' => 'Item(s) total',
+      'amount' => $itemsBaseAmount
+    ];
+
+    if ($itemsDiscount > 0) {
+      $totals[] = [
+        'type' => 'items_discount',
+        'display_text' => 'Items discount',
+        'amount' => $itemsDiscount
+      ];
+    }
+
+    $totals[] = [
+      'type' => 'subtotal',
+      'display_text' => 'Subtotal',
+      'amount' => $subtotal
+    ];
+
+    if ($discount > 0) {
+      $totals[] = [
+        'type' => 'discount',
+        'display_text' => 'Discount',
+        'amount' => $discount
+      ];
+    }
+
+    $totals[] = [
+      'type' => 'fulfillment',
+      'display_text' => 'Fulfillment',
+      'amount' => $fulfillmentSubtotal
+    ];
+
+    $totals[] = [
+      'type' => 'tax',
+      'display_text' => 'Tax',
+      'amount' => $tax
+    ];
+
+    if ($fee > 0) {
+      $totals[] = [
+        'type' => 'fee',
+        'display_text' => 'Fees',
+        'amount' => $fee
+      ];
+    }
+
+    $totals[] = [
+      'type' => 'total',
+      'display_text' => 'Total',
+      'amount' => $total
+    ];
+
+    return $totals;
+  }
+
+  /**
+   * Lookup customer id by email.
+   *
+   * @param string $email
+   * @return int|null
+   */
+  private function getCustomerIdByEmail(string $email): ?int
+  {
+    $Qcustomer = $this->db->prepare('select customers_id from :table_customers where customers_email_address = :email');
+    $Qcustomer->bindValue(':email', $email);
+    $Qcustomer->execute();
+
+    if ($Qcustomer->fetch()) {
+      return $Qcustomer->valueInt('customers_id');
+    }
+
+    return null;
+  }
+
+  /**
+   * Retrieve saved addresses for a customer in UCP format.
+   *
+   * @param int $customerId
+   * @return array
+   */
+  private function getSavedAddresses(int $customerId): array
+  {
+    $addresses = [];
+
+    $Qaddress = $this->db->prepare('select entry_firstname,
+                                           entry_lastname,
+                                           entry_company,
+                                           entry_street_address,
+                                           entry_suburb,
+                                           entry_city,
+                                           entry_state,
+                                           entry_postcode,
+                                           entry_country_id,
+                                           entry_telephone
+                                      from :table_address_book
+                                     where customers_id = :customers_id');
+    $Qaddress->bindInt(':customers_id', $customerId);
+    $Qaddress->execute();
+
+    while ($Qaddress->fetch()) {
+      $country = Address::getCountries((int)$Qaddress->valueInt('entry_country_id'), true);
+      $countryCode = $country['countries_iso_code_2'] ?? '';
+      $name = trim($Qaddress->value('entry_firstname') . ' ' . $Qaddress->value('entry_lastname'));
+
+      $addresses[] = [
+        'name' => $name,
+        'line_one' => $Qaddress->value('entry_street_address'),
+        'line_two' => $Qaddress->value('entry_suburb'),
+        'city' => $Qaddress->value('entry_city'),
+        'state' => $Qaddress->value('entry_state'),
+        'postal_code' => $Qaddress->value('entry_postcode'),
+        'country' => $countryCode,
+        'phone_number' => $Qaddress->value('entry_telephone')
+      ];
+    }
+
+    return $addresses;
+  }
+
+  /**
+   * Determine session status based on required fields.
+   *
+   * @param array $session
+   * @return string
+   */
+  private function determineSessionStatus(array $session): string
+  {
+    if (empty($session['items']) || empty($session['fulfillment_address'])) {
+      return 'not_ready_for_payment';
+    }
+
+    return 'ready_for_payment';
   }
 
   /**
@@ -1093,18 +1142,6 @@ class GptRetailersUCP
   }
 
   /**
-   * Handle payment webhook payload.
-   *
-   * @param array $payload
-   * @return array
-   */
-  public function handleWebhook(array $payload): array
-  {
-    $event = $this->paymentProcessor->handleWebhook($payload);
-    return ['received' => true, 'event' => $event['type'] ?? null];
-  }
-
-  /**
    * Create an order from a stored UCP session.
    *
    * @param string $sessionId
@@ -1160,66 +1197,31 @@ class GptRetailersUCP
   }
 
   /**
-   * Lookup customer id by email.
+   * Handle payment webhook payload.
    *
-   * @param string $email
-   * @return int|null
+   * @param array $payload
+   * @return array
    */
-  private function getCustomerIdByEmail(string $email): ?int
+  public function handleWebhook(array $payload): array
   {
-    $Qcustomer = $this->db->prepare('select customers_id from :table_customers where customers_email_address = :email');
-    $Qcustomer->bindValue(':email', $email);
-    $Qcustomer->execute();
-
-    if ($Qcustomer->fetch()) {
-      return $Qcustomer->valueInt('customers_id');
-    }
-
-    return null;
+    $event = $this->paymentProcessor->handleWebhook($payload);
+    return ['received' => true, 'event' => $event['type'] ?? null];
   }
 
   /**
-   * Retrieve saved addresses for a customer in UCP format.
+   * Returns the store country ISO-3166-1 alpha-2 code.
    *
-   * @param int $customerId
-   * @return array
+   * @return string
    */
-  private function getSavedAddresses(int $customerId): array
+  private function getStoreCountryIso(): string
   {
-    $addresses = [];
-
-    $Qaddress = $this->db->prepare('select entry_firstname,
-                                           entry_lastname,
-                                           entry_company,
-                                           entry_street_address,
-                                           entry_suburb,
-                                           entry_city,
-                                           entry_state,
-                                           entry_postcode,
-                                           entry_country_id,
-                                           entry_telephone
-                                      from :table_address_book
-                                     where customers_id = :customers_id');
-    $Qaddress->bindInt(':customers_id', $customerId);
-    $Qaddress->execute();
-
-    while ($Qaddress->fetch()) {
-      $country = Address::getCountries((int)$Qaddress->valueInt('entry_country_id'), true);
-      $countryCode = $country['countries_iso_code_2'] ?? '';
-      $name = trim($Qaddress->value('entry_firstname') . ' ' . $Qaddress->value('entry_lastname'));
-
-      $addresses[] = [
-        'name' => $name,
-        'line_one' => $Qaddress->value('entry_street_address'),
-        'line_two' => $Qaddress->value('entry_suburb'),
-        'city' => $Qaddress->value('entry_city'),
-        'state' => $Qaddress->value('entry_state'),
-        'postal_code' => $Qaddress->value('entry_postcode'),
-        'country' => $countryCode,
-        'phone_number' => $Qaddress->value('entry_telephone')
-      ];
+    if (\defined('STORE_COUNTRY')) {
+      $country = Address::getCountries((int)STORE_COUNTRY, true);
+      if (!empty($country['countries_iso_code_2'])) {
+        return $country['countries_iso_code_2'];
+      }
     }
 
-    return $addresses;
+    return 'US';
   }
 }

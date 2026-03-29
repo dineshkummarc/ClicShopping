@@ -101,6 +101,10 @@ class SEFU implements \ClicShopping\OM\Interfaces\ServiceInterface
       foreach ($parameters as $parameter) {
         $param_array = explode('-', $parameter, 2);
 
+        if (!isset($param_array[1])) {
+          $param_array[1] = '';
+        }
+
         if ($param_array[0] == 'language') {
           $value_language = $param_array[1];
         } else {

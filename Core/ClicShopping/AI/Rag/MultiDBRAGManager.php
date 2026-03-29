@@ -63,7 +63,6 @@ class MultiDBRAGManager
   private mixed $resultFormatter;
   private int $userId;
 
-  // Reranking properties (Task 2.14.3 - LLPhant reranking integration)
   private ?LLMReranker $reranker = null;
   private bool $useReranking = false;
 
@@ -186,7 +185,6 @@ class MultiDBRAGManager
       error_log("------------------------------------------");
     }
   }
-
 
   /**
    * Returns all known embedding tables (fully dynamic)

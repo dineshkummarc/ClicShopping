@@ -175,7 +175,8 @@ class CO implements \ClicShopping\OM\Modules\PaymentInterface
       }
     }
 
-    return ['id' => $this->app->vendor . '\\' . $this->app->code . '\\' . $this->code,
+    return [
+      'id' => $this->app->vendor . '\\' . $this->app->code . '\\' . $this->code,
       'module' => $this->public_title
     ];
   }
