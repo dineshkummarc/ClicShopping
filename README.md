@@ -83,14 +83,15 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
   - Semantic search across multiple database tables
   - Analytics query processing with natural language to SQL conversion
   - Intelligent content generation with context-aware responses
-  - Admin chatbot interface with RAG capabilities
+  - Admin chatbot interface with RAG, BI, WebSearch and Hybrid capabilities
   - Web Search impleted for semantic search
   - AI Agentic Agent via Multi Domain Approach and Actors expertise
     - Analytics (BI)
     - Semantic (RAG)
     - WebSearch with google SERP API AI Overview
     - HYBRID
-    - Around 50 KPI for manaer, Developer, Data scientist
+    - Around 50 KPI for manager, Developer, Data scientist
+    - 8 autonomous agents 
 - Generative Artificial Intelligence :
   - Generative artificial products customers recommendations
   - Generative artificial intelligence for All content (product,categories...)
@@ -107,6 +108,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 - Agentic Commerce Protocol (ACP) from OpenAI.
 - Universal Commerce Protocol (UCP) from Google.
 - Agentic SEO Analysis
+- Product cockpit AI with forecasting metrics and recommendations
 
 ##Security & Compliance
 - GDPR Ready: Built-in compliance tools and data protection
