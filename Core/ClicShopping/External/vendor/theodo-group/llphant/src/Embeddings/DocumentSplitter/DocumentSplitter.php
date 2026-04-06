@@ -4,7 +4,7 @@ namespace LLPhant\Embeddings\DocumentSplitter;
 
 use LLPhant\Embeddings\Document;
 
-final class DocumentSplitter
+class DocumentSplitter
 {
     /**
      * @return Document[]

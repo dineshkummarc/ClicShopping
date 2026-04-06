@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'bce8d3841002e4a04b4af4b27b8b88dc50985e45',
+        'reference' => 'abae4c18b41318867f83163b0218cdfa553db4c8',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'bce8d3841002e4a04b4af4b27b8b88dc50985e45',
+            'reference' => 'abae4c18b41318867f83163b0218cdfa553db4c8',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -110,9 +110,9 @@
             'dev_requirement' => false,
         ),
         'doctrine/orm' => array(
-            'pretty_version' => '3.6.2',
-            'version' => '3.6.2.0',
-            'reference' => '4262eb495b4d2a53b45de1ac58881e0091f2970f',
+            'pretty_version' => '3.6.3',
+            'version' => '3.6.3.0',
+            'reference' => 'e88cd591f0786089dee22b972c28aa2076df51c0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../doctrine/orm',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => '6a77cce24e143b6042397d1c255d085e22afae16',
+            'reference' => 'db78064456eb735e368677828095fb7fe5aeda6f',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
@@ -550,9 +550,9 @@
             'dev_requirement' => false,
         ),
         'theodo-group/llphant' => array(
-            'pretty_version' => '0.11.15',
-            'version' => '0.11.15.0',
-            'reference' => '6f95f01684c94cad6d6fad2f4ea73310ec05d3ee',
+            'pretty_version' => '0.11.16',
+            'version' => '0.11.16.0',
+            'reference' => '581a88125311b51bd29dd8e818b31e48df4c7f7a',
             'type' => 'library',
             'install_path' => __DIR__ . '/../theodo-group/llphant',
             'aliases' => array(),
