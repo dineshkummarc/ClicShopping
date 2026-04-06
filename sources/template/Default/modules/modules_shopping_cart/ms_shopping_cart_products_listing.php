@@ -209,8 +209,10 @@ class ms_shopping_cart_products_listing
         $cart .= '</tr>';
 
 // display SaveMoney Hook
-        $_POST['products_id'] = $products[$i]['id'];
-        $cart .= Registry::get('Hooks')->output('Cart', 'AdditionalCheckoutSaveMoney');
+        //trackingProduct
+        ProductsTracking::insertProductTracking((int)$products[$i]['id'],  $this->code, $module_position, $this->sort_order, $CLICSHOPPING_Language->getId(), null, 0.80);
+
+        $cart .= Registry::get('Hooks')->output('Cart', 'AdditionalCheckoutSaveMoney', ['product_id' => (int)$products[$i]['id']]);
 
         ob_start();
         require($CLICSHOPPING_Template->getTemplateModules($this->group . '/content/shopping_cart_products_listing'));
