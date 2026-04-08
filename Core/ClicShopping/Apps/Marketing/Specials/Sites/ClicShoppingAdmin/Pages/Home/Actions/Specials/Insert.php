@@ -18,7 +18,6 @@ class Insert extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {
-
     $CLICSHOPPING_Specials = Registry::get('Specials');
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
 
