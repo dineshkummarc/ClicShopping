@@ -117,10 +117,10 @@ class cc_checkout_confirmation_products_listing
         $data .= '</td>' . "\n";
 
         if (\count($CLICSHOPPING_Order->info['tax_groups']) > 1) {
-          $data .= '<td class="text-end" valign="top">' . Tax::displayTaxRateValue($CLICSHOPPING_Order->products[$i]['tax']) . '</td>' . "\n";
+          $data .= '<td class="text-end" vertical-align="top">' . Tax::displayTaxRateValue($CLICSHOPPING_Order->products[$i]['tax']) . '</td>' . "\n";
         }
 
-        $data .= '<td  class="text-end" valign="top">';
+        $data .= '<td  class="text-end" vertical-align="top">';
         $data .= $CLICSHOPPING_Currencies->displayPrice($CLICSHOPPING_Order->products[$i]['final_price'], $CLICSHOPPING_Order->products[$i]['tax'], $CLICSHOPPING_Order->products[$i]['qty']);
         $data .= '</td>' . "\n";
         $data .= '</tr>' . "\n";

@@ -11,6 +11,7 @@
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\AI\Ecommerce\Classes\Shop\CockpitAI\ProductsTracking;
 
 /**
  * Class pi_products_info_name
@@ -102,6 +103,10 @@ class pi_products_info_name
     $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
     $CLICSHOPPING_Template = Registry::get('Template');
     $CLICSHOPPING_TemplateCache = Registry::get('TemplateCache');
+    $CLICSHOPPING_Language = Registry::get('Language');
+
+    // normalisation position module (left/right)
+    $module_position = ($this->group === 'boxes_column_left') ? 'left' : 'right';
 
     if ($CLICSHOPPING_ProductsCommon->getID() && isset($_GET['Products'])) {
       if ($CLICSHOPPING_TemplateCache->isCacheEnabled()) {
@@ -123,6 +128,9 @@ class pi_products_info_name
 
       $id = $CLICSHOPPING_ProductsCommon->getID();
       $products_name = $CLICSHOPPING_ProductsCommon->getProductsName($id);
+
+      //trackingProduct
+      ProductsTracking::insertProductTracking($id,  $this->code, $module_position, $this->sort_order, $CLICSHOPPING_Language->getId(), null, 1);
 
       $products_name_url = $CLICSHOPPING_ProductsFunctionTemplate->getProductsUrlRewrited()->getProductNameUrl($id);
 

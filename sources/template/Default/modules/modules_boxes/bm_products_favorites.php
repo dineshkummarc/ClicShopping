@@ -11,6 +11,7 @@
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\AI\Ecommerce\Classes\Shop\CockpitAI\ProductsTracking;
 
 class bm_products_favorites
 {
@@ -34,14 +35,13 @@ class bm_products_favorites
       $this->sort_order = defined('MODULE_BOXES_PRODUCTS_FAVORITES_SORT_ORDER') ? (int)MODULE_BOXES_PRODUCTS_FAVORITES_SORT_ORDER : 0;
       $this->enabled = (defined('MODULE_BOXES_PRODUCTS_FAVORITES_STATUS') && MODULE_BOXES_PRODUCTS_FAVORITES_STATUS == 'True');
       $this->pages = defined('MODULE_BOXES_PRODUCTS_FAVORITES_DISPLAY_PAGES') ? MODULE_BOXES_PRODUCTS_FAVORITES_DISPLAY_PAGES : '';
-
       $this->group = (defined('MODULE_BOXES_PRODUCTS_FAVORITES_CONTENT_PLACEMENT') && MODULE_BOXES_PRODUCTS_FAVORITES_CONTENT_PLACEMENT == 'Left Column') ? 'boxes_column_left' : 'boxes_column_right';
     }
   }
 
   public function execute()
   {
-
+    $CLICSHOPPING_Language = Registry::get('Language');
     $CLICSHOPPING_Customer = Registry::get('Customer');
     $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
@@ -49,9 +49,10 @@ class bm_products_favorites
     $CLICSHOPPING_Service = Registry::get('Service');
     $CLICSHOPPING_Banner = Registry::get('Banner');
     $CLICSHOPPING_ProductsFunctionTemplate = Registry::get('ProductsFunctionTemplate');
+    // normalisation position module (left/right)
+    $module_position = ($this->group === 'boxes_column_left') ? 'left' : 'right';
 
     if ($CLICSHOPPING_Customer->getCustomersGroupID() != 0) {
-
       $Qproducts = $CLICSHOPPING_Db->prepare('select distinct p.products_id
                                                 from :table_products_favorites ph,
                                                       :table_products p left join :table_products_groups g on p.products_id = g.products_id,
@@ -130,31 +131,33 @@ class bm_products_favorites
 
       while ($Qproducts->fetch()) {
         $products_id = $Qproducts->valueInt('products_id');
-        $_POST['products_id'] = $products_id;
 
-// **************************
-//    product name
-// **************************
+        //trackingProduct
+        ProductsTracking::insertProductTracking($products_id,  $this->code, $module_position, $this->sort_order, $CLICSHOPPING_Language->getId(), null, 0.08);
+
+        // **************************
+        //    product name
+        // **************************
         $products_name_url = $CLICSHOPPING_ProductsFunctionTemplate->getProductsUrlRewrited()->getProductNameUrl($products_id);
 
         $products_name = $CLICSHOPPING_ProductsCommon->getProductsName($products_id);
 
         $products_name_image = $CLICSHOPPING_ProductsFunctionTemplate->getProductsNameUrl($products_id);
-// *************************
-//       Flash discount
-// **************************
+        // *************************
+        //       Flash discount
+        // **************************
         $products_flash_discount = '';
         if ($CLICSHOPPING_ProductsCommon->getProductsFlashDiscount($products_id) != '') {
           $products_flash_discount = CLICSHOPPING::getDef('text_flash_discount') . '<br/>' . $CLICSHOPPING_ProductsCommon->getProductsFlashDiscount($products_id);
         }
-// *************************
-// display the differents prices before button
-// **************************
+        // *************************
+        // display the differents prices before button
+        // **************************
         $product_price = $CLICSHOPPING_ProductsCommon->getCustomersPrice($products_id);
 
-// **************************
-// See the button more view details
-// **************************
+        // **************************
+        // See the button more view details
+        // **************************
         if (defined('MODULE_BOXES_PRODUCTS_FAVORITES_DETAIL_BUTTON') && MODULE_BOXES_PRODUCTS_FAVORITES_DETAIL_BUTTON == 'True') {
           $button_small_view_details = HTML::button(CLICSHOPPING::getDef('button_detail'), null, $products_name_url, 'info', null, 'sm');
         } else {
@@ -162,9 +165,9 @@ class bm_products_favorites
         }
 
         $products_image = HTML::link($products_name_url, HTML::image($CLICSHOPPING_Template->getDirectoryTemplateImages() . $CLICSHOPPING_ProductsCommon->getProductsImage($products_id), HTML::outputProtected($products_name), defined('SMALL_IMAGE_WIDTH') ? (int)SMALL_IMAGE_WIDTH : 0, defined('SMALL_IMAGE_HEIGHT') ? (int)SMALL_IMAGE_HEIGHT : 0));
-// **************************
-//Ticker Image
-// **************************
+        // **************************
+        //Ticker Image
+        // **************************
         if ($CLICSHOPPING_ProductsCommon->getProductsTickerSpecials($products_id) == 'True' && defined('MODULE_BOXES_PRODUCTS_FAVORITES_TICKER') && MODULE_BOXES_PRODUCTS_FAVORITES_TICKER == 'True') {
           $products_image .= HTML::link($products_name_url, HTML::tickerImage(CLICSHOPPING::getDef('text_ticker_specials'), 'ModulesBoxeBootstrapTickerSpecial', $CLICSHOPPING_ProductsCommon->getProductsTickerSpecials($products_id)));
         } elseif ($CLICSHOPPING_ProductsCommon->getProductsTickerFavorites($products_id) == 'True' && defined('MODULE_BOXES_PRODUCTS_FAVORITES_TICKER') && MODULE_BOXES_PRODUCTS_FAVORITES_TICKER == 'True') {

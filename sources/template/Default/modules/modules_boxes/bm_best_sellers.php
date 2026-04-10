@@ -8,7 +8,8 @@
  *
  */
 
-use ClicShopping\OM\CLICSHOPPING;
+  use ClicShopping\Apps\AI\Ecommerce\Classes\Shop\CockpitAI\ProductsTracking;
+  use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
@@ -40,7 +41,6 @@ class bm_best_sellers
 
   public function execute()
   {
-
     $CLICSHOPPING_Customer = Registry::get('Customer');
     $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_Template = Registry::get('Template');
@@ -50,6 +50,10 @@ class bm_best_sellers
     $CLICSHOPPING_Banner = Registry::get('Banner');
     $CLICSHOPPING_ProductsFunctionTemplate = Registry::get('ProductsFunctionTemplate');
     $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
+    $CLICSHOPPING_Language = Registry::get('Language');
+
+    // normalisation position module (left/right)
+    $module_position = ($this->group === 'boxes_column_left') ? 'left' : 'right';
 
     if ($CLICSHOPPING_Category->getID() && ($CLICSHOPPING_Category->getID() > 0)) {
       if ($CLICSHOPPING_Customer->getCustomersGroupID() != 0) {
@@ -169,6 +173,10 @@ class bm_best_sellers
       $bestsellers_list = '<ol class="olBestSellers">';
 
       foreach ($best_sellers as $b) {
+        //trackingProduct
+        ProductsTracking::insertProductTracking($b['products_id'],  $this->code, $module_position, $this->sort_order, $CLICSHOPPING_Language->getId(), null, 0.09);
+
+
         $products_name_url = $CLICSHOPPING_ProductsFunctionTemplate->getProductsUrlRewrited()->getProductNameUrl($b['products_id']);
         $bestsellers_list .= '<li class="BestSellerLi">' . HTML::link($products_name_url, null . '  <span itemprop="itemListElement">' . $b['products_name'] . '</span>') . '</li>';
 

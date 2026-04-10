@@ -11,6 +11,7 @@
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\AI\Ecommerce\Classes\Shop\CockpitAI\ProductsTracking;
 
 class pse_products_search
 {
@@ -43,6 +44,10 @@ class pse_products_search
     $CLICSHOPPING_Search = Registry::get('Search');
     $CLICSHOPPING_ProductsAttributes = Registry::get('ProductsAttributes');
     $CLICSHOPPING_Reviews = Registry::get('Reviews');
+    $CLICSHOPPING_Language = Registry::get('Language');
+
+    // normalisation position module (left/right)
+    $module_position = ($this->group === 'boxes_column_left') ? 'left' : 'right';
 
     $listingTotalRow = $CLICSHOPPING_Search->getResult();
 
@@ -158,7 +163,8 @@ class pse_products_search
 
           while ($Qlisting->fetch()) {
             $products_id = $Qlisting->valueInt('products_id');
-            $_POST['products_id'] = $products_id;
+            //trackingProduct
+            //ProductsTracking::insertProductTracking($products_id,  $this->code, $module_position, $this->sort_order, $CLICSHOPPING_Language->getId(), null, 0.45);
 //rewriting
             $products_name_url = $CLICSHOPPING_ProductsFunctionTemplate->getProductsUrlRewrited()->getProductNameUrl($products_id);
 //product name

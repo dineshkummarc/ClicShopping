@@ -11,6 +11,7 @@
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+  use ClicShopping\Apps\AI\Ecommerce\Classes\Shop\CockpitAI\ProductsTracking;
 
 class ms_shopping_cart_products_listing
 {
@@ -49,6 +50,10 @@ class ms_shopping_cart_products_listing
     $CLICSHOPPING_ProductsAttributes = Registry::get('ProductsAttributes');
     $CLICSHOPPING_ProductsFunctionTemplate = Registry::get('ProductsFunctionTemplate');
     $CLICSHOPPING_Reviews = Registry::get('Reviews');
+    $CLICSHOPPING_Language = Registry::get('Language');
+
+    // normalisation position module (left/right)
+    $module_position = ($this->group === 'boxes_column_left') ? 'left' : 'right';
 
     if (isset($_GET['Cart']) && $CLICSHOPPING_ShoppingCart->getCountContents() > 0) {
       $products = $CLICSHOPPING_ShoppingCart->get_products();
@@ -86,6 +91,7 @@ class ms_shopping_cart_products_listing
             $products[$i][$option]['price_prefix'] = $Qattributes->value('price_prefix');
             $products[$i][$option]['products_attributes_reference'] = $Qattributes->value('products_attributes_reference');
             $products[$i][$option]['products_attributes_image'] = $Qattributes->value('products_attributes_image');
+            $products[$i][$option]['products_options_type'] = $Qattributes->value('products_options_type');
           }
         }
       }
@@ -161,18 +167,26 @@ class ms_shopping_cart_products_listing
                 $products_attributes_values_name = $products[$i][$option]['products_attributes_values_name'];
                 $products_attributes_reference = $products[$i][$option]['products_attributes_reference'];
                 $products_attributes_image = $products[$i][$option]['products_attributes_image'];
+                $products_options_type = $products[$i][$option]['products_options_type'] ?? '';
 
-                if (!\is_null($products[$i][$option]['products_attributes_image'])) {
-                  if (is_file(CLICSHOPPING::getConfig('Shop') . $CLICSHOPPING_Template->getDirectoryTemplateImages() . $products_attributes_image)) {
-                    $products_attributes_image = HTML::image($CLICSHOPPING_Template->getDirectoryTemplateImages() . $products_attributes_image, $products_attributes_values_name . '   ', 30, 30);
+                if ($products_options_type === 'color_picker') {
+                  $hex = '#' . ltrim($products_attributes_values_name, '#');
+                  $color_swatch = '<span class="ModulesShoppingCartColorSwatch" style="background-color:' . HTML::outputProtected($hex) . ';"></span>';
+                  $price_display = ($products[$i][$option]['attributes_values_price'] != 0) ? ' ' . $products[$i][$option]['price_prefix'] . $CLICSHOPPING_Currencies->displayPrice($products[$i][$option]['attributes_values_price'], $CLICSHOPPING_Tax->getTaxRate($products[$i]['tax_class_id']), '1') : '';
+                  $products_attributes .= '<p class="ModulesShoppingCartproductsListingOption"> - ' . $color_swatch . HTML::outputProtected($products_attributes_values_name) . $price_display . '</p>';
+                } else {
+                  if (!\is_null($products[$i][$option]['products_attributes_image'])) {
+                    if (is_file(CLICSHOPPING::getConfig('Shop') . $CLICSHOPPING_Template->getDirectoryTemplateImages() . $products_attributes_image)) {
+                      $products_attributes_image = HTML::image($CLICSHOPPING_Template->getDirectoryTemplateImages() . $products_attributes_image, $products_attributes_values_name . '   ', 30, 30);
+                    } else {
+                      $products_attributes_image = '     ';
+                    }
                   } else {
                     $products_attributes_image = '     ';
                   }
-                } else {
-                  $products_attributes_image = '     ';
-                }
 
-                $products_attributes .= '<p class="ModulesShoppingCartproductsListingOption"> - ' . $products_attributes_image . ' :  ' . $products_attributes_values_name . ' (' . $products_attributes_reference . ') ' . ' - ' . $CLICSHOPPING_Currencies->displayPrice($products[$i][$option]['attributes_values_price'], $CLICSHOPPING_Tax->getTaxRate($products[$i]['tax_class_id']), '1') . '</p>';
+                  $products_attributes .= '<p class="ModulesShoppingCartproductsListingOption"> - ' . $products_attributes_image . ' :  ' . $products_attributes_values_name . ' (' . $products_attributes_reference . ') ' . ' - ' . $CLICSHOPPING_Currencies->displayPrice($products[$i][$option]['attributes_values_price'], $CLICSHOPPING_Tax->getTaxRate($products[$i]['tax_class_id']), '1') . '</p>';
+                }
               }
             }
           }

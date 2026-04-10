@@ -11,6 +11,7 @@
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\AI\Ecommerce\Classes\Shop\CockpitAI\ProductsTracking;
 
 class bm_products_recommendations
 {
@@ -41,7 +42,6 @@ class bm_products_recommendations
 
   public function execute()
   {
-
     $CLICSHOPPING_Customer = Registry::get('Customer');
     $CLICSHOPPING_Db = Registry::get('Db');
     $CLICSHOPPING_ProductsCommon = Registry::get('ProductsCommon');
@@ -49,6 +49,10 @@ class bm_products_recommendations
     $CLICSHOPPING_Service = Registry::get('Service');
     $CLICSHOPPING_Banner = Registry::get('Banner');
     $CLICSHOPPING_ProductsFunctionTemplate = Registry::get('ProductsFunctionTemplate');
+    $CLICSHOPPING_Language = Registry::get('Language');
+
+    // normalisation position module (left/right)
+    $module_position = ($this->group === 'boxes_column_left') ? 'left' : 'right';
 
     if ($CLICSHOPPING_Customer->getCustomersGroupID() != 0) {
       $Qproducts = $CLICSHOPPING_Db->prepare('select distinct p.products_id
@@ -134,7 +138,9 @@ class bm_products_recommendations
 
       while ($Qproducts->fetch()) {
         $products_id = $Qproducts->valueInt('products_id');
-        $_POST['products_id'] = $products_id;
+        //trackingProduct
+        ProductsTracking::insertProductTracking($products_id,  $this->code, $module_position, $this->sort_order, $CLICSHOPPING_Language->getId(), null, 0.09);
+
 // **************************
 //    product name
 // **************************

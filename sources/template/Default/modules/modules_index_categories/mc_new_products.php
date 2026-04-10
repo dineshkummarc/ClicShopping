@@ -12,6 +12,7 @@ use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\AI\Ecommerce\Classes\Shop\CockpitAI\ProductsTracking;
 
 class mc_new_products
 {
@@ -46,8 +47,11 @@ class mc_new_products
     $CLICSHOPPING_Category = Registry::get('Category');
     $CLICSHOPPING_ProductsAttributes = Registry::get('ProductsAttributes');
     $CLICSHOPPING_Reviews = Registry::get('Reviews');
+    $CLICSHOPPING_Language = Registry::get('Language');
 
-// needed for the new products module shown below
+    // normalisation position module (left/right)
+    $module_position = ($this->group === 'boxes_column_left') ? 'left' : 'right';
+    // needed for the new products module shown below
     $new_products_category_id = $CLICSHOPPING_Category->getID();
     $parent_id = $CLICSHOPPING_Category->getParent();
 
@@ -189,7 +193,9 @@ class mc_new_products
 
             while ($Qproduct->fetch()) {
               $products_id = $Qproduct->valueInt('products_id');
-              $_POST['products_id'] = $products_id;
+              //trackingProduct
+              ProductsTracking::insertProductTracking($products_id,  $this->code, $module_position, $this->sort_order, $CLICSHOPPING_Language->getId(), null, 0.30);
+
 
               $products_name_url = $CLICSHOPPING_ProductsFunctionTemplate->getProductsUrlRewrited()->getProductNameUrl($products_id);
 //product name
