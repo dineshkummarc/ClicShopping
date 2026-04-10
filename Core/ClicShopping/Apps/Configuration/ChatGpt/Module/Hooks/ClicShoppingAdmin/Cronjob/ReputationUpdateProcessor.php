@@ -89,8 +89,6 @@ class ReputationUpdateProcessor implements \ClicShopping\OM\Modules\HooksInterfa
      * This method checks for a 'cronId' parameter, validates it, and if it matches
      * the reputation update processor cron code, it triggers the processing logic.
      *
-     * Requirements: 15.1, 15.3
-     *
      * @return void
      */
     private function cronJob(): void
@@ -100,7 +98,8 @@ class ReputationUpdateProcessor implements \ClicShopping\OM\Modules\HooksInterfa
         if (isset($_GET['cronId'])) {
             $cron_id = HTML::sanitize($_GET['cronId']);
 
-            if ($cron_id !== null && !empty($cron_id) && is_int($cron_id)) {
+            if ($cron_id !== null && !empty($cron_id) && is_numeric($cron_id)) {
+                $cron_id = (int)$cron_id;
                 Cronjob::updateCron($cron_id);
 
                 if ($cron_id_reputation_update == $cron_id) {

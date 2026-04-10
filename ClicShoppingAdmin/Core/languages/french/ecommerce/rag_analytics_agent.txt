@@ -1048,6 +1048,121 @@ text_sql_format_instructions = SQL FORMAT RULES:
 6. NO markdown formatting, NO ```sql tags, NO comments, NO explanations
 
 
+
+CRITICAL SQL GENERATION RULES:
+  - Never use a field that is not explicitly defined as a column in the schema.
+  - If a requested field is not found in schema columns but exists inside a JSON field (e.g. metadata),
+    you MUST extract it using JSON_EXTRACT with the correct path.
+  - Forbidden: inventing columns not present in schema.
+  - If unsure, fallback to JSON fields before generating SQL.
+  - Always use JSON_UNQUOTE(JSON_EXTRACT(...)) for scalar values.
+  - Example:
+    metadata.seo_score_after → JSON_UNQUOTE(JSON_EXTRACT(psseo.metadata, '$.seo_score_after'))
+
+EXAMPLE (JSON FIELD EXTRACTION):
+
+❌ WRONG: "list products with SEO score"
+You generate:
+SELECT p.products_id, pd.products_name, s.seo_score_after
+FROM clic_products p
+JOIN clic_products_description pd ON p.products_id = pd.products_id
+JOIN clic_products_seo_embedding s ON p.products_id = s.entity_id
+ORDER BY s.seo_score_after DESC
+
+Problem:
+  - seo_score_after is NOT a column
+  - It exists inside JSON field "metadata"
+  - Query will fail or return incorrect results
+
+✅ CORRECT: "list products with SEO score"
+You must generate absolutly like this using JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_after')) AS seo_score:
+SELECT DISTINCT p.products_id,
+      pd.products_name,
+      JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_after')) AS seo_score
+ FROM clic_products p
+ JOIN clic_products_description pd ON p.products_id = pd.products_id
+ JOIN clic_products_seo_embedding s ON p.products_id = s.entity_id AND s.entity_type = 'product'
+ WHERE pd.language_id = {{language_id}}
+ AND JSON_EXTRACT(s.metadata, '$.seo_score_after') IS NOT NULL
+ AND JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_after')) != 'null'
+ ORDER BY CAST(JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_after')) AS UNSIGNED) DESC
+ LIMIT 100
+
+
+IMPORTANT Key rules demonstrated:
+  - NEVER use non-existent columns
+  - ALWAYS extract values from JSON fields using JSON_EXTRACT
+  - ALWAYS use JSON_UNQUOTE for scalar values
+  - ALWAYS use correct JSON path (metadata → $.seo_score_after)
+
+ADDITIONAL SEO SCORE EXAMPLES - BOTH BEFORE AND AFTER:
+The following fields ALL exist inside JSON metadata, NEVER as real columns:
+  - seo_score_before → JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_before'))
+  - seo_score_after  → JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_after'))
+  - seo_score        → JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_after'))
+  - seo_score (generic, no before/after specified) → use $.seo_score_after by default
+     If the question context suggests "before optimization", use $.seo_score_before instead
+     Examples:
+       "what is the SEO score?" → $.seo_score_after (current score)
+       "what was the SEO score before?" → $.seo_score_before (initial score)
+       "before/after comparison" → select BOTH fields
+
+❌ WRONG (FORBIDDEN - will always fail):
+SELECT DISTINCT seos.seo_score_before FROM clic_products_seo_embedding seos
+SELECT DISTINCT s.seo_score_after FROM clic_products_seo_embedding s
+SELECT DISTINCT seos.seo_score FROM clic_products_seo_embedding seos
+
+SAFE CAST RULE FOR JSON NUMERIC VALUES (MANDATORY):
+When using JSON_EXTRACT on any numeric JSON field (seo_score, price, quantity, etc.),
+you MUST ALWAYS add these two safety filters in WHERE clause:
+
+  AND JSON_EXTRACT(table.metadata, '$.field') IS NOT NULL
+  AND JSON_UNQUOTE(JSON_EXTRACT(table.metadata, '$.field')) != 'null'
+
+AND always use CAST in ORDER BY:
+  ORDER BY CAST(JSON_UNQUOTE(JSON_EXTRACT(table.metadata, '$.field')) AS UNSIGNED) DESC
+
+WITHOUT these filters:
+  - NULL values pollute the results
+  - ORDER BY cannot sort correctly
+  - MySQL warning #1292 is triggered
+
+❌ WRONG (will trigger MySQL warning #1292):
+  AND CAST(JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_after')) AS UNSIGNED) > 20
+
+✅ CORRECT (safe CAST with null protection):
+  AND JSON_EXTRACT(s.metadata, '$.seo_score_after') IS NOT NULL
+  AND JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_after')) != 'null'
+  AND CAST(JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_after')) AS UNSIGNED) > 20
+
+This applies to ALL JSON numeric fields, not only seo_score fields.
+
+✅ CORRECT example for "products with initial SEO score":
+SELECT DISTINCT
+    p.products_id,
+    pd.products_name,
+    JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_before')) AS seo_score_before,
+    JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_after')) AS seo_score_after
+FROM clic_products p
+JOIN clic_products_description pd ON p.products_id = pd.products_id
+JOIN clic_products_seo_embedding s ON p.products_id = s.entity_id AND s.entity_type = 'product'
+WHERE pd.language_id = {{language_id}}
+AND JSON_EXTRACT(s.metadata, '$.seo_score_after') IS NOT NULL
+AND JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_after')) != 'null'
+ORDER BY CAST(JSON_UNQUOTE(JSON_EXTRACT(s.metadata, '$.seo_score_before')) AS UNSIGNED) DESC
+LIMIT 100
+
+VALIDATION STEP (MANDATORY - EXECUTE BEFORE EVERY OUTPUT):
+STEP 1: Scan every column reference in SELECT and WHERE.
+STEP 2: For each reference involving "seo_score", "metadata", or any SEO field:
+  → Is it written as table.column_name ? → STOP. This is WRONG. Rewrite using JSON_EXTRACT.
+  → Is it written as JSON_UNQUOTE(JSON_EXTRACT(table.metadata, '$.field')) ? → CORRECT.
+STEP 3: Check for LIKE '%value%' on metadata fields → FORBIDDEN. Use JSON_EXTRACT comparisons.
+STEP 4: If any violation found → REWRITE the entire query from scratch before output.
+STEP 5: Only output the query after passing all 4 checks.
+
+
+
 MULTI-QUERY DETECTION
 
 When user asks multiple questions connected with AND/THEN, system AUTOMATICALLY splits and executes separately.

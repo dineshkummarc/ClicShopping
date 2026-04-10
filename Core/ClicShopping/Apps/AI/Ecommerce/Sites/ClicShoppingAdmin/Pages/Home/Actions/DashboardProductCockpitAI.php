@@ -12,15 +12,15 @@ namespace ClicShopping\Apps\AI\Ecommerce\Sites\ClicShoppingAdmin\Pages\Home\Acti
 
 use ClicShopping\OM\Registry;
 
-class Dashboard extends \ClicShopping\OM\Domains\PagesActionsAbstract
+class DashboardProductCockpitAI extends \ClicShopping\OM\Domains\PagesActionsAbstract
 {
   public function execute()
   {
     $CLICSHOPPING_Ecommerce = Registry::get('Ecommerce');
 
-    $this->page->setFile('dashboard.php');
-    $this->page->data['action'] = 'Dashboard';
+    $this->page->setFile('dashboard_product_cockpit_ai.php');
+    $this->page->data['action'] = 'DashboardProductCockpitAI';
 
-    $CLICSHOPPING_Ecommerce->loadDefinitions('Sites/ClicShoppingAdmin/dashboard');
+    $CLICSHOPPING_Ecommerce->loadDefinitions('Sites/ClicShoppingAdmin/dashboard_product_cockpit_ai');
   }
 }

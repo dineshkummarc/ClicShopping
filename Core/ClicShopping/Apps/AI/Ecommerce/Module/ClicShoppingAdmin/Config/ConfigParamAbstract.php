@@ -12,6 +12,11 @@ namespace ClicShopping\Apps\AI\Ecommerce\Module\ClicShoppingAdmin\Config;
 
 use ClicShopping\OM\Registry;
 
+/**
+ * Configuration parameter management for Amazon module.
+ * Uses centralized AppConfigParamAbstract to eliminate code duplication.
+ */
+
 abstract class ConfigParamAbstract extends \ClicShopping\Sites\ClicShoppingAdmin\ConfigParamAbstract
 {
   public mixed $app;

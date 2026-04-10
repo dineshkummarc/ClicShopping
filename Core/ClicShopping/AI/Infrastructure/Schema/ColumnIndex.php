@@ -10,6 +10,7 @@
 
 namespace ClicShopping\AI\Infrastructure\Schema;
 
+use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
 /**
@@ -62,11 +63,13 @@ class ColumnIndex
     $this->totalTables = 0;
     $this->totalColumns = 0;
     $this->columnsWithComments = 0;
-    
+
     // Get all clic_ tables
-    $Qtables = $this->db->query("SHOW TABLES LIKE 'clic_%'");
+    $prefix = CLICSHOPPING::getConfig('prefix_table');
+    $Qtables = $this->db->query("SHOW TABLES LIKE $prefix'%'");
     
     $tablesList = [];
+
     while ($Qtables->fetch()) {
       // Get first column value (table name)
       $row = $Qtables->toArray();
@@ -77,7 +80,7 @@ class ColumnIndex
     
     foreach ($tablesList as $tableName) {
       // Skip technical tables
-      if (strpos($tableName, '_embedding') !== false || strpos($tableName, 'clic_rag_') === 0) {
+      if (strpos($tableName, '_embedding') !== false || strpos($tableName, $prefix . 'rag_') === 0) {
         continue;
       }
       

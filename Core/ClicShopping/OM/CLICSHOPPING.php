@@ -922,4 +922,21 @@ class CLICSHOPPING
     return $data;
   }
 
+  /**
+   * Check if a Apps contant is activated or not
+   * @param array $constant
+   * @return bool
+   */
+  public static function checkAppsIsActivated(array $constant): bool
+  {
+    $requiredConstants = $constant;
+
+    foreach ($requiredConstants as $const) {
+      if (!\defined($const) || \constant($const) !== 'True') {
+        return false;
+      }
+    }
+
+    return true;
+  }
 }

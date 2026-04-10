@@ -48,6 +48,13 @@ module_ucp_short_title =  Google UCP Beta Ecommerce
 module_ucp_introduction = Google has developed an open ecommerce protocol called Universal Commerce Protocol (UCP).<br>
 It allows agents to retrieve products, create checkout sessions, and complete payments through standardized endpoints.
 
+
+module_cai_title = Product Cockpit AI
+module_cai_short_title =  Product Cockpit AI
+module_cai_introduction = Product Cockpit AI analyse your product with different settings and give recommendations.<br>
+
+
+
 section_domain_overview = Domain Overview
 subsection_domain_info = Domain Information
 subsection_supported_entities = Supported Entities

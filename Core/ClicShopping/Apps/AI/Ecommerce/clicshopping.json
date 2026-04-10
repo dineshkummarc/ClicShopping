@@ -16,18 +16,34 @@
   "modules": {
     "AdminDashboard": {
       "EntityCount": "Module\\ClicShoppingAdmin\\Dashboard\\EntityCount",
-      "QueryMetrics": "Module\\ClicShoppingAdmin\\Dashboard\\QueryMetrics"
+      "QueryMetrics": "Module\\ClicShoppingAdmin\\Dashboard\\QueryMetrics",
+      "ProductCockpitAI": "Module\\ClicShoppingAdmin\\Dashboard\\ProductCockpitAI"
     },
     "Config": {
       "EcommerceDomain": "Module\\ClicShoppingAdmin\\Config\\EcommerceDomain"
     },
     "Hooks": {
+      "ClicShoppingAdmin/Cronjob": {
+        "ProductCockpitAi": "Module\\Hooks\\ClicShoppingAdmin\\Cronjob\\ProductCockpitAi"
+      },
+      "ClicShoppingAdmin/Specials": {
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Specials\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Specials\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Specials\\DeleteAll"
+      },
+      "ClicShoppingAdmin/Favorites": {
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Favorites\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Favorites\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Favorites\\DeleteAll"
+      },
+      "ClicShoppingAdmin/Featured": {
+        "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Featured\\Insert",
+        "Update": "Module\\Hooks\\ClicShoppingAdmin\\Featured\\Update",
+        "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Featured\\DeleteAll"
+      },
       "ClicShoppingAdmin/Categories": {
-
         "PageContent": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\CategoriesSerp",
         "CategoriesContentTab3": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\SeoChatGpt",
-
-
         "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\Insert",
         "Update": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\Update",
         "DeleteConfirm": "Module\\Hooks\\ClicShoppingAdmin\\Categories\\DeleteConfirm"
@@ -40,6 +56,7 @@
       },
       "ClicShoppingAdmin/Products": {
         "ProductsContentTab7": "Module\\Hooks\\ClicShoppingAdmin\\Products\\ProductsSerp",
+        "ProductsContentTab8": "Module\\Hooks\\ClicShoppingAdmin\\Products\\CockpitAI",
         "PageTab": "Module\\Hooks\\ClicShoppingAdmin\\Products\\SeoChatGpt",
         "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Insert",
         "Update": "Module\\Hooks\\ClicShoppingAdmin\\Products\\Update",

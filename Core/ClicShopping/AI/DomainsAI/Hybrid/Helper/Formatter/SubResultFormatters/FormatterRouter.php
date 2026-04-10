@@ -10,8 +10,6 @@
 
 namespace ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\SubResultFormatters;
 
-
-
 /**
  * FormatterRouter - Intelligent routing system to select the appropriate formatter
  * based on query complexity and result type
@@ -42,7 +40,7 @@ class FormatterRouter
     usort($this->formatters, fn($a, $b) => $b['priority'] <=> $a['priority']);
 
     if ($this->debug) {
-      error_log('FormatterRouter: Registered formatter ' . get_class($formatter) . ' with priority ' . $priority);
+      error_log('[INFO FormatterRouter]: Registered formatter ' . get_class($formatter) . ' with priority ' . $priority);
     }
   }
 
@@ -53,7 +51,7 @@ class FormatterRouter
   {
     if (empty($results)) {
       if ($this->debug) {
-        error_log('FormatterRouter: Empty results provided');
+        error_log('[INFO FormatterRouter]: Empty results provided');
       }
       return null;
     }
@@ -75,20 +73,20 @@ class FormatterRouter
       $formatter = $entry['formatter'];
 
       if ($this->debug) {
-        error_log('   Testing formatter: ' . $entry['class']);
+        error_log('[INFO : Testing formatter]: ' . $entry['class']);
       }
 
       if ($formatter->canHandle($results)) {
         if ($this->debug) {
-          error_log('Selected formatter: ' . $entry['class'] . ' (priority: ' . $entry['priority'] . ')');
+          error_log('[INFO] Selected formatter: ' . $entry['class'] . ' (priority: ' . $entry['priority'] . ')');
         }
         return $formatter;
       }
     }
 
     if ($this->debug) {
-      error_log('No formatter found for type: ' . ($results['type'] ?? 'NONE'));
-      error_log('Available formatters: ' . count($this->formatters));
+      error_log('[INFO] No formatter found for type: ' . ($results['type'] ?? 'NONE'));
+      error_log('[INFO] Available formatters: ' . count($this->formatters));
     }
 
     return null;
@@ -109,13 +107,13 @@ class FormatterRouter
       $score += 30;
       $factors[] = 'complex_type';
       if ($this->debug) {
-        error_log('Complexity factor: complex_type (+30)');
+        error_log('[INFO] Complexity factor: complex_type (+30)');
       }
     } elseif (in_array($type, ['analytics_results', 'analytics_response'])) {
       $score += 10;
       $factors[] = 'analytics_type';
       if ($this->debug) {
-        error_log('Complexity factor: analytics_type (+10)');
+        error_log('[INFO] Complexity factor: analytics_type (+10)');
       }
     }
 
@@ -126,7 +124,7 @@ class FormatterRouter
       $score += $points;
       $factors[] = "sub_results_count:{$subCount}";
       if ($this->debug) {
-        error_log('   Complexity factor: sub_results_count:' . $subCount . ' (+' . $points . ')');
+        error_log('[INFO] Complexity factor: sub_results_count:' . $subCount . ' (+' . $points . ')');
       }
     }
 
@@ -136,7 +134,7 @@ class FormatterRouter
         $score += 20;
         $factors[] = 'multiple_data_sources';
         if ($this->debug) {
-          error_log('   Complexity factor: multiple_data_sources (+20)');
+          error_log('[INFO] Complexity factor: multiple_data_sources (+20)');
         }
       }
     }
@@ -146,7 +144,7 @@ class FormatterRouter
       $score += 5;
       $factors[] = 'has_sql';
       if ($this->debug) {
-        error_log('   Complexity factor: has_sql (+5)');
+        error_log('[INFO] Complexity factor: has_sql (+5)');
       }
     }
 
@@ -155,7 +153,7 @@ class FormatterRouter
       $score += 15;
       $factors[] = 'has_web_search';
       if ($this->debug) {
-        error_log('   Complexity factor: has_web_search (+15)');
+        error_log('[INFO] Complexity factor: has_web_search (+15)');
       }
     }
 
@@ -166,7 +164,7 @@ class FormatterRouter
         $score += 10;
         $factors[] = "large_result_set:{$resultCount}";
         if ($this->debug) {
-          error_log('   Complexity factor: large_result_set:' . $resultCount . ' (+10)');
+          error_log('[INFO] Complexity factor: large_result_set:' . $resultCount . ' (+10)');
         }
       }
     }
@@ -180,7 +178,7 @@ class FormatterRouter
     }
 
     if ($this->debug) {
-      error_log('   Final complexity: ' . $level . ' (score: ' . $score . ')');
+      error_log('[INFO] Final complexity: ' . $level . ' (score: ' . $score . ')');
     }
 
     return [

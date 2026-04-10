@@ -1,11 +1,14 @@
 version4.23
 
 - Some fix
-- Librairies updated
+- fix bug dynamicPrice on specials 
+- Libraries updated
 - update AGENTS.md to help the AI agents
-- New AI Product cockpit analysis with forecasting metrics (kpi), and action to do.
+- New AI Product advanced cockpit analysis with forecasting metrics (around 30 kpi), and autonomous action to do with realtime product AI tracking.
 - Small AI SEO improvement
 - LLM model updated for OpenAI and add Gemini
+- Add google Analytics v4 GA
+
 
 ---------------
 version4.22
@@ -15,7 +18,7 @@ version4.22
     - AI interface improvement
     - MCP improvement
 - Some fix
-- Librairies updated
+- Libraries updated
 - add AGENTS.md to help the AI agents
 
 
@@ -33,7 +36,7 @@ version4.21
    - SEO improvement
    - MCP updated
 - Some fix (included deprecated)
-- Librairies updated
+- Libraries updated
 - php9 compatibility
 
 ---------------

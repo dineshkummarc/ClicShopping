@@ -508,3 +508,19 @@ zealbot
 zippp
 zyborg
 zyborg/1.0
+
+# --- AI & LLM Crawlers ---
+GPTBot
+ChatGPT-User
+OAI-SearchBot
+ClaudeBot
+Claude-Web
+anthropic-ai
+PerplexityBot
+Google-Extended
+CCBot
+ImagesiftBot
+Cohere-ai
+facebookexternalhit
+MetaInspector
+PiplBot

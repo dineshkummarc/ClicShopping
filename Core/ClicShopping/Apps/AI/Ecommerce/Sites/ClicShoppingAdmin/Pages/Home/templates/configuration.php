@@ -14,7 +14,6 @@ use ClicShopping\OM\Registry;
 $CLICSHOPPING_Ecommerce = Registry::get('Ecommerce');
 $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 ?>
-
 <div class="contentBody">
   <div class="row">
     <div class="col-md-12">

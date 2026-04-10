@@ -11,10 +11,11 @@ This repository contains **ClicShopping AI™** - a powerful, open-source e-comm
 - Comprehensive testing and development environment
 
 ## Key AI Features
-- **Generative AI Integration**: GPT API, Ollama, and Anthropic support
+- **Generative AI Integration**: GPT API, Ollama, and Anthropic ... support
 - **RAG Business Intelligence**: Vector embeddings, semantic search, Web search, Hybridation, natural language to SQL
-- **AI-Powered Content**: Product descriptions, SEO optimization, review analysis
+- **AI-Powered Content**: Product descriptions, SEO optimization, review analysis ...
 - **Predictive Analytics**: Real-time safety stock prediction
+- **Product Cocpit Ai Analysis**: Marketing product analysis
 - **MCP Server**: Model Context Protocol for agentic e-commerce approach
 
 ## Core E-commerce Features
@@ -25,7 +26,7 @@ This repository contains **ClicShopping AI™** - a powerful, open-source e-comm
 - Performance optimization with OpCache, Memcached, Redis
 
 ## Target Audience
-E-commerce developers, AI engineers, and businesses looking to integrate advanced AI capabilities into their online stores.
+Shop owner, E-commerce developers, AI engineers, and businesses looking to integrate advanced AI capabilities into their online stores.
 This project **is not** osCommerce nor a legacy ClicShopping V2/V3 fork.
 
 ---
@@ -36,6 +37,7 @@ This project **is not** osCommerce nor a legacy ClicShopping V2/V3 fork.
 CRITICAL : Before any code generation, you MUST run a 'Constraint Check' phase: compare your plan against the PROHIBITED sections of AGENTS.md and the PARADIGM SHIFT of DATABASE.md. If a violation is found, auto-correct your plan before writing code.
 PROHIBITED: Generating code without reading existing files in the target scope.
 PROHIBITED: assuming a structure without verification in the actual repository.
+PROHIBITED: Change the core system OM directory without human permission.
 IMPORTANT: Self-Correction Protocol: Before delivering any code, the Agent MUST verify its output against the Absolute Prohibitions list of ALL six .md files. If a conflict is found, the Agent MUST prioritize AGENTS.md and SECURITY.md
 ```
 
@@ -86,6 +88,8 @@ Core/ClicShopping/AI/
 ├── Tools/ ← Domain tools (WebSearch, Analytics, Semantic)
 ├── InterfacesAI/ ← Contracts (ActorAgentInterface, etc.)
 └── Config/ ← AI configuration
+
+do not change this directory without permission : Core/ClicShopping/AI/
 
 Core/ClicShopping/Apps/AI/{DomainName}/ ← Domain-specific agents
 ├── SEO/ ← SEO optimization agent

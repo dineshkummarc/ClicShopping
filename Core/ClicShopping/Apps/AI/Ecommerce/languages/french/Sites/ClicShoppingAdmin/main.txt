@@ -45,6 +45,11 @@ Il permet aux agents de récupérer les produits, de créer des sessions de paie
 module_ec_short_title = Agent Ecommerce Insight
 module_ec_title = Agent Ecommerce Insight
 
+module_cai_title = Product Cockpit AI
+module_cai_short_title =  Product Cockpit AI
+module_cai_introduction = Product Cockpit AI analyse votre produit en prenant plusieurs paramètres et propose des recommandations.<br>
+
+
 section_domain_overview = Aperçu du Domaine
 subsection_domain_info = Informations du Domaine
 subsection_supported_entities = Entités Supportées
