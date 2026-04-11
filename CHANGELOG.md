@@ -8,7 +8,7 @@ version4.23
 - Small AI SEO improvement
 - LLM model updated for OpenAI and add Gemini
 - Add google Analytics v4 GA
-
+- add claude.md and use agenta.md
 
 ---------------
 version4.22

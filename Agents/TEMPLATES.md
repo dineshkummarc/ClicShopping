@@ -93,6 +93,7 @@ json example:
 ```
 
 **Never move theme templates (`sources/template/`) to `Core/ClicShopping/Sites/Shop/`.**
+**Never change the code inside Default  theme templates (`sources/template/Default`). Use always a Template from a subDirectory and copy the files from Default (`sources/template/MyTemplate`).**
 **Never put application logic in `sources/template/`.**
 
 ---
@@ -119,7 +120,7 @@ sources/template/
 │ │ ├── general/ # Global styles: stylesheet, bootstrap, general calls
 │ │ └── modules_{module_name}/ # Module-specific CSS — named according to the module
 │ │ └── {module_name}.css # ex: pi_products_info_also_purchased.css
-│ ├── javascript/ # Theme JavaScript
+│ ├── javascript/ # Default Theme JavaScript
 │ │ └── *.js
 │ ├── files/ # Page template (global HTML structure)
 │ │ └── *.php
@@ -144,12 +145,13 @@ sources/template/
 ```
 **Resolution rule:**
 ```
-1. sources/template/{CustomTheme}/{file} ← priority — active custom theme
+1. sources/template/{CustomTheme}/{file} ← priority — active custom theme. Copy the necessary files from Default template before to change inside the custom Template.
 2. sources/template/Default/{file} ← automatic fallback if missing from custom
+3. The modules ontains some parameters can be applied and customized the module behavior.
 ```
 
 A custom theme should only contain the files that it actually overloads.
-Do not copy the entire `Default/` into a custom theme.
+Do not copy the entire `Default/` into a custom theme, Just the files you need to update.
 
 ### 3.2 Critical distinction: fixed template vs listing
 
@@ -243,7 +245,7 @@ or sources/template/Default/modules/{mod}/content/{mod}.php ← fallback
 - `alt` attribute on all images — value from prepared data via `HTML::image()`
 - URLs via existing routing helpers — never hardcoded
 - Static cache active on catalog pages
-
+- The Core/modules/header.tgs modules contains all the modules can be displayed in the footer or de header about meta tag.
 ---
 ## 4. Back office (ClicShoppingAdmin) — separate architecture
 
@@ -359,7 +361,7 @@ $ai->generate('...');
 ## 7. Checklist before submitting a template
 
 ```
-[ ] No business logic or DB access in the template
+[ ] No business logic or DB access in the template execpt modules
 [ ] All output escaped (HTML::outputProtected)
 [ ] No visible hardcoded string — always via $CLICSHOPPING->getDef('key')
 [ ] URLs via routing helpers, not hardcoded
@@ -370,7 +372,7 @@ module listing → modules/{module_name}/template_html/ (if the module manages a
 [ ] template_html/ created only if the module actually manages a listing
 [ ] Custom theme: only contains overloaded files — no copy of Default/
 [ ] New template intended for all themes → create it in Default/
-[ ] SEO tags (title, meta) → via dedicated modules which inject into header/footer
+[ ] SEO tags (title, meta) → via dedicated modules header_tag which inject into header/footer
 [ ] Front: unique h1 per page, alt on all images
 [ ] Front: Core/ClicShopping/Work/ cache invalidation planned via the administration
 [ ] CSRF token on each Shop and Admin form — HTML::form() with ['tokenize' => true]
