@@ -10,6 +10,13 @@ return array(
     'Deprecated' => $vendorDir . '/symfony/polyfill-php84/Resources/stubs/Deprecated.php',
     'FPDF' => $vendorDir . '/setasign/fpdf/fpdf.php',
     'Normalizer' => $vendorDir . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
+    'Pdo\\Dblib' => $vendorDir . '/symfony/polyfill-php84/Resources/stubs/Pdo/Dblib.php',
+    'Pdo\\Firebird' => $vendorDir . '/symfony/polyfill-php84/Resources/stubs/Pdo/Firebird.php',
+    'Pdo\\Mysql' => $vendorDir . '/symfony/polyfill-php84/Resources/stubs/Pdo/Mysql.php',
+    'Pdo\\Odbc' => $vendorDir . '/symfony/polyfill-php84/Resources/stubs/Pdo/Odbc.php',
+    'Pdo\\Pgsql' => $vendorDir . '/symfony/polyfill-php84/Resources/stubs/Pdo/Pgsql.php',
+    'Pdo\\Sqlite' => $vendorDir . '/symfony/polyfill-php84/Resources/stubs/Pdo/Sqlite.php',
     'ReflectionConstant' => $vendorDir . '/symfony/polyfill-php84/Resources/stubs/ReflectionConstant.php',
+    'RoundingMode' => $vendorDir . '/symfony/polyfill-php84/Resources/stubs/RoundingMode.php',
     '©' => $vendorDir . '/symfony/cache/Traits/ValueWrapper.php',
 );

@@ -276,8 +276,6 @@ EOD;
       $CLICSHOPPING_Db->exec('CREATE VECTOR INDEX embedding_index ON :table_rag_agent_order_insights_embedding (embedding)');
     }
 
-    }
-
     // Create products_seo_embedding table
     $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_products_seo_embedding"');
 
