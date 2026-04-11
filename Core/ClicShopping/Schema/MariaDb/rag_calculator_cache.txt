@@ -1,4 +1,4 @@
-cache_id INT(11) UNSIGNED not_null auto_increment comment(Primary key - unique identifier for each cached calculation)
+cache_id INT(11) unsigned not_null auto_increment comment(Primary key - unique identifier for each cached calculation)
 expression VARCHAR(500) not_null comment(Mathematical expression that was calculated)
 expression_hash VARCHAR(64) not_null comment(MD5 hash of expression for fast lookup and deduplication)
 result DOUBLE not_null comment(Calculated result value)
@@ -7,7 +7,7 @@ variables JSON default null comment(Variables used in the calculation (JSON form
 execution_time FLOAT not_null comment(Time taken to execute calculation in milliseconds)
 created_at DATETIME not_null comment(When the calculation was first cached)
 last_accessed DATETIME not_null comment(Last time this cached result was accessed)
-access_count INT(11) UNSIGNED DEFAULT 0 comment(Number of times this cached result has been reused)
+access_count INT(11) unsigned default 0 comment(Number of times this cached result has been reused)
 
 --
 primary cache_id

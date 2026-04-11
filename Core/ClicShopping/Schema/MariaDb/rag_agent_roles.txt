@@ -2,8 +2,8 @@
  agent_id varchar(100)  not_null
  role varchar(50)  not_null
  status enum('active','suspended','disabled')  default (active)
- suspension_reason text  default NULL
- suspended_at timestamp NULL  default NULL
+ suspension_reason text  default null
+ suspended_at timestamp NULL  default null
  created_at timestamp NULL  default current_timestamp()
  updated_at timestamp NULL  default current_timestamp() ON UPDATE current_timestamp()
 

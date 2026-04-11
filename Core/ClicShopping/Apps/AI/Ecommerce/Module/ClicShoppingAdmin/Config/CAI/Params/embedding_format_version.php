@@ -18,7 +18,7 @@ class embedding_format_version extends \ClicShopping\Apps\AI\Ecommerce\Module\Cl
 
   protected function init()
   {
-    $this->title = $this->app->getDef('cfg_ecommerce_cockpit_ai_embedding _format_version_title');
-    $this->description = $this->app->getDef('cfg_ecommerce_cockpit_ai_embedding _format_version_description');
+    $this->title = $this->app->getDef('cfg_ecommerce_cockpit_ai_embedding_format_version_title');
+    $this->description = $this->app->getDef('cfg_ecommerce_cockpit_ai_embedding_format_version_description');
   }
 }

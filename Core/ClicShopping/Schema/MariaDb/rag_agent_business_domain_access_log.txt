@@ -3,7 +3,7 @@ agent_id varchar(100) not_null comment(Agent that attempted access)
 business_domain varchar(100) not_null comment(Business domain accessed = domain name)
 action varchar(50) not_null comment(Type of action attempted read, propose, execute)
 granted tinyint(1) not_null comment(Whether access was granted)
-accessed_at timestamp NULL DEFAULT current_timestamp() comment(When access was attempted)
+accessed_at timestamp NULL default current_timestamp() comment(When access was attempted)
 --
 primary log_id
 idx_agent_id agent_id

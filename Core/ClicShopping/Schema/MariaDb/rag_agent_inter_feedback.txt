@@ -1,13 +1,13 @@
-feedback_id varchar(36) NOT NULL comment(Unique identifier for the feedback (UUID))
-target_agent_id varchar(100) NOT NULL comment(Agent receiving the feedback)
-source_agent_id varchar(100) NOT NULL comment(Agent providing the feedback)
-output_id varchar(36) NOT NULL comment(Output that triggered the feedback)
-feedback_type enum('correctness','efficiency','completeness','best_practice') NOT NULL comment(Category of feedback)
-feedback_text text NOT NULL comment(Detailed feedback content)
-acknowledged tinyint(1) DEFAULT 0 comment(Whether the target agent has acknowledged)
-agent_response text DEFAULT NULL comment(Optional response from the target agent)
-created_at timestamp NULL DEFAULT current_timestamp() comment(When the feedback was created)
-acknowledged_at timestamp NULL DEFAULT NULL comment(When the feedback was acknowledged)
+feedback_id varchar(36) not_null comment(Unique identifier for the feedback (UUID))
+target_agent_id varchar(100) not_null comment(Agent receiving the feedback)
+source_agent_id varchar(100) not_null comment(Agent providing the feedback)
+output_id varchar(36) not_null comment(Output that triggered the feedback)
+feedback_type enum('correctness','efficiency','completeness','best_practice') not_null comment(Category of feedback)
+feedback_text text not_null comment(Detailed feedback content)
+acknowledged tinyint(1) default 0 comment(Whether the target agent has acknowledged)
+agent_response text default null comment(Optional response from the target agent)
+created_at timestamp NULL default current_timestamp() comment(When the feedback was created)
+acknowledged_at timestamp NULL default null comment(When the feedback was acknowledged)
 
 --
 primary feedback_id

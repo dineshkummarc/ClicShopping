@@ -1,8 +1,8 @@
-transition_id int(11) NOT NULL auto_increment comment(Auto-incrementing transition ID)
-objective_id varchar(36) NOT NULL comment(Objective that transitioned)
-old_status varchar(20) DEFAULT NULL comment(Previous status (NULL for initial creation))
-new_status varchar(20) NOT NULL comment(New status after transition)
-transition_reason text NOT NULL comment(Explanation for the state change)
+transition_id int(11) not_null auto_increment comment(Auto-incrementing transition ID)
+objective_id varchar(36) not_null comment(Objective that transitioned)
+old_status varchar(20) default null comment(Previous status (NULL for initial creation))
+new_status varchar(20) not_null comment(New status after transition)
+transition_reason text not_null comment(Explanation for the state change)
 transitioned_at timestamp NULL default(current_timestamp) comment(When the transition occurred)
 
 --

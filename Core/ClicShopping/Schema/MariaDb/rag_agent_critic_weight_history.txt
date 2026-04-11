@@ -1,8 +1,8 @@
-id int(11) NOT NULL auto_increment
-critic_id varchar(255) NOT NULL
-evaluation_id varchar(255) NOT NULL
-weight decimal(10,8) NOT NULL
-timestamp timestamp NULL DEFAULT current_timestamp()
+id int(11) not_null auto_increment
+critic_id varchar(255) not_null
+evaluation_id varchar(255) not_null
+weight decimal(10,8) not_null
+timestamp timestamp NULL default current_timestamp()
 
 --
 primary id

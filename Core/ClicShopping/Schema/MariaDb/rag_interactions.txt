@@ -10,12 +10,12 @@ response_time INT default null comment(Response time in milliseconds)
 execution_time INT default null comment(Execution time in milliseconds)
 tokens_used INT default null comment(Number of tokens used in the API call)
 api_cost DECIMAL(10,6) default null comment(API cost in USD for this interaction)
-language_id INT DEFAULT 1 comment(Language identifier for the interaction)
-entity_id INT DEFAULT 0 comment(Entity ID (0 = no specific entity, null = unknown))
+language_id INT default 1 comment(Language identifier for the interaction)
+entity_id INT default 0 comment(Entity ID (0 = no specific entity, null = unknown))
 entity_type VARCHAR(50) default null comment(Type of entity (product, category, page, etc.))
 agent_used VARCHAR(50) default null comment(Agent that processed the query (orchestrator, analytics_agent, semantic_agent, etc.))
 intent_type VARCHAR(50) default null comment(Intent classification (analytics, semantic, hybrid, web_search))
-date_added DATETIME not_null DEFAULT CURRENT_TIMESTAMP comment(Timestamp when the interaction was created)
+date_added DATETIME not_null default CURRENT_TIMESTAMP comment(Timestamp when the interaction was created)
 
 --
 primary interaction_id

@@ -1,6 +1,6 @@
 categories_id int not_null auto_increment comment(Primary key - unique identifier for each category)
 categories_image varchar(255) comment(Path to category image file)
-parent_id int UNSIGNED default(0) not_null comment(FK to categories table - parent category ID for hierarchical structure, 0 for root categories)
+parent_id int unsigned default(0) not_null comment(FK to categories table - parent category ID for hierarchical structure, 0 for root categories)
 sort_order int(3) comment(Display order for sorting categories)
 date_added datetime comment(Timestamp when category was created)
 last_modified datetime comment(Timestamp of last modification)

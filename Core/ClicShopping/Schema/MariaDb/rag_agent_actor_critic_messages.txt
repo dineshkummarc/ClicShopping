@@ -1,17 +1,17 @@
 id bigint(20) not_null auto_increment
 message_id varchar(100) not_null
 message_type varchar(50) not_null
-version varchar(10) not_null DEFAULT (1.0)
+version varchar(10) not_null default (1.0)
 sender_id varchar(100) not_null
 recipient_id varchar(100) not_null
-correlation_id varchar(100) DEFAULT NULL
+correlation_id varchar(100) default null
 payload longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin not_null CHECK (json_valid(payload))
-metadata longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(metadata))
-status enum('sent','delivered','failed','max_retries_exceeded') not_null DEFAULT (sent)
-retry_count int(11) not_null DEFAULT 0
-error_message text DEFAULT NULL
-created_at timestamp NULL DEFAULT current_timestamp()
-updated_at timestamp NULL DEFAULT NULL ON UPDATE current_timestamp()
+metadata longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin default null CHECK (json_valid(metadata))
+status enum('sent','delivered','failed','max_retries_exceeded') not_null default (sent)
+retry_count int(11) not_null default 0
+error_message text default null
+created_at timestamp NULL default current_timestamp()
+updated_at timestamp NULL default null ON UPDATE current_timestamp()
 
 --
 primary id

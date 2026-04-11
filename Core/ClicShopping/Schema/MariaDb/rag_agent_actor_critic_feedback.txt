@@ -1,14 +1,14 @@
 feedback_id bigint(20) auto_increment not_null
 target_actor_id varchar(100) not_null
 output_id varchar(100) not_null
-consensus_score decimal(32) not_null DEFAULT 0.00
+consensus_score decimal(32) not_null default 0.00
 categorized_feedback longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin not_null CHECK (json_valid(categorized_feedback))
 strengths longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin not_null CHECK (json_valid(strengths))
 improvements longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin not_null CHECK (json_valid(improvements))
-acknowledged tinyint(1) DEFAULT 0
-created_at timestamp NULL DEFAULT current_timestamp()
-delivered_at timestamp NULL DEFAULT NULL
-acknowledged_at timestamp NULL DEFAULT NULL
+acknowledged tinyint(1) default 0
+created_at timestamp NULL default current_timestamp()
+delivered_at timestamp NULL default null
+acknowledged_at timestamp NULL default null
 
 --
 primary feedback_id

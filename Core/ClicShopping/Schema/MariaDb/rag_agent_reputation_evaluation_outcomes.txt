@@ -3,10 +3,10 @@ evaluation_id varchar(100)  not_null
 critic_id varchar(100)  not_null
 critic_score decimal(3,2)  not_null
 consensus_score decimal(3,2)  not_null
-within_threshold tinyint(1)  not_null DEFAULT 0
+within_threshold tinyint(1)  not_null default 0
 alignment_delta decimal(3,2)  not_null
-feedback_accepted tinyint(1)  not_null DEFAULT 0
-evaluated_at timestamp NULL DEFAULT current_timestamp()
+feedback_accepted tinyint(1)  not_null default 0
+evaluated_at timestamp NULL default current_timestamp()
 
 --
 primary outcome_id

@@ -4,7 +4,7 @@ products_id INT not_null comment(FK to products table - product that received dy
 base_price DECIMAL(10,2) not_null comment(Original product price before rule application)
 dynamic_price DECIMAL(10,2) not_null comment(Final price after rule application)
 rule_applied VARCHAR(255) not_null comment(Name or description of the rule that was applied)
-date_added DATETIME not_null DEFAULT NULL comment(Timestamp when dynamic price was calculated and applied)
+date_added DATETIME not_null default null comment(Timestamp when dynamic price was calculated and applied)
 source VARCHAR(50) not_null comment(Source of price calculation - manual, automatic, scheduled, api)
 --
 primary id

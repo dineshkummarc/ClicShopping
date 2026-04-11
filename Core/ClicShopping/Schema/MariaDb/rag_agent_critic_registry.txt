@@ -1,10 +1,10 @@
-registry_id int(11) NOT NULL auto_increment
-critic_id varchar(100) NOT NULL
-output_type varchar(50) NOT NULL
-expertise_level decimal(3,2) NOT NULL
-domain varchar(50) DEFAULT NULL
-registered_at timestamp NULL DEFAULT current_timestamp()
-updated_at timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+registry_id int(11) not_null auto_increment
+critic_id varchar(100) not_null
+output_type varchar(50) not_null
+expertise_level decimal(3,2) not_null
+domain varchar(50) default null
+registered_at timestamp NULL default current_timestamp()
+updated_at timestamp NULL default current_timestamp() ON UPDATE current_timestamp()
 
 --
 primary registry_id
