@@ -1214,3 +1214,4 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
   </form><!-- end form delete all -->
 </div>
 <script src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/colorpicker/jscolor.js'); ?>"></script>
+<script src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin7products_attributes.js'); ?>"></script>
