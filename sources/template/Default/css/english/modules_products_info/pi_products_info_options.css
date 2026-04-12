@@ -38,3 +38,49 @@ div.ModuleProductsInfoPositionOption {
   padding-left: 0.625rem;
   width: 450px;
 }
+
+/* Color picker swatches */
+.ModuleProductsInfoOptionsColorSwatches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.ModuleProductsInfoOptionsColorSwatchItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.ModuleProductsInfoOptionsColorSwatchLabel {
+  display: inline-block;
+  width: 32px; /* Un peu plus grand pour faciliter le clic */
+  height: 32px;
+  border: 2px solid #dee2e6;
+  border-radius: 50%; /* Pastilles rondes */
+  transition: transform 0.2s, border-color 0.2s;
+  padding: 0;
+}
+
+/* État au survol */
+.ModuleProductsInfoOptionsColorSwatchLabel:hover {
+  border-color: #adb5bd;
+  transform: scale(1.1);
+}
+
+/* État sélectionné (Géré par le JS via la classe .swatch-selected) */
+.ModuleProductsInfoOptionsColorSwatchLabel.swatch-selected {
+  border-color: #212529 !important;
+  box-shadow: 0 0 0 3px rgba(33, 37, 41, 0.2);
+  transform: scale(1.1);
+}
+
+.ModuleProductsInfoOptionsColorSwatchPrice {
+  display: block;
+  font-size: 0.7rem;
+  margin-top: 3px;
+  color: #6c757d;
+}

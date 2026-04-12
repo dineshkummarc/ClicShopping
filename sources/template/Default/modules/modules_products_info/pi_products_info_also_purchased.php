@@ -187,9 +187,11 @@ class pi_products_info_also_purchased
             if ($CLICSHOPPING_ProductsAttributes->getHasProductAttributes($products_id) === false) {
               $form = HTML::form('cart_quantity', CLICSHOPPING::link(null, 'Cart&Add'), 'post', 'class="justify-content-center"', ['tokenize' => true]) . "\n";
               $form .= HTML::hiddenField('products_id', $products_id);
-              if (isset($_GET['Id']) || isset($_GET['products_id'])) {
+              
+	      if (isset($_GET['Id']) || isset($_GET['products_id'])) {
                 $form .= HTML::hiddenField('url', 'Products&Description');
               }
+	      
               $endform = '</form>';
               $submit_button = $CLICSHOPPING_ProductsCommon->getProductsBuyButton($products_id);
             }

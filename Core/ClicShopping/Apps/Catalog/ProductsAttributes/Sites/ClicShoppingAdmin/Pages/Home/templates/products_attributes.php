@@ -101,6 +101,7 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
             <!-- options //-->
             <?php
             $products_options_type = $CLICSHOPPING_ProductsAttributesAdmin->setAttributeType();
+            $products_options_type_labels = array_column($products_options_type, 'text', 'id');
 
             if (isset($_GET['DeleteProductOption'])) { // delete product option
               $QoptionValues = $CLICSHOPPING_ProductsAttributes->db->prepare('select products_options_id,
@@ -288,7 +289,7 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                   } else {
                     ?>
                     <td><?php echo $QoptionValues->valueInt('products_options_id'); ?></td>
-                    <td><?php echo $QoptionValues->value('products_options_type'); ?></td>
+                    <td><?php echo $products_options_type_labels[$QoptionValues->value('products_options_type')] ?? $QoptionValues->value('products_options_type'); ?></td>
                     <td><?php echo $QoptionValues->value('products_options_name'); ?></td>
                     <td><?php echo $QoptionValues->valueInt('products_options_sort_order'); ?></td>
                     <td></td>
@@ -478,6 +479,7 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
 
             while ($Qvalues->fetch()) {
             $options_name = $CLICSHOPPING_ProductsAttributesAdmin->getOptionsName($Qvalues->valueInt('products_options_id'));
+            $options_type_tab2 = $CLICSHOPPING_ProductsAttributesAdmin->getOptionsType($Qvalues->valueInt('products_options_id'));
             $values_name = $Qvalues->value('products_options_values_name');
             $rows++;
             ?>
@@ -500,9 +502,10 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                   $QvaluesName->bindInt(':products_options_values_id', $Qvalues->valueInt('products_options_values_id'));
                   $QvaluesName->execute();
 
+                  $value_name_attrs = ($options_type_tab2 === 'color_picker') ? 'class="color" required aria-required="true"' : 'required aria-required="true"';
                   $inputs .= '<div class="row">
                         <span class="col-md-1">' . $languages[$i]['code'] . ':</span>
-                        <span class="col-md-11">&nbsp;' . HTML::inputField('value_name[' . $languages[$i]['id'] . ']', $QvaluesName->value('products_options_values_name'), 'required aria-required="true"') . '</span>
+                        <span class="col-md-11">&nbsp;' . HTML::inputField('value_name[' . $languages[$i]['id'] . ']', $QvaluesName->value('products_options_values_name'), $value_name_attrs) . '</span>
                       </div>
                       ';
                 }
@@ -513,18 +516,19 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                   <select name="option_id" class="form-group">
                     <?php
                     $QoptionValues = $CLICSHOPPING_ProductsAttributes->db->prepare('select products_options_id,
-                                                                               products_options_name
-                                                                         from :table_products_options
-                                                                         where language_id = :language_id
-                                                                         order by products_options_name
-                                                                        ');
+                                                                                           products_options_name,
+                                                                                           products_options_type
+                                                                                     from :table_products_options
+                                                                                     where language_id = :language_id
+                                                                                     order by products_options_name
+                                                                                    ');
 
                     $QoptionValues->bindInt(':language_id', (int)$CLICSHOPPING_Language->getId());
 
                     $QoptionValues->execute();
 
                     while ($QoptionValues->fetch()) {
-                      echo "\n" . '<option name="' . $QoptionValues->value('products_options_name') . '" value="' . $QoptionValues->valueInt('products_options_id') . '"';
+                      echo "\n" . '<option name="' . $QoptionValues->value('products_options_name') . '" value="' . $QoptionValues->valueInt('products_options_id') . '" data-type="' . $QoptionValues->value('products_options_type') . '"';
                       if ($Qvalues->valueInt('products_options_id') == $QoptionValues->valueInt('products_options_id')) {
                         echo ' selected';
                       }
@@ -546,7 +550,14 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                 ?>
                 <td><?php echo $Qvalues->valueInt('products_options_id'); ?></td>
                 <td><?php echo $options_name; ?></td>
-                <td><?php echo $values_name; ?></td>
+                <td><?php
+                  if ($options_type_tab2 === 'color_picker') {
+                    $hex = '#' . ltrim($values_name, '#');
+                    echo '<span style="display:inline-block;width:20px;height:20px;background-color:' . HTML::outputProtected($hex) . ';border:1px solid #ccc;border-radius:3px;vertical-align:middle;margin-right:5px;"></span>' . HTML::outputProtected($values_name);
+                  } else {
+                    echo $values_name;
+                  }
+                ?></td>
                 <td class="text-end">
                   <?php
                   echo HTML::button($CLICSHOPPING_ProductsAttributes->getDef('button_edit'), null, $CLICSHOPPING_ProductsAttributes->link('ProductsAttributes&UpdateOptionValue&value_id=' . $Qvalues->valueInt('products_options_values_id') . '#tab2'), 'primary', null, 'sm') . ' ';
@@ -580,19 +591,20 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
               <tr>
                 <td><?php echo $next_id; ?></td>
                 <td>
-                  <select name="option_id">
+                  <select name="option_id" id="tab2InsertOptionId">
                     <?php
                     $QoptionValues = $CLICSHOPPING_ProductsAttributes->db->prepare('select products_options_id,
-                                                                                             products_options_name
-                                                                                       from :table_products_options
-                                                                                       where language_id = :language_id
-                                                                                       order by products_options_name
-                                                                                     ');
+                                                                                           products_options_name,
+                                                                                           products_options_type
+                                                                                     from :table_products_options
+                                                                                     where language_id = :language_id
+                                                                                     order by products_options_name
+                                                                                   ');
                     $QoptionValues->bindInt(':language_id', $CLICSHOPPING_Language->getId());
                     $QoptionValues->execute();
 
                     while ($QoptionValues->fetch()) {
-                      echo '<option name="' . $QoptionValues->value('products_options_name') . '" value="' . $QoptionValues->valueInt('products_options_id') . '">' . $QoptionValues->value('products_options_name') . '</option>';
+                      echo '<option name="' . $QoptionValues->value('products_options_name') . '" value="' . $QoptionValues->valueInt('products_options_id') . '" data-type="' . $QoptionValues->value('products_options_type') . '">' . $QoptionValues->value('products_options_name') . '</option>';
                     }
 
                     $inputs = '';
@@ -692,6 +704,7 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
               while ($Qattributes->fetch()) {
                 $products_name_only = $CLICSHOPPING_ProductsAdmin->getProductsName($Qattributes->valueInt('products_id'));
                 $options_name = $CLICSHOPPING_ProductsAttributesAdmin->getOptionsName($Qattributes->valueInt('options_id'));
+                $options_type = $CLICSHOPPING_ProductsAttributesAdmin->getOptionsType($Qattributes->valueInt('options_id'));
                 $values_name = $CLICSHOPPING_ProductsAttributesAdmin->getValuesName($Qattributes->valueInt('options_values_id'));
 
                 $rows++;
@@ -748,9 +761,9 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
 
                       while ($QoptionValues->fetch()) {
                         if ($Qattributes->valueInt('options_id') == $QoptionValues->valueInt('products_options_id')) {
-                          echo "\n" . '<option name="' . $QoptionValues->value('products_options_name') . '" value="' . $QoptionValues->valueInt('products_options_id') . '" SELECTED>' . $QoptionValues->value('products_options_name') . '</option>';
+                          echo "\n" . '<option name="' . $QoptionValues->value('products_options_name') . '" value="' . $QoptionValues->valueInt('products_options_id') . '" data-type="' . $QoptionValues->value('products_options_type') . '" SELECTED>' . $QoptionValues->value('products_options_name') . '</option>';
                         } else {
-                          echo "\n" . '<option name="' . $QoptionValues->value('products_options_name') . '" value="' . $QoptionValues->valueInt('products_options_id') . '">' . $QoptionValues->value('products_options_name') . '</option>';
+                          echo "\n" . '<option name="' . $QoptionValues->value('products_options_name') . '" value="' . $QoptionValues->valueInt('products_options_id') . '" data-type="' . $QoptionValues->value('products_options_type') . '">' . $QoptionValues->value('products_options_name') . '</option>';
                         }
                       }
                       ?>
@@ -867,7 +880,14 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                     <?php
                   }
                   ?>
-                  <td><strong><?php echo $values_name; ?></strong></td>
+                  <td><strong><?php
+                    if ($options_type === 'color_picker') {
+                      $hex = '#' . ltrim($values_name, '#');
+                      echo '<span style="display:inline-block;width:18px;height:18px;background-color:' . HTML::outputProtected($hex) . ';border:1px solid #ccc;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>' . HTML::outputProtected($values_name);
+                    } else {
+                      echo $values_name;
+                    }
+                  ?></strong></td>
                   <?php
                   if (MODE_B2B_B2C == 'True') {
                     if ($Qattributes->valueInt('customers_group_id') != 0 && $Qattributes->valueInt('customers_group_id') != 99) {
@@ -912,10 +932,10 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                   <?php
                   if (DOWNLOAD_ENABLED == 'true') {
                     $Qfilename = $CLICSHOPPING_ProductsAttributes->db->prepare('select products_attributes_filename
-                                                                                   from :table_products_attributes_download
-                                                                                   where products_attributes_id = :products_attributes_id
-                                                                                   limit 1
-                                                                                 ');
+                                                                                 from :table_products_attributes_download
+                                                                                 where products_attributes_id = :products_attributes_id
+                                                                                 limit 1
+                                                                               ');
                     $Qfilename->bindInt(':products_attributes_id', $Qattributes->valueInt('products_attributes_id'));
                     $Qfilename->execute();
                     ?>
@@ -923,7 +943,14 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                     <?php
                   }
                   ?>
-                  <td><?php echo $values_name; ?></td>
+                  <td><?php
+                    if ($options_type === 'color_picker') {
+                      $hex = '#' . ltrim($values_name, '#');
+                      echo '<span style="display:inline-block;width:18px;height:18px;background-color:' . HTML::outputProtected($hex) . ';border:1px solid #ccc;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>' . HTML::outputProtected($values_name);
+                    } else {
+                      echo $values_name;
+                    }
+                  ?></td>
                   <?php
                   if (MODE_B2B_B2C == 'True') {
                     if ($Qattributes->valueInt('customers_group_id') != 0 && $Qattributes->valueInt('customers_group_id') != 99) {
@@ -1005,7 +1032,7 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                   </select>
                 </td>
                 <td>
-                  <select name="options_id">
+                  <select name="options_id" id="tab3InsertOptionsId">
                     <?php
                     $QoptionValues = $CLICSHOPPING_ProductsAttributes->db->prepare('select *
                                                                                    from :table_products_options
@@ -1016,7 +1043,7 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                     $QoptionValues->execute();
 
                     while ($QoptionValues->fetch()) {
-                      echo '<option name="' . $QoptionValues->value('products_options_name') . '" value="' . $QoptionValues->valueInt('products_options_id') . '">' . $QoptionValues->value('products_options_name') . '</option>';
+                      echo '<option name="' . $QoptionValues->value('products_options_name') . '" value="' . $QoptionValues->valueInt('products_options_id') . '" data-type="' . $QoptionValues->value('products_options_type') . '">' . $QoptionValues->value('products_options_name') . '</option>';
                     }
                     ?>
                   </select>
@@ -1186,3 +1213,4 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
   </div>
   </form><!-- end form delete all -->
 </div>
+<script src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/colorpicker/jscolor.js'); ?>"></script>

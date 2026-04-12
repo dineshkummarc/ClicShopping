@@ -156,25 +156,26 @@ echo HTML::button($CLICSHOPPING_Products->getDef('button_cancel'), null, $CLICSH
   </div>
   <div class="mt-1"></div>
   <div id="productsTabs" style="overflow: auto;">
-    <ul class="nav nav-tabs flex-column flex-sm-row" role="tablist" id="myTab">
-      <li
-        class="nav-item"><?php echo '<a href="#tab1" role="tab" data-bs-toggle="tab" class="nav-link active">' . $CLICSHOPPING_Products->getDef('tab_general') . '</a>'; ?></li>
-      <li
-        class="nav-item"><?php echo '<a href="#tab2" role="tab" data-bs-toggle="tab" class="nav-link">' . $CLICSHOPPING_Products->getDef('tab_shipping'); ?></a></li>
-      <li
-        class="nav-item"><?php echo '<a href="#tab3" role="tab" data-bs-toggle="tab" class="nav-link">' . $CLICSHOPPING_Products->getDef('tab_stock'); ?></a></li>
-      <li
-        class="nav-item"><?php echo '<a href="#tab4" role="tab" data-bs-toggle="tab" class="nav-link">' . $CLICSHOPPING_Products->getDef('tab_price'); ?></a></li>
-      <li
-        class="nav-item"><?php echo '<a href="#tab5" role="tab" data-bs-toggle="tab" class="nav-link">' . $CLICSHOPPING_Products->getDef('tab_description'); ?></a></li>
-      <li
-        class="nav-item"><?php echo '<a href="#tab6" role="tab" data-bs-toggle="tab" class="nav-link">' . $CLICSHOPPING_Products->getDef('tab_img'); ?></a></li>
-      <li
-        class="nav-item"><?php echo '<a href="#tab7" role="tab" data-bs-toggle="tab" class="nav-link">' . $CLICSHOPPING_Products->getDef('tab_ref'); ?></a></li>
-      <li
-        class="nav-item"><?php echo '<a href="#tab8" role="tab" data-bs-toggle="tab" class="nav-link">' . $CLICSHOPPING_Products->getDef('tab_other_options'); ?></a></li>
-    </ul>
-    <div class="tabsClicShopping">
+    <div class="d-flex">
+      <ul class="nav nav-tabs flex-column me-3" role="tablist" id="myTab" style="min-width: 160px; border-bottom: none; border-right: 1px solid #dee2e6;">
+        <li
+          class="nav-item"><?php echo '<a href="#tab1" role="tab" data-bs-toggle="tab" class="nav-link active rounded-0 text-nowrap">' . $CLICSHOPPING_Products->getDef('tab_general') . '</a>'; ?></li>
+        <li
+          class="nav-item"><?php echo '<a href="#tab2" role="tab" data-bs-toggle="tab" class="nav-link rounded-0 text-nowrap">' . $CLICSHOPPING_Products->getDef('tab_shipping'); ?></a></li>
+        <li
+          class="nav-item"><?php echo '<a href="#tab3" role="tab" data-bs-toggle="tab" class="nav-link rounded-0 text-nowrap">' . $CLICSHOPPING_Products->getDef('tab_stock'); ?></a></li>
+        <li
+          class="nav-item"><?php echo '<a href="#tab4" role="tab" data-bs-toggle="tab" class="nav-link rounded-0 text-nowrap">' . $CLICSHOPPING_Products->getDef('tab_price'); ?></a></li>
+        <li
+          class="nav-item"><?php echo '<a href="#tab5" role="tab" data-bs-toggle="tab" class="nav-link rounded-0 text-nowrap">' . $CLICSHOPPING_Products->getDef('tab_description'); ?></a></li>
+        <li
+          class="nav-item"><?php echo '<a href="#tab6" role="tab" data-bs-toggle="tab" class="nav-link rounded-0 text-nowrap">' . $CLICSHOPPING_Products->getDef('tab_img'); ?></a></li>
+        <li
+          class="nav-item"><?php echo '<a href="#tab7" role="tab" data-bs-toggle="tab" class="nav-link rounded-0 text-nowrap">' . $CLICSHOPPING_Products->getDef('tab_ref'); ?></a></li>
+        <li
+          class="nav-item"><?php echo '<a href="#tab8" role="tab" data-bs-toggle="tab" class="nav-link rounded-0 text-nowrap">' . $CLICSHOPPING_Products->getDef('tab_other_options'); ?></a></li>
+      </ul>
+    <div class="tabsClicShopping flex-grow-1">
       <div class="tab-content">
         <?php
         // packaging
@@ -1506,6 +1507,7 @@ echo HTML::button($CLICSHOPPING_Products->getDef('button_cancel'), null, $CLICSH
       <?php echo $CLICSHOPPING_Hooks->output('Products', 'ProductsContentTab7', null, 'display'); ?>
       <?php echo $CLICSHOPPING_Hooks->output('Products', 'ProductsContentTab8', null, 'display'); ?>
 
+      </div>
     </div>
     <?php
     //***********************************

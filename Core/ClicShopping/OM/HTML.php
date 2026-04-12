@@ -1039,4 +1039,97 @@ class HTML
   {
     return str_replace($search, $replace, $name);
   }
+  
+   /**
+   * Generates a group of color swatch buttons for the color_picker option type.
+   *
+   * Unlike radioField(), this method does NOT use <input type="radio"> elements,
+   * because hidden radio inputs combined with "required" cause browsers to block
+   * form submission even when one option is selected (the browser cannot scroll
+   * to an invisible input to show the validation error).
+   *
+   * Instead, the approach is:
+   *  - One <input type="hidden"> "sentinel" per option group, carrying name="id[X]"
+   *    and required. It starts empty (invalid) and is filled by JS on swatch click.
+   *  - Visual <button type="button"> swatches with data attributes consumed by
+   *    products_info_options_color_swatch.js.
+   *
+   * The JS file must be loaded via:
+   *   $footer .= '<script defer src="' . CLICSHOPPING::link(
+   *       $CLICSHOPPING_Template->getTemplateDefaultJavaScript(
+   *           'clicshopping/products_info_options_color_swatch.js'
+   *       )
+   *   ) . '"></script>' . "\n";
+   *
+   * @param string     $name             Form field name, e.g. 'id[42]'
+   * @param array      $values           Array of ['id' => int, 'text' => string (hex color), 'price' => string]
+   * @param int|false  $selected_value   Currently selected value id, or false if none
+   * @param string     $group_id         Unique HTML id for the swatch container, e.g. 'color_group_42'
+   * @param string     $option_label     Human-readable option name (for aria-label)
+   * @return string    HTML markup for the sentinel input + swatch buttons
+   */
+
+  public static function colorSwatchField(
+    string   $name,
+    array    $values,
+    mixed    $selected_value,
+    string   $group_id,
+    string   $option_label = ''
+  ): string
+  {
+    // Resolve selected value from POST/GET (mirrors selectionField behaviour)
+    $name_key = str_contains($name, '[') ? substr($name, 0, strpos($name, '[')) : $name;
+
+    if (isset($_POST[$name_key]) && is_string($_POST[$name_key])) {
+      $selected_value = $_POST[$name_key];
+    } elseif (isset($_GET[$name_key]) && is_string($_GET[$name_key])) {
+      $selected_value = $_GET[$name_key];
+    }
+
+    $sentinel_value = ($selected_value !== false && $selected_value !== '') ? (int)$selected_value : '';
+
+    $html = '';
+
+    $html .= '<input type="hidden" name="' . $name . '" id="' . $group_id . '_sentinel"  value="' . $sentinel_value . '" data-color-sentinel="' . $group_id . '" required>';
+
+    // --- Swatch container -----------------------------------------------
+    $html .= '<div class="ModuleProductsInfoOptionsColorSwatches"'
+      . ' id="' . $group_id . '"'
+      . ' role="radiogroup"'
+      . ' aria-label="' . $option_label . '"'
+      . '>';
+
+    foreach ($values as $value) {
+      // On utilise 'color' si dispo (notre hexa), sinon on se rabat sur 'text'
+      $color_source = $value['color'] ?? $value['text'];
+      $hex          = '#' . ltrim((string)$color_source, '#');
+
+      $swatch_id   = $group_id . '_' . (int)$value['id'];
+      $is_selected = ($sentinel_value !== '' && (int)$sentinel_value === (int)$value['id']);
+      $title       = $value['text'] . (!empty($value['price']) ? ' ' . $value['price'] : '');
+
+      $html .= '<div class="ModuleProductsInfoOptionsColorSwatchItem">';
+      $html .= '<button type="button"'
+        . ' id="' . $swatch_id . '"'
+        . ' role="radio"'
+        . ' aria-checked="' . ($is_selected ? 'true' : 'false') . '"'
+        . ' data-swatch-group="' . $group_id . '"'
+        . ' data-swatch-value="' . (int)$value['id'] . '"'
+        . ' title="' . $title . '"'
+        . ' class="ModuleProductsInfoOptionsColorSwatchLabel' . ($is_selected ? ' swatch-selected' : '') . '"'
+        . ' style="background-color:' . $hex . ';cursor:pointer;border:none;padding:0;"'
+        . '></button>';
+
+      if (!empty($value['price'])) {
+        $html .= '<small class="ModuleProductsInfoOptionsColorSwatchPrice">' . $value['price'] . '</small>';
+      }
+
+      $html .= '</div>';
+    }
+
+    $html .= '</div>'; // .ModuleProductsInfoOptionsColorSwatches
+
+    return $html;
+  }
+
 }

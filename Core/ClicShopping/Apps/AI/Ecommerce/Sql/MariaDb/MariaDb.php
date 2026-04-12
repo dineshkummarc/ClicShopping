@@ -361,5 +361,33 @@ EOD;
 
       $CLICSHOPPING_Db->exec('CREATE VECTOR INDEX embedding_index ON :table_products_cockpit_ai_embedding  (embedding)');
     }
+
+    // Create products_seo_embedding table
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_products_cockpit_ai_tracking_impressions_summary"');
+
+    if ($Qcheck->fetch() === false) {
+    #CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY INVOKER VIEW clic_products_cockpit_ai_tracking_impressions_summary  AS SELECT clic_products_cockpit_ai_tracking_impressions.products_id AS `products_id`, clic_products_cockpit_ai_tracking_impressions.language_id AS `language_id`, sum(clic_products_cockpit_ai_tracking_impressions.weight * exp(-timestampdiff(HOUR,clic_products_cockpit_ai_tracking_impressions.displayed_at,current_timestamp()) / 48)) / (1 + log(count(0) + 1)) AS `popularity_heat`, count(0) AS `total_impressions`, count(distinct clic_products_cockpit_ai_tracking_impressions.module_code) AS `module_spread`, sum(case when clic_products_cockpit_ai_tracking_impressions.weight >= 0.5 then 1 else 0 end) / nullif(count(0),0) AS `high_intent_ratio`, std(clic_products_cockpit_ai_tracking_impressions.weight) AS `weight_stddev`, max(clic_products_cockpit_ai_tracking_impressions.displayed_at) AS `last_seen_at` FROM clic_products_cockpit_ai_tracking_impressions WHERE clic_products_cockpit_ai_tracking_impressions.displayed_at >= current_timestamp() - interval 7 day GROUP BY clic_products_cockpit_ai_tracking_impressions.products_id, clic_products_cockpit_ai_tracking_impressions.language_id ;
+
+      $sql = <<<EOD
+      CREATE OR REPLACE ALGORITHM=UNDEFINED SQL SECURITY INVOKER VIEW :table_products_cockpit_ai_tracking_impressions_summary AS
+      SELECT
+          :table_products_cockpit_ai_tracking_impressions.products_id AS `products_id`,
+          :table_products_cockpit_ai_tracking_impressions.language_id AS `language_id`,
+          SUM(:table_products_cockpit_ai_tracking_impressions.weight * EXP(-TIMESTAMPDIFF(HOUR, :table_products_cockpit_ai_tracking_impressions.displayed_at, CURRENT_TIMESTAMP()) / 48)) / (1 + LOG(COUNT(0) + 1)) AS `popularity_heat`,
+          COUNT(0) AS `total_impressions`,
+          COUNT(DISTINCT :table_products_cockpit_ai_tracking_impressions.module_code) AS `module_spread`,
+          SUM(CASE WHEN :table_products_cockpit_ai_tracking_impressions.weight >= 0.5 THEN 1 ELSE 0 END) / NULLIF(COUNT(0), 0) AS `high_intent_ratio`,
+          STD(:table_products_cockpit_ai_tracking_impressions.weight) AS `weight_stddev`,
+          MAX(:table_products_cockpit_ai_tracking_impressions.displayed_at) AS `last_seen_at`
+      FROM
+          :table_products_cockpit_ai_tracking_impressions
+      WHERE
+          :table_products_cockpit_ai_tracking_impressions.displayed_at >= CURRENT_TIMESTAMP() - INTERVAL 7 DAY
+      GROUP BY
+          :table_products_cockpit_ai_tracking_impressions.products_id,
+          :table_products_cockpit_ai_tracking_impressions.language_id;
+      EOD;
+      $CLICSHOPPING_Db->exec($sql);
+    }
   }
 }

@@ -135,6 +135,7 @@ class ProductsAttributesShop
     if (!is_null($options_values_id)) {
       if ($this->customer->getCustomersGroupID() != 0) {
         $Qattributes = $this->db->prepare('select distinct popt.products_options_name,
+                                                             popt.products_options_type,
                                                              poval.products_options_values_name,
                                                              pa.options_values_price,
                                                              pa.price_prefix,
@@ -162,6 +163,7 @@ class ProductsAttributesShop
         $Qattributes->execute();
       } else {
         $Qattributes = $this->db->prepare('select distinct popt.products_options_name,
+                                                             popt.products_options_type,
                                                              poval.products_options_values_name,
                                                              pa.options_values_price,
                                                              pa.price_prefix,

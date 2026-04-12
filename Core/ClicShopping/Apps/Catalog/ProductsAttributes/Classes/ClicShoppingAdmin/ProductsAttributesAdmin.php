@@ -66,6 +66,18 @@ class ProductsAttributesAdmin
     return $Qvalues->value('products_options_values_name');
   }
 
+  public function getOptionsType(int $options_id): string
+  {
+    $sql_array = [
+      'products_options_id' => (int)$options_id,
+      'language_id' => (int)$this->lang->getId()
+    ];
+
+    $Qoptions = Registry::get('Db')->get('products_options', 'products_options_type', $sql_array);
+
+    return $Qoptions->value('products_options_type');
+  }
+
   /**
    * Handles the upload of an image, resizes it, and saves the processed file.
    * Generates a random file name for the processed image and deletes the original image file.
@@ -142,12 +154,12 @@ class ProductsAttributesAdmin
   public function setAttributeType(): array
   {
     $products_options_type = [
-      ['id' => 'select',
-       'text' => $this->app->getDef('text_select')
-      ],
-      ['id' => 'radio',
-       'text' => $this->app->getDef('text_radio')
-      ]
+      ['id' => 'select', 'text' => $this->app->getDef('text_select')],
+      ['id' => 'radio','text' => $this->app->getDef('text_radio')],
+      ['id' => 'checkbox', 'text' => $this->app->getDef('text_checkbox')],
+      ['id' => 'text', 'text' => $this->app->getDef('text_text')],
+      ['id' => 'textarea', 'text' => $this->app->getDef('text_textarea')],
+      ['id' => 'color_picker', 'text' => $this->app->getDef('text_color_picker')],
     ];
 
     return $products_options_type;
