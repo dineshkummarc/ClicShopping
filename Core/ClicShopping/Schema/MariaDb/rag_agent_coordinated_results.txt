@@ -9,7 +9,7 @@ num_critics int(11) not_null default 0
 execution_time_ms int(11) not_null default 0
 evaluation_time_ms int(11) not_null default 0
 total_time_ms int(11) not_null default 0
-created_at timestamp NULL default current_timestamp()
+created_at timestamp NULL default(current_timestamp)
 
 --
 primary coordination_id

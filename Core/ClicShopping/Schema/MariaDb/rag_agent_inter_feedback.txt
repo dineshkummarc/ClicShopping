@@ -6,7 +6,7 @@ feedback_type enum('correctness','efficiency','completeness','best_practice') no
 feedback_text text not_null comment(Detailed feedback content)
 acknowledged tinyint(1) default 0 comment(Whether the target agent has acknowledged)
 agent_response text default null comment(Optional response from the target agent)
-created_at timestamp NULL default current_timestamp() comment(When the feedback was created)
+created_at timestamp NULL default(current_timestamp) comment(When the feedback was created)
 acknowledged_at timestamp NULL default null comment(When the feedback was acknowledged)
 
 --

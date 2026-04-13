@@ -6,7 +6,7 @@ categorized_feedback longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin not_null
 strengths longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin not_null CHECK (json_valid(strengths))
 improvements longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin not_null CHECK (json_valid(improvements))
 acknowledged tinyint(1) default 0
-created_at timestamp NULL default current_timestamp()
+created_at timestamp NULL default(current_timestamp)
 delivered_at timestamp NULL default null
 acknowledged_at timestamp NULL default null
 

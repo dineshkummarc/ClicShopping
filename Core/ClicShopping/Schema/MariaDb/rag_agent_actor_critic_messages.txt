@@ -10,7 +10,7 @@ metadata longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin default null CHECK (
 status enum('sent','delivered','failed','max_retries_exceeded') not_null default (sent)
 retry_count int(11) not_null default 0
 error_message text default null
-created_at timestamp NULL default current_timestamp()
+created_at timestamp NULL default(current_timestamp)
 updated_at timestamp NULL default null ON UPDATE current_timestamp()
 
 --

@@ -2,8 +2,8 @@ permission_id int(11) not_null auto_increment
 agent_id varchar(100) not_null
 business_domain varchar(100) not_null
 permission_level enum('read_only','propose','execute_safe','execute_all') not_null
-created_at timestamp NULL default current_timestamp()
-updated_at timestamp NULL default current_timestamp() ON UPDATE current_timestamp()
+created_at timestamp NULL default(current_timestamp)
+updated_at timestamp NULL default(current_timestamp) ON UPDATE current_timestamp()
 
 --
 primary permission_id

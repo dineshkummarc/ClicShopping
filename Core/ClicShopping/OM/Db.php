@@ -931,6 +931,12 @@ class Db extends PDO
 
         $is_auto_increment = array_search('auto_increment', $details);
 
+        if (preg_match('/on_update\(([^)]+)\)/', $details_string, $on_update_match)) {
+          $schema['col'][$field_name]['on_update'] = $on_update_match[1];
+          $details_string = preg_replace('/on_update\([^)]+\)/', '', $details_string);
+          $details = array_values(array_filter(explode(' ', $details_string)));
+        }
+
         if (is_int($is_auto_increment)) {
           array_splice($details, $is_auto_increment, 1);
           $schema['col'][$field_name]['auto_increment'] = true;
@@ -985,6 +991,10 @@ class Db extends PDO
 
       if (isset($fields['auto_increment']) && ($fields['auto_increment'] === true)) {
         $row .= ' auto_increment';
+      }
+
+      if (isset($fields['on_update'])) {
+        $row .= ' ON UPDATE ' . $fields['on_update'];
       }
 
       // Add COMMENT clause if comment exists

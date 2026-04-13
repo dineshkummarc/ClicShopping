@@ -6,7 +6,7 @@ consensus_score decimal(3,2)  not_null
 within_threshold tinyint(1)  not_null default 0
 alignment_delta decimal(3,2)  not_null
 feedback_accepted tinyint(1)  not_null default 0
-evaluated_at timestamp NULL default current_timestamp()
+evaluated_at timestamp NULL default(current_timestamp)
 
 --
 primary outcome_id

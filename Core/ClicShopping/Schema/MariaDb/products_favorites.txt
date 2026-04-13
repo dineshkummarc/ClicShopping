@@ -5,7 +5,7 @@ products_favorites_last_modified datetime comment(Timestamp of last modification
 scheduled_date datetime comment(Future date for scheduled favorites display - null for immediate)
 expires_date datetime comment(Expiration date for favorites promotion - null for no expiration)
 date_status_change datetime comment(Timestamp when status was last changed)
-status int(1) not_null default(1) comment(Favorites status - 0: inactive, 1: active)
+status tinyint(1) not_null default(1) comment(Favorites status - 0: inactive, 1: active)
 customers_group_id int not_null default(0) comment(FK to customers_groups table - customer group, 0: all groups)
 --
 primary products_favorites_id

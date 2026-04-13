@@ -2180,7 +2180,7 @@ INSERT INTO products VALUES(10, 0, 0, 200, 'REF-608054608', 'products/cook/130_S
 INSERT INTO products_cockpit_ai_rule_thresholds VALUES('description_poor', 0.5000, 0.5000, '2026-04-05 17:08:43');
 INSERT INTO products_cockpit_ai_rule_thresholds VALUES('recommendations_min', 2.0000, 2.0000, '2026-04-05 17:08:43');
 INSERT INTO products_cockpit_ai_rule_thresholds VALUES('return_threshold', 0.1000, 0.1000, '2026-04-05 17:08:43');
-INSERT INTO _products_cockpit_ai_rule_thresholds VALUES('seo_low_score', 50.0000, 50.0000, '2026-04-05 17:08:43');
+INSERT INTO products_cockpit_ai_rule_thresholds VALUES('seo_low_score', 50.0000, 50.0000, '2026-04-05 17:08:43');
 
 
 INSERT INTO products_description VALUES(2, 1, 'Ricardo Set of 2 Double Wall Glasses', 'Ideal for juices, cocktails, iced teas and coffees, beers and much more.\r\n<ul>\r\n	<li>Made of durable borosilicate glass</li>\r\n	<li>Double wall construction maintains beverages hot or cold longer</li>\r\n	<li>Ideal for juices, cocktails, iced teas and coffees, beers and much more</li>\r\n	<li>14 oz/420 ml capacity</li>\r\n	<li>Dishwasher safe</li>\r\n</ul>\r\n', '', 0, '', '', '', '', '', '', 'Made of durable borosilicate glass', '');

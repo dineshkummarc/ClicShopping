@@ -12,7 +12,7 @@ feedback text not_null
 strengths longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin not_null CHECK (json_valid(`strengths`))
 improvements longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin not_null CHECK (json_valid(`improvements`))
 evaluation_time_ms int(11) not_null
-evaluated_at timestamp NULL default current_timestamp()
+evaluated_at timestamp NULL default(current_timestamp)
 
 --
 primary evaluation_id

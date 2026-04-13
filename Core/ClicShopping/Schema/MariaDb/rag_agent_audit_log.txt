@@ -3,7 +3,7 @@ agent_id varchar(100) not_null
 action_type varchar(100) not_null
 outcome varchar(50) not_null
 details longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin default null CHECK (json_valid(details))
-timestamp timestamp NULL default current_timestamp()
+timestamp timestamp NULL default(current_timestamp)
 
 --
 primary audit_id

@@ -5,7 +5,7 @@ products_featured_last_modified datetime comment(Timestamp of last modification)
 scheduled_date datetime comment(Future date when featuring becomes active - null for immediate)
 expires_date datetime comment(Expiration date when featuring ends - null for no expiration)
 date_status_change datetime comment(Timestamp when status was last changed)
-status int(1) not_null default(1) comment(Featured status - 0: inactive, 1: active and displaying)
+status tinyint(1) not_null default(1) comment(Featured status - 0: inactive, 1: active and displaying)
 customers_group_id int not_null default(0) comment(FK to customers_groups table - customer group who sees featured product, 0: all groups)
 --
 primary products_featured_id

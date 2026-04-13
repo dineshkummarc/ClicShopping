@@ -4,8 +4,8 @@
  status enum('active','suspended','disabled')  default (active)
  suspension_reason text  default null
  suspended_at timestamp NULL  default null
- created_at timestamp NULL  default current_timestamp()
- updated_at timestamp NULL  default current_timestamp() ON UPDATE current_timestamp()
+ created_at timestamp NULL  default(current_timestamp)
+ updated_at timestamp NULL  default(current_timestamp) ON UPDATE current_timestamp()
 
 --
 primary role_id

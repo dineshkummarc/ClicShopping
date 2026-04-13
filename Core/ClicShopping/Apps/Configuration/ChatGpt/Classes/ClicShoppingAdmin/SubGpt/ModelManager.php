@@ -29,46 +29,6 @@ use function defined;
 class ModelManager
 {
   /**
-   * Returns the GPT model to use as a technical fallback in case
-   * the primary model fails due to API errors, timeouts, or rate limits.
-   * This model should have similar capabilities to the primary model
-   * to maintain consistency in behavior.
-   *
-   * @return string Model ID of the technical fallback GPT model.
-   */
-  public static function getTechnicalFallbackModel(): string
-  {
-    return 'gpt-5-mini';
-  }
-
-  /**
-   * Returns the GPT model to use for the first level of quality escalation.
-   * This model is intended to provide higher reasoning, accuracy, or context
-   * capacity than the primary model when the primary output is insufficient
-   * for complex tasks or low-confidence responses.
-   *
-   * @return string Model ID of the first-level escalation GPT model.
-   */
-  public static function getEscalationModelLevel1(): string
-  {
-    return 'gpt-5-mini';
-  }
-
-  /**
-   * Generates and returns an HTML select field for GPT model options.
-   *
-   * @return string The HTML select field containing GPT model options.
-   */
-  public static function getGptModalMenu(): string
-  {
-    $array = self::getGptModel();
-
-    $menu = HTML::selectField('engine', $array, null, 'id="engine"');
-
-    return $menu;
-  }
-
-  /**
    * Retrieves an array of GPT models with their corresponding IDs and textual descriptions.
    *
    * Model Capability Legend:
@@ -141,6 +101,47 @@ class ModelManager
     ];
 
     return $array;
+  }
+
+  /**
+   * Returns the GPT model to use as a technical fallback in case
+   * the primary model fails due to API errors, timeouts, or rate limits.
+   * This model should have similar capabilities to the primary model
+   * to maintain consistency in behavior.
+   *
+   * @return string Model ID of the technical fallback GPT model.
+   */
+  public static function getTechnicalFallbackModel(): string
+  {
+    return 'gpt-5-mini';
+  }
+
+  /**
+   * Returns the GPT model to use for the first level of quality escalation.
+   * This model is intended to provide higher reasoning, accuracy, or context
+   * capacity than the primary model when the primary output is insufficient
+   * for complex tasks or low-confidence responses.
+   *
+   * @return string Model ID of the first-level escalation GPT model.
+   */
+  public static function getEscalationModelLevel1(): string
+  {
+    return 'gpt-5-mini';
+  }
+
+
+  /**
+   * Generates and returns an HTML select field for GPT model options.
+   *
+   * @return string The HTML select field containing GPT model options.
+   */
+  public static function getGptModalMenu(): string
+  {
+    $array = self::getGptModel();
+
+    $menu = HTML::selectField('engine', $array, null, 'id="engine"');
+
+    return $menu;
   }
 
   /**

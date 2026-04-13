@@ -8,7 +8,7 @@ static_consensus decimal(10,8) not_null comment(Consensus using static weights)
 dynamic_consensus decimal(10,8) not_null comment(Consensus using adaptive weights)
 consensus_difference decimal(10,8) not_null comment(Absolute difference between consensus values)
 evaluation_context longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin default null CHECK (json_valid(`evaluation_context`)) comment(Evaluation context for analysis)
-created_at timestamp NULL default current_timestamp()
+created_at timestamp NULL default(current_timestamp)
 
 --
 primary id

@@ -3,7 +3,7 @@ evaluation_id varchar(255) not_null
 dynamic_consensus decimal(10,8) not_null
 static_consensus decimal(10,8) not_null
 difference decimal(10,8) not_null
-created_at timestamp NULL default current_timestamp()
+created_at timestamp NULL default(current_timestamp)
   
 --
 primary id

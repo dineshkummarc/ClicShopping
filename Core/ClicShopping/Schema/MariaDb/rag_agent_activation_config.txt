@@ -1,5 +1,5 @@
 agent_id varchar(100) not_null comment(Unique agent identifier)
-enabled tinyint(1) not_null default 1 comment(Agent enabled state (1=enabled, 0=disabled))
+enabled tinyint(1) not_null default(1) comment(Agent enabled state (1=enabled, 0=disabled))
 agent_type enum('actor','critic','hybrid') not_null comment(Agent type)
 domain varchar(50) default null comment(Domain specialization ecommerce, hr, finance, trading, etc)
 description text default null comment(Agent description)

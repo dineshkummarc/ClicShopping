@@ -14,13 +14,13 @@ metadata longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin default null comment
 
 --
 primary id
-idx_products_date products_id displayed_at comment(Product-level time analysis)
-idx_page_module_date page_code module_code,displayed_at comment(Page and module performance tracking over time)
-idx_language_date language_id displayed_at comment(Language-based segmentation)
-idx_customer customer_id comment(Customer-level tracking)
-idx_customer_group customer_group_id comment(Segmentation by customer group)
-idx_session session_hash comment(Session-level grouping and deduplication)
-idx_module_position page_code module_code module_position module_sort_order comment(Analysis of product ordering inside modules)
+idx_products_date products_id displayed_at
+idx_page_module_date page_code module_code displayed_at
+idx_language_date language_id displayed_at
+idx_customer customer_id
+idx_customer_group customer_group_id
+idx_session session_hash
+idx_module_position page_code module_code module_position module_sort_order
 idx_spam_check session_hash products_id module_code displayed_at
 
 ##

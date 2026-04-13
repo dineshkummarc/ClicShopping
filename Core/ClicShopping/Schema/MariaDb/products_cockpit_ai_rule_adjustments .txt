@@ -9,8 +9,8 @@ date_created datetime not_null comment(rule adjustment date created)
 
 --
 primary id
-idx_rule_key (rule_key),
-idx_date_created (date_created);
+idx_rule_key rule_key
+idx_date_created date_created
 
 ##
 engine innodb
