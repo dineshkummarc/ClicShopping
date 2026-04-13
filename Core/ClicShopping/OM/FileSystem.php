@@ -61,16 +61,37 @@ class FileSystem
    */
   public static function isWritable(string $location, bool $recursive_check = false): bool
   {
-    if ($recursive_check === true) {
-      if (!file_exists($location)) {
-        while (true) {
-          $location = dirname($location);
+    clearstatcache(true, $location);
 
-          if (file_exists($location)) {
-            break;
-          }
+    if ($recursive_check) {
+      while (!file_exists($location)) {
+        $parent = dirname($location);
+
+        if ($parent === $location) {
+          return false;
         }
+
+        $location = $parent;
       }
+    }
+
+    if (!file_exists($location)) {
+      return is_writable(dirname($location));
+    }
+
+    if (is_dir($location)) {
+      $tmpFile = rtrim($location, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . uniqid('wtest_', true);
+
+      $fp = @fopen($tmpFile, 'wb');
+
+      if ($fp === false) {
+        return false;
+      }
+
+      fclose($fp);
+      unlink($tmpFile);
+
+      return true;
     }
 
     return is_writable($location);

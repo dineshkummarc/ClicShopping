@@ -334,7 +334,7 @@ EOD;
     }
 
     // Create CockpitAI embedding table
-    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_products_cockpit_ai_embedding "');
+    $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_products_cockpit_ai_embedding"');
 
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD

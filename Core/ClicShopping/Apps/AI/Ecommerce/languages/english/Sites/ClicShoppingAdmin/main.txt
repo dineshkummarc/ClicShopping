@@ -36,6 +36,7 @@ text_welcome_message = This is the AI Ecommerce Domain management interface. Her
 
 module_ec_short_title = Ecommerce Agent Insight
 module_ec_title = Ecommerce Agent Insight
+module_ec_introduction = Do you want install agent insight for order
 
 module_acp_title = OpenAI ACP Beta Ecommerce
 module_acp_short_title =  OpenAI ACP Beta Ecommerce
