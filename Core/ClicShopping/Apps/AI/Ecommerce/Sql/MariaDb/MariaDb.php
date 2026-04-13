@@ -253,23 +253,23 @@ class MariaDb
 
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
-CREATE TABLE IF NOT EXISTS :table_rag_agent_order_insights_embedding (
-    id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each insight embedding',
-    content longtext DEFAULT NULL COMMENT 'Insight content for embedding generation - summary, recommendations, analysis',
-    type TEXT DEFAULT NULL COMMENT 'Type of content - summary, recommendations, full_insights',
-    sourcetype TEXT DEFAULT 'automated' COMMENT 'Source type - automated (from LLM), manual, imported',
-    sourcename TEXT DEFAULT 'insights_agent' COMMENT 'Name of the source system or process',
-    embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
-    chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
-    date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
-    entity_id INT COMMENT 'FK to rag_agent_order_insights table - insight ID',
-    metadata LONGTEXT COMMENT 'JSON metadata for the embedding',
-    language_id INT DEFAULT NULL COMMENT 'Language ID from languages table',
-    KEY idx_entity_id (entity_id),
-    KEY idx_language_id (language_id),
-    KEY idx_date_modified (date_modified)
-) COMMENT='Vector embeddings for order insights - enables semantic insight search and pattern analysis across orders'
-EOD;
+        CREATE TABLE IF NOT EXISTS :table_rag_agent_order_insights_embedding (
+            id SERIAL PRIMARY KEY COMMENT 'Primary key - unique identifier for each insight embedding',
+            content longtext DEFAULT NULL COMMENT 'Insight content for embedding generation - summary, recommendations, analysis',
+            type TEXT DEFAULT NULL COMMENT 'Type of content - summary, recommendations, full_insights',
+            sourcetype TEXT DEFAULT 'automated' COMMENT 'Source type - automated (from LLM), manual, imported',
+            sourcename TEXT DEFAULT 'insights_agent' COMMENT 'Name of the source system or process',
+            embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding (3072 dimensions) for semantic search',
+            chunknumber INT DEFAULT 128 COMMENT 'Chunk size used for embedding generation',
+            date_modified DATETIME DEFAULT NULL COMMENT 'Last modification timestamp',
+            entity_id INT COMMENT 'FK to rag_agent_order_insights table - insight ID',
+            metadata LONGTEXT COMMENT 'JSON metadata for the embedding',
+            language_id INT DEFAULT NULL COMMENT 'Language ID from languages table',
+            KEY idx_entity_id (entity_id),
+            KEY idx_language_id (language_id),
+            KEY idx_date_modified (date_modified)
+        ) COMMENT='Vector embeddings for order insights - enables semantic insight search and pattern analysis across orders'
+        EOD;
       $CLICSHOPPING_Db->exec($sql);
 
       // Create vector index
@@ -295,10 +295,10 @@ EOD;
      language_id     INT(11)       NOT NULL COMMENT 'FK to languages table',
      metadata        LONGTEXT      COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'JSON: url, page_type, seo_score_before, seo_score_after, status, report_raw, suggestions, audit_result, serp_data',
       PRIMARY KEY (id),
-      KEYidx_entity_lang    (entity_id,language_id),
-      KEYidx_type           (type(50)),
-      KEYidx_sourcetype     (sourcetype(50)),
-      KEYidx_date_modified  (date_modified)
+      KEY idx_entity_lang    (entity_id,language_id),
+      KEY idx_type           (type(50)),
+      KEY idx_sourcetype     (sourcetype(50)),
+      KEY idx_date_modified  (date_modified)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     EOD;
       $CLICSHOPPING_Db->exec($sql);
@@ -338,25 +338,25 @@ EOD;
 
     if ($Qcheck->fetch() === false) {
       $sql = <<<EOD
-CREATE TABLE IF NOT EXISTS :table_products_cockpit_ai_embedding  (
-  id INT(11) NOT NULL AUTO_INCREMENT COMMENT 'Primary key - unique identifier for each CockpitAI analysis embedding',
-  content TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Generated from metadata using normalized template v1.0',
-  type ENUM('score_product','score_commercial','analysis','action_plan','history') DEFAULT NULL COMMENT 'Type of analysis content',
-  sourcetype ENUM('manual','auto') DEFAULT NULL COMMENT 'Trigger origin: manual (merchant) | auto (MCP/hook - future)',
-  sourcename TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Source identifier: merchant username | system component',
-  chunknumber int(11) DEFAULT 128 COMMENT 'Chunk size for embedding generation',
-  embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding 3072 dimensions - OpenAI text-embedding-3-large',
-  date_modified DATETIME DEFAULT NULL COMMENT 'Timestamp of analysis generation',
-  entity_id INT(11) NOT NULL COMMENT 'FK to products table - product ID',
-  entity_type varchar(50) DEFAULT NULL COMMENT 'Entity type (product, category, etc.)',    
-  language_id INT(11) NOT NULL COMMENT 'FK to languages table - language identifier',
-  metadata LONGTEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'JSON structure with versioned analysis details (scores, factors, actions, history)',
-  PRIMARY KEY (id),
-  KEY idx_entity_id (entity_id),
-  KEY idx_date_modified (date_modified),
-  KEY idx_entity_date (entity_id, date_modified)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Cockpit IA strategic product analysis embeddings - dual-axis scoring with RAG context'
-EOD;
+        CREATE TABLE IF NOT EXISTS :table_products_cockpit_ai_embedding  (
+          id INT(11) NOT NULL AUTO_INCREMENT COMMENT 'Primary key - unique identifier for each CockpitAI analysis embedding',
+          content TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Generated from metadata using normalized template v1.0',
+          type ENUM('score_product','score_commercial','analysis','action_plan','history') DEFAULT NULL COMMENT 'Type of analysis content',
+          sourcetype ENUM('manual','auto') DEFAULT NULL COMMENT 'Trigger origin: manual (merchant) | auto (MCP/hook - future)',
+          sourcename TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Source identifier: merchant username | system component',
+          chunknumber int(11) DEFAULT 128 COMMENT 'Chunk size for embedding generation',
+          embedding VECTOR(3072) NOT NULL COMMENT 'Vector embedding 3072 dimensions - OpenAI text-embedding-3-large',
+          date_modified DATETIME DEFAULT NULL COMMENT 'Timestamp of analysis generation',
+          entity_id INT(11) NOT NULL COMMENT 'FK to products table - product ID',
+          entity_type varchar(50) DEFAULT NULL COMMENT 'Entity type (product, category, etc.)',    
+          language_id INT(11) NOT NULL COMMENT 'FK to languages table - language identifier',
+          metadata LONGTEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'JSON structure with versioned analysis details (scores, factors, actions, history)',
+          PRIMARY KEY (id),
+          KEY idx_entity_id (entity_id),
+          KEY idx_date_modified (date_modified),
+          KEY idx_entity_date (entity_id, date_modified)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Cockpit IA strategic product analysis embeddings - dual-axis scoring with RAG context'
+        EOD;
       $CLICSHOPPING_Db->exec($sql);
 
       $CLICSHOPPING_Db->exec('CREATE VECTOR INDEX embedding_index ON :table_products_cockpit_ai_embedding  (embedding)');
@@ -369,23 +369,19 @@ EOD;
     #CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY INVOKER VIEW clic_products_cockpit_ai_tracking_impressions_summary  AS SELECT clic_products_cockpit_ai_tracking_impressions.products_id AS `products_id`, clic_products_cockpit_ai_tracking_impressions.language_id AS `language_id`, sum(clic_products_cockpit_ai_tracking_impressions.weight * exp(-timestampdiff(HOUR,clic_products_cockpit_ai_tracking_impressions.displayed_at,current_timestamp()) / 48)) / (1 + log(count(0) + 1)) AS `popularity_heat`, count(0) AS `total_impressions`, count(distinct clic_products_cockpit_ai_tracking_impressions.module_code) AS `module_spread`, sum(case when clic_products_cockpit_ai_tracking_impressions.weight >= 0.5 then 1 else 0 end) / nullif(count(0),0) AS `high_intent_ratio`, std(clic_products_cockpit_ai_tracking_impressions.weight) AS `weight_stddev`, max(clic_products_cockpit_ai_tracking_impressions.displayed_at) AS `last_seen_at` FROM clic_products_cockpit_ai_tracking_impressions WHERE clic_products_cockpit_ai_tracking_impressions.displayed_at >= current_timestamp() - interval 7 day GROUP BY clic_products_cockpit_ai_tracking_impressions.products_id, clic_products_cockpit_ai_tracking_impressions.language_id ;
 
       $sql = <<<EOD
-      CREATE OR REPLACE ALGORITHM=UNDEFINED SQL SECURITY INVOKER VIEW :table_products_cockpit_ai_tracking_impressions_summary AS
-      SELECT
-          :table_products_cockpit_ai_tracking_impressions.products_id AS `products_id`,
-          :table_products_cockpit_ai_tracking_impressions.language_id AS `language_id`,
-          SUM(:table_products_cockpit_ai_tracking_impressions.weight * EXP(-TIMESTAMPDIFF(HOUR, :table_products_cockpit_ai_tracking_impressions.displayed_at, CURRENT_TIMESTAMP()) / 48)) / (1 + LOG(COUNT(0) + 1)) AS `popularity_heat`,
-          COUNT(0) AS `total_impressions`,
-          COUNT(DISTINCT :table_products_cockpit_ai_tracking_impressions.module_code) AS `module_spread`,
-          SUM(CASE WHEN :table_products_cockpit_ai_tracking_impressions.weight >= 0.5 THEN 1 ELSE 0 END) / NULLIF(COUNT(0), 0) AS `high_intent_ratio`,
-          STD(:table_products_cockpit_ai_tracking_impressions.weight) AS `weight_stddev`,
-          MAX(:table_products_cockpit_ai_tracking_impressions.displayed_at) AS `last_seen_at`
-      FROM
-          :table_products_cockpit_ai_tracking_impressions
-      WHERE
-          :table_products_cockpit_ai_tracking_impressions.displayed_at >= CURRENT_TIMESTAMP() - INTERVAL 7 DAY
-      GROUP BY
-          :table_products_cockpit_ai_tracking_impressions.products_id,
-          :table_products_cockpit_ai_tracking_impressions.language_id;
+      CREATE OR REPLACE VIEW :table_products_cockpit_ai_tracking_impressions_summary AS
+        SELECT
+          products_id,
+          language_id,
+          SUM(weight * EXP(-TIMESTAMPDIFF(HOUR, displayed_at, CURRENT_TIMESTAMP()) / 48)) / (1 + LOG(COUNT(*) + 1)) AS popularity_heat,
+          COUNT(*) AS total_impressions,
+          COUNT(DISTINCT module_code) AS module_spread,
+          SUM(CASE WHEN weight >= 0.5 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0) AS high_intent_ratio,
+          STD(weight) AS weight_stddev,
+          MAX(displayed_at) AS last_seen_at
+        FROM :table_products_cockpit_ai_tracking_impressions
+        WHERE displayed_at >= CURRENT_TIMESTAMP() - INTERVAL 7 DAY
+        GROUP BY products_id, language_id;
       EOD;
       $CLICSHOPPING_Db->exec($sql);
     }

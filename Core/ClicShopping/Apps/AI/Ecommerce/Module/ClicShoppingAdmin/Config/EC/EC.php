@@ -35,7 +35,7 @@ class EC extends \ClicShopping\Apps\AI\Ecommerce\Module\ClicShoppingAdmin\Config
   protected $pm_code = 'ecommerce';
 
   public bool $is_uninstallable = true;
-  public int|null $sort_order = 400;
+  public int|null $sort_order = 10;
 
   protected function init()
   {

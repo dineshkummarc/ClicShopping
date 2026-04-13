@@ -42,9 +42,9 @@ module_ucp_short_title =  Google UCP Beta Ecommerce
 module_ucp_introduction = Google a développé un protocole de commerce électronique ouvert appelé Universal Commerce Protocol (UCP).<br>
 Il permet aux agents de récupérer les produits, de créer des sessions de paiement et de finaliser les paiements via des points d'accès standardisés.
 
-module_ec_short_title = Agent Ecommerce Insight
-module_ec_title = Agent Ecommerce Insight
-module_ec_introduction = Souhaitez-vous installer AgentInsight pour les commandes ?
+module_ec_short_title = Agent Ecommerce
+module_ec_title = Agent Ecommerce
+module_ec_introduction = Ce module Apps est obligatoire pour pouvoir utiliser correctement le rag et crééer les embedding nécessaires. ?
 
 module_cai_title = Product Cockpit AI
 module_cai_short_title =  Product Cockpit AI
