@@ -1179,7 +1179,7 @@ class Db extends PDO
     $size = 0;
 
     while ($Qresult->fetch()) {
-      $size += $Qresult->value('Data_length');
+      $size += $Qresult->valueInt('data_length');
     }
 
     $size_db = round(($size / 1024) / 1024, 1);

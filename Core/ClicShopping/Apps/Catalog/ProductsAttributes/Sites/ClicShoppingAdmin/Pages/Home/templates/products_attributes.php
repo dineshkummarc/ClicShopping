@@ -43,14 +43,6 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
 
 echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
 ?>
-<script>
-  function go_option() {
-    if (document.option_order_by.selected.options[document.option_order_by.selected.selectedIndex].value != "none") {
-      location = "<?php echo $CLICSHOPPING_ProductsAttributes->link('productsAttributes&option_page=' . $option_page); ?>&option_order_by=" + document.option_order_by.selected.options[document.option_order_by.selected.selectedIndex].value;
-    }
-  }
-
-</script>
 <div class="contentBody">
   <?php
   // check if the catalog image directory exists
@@ -80,7 +72,7 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
     </div>
   </div>
   <div class="mt-1"></div>
-  <div id="categoriesTabs" style="overflow: auto;">
+  <div id="categoriesTabs" style="overflow: auto;" data-go-option-url="<?php echo $CLICSHOPPING_ProductsAttributes->link('productsAttributes&option_page=' . $option_page); ?>">
     <ul class="nav nav-tabs flex-column flex-sm-row" role="tablist" id="myTab">
       <li
         class="nav-item"><?php echo '<a href="#tab1" role="tab" data-bs-toggle="tab" class="nav-link active">' . $CLICSHOPPING_ProductsAttributes->getDef('tab_step1') . '</a>'; ?></li>
@@ -261,7 +253,7 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                                                                                      and language_id = :language_id
                                                                                     ');
                       $QoptionsName->bindInt(':products_options_id', $QoptionValues->valueInt('products_options_id'));
-                      $QoptionsName->bindInt(':language_id', $CLICSHOPPING_Language->getId());
+                      $QoptionsName->bindInt(':language_id', $languages[$i]['id']);
                       $QoptionsName->execute();
 
                       $inputs .= '<div class="row">
@@ -498,7 +490,7 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                                                                                 and language_id = :language_id
                                                                                ');
 
-                  $QvaluesName->bindInt(':language_id', $CLICSHOPPING_Language->getId());
+                  $QvaluesName->bindInt(':language_id', $languages[$i]['id']);
                   $QvaluesName->bindInt(':products_options_values_id', $Qvalues->valueInt('products_options_values_id'));
                   $QvaluesName->execute();
 
@@ -619,56 +611,6 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                   class="text-end"><?php echo HTML::button($CLICSHOPPING_ProductsAttributes->getDef('button_insert'), null, null, 'primary', null, 'sm'); ?></td>
               </tr>
 
-              <script>
-              (function() {
-                function initTab2ColorPicker() {
-                  var sel = document.getElementById('tab2InsertOptionId');
-                  if (!sel) return;
-
-                  function updateColorPicker() {
-                    var selectedOption = sel.options[sel.selectedIndex];
-                    var isColor = selectedOption && selectedOption.getAttribute('data-type') === 'color_picker';
-                    var inputs = document.querySelectorAll('[id^="tab2InsertValueName_"]');
-
-                    inputs.forEach(function(inp) {
-                      if (isColor) {
-                        // Activer jscolor sur cet input
-                        inp.classList.add('color');
-                        if (window.jscolor) {
-                          if (!inp.jscolor) {
-                            new jscolor(inp);
-                          }
-                          inp.jscolor.show();
-                          inp.jscolor.hide();
-                        }
-                      } else {
-                        // Désactiver : supprimer le picker et vider le champ
-                        if (inp.jscolor) {
-                          inp.jscolor.hide();
-                          // Supprimer le bouton/widget jscolor injecté
-                          if (inp.jscolor.button) inp.jscolor.button.parentNode && inp.jscolor.button.parentNode.removeChild(inp.jscolor.button);
-                          delete inp.jscolor;
-                        }
-                        inp.classList.remove('color');
-                        inp.style.background = '';
-                        inp.style.color = '';
-                        inp.value = '';
-                      }
-                    });
-                  }
-
-                  sel.addEventListener('change', updateColorPicker);
-                  updateColorPicker();
-                }
-
-                // Attendre que jscolor soit chargé (il est inclus en bas de page)
-                if (document.readyState === 'complete') {
-                  initTab2ColorPicker();
-                } else {
-                  window.addEventListener('load', initTab2ColorPicker);
-                }
-              })();
-              </script>
 
               <?php
               echo '</form>';
@@ -855,7 +797,12 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                         <option value="<?php echo (int)$vd['id']; ?>"<?php echo ((int)$vd['id'] === $tab3EditSelectedId) ? ' selected' : ''; ?>><?php echo HTML::outputProtected($vd['name']); ?></option>
                       <?php endforeach; ?>
                     </select>
-                    <div id="tab3EditValuesDropdown" style="position:relative;display:inline-block;min-width:180px;">
+                    <div id="tab3EditValuesDropdown"
+                         data-values="<?php echo HTML::outputProtected(json_encode($tab3EditValuesData)); ?>"
+                         data-options-type="<?php echo HTML::outputProtected($options_type); ?>"
+                         data-selected-name="<?php echo HTML::outputProtected($tab3EditSelectedName); ?>"
+                         data-selected-id="<?php echo (int)$tab3EditSelectedId; ?>"
+                         style="position:relative;display:inline-block;min-width:180px;">
                       <div id="tab3EditValuesDisplay" style="border:1px solid #ced4da;border-radius:4px;padding:4px 8px;cursor:pointer;background:#fff;display:flex;align-items:center;gap:6px;min-height:31px;">
                         <span id="tab3EditValuesSwatch" style="display:inline-block;width:18px;height:18px;border:1px solid #ccc;border-radius:3px;flex-shrink:0;"></span>
                         <span id="tab3EditValuesLabel" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
@@ -863,66 +810,6 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                       </div>
                       <div id="tab3EditValuesList" style="display:none;position:absolute;z-index:9999;border:1px solid #ced4da;border-radius:4px;background:#fff;max-height:220px;overflow-y:auto;width:100%;box-shadow:0 2px 8px rgba(0,0,0,.15);"></div>
                     </div>
-                    <script>
-                    (function() {
-                      var valuesData = <?php echo json_encode($tab3EditValuesData); ?>;
-                      var currentOptionsType = '<?php echo addslashes($options_type); ?>';
-                      var nativeSelect = document.getElementById('tab3EditValuesSelect');
-                      var display = document.getElementById('tab3EditValuesDisplay');
-                      var swatch = document.getElementById('tab3EditValuesSwatch');
-                      var label = document.getElementById('tab3EditValuesLabel');
-                      var list = document.getElementById('tab3EditValuesList');
-                      var isOpen = false;
-
-                      function isColorPicker() { return currentOptionsType === 'color_picker'; }
-                      function isHex(str) { return /^#?[0-9a-fA-F]{3,6}$/.test(str); }
-
-                      function renderSwatch(name, swEl) {
-                        if (isColorPicker() && isHex(name)) {
-                          swEl.style.background = name.startsWith('#') ? name : '#' + name;
-                          swEl.style.display = 'inline-block';
-                        } else {
-                          swEl.style.background = 'transparent';
-                          swEl.style.display = 'none';
-                        }
-                      }
-
-                      function buildList() {
-                        list.innerHTML = '';
-                        valuesData.forEach(function(v) {
-                          var item = document.createElement('div');
-                          item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 8px;cursor:pointer;';
-                          item.addEventListener('mouseover', function(){ this.style.background='#f0f0f0'; });
-                          item.addEventListener('mouseout', function(){ this.style.background=''; });
-                          var sw = document.createElement('span');
-                          sw.style.cssText = 'display:inline-block;width:18px;height:18px;border:1px solid #ccc;border-radius:3px;flex-shrink:0;';
-                          renderSwatch(v.name, sw);
-                          var txt = document.createElement('span');
-                          txt.textContent = v.name;
-                          item.appendChild(sw); item.appendChild(txt);
-                          item.addEventListener('click', function() {
-                            nativeSelect.value = v.id;
-                            label.textContent = v.name;
-                            renderSwatch(v.name, swatch);
-                            closeList();
-                          });
-                          list.appendChild(item);
-                        });
-                      }
-
-                      function openList() { buildList(); list.style.display='block'; isOpen=true; }
-                      function closeList() { list.style.display='none'; isOpen=false; }
-
-                      display.addEventListener('click', function(e) { e.stopPropagation(); isOpen ? closeList() : openList(); });
-                      document.addEventListener('click', closeList);
-
-                      // Init with current value
-                      var selectedName = <?php echo json_encode($tab3EditSelectedName); ?>;
-                      nativeSelect.value = <?php echo (int)$tab3EditSelectedId; ?>;
-                      label.textContent = selectedName;
-                      renderSwatch(selectedName, swatch);
-                    })();
-                    </script>
                   </td>
                   <?php
                   if (MODE_B2B_B2C == 'True') {
@@ -1208,7 +1095,7 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                     <?php endforeach; ?>
                   </select>
                   <!-- Custom color-aware dropdown -->
-                  <div id="tab3ValuesDropdown" style="position:relative;display:inline-block;min-width:180px;">
+                  <div id="tab3ValuesDropdown" data-values="<?php echo HTML::outputProtected(json_encode($tab3ValuesData)); ?>" style="position:relative;display:inline-block;min-width:180px;">
                     <div id="tab3ValuesDisplay" style="border:1px solid #ced4da;border-radius:4px;padding:4px 8px;cursor:pointer;background:#fff;display:flex;align-items:center;gap:6px;min-height:31px;">
                       <span id="tab3ValuesSwatch" style="display:inline-block;width:18px;height:18px;border:1px solid #ccc;border-radius:3px;flex-shrink:0;"></span>
                       <span id="tab3ValuesLabel" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
@@ -1216,101 +1103,6 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                     </div>
                     <div id="tab3ValuesList" style="display:none;position:absolute;z-index:9999;border:1px solid #ced4da;border-radius:4px;background:#fff;max-height:220px;overflow-y:auto;width:100%;box-shadow:0 2px 8px rgba(0,0,0,.15);"></div>
                   </div>
-                  <script>
-                  (function() {
-                    var valuesData = <?php echo json_encode($tab3ValuesData); ?>;
-                    var optionsSelect = document.getElementById('tab3InsertOptionsId');
-                    var nativeSelect = document.getElementById('tab3ValuesSelect');
-                    var display = document.getElementById('tab3ValuesDisplay');
-                    var swatch = document.getElementById('tab3ValuesSwatch');
-                    var label = document.getElementById('tab3ValuesLabel');
-                    var list = document.getElementById('tab3ValuesList');
-                    var isOpen = false;
-
-                    function isColorPicker() {
-                      var opt = optionsSelect ? optionsSelect.options[optionsSelect.selectedIndex] : null;
-                      return opt && opt.getAttribute('data-type') === 'color_picker';
-                    }
-
-                    function isHex(str) {
-                      return /^#?[0-9a-fA-F]{3,6}$/.test(str);
-                    }
-
-                    function renderSwatch(name, swatchEl) {
-                      if (isColorPicker() && isHex(name)) {
-                        var hex = name.startsWith('#') ? name : '#' + name;
-                        swatchEl.style.background = hex;
-                        swatchEl.style.display = 'inline-block';
-                      } else {
-                        swatchEl.style.background = 'transparent';
-                        swatchEl.style.display = 'none';
-                      }
-                    }
-
-                    function buildList() {
-                      list.innerHTML = '';
-                      valuesData.forEach(function(v) {
-                        var item = document.createElement('div');
-                        item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 8px;cursor:pointer;';
-                        item.addEventListener('mouseover', function(){ this.style.background='#f0f0f0'; });
-                        item.addEventListener('mouseout', function(){ this.style.background=''; });
-
-                        var sw = document.createElement('span');
-                        sw.style.cssText = 'display:inline-block;width:18px;height:18px;border:1px solid #ccc;border-radius:3px;flex-shrink:0;';
-                        renderSwatch(v.name, sw);
-
-                        var txt = document.createElement('span');
-                        txt.textContent = v.name;
-
-                        item.appendChild(sw);
-                        item.appendChild(txt);
-                        item.addEventListener('click', function() {
-                          nativeSelect.value = v.id;
-                          label.textContent = v.name;
-                          renderSwatch(v.name, swatch);
-                          closeList();
-                        });
-                        list.appendChild(item);
-                      });
-                    }
-
-                    function openList() {
-                      buildList();
-                      list.style.display = 'block';
-                      isOpen = true;
-                    }
-                    function closeList() {
-                      list.style.display = 'none';
-                      isOpen = false;
-                    }
-
-                    function initDisplay() {
-                      if (valuesData.length > 0) {
-                        var first = valuesData[0];
-                        nativeSelect.value = first.id;
-                        label.textContent = first.name;
-                        renderSwatch(first.name, swatch);
-                      }
-                    }
-
-                    display.addEventListener('click', function(e) {
-                      e.stopPropagation();
-                      isOpen ? closeList() : openList();
-                    });
-                    document.addEventListener('click', closeList);
-
-                    if (optionsSelect) {
-                      optionsSelect.addEventListener('change', function() {
-                        // rebuild swatches when option type changes
-                        var cur = nativeSelect.options[nativeSelect.selectedIndex];
-                        if (cur) renderSwatch(cur.text, swatch);
-                        if (isOpen) buildList();
-                      });
-                    }
-
-                    initDisplay();
-                  })();
-                  </script>
                 </td>
                 <td>
                   <?php
@@ -1454,4 +1246,4 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
   </form><!-- end form delete all -->
 </div>
 <script src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/colorpicker/jscolor.js'); ?>"></script>
-<script src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin7products_attributes.js'); ?>"></script>
+<script src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/products_attributes.js'); ?>"></script>
