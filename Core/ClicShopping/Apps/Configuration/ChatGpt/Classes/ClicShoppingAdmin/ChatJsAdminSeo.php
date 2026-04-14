@@ -1532,51 +1532,53 @@ $('[id^=\"seo_special_description\"]').each(function(index) {
   {
     $script = "
       <script defer>
-      $('[id^=\"categories_head_desc_tag\"]').each(function(index) {
-        let button = '{$content}';
-        let newButton = $(button).attr('data-index', index);
-      
-        let textareaId = $(this).find('textarea').attr('id'); // Récupérer l'id du textarea pour l'itération actuelle
-        // Vérifier si le textarea a été trouvé
-        if (textareaId !== undefined) {
-          let regex = /(\d+)/g;
-          let idCategoriesSeoDescription = regex.exec(textareaId)[0];
+  $('[id^=\"categories_head_desc_tag\"]').each(function(index) {
+    let button = '{$content}';
+          let newButton = $(button).attr('data-index', index);
         
-          let language_id = parseInt(idCategoriesSeoDescription);
-        
-          // Envoi d'une requête AJAX pour récupérer le nom de la langue
-          let self = this;
-          $.ajax({
-            url: '{$urlMultilanguage}',
-            data: {id: language_id},
-            success: function(language_name) {
-              let questionResponse = '{$translate_language}' + ' ' + language_name + ' : ' +  '{$question_summary_description}';
-              
-              newButton.click(function() {
-                let message = questionResponse;
-                let engine = $('#engine').val();
-        
-                $.ajax({
-                  url: '{$url}',
-                  type: 'POST',
-                  data: {message: message, engine: engine},
-                  success: function(data) {
+          let textareaId = $(this).find('textarea').attr('id'); // Récupérer l'id du textarea pour l'itération actuelle
+          // Vérifier si le textarea a été trouvé
+          if (textareaId !== undefined) {
+            let regex = /(\d+)/g;
+            let idCategoriesSeoDescription = regex.exec(textareaId)[0];
+          
+            let language_id = parseInt(idCategoriesSeoDescription);
+          
+            // Envoi d'une requête AJAX pour récupérer le nom de la langue
+            let self = this;
+            $.ajax({
+              url: '{$urlMultilanguage}',
+              data: {id: language_id},
+              success: function(language_name) {
+              let questionResponse =  '{$translate_language}' + ' ' + language_name + '. ' + '{$question_summary_description}';
+
+                newButton.click(function() {
+                  let message = questionResponse;
+                  let engine = $('#engine').val();
+          
+                  $.ajax({
+                    url: '{$url}',
+                    type: 'POST',
+                    data: {message: message, engine: engine},
+                    success: function(data) {
                     $('#chatGpt-output-input').val(data);
                     $('#categories_head_desc_tag_' + idCategoriesSeoDescription).val(data);
                   },
-                  error: function(xhr, status, error) {
+                    error: function(xhr, status, error) {
                     console.log(xhr.responseText);
                   }
+                  });
                 });
-              });
-        
-              if (newButton) {
-                $(self).append(newButton);
+          
+                if (newButton) {
+                  $(self).append(newButton);
+                }
               }
-            }
-          });
-        }
-      });
+            });
+          }
+        });    
+      
+      
       </script>";
 
     return $script;
@@ -1629,13 +1631,13 @@ $('[id^=\"seo_special_description\"]').each(function(index) {
                 error: function(xhr, status, error) {
                   console.log(xhr.responseText);
                 }
-});
+              });
             });
       
             if (newButton) {
               $(self).append(newButton);
             }
-}
+          }
         });
       });
       </script>";
@@ -2013,13 +2015,13 @@ $('[id^=\"seo_special_description\"]').each(function(index) {
                   error: function(xhr, status, error) {
                     console.log(xhr.responseText);
                   }
-});
+                });
               });
         
               if (newButton) {
                 $(self).append(newButton);
               }
-}
+            }
           });
         });
       </script>";
@@ -2079,13 +2081,13 @@ $('[id^=\"seo_special_description\"]').each(function(index) {
                   error: function(xhr, status, error) {
                     console.log(xhr.responseText);
                   }
-});
+                });
               });
         
               if (newButton) {
                 $(self).append(newButton);
               }
-}
+            }
           });
         });
       </script>";

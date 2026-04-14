@@ -15,10 +15,10 @@
   use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
   use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\SEO\SeoAgenticPipeline;
 
-define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/') . DIRECTORY_SEPARATOR);
+  define('CLICSHOPPING_BASE_DIR', realpath(__DIR__ . '/../../../Core/ClicShopping/') . DIRECTORY_SEPARATOR);
 
-require_once(CLICSHOPPING_BASE_DIR . 'OM/CLICSHOPPING.php');
-spl_autoload_register('ClicShopping\OM\CLICSHOPPING::autoload');
+  require_once(CLICSHOPPING_BASE_DIR . 'OM/CLICSHOPPING.php');
+  spl_autoload_register('ClicShopping\OM\CLICSHOPPING::autoload');
 
   CLICSHOPPING::initialize();
   CLICSHOPPING::loadSite('ClicShoppingAdmin');

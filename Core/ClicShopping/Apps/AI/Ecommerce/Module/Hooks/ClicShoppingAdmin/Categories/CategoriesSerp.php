@@ -126,6 +126,7 @@
       // -- Live SEO Report (crawl current page) --
       $seoReport = new SeoReport($linkUrl, $baseUrl);
       $seoData    = $seoReport->getSeoData(false, 'category');
+
       if ($seoData['isAlive']) {
         if (method_exists($seoReport, 'getHTMLReport')) {
           $reportHtml = $seoReport->getHTMLReport($seoData);

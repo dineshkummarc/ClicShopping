@@ -304,7 +304,6 @@ class MariaDb
       $CLICSHOPPING_Db->exec($sql);
     }
 
-
     // Create products_seo_embedding table
     $Qcheck = $CLICSHOPPING_Db->query('show tables like ":table_categories_seo_embedding"');
 

@@ -20,9 +20,8 @@
   use ClicShopping\OM\CLICSHOPPING;
   use ClicShopping\OM\Registry;
   use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
-  use ClicShopping\Apps\Marketing\SEO\Classes\ClicShoppingAdmin\SeoReport;
   use ClicShopping\AI\Rag\MultiDBRAGManager;
-
+  use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\SEO\SeoReport;
   class SeoEmbedding
   {
     private mixed               $db;
