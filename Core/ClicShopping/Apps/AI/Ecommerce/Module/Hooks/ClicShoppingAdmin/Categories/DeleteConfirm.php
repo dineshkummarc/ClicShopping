@@ -10,13 +10,22 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\Categories;
 
-use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\Apps\AI\Ecommerce\Ecommerce as EcommerceApp;
 use ClicShopping\OM\HTML;
+use ClicShopping\OM\Registry;
 
 class DeleteConfirm implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
 
+  public function __construct()
+  {
+    if (!Registry::exists('Ecommerce')) {
+      Registry::set('Ecommerce', new EcommerceApp());
+    }
+
+    $this->app = Registry::get('Ecommerce');
+  }
   /**
    * Executes the necessary processes based on the provided GET and POST parameters related to category handling.
    *

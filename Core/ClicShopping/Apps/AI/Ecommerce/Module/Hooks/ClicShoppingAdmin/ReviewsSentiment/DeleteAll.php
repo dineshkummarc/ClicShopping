@@ -10,7 +10,7 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\ReviewsSentiment;
 
-use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
+use ClicShopping\Apps\AI\Ecommerce\Ecommerce as EcommerceApp;
 use ClicShopping\OM\Registry;
 
 class DeleteAll implements \ClicShopping\OM\Modules\HooksInterface
@@ -27,11 +27,11 @@ class DeleteAll implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function __construct()
   {
-    if (!Registry::exists('ChatGpt')) {
-      Registry::set('ChatGpt', new ChatGptApp());
+    if (!Registry::exists('Ecommerce')) {
+      Registry::set('Ecommerce', new EcommerceApp());
     }
 
-    $this->app = Registry::get('ChatGpt');
+    $this->app = Registry::get('Ecommerce');
   }
 
   /**

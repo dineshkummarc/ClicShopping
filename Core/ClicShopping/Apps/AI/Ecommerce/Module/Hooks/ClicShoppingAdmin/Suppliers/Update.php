@@ -10,11 +10,11 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\Suppliers;
 
-
 use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
-use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
+use ClicShopping\Apps\AI\Ecommerce\Ecommerce as EcommerceApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
@@ -35,11 +35,11 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function __construct()
   {
-    if (!Registry::exists('ChatGpt')) {
-      Registry::set('ChatGpt', new ChatGptApp());
+    if (!Registry::exists('Ecommerce')) {
+      Registry::set('Ecommerce', new EcommerceApp());
     }
+    $this->app = Registry::get('Ecommerce');
 
-    $this->app = Registry::get('ChatGpt');
     $this->lang = Registry::get('Language');
 
     if (!Registry::exists('Semantics')) {
@@ -65,17 +65,13 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       'CLICSHOPPING_APP_CHATGPT_RA_STATUS',
     ];
 
-    foreach ($requiredConstants as $const) {
-      if (!\defined($const) || \constant($const) !== 'True') {
-        return false;
-      }
-    }
+    CLICSHOPPING::checkAppsIsActivated($requiredConstants);
 
     if (!Gpt::checkGptStatus()) {
       return false;
     }
 
-    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
 
     if (isset($_GET['Update'], $_GET['Suppliers'])) {
       if (isset($_GET['mID'])) {
@@ -146,112 +142,111 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
         if ($suppliers_id !== null) {
           //********************
-           // add embedding (WITHOUT taxonomy in content)
+          // add embedding (WITHOUT taxonomy in content)
           //********************
-           if ($embedding_enabled) {
-              $embedding_data = $this->app->getDef('text_supplier_name') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($supplier_name) . "\n";
-              $embedding_data .= $this->app->getDef('text_supplier_id') . ' : ' . $suppliers_id . "\n";
+          if ($embedding_enabled) {
+            $embedding_data = $this->app->getDef('text_supplier_name') . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($supplier_name) . "\n";
+            $embedding_data .= $this->app->getDef('text_supplier_id') . ' : ' . $suppliers_id . "\n";
 
-              if (!empty($date_added)) {
-                $embedding_data .= $this->app->getDef('text_supplier_date_added', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";
-              }
+            if (!empty($date_added)) {
+              $embedding_data .= $this->app->getDef('text_supplier_date_added', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($date_added) . "\n";
+            }
 
-              if (!empty($suppliers_manager)) {
-                $embedding_data .= $this->app->getDef('text_suppliers_manager', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_manager) . "\n";
-              }
+            if (!empty($suppliers_manager)) {
+              $embedding_data .= $this->app->getDef('text_suppliers_manager', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_manager) . "\n";
+            }
 
-              if (!empty($suppliers_phone)) {
-                $embedding_data .= $this->app->getDef('text_suppliers_phone', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_phone) . "\n";
-              }
+            if (!empty($suppliers_phone)) {
+              $embedding_data .= $this->app->getDef('text_suppliers_phone', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_phone) . "\n";
+            }
 
-              if (!empty($suppliers_email_address)) {
-                $embedding_data .= $this->app->getDef('text_suppliers_email_address', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_email_address) . "\n";
-              }
+            if (!empty($suppliers_email_address)) {
+              $embedding_data .= $this->app->getDef('text_suppliers_email_address', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_email_address) . "\n";
+            }
 
-              if (!empty($suppliers_address)) {
-                $embedding_data .= $this->app->getDef('text_suppliers_address', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_address) . "\n";
-              }
+            if (!empty($suppliers_address)) {
+              $embedding_data .= $this->app->getDef('text_suppliers_address', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_address) . "\n";
+            }
 
-              if (!empty($suppliers_suburb)) {
-                $embedding_data .= $this->app->getDef('text_supplier_suburb', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_suburb) . "\n";
-              }
+            if (!empty($suppliers_suburb)) {
+              $embedding_data .= $this->app->getDef('text_supplier_suburb', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_suburb) . "\n";
+            }
 
-              if (!empty($suppliers_postcode)) {
-                $embedding_data .= $this->app->getDef('text_suppliers_postcode', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_postcode) . "\n";
-              }
+            if (!empty($suppliers_postcode)) {
+              $embedding_data .= $this->app->getDef('text_suppliers_postcode', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_postcode) . "\n";
+            }
 
-               if (!empty($suppliers_states)) {
-                 $embedding_data .= $this->app->getDef('text_suppliers_states', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_states) . "\n";
-               }
+            if (!empty($suppliers_states)) {
+              $embedding_data .= $this->app->getDef('text_suppliers_states', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_states) . "\n";
+            }
 
-               if (!empty($suppliers_city)) {
-                 $embedding_data .= $this->app->getDef('text_supplier_city', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_city) . "\n";
-               }
+            if (!empty($suppliers_city)) {
+              $embedding_data .= $this->app->getDef('text_supplier_city', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_city) . "\n";
+            }
 
-               if (!empty($suppliers_country_id)) {
-                 $embedding_data .= $this->app->getDef('text_supplier_country_id', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_country_id) . "\n";
-               }
+            if (!empty($suppliers_country_id)) {
+              $embedding_data .= $this->app->getDef('text_supplier_country_id', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_country_id) . "\n";
+            }
 
-               if (!empty($suppliers_notes)) {
-                 $embedding_data .= $this->app->getDef('text_suppliers_notes', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_notes) . "\n";
-               }
+            if (!empty($suppliers_notes)) {
+              $embedding_data .= $this->app->getDef('text_suppliers_notes', ['supplier_name' => $supplier_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($suppliers_notes) . "\n";
+            }
 
-              // Get default language code for taxonomy (suppliers don't have language_id)
-              $default_language_code = $this->lang->getCode() ?? 'en';
-              $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($embedding_data), $default_language_code, null);
+            // Get default language code for taxonomy (suppliers don't have language_id)
+            $default_language_code = $this->lang->getCode() ?? 'en';
+            $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($embedding_data), $default_language_code, null);
 
-              if (!empty($taxonomy)) {
-                $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
-                $tags = [];
+            if (!empty($taxonomy)) {
+              $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
+              $tags = [];
 
-                foreach ($lines as $line) {
-                  if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
-                    $tags[$matches[1]] = trim($matches[2]);
-                  }
+              foreach ($lines as $line) {
+                if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
+                  $tags[$matches[1]] = trim($matches[2]);
                 }
-              } else {
-                $tags = [];
               }
+            } else {
+              $tags = [];
+            }
 
-              $embedding_data .= "\n" . $this->app->getDef('text_supplier_taxonomy') . " :\n";
+            $embedding_data .= "\n" . $this->app->getDef('text_supplier_taxonomy') . " :\n";
 
-              foreach ($tags as $key => $value) {
-                $embedding_data .= "[$key]: $value\n";
-              }
+            foreach ($tags as $key => $value) {
+              $embedding_data .= "[$key]: $value\n";
+            }
 
-              // Generate embeddings
-              $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
+            // Generate embeddings
+            $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-              // Prepare base metadata (suppliers table doesn't have language_id)
-              $baseMetadata = [
-                'supplier_name' => HTMLOverrideCommon::cleanHtmlForEmbedding($supplier_name),
-                'content' => HTMLOverrideCommon::cleanHtmlForEmbedding($supplier_name),
-                'supplier_id' => (int)$suppliers_id,
-                'type' => 'suppliers',
-                'tags' => isset($tags) ? $tags : [],
-                'source' => ['type' => 'manual', 'name' => 'manual']
-              ];
+            // Prepare base metadata (suppliers table doesn't have language_id)
+            $baseMetadata = [
+              'supplier_name' => HTMLOverrideCommon::cleanHtmlForEmbedding($supplier_name),
+              'content' => HTMLOverrideCommon::cleanHtmlForEmbedding($supplier_name),
+              'supplier_id' => (int)$suppliers_id,
+              'type' => 'suppliers',
+              'tags' => isset($tags) ? $tags : [],
+              'source' => ['type' => 'manual', 'name' => 'manual']
+            ];
 
-              // Save all chunks using centralized method (pass null for language_id as suppliers table doesn't have this column)
-              $result = NewVector::saveEmbeddingsWithChunks(
-                $embeddedDocuments,
-                'suppliers_embedding',
-                (int)$suppliers_id,
-                null,  // language_id - suppliers table doesn't have this column
-                $baseMetadata,
-                $this->app->db,
-                !$insert_embedding  // isUpdate = true if not inserting
-              );
+            // Save all chunks using centralized method (pass null for language_id as suppliers table doesn't have this column)
+            $result = NewVector::saveEmbeddingsWithChunks(
+              $embeddedDocuments,
+              'suppliers_embedding',
+              (int)$suppliers_id,
+              null,  // language_id - suppliers table doesn't have this column
+              $baseMetadata,
+              $this->app->db,
+              !$insert_embedding  // isUpdate = true if not inserting
+            );
 
-              if (!$result['success']) {
-                error_log("Suppliers Update: Failed to save embeddings - " . $result['error']);
-              } else {
-                error_log("Suppliers Update: Successfully saved {$result['chunks_saved']} chunks for supplier {$suppliers_id}");
-              }
+            if (!$result['success']) {
+              error_log("Suppliers Update: Failed to save embeddings - " . $result['error']);
+            } else {
+              error_log("Suppliers Update: Successfully saved {$result['chunks_saved']} chunks for supplier {$suppliers_id}");
             }
           }
         }
       }
     }
-
+  }
 }

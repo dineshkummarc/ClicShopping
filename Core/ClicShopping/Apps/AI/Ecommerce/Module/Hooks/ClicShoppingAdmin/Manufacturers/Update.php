@@ -10,11 +10,11 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\Manufacturers;
 
-
 use ClicShopping\AI\DomainsAI\CoreAI\Embedding\NewVector;
 use ClicShopping\AI\DomainsAI\Semantic\Agent\SemanticAgent;
-use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
+use ClicShopping\Apps\AI\Ecommerce\Ecommerce as EcommerceApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
+use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
@@ -36,11 +36,11 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function __construct()
   {
-    if (!Registry::exists('ChatGpt')) {
-      Registry::set('ChatGpt', new ChatGptApp());
+    if (!Registry::exists('Ecommerce')) {
+      Registry::set('Ecommerce', new EcommerceApp());
     }
 
-    $this->app = Registry::get('ChatGpt');
+    $this->app = Registry::get('Ecommerce');
     $this->lang = Registry::get('Language');
 
     if (!Registry::exists('Semantics')) {
@@ -67,11 +67,7 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       'CLICSHOPPING_APP_CHATGPT_RA_STATUS',
     ];
 
-    foreach ($requiredConstants as $const) {
-      if (!\defined($const) || \constant($const) !== 'True') {
-        return false;
-      }
-    }
+    CLICSHOPPING::checkAppsIsActivated($requiredConstants);
 
     if (!Gpt::checkGptStatus()) {
       return false;

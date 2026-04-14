@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\Products;
 
+use ClicShopping\Apps\AI\Ecommerce\Ecommerce as EcommerceApp;
 use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
@@ -34,7 +35,11 @@ class DeleteConfirm extends \ClicShopping\OM\Domains\PagesActionsAbstract
    */
   public function __construct()
   {
-    $this->app = Registry::get('Products');
+    if (!Registry::exists('Ecommerce')) {
+      Registry::set('Ecommerce', new EcommerceApp());
+    }
+
+    $this->app = Registry::get('Ecommerce');
 
     $this->Id = HTML::sanitize($_POST['products_id']);
   }

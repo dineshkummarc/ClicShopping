@@ -10,8 +10,8 @@
 
 namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\Favorites;
 
+use ClicShopping\Apps\AI\Ecommerce\Ecommerce as EcommerceApp;
 use ClicShopping\OM\Registry;
-use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
 use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
 use ClicShopping\Apps\AI\Ecommerce\Classes\ClicShoppingAdmin\CockpitAI\CockpitAIOrchestrator;
 
@@ -30,11 +30,11 @@ class DeleteAll extends \ClicShopping\OM\Domains\PagesActionsAbstract
    */
   public function __construct()
   {
-    if (!Registry::exists('ChatGpt')) {
-      Registry::set('ChatGpt', new ChatGptApp());
+    if (!Registry::exists('Ecommerce')) {
+      Registry::set('Ecommerce', new EcommerceApp());
     }
 
-    $this->app = Registry::get('ChatGpt');
+    $this->app = Registry::get('Ecommerce');
     $this->lang = Registry::get('Language');
 
     Registry::set('CockpitAIOrchestrator', new CockpitAIOrchestrator());

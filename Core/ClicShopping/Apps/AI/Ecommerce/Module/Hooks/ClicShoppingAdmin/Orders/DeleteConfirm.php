@@ -8,13 +8,13 @@
  *
  */
 
-namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\Suppliers;
+namespace ClicShopping\Apps\AI\Ecommerce\Module\Hooks\ClicShoppingAdmin\Orders;
 
-use ClicShopping\Apps\AI\Ecommerce\Ecommerce as EcommerceApp;
-use ClicShopping\Apps\Configuration\ChatGpt\ChatGpt as ChatGptApp;
+use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\AI\Ecommerce\Ecommerce as EcommerceApp;
 
-class DeleteAll implements \ClicShopping\OM\Modules\HooksInterface
+class DeleteConfirm implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
 
@@ -43,12 +43,9 @@ class DeleteAll implements \ClicShopping\OM\Modules\HooksInterface
    */
   public function execute()
   {
-    if (isset($_POST['selected']) && is_array($_POST['selected']) && isset($_POST['DeleteAll'])) {
-      foreach ($_POST['selected'] as $items) {
-        if (isset($items)) {
-          $this->app->delete('suppliers_embedding', 'entity_id', $items);
-        }
-      }
+    if (isset($_GET['DeleteConfirm'], $_GET['oID'])) {
+      $order_id = HTML::sanitize($_GET['oID']);
+      $this->app->db->delete('orders_embedding', 'entity_id', $order_id);
     }
-  }
+}
 }
