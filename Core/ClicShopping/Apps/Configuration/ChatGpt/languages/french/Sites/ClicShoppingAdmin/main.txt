@@ -101,4 +101,4 @@ button_reset_cache = 🗑️ Réinitialiser Cache
 button_reset_all_stats = Réinitialiser Stats
 
 text_query_too_ambiguous = Votre requête est trop ambiguë. Veuillez être plus précis sur ce que vous voulez savoir.
-text_alert_dashboard = Pour avoir bénéficier de l'ensemble des résultats données par les inficateurs, veuillez activer le RAG-BI
+text_alert_dashboard = Pour avoir bénéficier de l'ensemble des résultats données par les indicateurs, veuillez activer le RAG-BI

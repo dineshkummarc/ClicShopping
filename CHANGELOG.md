@@ -9,6 +9,7 @@ version4.23
 - LLM model updated for OpenAI and add Gemini
 - Add google Analytics v4 GA
 - add claude.md and use agenta.md
+- products attributes refactoring
 
 ---------------
 version4.22

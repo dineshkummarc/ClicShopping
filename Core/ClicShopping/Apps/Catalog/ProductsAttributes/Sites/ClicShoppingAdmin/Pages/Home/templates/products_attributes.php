@@ -609,7 +609,7 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
 
                     $inputs = '';
                     for ($i = 0, $n = \count($languages); $i < $n; $i++) {
-                      $inputs .= $languages[$i]['code'] . ':&nbsp;' . HTML::inputField('value_name[' . $languages[$i]['id'] . ']', null, 'required aria-required="true"') . '<br />';
+                      $inputs .= $languages[$i]['code'] . ':&nbsp;' . HTML::inputField('value_name[' . $languages[$i]['id'] . ']', null, 'required aria-required="true" id="tab2InsertValueName_' . $languages[$i]['id'] . '"') . '<br />';
                     }
                     ?>
                   </select>
@@ -618,6 +618,57 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                 <td
                   class="text-end"><?php echo HTML::button($CLICSHOPPING_ProductsAttributes->getDef('button_insert'), null, null, 'primary', null, 'sm'); ?></td>
               </tr>
+
+              <script>
+              (function() {
+                function initTab2ColorPicker() {
+                  var sel = document.getElementById('tab2InsertOptionId');
+                  if (!sel) return;
+
+                  function updateColorPicker() {
+                    var selectedOption = sel.options[sel.selectedIndex];
+                    var isColor = selectedOption && selectedOption.getAttribute('data-type') === 'color_picker';
+                    var inputs = document.querySelectorAll('[id^="tab2InsertValueName_"]');
+
+                    inputs.forEach(function(inp) {
+                      if (isColor) {
+                        // Activer jscolor sur cet input
+                        inp.classList.add('color');
+                        if (window.jscolor) {
+                          if (!inp.jscolor) {
+                            new jscolor(inp);
+                          }
+                          inp.jscolor.show();
+                          inp.jscolor.hide();
+                        }
+                      } else {
+                        // Désactiver : supprimer le picker et vider le champ
+                        if (inp.jscolor) {
+                          inp.jscolor.hide();
+                          // Supprimer le bouton/widget jscolor injecté
+                          if (inp.jscolor.button) inp.jscolor.button.parentNode && inp.jscolor.button.parentNode.removeChild(inp.jscolor.button);
+                          delete inp.jscolor;
+                        }
+                        inp.classList.remove('color');
+                        inp.style.background = '';
+                        inp.style.color = '';
+                        inp.value = '';
+                      }
+                    });
+                  }
+
+                  sel.addEventListener('change', updateColorPicker);
+                  updateColorPicker();
+                }
+
+                // Attendre que jscolor soit chargé (il est inclus en bas de page)
+                if (document.readyState === 'complete') {
+                  initTab2ColorPicker();
+                } else {
+                  window.addEventListener('load', initTab2ColorPicker);
+                }
+              })();
+              </script>
 
               <?php
               echo '</form>';
@@ -776,26 +827,102 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                     <?php
                   }
                   ?>
-                  <td>
-                    <select name="values_id">
-                      <?php
-                      $Qvalues = $CLICSHOPPING_ProductsAttributes->db->prepare('select *
-                                                                                from :table_products_options_values
-                                                                                where language_id = :language_id
-                                                                                order by products_options_values_name
-                                                                               ');
-                      $Qvalues->bindInt(':language_id', (int)$CLICSHOPPING_Language->getId());
-                      $Qvalues->execute();
+                  <td id="tab3EditValuesCell">
+                    <?php
+                    $Qvalues_edit = $CLICSHOPPING_ProductsAttributes->db->prepare('select *
+                                                                              from :table_products_options_values
+                                                                              where language_id = :language_id
+                                                                              order by products_options_values_name
+                                                                             ');
+                    $Qvalues_edit->bindInt(':language_id', (int)$CLICSHOPPING_Language->getId());
+                    $Qvalues_edit->execute();
 
-                      while ($Qvalues->fetch()) {
-                        if ($Qattributes->valueInt('options_values_id') == $Qvalues->valueInt('products_options_values_id')) {
-                          echo "\n" . '<option name="' . $Qvalues->value('products_options_values_name') . '" value="' . $Qvalues->valueInt('products_options_values_id') . '" SELECTED>' . $Qvalues->value('products_options_values_name') . '</option>';
+                    $tab3EditValuesData = [];
+                    $tab3EditSelectedId = $Qattributes->valueInt('options_values_id');
+                    $tab3EditSelectedName = '';
+                    while ($Qvalues_edit->fetch()) {
+                      $tab3EditValuesData[] = [
+                        'id'   => $Qvalues_edit->valueInt('products_options_values_id'),
+                        'name' => $Qvalues_edit->value('products_options_values_name'),
+                      ];
+                      if ($Qvalues_edit->valueInt('products_options_values_id') == $tab3EditSelectedId) {
+                        $tab3EditSelectedName = $Qvalues_edit->value('products_options_values_name');
+                      }
+                    }
+                    ?>
+                    <select name="values_id" id="tab3EditValuesSelect" style="display:none;">
+                      <?php foreach ($tab3EditValuesData as $vd): ?>
+                        <option value="<?php echo (int)$vd['id']; ?>"<?php echo ((int)$vd['id'] === $tab3EditSelectedId) ? ' selected' : ''; ?>><?php echo HTML::outputProtected($vd['name']); ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                    <div id="tab3EditValuesDropdown" style="position:relative;display:inline-block;min-width:180px;">
+                      <div id="tab3EditValuesDisplay" style="border:1px solid #ced4da;border-radius:4px;padding:4px 8px;cursor:pointer;background:#fff;display:flex;align-items:center;gap:6px;min-height:31px;">
+                        <span id="tab3EditValuesSwatch" style="display:inline-block;width:18px;height:18px;border:1px solid #ccc;border-radius:3px;flex-shrink:0;"></span>
+                        <span id="tab3EditValuesLabel" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                        <span style="color:#666;">&#9660;</span>
+                      </div>
+                      <div id="tab3EditValuesList" style="display:none;position:absolute;z-index:9999;border:1px solid #ced4da;border-radius:4px;background:#fff;max-height:220px;overflow-y:auto;width:100%;box-shadow:0 2px 8px rgba(0,0,0,.15);"></div>
+                    </div>
+                    <script>
+                    (function() {
+                      var valuesData = <?php echo json_encode($tab3EditValuesData); ?>;
+                      var currentOptionsType = '<?php echo addslashes($options_type); ?>';
+                      var nativeSelect = document.getElementById('tab3EditValuesSelect');
+                      var display = document.getElementById('tab3EditValuesDisplay');
+                      var swatch = document.getElementById('tab3EditValuesSwatch');
+                      var label = document.getElementById('tab3EditValuesLabel');
+                      var list = document.getElementById('tab3EditValuesList');
+                      var isOpen = false;
+
+                      function isColorPicker() { return currentOptionsType === 'color_picker'; }
+                      function isHex(str) { return /^#?[0-9a-fA-F]{3,6}$/.test(str); }
+
+                      function renderSwatch(name, swEl) {
+                        if (isColorPicker() && isHex(name)) {
+                          swEl.style.background = name.startsWith('#') ? name : '#' + name;
+                          swEl.style.display = 'inline-block';
                         } else {
-                          echo "\n" . '<option name="' . $Qvalues->value('products_options_values_name') . '" value="' . $Qvalues->valueInt('products_options_values_id') . '">' . $Qvalues->value('products_options_values_name') . '</option>';
+                          swEl.style.background = 'transparent';
+                          swEl.style.display = 'none';
                         }
                       }
-                      ?>
-                    </select>&nbsp;
+
+                      function buildList() {
+                        list.innerHTML = '';
+                        valuesData.forEach(function(v) {
+                          var item = document.createElement('div');
+                          item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 8px;cursor:pointer;';
+                          item.addEventListener('mouseover', function(){ this.style.background='#f0f0f0'; });
+                          item.addEventListener('mouseout', function(){ this.style.background=''; });
+                          var sw = document.createElement('span');
+                          sw.style.cssText = 'display:inline-block;width:18px;height:18px;border:1px solid #ccc;border-radius:3px;flex-shrink:0;';
+                          renderSwatch(v.name, sw);
+                          var txt = document.createElement('span');
+                          txt.textContent = v.name;
+                          item.appendChild(sw); item.appendChild(txt);
+                          item.addEventListener('click', function() {
+                            nativeSelect.value = v.id;
+                            label.textContent = v.name;
+                            renderSwatch(v.name, swatch);
+                            closeList();
+                          });
+                          list.appendChild(item);
+                        });
+                      }
+
+                      function openList() { buildList(); list.style.display='block'; isOpen=true; }
+                      function closeList() { list.style.display='none'; isOpen=false; }
+
+                      display.addEventListener('click', function(e) { e.stopPropagation(); isOpen ? closeList() : openList(); });
+                      document.addEventListener('click', closeList);
+
+                      // Init with current value
+                      var selectedName = <?php echo json_encode($tab3EditSelectedName); ?>;
+                      nativeSelect.value = <?php echo (int)$tab3EditSelectedId; ?>;
+                      label.textContent = selectedName;
+                      renderSwatch(selectedName, swatch);
+                    })();
+                    </script>
                   </td>
                   <?php
                   if (MODE_B2B_B2C == 'True') {
@@ -1055,22 +1182,135 @@ echo $CLICSHOPPING_Wysiwyg::getWysiwyg();
                   <?php
                 }
                 ?>
-                <td>
-                  <select name="values_id">
-                    <?php
-                    $Qvalues = $CLICSHOPPING_ProductsAttributes->db->prepare('select *
+                <td id="tab3ValuesCell">
+                  <?php
+                  // Build values data array for JS color rendering
+                  $Qvalues = $CLICSHOPPING_ProductsAttributes->db->prepare('select *
                                                                               from :table_products_options_values
                                                                               where language_id = :language_id
                                                                               order by products_options_values_name
                                                                              ');
-                    $Qvalues->bindInt(':language_id', $CLICSHOPPING_Language->getId());
-                    $Qvalues->execute();
+                  $Qvalues->bindInt(':language_id', $CLICSHOPPING_Language->getId());
+                  $Qvalues->execute();
 
-                    while ($Qvalues->fetch()) {
-                      echo '<option name="' . $Qvalues->value('products_options_values_name') . '" value="' . $Qvalues->value('products_options_values_id') . '">' . $Qvalues->value('products_options_values_name') . '</option>';
-                    }
-                    ?>
+                  $tab3ValuesData = [];
+                  while ($Qvalues->fetch()) {
+                    $tab3ValuesData[] = [
+                      'id'   => $Qvalues->valueInt('products_options_values_id'),
+                      'name' => $Qvalues->value('products_options_values_name'),
+                    ];
+                  }
+                  ?>
+                  <!-- Native select (hidden, used for form submission) -->
+                  <select name="values_id" id="tab3ValuesSelect" style="display:none;">
+                    <?php foreach ($tab3ValuesData as $vd): ?>
+                      <option value="<?php echo (int)$vd['id']; ?>"><?php echo HTML::outputProtected($vd['name']); ?></option>
+                    <?php endforeach; ?>
                   </select>
+                  <!-- Custom color-aware dropdown -->
+                  <div id="tab3ValuesDropdown" style="position:relative;display:inline-block;min-width:180px;">
+                    <div id="tab3ValuesDisplay" style="border:1px solid #ced4da;border-radius:4px;padding:4px 8px;cursor:pointer;background:#fff;display:flex;align-items:center;gap:6px;min-height:31px;">
+                      <span id="tab3ValuesSwatch" style="display:inline-block;width:18px;height:18px;border:1px solid #ccc;border-radius:3px;flex-shrink:0;"></span>
+                      <span id="tab3ValuesLabel" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                      <span style="color:#666;">&#9660;</span>
+                    </div>
+                    <div id="tab3ValuesList" style="display:none;position:absolute;z-index:9999;border:1px solid #ced4da;border-radius:4px;background:#fff;max-height:220px;overflow-y:auto;width:100%;box-shadow:0 2px 8px rgba(0,0,0,.15);"></div>
+                  </div>
+                  <script>
+                  (function() {
+                    var valuesData = <?php echo json_encode($tab3ValuesData); ?>;
+                    var optionsSelect = document.getElementById('tab3InsertOptionsId');
+                    var nativeSelect = document.getElementById('tab3ValuesSelect');
+                    var display = document.getElementById('tab3ValuesDisplay');
+                    var swatch = document.getElementById('tab3ValuesSwatch');
+                    var label = document.getElementById('tab3ValuesLabel');
+                    var list = document.getElementById('tab3ValuesList');
+                    var isOpen = false;
+
+                    function isColorPicker() {
+                      var opt = optionsSelect ? optionsSelect.options[optionsSelect.selectedIndex] : null;
+                      return opt && opt.getAttribute('data-type') === 'color_picker';
+                    }
+
+                    function isHex(str) {
+                      return /^#?[0-9a-fA-F]{3,6}$/.test(str);
+                    }
+
+                    function renderSwatch(name, swatchEl) {
+                      if (isColorPicker() && isHex(name)) {
+                        var hex = name.startsWith('#') ? name : '#' + name;
+                        swatchEl.style.background = hex;
+                        swatchEl.style.display = 'inline-block';
+                      } else {
+                        swatchEl.style.background = 'transparent';
+                        swatchEl.style.display = 'none';
+                      }
+                    }
+
+                    function buildList() {
+                      list.innerHTML = '';
+                      valuesData.forEach(function(v) {
+                        var item = document.createElement('div');
+                        item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 8px;cursor:pointer;';
+                        item.addEventListener('mouseover', function(){ this.style.background='#f0f0f0'; });
+                        item.addEventListener('mouseout', function(){ this.style.background=''; });
+
+                        var sw = document.createElement('span');
+                        sw.style.cssText = 'display:inline-block;width:18px;height:18px;border:1px solid #ccc;border-radius:3px;flex-shrink:0;';
+                        renderSwatch(v.name, sw);
+
+                        var txt = document.createElement('span');
+                        txt.textContent = v.name;
+
+                        item.appendChild(sw);
+                        item.appendChild(txt);
+                        item.addEventListener('click', function() {
+                          nativeSelect.value = v.id;
+                          label.textContent = v.name;
+                          renderSwatch(v.name, swatch);
+                          closeList();
+                        });
+                        list.appendChild(item);
+                      });
+                    }
+
+                    function openList() {
+                      buildList();
+                      list.style.display = 'block';
+                      isOpen = true;
+                    }
+                    function closeList() {
+                      list.style.display = 'none';
+                      isOpen = false;
+                    }
+
+                    function initDisplay() {
+                      if (valuesData.length > 0) {
+                        var first = valuesData[0];
+                        nativeSelect.value = first.id;
+                        label.textContent = first.name;
+                        renderSwatch(first.name, swatch);
+                      }
+                    }
+
+                    display.addEventListener('click', function(e) {
+                      e.stopPropagation();
+                      isOpen ? closeList() : openList();
+                    });
+                    document.addEventListener('click', closeList);
+
+                    if (optionsSelect) {
+                      optionsSelect.addEventListener('change', function() {
+                        // rebuild swatches when option type changes
+                        var cur = nativeSelect.options[nativeSelect.selectedIndex];
+                        if (cur) renderSwatch(cur.text, swatch);
+                        if (isOpen) buildList();
+                      });
+                    }
+
+                    initDisplay();
+                  })();
+                  </script>
                 </td>
                 <td>
                   <?php

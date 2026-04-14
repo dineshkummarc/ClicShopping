@@ -59,7 +59,7 @@
   <!-- Header -->
   <div style="background:#1a1f2e;color:#fff;padding:8px 14px;border-radius:4px 4px 0 0;
               display:flex;justify-content:space-between;align-items:center;">
-    <strong style="font-size:13px;">CockpitAI — Overview</strong>
+    <strong style="font-size:13px;">Product CockpitAI — Overview</strong>
     <a href="<?= $dashUrl ?>" style="font-size:11px;color:#93c5fd;text-decoration:none;">
       Full dashboard &rsaquo;
     </a>
