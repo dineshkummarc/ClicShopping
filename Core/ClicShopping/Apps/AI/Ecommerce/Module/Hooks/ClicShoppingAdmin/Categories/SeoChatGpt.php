@@ -43,7 +43,6 @@ class SeoChatGpt implements \ClicShopping\OM\Modules\HooksInterface
   public function display()
   {
     $CLICSHOPPING_CategoriesAdmin = Registry::get('CategoriesAdmin');
-    $CLICSHOPPING_Language = Registry::get('Language');
 
     if (Gpt::checkGptStatus() === false) {
       return false;
@@ -57,11 +56,13 @@ class SeoChatGpt implements \ClicShopping\OM\Modules\HooksInterface
 
     if (isset($_GET['cID'])) {
       $id = HTML::sanitize($_GET['cID']);
-      $categories_name = $CLICSHOPPING_CategoriesAdmin->getCategoryName($id, $CLICSHOPPING_Language->getId());
-      $question = $this->app->getDef('text_seo_page_title_question', ['category_name' => $categories_name]);
-      $question_keywords = $this->app->getDef('text_seo_page_keywords_question', ['category_name'  => $categories_name]);
-      $question_summary_description = $this->app->getDef('text_seo_page_summary_description_question', ['category_name'  => $categories_name]);
+      $categories_name = $CLICSHOPPING_CategoriesAdmin->getCategoryName($id);
+
+      $expertise = $this->app->getDef('text_seo_expertise');
+      $question = $expertise . ' ' . $this->app->getDef('text_seo_page_title_question', ['category_name' => $categories_name]);
+      $question_summary_description = $expertise . ' ' . $this->app->getDef('text_seo_page_summary_description_question', ['category_name'  => $categories_name]);
       $translate_language = $this->app->getDef('text_seo_page_translate_language');
+      $question_keywords = $expertise . ' ' . $this->app->getDef('text_seo_page_keywords_question', ['category_name'  => $categories_name]);
 
       $url = Gpt::getAjaxUrl(false);
       $urlMultilanguage = Gpt::getAjaxSeoMultilanguageUrl();
@@ -71,21 +72,24 @@ class SeoChatGpt implements \ClicShopping\OM\Modules\HooksInterface
       $content .= '</button>';
 
       $getCategoriesSeoTitle = ChatJsAdminSeo::getCategoriesSeoTitle($content, $urlMultilanguage, $translate_language, $question, $url);
+
+
       $getCategoriesSeoDescription = ChatJsAdminSeo::getCategoriesSeoDescription($content, $urlMultilanguage, $translate_language, $question_summary_description, $url);
       $getCategoriesSeoKeywords = ChatJsAdminSeo::getCategoriesSeoKeywords($content, $urlMultilanguage, $translate_language, $question_keywords, $url);
 
-$output = <<<EOD
-<!------------------>
-<!-- ChatGpt start tag-->
-<!------------------>
-     
-<!-- categories seo meta title -->
-    {$getCategoriesSeoTitle}
-<!-- categories meta description -->
-    {$getCategoriesSeoDescription}
-<!-- categories seo meta keyword -->
-    {$getCategoriesSeoKeywords}
-EOD;
+      $output = <<<EOD
+      <!------------------>
+      <!-- ChatGpt start tag-->
+      <!------------------>
+           
+      <!-- categories seo meta title -->
+          {$getCategoriesSeoTitle}
+      <!-- categories meta description -->
+          {$getCategoriesSeoDescription}
+      <!-- categories seo meta keyword -->
+          {$getCategoriesSeoKeywords}
+      <!-- categories seo tag -->
+      EOD;
     } else {
       $tab_title = $this->app->getDef('tab_gpt_options');
       $title = $this->app->getDef('text_gpt_options');
@@ -111,6 +115,7 @@ EOD;
               </div>
             </div>
            
+
             <div class="mt-1"></div>     
             <div class="row" id="productOptionGptSeoTitle">
               <div class="col-md-9">

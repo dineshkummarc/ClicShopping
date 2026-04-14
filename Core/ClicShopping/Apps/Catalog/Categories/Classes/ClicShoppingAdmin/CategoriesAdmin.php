@@ -151,11 +151,16 @@ class CategoriesAdmin
    * @param int $language_id The ID of the language for which the category name is required.
    * @return string The name of the category in the specified language.
    */
-  public function getCategoryName(int $category_id, int $language_id): string
+  public function getCategoryName(int $category_id, int $language_id = 0): string
   {
+    if ($language_id == 0) $language_id = $this->lang->getId();
 
-    if (!$language_id) $language_id = $this->lang->getId();
-    $Qcategory = Registry::get('Db')->get('categories_description', 'categories_name', ['categories_id' => (int)$category_id, 'language_id' => $language_id]);
+    $array = [
+      'categories_id' => (int)$category_id,
+      'language_id' => (int)$language_id
+    ];
+
+    $Qcategory = Registry::get('Db')->get('categories_description', 'categories_name', $array);
 
     return $Qcategory->value('categories_name');
   }
