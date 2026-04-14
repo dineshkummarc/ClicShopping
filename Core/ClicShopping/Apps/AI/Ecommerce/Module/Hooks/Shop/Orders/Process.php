@@ -413,10 +413,12 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
         !$insert_embedding  // isUpdate = true if not inserting (i.e., updating existing entity)
       );
 
-      if (!$result['success']) {
-        error_log("Shop/Orders: Failed to save embeddings - " . $result['error']);
-      } else {
-        error_log("Shop/Orders: Successfully saved {$result['chunks_saved']} chunk(s) for order {$order_id}");
+      if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+        if (!$result['success']) {
+          error_log("Shop/Orders: Failed to save embeddings - " . $result['error']);
+        } else {
+          error_log("Shop/Orders: Successfully saved {$result['chunks_saved']} chunk(s) for order {$order_id}");
+        }
       }
     }
   }

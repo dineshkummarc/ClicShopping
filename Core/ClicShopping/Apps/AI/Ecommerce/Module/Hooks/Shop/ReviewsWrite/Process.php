@@ -197,10 +197,12 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
             !$insert_embedding  // isUpdate = true if not inserting (i.e., updating existing entity)
           );
 
-          if (!$result['success']) {
-            error_log("Shop/ReviewsWrite: Failed to save embeddings - " . $result['error']);
-          } else {
-            error_log("Shop/ReviewsWrite: Successfully saved {$result['chunks_saved']} chunk(s) for review {$item['reviews_id']}");
+          if (defined('CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER') && CLICSHOPPING_APP_CHATGPT_RA_DEBUG_RAG_MANAGER === 'True') {
+            if (!$result['success']) {
+              error_log("Shop/ReviewsWrite: Failed to save embeddings - " . $result['error']);
+            } else {
+              error_log("Shop/ReviewsWrite: Successfully saved {$result['chunks_saved']} chunk(s) for review {$item['reviews_id']}");
+            }
           }
         }
       }
