@@ -10,6 +10,7 @@
 
 
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 
 /**
@@ -66,38 +67,12 @@ class securityCheckExtended_ext_directory_listing
    * Sends a HTTP HEAD request to the specified URL and retrieves information about the request.
    *
    * @param string $url The URL to send the HTTP request to.
-   * @return array|string Returns an array of information about the HTTP request if successful, or a string 'error' if the request fails.
+   * @return array Returns an array with the http_code key.
    */
-  public function getHttpRequest($url)
+  public function getHttpRequest(string $url): array
   {
-    $server = parse_url($url);
+    $result = HTTP::getResponse(['url' => $url, 'method' => 'head']);
 
-    if (isset($server['port']) === false) {
-      $server['port'] = ($server['scheme'] == 'https') ? 443 : 80;
-    }
-
-    if (isset($server['path']) === false) {
-      $server['path'] = '/';
-    }
-
-    $curl = curl_init($server['scheme'] . '://' . $server['host'] . $server['path'] . (isset($server['query']) ? '?' . $server['query'] : ''));
-    curl_setopt($curl, CURLOPT_PORT, $server['port']);
-    curl_setopt($curl, CURLOPT_HEADER, false);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($curl, CURLOPT_FORBID_REUSE, true);
-    curl_setopt($curl, CURLOPT_FRESH_CONNECT, true);
-    curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'HEAD');
-    curl_setopt($curl, CURLOPT_NOBODY, true);
-
-    $result = curl_exec($curl);
-
-    if (empty($result)) {
-      $info = curl_getinfo($curl);
-      curl_close($curl);
-    } else {
-      $info = 'error';
-    }
-
-    return $info;
+    return ['http_code' => $result !== false ? 200 : 0];
   }
 }

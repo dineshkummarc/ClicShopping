@@ -113,7 +113,7 @@ echo $form;
     if ((ACCOUNT_DOB == 'true' && ($CLICSHOPPING_Customer->getCustomersGroupID() == 0)) || (ACCOUNT_DOB_PRO == 'true' && ($CLICSHOPPING_Customer->getCustomersGroupID() != 0))) {
       if (!empty($customers_dob)) {
         $customers_dob = DateTime::toShort($customers_dob);
-        $dateObj = new \DateTime($customers_dob);
+        $dateObj = new \DateTimeImmutable($customers_dob);
         $customers_dob = $dateObj->format('Y-m-d');
       } else {
         $customers_dob = null;
