@@ -151,7 +151,7 @@ class Image
           $image = str_replace($ext, 'webp', $image);
 
           $this->imageResample->save($this->template->getDirectoryPathTemplateShopImages() . $image, $ext);
-          imagedestroy($img);
+          unset($img);
         }
 
         if (file_exists($big_image_resized_path)) {

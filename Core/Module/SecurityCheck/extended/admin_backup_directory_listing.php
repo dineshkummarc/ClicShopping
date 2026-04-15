@@ -9,6 +9,7 @@
  */
 
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 
 /**
@@ -36,15 +37,13 @@ class securityCheckExtended_admin_backup_directory_listing
   }
 
   /**
-   * Checks if the HTTP request to the specified backup directory URL does not return a 200 HTTP status code.
+   * Checks if the backup directory is not publicly accessible.
    *
-   * @return bool True if the HTTP code is not 200, indicating a potential issue or restriction; otherwise, false.
+   * @return bool True if the directory is not accessible (non-2xx response), false otherwise.
    */
-  public function pass()
+  public function pass(): bool
   {
-    $request = $this->getHttpRequest(CLICSHOPPING::link('Shop/Core/ClicShopping/Work/Backups/'));
-
-    return $request['http_code'] != 200;
+    return !$this->getHttpRequest(CLICSHOPPING::link('Shop/Core/ClicShopping/Work/Backups/'));
   }
 
   /**
@@ -62,49 +61,23 @@ class securityCheckExtended_admin_backup_directory_listing
   }
 
   /**
-   * Sends an HTTP HEAD request to the specified URL and retrieves the response information.
+   * Sends an HTTP GET request to the specified URL and returns whether it is accessible.
    *
-   * @param string $url The URL to which the HTTP request will be sent.
-   * @return mixed Returns an array containing information about the HTTP response if successful or 'error' if the request fails.
+   * @param string $url The URL to check.
+   * @return bool True if the server returned a 2xx response, false otherwise.
    */
-  public function getHttpRequest($url)
+  public function getHttpRequest(string $url): bool
   {
+    $data = ['url' => $url, 'method' => 'get'];
 
-    $server = parse_url($url);
-
-    if (isset($server['port']) === false) {
-      $server['port'] = ($server['scheme'] == 'https') ? 443 : 80;
-    }
-
-    if (isset($server['path']) === false) {
-      $server['path'] = '/';
-    }
-
-    $curl = curl_init($server['scheme'] . '://' . $server['host'] . $server['path'] . (isset($server['query']) ? '?' . $server['query'] : ''));
-    curl_setopt($curl, CURLOPT_PORT, $server['port']);
-    curl_setopt($curl, CURLOPT_HEADER, false);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($curl, CURLOPT_FORBID_REUSE, true);
-    curl_setopt($curl, CURLOPT_FRESH_CONNECT, true);
-    curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'HEAD');
-    curl_setopt($curl, CURLOPT_NOBODY, true);
-
-    if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
-      curl_setopt($curl, CURLOPT_USERPWD, $_SERVER['PHP_AUTH_USER'] . ':' . $_SERVER['PHP_AUTH_PW']);
-
+    if (isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'])) {
+      $data['header'] = [
+        'Authorization: Basic ' . base64_encode($_SERVER['PHP_AUTH_USER'] . ':' . $_SERVER['PHP_AUTH_PW'])
+      ];
       $this->type = 'warning';
     }
 
-    $result = curl_exec($curl);
-
-    if (empty($result)) {
-      $info = curl_getinfo($curl);
-      curl_close($curl);
-    } else {
-      $info = 'error';
-    }
-
-    return $info;
+    return HTTP::getResponse($data) !== false;
   }
 }
 

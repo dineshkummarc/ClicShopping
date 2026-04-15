@@ -1715,7 +1715,7 @@ class FPDF
       $this->Error('Unable to create a temporary file');
     if (!imagepng($im, $tmp))
       $this->Error('Error while saving to temporary file');
-    imagedestroy($im);
+    unset($im);
     $info = $this->_parsepng($tmp);
     unlink($tmp);
     return $info;
