@@ -244,8 +244,8 @@ class BatchCacheWarmer
         'expertiseAccuracy' => (float)$row['expertise_accuracy'],
         'totalEvaluations' => (int)$row['total_evaluations'],
         'status' => $row['status'],
-        'calculatedAt' => new \DateTime($row['calculated_at']),
-        'lastDecayAt' => new \DateTime($row['last_decay_at'])
+        'calculatedAt' => new \DateTimeImmutable($row['calculated_at']),
+        'lastDecayAt' => new \DateTimeImmutable($row['last_decay_at'])
       ];
     }
 

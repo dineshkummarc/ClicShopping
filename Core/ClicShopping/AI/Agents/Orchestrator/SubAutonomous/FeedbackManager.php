@@ -10,7 +10,7 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubAutonomous;
 
 use ClicShopping\OM\Registry;
-use DateTime;
+use DateTimeImmutable;
 use Exception;
 
 /**
@@ -109,7 +109,7 @@ class FeedbackManager
       $stmt->bindValue(':feedback_text', $feedback['feedback_text']);
       $stmt->bindValue(':acknowledged', false);
       $stmt->bindValue(':agent_response', null);
-      $stmt->bindValue(':created_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':created_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->bindValue(':acknowledged_at', null);
       $stmt->execute();
 
@@ -170,7 +170,7 @@ class FeedbackManager
       $stmt->bindValue(':feedback_id', $feedbackId);
       $stmt->bindValue(':acknowledged', true);
       $stmt->bindValue(':agent_response', $response);
-      $stmt->bindValue(':acknowledged_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':acknowledged_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->execute();
     } catch (Exception $e) {
       throw new Exception('Failed to acknowledge feedback: ' . $e->getMessage());
@@ -452,8 +452,8 @@ class FeedbackManager
 
     // Distribute feedback into weekly buckets
     foreach ($feedbackItems as $item) {
-      $createdAt = new DateTime($item['created_at']);
-      $now = new DateTime();
+      $createdAt = new DateTimeImmutable($item['created_at']);
+      $now = new DateTimeImmutable();
       $daysDiff = $now->diff($createdAt)->days;
       $weekIndex = floor($daysDiff / 7);
 

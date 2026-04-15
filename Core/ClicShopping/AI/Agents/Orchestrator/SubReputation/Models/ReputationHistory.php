@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubReputation\Models;
 
-use DateTime;
+use DateTimeImmutable;
 
 /**
  * ReputationHistory - Data model for reputation change history
@@ -23,7 +23,7 @@ class ReputationHistory
     public float $reputationImpact;     // change in reputation
     public float $oldReputation;
     public float $newReputation;
-    public DateTime $recordedAt;
+    public DateTimeImmutable $recordedAt;
     
     /**
      * Create a new ReputationHistory record
@@ -53,7 +53,7 @@ class ReputationHistory
         $history->reputationImpact = $newReputation - $oldReputation;
         $history->oldReputation = $oldReputation;
         $history->newReputation = $newReputation;
-        $history->recordedAt = new DateTime();
+        $history->recordedAt = new DateTimeImmutable();
         
         return $history;
     }

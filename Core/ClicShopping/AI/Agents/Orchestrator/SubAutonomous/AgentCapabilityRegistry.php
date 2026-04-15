@@ -12,7 +12,7 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubAutonomous;
 
 use ClicShopping\OM\Registry;
-use DateTime;
+use DateTimeImmutable;
 use Exception;
 use InvalidArgumentException;
 
@@ -70,7 +70,7 @@ class AgentCapabilityRegistry
                 capability_level = VALUES(capability_level),
                 updated_at = VALUES(updated_at)";
       
-      $now = (new DateTime())->format('Y-m-d H:i:s');
+      $now = (new DateTimeImmutable())->format('Y-m-d H:i:s');
       
       $stmt = $this->db->prepare($sql);
       $stmt->bindValue(':agent_id', $agentId);
@@ -283,7 +283,7 @@ class AgentCapabilityRegistry
         $stmt->bindValue(':agent_id', $agentId);
         $stmt->bindValue(':output_type', $outputType);
         $stmt->bindValue(':capability_level', $level);
-        $stmt->bindValue(':updated_at', (new DateTime())->format('Y-m-d H:i:s'));
+        $stmt->bindValue(':updated_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
         $stmt->execute();
       } else {
         // Create new capability

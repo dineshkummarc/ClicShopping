@@ -165,7 +165,7 @@ class BatchReputationProcessor
         'withinThreshold' => (bool)$row['within_threshold'],
         'alignmentDelta' => (float)$row['alignment_delta'],
         'feedbackAccepted' => (bool)$row['feedback_accepted'],
-        'evaluatedAt' => new \DateTime($row['evaluated_at'])
+        'evaluatedAt' => new \DateTimeImmutable($row['evaluated_at'])
       ];
     }
 

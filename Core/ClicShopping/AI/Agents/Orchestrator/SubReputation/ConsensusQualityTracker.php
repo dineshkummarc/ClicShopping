@@ -5,7 +5,7 @@ namespace ClicShopping\AI\Agents\Orchestrator\SubReputation;
 
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\Agents\Orchestrator\SubReputation\Models\ConsensusResult;
-use DateTime;
+use DateTimeImmutable;
 use Exception;
 
 /**
@@ -85,7 +85,7 @@ class ConsensusQualityTracker
     {
         try {
             // Filter consensus history to specified time period
-            $cutoffTime = (new DateTime())->modify("-{$days} days")->getTimestamp();
+            $cutoffTime = (new DateTimeImmutable())->modify("-{$days} days")->getTimestamp();
             $recentConsensus = array_filter(
                 $this->consensusHistory,
                 fn($c) => $c['timestamp'] >= $cutoffTime
@@ -131,7 +131,7 @@ class ConsensusQualityTracker
                 'avg_weighting_magnitude' => $avgWeighting,
                 'avg_quality_score' => $avgQuality,
                 'period_days' => $days,
-                'calculated_at' => (new DateTime())->format('Y-m-d H:i:s')
+                'calculated_at' => (new DateTimeImmutable())->format('Y-m-d H:i:s')
             ];
             
             if ($this->debug) {
@@ -229,7 +229,7 @@ class ConsensusQualityTracker
             $correlation = $this->calculateCorrelation(30);
             
             // Get consensus history for the past month
-            $cutoffTime = (new DateTime())->modify("-30 days")->getTimestamp();
+            $cutoffTime = (new DateTimeImmutable())->modify("-30 days")->getTimestamp();
             $monthlyConsensus = array_filter(
                 $this->consensusHistory,
                 fn($c) => $c['timestamp'] >= $cutoffTime
@@ -254,7 +254,7 @@ class ConsensusQualityTracker
             
             $report = [
                 'period' => 'Last 30 days',
-                'generated_at' => (new DateTime())->format('Y-m-d H:i:s'),
+                'generated_at' => (new DateTimeImmutable())->format('Y-m-d H:i:s'),
                 'total_consensus_operations' => count($monthlyConsensus),
                 'correlation_analysis' => $correlation,
                 'quality_trends' => $qualityTrends,

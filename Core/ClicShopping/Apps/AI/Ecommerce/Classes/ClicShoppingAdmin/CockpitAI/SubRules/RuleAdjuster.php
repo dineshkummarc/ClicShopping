@@ -278,7 +278,7 @@
         $Q->bindValue(':key', $ruleKey);
         $Q->execute();
         if (!$Q->fetch()) return true;
-        return (new \DateTime())->diff(new \DateTime($Q->value('date_created')))->days >= 7;
+        return (new \DateTimeImmutable())->diff(new \DateTimeImmutable($Q->value('date_created')))->days >= 7;
       } catch (\Throwable) {
         return true;
       }

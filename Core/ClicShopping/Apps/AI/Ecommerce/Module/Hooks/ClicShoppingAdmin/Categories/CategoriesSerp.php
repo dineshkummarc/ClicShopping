@@ -740,7 +740,7 @@
     private function formatDate(string $dateString): string
     {
       try {
-        $dt = new \DateTime($dateString);
+        $dt = new \DateTimeImmutable($dateString);
         return $dt->format('d/m/Y H:i');
       } catch (\Throwable) {
         return $dateString;

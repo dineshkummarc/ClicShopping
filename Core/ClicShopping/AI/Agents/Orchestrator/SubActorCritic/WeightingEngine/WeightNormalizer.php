@@ -438,7 +438,7 @@ class WeightNormalizer
     {
         $this->normalizationLog[] = [
             'operation' => $operation,
-            'timestamp' => (new \DateTime())->format('Y-m-d H:i:s.u'),
+            'timestamp' => (new \DateTimeImmutable())->format('Y-m-d H:i:s.u'),
             'data' => $data
         ];
     }

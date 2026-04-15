@@ -10,7 +10,7 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubAutonomous;
 
 use ClicShopping\OM\Registry;
-use DateTime;
+use DateTimeImmutable;
 use Exception;
 use InvalidArgumentException;
 
@@ -116,7 +116,7 @@ class ExpertiseWeightingSystem
                 expertise_weight = VALUES(expertise_weight),
                 updated_at = VALUES(updated_at)";
 
-      $now = (new DateTime())->format('Y-m-d H:i:s');
+      $now = (new DateTimeImmutable())->format('Y-m-d H:i:s');
       $weight = self::EXPERTISE_WEIGHTS[$expertiseLevel];
 
       $stmt = $this->db->prepare($sql);
@@ -300,7 +300,7 @@ class ExpertiseWeightingSystem
 
         $stmt = $this->db->prepare($sql);
         $stmt->bindValue(':expertise_weight', (float)$weight);
-        $stmt->bindValue(':updated_at', (new DateTime())->format('Y-m-d H:i:s'));
+        $stmt->bindValue(':updated_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
         $stmt->bindValue(':expertise_level', $level);
         $stmt->execute();
 

@@ -7,7 +7,7 @@ use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\AI\Agents\Orchestrator\SubAutonomous\AgentEvaluation;
 use ClicShopping\AI\Agents\Orchestrator\SubReputation\Models\ReputationHistory;
-use DateTime;
+use DateTimeImmutable;
 
 /**
  * ReputationTracker - Monitors evaluation outcomes and tracks reputation metrics
@@ -222,8 +222,8 @@ class ReputationTracker
             $reputation->expertiseAccuracy = $expertiseAccuracy;
             $reputation->totalEvaluations = $totalEvaluations;
             $reputation->status = $status;
-            $reputation->calculatedAt = new DateTime();
-            $reputation->lastDecayAt = $currentReputation ? $currentReputation->lastDecayAt : new DateTime();
+            $reputation->calculatedAt = new DateTimeImmutable();
+            $reputation->lastDecayAt = $currentReputation ? $currentReputation->lastDecayAt : new DateTimeImmutable();
             
             // Save updated reputation
             $this->store->saveReputation($reputation);
@@ -311,8 +311,8 @@ class ReputationTracker
         $reputation->expertiseAccuracy = 0.5;
         $reputation->totalEvaluations = 0;
         $reputation->status = 'bootstrapping';
-        $reputation->calculatedAt = new DateTime();
-        $reputation->lastDecayAt = new DateTime();
+        $reputation->calculatedAt = new DateTimeImmutable();
+        $reputation->lastDecayAt = new DateTimeImmutable();
         
         $this->store->saveReputation($reputation);
     }
@@ -349,7 +349,7 @@ class ReputationTracker
         $history->reputationImpact = $newReputation - $oldReputation;
         $history->oldReputation = $oldReputation;
         $history->newReputation = $newReputation;
-        $history->recordedAt = new DateTime();
+        $history->recordedAt = new DateTimeImmutable();
         
         $this->store->saveHistory($history);
     }

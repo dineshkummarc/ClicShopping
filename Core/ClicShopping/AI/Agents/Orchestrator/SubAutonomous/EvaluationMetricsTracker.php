@@ -14,7 +14,7 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubAutonomous;
 
 use ClicShopping\OM\Registry;
-use DateTime;
+use DateTimeImmutable;
 use Exception;
 
 class EvaluationMetricsTracker
@@ -35,8 +35,8 @@ class EvaluationMetricsTracker
    * Calculates how often evaluations are performed over a time period,
    * broken down by evaluator, producer, and output type.
    *
-   * @param DateTime|null $startDate Start of time period (null for all time)
-   * @param DateTime|null $endDate End of time period (null for now)
+   * @param DateTimeImmutable|null $startDate Start of time period (null for all time)
+   * @param DateTimeImmutable|null $endDate End of time period (null for now)
    * @return array Evaluation frequency metrics:
    *               - total_evaluations: Total number of evaluations
    *               - evaluations_per_day: Average evaluations per day
@@ -45,8 +45,8 @@ class EvaluationMetricsTracker
    *               - by_output_type: Breakdown by output type
    */
   public function trackEvaluationFrequency(
-    ?DateTime $startDate = null,
-    ?DateTime $endDate = null
+    ?DateTimeImmutable $startDate = null,
+    ?DateTimeImmutable $endDate = null
   ): array {
     try {
       $conditions = [];
@@ -81,7 +81,7 @@ class EvaluationMetricsTracker
         $interval = $startDate->diff($endDate);
         $days = max(1, $interval->days);
       } elseif ($startDate) {
-        $interval = $startDate->diff(new DateTime());
+        $interval = $startDate->diff(new DateTimeImmutable());
         $days = max(1, $interval->days);
       }
 
@@ -171,8 +171,8 @@ class EvaluationMetricsTracker
    * Analyzes the distribution of evaluation scores across all dimensions
    * (accuracy, completeness, efficiency, clarity, overall).
    *
-   * @param DateTime|null $startDate Start of time period (null for all time)
-   * @param DateTime|null $endDate End of time period (null for now)
+   * @param DateTimeImmutable|null $startDate Start of time period (null for all time)
+   * @param DateTimeImmutable|null $endDate End of time period (null for now)
    * @param string|null $outputType Optional output type to filter by
    * @return array Score distribution metrics for each dimension:
    *               - average: Average score
@@ -183,8 +183,8 @@ class EvaluationMetricsTracker
    *               - distribution: Score ranges with counts
    */
   public function calculateScoreDistribution(
-    ?DateTime $startDate = null,
-    ?DateTime $endDate = null,
+    ?DateTimeImmutable $startDate = null,
+    ?DateTimeImmutable $endDate = null,
     ?string $outputType = null
   ): array {
     try {
@@ -424,8 +424,8 @@ class EvaluationMetricsTracker
    * Analyzes the quality of feedback provided in evaluations by examining
    * feedback length, structure (strengths/improvements), and completeness.
    *
-   * @param DateTime|null $startDate Start of time period (null for all time)
-   * @param DateTime|null $endDate End of time period (null for now)
+   * @param DateTimeImmutable|null $startDate Start of time period (null for all time)
+   * @param DateTimeImmutable|null $endDate End of time period (null for now)
    * @return array Feedback quality metrics:
    *               - total_evaluations: Total evaluations analyzed
    *               - avg_feedback_length: Average feedback text length
@@ -435,8 +435,8 @@ class EvaluationMetricsTracker
    *               - empty_feedback_count: Number with empty feedback
    */
   public function assessFeedbackQuality(
-    ?DateTime $startDate = null,
-    ?DateTime $endDate = null
+    ?DateTimeImmutable $startDate = null,
+    ?DateTimeImmutable $endDate = null
   ): array {
     try {
       $conditions = [];
@@ -542,14 +542,14 @@ class EvaluationMetricsTracker
    *
    * Combines all evaluation metrics into a single comprehensive report.
    *
-   * @param DateTime|null $startDate Start of time period
-   * @param DateTime|null $endDate End of time period
+   * @param DateTimeImmutable|null $startDate Start of time period
+   * @param DateTimeImmutable|null $endDate End of time period
    * @param string|null $outputType Optional output type to filter by
    * @return array Comprehensive evaluation metrics summary
    */
   public function getEvaluationMetricsSummary(
-    ?DateTime $startDate = null,
-    ?DateTime $endDate = null,
+    ?DateTimeImmutable $startDate = null,
+    ?DateTimeImmutable $endDate = null,
     ?string $outputType = null
   ): array {
     return [

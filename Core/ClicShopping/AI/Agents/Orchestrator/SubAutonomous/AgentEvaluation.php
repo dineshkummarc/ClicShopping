@@ -9,7 +9,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubAutonomous;
 
-use DateTime;
+use DateTimeImmutable;
 use InvalidArgumentException;
 
 /**
@@ -34,7 +34,7 @@ class AgentEvaluation
   private string $feedback;
   private array $strengths;
   private array $improvements;
-  private DateTime $evaluatedAt;
+  private DateTimeImmutable $evaluatedAt;
 
   /**
    * Constructor
@@ -97,7 +97,7 @@ class AgentEvaluation
     $this->feedback = $feedback;
     $this->strengths = $strengths;
     $this->improvements = $improvements;
-    $this->evaluatedAt = new DateTime();
+    $this->evaluatedAt = new DateTimeImmutable();
   }
 
   /**
@@ -246,9 +246,9 @@ class AgentEvaluation
   /**
    * Gets the evaluation timestamp
    *
-   * @return DateTime When the evaluation was performed
+   * @return DateTimeImmutable When the evaluation was performed
    */
-  public function getEvaluatedAt(): DateTime
+  public function getEvaluatedAt(): DateTimeImmutable
   {
     return $this->evaluatedAt;
   }

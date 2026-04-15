@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubReputation\Models;
 
-use DateTime;
+use DateTimeImmutable;
 
 /**
  * ReputationAlert - Data model for reputation alerts
@@ -22,8 +22,8 @@ class ReputationAlert
     public ?array $context = null;
     public bool $acknowledged = false;
     public ?string $acknowledgedBy = null;
-    public ?DateTime $acknowledgedAt = null;
-    public DateTime $createdAt;
+    public ?DateTimeImmutable $acknowledgedAt = null;
+    public DateTimeImmutable $createdAt;
     
     /**
      * Create a new ReputationAlert
@@ -48,7 +48,7 @@ class ReputationAlert
         $alert->severity = $severity;
         $alert->message = $message;
         $alert->context = $context;
-        $alert->createdAt = new DateTime();
+        $alert->createdAt = new DateTimeImmutable();
         
         return $alert;
     }

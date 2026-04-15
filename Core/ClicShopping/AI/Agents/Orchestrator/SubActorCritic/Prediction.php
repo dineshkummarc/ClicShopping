@@ -30,7 +30,7 @@ class Prediction
     private array $identifiedRisks;
     private array $successProbabilities; // probabilities for different outcome scenarios
     private array $recommendedMitigations;
-    private \DateTime $predictedAt;
+    private \DateTimeImmutable $predictedAt;
     
     public function __construct(
         string $actionId,
@@ -49,7 +49,7 @@ class Prediction
         $this->identifiedRisks = $identifiedRisks;
         $this->successProbabilities = $successProbabilities;
         $this->recommendedMitigations = $recommendedMitigations;
-        $this->predictedAt = new \DateTime();
+        $this->predictedAt = new \DateTimeImmutable();
     }
     
     public function getPredictionId(): string { return $this->predictionId; }
@@ -60,7 +60,7 @@ class Prediction
     public function getIdentifiedRisks(): array { return $this->identifiedRisks; }
     public function getSuccessProbabilities(): array { return $this->successProbabilities; }
     public function getRecommendedMitigations(): array { return $this->recommendedMitigations; }
-    public function getPredictedAt(): \DateTime { return $this->predictedAt; }
+    public function getPredictedAt(): \DateTimeImmutable { return $this->predictedAt; }
     
     public function addRisk(string $riskType, string $description, float $probability): void
     {

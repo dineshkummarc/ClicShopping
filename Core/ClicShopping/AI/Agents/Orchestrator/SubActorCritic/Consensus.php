@@ -30,7 +30,7 @@ class Consensus
     private bool $consensusReached;
     private array $aggregatedFeedback;
     private array $outliers;
-    private \DateTime $createdAt;
+    private \DateTimeImmutable $createdAt;
     
     public function __construct(
         string $outputId,
@@ -47,7 +47,7 @@ class Consensus
         $this->consensusReached = $consensusReached;
         $this->aggregatedFeedback = $aggregatedFeedback;
         $this->outliers = $outliers;
-        $this->createdAt = new \DateTime();
+        $this->createdAt = new \DateTimeImmutable();
     }
     
     public function getConsensusId(): string { return $this->consensusId; }
@@ -57,7 +57,7 @@ class Consensus
     public function isReached(): bool { return $this->consensusReached; }
     public function getAggregatedFeedback(): array { return $this->aggregatedFeedback; }
     public function getOutliers(): array { return $this->outliers; }
-    public function getCreatedAt(): \DateTime { return $this->createdAt; }
+    public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
     
     private function generateId(): string
     {

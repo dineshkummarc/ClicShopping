@@ -15,7 +15,7 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubAutonomous;
 
 use ClicShopping\OM\Registry;
-use DateTime;
+use DateTimeImmutable;
 use Exception;
 
 class SystematicIssueDetector
@@ -50,8 +50,8 @@ class SystematicIssueDetector
    *
    * Identifies agents or output types with consistently low evaluation scores.
    *
-   * @param DateTime|null $startDate Start of analysis period
-   * @param DateTime|null $endDate End of analysis period
+   * @param DateTimeImmutable|null $startDate Start of analysis period
+   * @param DateTimeImmutable|null $endDate End of analysis period
    * @return array Detected low score patterns with:
    *               - agent_id: Agent with low scores
    *               - output_type: Output type with low scores
@@ -60,8 +60,8 @@ class SystematicIssueDetector
    *               - severity: 'critical', 'high', 'medium'
    */
   public function detectLowScorePatterns(
-    ?DateTime $startDate = null,
-    ?DateTime $endDate = null
+    ?DateTimeImmutable $startDate = null,
+    ?DateTimeImmutable $endDate = null
   ): array {
     try {
       $conditions = [];
@@ -125,7 +125,7 @@ class SystematicIssueDetector
           'evaluation_count' => (int)$row['evaluation_count'],
           'severity' => $severity,
           'threshold' => $this->lowScoreThreshold,
-          'detected_at' => (new DateTime())->format('Y-m-d H:i:s')
+          'detected_at' => (new DateTimeImmutable())->format('Y-m-d H:i:s')
         ];
       }
 
@@ -140,8 +140,8 @@ class SystematicIssueDetector
    *
    * Identifies agents with consistently high objective failure rates.
    *
-   * @param DateTime|null $startDate Start of analysis period
-   * @param DateTime|null $endDate End of analysis period
+   * @param DateTimeImmutable|null $startDate Start of analysis period
+   * @param DateTimeImmutable|null $endDate End of analysis period
    * @return array Detected failure patterns with:
    *               - agent_id: Agent with high failure rate
    *               - total_objectives: Total objectives
@@ -150,8 +150,8 @@ class SystematicIssueDetector
    *               - severity: 'critical', 'high', 'medium'
    */
   public function detectHighFailureRatePatterns(
-    ?DateTime $startDate = null,
-    ?DateTime $endDate = null
+    ?DateTimeImmutable $startDate = null,
+    ?DateTimeImmutable $endDate = null
   ): array {
     try {
       $conditions = [];
@@ -215,7 +215,7 @@ class SystematicIssueDetector
           'failure_rate' => round($failureRate * 100, 2),
           'severity' => $severity,
           'threshold' => $this->failureRateThreshold * 100,
-          'detected_at' => (new DateTime())->format('Y-m-d H:i:s')
+          'detected_at' => (new DateTimeImmutable())->format('Y-m-d H:i:s')
         ];
       }
 
@@ -245,7 +245,7 @@ class SystematicIssueDetector
     int $baselineDays = 30
   ): array {
     try {
-      $now = new DateTime();
+      $now = new DateTimeImmutable();
       $recentStart = (clone $now)->modify("-{$recentDays} days");
       $baselineStart = (clone $now)->modify("-{$baselineDays} days");
       $baselineEnd = (clone $now)->modify("-{$recentDays} days");
@@ -289,7 +289,7 @@ class SystematicIssueDetector
             'severity' => $severity,
             'baseline_period' => "{$baselineDays} days ago to {$recentDays} days ago",
             'recent_period' => "last {$recentDays} days",
-            'detected_at' => (new DateTime())->format('Y-m-d H:i:s')
+            'detected_at' => (new DateTimeImmutable())->format('Y-m-d H:i:s')
           ];
         }
       }
@@ -308,13 +308,13 @@ class SystematicIssueDetector
   /**
    * Get average scores by agent for a time period
    *
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @return array Agent ID => average score mapping
    */
   private function getAgentAverageScores(
-    DateTime $startDate,
-    DateTime $endDate
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate
   ): array {
     try {
       $sql = "SELECT 
@@ -475,7 +475,7 @@ class SystematicIssueDetector
       $stmt = $this->db->prepare($sql);
       $stmt->bindValue(':alert_id', $alertId);
       $stmt->bindValue(':acknowledged_by', $acknowledgedBy);
-      $stmt->bindValue(':acknowledged_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':acknowledged_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->bindValue(':notes', $notes);
       $stmt->execute();
     } catch (Exception $e) {
@@ -509,7 +509,7 @@ class SystematicIssueDetector
       $stmt = $this->db->prepare($sql);
       $stmt->bindValue(':alert_id', $alertId);
       $stmt->bindValue(':resolved_by', $resolvedBy);
-      $stmt->bindValue(':resolved_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':resolved_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->bindValue(':resolution', $resolution);
       $stmt->execute();
     } catch (Exception $e) {
@@ -522,13 +522,13 @@ class SystematicIssueDetector
    *
    * Runs all detection methods and generates alerts for found issues.
    *
-   * @param DateTime|null $startDate Start of analysis period
-   * @param DateTime|null $endDate End of analysis period
+   * @param DateTimeImmutable|null $startDate Start of analysis period
+   * @param DateTimeImmutable|null $endDate End of analysis period
    * @return array Summary of detected issues and generated alerts
    */
   public function runComprehensiveDetection(
-    ?DateTime $startDate = null,
-    ?DateTime $endDate = null
+    ?DateTimeImmutable $startDate = null,
+    ?DateTimeImmutable $endDate = null
   ): array {
     $lowScorePatterns = $this->detectLowScorePatterns($startDate, $endDate);
     $failurePatterns = $this->detectHighFailureRatePatterns($startDate, $endDate);
@@ -541,7 +541,7 @@ class SystematicIssueDetector
     $alertCount = $this->generateAlerts($allIssues);
 
     return [
-      'detection_run_at' => (new DateTime())->format('Y-m-d H:i:s'),
+      'detection_run_at' => (new DateTimeImmutable())->format('Y-m-d H:i:s'),
       'period' => [
         'start_date' => $startDate ? $startDate->format('Y-m-d H:i:s') : 'all time',
         'end_date' => $endDate ? $endDate->format('Y-m-d H:i:s') : 'now'

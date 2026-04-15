@@ -29,7 +29,7 @@ class WeightResult
     private string $overallRationale;     // LLM's overall reasoning
     private array $factorAnalysis;        // Which factors were most important
     private ?array $bounds;               // Min/max bounds if applied
-    private \DateTime $calculatedAt;
+    private \DateTimeImmutable $calculatedAt;
     private bool $isFallback;             // Whether this used fallback weighting
     private ?string $fallbackReason;      // Reason for fallback if applicable
     
@@ -51,7 +51,7 @@ class WeightResult
         $this->overallRationale = $overallRationale;
         $this->factorAnalysis = $factorAnalysis;
         $this->bounds = $bounds;
-        $this->calculatedAt = new \DateTime();
+        $this->calculatedAt = new \DateTimeImmutable();
         $this->isFallback = $isFallback;
         $this->fallbackReason = $fallbackReason;
     }
@@ -91,7 +91,7 @@ class WeightResult
         return $this->bounds; 
     }
     
-    public function getCalculatedAt(): \DateTime 
+    public function getCalculatedAt(): \DateTimeImmutable 
     { 
         return $this->calculatedAt; 
     }

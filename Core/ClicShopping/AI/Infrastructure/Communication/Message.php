@@ -22,7 +22,7 @@ class Message
   private string $recipientId;
   private array $payload;
   private array $metadata;
-  private \DateTime $timestamp;
+  private \DateTimeImmutable $timestamp;
   private ?string $correlationId;
   private int $retryCount;
 
@@ -63,7 +63,7 @@ class Message
     $this->recipientId = $recipientId;
     $this->payload = $payload;
     $this->correlationId = $correlationId;
-    $this->timestamp = new \DateTime();
+    $this->timestamp = new \DateTimeImmutable();
     $this->retryCount = 0;
     $this->metadata = [
       'created_at' => $this->timestamp->format('Y-m-d H:i:s.u'),
@@ -154,9 +154,9 @@ class Message
   /**
    * Get timestamp
    *
-   * @return \DateTime
+   * @return \DateTimeImmutable
    */
-  public function getTimestamp(): \DateTime
+  public function getTimestamp(): \DateTimeImmutable
   {
     return $this->timestamp;
   }

@@ -29,7 +29,7 @@ class Context
     private array $systemState;
     private array $userPreferences;
     private array $environmentalData;
-    private \DateTime $timestamp;
+    private \DateTimeImmutable $timestamp;
     
     public function __construct(
         string $userId,
@@ -44,7 +44,7 @@ class Context
         $this->systemState = $systemState;
         $this->userPreferences = $userPreferences;
         $this->environmentalData = $environmentalData;
-        $this->timestamp = new \DateTime();
+        $this->timestamp = new \DateTimeImmutable();
     }
     
     public function getContextId(): string { return $this->contextId; }
@@ -53,7 +53,7 @@ class Context
     public function getSystemState(): array { return $this->systemState; }
     public function getUserPreferences(): array { return $this->userPreferences; }
     public function getEnvironmentalData(): array { return $this->environmentalData; }
-    public function getTimestamp(): \DateTime { return $this->timestamp; }
+    public function getTimestamp(): \DateTimeImmutable { return $this->timestamp; }
     
     public function setSystemState(array $systemState): void
     {

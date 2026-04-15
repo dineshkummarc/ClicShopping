@@ -29,7 +29,7 @@ class ConsensusResult
     private array $weightedScores;        // [criticId => weighted_score]
     private float $confidenceLevel;       // Confidence in consensus
     private string $consensusQuality;     // LLM assessment of quality
-    private \DateTime $calculatedAt;
+    private \DateTimeImmutable $calculatedAt;
     
     public function __construct(
         string $evaluationId,
@@ -47,7 +47,7 @@ class ConsensusResult
         $this->weightedScores = $weightedScores;
         $this->confidenceLevel = $confidenceLevel;
         $this->consensusQuality = $consensusQuality;
-        $this->calculatedAt = new \DateTime();
+        $this->calculatedAt = new \DateTimeImmutable();
     }
     
     public function getEvaluationId(): string 
@@ -85,7 +85,7 @@ class ConsensusResult
         return $this->consensusQuality; 
     }
     
-    public function getCalculatedAt(): \DateTime 
+    public function getCalculatedAt(): \DateTimeImmutable 
     { 
         return $this->calculatedAt; 
     }

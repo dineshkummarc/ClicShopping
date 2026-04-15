@@ -19,7 +19,7 @@ class ConsensusResult
     public float $difference;
     public array $evaluations;
     public array $reputations;
-    public \DateTime $calculatedAt;
+    public \DateTimeImmutable $calculatedAt;
     
     // Consensus quality metrics (Requirement 11.1)
     public float $agreementLevel;
@@ -56,7 +56,7 @@ class ConsensusResult
         $this->agreementLevel = $agreementLevel;
         $this->confidence = $confidence;
         $this->stability = $stability;
-        $this->calculatedAt = new \DateTime();
+        $this->calculatedAt = new \DateTimeImmutable();
     }
     
     /**

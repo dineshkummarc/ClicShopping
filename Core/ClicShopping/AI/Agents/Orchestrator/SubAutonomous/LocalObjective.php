@@ -12,7 +12,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubAutonomous;
 
-use DateTime;
+use DateTimeImmutable;
 use InvalidArgumentException;
 
 class LocalObjective
@@ -25,8 +25,8 @@ class LocalObjective
   private int $estimatedCompletionTime;
   private string $status;
   private ?string $conflictsWith;
-  private DateTime $createdAt;
-  private ?DateTime $completedAt;
+  private DateTimeImmutable $createdAt;
+  private ?DateTimeImmutable $completedAt;
   private array $metrics;
   private ?string $failureReason;
 
@@ -91,7 +91,7 @@ class LocalObjective
     $this->estimatedCompletionTime = $estimatedCompletionTime;
     $this->status = 'pending';
     $this->conflictsWith = null;
-    $this->createdAt = new DateTime();
+    $this->createdAt = new DateTimeImmutable();
     $this->completedAt = null;
     $this->metrics = [];
     $this->failureReason = null;
@@ -190,9 +190,9 @@ class LocalObjective
   /**
    * Get the creation timestamp
    *
-   * @return DateTime
+   * @return DateTimeImmutable
    */
-  public function getCreatedAt(): DateTime
+  public function getCreatedAt(): DateTimeImmutable
   {
     return $this->createdAt;
   }
@@ -200,9 +200,9 @@ class LocalObjective
   /**
    * Get the completion timestamp
    *
-   * @return DateTime|null
+   * @return DateTimeImmutableImmutable|null
    */
-  public function getCompletedAt(): ?DateTime
+  public function getCompletedAt(): ?DateTimeImmutable
   {
     return $this->completedAt;
   }
@@ -256,7 +256,7 @@ class LocalObjective
   public function markCompleted(array $metrics): void
   {
     $this->status = 'completed';
-    $this->completedAt = new DateTime();
+    $this->completedAt = new DateTimeImmutable();
     $this->metrics = $metrics;
   }
 
@@ -270,7 +270,7 @@ class LocalObjective
   public function markFailed(string $reason): void
   {
     $this->status = 'failed';
-    $this->completedAt = new DateTime();
+    $this->completedAt = new DateTimeImmutable();
     $this->failureReason = $reason;
   }
 
@@ -356,7 +356,7 @@ class LocalObjective
       return false;
     }
 
-    $now = new DateTime();
+    $now = new DateTimeImmutable();
     $elapsed = $now->getTimestamp() - $this->createdAt->getTimestamp();
 
     return $elapsed > $this->estimatedCompletionTime;
@@ -369,7 +369,7 @@ class LocalObjective
    */
   public function getElapsedTime(): int
   {
-    $now = new DateTime();
+    $now = new DateTimeImmutable();
     return $now->getTimestamp() - $this->createdAt->getTimestamp();
   }
 

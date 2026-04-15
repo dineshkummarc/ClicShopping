@@ -9,7 +9,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubAutonomous;
 
-use DateTime;
+use DateTimeImmutable;
 
 /**
  * ConsensusResult Class
@@ -31,8 +31,8 @@ class ConsensusResult
   private float $agreementLevel;
   private array $outliers;
   private ?string $discussionLog;
-  private DateTime $createdAt;
-  private ?DateTime $resolvedAt;
+  private DateTimeImmutable $createdAt;
+  private ?DateTimeImmutable $resolvedAt;
 
   /**
    * Constructor
@@ -65,8 +65,8 @@ class ConsensusResult
     $this->agreementLevel = $agreementLevel;
     $this->outliers = $outliers;
     $this->discussionLog = $discussionLog;
-    $this->createdAt = new DateTime();
-    $this->resolvedAt = $consensusReached ? new DateTime() : null;
+    $this->createdAt = new DateTimeImmutable();
+    $this->resolvedAt = $consensusReached ? new DateTimeImmutable() : null;
   }
 
   /**
@@ -172,9 +172,9 @@ class ConsensusResult
   /**
    * Gets the creation timestamp
    *
-   * @return DateTime When the consensus session was created
+   * @return DateTimeImmutable When the consensus session was created
    */
-  public function getCreatedAt(): DateTime
+  public function getCreatedAt(): DateTimeImmutable
   {
     return $this->createdAt;
   }
@@ -182,9 +182,9 @@ class ConsensusResult
   /**
    * Gets the resolution timestamp
    *
-   * @return DateTime|null When consensus was reached, or null if not reached
+   * @return DateTimeImmutable|null When consensus was reached, or null if not reached
    */
-  public function getResolvedAt(): ?DateTime
+  public function getResolvedAt(): ?DateTimeImmutable
   {
     return $this->resolvedAt;
   }

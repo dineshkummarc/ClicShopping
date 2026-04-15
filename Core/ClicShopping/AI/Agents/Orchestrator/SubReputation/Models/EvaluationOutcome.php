@@ -18,7 +18,7 @@ class EvaluationOutcome
     public bool $withinThreshold;
     public float $alignmentDelta;
     public bool $feedbackAccepted;
-    public \DateTime $evaluatedAt;
+    public \DateTimeImmutable $evaluatedAt;
     public array $metadata;
     
     /**
@@ -31,7 +31,7 @@ class EvaluationOutcome
      * @param bool $withinThreshold Whether within 0.1 threshold
      * @param float $alignmentDelta Absolute difference between scores
      * @param bool $feedbackAccepted Whether actor accepted feedback
-     * @param \DateTime $evaluatedAt Evaluation timestamp
+     * @param \DateTimeImmutable $evaluatedAt Evaluation timestamp
      * @param array $metadata Additional metadata
      */
     public function __construct(
@@ -42,7 +42,7 @@ class EvaluationOutcome
         bool $withinThreshold,
         float $alignmentDelta,
         bool $feedbackAccepted,
-        \DateTime $evaluatedAt,
+        \DateTimeImmutable $evaluatedAt,
         array $metadata = []
     ) {
         $this->evaluationId = $evaluationId;
@@ -92,7 +92,7 @@ class EvaluationOutcome
             withinThreshold: (bool)$data['within_threshold'],
             alignmentDelta: (float)$data['alignment_delta'],
             feedbackAccepted: (bool)$data['feedback_accepted'],
-            evaluatedAt: new \DateTime($data['evaluated_at']),
+            evaluatedAt: new \DateTimeImmutable($data['evaluated_at']),
             metadata: $data['metadata'] ?? []
         );
     }

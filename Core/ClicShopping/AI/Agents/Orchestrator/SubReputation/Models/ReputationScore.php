@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubReputation\Models;
 
-use DateTime;
+use DateTimeImmutable;
 
 /**
  * ReputationScore - Data model for critic reputation scores
@@ -22,8 +22,8 @@ class ReputationScore
     public float $expertiseAccuracy;    // 0.0-1.0
     public int $totalEvaluations;
     public string $status;              // 'bootstrapping', 'establishing', 'established'
-    public DateTime $calculatedAt;
-    public DateTime $lastDecayAt;
+    public DateTimeImmutable $calculatedAt;
+    public DateTimeImmutable $lastDecayAt;
     
     /**
      * Create a new ReputationScore with default values
@@ -42,8 +42,8 @@ class ReputationScore
         $reputation->expertiseAccuracy = 0.75;
         $reputation->totalEvaluations = 0;
         $reputation->status = 'bootstrapping';
-        $reputation->calculatedAt = new DateTime();
-        $reputation->lastDecayAt = new DateTime();
+        $reputation->calculatedAt = new DateTimeImmutable();
+        $reputation->lastDecayAt = new DateTimeImmutable();
         
         return $reputation;
     }

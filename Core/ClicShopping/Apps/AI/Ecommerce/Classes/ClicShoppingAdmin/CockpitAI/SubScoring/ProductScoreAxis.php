@@ -27,7 +27,7 @@
    *     - products_image_medium   : string  — medium image filename
    *     - products_image_zoom     : string  — zoom image filename
    *     - products_image_small    : string  — small image filename
-   *     - products_date_added     : string|DateTime — catalog creation date
+   *     - products_date_added     : string|\DateTimeImmutable — catalog creation date
    *     - products_model          : string  — model/reference
    *     - products_sku            : string  — SKU
    *     - products_ean            : string  — EAN barcode
@@ -114,10 +114,10 @@
       $createdAt = $product['products_date_added'] ?? null;
       $freshnessRatio = null;
       if (!empty($createdAt)) {
-        $createdDate = ($createdAt instanceof \DateTime || $createdAt instanceof \DateTimeImmutable)
+        $createdDate = ($createdAt instanceof \DateTimeInterface)
           ? $createdAt
-          : new \DateTime($createdAt);
-        $daysSince = (int) (new \DateTime('now'))->diff($createdDate)->days;
+          : new \DateTimeImmutable($createdAt);
+        $daysSince = (int) (new \DateTimeImmutable('now'))->diff($createdDate)->days;
         $freshnessRatio = max(0.0, 1.0 - ($daysSince / self::FRESHNESS_DAYS_REF));
       }
       $factors['creation_date'] = new RatioFactor($freshnessRatio);
@@ -153,8 +153,8 @@
       }
 
       // REQ-SC-01 : Récupération de l'âge du produit et du max catalogue
-      $dateAdded = new \DateTime($product['products_date_added'] ?? 'now');
-      $ageDays = (int) $dateAdded->diff(new \DateTime())->format('%a');
+      $dateAdded = new \DateTimeImmutable($product['products_date_added'] ?? 'now');
+      $ageDays = (int) $dateAdded->diff(new \DateTimeImmutable())->format('%a');
 
       $maxDays = $context->catalog->ageMax ?? 365;
 

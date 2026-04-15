@@ -15,7 +15,7 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubAutonomous;
 
 use ClicShopping\OM\Registry;
-use DateTime;
+use DateTimeImmutable;
 use Exception;
 
 class PeriodicReportGenerator
@@ -49,14 +49,14 @@ class PeriodicReportGenerator
    * Creates a complete report covering all aspects of autonomous agent activity
    * for a specified time period.
    *
-   * @param DateTime $startDate Start of reporting period
-   * @param DateTime $endDate End of reporting period
+   * @param DateTimeImmutable $startDate Start of reporting period
+   * @param DateTimeImmutable $endDate End of reporting period
    * @param string $reportType Type of report ('daily', 'weekly', 'monthly', 'custom')
    * @return array Comprehensive report data
    */
   public function generateReport(
-    DateTime $startDate,
-    DateTime $endDate,
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate,
     string $reportType = 'custom'
   ): array {
     $report = [
@@ -80,14 +80,14 @@ class PeriodicReportGenerator
   /**
    * Generate report metadata
    *
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @param string $reportType Report type
    * @return array Report metadata
    */
   private function generateReportMetadata(
-    DateTime $startDate,
-    DateTime $endDate,
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate,
     string $reportType
   ): array {
     $interval = $startDate->diff($endDate);
@@ -95,7 +95,7 @@ class PeriodicReportGenerator
     return [
       'report_id' => $this->generateUuid(),
       'report_type' => $reportType,
-      'generated_at' => (new DateTime())->format('Y-m-d H:i:s'),
+      'generated_at' => (new DateTimeImmutable())->format('Y-m-d H:i:s'),
       'period' => [
         'start_date' => $startDate->format('Y-m-d H:i:s'),
         'end_date' => $endDate->format('Y-m-d H:i:s'),
@@ -111,13 +111,13 @@ class PeriodicReportGenerator
    *
    * Creates a high-level summary of key metrics and highlights.
    *
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @return array Executive summary
    */
   private function generateExecutiveSummary(
-    DateTime $startDate,
-    DateTime $endDate
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate
   ): array {
     // Get key metrics
     $objectiveMetrics = $this->objectiveTracker->calculateSuccessRate($startDate, $endDate);
@@ -193,13 +193,13 @@ class PeriodicReportGenerator
   /**
    * Generate highlights
    *
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @return array Array of highlight strings
    */
   private function generateHighlights(
-    DateTime $startDate,
-    DateTime $endDate
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate
   ): array {
     $highlights = [];
 
@@ -228,13 +228,13 @@ class PeriodicReportGenerator
   /**
    * Generate concerns
    *
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @return array Array of concern strings
    */
   private function generateConcerns(
-    DateTime $startDate,
-    DateTime $endDate
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate
   ): array {
     $concerns = [];
 
@@ -262,13 +262,13 @@ class PeriodicReportGenerator
   /**
    * Get consensus metrics
    *
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @return array Consensus metrics
    */
   private function getConsensusMetrics(
-    DateTime $startDate,
-    DateTime $endDate
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate
   ): array {
     try {
       $sql = "SELECT 
@@ -314,13 +314,13 @@ class PeriodicReportGenerator
   /**
    * Get agent performance breakdown
    *
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @return array Performance breakdown by agent
    */
   private function getAgentPerformanceBreakdown(
-    DateTime $startDate,
-    DateTime $endDate
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate
   ): array {
     try {
       // Get unique agents
@@ -371,14 +371,14 @@ class PeriodicReportGenerator
    * Get agent average evaluation score
    *
    * @param string $agentId Agent ID
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @return float Average score
    */
   private function getAgentAverageEvaluationScore(
     string $agentId,
-    DateTime $startDate,
-    DateTime $endDate
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate
   ): float {
     try {
       $sql = "SELECT AVG(overall_score) as avg_score
@@ -404,14 +404,14 @@ class PeriodicReportGenerator
   /**
    * Get top performing agents
    *
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @param int $limit Number of agents to return
    * @return array Top performing agents
    */
   private function getTopPerformingAgents(
-    DateTime $startDate,
-    DateTime $endDate,
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate,
     int $limit = 5
   ): array {
     try {
@@ -451,13 +451,13 @@ class PeriodicReportGenerator
   /**
    * Get collaboration count
    *
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @return int Number of collaborative objectives
    */
   private function getCollaborationCount(
-    DateTime $startDate,
-    DateTime $endDate
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate
   ): int {
     try {
       $sql = "SELECT COUNT(*) as count
@@ -481,13 +481,13 @@ class PeriodicReportGenerator
   /**
    * Generate trends and insights
    *
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @return array Trends and insights
    */
   private function generateTrendsAndInsights(
-    DateTime $startDate,
-    DateTime $endDate
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate
   ): array {
     return [
       'objective_trends' => $this->getObjectiveTrends($startDate, $endDate),
@@ -499,13 +499,13 @@ class PeriodicReportGenerator
   /**
    * Get objective trends
    *
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @return array Objective trends
    */
   private function getObjectiveTrends(
-    DateTime $startDate,
-    DateTime $endDate
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate
   ): array {
     // Compare current period to previous period
     $interval = $startDate->diff($endDate);
@@ -525,13 +525,13 @@ class PeriodicReportGenerator
   /**
    * Get evaluation trends
    *
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @return array Evaluation trends
    */
   private function getEvaluationTrends(
-    DateTime $startDate,
-    DateTime $endDate
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate
   ): array {
     // Compare current period to previous period
     $interval = $startDate->diff($endDate);
@@ -569,13 +569,13 @@ class PeriodicReportGenerator
   /**
    * Generate recommendations
    *
-   * @param DateTime $startDate Start date
-   * @param DateTime $endDate End date
+   * @param DateTimeImmutable $startDate Start date
+   * @param DateTimeImmutable $endDate End date
    * @return array Recommendations
    */
   private function generateRecommendations(
-    DateTime $startDate,
-    DateTime $endDate
+    DateTimeImmutable $startDate,
+    DateTimeImmutable $endDate
   ): array {
     $recommendations = [];
 

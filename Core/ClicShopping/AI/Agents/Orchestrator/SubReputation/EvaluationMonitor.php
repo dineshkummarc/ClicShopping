@@ -73,7 +73,7 @@ class EvaluationMonitor
                 withinThreshold: abs($criticScore - $consensusScore) < 0.1,
                 alignmentDelta: abs($criticScore - $consensusScore),
                 feedbackAccepted: $feedbackAccepted,
-                evaluatedAt: new \DateTime(),
+                evaluatedAt: new \DateTimeImmutable(),
                 metadata: $metadata
             );
             
@@ -240,7 +240,7 @@ class EvaluationMonitor
                         withinThreshold: abs($job['critic_score'] - $job['consensus_score']) < 0.1,
                         alignmentDelta: (float)$job['alignment_delta'],
                         feedbackAccepted: (bool)$job['feedback_accepted'],
-                        evaluatedAt: new \DateTime(),
+                        evaluatedAt: new \DateTimeImmutable(),
                         metadata: json_decode($job['metadata'], true) ?? []
                     );
                     

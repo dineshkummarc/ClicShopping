@@ -34,7 +34,7 @@ class Evaluation
     private string $feedback;
     private array $strengths;
     private array $improvements;
-    private \DateTime $evaluatedAt;
+    private \DateTimeImmutable $evaluatedAt;
     
     public function __construct(
         string $evaluatorAgentId,
@@ -55,7 +55,7 @@ class Evaluation
         $this->feedback = $feedback;
         $this->strengths = $strengths;
         $this->improvements = $improvements;
-        $this->evaluatedAt = new \DateTime();
+        $this->evaluatedAt = new \DateTimeImmutable();
     }
     
     private function calculateOverallScore(array $scores): float
@@ -78,7 +78,7 @@ class Evaluation
     public function getFeedback(): string { return $this->feedback; }
     public function getStrengths(): array { return $this->strengths; }
     public function getImprovements(): array { return $this->improvements; }
-    public function getEvaluatedAt(): \DateTime { return $this->evaluatedAt; }
+    public function getEvaluatedAt(): \DateTimeImmutable { return $this->evaluatedAt; }
     
     private function generateId(): string
     {

@@ -30,7 +30,7 @@ class ActionResult
     private string $outputType;
     private array $executionMetrics;
     private Context $executionContext;
-    private \DateTime $timestamp;
+    private \DateTimeImmutable $timestamp;
     private string $status; // 'success', 'partial', 'failed'
     
     public function __construct(
@@ -49,7 +49,7 @@ class ActionResult
         $this->outputType = $outputType;
         $this->executionMetrics = $executionMetrics;
         $this->executionContext = $executionContext;
-        $this->timestamp = new \DateTime();
+        $this->timestamp = new \DateTimeImmutable();
         $this->status = $status;
     }
     
@@ -60,7 +60,7 @@ class ActionResult
     public function getOutputType(): string { return $this->outputType; }
     public function getExecutionMetrics(): array { return $this->executionMetrics; }
     public function getExecutionContext(): Context { return $this->executionContext; }
-    public function getTimestamp(): \DateTime { return $this->timestamp; }
+    public function getTimestamp(): \DateTimeImmutable { return $this->timestamp; }
     public function getStatus(): string { return $this->status; }
     
     private function generateId(): string

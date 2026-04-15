@@ -12,7 +12,7 @@
 namespace ClicShopping\AI\Agents\Orchestrator\SubAutonomous;
 
 use ClicShopping\OM\Registry;
-use DateTime;
+use DateTimeImmutable;
 use Exception;
 
 class ObjectiveRegistry
@@ -157,13 +157,13 @@ class ObjectiveRegistry
       // Set timestamps based on status
       if ($status === 'approved') {
         $updates[] = 'approved_at = :approved_at';
-        $params[':approved_at'] = (new DateTime())->format('Y-m-d H:i:s');
+        $params[':approved_at'] = (new DateTimeImmutable())->format('Y-m-d H:i:s');
       } elseif ($status === 'active') {
         $updates[] = 'started_at = :started_at';
-        $params[':started_at'] = (new DateTime())->format('Y-m-d H:i:s');
+        $params[':started_at'] = (new DateTimeImmutable())->format('Y-m-d H:i:s');
       } elseif (in_array($status, ['completed', 'failed', 'cancelled'])) {
         $updates[] = 'completed_at = :completed_at';
-        $params[':completed_at'] = (new DateTime())->format('Y-m-d H:i:s');
+        $params[':completed_at'] = (new DateTimeImmutable())->format('Y-m-d H:i:s');
       }
 
       $sql = "UPDATE :table_rag_agent_objectives 
@@ -315,7 +315,7 @@ class ObjectiveRegistry
 
       if (isset($filters['created_after'])) {
         $conditions[] = 'created_at >= :created_after';
-        $date = $filters['created_after'] instanceof DateTime
+        $date = $filters['created_after'] instanceof \DateTimeInterface
           ? $filters['created_after']->format('Y-m-d H:i:s')
           : $filters['created_after'];
         $params[':created_after'] = $date;
@@ -323,7 +323,7 @@ class ObjectiveRegistry
 
       if (isset($filters['created_before'])) {
         $conditions[] = 'created_at <= :created_before';
-        $date = $filters['created_before'] instanceof DateTime
+        $date = $filters['created_before'] instanceof \DateTimeInterface
           ? $filters['created_before']->format('Y-m-d H:i:s')
           : $filters['created_before'];
         $params[':created_before'] = $date;
@@ -420,7 +420,7 @@ class ObjectiveRegistry
       $stmt->bindValue(':objective_id', $objectiveId);
       $stmt->bindValue(':metric_name', $metricName);
       $stmt->bindValue(':metric_value', $metricValue);
-      $stmt->bindValue(':recorded_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':recorded_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->execute();
     } catch (Exception $e) {
       throw new Exception('Failed to record metric: ' . $e->getMessage());
@@ -479,7 +479,7 @@ class ObjectiveRegistry
 
       $stmt = $this->db->prepare($sql);
       $stmt->bindValue(':objective_id', $objectiveId);
-      $stmt->bindValue(':completed_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':completed_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->bindValue(':reason', $reason);
       $stmt->execute();
 
@@ -529,7 +529,7 @@ class ObjectiveRegistry
 
       $stmt = $this->db->prepare($sql);
       $stmt->bindValue(':objective_id', $objectiveId);
-      $stmt->bindValue(':completed_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':completed_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->bindValue(':metrics', json_encode($metrics));
       $stmt->execute();
 
@@ -582,7 +582,7 @@ class ObjectiveRegistry
 
       $stmt = $this->db->prepare($sql);
       $stmt->bindValue(':objective_id', $objectiveId);
-      $stmt->bindValue(':completed_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':completed_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->bindValue(':reason', $reason);
       $stmt->execute();
 
@@ -623,7 +623,7 @@ class ObjectiveRegistry
         'old_status' => $oldStatus,
         'new_status' => $newStatus,
         'reason' => $reason,
-        'timestamp' => (new DateTime())->format('Y-m-d H:i:s')
+        'timestamp' => (new DateTimeImmutable())->format('Y-m-d H:i:s')
       ];
 
       // Persist to database
@@ -636,7 +636,7 @@ class ObjectiveRegistry
       $stmt->bindValue(':old_status', $oldStatus);
       $stmt->bindValue(':new_status', $newStatus);
       $stmt->bindValue(':reason', $reason);
-      $stmt->bindValue(':transitioned_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':transitioned_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->execute();
     } catch (Exception $e) {
       // Log error but don't fail the operation
@@ -876,7 +876,7 @@ class ObjectiveRegistry
       $stmt->bindValue(':similarity_score', $similarity);
       $stmt->bindValue(':notification_type', $notificationType);
       $stmt->bindValue(':status', 'pending');
-      $stmt->bindValue(':created_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':created_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->execute();
     } catch (Exception $e) {
       throw new Exception('Failed to create collaboration notification: ' . $e->getMessage());
@@ -952,7 +952,7 @@ class ObjectiveRegistry
       $stmt = $this->db->prepare($sql);
       $stmt->bindValue(':notification_id', $notificationId);
       $stmt->bindValue(':status', 'acknowledged');
-      $stmt->bindValue(':acknowledged_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':acknowledged_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->bindValue(':response', $response);
       $stmt->execute();
     } catch (Exception $e) {
@@ -1053,7 +1053,7 @@ class ObjectiveRegistry
       $stmt->bindValue(':original_objectives', json_encode($originalObjectiveIds));
       $stmt->bindValue(':participating_agents', json_encode($participatingAgents));
       $stmt->bindValue(':similarity_score', $similarity);
-      $stmt->bindValue(':created_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':created_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->execute();
 
       // Initialize contribution tracking for each agent
@@ -1093,7 +1093,7 @@ class ObjectiveRegistry
       $stmt->bindValue(':agent_id', $agentId);
       $stmt->bindValue(':contribution_type', 'initialization');
       $stmt->bindValue(':contribution_value', json_encode(['status' => 'joined']));
-      $stmt->bindValue(':recorded_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':recorded_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->execute();
     } catch (Exception $e) {
       throw new Exception('Failed to initialize contribution: ' . $e->getMessage());
@@ -1132,7 +1132,7 @@ class ObjectiveRegistry
       $stmt->bindValue(':agent_id', $agentId);
       $stmt->bindValue(':contribution_type', $contributionType);
       $stmt->bindValue(':contribution_value', json_encode($contributionValue));
-      $stmt->bindValue(':recorded_at', (new DateTime())->format('Y-m-d H:i:s'));
+      $stmt->bindValue(':recorded_at', (new DateTimeImmutable())->format('Y-m-d H:i:s'));
       $stmt->execute();
     } catch (Exception $e) {
       throw new Exception('Failed to record contribution: ' . $e->getMessage());
@@ -1344,7 +1344,7 @@ class ObjectiveRegistry
 
       if (isset($filters['created_after'])) {
         $conditions[] = 'created_at >= :created_after';
-        $date = $filters['created_after'] instanceof DateTime
+        $date = $filters['created_after'] instanceof \DateTimeInterface
           ? $filters['created_after']->format('Y-m-d H:i:s')
           : $filters['created_after'];
         $params[':created_after'] = $date;
@@ -1352,7 +1352,7 @@ class ObjectiveRegistry
 
       if (isset($filters['created_before'])) {
         $conditions[] = 'created_at <= :created_before';
-        $date = $filters['created_before'] instanceof DateTime
+        $date = $filters['created_before'] instanceof \DateTimeInterface
           ? $filters['created_before']->format('Y-m-d H:i:s')
           : $filters['created_before'];
         $params[':created_before'] = $date;
@@ -1405,10 +1405,10 @@ class ObjectiveRegistry
           $this->conflictsWith = $row['conflicts_with'];
         }
         
-        $this->createdAt = new DateTime($row['created_at']);
+        $this->createdAt = new DateTimeImmutable($row['created_at']);
         
         if ($row['completed_at']) {
-          $this->completedAt = new DateTime($row['completed_at']);
+          $this->completedAt = new DateTimeImmutable($row['completed_at']);
         }
         
         if ($row['metrics']) {

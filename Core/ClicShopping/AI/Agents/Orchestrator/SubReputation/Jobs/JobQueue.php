@@ -230,7 +230,7 @@ class JobQueue
     $outcome->withinThreshold = (bool)($data['withinThreshold'] ?? $data['within_threshold'] ?? false);
     $outcome->alignmentDelta = (float)($data['alignmentDelta'] ?? $data['alignment_delta'] ?? 0.0);
     $outcome->feedbackAccepted = (bool)($data['feedbackAccepted'] ?? $data['feedback_accepted'] ?? false);
-    $outcome->evaluatedAt = new \DateTime($data['evaluatedAt'] ?? $data['evaluated_at'] ?? 'now');
+    $outcome->evaluatedAt = new \DateTimeImmutable($data['evaluatedAt'] ?? $data['evaluated_at'] ?? 'now');
 
     return $outcome;
   }

@@ -31,7 +31,7 @@ class Feedback
     private array $strengths;
     private array $improvements;
     private bool $acknowledged;
-    private ?\DateTime $acknowledgedAt;
+    private ?\DateTimeImmutable $acknowledgedAt;
     
     public function __construct(
         string $targetActorId,
@@ -55,7 +55,7 @@ class Feedback
     public function acknowledge(): void
     {
         $this->acknowledged = true;
-        $this->acknowledgedAt = new \DateTime();
+        $this->acknowledgedAt = new \DateTimeImmutable();
     }
     
     public function getFeedbackId(): string { return $this->feedbackId; }
@@ -66,7 +66,7 @@ class Feedback
     public function getStrengths(): array { return $this->strengths; }
     public function getImprovements(): array { return $this->improvements; }
     public function isAcknowledged(): bool { return $this->acknowledged; }
-    public function getAcknowledgedAt(): ?\DateTime { return $this->acknowledgedAt; }
+    public function getAcknowledgedAt(): ?\DateTimeImmutable { return $this->acknowledgedAt; }
     
     private function generateId(): string
     {

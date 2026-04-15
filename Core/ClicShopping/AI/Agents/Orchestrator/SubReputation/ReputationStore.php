@@ -81,8 +81,8 @@ class ReputationStore
         $reputation->expertiseAccuracy = (float)$row['expertise_accuracy'];
         $reputation->totalEvaluations = (int)$row['total_evaluations'];
         $reputation->status = $row['status'];
-        $reputation->calculatedAt = new \DateTime($row['calculated_at']);
-        $reputation->lastDecayAt = new \DateTime($row['last_decay_at']);
+        $reputation->calculatedAt = new \DateTimeImmutable($row['calculated_at']);
+        $reputation->lastDecayAt = new \DateTimeImmutable($row['last_decay_at']);
 
         return $reputation;
     }
@@ -212,7 +212,7 @@ class ReputationStore
         $history->reputationImpact = (float)$row['reputation_impact'];
         $history->oldReputation = (float)$row['old_reputation'];
         $history->newReputation = (float)$row['new_reputation'];
-        $history->recordedAt = new \DateTime($row['recorded_at']);
+        $history->recordedAt = new \DateTimeImmutable($row['recorded_at']);
 
         return $history;
     }

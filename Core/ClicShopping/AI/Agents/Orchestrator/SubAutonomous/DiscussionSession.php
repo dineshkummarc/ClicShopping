@@ -9,7 +9,7 @@
 
 namespace ClicShopping\AI\Agents\Orchestrator\SubAutonomous;
 
-use DateTime;
+use DateTimeImmutable;
 
 /**
  * DiscussionSession Class
@@ -27,8 +27,8 @@ class DiscussionSession
   private array $messages;
   private bool $resolved;
   private ?float $resolvedScore;
-  private DateTime $startedAt;
-  private ?DateTime $resolvedAt;
+  private DateTimeImmutable $startedAt;
+  private ?DateTimeImmutable $resolvedAt;
   private int $timeoutSeconds;
 
   // Configuration constants
@@ -52,7 +52,7 @@ class DiscussionSession
     $this->messages = [];
     $this->resolved = false;
     $this->resolvedScore = null;
-    $this->startedAt = new DateTime();
+    $this->startedAt = new DateTimeImmutable();
     $this->resolvedAt = null;
     $this->timeoutSeconds = $timeoutSeconds;
   }
@@ -80,7 +80,7 @@ class DiscussionSession
       'agent_id' => $agentId,
       'message' => $message,
       'metadata' => $metadata,
-      'timestamp' => (new DateTime())->format('Y-m-d H:i:s')
+      'timestamp' => (new DateTimeImmutable())->format('Y-m-d H:i:s')
     ];
   }
 
@@ -93,7 +93,7 @@ class DiscussionSession
   {
     $this->resolved = true;
     $this->resolvedScore = $resolvedScore;
-    $this->resolvedAt = new DateTime();
+    $this->resolvedAt = new DateTimeImmutable();
   }
 
   /**
@@ -103,7 +103,7 @@ class DiscussionSession
    */
   public function hasTimedOut(): bool
   {
-    $now = new DateTime();
+    $now = new DateTimeImmutable();
     $elapsed = $now->getTimestamp() - $this->startedAt->getTimestamp();
     return $elapsed > $this->timeoutSeconds;
   }
@@ -171,9 +171,9 @@ class DiscussionSession
   /**
    * Gets the start timestamp
    *
-   * @return DateTime When the discussion started
+   * @return DateTimeImmutable When the discussion started
    */
-  public function getStartedAt(): DateTime
+  public function getStartedAt(): DateTimeImmutable
   {
     return $this->startedAt;
   }
@@ -181,9 +181,9 @@ class DiscussionSession
   /**
    * Gets the resolution timestamp
    *
-   * @return DateTime|null When the discussion was resolved, or null if not resolved
+   * @return DateTimeImmutable|null When the discussion was resolved, or null if not resolved
    */
-  public function getResolvedAt(): ?DateTime
+  public function getResolvedAt(): ?DateTimeImmutable
   {
     return $this->resolvedAt;
   }
@@ -205,7 +205,7 @@ class DiscussionSession
    */
   public function getElapsedSeconds(): int
   {
-    $now = new DateTime();
+    $now = new DateTimeImmutable();
     return $now->getTimestamp() - $this->startedAt->getTimestamp();
   }
 

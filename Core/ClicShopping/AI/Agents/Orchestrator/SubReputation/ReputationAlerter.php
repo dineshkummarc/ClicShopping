@@ -602,8 +602,8 @@ class ReputationAlerter
         $alert->context = $row['context'] ? json_decode($row['context'], true) : null;
         $alert->acknowledged = (bool)$row['acknowledged'];
         $alert->acknowledgedBy = $row['acknowledged_by'];
-        $alert->acknowledgedAt = $row['acknowledged_at'] ? new \DateTime($row['acknowledged_at']) : null;
-        $alert->createdAt = new \DateTime($row['created_at']);
+        $alert->acknowledgedAt = $row['acknowledged_at'] ? new \DateTimeImmutable($row['acknowledged_at']) : null;
+        $alert->createdAt = new \DateTimeImmutable($row['created_at']);
         
         return $alert;
     }
