@@ -9,6 +9,7 @@
  */
 
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\HTTP;
 use ClicShopping\OM\Registry;
 
 /**
@@ -64,36 +65,10 @@ class securityCheckExtended_admin_includes_directory_listing
    * @param string $url The target URL for the HTTP request.
    * @return mixed An array of information about the HTTP request on success, or the string 'error' if the request fails.
    */
-  public function getHttpRequest($url)
+  public function getHttpRequest(string $url): array
   {
-    $server = parse_url($url);
+    $result = HTTP::getResponse(['url' => $url, 'method' => 'head']);
 
-    if (isset($server['port']) === false) {
-      $server['port'] = ($server['scheme'] == 'https') ? 443 : 80;
-    }
-
-    if (isset($server['path']) === false) {
-      $server['path'] = '/';
-    }
-
-    $curl = curl_init($server['scheme'] . '://' . $server['host'] . $server['path'] . (isset($server['query']) ? '?' . $server['query'] : ''));
-    curl_setopt($curl, CURLOPT_PORT, $server['port']);
-    curl_setopt($curl, CURLOPT_HEADER, false);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($curl, CURLOPT_FORBID_REUSE, true);
-    curl_setopt($curl, CURLOPT_FRESH_CONNECT, true);
-    curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'HEAD');
-    curl_setopt($curl, CURLOPT_NOBODY, true);
-
-    $result = curl_exec($curl);
-
-    if (empty($result)) {
-      $info = curl_getinfo($curl);
-      curl_close($curl);
-    } else {
-      $info = 'error';
-    }
-
-    return $info;
+    return ['http_code' => $result !== false ? 200 : 0];
   }
 }

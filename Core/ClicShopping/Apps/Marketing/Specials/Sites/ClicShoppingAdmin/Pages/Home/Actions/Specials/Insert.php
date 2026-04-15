@@ -36,8 +36,8 @@ class Insert extends \ClicShopping\OM\Domains\PagesActionsAbstract
     if (!empty($_POST['schdate'])) {
       $schdate = HTML::sanitize($_POST['schdate']);
 
-      $date1 = new \DateTime(date('Y-m-d'));
-      $date2 = new \DateTime($schdate);
+      $date1 = new \DateTimeImmutable(date('Y-m-d'));
+      $date2 = new \DateTimeImmutable($schdate);
 
       if ($date1 < $date2) {
         $status = 0;
