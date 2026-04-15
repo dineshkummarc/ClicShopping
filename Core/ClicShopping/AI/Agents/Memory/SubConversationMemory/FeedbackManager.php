@@ -55,7 +55,7 @@ class FeedbackManager
     try {
       // Validate feedback type
       $validTypes = ['positive', 'negative', 'correction'];
-      if (!in_array($feedbackType, $validTypes)) {
+      if (!in_array($feedbackType, $validTypes, true)) {
         throw new \InvalidArgumentException("Invalid feedback type: {$feedbackType}");
       }
 

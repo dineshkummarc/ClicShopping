@@ -342,7 +342,7 @@ class QueryClassifier
       
       // Validate response (now supports 4 categories)
       $validTypes = ['analytics', 'semantic', 'hybrid', 'web_search'];
-      if (!in_array($type, $validTypes)) {
+      if (!in_array($type, $validTypes, true)) {
         
         if ($this->debug) {
           $this->logger->logStructured(

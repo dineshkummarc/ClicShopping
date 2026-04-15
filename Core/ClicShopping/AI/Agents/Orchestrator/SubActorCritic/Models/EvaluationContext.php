@@ -85,12 +85,12 @@ class EvaluationContext
     
     public function hasRequiredExpertise(string $expertise): bool
     {
-        return in_array($expertise, $this->requiredExpertise);
+        return in_array($expertise, $this->requiredExpertise, true);
     }
     
     public function hasSpecialRequirement(string $requirement): bool
     {
-        return in_array($requirement, $this->specialRequirements);
+        return in_array($requirement, $this->specialRequirements, true);
     }
     
     public function isCritical(): bool
@@ -100,7 +100,7 @@ class EvaluationContext
     
     public function isHighPriority(): bool
     {
-        return in_array($this->priorityLevel, ['high', 'critical']);
+        return in_array($this->priorityLevel, ['high', 'critical'], true);
     }
     
     public function getMetadataValue(string $key): mixed

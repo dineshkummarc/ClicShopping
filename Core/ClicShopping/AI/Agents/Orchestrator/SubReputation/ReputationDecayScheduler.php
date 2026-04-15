@@ -178,7 +178,7 @@ class ReputationDecayScheduler
                     $config[$key] = (bool)$value;
                 } elseif ($key === 'decay_factor') {
                     $config[$key] = (float)$value;
-                } elseif (in_array($key, ['period_seconds', 'recent_evaluation_count'])) {
+                } elseif (in_array($key, ['period_seconds', 'recent_evaluation_count'], true)) {
                     $config[$key] = (int)$value;
                 }
             }

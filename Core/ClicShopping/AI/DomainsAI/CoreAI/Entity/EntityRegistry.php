@@ -349,7 +349,7 @@ class EntityRegistry
   public function isEntityTable(string $tableName): bool
   {
     $allTables = $this->getAllEntityTables();
-    return in_array($tableName, $allTables);
+    return in_array($tableName, $allTables, true);
   }
 
   /**
@@ -372,7 +372,7 @@ class EntityRegistry
   public function isMemoryTable(string $tableName): bool
   {
     $memoryTables = $this->getMemoryTables();
-    return in_array($tableName, $memoryTables);
+    return in_array($tableName, $memoryTables, true);
   }
 
   /**
@@ -502,7 +502,7 @@ class EntityRegistry
   public function registerEntityTable(string $tableName, string $idColumn, ?string $entityType = null): void
   {
     // Add to entity table cache (IN-MEMORY ONLY)
-    if (!in_array($tableName, $this->entityTableCache)) {
+    if (!in_array($tableName, $this->entityTableCache, true)) {
       $this->entityTableCache[] = $tableName;
     }
 

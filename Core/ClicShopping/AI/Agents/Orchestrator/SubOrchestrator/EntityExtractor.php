@@ -412,7 +412,7 @@ class EntityExtractor
         $targetTable = $prefix . $pluralEntity . '_embedding';
         
         // Only search in the specific table if it exists
-        if (in_array($targetTable, $embeddingTables)) {
+        if (in_array($targetTable, $embeddingTables, true)) {
           $embeddingTables = [$targetTable];
           
           if ($this->debug) {

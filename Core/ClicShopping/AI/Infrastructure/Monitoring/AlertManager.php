@@ -209,7 +209,7 @@ class AlertManager
 
     // Canal: SMS (placeholder)
     $this->addNotificationChannel('sms', function($alert) {
-      if (in_array($alert['severity'], [self::SEVERITY_ERROR, self::SEVERITY_CRITICAL])) {
+      if (in_array($alert['severity'], [self::SEVERITY_ERROR, self::SEVERITY_CRITICAL], true)) {
         // À implémenter avec votre système SMS
       }
     });

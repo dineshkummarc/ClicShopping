@@ -205,7 +205,7 @@ class QueryClassifier extends BaseQueryProcessor
       
       // Validate response (supports 4 categories)
       $validTypes = ['analytic', 'semantic', 'web', 'hybrid'];
-      if (!in_array($type, $validTypes)) {
+      if (!in_array($type, $validTypes, true)) {
         if ($this->debug) {
           $this->logWarning("LLM returned invalid type", [
             'type' => $type,

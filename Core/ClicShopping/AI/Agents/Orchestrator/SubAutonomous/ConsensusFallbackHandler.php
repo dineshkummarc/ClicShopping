@@ -173,7 +173,7 @@ class ConsensusFallbackHandler
         $outlierScores = array_column($outliers, 'score');
         
         $validScores = array_filter($scores, function($score) use ($outlierScores) {
-          return !in_array($score, $outlierScores);
+          return !in_array($score, $outlierScores, true);
         });
         
         if (!empty($validScores)) {

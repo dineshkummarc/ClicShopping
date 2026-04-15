@@ -103,13 +103,13 @@ class FormatterRouter
 
     // Factor 1: Result type
     $type = $results['type'] ?? '';
-    if (in_array($type, ['complex_query', 'hybrid'])) {
+    if (in_array($type, ['complex_query', 'hybrid'], true)) {
       $score += 30;
       $factors[] = 'complex_type';
       if ($this->debug) {
         error_log('[INFO] Complexity factor: complex_type (+30)');
       }
-    } elseif (in_array($type, ['analytics_results', 'analytics_response'])) {
+    } elseif (in_array($type, ['analytics_results', 'analytics_response'], true)) {
       $score += 10;
       $factors[] = 'analytics_type';
       if ($this->debug) {

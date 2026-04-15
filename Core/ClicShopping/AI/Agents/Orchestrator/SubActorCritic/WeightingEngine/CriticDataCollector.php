@@ -259,7 +259,7 @@ class CriticDataCollector
         foreach ($criteria as $outputType => $criterion) {
             if (is_object($criterion) && method_exists($criterion, 'getDomain')) {
                 $domain = $criterion->getDomain();
-                if (!empty($domain) && !in_array($domain, $domains)) {
+                if (!empty($domain) && !in_array($domain, $domains, true)) {
                     $domains[] = $domain;
                 }
             }

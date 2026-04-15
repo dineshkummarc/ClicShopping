@@ -233,7 +233,7 @@ class AgentActivationConfig
         }
 
         $normalized = \strtolower(\trim((string)$value));
-        return \in_array($normalized, ['1', 'true', 'yes', 'on'], true);
+        return \in_array($normalized, ['1', 'true', 'yes', 'on'], true,);
     }
     
     /**
@@ -405,7 +405,7 @@ class AgentActivationConfig
         self::initialize();
         
         // Validate type
-        if (!in_array($type, [self::AGENT_TYPE_ACTOR, self::AGENT_TYPE_CRITIC, self::AGENT_TYPE_HYBRID])) {
+        if (!in_array($type, [self::AGENT_TYPE_ACTOR, self::AGENT_TYPE_CRITIC, self::AGENT_TYPE_HYBRID], true)) {
             if (self::$debug) {
                 error_log("AgentActivationConfig: Invalid agent type: {$type}");
             }

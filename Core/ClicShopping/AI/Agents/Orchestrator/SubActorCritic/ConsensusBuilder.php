@@ -432,7 +432,7 @@ class ConsensusBuilder
             
             // Calculate scores excluding outliers
             $nonOutlierEvaluations = array_filter($evaluations, function($evaluation) use ($outlierIds) {
-                return !in_array($evaluation->getEvaluatorAgentId(), $outlierIds);
+                return !in_array($evaluation->getEvaluatorAgentId(), $outlierIds, true);
             });
             
             if (empty($nonOutlierEvaluations)) {
@@ -470,7 +470,7 @@ class ConsensusBuilder
                 $totalWeight = 0.0;
                 
                 foreach ($evaluations as $evaluation) {
-                    $weight = in_array($evaluation->getEvaluatorAgentId(), $outlierIds) ? 0.3 : 1.0;
+                    $weight = in_array($evaluation->getEvaluatorAgentId(), $outlierIds, true) ? 0.3 : 1.0;
                     $totalWeightedScore += $evaluation->getOverallScore() * $weight;
                     $totalWeight += $weight;
                 }

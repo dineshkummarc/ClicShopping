@@ -404,7 +404,7 @@ class QueryAnalyzer
       $cleanWord = preg_replace('/[^\w\-]/', '', $word);
 
       // Ignore short words or stop words
-      if (strlen($cleanWord) > 2 && !in_array($cleanWord, $stopWords)) {
+      if (strlen($cleanWord) > 2 && !in_array($cleanWord, $stopWords, true)) {
         $keywords[] = $cleanWord;
       }
     }

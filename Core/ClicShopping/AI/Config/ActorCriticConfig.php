@@ -174,7 +174,7 @@ class ActorCriticConfig
                     self::CONFIG_KEY_REPUTATION_DECAY_RECENT_EVAL_COUNT,
                     self::CONFIG_KEY_REPUTATION_BOOTSTRAP_THRESHOLD_LOW,
                     self::CONFIG_KEY_REPUTATION_BOOTSTRAP_THRESHOLD_HIGH
-                ])) {
+                ], true)) {
                     $config[$key] = (int)$value;
                 } elseif (in_array($key, [
                     self::CONFIG_KEY_CONSENSUS_THRESHOLD,
@@ -185,7 +185,7 @@ class ActorCriticConfig
                     self::CONFIG_KEY_REPUTATION_WEIGHT_CONSISTENCY,
                     self::CONFIG_KEY_REPUTATION_WEIGHT_EXPERTISE,
                     self::CONFIG_KEY_REPUTATION_MIN_THRESHOLD
-                ])) {
+                ], true)) {
                     $config[$key] = (float)$value;
                 }
             }
@@ -230,7 +230,7 @@ class ActorCriticConfig
         }
 
         $normalized = \strtolower(\trim((string)$value));
-        return \in_array($normalized, ['1', 'true', 'yes', 'on'], true);
+        return \in_array($normalized, ['1', 'true', 'yes', 'on'], true,);
     }
     
     /**

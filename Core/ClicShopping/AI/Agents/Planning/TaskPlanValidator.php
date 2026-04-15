@@ -230,7 +230,7 @@ class TaskPlanValidator
             // Filter circular dependencies
             $filteredDependsOn = array_filter($dependsOn, function($depId) use ($cycles, $stepId) {
                 foreach ($cycles as $cycle) {
-                    if (in_array($stepId, $cycle) && in_array($depId, $cycle)) {
+                    if (in_array($stepId, $cycle, true) && in_array($depId, $cycle, true)) {
                         // This dependency creates a cycle
                         return false;
                     }
@@ -589,7 +589,7 @@ class TaskPlanValidator
         ];
         
         foreach ($steps as $step) {
-            if (!in_array($step->getType(), $allowedTypes)) {
+            if (!in_array($step->getType(), $allowedTypes, true)) {
                 return false;
             }
         }
@@ -610,7 +610,7 @@ class TaskPlanValidator
         
         foreach ($dependencies as $stepId => $deps) {
             foreach ($deps['depends_on'] as $depId) {
-                if (!in_array($depId, $stepIds)) {
+                if (!in_array($depId, $stepIds, true)) {
                     return false;
                 }
             }

@@ -139,7 +139,7 @@ class TaskPlannerPrompts
     if (!empty($metadata)) {
       $parts[] = "Additional Context:";
       foreach ($metadata as $key => $value) {
-        if (is_string($value) && !in_array($key, ['entity_type', 'entity_id'])) {
+        if (is_string($value) && !in_array($key, ['entity_type', 'entity_id'], true)) {
           $parts[] = "- {$key}: {$value}";
         }
       }
@@ -185,7 +185,7 @@ class TaskPlannerPrompts
     }
 
     // 3. Validate complexity
-    if (isset($json['complexity']) && !in_array($json['complexity'], self::COMPLEXITY_LEVELS)) {
+    if (isset($json['complexity']) && !in_array($json['complexity'], self::COMPLEXITY_LEVELS, true)) {
       $result['errors'][] = "Invalid complexity level: {$json['complexity']}";
     }
 
@@ -247,13 +247,13 @@ class TaskPlannerPrompts
     }
 
     // Validate type
-    if (isset($step['type']) && !in_array($step['type'], self::ALLOWED_STEP_TYPES)) {
+    if (isset($step['type']) && !in_array($step['type'], self::ALLOWED_STEP_TYPES, true)) {
       $errors[] = "Step {$index}: Invalid type '{$step['type']}'";
     }
 
     // Validate unique ID
     if (isset($step['id'])) {
-      if (in_array($step['id'], $existingIds)) {
+      if (in_array($step['id'], $existingIds, true)) {
         $errors[] = "Step {$index}: Duplicate ID '{$step['id']}'";
       }
 
@@ -268,7 +268,7 @@ class TaskPlannerPrompts
         $errors[] = "Step {$index}: 'depends_on' must be an array";
       } else {
         foreach ($step['depends_on'] as $depId) {
-          if (!in_array($depId, $existingIds)) {
+          if (!in_array($depId, $existingIds, true)) {
             $errors[] = "Step {$index}: Dependency '{$depId}' references non-existent step";
           }
         }

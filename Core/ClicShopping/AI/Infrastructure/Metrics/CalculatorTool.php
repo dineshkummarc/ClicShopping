@@ -521,7 +521,7 @@ class CalculatorTool
 
     $parseMulDiv = function() use (&$parsePower, $expr, &$pos) {
       $left = $parsePower();
-      while ($pos < strlen($expr) && in_array($expr[$pos], ['*', '/', '%'])) {
+      while ($pos < strlen($expr) && in_array($expr[$pos], ['*', '/', '%'], true)) {
         $op = $expr[$pos++];
         $right = $parsePower();
         $left = match($op) {
@@ -535,7 +535,7 @@ class CalculatorTool
 
     $parseAddSub = function() use (&$parseMulDiv, $expr, &$pos) {
       $left = $parseMulDiv();
-      while ($pos < strlen($expr) && in_array($expr[$pos], ['+', '-'])) {
+      while ($pos < strlen($expr) && in_array($expr[$pos], ['+', '-'], true)) {
         $op = $expr[$pos++];
         $right = $parseMulDiv();
         $left = $op === '+' ? $left + $right : $left - $right;

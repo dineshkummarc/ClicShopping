@@ -187,7 +187,7 @@ abstract class AbstractFormatter
     $filteredRow = [];
 
     foreach ($row as $key => $value) {
-      if (!in_array($key, $systemFields)) {
+      if (!in_array($key, $systemFields, true)) {
         $filteredRow[$key] = $value;
       }
     }

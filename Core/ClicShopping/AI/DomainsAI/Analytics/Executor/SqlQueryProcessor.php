@@ -716,7 +716,7 @@ class SqlQueryProcessor
       $escapedPattern = '/LIKE\s+\'([^\'\\\\]*(?:\\\\.[^\'\\\\]*)*)\'/i';
       if (preg_match_all($escapedPattern, $sql, $matches)) {
         foreach ($matches[1] as $pattern) {
-          if (!in_array($pattern, $allMatches)) {
+          if (!in_array($pattern, $allMatches, true)) {
             $allMatches[] = $pattern;
           }
         }

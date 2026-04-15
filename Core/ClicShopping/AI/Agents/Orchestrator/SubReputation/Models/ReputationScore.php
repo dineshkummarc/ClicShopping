@@ -66,7 +66,7 @@ class ReputationScore
             && $this->expertiseAccuracy >= 0.0
             && $this->expertiseAccuracy <= 1.0
             && $this->totalEvaluations >= 0
-            && in_array($this->status, ['bootstrapping', 'establishing', 'established']);
+            && in_array($this->status, ['bootstrapping', 'establishing', 'established'], true);
     }
     
     /**

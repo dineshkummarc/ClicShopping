@@ -93,7 +93,7 @@ class ResultValidator
       $sourceAttr = $result['source_attribution'];
       
       // If source is RAG, verify embedding data exists
-      if (in_array($sourceAttr['source_type'], ['rag', 'semantic', 'embedding'])) {
+      if (in_array($sourceAttr['source_type'], ['rag', 'semantic', 'embedding'], true)) {
         if (!$this->hasEmbeddingData($result)) {
           $validationErrors[] = "RAG source but no document/embedding data found";
           return false;

@@ -1709,7 +1709,7 @@ HTML;
     $snapshot = $this->collectMetrics();
     $health = $this->calculateOverallHealth($snapshot);
 
-    return in_array($health['status'], ['healthy', 'warning']);
+    return in_array($health['status'], ['healthy', 'warning'], true);
   }
 
   /**

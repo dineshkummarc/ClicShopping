@@ -972,7 +972,7 @@ class LLMWeightingEngine
         
         // Validate selected critics are from available pool
         foreach ($data['selected_critics'] as $criticId) {
-            if (!in_array($criticId, $availableCriticIds)) {
+            if (!in_array($criticId, $availableCriticIds, true)) {
                 throw new \RuntimeException("LLM selected invalid critic: {$criticId}");
             }
         }
@@ -1041,7 +1041,7 @@ class LLMWeightingEngine
                 $criticId = $critic['critic_id'];
             }
             
-            if ($criticId && in_array($criticId, $criticIds)) {
+            if ($criticId && in_array($criticId, $criticIds, true)) {
                 $selected[] = $critic;
             }
         }
@@ -1681,7 +1681,7 @@ class LLMWeightingEngine
             
             // Validate severity is valid
             $validSeverities = ['low', 'medium', 'high'];
-            if (!in_array($anomaly['severity'], $validSeverities)) {
+            if (!in_array($anomaly['severity'], $validSeverities, true)) {
                 throw new \RuntimeException(
                     "Anomaly {$idx} has invalid severity: {$anomaly['severity']}. Must be one of: " . 
                     implode(', ', $validSeverities)

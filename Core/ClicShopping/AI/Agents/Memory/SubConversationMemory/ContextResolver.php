@@ -312,7 +312,7 @@ class ContextResolver
           'rag_correction_patterns_embedding',  // Embedding table: correction patterns
           'rag_web_cache_embedding',            // Embedding table: web cache
           'rag_memory_retention_log'            // System table: retention logs (no embedding)
-        ])) {
+        ], true)) {
           continue;
         }
         
@@ -341,7 +341,7 @@ class ContextResolver
         
         // Also try with entity type name directly
         // Matches: "supplier ABC Corp", "manufacturer XYZ Inc"
-        if (in_array($entityType, ['suppliers', 'manufacturers', 'categories'])) {
+        if (in_array($entityType, ['suppliers', 'manufacturers', 'categories'], true)) {
           $namePattern = '/\b(?:' . preg_quote($singularType, '/') . ')\s+(["\']?)([^"\']+)\1/i';
           
           if (preg_match_all($namePattern, $content, $matches)) {

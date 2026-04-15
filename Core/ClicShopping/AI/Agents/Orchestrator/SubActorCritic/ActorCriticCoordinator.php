@@ -830,7 +830,7 @@ class ActorCriticCoordinator
     private function selectAlternativeActor(Action $action, array $excludeActorIds): ActorAgentInterface
     {
         $capableActors = $this->actorRegistry->getCapableActors($action->getType());
-        $alternatives = array_filter($capableActors, fn($a) => !in_array($a->getActorId(), $excludeActorIds));
+        $alternatives = array_filter($capableActors, fn($a) => !in_array($a->getActorId(), $excludeActorIds, true));
         
         if (empty($alternatives)) {
             throw new NoCapableActorException("No alternative actor available for action type: {$action->getType()}");
@@ -868,7 +868,7 @@ class ActorCriticCoordinator
         array $excludeCriticIds
     ): array {
         $qualifiedCritics = $this->criticRegistry->getQualifiedCritics($result->getOutputType());
-        $validCritics = array_filter($qualifiedCritics, fn($c) => !in_array($c->getCriticId(), $excludeCriticIds));
+        $validCritics = array_filter($qualifiedCritics, fn($c) => !in_array($c->getCriticId(), $excludeCriticIds, true));
         
         if (count($validCritics) < $count) {
             throw new InsufficientCriticsException(

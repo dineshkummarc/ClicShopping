@@ -527,10 +527,10 @@ class HybridQueryDecomposer
         $analyticsMatch = $this->hasKeyword($lower, $analyticsKeywords);
         $semanticMatch = $this->hasKeyword($lower, $semanticKeywords);
 
-        if ($analyticsMatch && in_array('analytics', $requestedTypes, true)) {
+        if ($analyticsMatch && in_array('analytics', $requestedTypes, true,)) {
             return 'analytics';
         }
-        if ($semanticMatch && in_array('semantic', $requestedTypes, true)) {
+        if ($semanticMatch && in_array('semantic', $requestedTypes, true,)) {
             return 'semantic';
         }
 
@@ -888,7 +888,7 @@ class HybridQueryDecomposer
             }
 
             // Verify type matches requested types
-            if (!in_array($subQuery['type'], $requestedTypes)) {
+            if (!in_array($subQuery['type'], $requestedTypes, true)) {
                 if ($this->debug) {
                     $this->logDebug("Validation failed: sub-query {$index} type '{$subQuery['type']}' not in requested types");
                 }

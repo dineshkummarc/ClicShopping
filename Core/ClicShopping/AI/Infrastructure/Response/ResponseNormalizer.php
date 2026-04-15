@@ -389,7 +389,7 @@ class ResponseNormalizer
   private function isAnalyticsResponse(array $response): bool
   {
     $type = $response['response_type'] ?? '';
-    return in_array($type, ['analytics_response', 'analytics_results', 'analytics']);
+    return in_array($type, ['analytics_response', 'analytics_results', 'analytics'], true);
   }
 
   /**
@@ -527,17 +527,17 @@ class ResponseNormalizer
   private function applyModelSpecificAdjustments(array $response, string $model): array
   {
     // GPT-4.x series: May have truncated responses due to context limits
-    if (in_array($model, ['gpt-4', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano'])) {
+    if (in_array($model, ['gpt-4', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano'], true)) {
       $response = $this->handleGpt4Truncation($response);
     }
 
     // GPT-5.x series: Newer models may also hit limits; handle truncation similarly
-    if (in_array($model, ['gpt-5.2', 'gpt-5.2-pro', 'gpt-5-mini'])) {
+    if (in_array($model, ['gpt-5.2', 'gpt-5.2-pro', 'gpt-5-mini'], true)) {
       $response = $this->handleGpt5Truncation($response);
     }
 
     // Local models (GPT-OSS, Phi-4, Mistral): May have formatting variations
-    if (in_array($model, ['gpt-oss', 'phi-4', 'mistral-large', 'mistral-medium'])) {
+    if (in_array($model, ['gpt-oss', 'phi-4', 'mistral-large', 'mistral-medium'], true)) {
       $response = $this->handleLocalModelVariations($response);
     }
 
@@ -561,7 +561,7 @@ class ResponseNormalizer
       $lastChar = substr($interpretation, -1);
 
       // If doesn't end with punctuation, may be truncated
-      if (!in_array($lastChar, ['.', '!', '?', ')', ']', '}'])) {
+      if (!in_array($lastChar, ['.', '!', '?', ')', ']', '}'], true)) {
         $response['interpretation'] .= ' [Response may be truncated due to context limit]';
         $response['truncated'] = true;
       }
@@ -584,7 +584,7 @@ class ResponseNormalizer
       $interpretation = $response['interpretation'];
       $lastChar = substr($interpretation, -1);
 
-      if (!in_array($lastChar, ['.', '!', '?', ')', ']', '}'])) {
+      if (!in_array($lastChar, ['.', '!', '?', ')', ']', '}'], true)) {
         $response['interpretation'] .= ' [Response may be truncated due to context limit]';
         $response['truncated'] = true;
       }

@@ -55,7 +55,7 @@ class AnalyticsFormatter extends AbstractFormatter
   public function canHandle(array $results): bool
   {
     $type = $results['type'] ?? '';
-    return in_array($type, ['analytics_results', 'analytics_response']);
+    return in_array($type, ['analytics_results', 'analytics_response'], true);
   }
 
   public function format(array $results): array

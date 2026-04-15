@@ -126,7 +126,7 @@ class WorkingMemory
     // Ensure the scope array is initialized (though it should be by createScope/enterScope)
     $this->scopes[$this->currentScope] ??= [];
 
-    if (!in_array($scopedKey, $this->scopes[$this->currentScope])) {
+    if (!in_array($scopedKey, $this->scopes[$this->currentScope], true)) {
       $this->scopes[$this->currentScope][] = $scopedKey;
     }
 

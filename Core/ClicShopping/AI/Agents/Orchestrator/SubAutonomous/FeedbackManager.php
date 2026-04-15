@@ -84,7 +84,7 @@ class FeedbackManager
 
     // Validate feedback type
     $validTypes = ['correctness', 'efficiency', 'completeness', 'best_practice'];
-    if (!in_array($feedback['feedback_type'], $validTypes)) {
+    if (!in_array($feedback['feedback_type'], $validTypes, true)) {
       throw new Exception('Invalid feedback type. Must be one of: ' . implode(', ', $validTypes));
     }
 

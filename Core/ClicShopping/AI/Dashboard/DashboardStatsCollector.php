@@ -569,9 +569,9 @@ class DashboardStatsCollector
                 $feedback_type = $row['feedback_type'] ?? '';
                 $total += $count;
 
-                if (\in_array($feedback_type, ['positive', 'helpful', 'thumbs_up'])) {
+                if (\in_array($feedback_type, ['positive', 'helpful', 'thumbs_up'], true)) {
                     $positive += $count;
-                } elseif (\in_array($feedback_type, ['negative', 'unhelpful', 'thumbs_down'])) {
+                } elseif (\in_array($feedback_type, ['negative', 'unhelpful', 'thumbs_down'], true)) {
                     $negative += $count;
                 }
             }

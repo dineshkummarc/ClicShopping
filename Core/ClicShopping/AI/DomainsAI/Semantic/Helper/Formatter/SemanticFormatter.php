@@ -170,7 +170,7 @@ class SemanticFormatter extends AbstractFormatter
     
     // Check for flagged or rejected grounding decision
     if (isset($groundingMetadata['grounding_decision']) && 
-        in_array($groundingMetadata['grounding_decision'], ['FLAG', 'REJECT'])) {
+        in_array($groundingMetadata['grounding_decision'], ['FLAG', 'REJECT'], true)) {
       $hasWarnings = true;
     }
     

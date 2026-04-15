@@ -71,7 +71,7 @@ class ComplexQueryFormatter extends AbstractFormatter
     $type = $results['type'] ?? '';
     // Note: 'hybrid' is now handled by HybridFormatter (priority 105)
     // ComplexQueryFormatter handles 'complex_query' and legacy 'hybrid_results'
-    return in_array($type, ['complex_query', 'hybrid_results']);
+    return in_array($type, ['complex_query', 'hybrid_results'], true);
   }
 
   /**

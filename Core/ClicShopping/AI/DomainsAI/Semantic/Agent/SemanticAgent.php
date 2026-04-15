@@ -648,7 +648,7 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
     }
 
     // Range validation for numeric types
-    if (in_array($expectedType, ['int', 'float'])) {
+    if (in_array($expectedType, ['int', 'float'], true)) {
       if (isset($paramDef['min']) && $value < $paramDef['min']) {
         $errors[] = "Value {$value} is below minimum {$paramDef['min']}";
       }
@@ -658,7 +658,7 @@ class SemanticAgent implements ConfigurableComponent, QueryTypeDomainInterface
     }
 
     // Enum validation
-    if (isset($paramDef['allowed_values']) && !in_array($value, $paramDef['allowed_values'])) {
+    if (isset($paramDef['allowed_values']) && !in_array($value, $paramDef['allowed_values'], true)) {
       $errors[] = "Value '{$value}' is not in allowed values: " . implode(', ', $paramDef['allowed_values']);
     }
 

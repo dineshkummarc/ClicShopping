@@ -237,14 +237,14 @@ class EvaluationRetryHandler
     
     // Filter out excluded evaluators
     $availableEvaluators = array_filter($capableEvaluators, function($evaluator) use ($excludedEvaluators) {
-      return !in_array($evaluator['agent_id'], $excludedEvaluators);
+      return !in_array($evaluator['agent_id'], $excludedEvaluators, true);
     });
     
     // If no competent evaluators available, try novice level
     if (empty($availableEvaluators)) {
       $capableEvaluators = $this->capabilityRegistry->getCapableEvaluators($outputType, 'novice');
       $availableEvaluators = array_filter($capableEvaluators, function($evaluator) use ($excludedEvaluators) {
-        return !in_array($evaluator['agent_id'], $excludedEvaluators);
+        return !in_array($evaluator['agent_id'], $excludedEvaluators, true);
       });
     }
     

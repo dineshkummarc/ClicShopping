@@ -170,7 +170,7 @@ class AmbiguousQueryDetector
           $analysis['interpretations'] = array_filter(
             $analysis['interpretations'],
             function($interp) use ($selectedTypes) {
-              return in_array($interp['type'] ?? '', $selectedTypes);
+              return in_array($interp['type'] ?? '', $selectedTypes, true);
             }
           );
           

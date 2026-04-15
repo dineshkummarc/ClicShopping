@@ -220,7 +220,7 @@ class AmbiguityOptimizer
     
     $selected = [];
     foreach ($priority as $type) {
-      if (in_array($type, $availableInterpretations)) {
+      if (in_array($type, $availableInterpretations, true)) {
         $selected[] = $type;
         if (count($selected) >= $count) {
           break;
@@ -230,7 +230,7 @@ class AmbiguityOptimizer
     
     // Fill remaining with any available interpretations
     foreach ($availableInterpretations as $type) {
-      if (!in_array($type, $selected)) {
+      if (!in_array($type, $selected, true)) {
         $selected[] = $type;
         if (count($selected) >= $count) {
           break;
@@ -504,7 +504,7 @@ class AmbiguityOptimizer
     if (TemporalConflictPattern::isSingleDayRange($timeRange)) {
       $coarseAggregationPeriods = TemporalConflictPattern::getCoarseAggregationPeriods();
       foreach ($temporalPeriods as $period) {
-        if (in_array(strtolower($period), $coarseAggregationPeriods)) {
+        if (in_array(strtolower($period), $coarseAggregationPeriods, true)) {
           return [
             'has_conflict' => true,
             'conflict_type' => 'granularity_too_coarse',

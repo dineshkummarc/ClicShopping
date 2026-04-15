@@ -184,7 +184,7 @@
     {
       $allowed = ['google', 'bing', 'duckduckgo', 'yahoo'];
 
-      if (!in_array($engine, $allowed)) {
+      if (!in_array($engine, $allowed, true)) {
         throw new \InvalidArgumentException("Engine must be one of: " . implode(', ', $allowed));
       }
 

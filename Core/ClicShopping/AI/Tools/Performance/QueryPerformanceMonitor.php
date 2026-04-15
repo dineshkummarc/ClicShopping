@@ -278,7 +278,7 @@ class QueryPerformanceMonitor
             $columns[$table] = [];
           }
           
-          if (!in_array($column, $columns[$table])) {
+          if (!in_array($column, $columns[$table], true)) {
             $columns[$table][] = $column;
           }
         }
@@ -436,7 +436,7 @@ class QueryPerformanceMonitor
     $columns = [];
     
     foreach ($this->slowQueries as $query) {
-      if (in_array($table, $query['analysis']['tables_accessed'])) {
+      if (in_array($table, $query['analysis']['tables_accessed'], true)) {
         $whereColumns = $this->extractWhereColumns($query['sql']);
         if (isset($whereColumns[$table])) {
           foreach ($whereColumns[$table] as $column) {
@@ -463,7 +463,7 @@ class QueryPerformanceMonitor
   private function hasIndexOnColumn(array $indexes, string $column): bool
   {
     foreach ($indexes as $index) {
-      if (in_array($column, $index['columns'])) {
+      if (in_array($column, $index['columns'], true)) {
         return true;
       }
     }

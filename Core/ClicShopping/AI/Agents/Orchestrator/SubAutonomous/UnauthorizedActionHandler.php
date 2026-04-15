@@ -144,7 +144,7 @@ class UnauthorizedActionHandler
       'access_sensitive_data'
     ];
 
-    if (in_array($actionType, $criticalActions)) {
+    if (in_array($actionType, $criticalActions, true)) {
       return 'critical';
     }
 
@@ -155,7 +155,7 @@ class UnauthorizedActionHandler
       'modify_agent_role'
     ];
 
-    if (in_array($actionType, $highSeverityActions)) {
+    if (in_array($actionType, $highSeverityActions, true)) {
       return 'high';
     }
 
@@ -185,7 +185,7 @@ class UnauthorizedActionHandler
       'access_sensitive_data'
     ];
 
-    if (in_array($actionType, $criticalActions)) {
+    if (in_array($actionType, $criticalActions, true)) {
       return true;
     }
 

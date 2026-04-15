@@ -64,7 +64,7 @@ class ActorCapability
     
     public function supportsParameter(string $parameter): bool
     {
-        return in_array($parameter, $this->supportedParameters);
+        return in_array($parameter, $this->supportedParameters, true);
     }
     
     public function getPerformanceMetric(string $metric): mixed

@@ -315,7 +315,7 @@ class ValidationAgent
     
     $firstWord = strtoupper(explode(' ', $input)[0]);
     
-    if (in_array($firstWord, $sqlKeywords)) {
+    if (in_array($firstWord, $sqlKeywords, true)) {
       return true;
     }
     

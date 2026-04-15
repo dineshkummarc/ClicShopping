@@ -1028,7 +1028,7 @@ class ConversationMemory
       
       // Validate feedback type
       $validTypes = ['positive', 'negative', 'correction'];
-      if (!in_array($feedbackType, $validTypes)) {
+      if (!in_array($feedbackType, $validTypes, true)) {
         error_log("ConversationMemory::recordFeedback - INVALID TYPE: {$feedbackType}");
         $this->securityLogger->logSecurityEvent(
           "Invalid feedback type: {$feedbackType}. Must be one of: " . implode(', ', $validTypes),

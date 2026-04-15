@@ -223,7 +223,7 @@ class WebSearchPostFilter
       $site = strtolower($matches[3]);
       
       // Exclude internal keywords
-      if (!in_array($site, WebSearchPatterns::$internalKeywords)) {
+      if (!in_array($site, WebSearchPatterns::$internalKeywords, true)) {
         $analysis['intent_type'] = 'web_search';
         $analysis['confidence'] = 0.95;
         $analysis['override_reason'] = "External site pattern detected: on/at $site";
@@ -238,7 +238,7 @@ class WebSearchPostFilter
       $site = strtolower($matches[3]);
       
       // Exclude internal keywords
-      if (!in_array($site, WebSearchPatterns::$internalKeywords)) {
+      if (!in_array($site, WebSearchPatterns::$internalKeywords, true)) {
         $analysis['intent_type'] = 'web_search';
         $analysis['confidence'] = 0.95;
         $analysis['override_reason'] = "External site pattern detected: on/at $site";

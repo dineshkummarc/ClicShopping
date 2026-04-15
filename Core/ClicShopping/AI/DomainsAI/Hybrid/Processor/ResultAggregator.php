@@ -141,12 +141,12 @@ class ResultAggregator extends BaseQueryProcessor
     $typeKey = implode('_', $queryTypes);
 
     // Price comparison: analytics + web_search
-    if (in_array('analytics', $queryTypes) && in_array('web_search', $queryTypes)) {
+    if (in_array('analytics', $queryTypes, true) && in_array('web_search', $queryTypes, true)) {
       return 'price_comparison';
     }
 
     // Semantic + analytics
-    if (in_array('semantic', $queryTypes) && in_array('analytics', $queryTypes)) {
+    if (in_array('semantic', $queryTypes, true) && in_array('analytics', $queryTypes, true)) {
       return 'semantic_analytics';
     }
 

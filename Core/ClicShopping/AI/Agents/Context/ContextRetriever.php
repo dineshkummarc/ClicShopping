@@ -687,20 +687,20 @@ class ContextRetriever
     switch ($queryType) {
       case 'semantic':
         // For semantic queries, embeddings are critical
-        if (in_array('embeddings', $failedOps)) {
+        if (in_array('embeddings', $failedOps, true)) {
           return 'significant'; // Embeddings are essential for semantic search
         }
-        if (in_array('memory', $failedOps)) {
+        if (in_array('memory', $failedOps, true)) {
           return 'moderate'; // Memory helps but not critical
         }
         return 'minimal';
 
       case 'analytics':
         // For analytics queries, entities are critical
-        if (in_array('entities', $failedOps)) {
+        if (in_array('entities', $failedOps, true)) {
           return 'significant'; // Entities are essential for analytics
         }
-        if (in_array('memory', $failedOps)) {
+        if (in_array('memory', $failedOps, true)) {
           return 'minimal'; // Memory less important for analytics
         }
         return 'minimal';

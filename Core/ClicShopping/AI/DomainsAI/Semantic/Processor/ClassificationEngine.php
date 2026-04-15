@@ -272,7 +272,7 @@ class ClassificationEngine
       
       // Validate type (must be one of 4 categories)
       $validTypes = ['analytics', 'semantic', 'hybrid', 'web_search'];
-      if (!in_array($result['type'], $validTypes)) {
+      if (!in_array($result['type'], $validTypes, true)) {
         throw new \Exception('Invalid type: ' . $result['type']);
       }
       
@@ -345,7 +345,7 @@ class ClassificationEngine
       $type = trim(strtolower($response));
       
       // Validate old prompt response - default to 'semantic' if invalid
-      if (!in_array($type, ['analytics', 'semantic'])) {
+      if (!in_array($type, ['analytics', 'semantic'], true)) {
         $type = 'semantic'; // Default fallback
       }
       

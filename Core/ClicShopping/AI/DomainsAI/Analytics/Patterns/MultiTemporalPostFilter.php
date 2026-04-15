@@ -102,14 +102,14 @@ class MultiTemporalPostFilter
       foreach ($variants as $variant) {
         // Check for "by {period}" pattern
         if (preg_match('/\bby\s+' . preg_quote($variant, '/') . '\b/i', $query)) {
-          if (!in_array($basePeriod, $detected)) {
+          if (!in_array($basePeriod, $detected, true)) {
             $detected[] = $basePeriod;
           }
           break;
         }
         // Check for "per {period}" pattern
         if (preg_match('/\bper\s+' . preg_quote($variant, '/') . '\b/i', $query)) {
-          if (!in_array($basePeriod, $detected)) {
+          if (!in_array($basePeriod, $detected, true)) {
             $detected[] = $basePeriod;
           }
           break;
@@ -126,7 +126,7 @@ class MultiTemporalPostFilter
         foreach ($variants as $variant) {
           // Check if the period appears anywhere in the query
           if (preg_match('/\b' . preg_quote($variant, '/') . '\b/i', $query)) {
-            if (!in_array($basePeriod, $detected)) {
+            if (!in_array($basePeriod, $detected, true)) {
               $detected[] = $basePeriod;
             }
             break;

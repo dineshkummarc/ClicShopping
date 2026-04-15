@@ -689,7 +689,7 @@ class SemanticSecurityAnalyzer
     
     // Validate threat_type
     $validThreatTypes = ['instruction_override', 'exfiltration', 'hallucination', 'none'];
-    if (!\in_array($analysis['threat_type'], $validThreatTypes)) {
+    if (!\in_array($analysis['threat_type'], $validThreatTypes, true)) {
       self::$logger->logSecurityEvent(
         "Invalid threat_type: " . $analysis['threat_type'] . ", defaulting to 'none'",
         'warning'

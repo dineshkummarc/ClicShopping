@@ -165,14 +165,14 @@ class EvaluationResult
 
       // Collect strengths
       foreach ($evaluation->getStrengths() as $strength) {
-        if (!in_array($strength, $allStrengths)) {
+        if (!in_array($strength, $allStrengths, true)) {
           $allStrengths[] = $strength;
         }
       }
 
       // Collect improvements
       foreach ($evaluation->getImprovements() as $improvement) {
-        if (!in_array($improvement, $allImprovements)) {
+        if (!in_array($improvement, $allImprovements, true)) {
           $allImprovements[] = $improvement;
         }
       }

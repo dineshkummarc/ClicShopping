@@ -1502,7 +1502,7 @@ class OrchestratorAgent
         }
 
         // If web search keyword found but not in sub_types, add it
-        if ($hasWebSearchKeyword && !in_array('web_search', $intent['sub_types'])) {
+        if ($hasWebSearchKeyword && !in_array('web_search', $intent['sub_types'], true)) {
           $intent['sub_types'][] = 'web_search';
 
           if ($this->debug) {
@@ -1553,7 +1553,7 @@ class OrchestratorAgent
       $this->workingMemory->set('reasoning_result', $reasoning);
 
       // default to semantic (safer fallback than analytics)
-      if ($intent['confidence'] < 0.6 && !in_array($intent['type'], ['analytics', 'semantic', 'web_search', 'hybrid'])) {
+      if ($intent['confidence'] < 0.6 && !in_array($intent['type'], ['analytics', 'semantic', 'web_search', 'hybrid'], true)) {
         $this->securityLogger->logStructured(
           'warning',
           'OrchestratorAgent',
@@ -1692,7 +1692,7 @@ class OrchestratorAgent
           }
         }
 
-        if ($hasWebSearchKeyword && !in_array('web_search', $intent['sub_types'])) {
+        if ($hasWebSearchKeyword && !in_array('web_search', $intent['sub_types'], true)) {
           $intent['sub_types'][] = 'web_search';
 
           if ($this->debug) {

@@ -258,8 +258,8 @@ class DatabaseSchemaManager
 
             $prefix = CLICSHOPPING::getConfig('prefix_table');
             // Check if the related table exists
-            if (in_array($relatedTable, $tables) || in_array($prefix . $relatedTable, $tables)) {
-              $actualTable = in_array($prefix . $relatedTable, $tables) ? $prefix . $relatedTable : $relatedTable;
+            if (in_array($relatedTable, $tables, true) || in_array($prefix . $relatedTable, $tables, true)) {
+              $actualTable = in_array($prefix . $relatedTable, $tables, true) ? $prefix . $relatedTable : $relatedTable;
               $this->tableRelationships[$table][$column] = $actualTable;
             }
           }

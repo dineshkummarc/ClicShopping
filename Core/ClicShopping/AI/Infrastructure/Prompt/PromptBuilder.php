@@ -121,7 +121,7 @@ class PromptBuilder
   public function getSystemMessage(string $agentType = 'analytics', string $query = '', string $modelName = 'gpt-4o-mini'): string
   {
     // Validate agent type
-    if (!in_array($agentType, self::AGENT_TYPES)) {
+    if (!in_array($agentType, self::AGENT_TYPES, true)) {
       throw new \InvalidArgumentException("Invalid agent type: {$agentType}. Supported types: " . implode(', ', self::AGENT_TYPES));
     }
 

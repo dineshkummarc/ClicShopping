@@ -183,7 +183,7 @@ class BusinessDomainPermissionManager
     
     // Check if action is allowed for this permission level
     if (isset($permissionActions[$permissionLevel])) {
-      return in_array($action, $permissionActions[$permissionLevel]);
+      return in_array($action, $permissionActions[$permissionLevel], true);
     }
     
     // If permission level is unknown, deny access
@@ -240,7 +240,7 @@ class BusinessDomainPermissionManager
     $businessDomain = $this->normalizeDomain($businessDomain);
     try {
       // Validate permission level
-      if (!in_array($permissionLevel, $this->validPermissionLevels)) {
+      if (!in_array($permissionLevel, $this->validPermissionLevels, true)) {
         throw new Exception("Invalid permission level: $permissionLevel. Must be one of: " . 
                           implode(', ', $this->validPermissionLevels));
       }
@@ -314,7 +314,7 @@ class BusinessDomainPermissionManager
       $permissionLevel = $this->getAgentPermissionLevel($agentId, $businessDomain);
       
       // Actions that always require approval regardless of permission level
-      if (in_array($action, $this->approvalRequiredActions)) {
+      if (in_array($action, $this->approvalRequiredActions, true)) {
         return true;
       }
       
@@ -331,7 +331,7 @@ class BusinessDomainPermissionManager
       // Execute_safe requires approval for non-safe operations
       if ($permissionLevel === self::PERMISSION_EXECUTE_SAFE) {
         $unsafeActions = ['delete', 'modify_business_rules', 'modify_rules', 'change_business_logic'];
-        if (in_array($action, $unsafeActions)) {
+        if (in_array($action, $unsafeActions, true)) {
           return true;
         }
       }

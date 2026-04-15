@@ -150,8 +150,8 @@ class ConflictDetector
     ];
 
     foreach ($conflictingOps as $pair) {
-      if ((in_array($pair[0], $operations1) && in_array($pair[1], $operations2)) ||
-          (in_array($pair[1], $operations1) && in_array($pair[0], $operations2))) {
+      if ((in_array($pair[0], $operations1, true) && in_array($pair[1], $operations2, true)) ||
+          (in_array($pair[1], $operations1, true) && in_array($pair[0], $operations2, true))) {
         return true;
       }
     }
@@ -459,7 +459,7 @@ class ConflictDetector
     // Extract words
     $words = preg_split('/\s+/', strtolower($text));
     $words = array_filter($words, function($word) use ($stopWords) {
-      return strlen($word) > 2 && !in_array($word, $stopWords);
+      return strlen($word) > 2 && !in_array($word, $stopWords, true);
     });
 
     return array_values($words);

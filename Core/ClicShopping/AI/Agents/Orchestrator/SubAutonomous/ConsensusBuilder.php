@@ -392,7 +392,7 @@ class ConsensusBuilder
     $totalWeight = 0.0;
     
     foreach ($evaluations as $evaluation) {
-      $weight = in_array($evaluation->getEvaluatorAgentId(), $outlierAgents) ? 0.5 : 1.0;
+      $weight = in_array($evaluation->getEvaluatorAgentId(), $outlierAgents, true) ? 0.5 : 1.0;
       $weightedSum += $evaluation->getOverallScore() * $weight;
       $totalWeight += $weight;
     }
@@ -473,7 +473,7 @@ class ConsensusBuilder
     $totalWeight = 0.0;
 
     foreach ($scores as $score) {
-      $weight = in_array($score, $outlierScores) ? 0.5 : 1.0;
+      $weight = in_array($score, $outlierScores, true) ? 0.5 : 1.0;
       $weightedSum += $score * $weight;
       $totalWeight += $weight;
     }

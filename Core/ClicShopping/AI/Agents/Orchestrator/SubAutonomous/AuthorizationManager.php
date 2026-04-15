@@ -261,7 +261,7 @@ class AuthorizationManager
       case 'full':
         return true;
       case 'write':
-        return in_array($action, ['create', 'read', 'update']);
+        return in_array($action, ['create', 'read', 'update'], true);
       case 'read':
         return $action === 'read';
       default:
@@ -281,7 +281,7 @@ class AuthorizationManager
   {
     try {
       $validLevels = ['read', 'write', 'full'];
-      if (!in_array($permissionLevel, $validLevels)) {
+      if (!in_array($permissionLevel, $validLevels, true)) {
         throw new Exception("Invalid permission level: $permissionLevel");
       }
       

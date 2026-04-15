@@ -459,7 +459,7 @@ class SecurityLogger
             $this->db->save($table, $data);
             
             // Check if we should trigger alerts (for threat events)
-            if (in_array($eventType, ['threat_detected', 'threat_blocked']) && isset($details['blocked']) && $details['blocked']) {
+            if (in_array($eventType, ['threat_detected', 'threat_blocked'], true) && isset($details['blocked']) && $details['blocked']) {
                 $this->checkAndTriggerAlerts();
             }
             
@@ -727,7 +727,7 @@ class SecurityLogger
         
         // Map detection_method to valid ENUM value
         $detectionMethod = $context['detection_method'] ?? 'llm_semantic';
-        if (!in_array($detectionMethod, ['llm_semantic', 'pattern_based', 'response_validation', 'hybrid'])) {
+        if (!in_array($detectionMethod, ['llm_semantic', 'pattern_based', 'response_validation', 'hybrid'], true)) {
             $detectionMethod = 'llm_semantic'; // default
         }
         
@@ -777,7 +777,7 @@ class SecurityLogger
         
         // Map detection_method to valid ENUM value
         $detectionMethod = $context['detection_method'] ?? 'pattern_based';
-        if (!in_array($detectionMethod, ['llm_semantic', 'pattern_based', 'response_validation', 'hybrid'])) {
+        if (!in_array($detectionMethod, ['llm_semantic', 'pattern_based', 'response_validation', 'hybrid'], true)) {
             $detectionMethod = 'pattern_based'; // default for fallback
         }
         

@@ -161,7 +161,7 @@ class ObjectiveRegistry
       } elseif ($status === 'active') {
         $updates[] = 'started_at = :started_at';
         $params[':started_at'] = (new DateTimeImmutable())->format('Y-m-d H:i:s');
-      } elseif (in_array($status, ['completed', 'failed', 'cancelled'])) {
+      } elseif (in_array($status, ['completed', 'failed', 'cancelled'], true)) {
         $updates[] = 'completed_at = :completed_at';
         $params[':completed_at'] = (new DateTimeImmutable())->format('Y-m-d H:i:s');
       }

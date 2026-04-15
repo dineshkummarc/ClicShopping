@@ -64,8 +64,8 @@ class ReputationAlert
         $validSeverities = ['low', 'medium', 'high', 'critical'];
         
         return !empty($this->criticId)
-            && in_array($this->alertType, $validTypes)
-            && in_array($this->severity, $validSeverities)
+            && in_array($this->alertType, $validTypes, true)
+            && in_array($this->severity, $validSeverities, true)
             && !empty($this->message);
     }
     

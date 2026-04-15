@@ -508,7 +508,7 @@ class ResultFormatter
     // Check for period-related columns
     $periodColumns = ['period', 'month', 'quarter', 'semester', 'year', 'week', 'day', 'MONTH', 'QUARTER', 'YEAR', 'WEEK'];
     
-    if (in_array($column, $periodColumns) || stripos($column, 'period') !== false) {
+    if (in_array($column, $periodColumns, true) || stripos($column, 'period') !== false) {
       return $this->getTemporalColumnLabel($temporalPeriod, $languageCode);
     }
     
@@ -560,7 +560,7 @@ class ResultFormatter
     // Check if this is a period column that needs temporal formatting
     $periodColumns = ['period', 'month', 'quarter', 'semester', 'year', 'week', 'day', 'MONTH', 'QUARTER', 'YEAR', 'WEEK'];
     
-    if (in_array($column, $periodColumns) || stripos($column, 'period') !== false) {
+    if (in_array($column, $periodColumns, true) || stripos($column, 'period') !== false) {
       return $this->formatTemporalLabel($temporalPeriod, $value, $languageCode);
     }
     

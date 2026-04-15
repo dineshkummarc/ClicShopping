@@ -289,7 +289,7 @@ class InputValidator
           // Additional URL validation for allowed schemes
           if (isset($options['allowedSchemes'])) {
               $scheme = parse_url($input, PHP_URL_SCHEME);
-              if (!in_array($scheme, $options['allowedSchemes'])) {
+              if (!in_array($scheme, $options['allowedSchemes'], true)) {
                   self::logSecurityEvent("URL scheme not allowed: $scheme");
                   return $default ?? '';
               }
@@ -368,7 +368,7 @@ class InputValidator
     // Check file extension if extensions are specified
     if (!empty($allowedExtensions)) {
       $extension = strtolower(pathinfo($realPath, PATHINFO_EXTENSION));
-      if (!in_array($extension, array_map('strtolower', $allowedExtensions))) {
+      if (!in_array($extension, array_map('strtolower', $allowedExtensions), true)) {
         self::logSecurityEvent("File has disallowed extension: $extension");
         return false;
       }
