@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '5189b9ec82c289d11b3c9a2bf1742aacef64dd20',
+        'reference' => 'd7a55b66e4b7a21bcb08ba0b89e4a422af369504',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '5189b9ec82c289d11b3c9a2bf1742aacef64dd20',
+            'reference' => 'd7a55b66e4b7a21bcb08ba0b89e4a422af369504',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => 'd830a949e5c180e97c2245221daf8b589552cc2c',
+            'reference' => 'f8c7911d543be053da1601797a9d471110222b08',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
@@ -469,8 +469,8 @@
             ),
         ),
         'symfony/polyfill-ctype' => array(
-            'pretty_version' => 'v1.34.0',
-            'version' => '1.34.0.0',
+            'pretty_version' => 'v1.35.0',
+            'version' => '1.35.0.0',
             'reference' => '141046a8f9477948ff284fa65be2095baafb94f2',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/polyfill-ctype',
@@ -478,8 +478,8 @@
             'dev_requirement' => false,
         ),
         'symfony/polyfill-intl-grapheme' => array(
-            'pretty_version' => 'v1.34.0',
-            'version' => '1.34.0.0',
+            'pretty_version' => 'v1.35.0',
+            'version' => '1.35.0.0',
             'reference' => 'ad1b7b9092976d6c948b8a187cec9faaea9ec1df',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/polyfill-intl-grapheme',
@@ -487,8 +487,8 @@
             'dev_requirement' => false,
         ),
         'symfony/polyfill-intl-normalizer' => array(
-            'pretty_version' => 'v1.34.0',
-            'version' => '1.34.0.0',
+            'pretty_version' => 'v1.35.0',
+            'version' => '1.35.0.0',
             'reference' => '3833d7255cc303546435cb650316bff708a1c75c',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/polyfill-intl-normalizer',
@@ -496,8 +496,8 @@
             'dev_requirement' => false,
         ),
         'symfony/polyfill-mbstring' => array(
-            'pretty_version' => 'v1.34.0',
-            'version' => '1.34.0.0',
+            'pretty_version' => 'v1.35.0',
+            'version' => '1.35.0.0',
             'reference' => '6a21eb99c6973357967f6ce3708cd55a6bec6315',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/polyfill-mbstring',
@@ -505,8 +505,8 @@
             'dev_requirement' => false,
         ),
         'symfony/polyfill-php84' => array(
-            'pretty_version' => 'v1.34.0',
-            'version' => '1.34.0.0',
+            'pretty_version' => 'v1.35.0',
+            'version' => '1.35.0.0',
             'reference' => '88486db2c389b290bf87ff1de7ebc1e13e42bb06',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/polyfill-php84',
