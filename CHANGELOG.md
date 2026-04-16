@@ -6,7 +6,7 @@ version4.24
 
 ---------------
 version4.23
-
+git
 - Some fix
 - fix bug dynamicPrice on specials 
 - Libraries updated
