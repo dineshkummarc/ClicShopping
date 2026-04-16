@@ -10,111 +10,10 @@
 
   namespace ClicShopping\Apps\AI\Ecommerce\Classes\Shop\CockpitAI;
 
+  use ClicShopping\Apps\Configuration\ChatGpt\Classes\ClicShoppingAdmin\Gpt;
   use ClicShopping\OM\CLICSHOPPING;
   use ClicShopping\OM\Registry;
   use ClicShopping\Sites\Shop\BotDetector;
-
-   /*
-       CREATE TABLE IF NOT EXISTS :table_products_cockpit_ai_tracking_impressions (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Primary key - unique identifier for each product impression event',
-  products_id INT(11) UNSIGNED NOT NULL COMMENT 'FK to products table - product identifier',
-  language_id INT(11) NOT NULL COMMENT 'FK to languages table - language identifier (context of display)',
-  page_code VARCHAR(64) NOT NULL COMMENT 'Logical page identifier (index, product_info, specials, featured, favorites, search, etc.)',
-  module_code VARCHAR(64) NOT NULL COMMENT 'Display module identifier (box_new_products, box_featured, box_specials, etc.), reusable across pages',
-  module_position VARCHAR(10) NOT NULL COMMENT 'Position of the module can be left, right, middle, top, bottom',
-  module_sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Sort order of the module inside the module (ordering index starting at 0 or 1)',
-
-  displayed_at DATETIME NOT NULL COMMENT 'Timestamp when the product was rendered/displayed to the user',
-  session_hash BINARY(16) DEFAULT NULL COMMENT 'Session identifier hashed in binary (MD5 or equivalent) for deduplication and session-level analysis',
-  customer_id INT(11) DEFAULT NULL COMMENT 'FK to customers table - null if visitor is not authenticated',
-  customer_group_id INT(11) DEFAULT NULL  COMMENT 'FK to customer groups - pricing/segmentation context',
-  metadata JSON DEFAULT NULL  COMMENT 'Optional JSON payload (A/B test, device, source context, campaign, rendering details)',
-  PRIMARY KEY (id),
-
-  KEY idx_products_date (products_id, displayed_at)    COMMENT 'Product-level time analysis',
-  KEY idx_page_module_date (page_code, module_code, displayed_at)    COMMENT 'Page and module performance tracking over time',
-  KEY idx_language_date (language_id, displayed_at)    COMMENT 'Language-based segmentation',
-  KEY idx_customer (customer_id)     COMMENT 'Customer-level tracking',
-  KEY idx_customer_group (customer_group_id)    COMMENT 'Segmentation by customer group',
-  KEY idx_session (session_hash)    COMMENT 'Session-level grouping and deduplication',
- KEY idx_module_position (page_code, module_code, module_position,module_sort_order)    COMMENT 'Analysis of product ordering inside modules'
-
-) ENGINE=InnoDB
-DEFAULT CHARSET=utf8mb4
-COLLATE=utf8mb4_unicode_ci
-COMMENT='Product impressions tracking - captures where and how products are displayed across pages and modules';
-
-
-ALTER TABLE :table_products_cockpit_ai_tracking_impressions ADD weight DECIMAL(3,2) NOT NULL DEFAULT 0.10 AFTER module_sort_order;
-ALTER TABLE `clic_products_cockpit_ai_tracking_impressions` CHANGE `weight` `weight` DECIMAL(3,2) NOT NULL DEFAULT '0.10' COMMENT 'Module weight';
-ALTER TABLE :table_products_cockpit_ai_tracking_impressions ADD INDEX idx_spam_check (session_hash, products_id, module_code, displayed_at);
-
-
-CREATE OR REPLACE VIEW clic_products_tracking_summary AS
-SELECT
-  products_id
-    COMMENT 'FK to products table - unique product identifier aggregated over impressions',
-
-  language_id
-    COMMENT 'FK to languages table - language context of the impressions aggregation',
-
-  -- Popularité pondérée avec décroissance temporelle exponentielle
-  -- Favorise les impressions récentes (demi-vie ~48h) et réduit l’impact des anciennes
-  SUM(weight * EXP(-TIMESTAMPDIFF(HOUR, displayed_at, NOW()) / 48))
-    / (1 + LOG(COUNT(*) + 1))
-    AS popularity_heat
-    COMMENT 'Time-decayed weighted popularity score normalized by log(volume) to reduce exposure bias',
-
-  COUNT(*)
-    AS total_impressions
-    COMMENT 'Total number of impressions over the aggregation window (7 days)',
-
-  COUNT(DISTINCT module_code)
-    AS module_spread
-    COMMENT 'Number of distinct modules where the product was displayed (diversity of exposure)',
-
-  SUM(CASE WHEN weight >= 0.5 THEN 1 ELSE 0 END)
-    / NULLIF(COUNT(*), 0)
-    AS high_intent_ratio
-    COMMENT 'Ratio of high-intent impressions (weight >= 0.5) over total impressions',
-
-  STDDEV(weight)
-    AS weight_stddev
-    COMMENT 'Standard deviation of weights - measures variability of user intent signals',
-
-  MAX(displayed_at)
-    AS last_seen_at
-    COMMENT 'Most recent timestamp when the product was displayed'
-
-FROM clic_products_cockpit_ai_tracking_impressions
-
-WHERE displayed_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-  -- Restricts aggregation to recent data for reactivity and freshness
-
-GROUP BY products_id, language_id;
-
-
-
-
-
-Module (Box)	Weight	Justification IA
-bm_products_new	0.10	Simple nouveauté, souvent ignorée.
-bm_specials	0.15	Promo, attire l'œil mais reste passif.
-bm_favorites	0.15	Rappel de produits déjà aimés.
-bm_featured	0.20	Mise en avant manuelle (curation).
-bm_best_seller	0.25	Preuve sociale (influence forte).
-bm_recommendations	0.30	Critique : Validation de la pertinence de l'IA.
-bm_products_related	0.35	Contextuel (lié au produit consulté).
-
- pf_products_new	0.40	L'utilisateur a cliqué sur "Nouveautés".
-pf_specials	0.45	Chasseur de promos actif.
-pf_favorites	0.60	Fort : Consultation volontaire de sa liste.
-pf_search	0.70	Très Fort : Résultat d'une recherche précise.
-cl_product_listing	0.50	Navigation par catégorie (intention d'achat).
-
-product_info	1.00	Le Graal : Consultation de la fiche détaillée.
-checkout_cart	0.80	Rappel de produits dans le panier ou cross-selling.
-       */
 
   class ProductsTracking
   {
@@ -124,6 +23,7 @@ checkout_cart	0.80	Rappel de produits dans le panier ou cross-selling.
      */
     public function __construct()
     {
+      static::checkStatusProductTracking();
     }
 
     /**
@@ -132,10 +32,17 @@ checkout_cart	0.80	Rappel de produits dans le panier ou cross-selling.
      */
     private static function checkStatusProductTracking(): bool
     {
-      CLICSHOPPING::checkAppsIsActivated([
+      $requiredConstants = [
         'CLICSHOPPING_APP_ECOMMERCE_CAI_STATUS',
-        'CLICSHOPPING_APP_ECOMMERCE_CAI_PRODUCT_TRACKING'
-      ]);
+        'CLICSHOPPING_APP_ECOMMERCE_CAI_PRODUCT_TRACKING',
+        'CLICSHOPPING_APP_ECOMMERCE_EC_STATUS',
+      ];
+
+      CLICSHOPPING::checkAppsIsActivated($requiredConstants);
+
+      if (!Gpt::checkGptStatus()) {
+        return false;
+      }
 
       return true;
     }

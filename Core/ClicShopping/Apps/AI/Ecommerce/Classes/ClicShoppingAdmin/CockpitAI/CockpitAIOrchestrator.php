@@ -110,6 +110,8 @@
       $this->llmGenerator         = new LlmAnalysisGenerator();
 
       $this->db = Registry::get('Db');
+
+      $this->checkStatus();
     }
 
     /*
@@ -118,9 +120,14 @@
      */
     public function checkStatus(): bool
     {
-      CLICSHOPPING::checkAppsIsActivated([
-        'CLICSHOPPING_APP_ECOMMERCE_CAI_STATUS'
-      ]);
+      $requiredConstants = [
+        'CLICSHOPPING_APP_ECOMMERCE_CAI_STATUS',
+        'CLICSHOPPING_APP_ECOMMERCE_EC_STATUS',
+        'CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING',
+        'CLICSHOPPING_APP_CHATGPT_RA_STATUS',
+      ];
+
+      CLICSHOPPING::checkAppsIsActivated($requiredConstants);
 
       if (!Gpt::checkGptStatus()) {
         return false;
@@ -234,7 +241,6 @@
         }, $ctx, critical: true);
 
         // ── Step 4: SEO Analysis (conditional) ───────────────────────────
-        // Requirement 10.4: WHEN SEO status is ANALYZED, invoke SEO_Agent
         // Timeout: 5s (handled by PipelineRunner)
         // Fallback: mark seo_status='NOT_ANALYZED', continue
         $ctx = $this->runner->run(4, 'seo_analysis', function (array $context) use ($productId, $languageId): array {
@@ -248,7 +254,6 @@
 
 
         // ── Step 6: LLM Analysis Generation ──────────────────────────────
-        // TODO task 7.7 — wire existing Gpt::class actor (no new actor needed)
         $ctx = $this->runner->run(6, 'llm_analysis_generation', function (array $context): array {
           return $this->generateLLMAnalysis($context);
         }, $ctx, critical: false);
