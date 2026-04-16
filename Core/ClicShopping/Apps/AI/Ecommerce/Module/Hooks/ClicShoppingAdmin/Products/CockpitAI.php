@@ -61,10 +61,17 @@
      */
     public function display()
     {
-      CLICSHOPPING::checkAppsIsActivated([
-        'CLICSHOPPING_APP_ECOMMERCE_CAI_STATUS'
-      ]);
+      $requiredConstants = [
+        'CLICSHOPPING_APP_ECOMMERCE_EC_STATUS',
+        'CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING',
+        'CLICSHOPPING_APP_CHATGPT_RA_STATUS',
+      ];
 
+      foreach ($requiredConstants as $const) {
+        if (!\defined($const) || \constant($const) !== 'True') {
+          return false;
+        }
+      }
       $CLICSHOPPING_ProductsAdmin = Registry::get('ProductsAdmin');
 
       // Load language definitions
@@ -690,10 +697,10 @@ EOD;
           <div class="mt-1"></div>
           <div>Configuration options will be implemented in subsequent tasks.</div>
           <div class="mt-2">
-            <p><strong>' . $this->app->getDef('text_config_t_high') . ':</strong> ' . (float)CLICSHOPPING_APP_ECOMMERCE_CAI_T_HIGH . '</p>
-            <p><strong>' . $this->app->getDef('text_config_t_low') . ':</strong> ' . (float)CLICSHOPPING_APP_ECOMMERCE_CAI_T_LOW . '</p>
-            <p><strong>' . $this->app->getDef('text_config_strategy_x') . ':</strong> ' . (float)CLICSHOPPING_APP_ECOMMERCE_CAI_STRATEGY_X . '</p>
-            <p><strong>' . $this->app->getDef('text_config_strategy_y') . ':</strong> ' . (float)CLICSHOPPING_APP_ECOMMERCE_CAI_STRATEGY_Y . '</p>
+            <p><strong>' . $this->app->getDef('text_config_t_high') . ':</strong> ' . (\defined('CLICSHOPPING_APP_ECOMMERCE_CAI_T_HIGH') ? (float)CLICSHOPPING_APP_ECOMMERCE_CAI_T_HIGH : 70.0) . '</p>
+            <p><strong>' . $this->app->getDef('text_config_t_low') . ':</strong> ' . (\defined('CLICSHOPPING_APP_ECOMMERCE_CAI_T_LOW') ? (float)CLICSHOPPING_APP_ECOMMERCE_CAI_T_LOW : 30.0) . '</p>
+            <p><strong>' . $this->app->getDef('text_config_strategy_x') . ':</strong> ' . (\defined('CLICSHOPPING_APP_ECOMMERCE_CAI_STRATEGY_X') ? CLICSHOPPING_APP_ECOMMERCE_CAI_STRATEGY_X : 'quality') . '</p>
+            <p><strong>' . $this->app->getDef('text_config_strategy_y') . ':</strong> ' . (\defined('CLICSHOPPING_APP_ECOMMERCE_CAI_STRATEGY_Y') ? CLICSHOPPING_APP_ECOMMERCE_CAI_STRATEGY_Y : 'performance') . '</p>
           </div>
         </div>
       ';

@@ -132,6 +132,22 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 - Cron System: Automated tasks and maintenance
 - Dynamic Reports: Sales, inventory, and customer analytics
 
+
+##Comparison between competitors (native functions):
+
+| Caractéristiques        | ClicShopping           | Shopify             | Magento          | WooCommerce         |
+|------------------------|-----------------------|---------------------|------------------|---------------------|
+| IA Générative          | ✅ Natif multi-agents | ❌ Apps tierces     | ❌ Extensions     | ❌ Plugins          |
+| Support Multi-LLM      | ✅ 6+ fournisseurs    | ❌ OpenAI uniquement| ❌ Limité         | ❌ Limité           |
+| Base Vectorielle       | ✅ MariaDB native     | ❌ Externe requis   | ❌ Externe requis | ❌ Externe requis   |
+| Protocoles IA          | ✅ ACP/UCP/MCP        | ❌ Extensions       | ❌ Extensions     | ❌ Extensions       |
+| WebSearch Intégré      | ✅ Natif              | ❌ Apps tierces     | ❌ Extensions     | ❌ Plugins          |
+| Open Source            | ✅ GPL2/MIT           | ❌ Propriétaire     | ❌ Open Source    | ❌ Open Source      |
+| Rag                    | ✅ Semantic           | ❌ Propriétaire     | ❌ Open Source    | ❌ Open Source      |
+| BI                     | ✅ Analytic           | ❌ Propriétaire     | ❌ Open Source    | ❌ Open Source      |
+| Agentic                | ✅ 8 Autonomous       | ❌ Propriétaire     | ❌ Open Source    | ❌ Open Source      |
+
+
 ##Server performance
 - OpCache
 - Memcached
