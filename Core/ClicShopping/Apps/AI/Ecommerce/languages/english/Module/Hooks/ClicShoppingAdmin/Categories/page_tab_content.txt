@@ -35,3 +35,4 @@ text_seo_table_language = Languages
 text_seo_table_action = Action
 text_seo_status_initial = Initial status
 text_seo_view = View
+text_seo_status_completed = Completed

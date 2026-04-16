@@ -23,9 +23,6 @@
       "EcommerceDomain": "Module\\ClicShoppingAdmin\\Config\\EcommerceDomain"
     },
     "Hooks": {
-      "ClicShoppingAdmin/Cronjob": {
-        "ProductCockpitAi": "Module\\Hooks\\ClicShoppingAdmin\\Cronjob\\ProductCockpitAi"
-      },
       "ClicShoppingAdmin/Specials": {
         "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Specials\\Insert",
         "Update": "Module\\Hooks\\ClicShoppingAdmin\\Specials\\Update",
@@ -101,14 +98,20 @@
       "ClicShoppingAdmin/Recommendations": {
       },
       "ClicShoppingAdmin/RAG": {
+      },
+      "ClicShoppingAdmin/Cronjob": {
+        "Process": "Module\\Hooks\\ClicShoppingAdmin\\Cronjob\\Process"
+      },
+      "Shop/Cronjob": {
+        "Process": "Module\\Hooks\\Shop\\Cronjob\\Cron&Process"
       }
     }
   },
   "routes": {
     "ClicShoppingAdmin": "Sites\\ClicShoppingAdmin\\Pages\\Home",
     "Shop": {
-      "OpenAI&ACP": "Sites\\Shop\\Pages\\ACP",
-      "Google&UCP": "Sites\\Shop\\Pages\\UCP"
+      "OpenAI&ACP":"Sites\\Shop\\Pages\\ACP",
+      "Google&UCP":"Sites\\Shop\\Pages\\UCP"
     }
   }
 }

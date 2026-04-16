@@ -1,9 +1,7 @@
 version4.24
 
-
-
-
-
+- Some fix
+- add shop cron for product Cockpit Ai
 
 ---------------
 version4.23
