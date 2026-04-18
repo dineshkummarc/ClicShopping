@@ -270,6 +270,16 @@ class ApiRequestor
                 return Exception\IdempotencyException::factory($msg, $rcode, $rbody, $resp, $rheaders, $code);
 
                 // switchCases: The beginning of the section generated from our OpenAPI spec
+            case 'rate_limit':
+                return Exception\RateLimitException::factory(
+                    $msg,
+                    $rcode,
+                    $rbody,
+                    $resp,
+                    $rheaders,
+                    $code
+                );
+
             case 'temporary_session_expired':
                 return Exception\TemporarySessionExpiredException::factory(
                     $msg,
@@ -385,6 +395,7 @@ class ApiRequestor
         ['CODEX_CI', 'codex_cli'],
         ['CURSOR_AGENT', 'cursor'],
         ['GEMINI_CLI', 'gemini_cli'],
+        ['OPENCLAW_SHELL', 'openclaw'],
         ['OPENCODE', 'open_code'],
         // aiAgents: The end of the section generated from our OpenAPI spec
     ];
@@ -419,8 +430,6 @@ class ApiRequestor
         $uaString = "Stripe/{$apiMode} PhpBindings/" . Stripe::VERSION;
 
         $langVersion = \PHP_VERSION;
-        $uname_disabled = self::_isDisabled(\ini_get('disable_functions'), 'php_uname');
-        $uname = $uname_disabled ? '(disabled)' : \php_uname();
 
         // Fallback to global configuration to maintain backwards compatibility.
         $appInfo = $appInfo ?: Stripe::getAppInfo();
@@ -428,9 +437,14 @@ class ApiRequestor
             'bindings_version' => Stripe::VERSION,
             'lang' => 'php',
             'lang_version' => $langVersion,
-            'publisher' => 'stripe',
-            'uname' => $uname,
         ];
+        if (Stripe::getEnableTelemetry()) {
+            $uname_disabled = self::_isDisabled(\ini_get('disable_functions'), 'php_uname');
+            $ua['platform'] = $uname_disabled
+                ? '(disabled)'
+                // only get general platform information, e.g. `Darwin 25.3.0 arm64`
+                : \php_uname('s') . ' ' . \php_uname('r') . ' ' . \php_uname('m');
+        }
         if ($clientInfo) {
             $ua = \array_merge($clientInfo, $ua);
         }
