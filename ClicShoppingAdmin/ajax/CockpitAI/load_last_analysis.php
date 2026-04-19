@@ -65,8 +65,10 @@ try {
   // Get language ID from GET parameter or session
   if (isset($_GET['language_id']) && is_numeric($_GET['language_id'])) {
     $languageId = (int)$_GET['language_id'];
-  } else {
+  } elseif (Registry::exists('Language')) {
     $languageId = Registry::get('Language')->getId();
+  } else {
+    $languageId = 1;
   }
 
   // Whether the caller wants the full score time series (for sparklines)

@@ -199,6 +199,7 @@ class Update extends \ClicShopping\OM\Domains\PagesActionsAbstract
     } else {
       $dobDateTime = null;
     }
+
 // Contrôle des saisies faites sur les champs TVA Intracom
     if ((\strlen($customers_tva_intracom_code_iso) > 0) || (\strlen($customers_tva_intracom) > 0)) {
 

@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Apps\Customers\Groups\Classes\ClicShoppingAdmin;
 
+use ClicShopping\OM\HTTP;
 use SoapClient;
 /**
  * Get the prefix for Intracommunity VAT numbers for various countries.
@@ -116,15 +117,19 @@ class VatNumber
    *
    * @return mixed Returns the SOAP client if the web service is available, or true if it is unavailable.
    */
-  public static function checkWebService()
+  public static function checkWebService(): SoapClient|false
   {
-    $client = new SoapClient("https://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl");
-
-    if (!array($client)) {
-//        $error_message = "web service at ec.europa.eu unavailable";
-      return true;
-    } else {
+    try {
+      $client = new SoapClient(
+        "https://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl",
+        [
+          'connection_timeout' => 10,
+          'exceptions'         => true,
+        ]
+      );
       return $client;
+    } catch (SoapFault $e) {
+      return false;
     }
   }
 
@@ -141,63 +146,51 @@ class VatNumber
       return false;
     }
 
-    $error = false;
-
+    // Détermination du code ISO
     if (!empty($country_iso)) {
       $result = static::checkIsoCountry($country_iso);
     } else {
-      $country_iso = substr($tva_intracom, 0, 2);
-      $country_iso = substr(str_replace(' ', '', $country_iso), 2);
-
+      $country_iso = strtoupper(substr(str_replace(' ', '', $tva_intracom), 0, 2));
       $result = static::checkIsoCountry($country_iso);
     }
 
+    // Pays invalide
     if ($result === true) {
-      $error = true;
-    }
-
-    if (static::checkWebService() && $error === false) {
-      $client = static::checkWebService();
-
-      try {
-        $array = [
-          'countryCode' => $country_iso,
-          'vatNumber' => $tva_intracom
-        ];
-
-        $response = $client->checkVat($array);
-      } catch (SoapFault $e) {
-        $faults = [
-          'INVALID_INPUT' => 'The provided CountryCode is invalid or the VAT number is empty',
-          'SERVICE_UNAVAILABLE' => 'The SOAP service is unavailable, try again later',
-          'MS_UNAVAILABLE' => 'The Member State service is unavailable, try again later or with another Member State',
-          'TIMEOUT' => 'The Member State service could not be reached in time, try again later or with another Member State',
-          'SERVER_BUSY' => 'The service cannot process your request. Try again later.'
-        ];
-
-        $error_message = $faults[$e->faultstring];
-
-        if (!is_array(is_set($error_message))) {
-//            $error_message = $e->faultstring;
-          $error = true;
-        }
-      }
-
-      if (!array($response->valid)) {
-//          $error_message = "Not a valid VAT number";
-        $error = true;
-      }
-
-      if ($error === true) {
-//          $error_message = '{ "success": 0, "error": "' . $error . '" }';
-        return true;
-      } else {
-//          $error_message = '{ "success": 0, "error": "' . $error . '" }';
-        return false;
-      }
-    } else {
       return true;
     }
+
+    // Connexion au web service (une seule fois)
+    $client = static::checkWebService();
+    if ($client === false) {
+      return true; // service indisponible
+    }
+
+    // Numéro TVA sans le préfixe pays
+    $vatNumber = preg_replace('/^' . preg_quote($country_iso, '/') . '/i', '', str_replace(' ', '', $tva_intracom));
+
+    try {
+      $response = $client->checkVat([
+        'countryCode' => $country_iso,
+        'vatNumber'   => $vatNumber,
+      ]);
+    } catch (SoapFault $e) {
+      $faults = [
+        'INVALID_INPUT'     => 'The provided CountryCode is invalid or the VAT number is empty',
+        'SERVICE_UNAVAILABLE' => 'The SOAP service is unavailable, try again later',
+        'MS_UNAVAILABLE'    => 'The Member State service is unavailable, try again later',
+        'TIMEOUT'           => 'The Member State service could not be reached in time',
+        'SERVER_BUSY'       => 'The service cannot process your request. Try again later.',
+      ];
+      // $error_message = $faults[$e->faultstring] ?? $e->faultstring;
+      return true; // erreur SOAP = TVA non vérifiable
+    }
+
+    // Vérification de la réponse
+    if (empty($response) || $response->valid !== true) {
+      return true; // numéro invalide
+    }
+
+    return false; // numéro valide
   }
 
   /**
@@ -223,5 +216,128 @@ class VatNumber
     $result .= "\n}";
 
     return $result;
+  }
+
+
+  /**
+   * Retrieves company information from the Pappers API.
+   *
+   * If a SIREN number is provided, the method fetches company details directly.
+   * Otherwise, it performs a search by company name to retrieve the SIREN first,
+   * then fetches the full company details.
+   *
+   * Returns false if the API token is not configured.
+   * Returns null if the company is not found or the API is unavailable.
+   *
+   * @param ?string      $name  The company name to search for (used when SIREN is not provided).
+   * @param string|null $siren The SIREN number (9 digits). If provided, skips the name search.
+   *
+   * @return array|bool|null Company details as an associative array, false if token missing, null on failure.
+   *
+   *
+   * // Avec SIREN → recherche directe (1 seul appel API)
+   * $info = $this->checkCompanyInfo('Renault', '444513151');
+   *
+   * // Sans SIREN → recherche par nom (2 appels API)
+   * $info = $this->checkCompanyInfo('Renault');
+   *
+   * // SIREN vide explicitement → aussi par nom
+   * $info = $this->checkCompanyInfo('Renault', '');
+   *
+   */
+  public function checkPapersCompanyInfo(?string $name, ?string $siren = null): array|bool|null
+  {
+    // Check that the Pappers API token is defined and not empty
+    if (!defined('PAPPERS_API_TOKEN') || empty(PAPPERS_API_TOKEN)) {
+      return false;
+    }
+
+    $apiToken = PAPPERS_API_TOKEN;
+    $allowedHosts   = ['api.pappers.fr'];
+
+    // Step 1 — SIREN provided: fetch company details directly (single API call)
+    if (!empty($siren)) {
+      $siren = preg_replace('/\s/', '', $siren);
+      $siren = substr($siren, 0, 9);
+
+      $response = HTTP::getResponse(
+        [
+          'url'        => 'https://api.pappers.fr/v2/entreprise?' . http_build_query([
+              'api_token' => $apiToken,
+              'siren'     => $siren,
+            ]),
+          'method'     => 'get',
+          'format'     => 'json',
+        ],
+        $allowedHosts
+      );
+
+      if ($response === false || $response === null) {
+        return null;
+      }
+
+    } else {
+      // Step 2 — No SIREN provided: search by company name to retrieve the SIREN
+      $search = HTTP::getResponse(
+        [
+          'url'        => 'https://api.pappers.fr/v2/recherche?' . http_build_query([
+              'api_token' => $apiToken,
+              'q'         => $name,
+              'par_page'  => 1,
+            ]),
+          'method'     => 'get',
+          'format'     => 'json',
+        ],
+        $allowedHosts
+      );
+
+      if ($search === false || $search === null || empty($search['resultats'])) {
+        return null;
+      }
+
+      // Extract the SIREN from the first search result
+      $siren = $search['resultats'][0]['siren'] ?? null;
+
+      if (!$siren) {
+        return null;
+      }
+
+      // Step 3 — Fetch full company details using the retrieved SIREN
+      $response = HTTP::getResponse(
+        [
+          'url'        => 'https://api.pappers.fr/v2/entreprise?' . http_build_query([
+              'api_token' => $apiToken,
+              'siren'     => $siren,
+            ]),
+          'method'     => 'get',
+          'format'     => 'json',
+        ],
+        $allowedHosts
+      );
+
+      if ($response === false || $response === null) {
+        return null;
+      }
+    }
+
+    // Step 4 — Extract and return relevant company fields
+    return [
+      'siren'           => $response['siren']                           ?? null,
+      'siret'           => $response['siege']['siret']                  ?? null,
+      'name'            => $response['nom_entreprise']                  ?? null,
+      'legal_form'      => $response['forme_juridique']                 ?? null,
+      'creation_date'   => $response['date_creation']                   ?? null,
+      'vat_number'      => $response['numero_tva_intracommunautaire']   ?? null,
+      'address'         => $response['siege']['adresse_ligne_1']        ?? null,
+      'zip_code'        => $response['siege']['code_postal']            ?? null,
+      'city'            => $response['siege']['ville']                  ?? null,
+      'country'         => $response['siege']['pays']                   ?? null,
+      'status'          => $response['statut']                          ?? null, // 'A' = active, 'C' = closed
+      'manager'         => $response['representants'][0]['nom_complet'] ?? null,
+      'naf_code'        => $response['code_naf']                        ?? null,
+      'naf_label'       => $response['libelle_code_naf']                ?? null,
+      'capital'         => $response['capital']                         ?? null,
+      'pappers_url'     => 'https://www.pappers.fr/entreprise/' . ($response['nom_url'] ?? $siren),
+    ];
   }
 }

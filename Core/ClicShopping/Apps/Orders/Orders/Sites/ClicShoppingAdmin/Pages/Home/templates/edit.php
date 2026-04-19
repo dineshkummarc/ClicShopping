@@ -14,6 +14,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\ClicShoppingAdmin\Tax;
 use ClicShopping\Apps\Orders\Orders\Classes\ClicShoppingAdmin\OrderAdmin;
+use ClicShopping\Apps\Orders\Orders\Classes\Common\EInvoiceService;
 
 $CLICSHOPPING_Orders = Registry::get('Orders');
 $CLICSHOPPING_Template = Registry::get('TemplateAdmin');
@@ -53,7 +54,6 @@ while ($QordersStatus->fetch() !== false) {
 }
 
 if (isset($order_id) && is_numeric($order_id) && ($order_id > 0)) {
-
   $oID = (int)$order_id;
 
   $Qorders = $CLICSHOPPING_Orders->db->get('orders', 'orders_id', ['orders_id' => (int)$oID]);
@@ -129,19 +129,6 @@ $Qcustomers->execute();
     </div>
   </div>
   <div class="mt-1"></div>
-
-
-  <!-- pb avec autres script
-
-  <script>
-    $(function() {
-      $('#orderTabs').tabs();
-    });
-  </script>
-
-  -->
-
-
   <!-- //###########################################//-->
   <!--          Customer information tab  1        //-->
   <!-- //###########################################//-->
@@ -158,7 +145,7 @@ $Qcustomers->execute();
       <div class="tab-content">
 
         <div class="tab-pane active" id="tab1">
-          <div class="mainTitle"><?php echo $CLICSHOPPING_Orders->getDef('title_orders_adresse'); ?></div>
+          <div class="mainTitle"><?php echo $CLICSHOPPING_Orders->getDef('title_orders_address'); ?></div>
           <div class="adminformTitle">
             <div class="row">
               <div class="col-md-3 card m-1">
@@ -173,16 +160,6 @@ $Qcustomers->execute();
                     href="<?php echo $CLICSHOPPING_Orders->link('EditCustomerAddress&order_id=' . (int)$order_id . '&customer_id=' . $Qcustomers->valueInt('customers_id')); ?>"
                     data-bs-toggle="modal" data-refresh="true"
                     data-bs-target="#myModal1"><?php echo '<h4><i class="bi bi-pencil" title="' . $CLICSHOPPING_Orders->getDef('icon_edit') . '"></i></h4>'; ?></a>
-                  <div class="modal fade" id="myModal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
-                       aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-body">
-                          <div class="te"></div>
-                        </div>
-                      </div> <!-- /.modal-content -->
-                    </div><!-- /.modal-dialog -->
-                  </div><!-- /.modal -->
                 </div>
               </div>
               <div class="col-md-3 card m-1">
@@ -197,16 +174,6 @@ $Qcustomers->execute();
                     href="<?php echo $CLICSHOPPING_Orders->link('EditShippingAddress&order_id=' . (int)$order_id . '&customer_id=' . $Qcustomers->valueInt('customers_id')); ?>"
                     data-bs-toggle="modal" data-refresh="true"
                     data-bs-target="#myModal2"><?php echo '<h4><i class="bi bi-pencil" title="' . $CLICSHOPPING_Orders->getDef('icon_edit') . '"></i></h4>'; ?></a>
-                  <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
-                       aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-body">
-                          <div class="te"></div>
-                        </div>
-                      </div> <!-- /.modal-content -->
-                    </div><!-- /.modal-dialog -->
-                  </div><!-- /.modal -->
                 </div>
               </div>
               <div class="col-md-3 card m-1">
@@ -221,18 +188,39 @@ $Qcustomers->execute();
                     href="<?php echo $CLICSHOPPING_Orders->link('EditPaymentAddress&order_id=' . (int)$order_id . '&customer_id=' . $Qcustomers->valueInt('customers_id')); ?>"
                     data-bs-toggle="modal" data-refresh="true"
                     data-bs-target="#myModal3"><?php echo '<h4><i class="bi bi-pencil" title="' . $CLICSHOPPING_Orders->getDef('icon_edit') . '"></i></h4>'; ?></a>
-                  <div class="modal fade" id="myModal3" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
-                       aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-body">
-                          <div class="te"></div>
-                        </div>
-                      </div> <!-- /.modal-content -->
-                    </div><!-- /.modal-dialog -->
-                  </div><!-- /.modal -->
                 </div>
               </div>
+              <!-- Modals placed outside cards to avoid Bootstrap positioning conflicts -->
+              <div class="modal fade" id="myModal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                   aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-body">
+                      <div class="te"></div>
+                    </div>
+                  </div> <!-- /.modal-content -->
+                </div><!-- /.modal-dialog -->
+              </div><!-- /.modal -->
+              <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                   aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-body">
+                      <div class="te"></div>
+                    </div>
+                  </div> <!-- /.modal-content -->
+                </div><!-- /.modal-dialog -->
+              </div><!-- /.modal -->
+              <div class="modal fade" id="myModal3" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                   aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-body">
+                      <div class="te"></div>
+                    </div>
+                  </div> <!-- /.modal-content -->
+                </div><!-- /.modal-dialog -->
+              </div><!-- /.modal -->
             </div>
           </div>
           <div class="mt-1"></div>
@@ -303,8 +291,8 @@ $Qcustomers->execute();
                 <div class="mt-1"></div>
                 <div class="col-md-2 group-text" id="location">
                   <span class="col-md-6"><?php echo $CLICSHOPPING_Orders->getDef('entry_customer_location'); ?></span>
-                  <span class="col-md-6 float-end text-start"><a target="_blank" rel="noreferrer"
-                                                                 href="http://maps.google.com/maps?q=<?php echo $order->delivery['street_address'], ',', $order->delivery['postcode'], ',', $order->delivery['state'], ',', $order->delivery['country']; ?>&hl=fr&um=1&ie=UTF-8&sa=N&tab=wl"><h4><i
+                  <span class="col-md-6 float-end text-start">
+                    <a target="_blank" rel="noreferrer" href="http://maps.google.com/maps?q=<?php echo $order->delivery['street_address'], ',', $order->delivery['postcode'], ',', $order->delivery['state'], ',', $order->delivery['country']; ?>&hl=fr&um=1&ie=UTF-8&sa=N&tab=wl"><h4><i
                           class="bi bi-plus-circle"
                           title="'<?php echo $CLICSHOPPING_Orders->getDef('entry_customer_location'); ?>"></i></h4></a></span>
                 </div>
@@ -398,11 +386,11 @@ $Qcustomers->execute();
               $products_id = $order->products[$i]['products_id'];
 
               echo '    <tr class="dataTableRow">' . "\n" .
-                '      <td class="dataTableContent" valign="top">' . HTML::link(CLICSHOPPING::link(null, 'A&Catalog\Products&Preview&pID=' . $products_id . '?page=' . $page), '<h4><i class="bi bi-easil3" title="' . $CLICSHOPPING_Orders->getDef('icon_preview') . '"></i></h4>') . '</td>' . "\n" .
-                '      <td class="dataTableContent" valign="top">' . HTML::link(CLICSHOPPING::link(null, 'A&Catalog\Products&Edit&pID=' . $products_id), '<h4><i class="bi bi-pencil" title="' . $CLICSHOPPING_Orders->getDef('icon_edit') . '"></i></h4>') . '</td>' . "\n" .
-                '      <td class="dataTableContent" valign="top">' . $CLICSHOPPING_Image->getSmallImageAdmin($products_id) . '</td>' . "\n" .
-                '      <td class="dataTableContent" valign="top">' . $order->products[$i]['qty'] . '&nbsp;x</td>' . "\n" .
-                '      <td class="dataTableContent" colspan="3" valign="top">' . $order->products[$i]['name'];
+                '      <td class="dataTableContent" vertical-align="top">' . HTML::link(CLICSHOPPING::link(null, 'A&Catalog\Products&Preview&pID=' . $products_id . '?page=' . $page), '<h4><i class="bi bi-easil3" title="' . $CLICSHOPPING_Orders->getDef('icon_preview') . '"></i></h4>') . '</td>' . "\n" .
+                '      <td class="dataTableContent" vertical-align="top">' . HTML::link(CLICSHOPPING::link(null, 'A&Catalog\Products&Edit&pID=' . $products_id), '<h4><i class="bi bi-pencil" title="' . $CLICSHOPPING_Orders->getDef('icon_edit') . '"></i></h4>') . '</td>' . "\n" .
+                '      <td class="dataTableContent" vertical-align="top">' . $CLICSHOPPING_Image->getSmallImageAdmin($products_id) . '</td>' . "\n" .
+                '      <td class="dataTableContent" vertical-align="top">' . $order->products[$i]['qty'] . '&nbsp;x</td>' . "\n" .
+                '      <td class="dataTableContent" colspan="3" vertical-align="top">' . $order->products[$i]['name'];
 
               if (isset($order->products[$i]['attributes']) && (\count($order->products[$i]['attributes']) > 0)) {
                 for ($j = 0, $k = \count($order->products[$i]['attributes']); $j < $k; $j++) {
@@ -419,7 +407,7 @@ $Qcustomers->execute();
               }
 
               echo '      </td>' . "\n" .
-                '      <td class="dataTableContent" valign="top">' . $order->products[$i]['model'] . '</td>' . "\n" .
+                '      <td class="dataTableContent" vertical-align="top">' . $order->products[$i]['model'] . '</td>' . "\n" .
                 '      <td class="text-end dataTableContent">' . $order->products[$i]['tax'] . '</td>' . "\n" .
                 '      <td class="text-end dataTableContent"><strong>' . $CLICSHOPPING_Currencies->format($order->products[$i]['final_price'], true, $order->info['currency'], $order->info['currency_value']) . '</strong></td>' . "\n" .
                 '      <td class="text-end dataTableContent"><strong>' . $CLICSHOPPING_Currencies->format(Tax::addTax($order->products[$i]['final_price'], $order->products[$i]['tax'], true), true, $order->info['currency'], $order->info['currency_value']) . '</strong></td>' . "\n" .
@@ -431,7 +419,7 @@ $Qcustomers->execute();
           </table>
 
           <div class="mt-1"></div>
-          <table border="0" cellspacing="0" cellpadding="2" width="100%">
+          <table class="table">
             <?php
             foreach ($order->totals as $value) {
               echo '      <tr>' . "\n" .
@@ -510,6 +498,107 @@ $Qcustomers->execute();
                   </span>
                   </div>
                 </div>
+
+                <?php
+                //**********************************
+                // ── E-Invoice (Chorus Pro) slider — visible only when module is enabled ──
+                $eInvoiceService = new EInvoiceService();
+
+                if ($eInvoiceService->isEnabled()) {
+                  // Retrieve current numeric invoice status directly from the orders table
+                  $QinvoiceStatus = $CLICSHOPPING_Orders->db->prepare('select orders_status_invoice
+                                                                        from :table_orders
+                                                                        where orders_id = :orders_id
+                                                                        ');
+                  $QinvoiceStatus->bindInt(':orders_id', $oID);
+                  $QinvoiceStatus->execute();
+                  $current_invoice_status_id = $QinvoiceStatus->valueInt('orders_status_invoice');
+
+                  $is_b2b = isset($order) ? $eInvoiceService->isB2B($order->customer) : false;
+                  $already_sent = $eInvoiceService->isAlreadySent($oID);
+                ?>
+                <div class="row mt-2" id="notifyEInvoice">
+                  <div class="col-md-12">
+                    <div class="card border-secondary">
+
+                      <!-- Card header: title + portal button -->
+                      <div class="card-header d-flex align-items-center gap-2">
+                        <strong>&#127963; <?php echo $CLICSHOPPING_Orders->getDef('card_title'); ?></strong>
+                        <span class="ms-2 text-muted small">
+                          <?php echo $CLICSHOPPING_Orders->getDef('label_invoice_status'); ?> :
+                          <strong><?php echo htmlspecialchars($orders_status_invoice_array[$current_invoice_status_id] ?? '—'); ?></strong>
+                        </span>
+                        <a href="<?php echo EInvoiceService::CHORUS_PORTAL_URL; ?>"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="btn btn-sm btn-primary ms-auto"
+                           title="<?php echo $CLICSHOPPING_Orders->getDef('button_portal'); ?>">
+                          <i class="bi bi-box-arrow-up-right me-1"></i><?php echo $CLICSHOPPING_Orders->getDef('button_portal'); ?>
+                        </a>
+                      </div>
+
+                      <!-- Card body: contextual status message -->
+                      <div class="card-body py-2">
+                        <?php
+                        if (!$is_b2b) {
+                        ?>
+                          <span class="badge bg-secondary"><?php echo $CLICSHOPPING_Orders->getDef('badge_b2c'); ?></span>
+                          &nbsp;<span class="text-muted small"><?php echo $CLICSHOPPING_Orders->getDef('text_b2c_notice'); ?></span>
+
+                        <?php
+                        } elseif ($already_sent) {
+                          ?>
+                          <span class="badge bg-success"><?php echo $CLICSHOPPING_Orders->getDef('badge_transmitted'); ?></span>
+                          &nbsp;<span class="text-success small"><?php echo $CLICSHOPPING_Orders->getDef('text_transmitted_notice'); ?></span>
+
+                        <?php
+                        } elseif (!in_array($current_invoice_status_id, [EInvoiceService::STATUS_INVOICE, EInvoiceService::STATUS_CANCEL, EInvoiceService::STATUS_CREDIT_NOTE])) {
+                          ?>
+
+                          <span class="badge bg-warning text-dark"><?php echo $CLICSHOPPING_Orders->getDef('badge_pending'); ?></span>
+                          &nbsp;<span class="text-muted small"><?php echo $CLICSHOPPING_Orders->getDef('text_pending_notice'); ?></span>
+
+                        <?php
+                        } else {
+                          ?>
+                          <span class="badge bg-info"><?php echo $CLICSHOPPING_Orders->getDef('badge_ready'); ?></span>
+                          &nbsp;<span class="text-muted small"><?php echo $CLICSHOPPING_Orders->getDef('text_ready_notice'); ?></span>
+                        <?php
+                        }
+                        ?>
+
+                        <?php
+                        // Show the E-Invoice slider only if B2B and not yet transmitted
+                        if ($is_b2b && !$already_sent) {
+                        ?>
+                        <div class="mt-2">
+                          <div class="form-group row">
+                            <label class="col-5 col-form-label">
+                              <strong><?php echo $CLICSHOPPING_Orders->getDef('entry_notify_einvoice'); ?></strong>
+                            </label>
+                            <div class="col-md-5">
+                              <ul class="list-group-slider list-group-flush">
+                                <li class="list-group-item-slider">
+                                  <label class="switch">
+                                    <input type="checkbox" name="notify_einvoice" value="1" class="success">
+                                    <span class="slider"></span>
+                                  </label>
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                        <?php
+                        }
+                        ?>
+                      </div><!-- /card-body -->
+                    </div><!-- /card -->
+                  </div><!-- /col -->
+                </div><!-- /row -->
+                <?php
+                }
+                ?>
+
               </div>
             </div>
             <div class="mt-1"></div>

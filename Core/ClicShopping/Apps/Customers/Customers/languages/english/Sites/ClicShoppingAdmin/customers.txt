@@ -97,6 +97,13 @@ icon_edit_new_password = To send a new password
 
 visitor_name = Normal customer
 
+entry_pappers_lookup = Company verification (Pappers)
+entry_pappers_fill = Fill in fields
+entry_pappers_view = View on Pappers
+entry_pappers_manager = Manager
+entry_pappers_company_closed = Company closed
+entry_pappers_not_found = Company not found on Pappers
+
 category_shipping_customer_group = Group B2B Expédition
 button_export_customer_info = CSV Export
 

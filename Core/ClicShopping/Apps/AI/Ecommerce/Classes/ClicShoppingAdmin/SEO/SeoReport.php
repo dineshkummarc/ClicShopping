@@ -42,7 +42,7 @@
       $this->cache = new Cache('SEO', 'SEO');
 
       // Nettoyage automatique (1 chance sur 50)
-      if (mt_rand(1, 50) === 1) {
+      if (random_int(1, 50) === 1) {
         $this->purgeOldCache(7);
       }
     }
@@ -54,11 +54,24 @@
     {
       $directory = CLICSHOPPING::getConfig('dir_root', 'Shop') . 'Work/Log/Cache/SEO/';
 
-      if (!is_dir($directory)) {
-        // Création récursive (true) avec permissions larges (0777) tempérées par l'umask
-        if (!mkdir($directory, 0777, true) && !is_dir($directory)) {
-          error_log("SEO Report Error: Directory creation failed: " . $directory);
-        }
+      if (is_dir($directory)) {
+        return;
+      }
+
+      // Walk up to find the nearest existing ancestor to pre-check writability
+      // This prevents PHP from emitting a native Warning on mkdir() failure
+      $ancestor = rtrim($directory, '/');
+      while ($ancestor !== '' && $ancestor !== dirname($ancestor) && !is_dir($ancestor)) {
+        $ancestor = dirname($ancestor);
+      }
+
+      if (!is_dir($ancestor) || !is_writable($ancestor)) {
+        error_log("[ERROR] SEO Report: Cannot create cache directory (permission denied): " . $directory);
+        return;
+      }
+
+      if (!mkdir($directory, 0777, true) && !is_dir($directory)) {
+        error_log("[ERROR] SEO Report: Directory creation failed: " . $directory);
       }
     }
 

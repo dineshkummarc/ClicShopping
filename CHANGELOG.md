@@ -1,7 +1,10 @@
 version4.25
-librairies updated
+- librairies updated
+- Some fix
+- Add papers company checking for customers B2b
+- Add electronique EU invoice regulation
 
-
+---------------
 version4.24
 
 - Some fix
@@ -10,7 +13,6 @@ version4.24
 
 ---------------
 version4.23
-git
 - Some fix
 - fix bug dynamicPrice on specials 
 - Libraries updated

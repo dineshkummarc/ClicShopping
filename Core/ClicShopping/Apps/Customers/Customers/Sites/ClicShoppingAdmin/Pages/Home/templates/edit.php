@@ -14,7 +14,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\ObjectInfo;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
-
+use ClicShopping\Apps\Customers\Groups\Classes\ClicShoppingAdmin\VatNumber;
 use ClicShopping\Sites\ClicShoppingAdmin\AddressAdmin;
 
 $CLICSHOPPING_Customers = Registry::get('Customers');
@@ -766,7 +766,7 @@ echo HTML::hiddenField('customers_modify_company');
                       ?>
                       <!-- lien pointant sur le site de vérification -->
                       <a
-                        href="<?php echo 'https://ec.europa.eu/taxation_customs/vies/vieshome.do?ms=' . $cInfo->customers_tva_intracom_code_iso . '&iso=' . $cInfo->customers_tva_intracom_code_iso . '&vat=' . $cInfo->customers_tva_intracom; ?>"
+                        href="<?php echo 'https://ec.europa.eu/taxation_customs/vies/#/vat-validation?memberStateCode=' . $cInfo->customers_tva_intracom_code_iso . '&number=' . preg_replace('/^' . $cInfo->customers_tva_intracom_code_iso . '/', '', $cInfo->customers_tva_intracom); ?>"
                         target="_blank"
                         rel="noreferrer"><?php echo $CLICSHOPPING_Customers->getDef('tva_intracom_verify'); ?></a>
                     </div>
@@ -775,15 +775,95 @@ echo HTML::hiddenField('customers_modify_company');
               </div>
               <?php
             }
+
+              if (defined('PAPPERS_API_TOKEN') && !empty(PAPPERS_API_TOKEN)) {
             ?>
+            <!-- Pappers company lookup -->
+            <div class="adminformTitle">
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group row">
+                    <label class="col-5 col-form-label">
+                      <?php echo $CLICSHOPPING_Customers->getDef('entry_pappers_lookup'); ?>
+                    </label>
+                    <div class="col-md-5">
+                      <?php
+                        // Build SIREN from SIRET (first 9 digits) if available
+                        $siren = !empty($cInfo->customers_siret) ? substr(preg_replace('/\s/', '', $cInfo->customers_siret), 0, 9) : null;
+                        $companyName = Hash::displayDecryptedDataText($cInfo->customers_company);
+
+                        $vatNumber = new VatNumber();
+                        $companyInfo = $vatNumber->checkCompanyInfo($companyName, $siren);
+                      ?>
+
+                      <?php if ($companyInfo === false): ?>
+                        <!-- API token not configured — button hidden -->
+
+                      <?php elseif ($companyInfo !== null): ?>
+                        <!-- Display results + fill button -->
+                        <div id="pappersInfoBox" class="border rounded p-2 mb-2 bg-light small">
+                          <strong><?php echo $companyInfo['name']; ?></strong><br>
+                          <?php if ($companyInfo['legal_form']): ?><span><?php echo $companyInfo['legal_form']; ?></span><br><?php endif; ?>
+                          <?php if ($companyInfo['address']): ?><span><?php echo $companyInfo['address'] . ', ' . $companyInfo['zip_code'] . ' ' . $companyInfo['city']; ?></span><br><?php endif; ?>
+                          <?php if ($companyInfo['vat_number']): ?><span>TVA : <?php echo $companyInfo['vat_number']; ?></span><br><?php endif; ?>
+                          <?php if ($companyInfo['naf_label']): ?><span>NAF : <?php echo $companyInfo['naf_code'] . ' – ' . $companyInfo['naf_label']; ?></span><br><?php endif; ?>
+                          <?php if ($companyInfo['manager']): ?><span><?php echo $CLICSHOPPING_Customers->getDef('entry_pappers_manager'); ?> : <?php echo $companyInfo['manager']; ?></span><br><?php endif; ?>
+                          <?php if ($companyInfo['status'] === 'C'): ?>
+                            <span class="text-danger"><?php echo $CLICSHOPPING_Customers->getDef('entry_pappers_company_closed'); ?></span><br>
+                          <?php endif; ?>
+                          <a href="<?php echo $companyInfo['pappers_url']; ?>" target="_blank" rel="noreferrer" class="small">
+                            <?php echo $CLICSHOPPING_Customers->getDef('entry_pappers_view'); ?>
+                          </a>
+                        </div>
+
+                        <?php
+                          // Build JSON for JS fill
+                          $pappersJson = json_encode([
+                            'customers_company'    => $companyInfo['name']       ?? '',
+                            'customers_siret'      => $companyInfo['siret']      ?? '',
+                            'customers_ape'        => $companyInfo['naf_code']   ?? '',
+                            'customers_tva_intracom' => $companyInfo['vat_number'] ?? '',
+                            'customer_company_information' => implode("\n", array_filter([
+                              $companyInfo['name'],
+                              $companyInfo['legal_form'],
+                              $companyInfo['address'],
+                              ($companyInfo['zip_code'] ?? '') . ' ' . ($companyInfo['city'] ?? ''),
+                              $companyInfo['country'],
+                              'SIREN: ' . ($companyInfo['siren'] ?? ''),
+                              'TVA: '  . ($companyInfo['vat_number'] ?? ''),
+                              'NAF: '  . ($companyInfo['naf_code'] ?? '') . ' ' . ($companyInfo['naf_label'] ?? ''),
+                            ])),
+                          ]);
+                        ?>
+                        <button type="button"
+                                class="btn btn-sm btn-primary mt-1"
+                                onclick="pappersFillFields(<?php echo htmlspecialchars($pappersJson, ENT_QUOTES); ?>)">
+                          <i class="bi bi-arrow-down-circle"></i>
+                          <?php echo $CLICSHOPPING_Customers->getDef('entry_pappers_fill'); ?>
+                        </button>
+
+                      <?php else: ?>
+                        <!-- Company not found -->
+                        <span class="text-muted small"><?php echo $CLICSHOPPING_Customers->getDef('entry_pappers_not_found'); ?></span>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <?php
+              }
+            ?>
+            <div id="tab2Content"></div>
+            <div class="mt-1"></div>
+            <div class="alert alert-info">
+              <div><?php echo '<h4><i class="bi bi-question-circle" title="' . $CLICSHOPPING_Customers->getDef('title_help_customers_tva') . '"></i></h4> ' . $CLICSHOPPING_Customers->getDef('title_help_customers_tva') ?></div>
+              <div class="mt-1"></div>
+              <div><?php echo $CLICSHOPPING_Customers->getDef('title_help_tva_customers'); ?></div>
+            </div>
           </div>
           <div id="tab2Content"></div>
           <div class="mt-1"></div>
-          <div class="alert alert-info">
-            <div><?php echo '<h4><i class="bi bi-question-circle" title="' . $CLICSHOPPING_Customers->getDef('title_help_customers_tva') . '"></i></h4> ' . $CLICSHOPPING_Customers->getDef('title_help_customers_tva') ?></div>
-            <div class="mt-1"></div>
-            <div><?php echo $CLICSHOPPING_Customers->getDef('title_help_tva_customers'); ?></div>
-          </div>
         </div>
         <?php
       } else {
@@ -855,7 +935,7 @@ echo HTML::hiddenField('customers_modify_company');
                     if ($cInfo->customers_modify_address_default == '1') echo $CLICSHOPPING_Customers->getDef('error_entry_customers_modify_yes');
                     echo HTML::hiddenField('customers_modify_address_default');
                     ?>
-                </span>
+                  </span>
                     <?php
                     echo HTML::hiddenField('customers_modify_address_default');
                     } else {
@@ -883,12 +963,12 @@ echo HTML::hiddenField('customers_modify_company');
                 ?>
 
                 <div class="row">
-                  <div class="col-md-7">
+                  <div class="col-md-5">
                     <div class="form-group row">
                       <label for="<?php echo $CLICSHOPPING_Customers->getDef('entry_company'); ?>"
                              class="col-5 col-form-label"><?php echo $CLICSHOPPING_Customers->getDef('entry_company'); ?></label>
                       <div class="col-md-5">
-                        <?php echo $QaddressesBook->value('company'); ?>
+                        <?php echo HASH::displayDecryptedDataText($QaddressesBook->value('company')); ?>
                       </div>
                     </div>
                   </div>
@@ -942,10 +1022,12 @@ echo HTML::hiddenField('customers_modify_company');
                 <div class="col-md-7">
                   <div class="form-group row">
                     <div class="col-md-12">
-                          <span><a
-                              href="https://maps.google.com/maps?q=<?php echo Hash::displayDecryptedDataText($QaddressesBook->value('street_address')) . ',' . Hash::displayDecryptedDataText($QaddressesBook->value('suburb')) . ',' . Hash::displayDecryptedDataText($QaddressesBook->value('postcode')) . ',' . Hash::displayDecryptedDataText($QaddressesBook->value('city')); ?>&hl=fr&um=1&ie=UTF-8&sa=N&tab=wl"
-                              target="_blank"
-                              rel="noreferrer"><?php echo $CLICSHOPPING_Customers->getDef('entry_customer_location') . ' <h4><i class="bi bi-question-circle" title="' . $CLICSHOPPING_Customers->getDef('entry_customer_location') . '"></i></h4></a></span>'; ?>
+                        <span>
+                          <a
+                            href="https://maps.google.com/maps?q=<?php echo Hash::displayDecryptedDataText($QaddressesBook->value('street_address')) . ',' . Hash::displayDecryptedDataText($QaddressesBook->value('suburb')) . ',' . Hash::displayDecryptedDataText($QaddressesBook->value('postcode')) . ',' . Hash::displayDecryptedDataText($QaddressesBook->value('city')); ?>&hl=fr&um=1&ie=UTF-8&sa=N&tab=wl"
+                            target="_blank"
+                            rel="noreferrer"><?php echo $CLICSHOPPING_Customers->getDef('entry_customer_location') . ' <h4><i class="bi bi-question-circle" title="' . $CLICSHOPPING_Customers->getDef('entry_customer_location') . '"></i></h4></a>'; ?>
+                       </span>
                     </div>
                   </div>
                 </div>
@@ -1080,3 +1162,5 @@ echo HTML::hiddenField('customers_modify_company');
 </div>
 </div>
 </form>
+<div class="py-4"></div>
+<script defer src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/clicshopping/ClicShoppingAdmin/papers_verification.js'); ?>"></script>

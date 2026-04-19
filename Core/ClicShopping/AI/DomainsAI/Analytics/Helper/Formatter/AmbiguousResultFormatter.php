@@ -17,7 +17,6 @@
 
 namespace ClicShopping\AI\DomainsAI\Analytics\Helper\Formatter;
 
-
 use ClicShopping\AI\Config\DomainConfig;
 use ClicShopping\OM\Registry;
 use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\SubResultFormatters\AbstractFormatter;
@@ -35,12 +34,7 @@ class AmbiguousResultFormatter extends AbstractFormatter
    * @var \ClicShopping\OM\Language Language instance for translations
    */
   private $language;
-  
-  /**
-   * @var string Current language code
-   */
-  private string $languageCode;
-  
+
   /**
    * Constructor
    * 
@@ -50,12 +44,8 @@ class AmbiguousResultFormatter extends AbstractFormatter
   public function __construct(bool $debug = false, bool $displaySql = false)
   {
     parent::__construct($debug, $displaySql);
-    
-    // Initialize language
+
     $this->language = Registry::get('Language');
-    $this->languageCode = $this->language->get('code');
-    
-    // Load language definitions once (null = use current user language)
     DomainConfig::loadLanguageFile('rag_formatters', null);
   }
   

@@ -108,4 +108,4 @@ if (isset($_GET['cPath'])) {
 </form>
 
 <script
-  src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/bootstrap/ajax_form//bootstrap_ajax_form_fields_configuration.js'); ?>"></script>
+  src="<?php echo CLICSHOPPING::link('Shop/ext/javascript/bootstrap/ajax_form/bootstrap_ajax_form_fields_configuration.js'); ?>"></script>

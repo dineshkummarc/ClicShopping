@@ -52,7 +52,7 @@ tab_orders_details =  Détails
 tab_statut = Statut
 
 
-title_orders_adresse = Adresses
+title_orders_address = Adresses
 title_orders_customers = Informations sur le client
 title_orders_paiement = Paiement
 title_orders_history = Historique

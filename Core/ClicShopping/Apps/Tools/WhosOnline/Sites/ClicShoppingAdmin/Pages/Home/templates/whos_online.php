@@ -99,7 +99,7 @@ if (isset($_GET['refresh']) && is_numeric($_GET['refresh'])) {
         <th scope="row"><?php echo gmdate('H:i:s', $time_online); ?></th>
         <td><?php echo $QwhosOnline->value('customer_id'); ?></td>
         <td><?php echo $QwhosOnline->value('full_name'); ?></td>
-        <td><?php echo '<a href="https://ip-lookup.net/index.php?ip=' . urlencode($ip_address) . '" title="Lookup" target="_blank" rel="noreferrer">' . $ip_address . '</a>'; ?></td>
+        <td><?php echo '<a href="https://ipinfo.io/' . urlencode($ip_address) . '" title="Lookup" target="_blank" rel="noreferrer">' . $ip_address . '</a>'; ?></td>
         <td><?php echo date('H:i:s', $QwhosOnline->value('time_entry')); ?></td>
         <td class="text-center;"><?php echo date('H:i:s', $QwhosOnline->value('time_last_click')); ?></td>
         <td><?php echo $QwhosOnline->value('user_agent'); ?></td>

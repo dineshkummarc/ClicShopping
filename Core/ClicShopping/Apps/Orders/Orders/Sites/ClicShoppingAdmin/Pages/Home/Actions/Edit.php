@@ -22,5 +22,6 @@ class Edit extends \ClicShopping\OM\Domains\PagesActionsAbstract
     $this->page->data['action'] = 'Edit';
 
     $CLICSHOPPING_Orders->loadDefinitions('Sites/ClicShoppingAdmin/main');
+    $CLICSHOPPING_Orders->loadDefinitions('Sites/ClicShoppingAdmin/e_invoice_service');
   }
 }

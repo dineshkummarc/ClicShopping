@@ -31,6 +31,7 @@ gdpr tinyint(1) default(0) not_null comment(GDPR consent status - 0: not consent
 email_verification tinyint(1) default(1) not_null comment(Email verification requirement - 0: not required, 1: required)
 email_verification_code varchar(32) NULL comment(Temporary code for email verification)
 email_verification_expiry datetime NULL comment(Expiration timestamp for verification code)
+customer_company_information text null default null comment(Company information, verification about the customer from Pappers)
 
 --
 primary customers_id

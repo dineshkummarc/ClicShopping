@@ -14,6 +14,8 @@ namespace ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\SubResultFormatters;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\Hash;
+use ClicShopping\OM\Language;
+
 /**
  * AbstractFormatter - Base class for all result formatters
  */
@@ -29,7 +31,12 @@ abstract class AbstractFormatter
   {
     $this->debug = $debug;
     $this->displaySql = $displaySql;
-    $this->language = Registry::get('language');
+
+    If(!Registry::exists('Language')) {
+      Registry::set('Language', new Language());
+    }
+
+    $this->language = Registry::get('Language');
   }
 
   /**
@@ -205,10 +212,10 @@ abstract class AbstractFormatter
     $displayName = CLICSHOPPING::getDef($langKey);
 
     if ($this->debug) {
-      error_log("================================================================================\n");
-      error_log("mapColumnName");
-      error_log("================================================================================\n");
-      error_log("Final message length: " . $displayName);
+      error_log("[DEBUG] ================================================================================");
+      error_log("[DEBUG] mapColumnName");
+      error_log("[DEBUG] ================================================================================");
+      error_log("[DEBUG] Final message length: " . $displayName);
     }
 
     if ($displayName && $displayName !== $langKey) {

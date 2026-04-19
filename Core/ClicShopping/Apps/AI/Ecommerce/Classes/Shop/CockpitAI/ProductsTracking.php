@@ -23,7 +23,9 @@
      */
     public function __construct()
     {
-      static::checkStatusProductTracking();
+      if (!static::checkStatusProductTracking()) {
+        return;
+      }
     }
 
     /**
@@ -69,7 +71,9 @@
       $CLICSHOPPING_Customer = Registry::get('Customer');
       $CLICSHOPPING_Db = Registry::get('Db');
 
-      self::checkStatusProductTracking();
+      if (!self::checkStatusProductTracking()) {
+        return;
+      }
 
       // 1. Anti-Spam Check (Cool-down 15 min)
       // Avoids artificial inflation of scores by page refreshing

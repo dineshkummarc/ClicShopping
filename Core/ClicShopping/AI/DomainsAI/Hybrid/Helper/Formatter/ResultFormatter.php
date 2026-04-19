@@ -12,6 +12,7 @@ namespace ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter;
 
 
 use ClicShopping\OM\Registry;
+use ClicShopping\OM\Language;
 use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\SubResultFormatters\FormatterRouter;
 use ClicShopping\AI\DomainsAI\Analytics\Helper\Formatter\AnalyticsFormatter;
 use ClicShopping\AI\DomainsAI\Semantic\Helper\Formatter\SemanticFormatter;
@@ -57,9 +58,13 @@ class ResultFormatter
                         CLICSHOPPING_APP_CHATGPT_RA_DISPLAY_SQL === 'True';
 
     // Initialize language support
+    If(!Registry::exists('Language')) {
+      Registry::set('Language', new Language());
+    }
+    
     $this->language = Registry::get('Language');
     $this->languageCode = $this->language->get('code');
-    
+
     // Load language definitions (null = use current user language)
     DomainConfig::loadLanguageFile('rag_result_formatter', null);
 
@@ -121,7 +126,7 @@ class ResultFormatter
       $contentLength = isset($formattedResult['content']) ? strlen($formattedResult['content']) : 0;
       
       error_log(sprintf(
-        '[RAG] Synthesis: type=%s, formatter=%s, length=%d, time=%dms',
+        '[INFO][RAG] Synthesis: type=%s, formatter=%s, length=%d, time=%dms',
         $resultType,
         basename(str_replace('\\', '/', $formatterClass)),
         $contentLength,
@@ -129,8 +134,8 @@ class ResultFormatter
       ));
       
       if ($this->debug) {
-        error_log('ResultFormatter: Using ' . $formatterClass);
-        error_log($this->router->getComplexityReport($results));
+        error_log('[DEBUG] ResultFormatter: Using ' . $formatterClass);
+        error_log('[DEBUG] ' . $this->router->getComplexityReport($results));
       }
 
       return $formattedResult;
@@ -138,7 +143,7 @@ class ResultFormatter
 
     // Fallback: return raw data
     if ($this->debug) {
-      error_log('ResultFormatter: No formatter found, using fallback\n');
+      error_log('[WARNING] ResultFormatter: No formatter found, using fallback');
     }
 
     return [
@@ -181,7 +186,7 @@ class ResultFormatter
     ];
     
     if ($this->debug) {
-      error_log('ResultFormatter: Memory context used (not displayed) - ' . 'Short-term: ' . $formattedResults['memory_metadata']['short_term_count']
+      error_log('[DEBUG] ResultFormatter: Memory context used (not displayed) - ' . 'Short-term: ' . $formattedResults['memory_metadata']['short_term_count']
         . ', Long-term: ' . $formattedResults['memory_metadata']['long_term_count']
         . ', Feedback: ' . $formattedResults['memory_metadata']['feedback_count'] . "\n");
     }
@@ -333,7 +338,7 @@ class ResultFormatter
     $startTime = microtime(true);
     
     if (empty($results)) {
-      error_log('[RAG] TemporalFormatter: No results to format\n');
+      error_log('[WARNING][RAG] TemporalFormatter: No results to format');
       return [
         'type' => 'formatted_results',
         'content' => '<div class="alert alert-warning">' . htmlspecialchars($this->language->getDef('no_results_to_display')) . '</div>'
@@ -341,8 +346,8 @@ class ResultFormatter
     }
 
     if ($this->debug) {
-      error_log('[RAG] TemporalFormatter: Starting temporal formatting');
-      error_log('[RAG] TemporalFormatter: Results count=' . count($results) . ', language=' . $languageCode);
+      error_log('[DEBUG][RAG] TemporalFormatter: Starting temporal formatting');
+      error_log('[DEBUG][RAG] TemporalFormatter: Results count=' . count($results) . ', language=' . $languageCode);
     }
 
     $output = '<div class="temporal-results-container" style="width: 100%;">';
@@ -379,7 +384,7 @@ class ResultFormatter
     
     // Log formatting event
     error_log(sprintf(
-      '[RAG] TemporalFormatter: Completed formatting - sections=%d, language=%s, time=%dms',
+      '[INFO][RAG] TemporalFormatter: Completed formatting - sections=%d, language=%s, time=%dms',
       count($results),
       $languageCode,
       $executionTime

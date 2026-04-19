@@ -19,6 +19,7 @@ use ClicShopping\Apps\Orders\Orders\Classes\ClicShoppingAdmin\OrderAdmin;
 class PageContentTab3 implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
+  public mixed $order;
 
   /**
    * Constructs the object and initializes the OrdersStatusInvoice application.
@@ -82,7 +83,7 @@ class PageContentTab3 implements \ClicShopping\OM\Modules\HooksInterface
       $Qorders = $this->app->db->get('orders', 'orders_id', ['orders_id' => (int)$oID]);
 
       if ($Qorders->fetch()) {
-        if (!Registry::exists('OrdersStatus')) {
+        if (!Registry::exists('Order')) {
           Registry::set('Order', new OrderAdmin($Qorders->valueInt('orders_id')));
         }
 

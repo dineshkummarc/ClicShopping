@@ -50,7 +50,7 @@ tab_general = General
 tab_orders_details =  Details
 tab_statut = Status
 
-title_orders_adresse = Addresses
+title_orders_address = Address
 title_orders_customers = Information on the customer
 title_orders_paiement = Payment
 title_orders_history = History

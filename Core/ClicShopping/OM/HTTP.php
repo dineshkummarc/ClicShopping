@@ -124,6 +124,7 @@ class HTTP
    *                    - 'format' (string): Optional. Expected response format, e.g., 'json'.
    *                    - 'url' (string): Required. The URL for the request.
    *                    - 'certificate' (string): Optional. Path to the certificate file for SSL authentication.
+   *                    - 'timeout' (int): Optional. Request timeout in seconds (Guzzle connect_timeout + timeout). Default: no timeout.
    * @return mixed The response body. If 'format' is set to 'json', the response will be decoded into an array. Returns false if an error occurs.
    */
   public static function getResponse(array $data, array|null $allowed_hosts = null): mixed
@@ -196,6 +197,11 @@ class HTTP
       $options['cert'] = $data['certificate'];
     }
 
+    if (isset($data['timeout']) && $data['timeout'] > 0) {
+      $options['timeout']         = (int)$data['timeout'];
+      $options['connect_timeout'] = (int)$data['timeout'];
+    }
+
     $result = false;
 
     try {
@@ -208,17 +214,8 @@ class HTTP
         $result = json_decode($result, true);
       }
     } catch (Exception $e) {
-      $json = json_encode([
-        'method' => $data['method'],
-        'url' => $data['url'],
-        'options' => $options
-      ], JSON_PRETTY_PRINT);
-
-      if ($json !== false) {
-        trigger_error($json);
-      }
-
-      trigger_error($e->getMessage());
+      // Log only method and URL — never log headers or options (may contain credentials/tokens)
+      trigger_error('HTTP::getResponse() failed [' . strtoupper($data['method']) . ' ' . $data['url'] . ']: ' . $e->getMessage());
     }
 
     return $result;

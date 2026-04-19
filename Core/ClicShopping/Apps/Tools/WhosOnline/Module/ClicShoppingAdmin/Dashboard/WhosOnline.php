@@ -122,7 +122,7 @@ class WhosOnline extends \ClicShopping\OM\Modules\AdminDashboardAbstract
           $output .= '<td class="dataTableContent"><a href="' . CLICSHOPPING::link(null, 'A&Customers\Customers&Customers&Edit&cID=' . $QwhosOnline->valueInt('customer_id')) . '" title="View Customer">' . $QwhosOnline->value('full_name') . '</a></td>';
         }
 
-        $output .= '<td class="dataTableContent text-center"><a href="https://ip-lookup.net/index.php?ip=' . urlencode($QwhosOnline->valueInt('ip_address')) . '" title="Lookup" target="_blank" rel="noreferrer">' . $QwhosOnline->value('ip_address') . '</a></td>';
+        $output .= '<td class="dataTableContent text-center"><a href="https://ipinfo.io/' . urlencode($QwhosOnline->valueInt('ip_address')) . '" title="Lookup" target="_blank" rel="noreferrer">' . $QwhosOnline->value('ip_address') . '</a></td>';
         $output .= '<td class="dataTableContent">' . $QwhosOnline->value('user_agent') . '</td>';
         $output .= '</tr>';
       } // end while

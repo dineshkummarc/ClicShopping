@@ -24,8 +24,8 @@
         "symfony/cache": "^8.0",
         "symfony/http-client": "^8.0",
         "mattketmo/email-checker": "^3.0",
-        "theodo-group/llphant": "^0.11.16",
-        "stripe/stripe-php": "^20.0"
+        "stripe/stripe-php": "^20.0",
+        "theodo-group/llphant": "^0.11.16"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest"

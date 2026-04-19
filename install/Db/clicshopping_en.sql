@@ -1665,7 +1665,7 @@ INSERT INTO configuration VALUES(1598, 'Select the width to display', 'MODULE_AD
 INSERT INTO configuration VALUES(1599, 'Choose your analyse interval ?', 'MODULE_ADMIN_DASHBOARD_TOTAL_CUSTOMERS_APP_INTERVAL', '30 Day', 'Analyse interval', 6, 1, NULL, '2023-04-30 14:22:33', NULL, 'clic_cfg_set_boolean_value(array(\'7 Day\', \'14 Day\', \'30 Day\', \'90 Day\', \'182 Day\', \'365 Day\'))');
 INSERT INTO configuration VALUES(1600, 'Sort Order', 'MODULE_ADMIN_DASHBOARD_TOTAL_CUSTOMERS_APP_SORT_ORDER', '45', 'Sort order of display. Lowest is displayed first.', 6, 2, NULL, '2023-04-30 14:22:33', NULL, '');
 INSERT INTO configuration VALUES(1601, 'Marketplace Username', 'CLICSHOPPING_APP_UPGRADE_UP_USERNAME', '', 'The username is our username on ClicShopping Forum (subscription is manadatory)', 6, 0, NULL, '2018-07-30 10:35:50', NULL, NULL);
-INSERT INTO configuration VALUES(1602, 'Marketplace Password', 'CLICSHOPPING_APP_UPGRADE_UP_PASSWORD', '', 'The password is our password on ClicShopping Forum (subscription is manadatory)', 6, 0, NULL, '2018-07-30 10:35:50', NULL, NULL);
+INSERT INTO configuration VALUES(1602, 'Marketplace Password', 'CLICSHOPPING_APP_UPGRADE_UP_PASSWORD', '', 'The password is our password on ClicShopping Forum (subscription is manadatory)', 6, 0, NULL, '2018-07-30 10:35:50', 'clic_cfg_use_function_password', 'clic_cfg_set_input_password');
 
 INSERT INTO configuration VALUES(1603, 'Parameter [Return Orders App]', 'MODULE_MODULES_PRODUCTS_RETURN_ORDERS_INSTALLED', ';Orders\\ReturnOrders\\RO', 'Parameter [Return Orders App]', 6, 0, NULL, '2023-06-13 18:02:40', NULL, NULL);
 INSERT INTO configuration VALUES(1604, 'Status', 'CLICSHOPPING_APP_RETURN_ORDERS_RO_STATUS', 'True', 'Set True to enable or not the module', 6, 0, NULL, '2023-06-13 18:06:17', NULL, NULL);
@@ -1746,16 +1746,24 @@ INSERT INTO configuration VALUES(1775, 'External Sources Weighting', 'CLICSHOPPI
 
 
 INSERT INTO configuration VALUES(1776, 'Sort Order', 'CLICSHOPPING_APP_MCP_MC_SORT_ORDER', '500', 'The sort order location of the module shown in the available methods listing (lowest is displayed first).', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1777, 'Status', 'CLICSHOPPING_APP_MCP_MC_STATUS', 'True', 'Set True to enable or not the module', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
+INSERT INTO configuration VALUES(1777, 'Status', 'CLICSHOPPING_APP_MCP_MC_STATUS', 'True', 'Set True to enable or not the module', 6, 0, NULL, '2025-09-18 18:14:27', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1778, 'Parameter [MCP App]', 'MODULE_MODULES_MCP_INSTALLED', 'Tools\\MCP\\MC', 'Parameter [MCP App]', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
-INSERT INTO configuration VALUES(1779, 'Display JSON in Browser', 'CLICSHOPPING_APP_MCP_MC_DISPLAY_BROWSER_JSON', 'True', 'In test mode, select False; in production mode, select True.<br>This setting allows displaying the API request result in JSON format in the browser.', 6, 0, NULL, '2025-09-18 18:14:27', NULL, NULL);
+INSERT INTO configuration VALUES(1779, 'Display JSON in Browser', 'CLICSHOPPING_APP_MCP_MC_DISPLAY_BROWSER_JSON', 'True', 'In test mode, select False; in production mode, select True.<br>This setting allows displaying the API request result in JSON format in the browser.', 6, 0, NULL, '2025-09-18 18:14:27', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
 INSERT INTO configuration VALUES(1780, 'Intervalle de temps pendant lequel les limites de débit sont appliquées', 'CLICSHOPPING_APP_MCP_MC_RATE_LIMIT_WINDOW', '900', 'Durée fixe définissant la période sur laquelle les requêtes sont comptabilisées pour appliquer la limitation et éviter les usages excessifs.', 6, 0, NULL, '2025-10-30 15:21:25', NULL, NULL);
 INSERT INTO configuration VALUES(1781, 'Durée d’expiration de la session', 'CLICSHOPPING_APP_MCP_MC_SESSION_TIMEOUT_MINUTES', '30', 'Spécifie la durée d’expiration de la session en minutes.', 6, 0, NULL, '2025-10-30 15:21:25', NULL, NULL);
 INSERT INTO configuration VALUES(1782, 'Durée de verrouillage du compte', 'CLICSHOPPING_APP_MCP_MC_ACCOUNT_LOCK_DURATION', '1800', 'Durée pendant laquelle un compte reste verrouillé après dépassement des limites autorisées.', 6, 0, NULL, '2025-10-30 15:21:25', NULL, NULL);
 INSERT INTO configuration VALUES(1783, 'Nombre maximal de tentatives de connexion', 'CLICSHOPPING_APP_MCP_MC_MAX_LOGIN_ATTEMPTS', '5', 'Spécifie le nombre maximal de tentatives de connexion autorisées avant restriction.', 6, 0, NULL, '2025-10-30 15:21:25', NULL, NULL);
 INSERT INTO configuration VALUES(1784, 'Nombre maximal de requêtes par fenêtre', 'CLICSHOPPING_APP_MCP_MC_MAX_REQUEST_PER_WINDOW', '20', 'Limite le nombre de requêtes à 20 sur une période de 15 minutes.', 6, 0, NULL, '2025-10-30 15:21:25', NULL, NULL);
-
-
+INSERT INTO configuration VALUES(1785, 'Pappers company API token', 'PAPPERS_API_TOKEN', '', 'API token used to verify company information via the Pappers website (pappers.fr).<br><br><i>Enter your API token obtained from your Pappers account.</i>', 25, 161, '2006-10-23 01:16:20', '2006-04-09 16:13:48', NULL, NULL);
+INSERT INTO configuration VALUES(1786, 'Chorus Pro Activation', 'CHORUSPRO_ENABLED', 'False', 'Enable or disable the Chorus Pro integration (True | False).', 25, 161, '2006-10-23 01:16:20', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1787, 'Chorus Pro Sandbox Mode', 'CHORUSPRO_SANDBOX', 'True', 'Use the Chorus Pro test environment (True | False).',25, 161, '2006-10-23 01:16:20', '2006-04-09 16:13:48', NULL, 'clic_cfg_set_boolean_value(array(\'True\', \'False\'))');
+INSERT INTO configuration VALUES(1788, 'PISTE Client ID', 'CHORUSPRO_PISTE_CLIENT_ID', '', 'Client ID of the PISTE application. Chorus Pro',25, 161, '2006-10-23 01:16:20', '2006-04-09 16:13:48', NULL, NULL);
+INSERT INTO configuration VALUES(1789, 'PISTE Client Secret', 'CHORUSPRO_PISTE_CLIENT_SECRET', '', 'Client Secret of the PISTE application. Chorus Pro', 25, 161, '2006-10-23 01:16:20', '2006-04-09 16:13:48', NULL, NULL);
+INSERT INTO configuration VALUES(1790, 'Chorus Pro Technical Login', 'CHORUSPRO_TECHNICAL_LOGIN', '', 'Technical account login for Chorus Pro.',25, 161, '2006-10-23 01:16:20', '2006-04-09 16:13:48', NULL, NULL);
+INSERT INTO configuration VALUES(1791, 'Chorus Pro Technical Password', 'CHORUSPRO_TECHNICAL_PASSWORD', '', 'Technical account password for Chorus Pro.', 25, 161, '2006-10-23 01:16:20', '2006-04-09 16:13:48', 'clic_cfg_use_function_password', 'clic_cfg_set_input_password');
+INSERT INTO configuration VALUES(1792, 'Supplier SIRET', 'CHORUSPRO_SIRET_FOURNISSEUR', '','Your company SIRET number (14 digits). Chorus Pro', 25, 161, '2006-10-23 01:16:20', '2006-04-09 16:13:48', NULL, NULL);
+INSERT INTO configuration VALUES(1793, 'Chorus Pro Supplier ID', 'CHORUSPRO_FOURNISSEUR_ID', '', 'Internal numeric identifier of your supplier entity in Chorus Pro (idFournisseur).', 25, 161, '2006-10-23 01:16:20', '2006-04-09 16:13:48', NULL, NULL);
+INSERT INTO configuration VALUES(1794, 'Chorus Pro Bank Account Code', 'CHORUSPRO_BANK_ACCOUNT_CODE', '', 'Numeric code of the bank account details registered in Chorus Pro (codeCoordonneesBancairesFournisseur).', 25, 161, '2006-10-23 01:16:20', '2006-04-09 16:13:48', NULL, NULL);
 
 
 INSERT INTO configuration_group VALUES(1, 'Store Setup', 'General Information on the Store.', 1, 1);
