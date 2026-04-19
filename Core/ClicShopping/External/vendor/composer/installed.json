@@ -2425,12 +2425,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Roave/SecurityAdvisories.git",
-                "reference": "3fd39751db5e2c03448edd210763ae57971b2856"
+                "reference": "7d0034bc560ba3be5d93736256a9a500c907c37a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/3fd39751db5e2c03448edd210763ae57971b2856",
-                "reference": "3fd39751db5e2c03448edd210763ae57971b2856",
+                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/7d0034bc560ba3be5d93736256a9a500c907c37a",
+                "reference": "7d0034bc560ba3be5d93736256a9a500c907c37a",
                 "shasum": ""
             },
             "conflict": {
@@ -3050,7 +3050,7 @@
                 "phpseclib/phpseclib": "<2.0.53|>=3,<3.0.51",
                 "phpservermon/phpservermon": "<3.6",
                 "phpsysinfo/phpsysinfo": "<3.4.3",
-                "phpunit/phpunit": "<=12.5.21|>=13,<=13.1.5",
+                "phpunit/phpunit": "<12.5.22|>=13,<13.1.6",
                 "phpwhois/phpwhois": "<=4.2.5",
                 "phpxmlrpc/extras": "<0.6.1",
                 "phpxmlrpc/phpxmlrpc": "<4.9.2",
@@ -3437,7 +3437,7 @@
                 "zoujingli/thinkadmin": "<=6.1.53",
                 "zumba/json-serializer": "<3.2.3"
             },
-            "time": "2026-04-18T01:37:35+00:00",
+            "time": "2026-04-18T09:19:46+00:00",
             "default-branch": true,
             "type": "metapackage",
             "notification-url": "https://packagist.org/downloads/",
@@ -5006,17 +5006,17 @@
         },
         {
             "name": "theodo-group/llphant",
-            "version": "0.11.16",
-            "version_normalized": "0.11.16.0",
+            "version": "0.11.18",
+            "version_normalized": "0.11.18.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/LLPhant/LLPhant.git",
-                "reference": "581a88125311b51bd29dd8e818b31e48df4c7f7a"
+                "reference": "10d7d50d77ec4fdf070c4d752a27ca875b04ff2e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/LLPhant/LLPhant/zipball/581a88125311b51bd29dd8e818b31e48df4c7f7a",
-                "reference": "581a88125311b51bd29dd8e818b31e48df4c7f7a",
+                "url": "https://api.github.com/repos/LLPhant/LLPhant/zipball/10d7d50d77ec4fdf070c4d752a27ca875b04ff2e",
+                "reference": "10d7d50d77ec4fdf070c4d752a27ca875b04ff2e",
                 "shasum": ""
             },
             "require": {
@@ -5051,6 +5051,7 @@
                 "phpstan/phpstan": "^2",
                 "predis/predis": "^2.2",
                 "rector/rector": "^2",
+                "scotteuser/pinecone-php": "^1.0.4",
                 "symfony/cache": "^7.2",
                 "symfony/process": "^v7.1.8",
                 "symfony/var-dumper": "^7.2"
@@ -5063,9 +5064,10 @@
                 "hkulekci/qdrant": "This is required for the QdrantVectoreStore.",
                 "opensearch-project/opensearch-php": "This is required for the OpenSearchVectorStore.",
                 "predis/predis": "This is required for the RedisVectoreStore.",
+                "probots-io/pinecone-php": "This is required for the PineconeVectorStore. Use scotteuser/pinecone-php for <= PHP 8.2",
                 "symfony/cache": "This is one of the possible types of psr/cache needed by doctrine/orm"
             },
-            "time": "2026-04-06T10:50:40+00:00",
+            "time": "2026-04-19T15:00:44+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -5097,7 +5099,7 @@
             ],
             "support": {
                 "issues": "https://github.com/LLPhant/LLPhant/issues",
-                "source": "https://github.com/LLPhant/LLPhant/tree/0.11.16"
+                "source": "https://github.com/LLPhant/LLPhant/tree/0.11.18"
             },
             "install-path": "../theodo-group/llphant"
         },

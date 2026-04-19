@@ -30,15 +30,16 @@
         "predis/predis": "This is required for the RedisVectoreStore.",
         "elasticsearch/elasticsearch": "This is required for the ElasticsearchVectoreStore.",
         "codewithkyrian/chromadb-php": "This is required for the ChromaDBVectorStore.",
-        "opensearch-project/opensearch-php": "This is required for the OpenSearchVectorStore."
+        "opensearch-project/opensearch-php": "This is required for the OpenSearchVectorStore.",
+        "probots-io/pinecone-php": "This is required for the PineconeVectorStore. Use scotteuser/pinecone-php for <= PHP 8.2"
     },
     "require-dev": {
+        "ext-mongodb": "*",
         "codewithkyrian/chromadb-php": "1.0.0",
         "doctrine/dbal": "^4",
-        "doctrine/orm": "^3",
         "doctrine/mongodb-odm": "^2.16.1",
+        "doctrine/orm": "^3",
         "elasticsearch/elasticsearch": "^8.15",
-        "ext-mongodb": "*",
         "hkulekci/qdrant": "^v0.5.7",
         "laravel/pint": "v1.15.3",
         "mockery/mockery": "^1.6.12",
@@ -50,9 +51,10 @@
         "phpstan/phpstan": "^2",
         "predis/predis": "^2.2",
         "rector/rector": "^2",
+        "scotteuser/pinecone-php": "^1.0.4",
         "symfony/cache": "^7.2",
-        "symfony/var-dumper": "^7.2",
-        "symfony/process": "^v7.1.8"
+        "symfony/process": "^v7.1.8",
+        "symfony/var-dumper": "^7.2"
     },
     "autoload": {
         "psr-4": {
