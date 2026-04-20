@@ -95,9 +95,9 @@ entry_newsletter_language = Langue de correspondance
 entry_address_number = No Adresse
 entry_adress_default = (Adresse principale)
 entry_siret = Numéro d'immatriculation :
-entry_siret_exemple = (ex : No immatricultion de la société)
+entry_siret_exemple = (ex : No immatricultion SIRET de la société)
 entry_ape = Numéro de nomenclature (ou autre) :
-entry_ape_exemple = (ex : Autre numeacute;ro immatriculation (ex code APE)
+entry_ape_exemple = (ex : Autre numeéro immatriculation (ex code APE)
 entry_tva = Numéro de TVA Intracom (Europe) :
 entry_tva_iso_error = &nbsp;<span class="errorText">Le code pays de deux lettres ne semble pas être correct.</span>
 
