@@ -112,6 +112,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 
 ##Security & Compliance
 - GDPR Ready: Built-in compliance tools and data protection
+- European electronic invoice (Chorus Pro) for B2B and Pappers company verification
 - AES Encryption: Secure storage of sensitive information
 - Two-Factor Authentication: Enhanced admin security
 - Anti-spam Protection: Multiple layers of protection
@@ -121,7 +122,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 - Inforced security for AI.
 
 ##Internationalization
-- Multi-language includding Languages: English, French
+- Multi-language including Languages: English, French
 - Additional Language Packs: Available on GitHub
 - Multi-Currency Support: Configure multiple currencies with real-time exchange rates
 
