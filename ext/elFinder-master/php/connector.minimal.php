@@ -60,6 +60,8 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 
 // define('ELFINDER_CONNECTOR_URL', 'URL to this connector script');  // see elFinder::getConnectorUrl()
 
+// define('ELFINDER_COOKIE_SAMESITE', 'None'); // It require when configuring with CORS.
+
 // define('ELFINDER_DEBUG_ERRORLEVEL', -1); // Error reporting level of debug mode
 
 // // To Enable(true) handling of PostScript files by ImageMagick
