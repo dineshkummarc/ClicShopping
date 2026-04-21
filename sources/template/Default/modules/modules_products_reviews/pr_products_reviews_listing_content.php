@@ -10,7 +10,8 @@
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
-use ClicShopping\OM\HTML;
+  use ClicShopping\OM\Hash;
+  use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 class pr_products_reviews_listing_content
@@ -78,7 +79,7 @@ class pr_products_reviews_listing_content
 
       while ($Qreviews->fetch()) {
         $date_reviews = CLICSHOPPING::getDef('text_review_date_added') . ' ' . DateTime::toLong($Qreviews->value('date_added'));
-        $customer_name = CLICSHOPPING::getDef('text_review_by', ['customer_name' => '*** ' . HTML::outputProtected(substr($Qreviews->value('customers_name'), 4, -4)) . ' ***']);
+        $customer_name = CLICSHOPPING::getDef('text_review_by', ['customer_name' => '*** ' . HTML::outputProtected(substr(HASH::displayDecryptedDataText($Qreviews->value('customers_name')), 4, -4)) . ' ***']);
         $customer_review = '<a href="' . CLICSHOPPING::link(null, 'Products&ReviewsInfo&products_id=' . $CLICSHOPPING_ProductsCommon->getID() . '&reviews_id=' . $Qreviews->valueInt('reviews_id')) . '">' . $customer_name . '</a>';
         $delete_reviews = '';
 

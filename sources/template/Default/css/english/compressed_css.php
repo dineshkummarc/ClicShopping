@@ -162,6 +162,20 @@
     // Output the final CSS buffer
     echo $buffer;
 
+
+// Finalize the output
+    /*
+    if (ob_get_level() > 0) {
+      $handlers = ob_list_handlers();
+      $current = end($handlers);
+
+      // ob_gzhandler se ferme seul en fin de script, forcer ob_end_flush() provoque l'erreur
+      if ($current !== 'ob_gzhandler') {
+        ob_end_flush();
+      }
+    }
+    */
+
   } catch (Exception $e) {
     // Log the error and return a 500 server error
     $CLICSHOPPING_templateCss->logSecurityError("Critical error: " . $e->getMessage());
@@ -169,15 +183,4 @@
     http_response_code(500);
     header('Content-Type: text/css; charset=utf-8');
     echo '/* CSS compression error - check server logs */';
-  }
-
-// Finalize the output
-  if (ob_get_level() > 0) {
-    // Check if the current buffer is the zlib handler to avoid "Failed to send buffer" errors
-    $handlers = ob_list_handlers();
-    if (in_array('ob_gzhandler', $handlers) || in_array('zlib output compression', $handlers)) {
-      ob_end_flush();
-    } else {
-      ob_end_clean(); // Clean any accidental whitespace or buffers that shouldn't be there
-    }
   }

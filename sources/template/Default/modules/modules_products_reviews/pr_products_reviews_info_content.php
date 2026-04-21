@@ -11,7 +11,8 @@
 use ClicShopping\Apps\Customers\Reviews\Classes\Shop\Reviews;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
-use ClicShopping\OM\HTML;
+  use ClicShopping\OM\Hash;
+  use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 class pr_products_reviews_info_content
@@ -71,7 +72,7 @@ class pr_products_reviews_info_content
           $delete_reviews .= '</form>';
         }
 
-        $customer_name = '<h5>*** ' . HTML::outputProtected(substr($reviews['customers_name'], 4, -4)) . ' ***</h5>';
+        $customer_name = '<h5>*** ' . HTML::outputProtected(substr(HASH::displayDecryptedDataText($reviews['customers_name']), 4, -4)) . ' ***</h5>';
         $date_added = DateTime::toLong($reviews['date_added']);
         $customer_text = HTML::breakString(nl2br(HTML::outputProtected($reviews_text)), 60, '-<br />');
         $customer_rating = '<span class="productsInfoReviewsContentRating" itemprop="ratingValue">' . HTML::stars($reviews_rating) . '</span>';

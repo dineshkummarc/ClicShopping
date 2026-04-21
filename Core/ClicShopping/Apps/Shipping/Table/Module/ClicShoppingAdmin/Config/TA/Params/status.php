@@ -15,7 +15,7 @@ use ClicShopping\OM\HTML;
 class status extends \ClicShopping\Apps\Shipping\Table\Module\ClicShoppingAdmin\Config\ConfigParamAbstract
 {
   public $default = 'True';
-  public int|null $sort_order = 10;
+  public int|null $sort_order = 5;
 
   protected function init()
   {

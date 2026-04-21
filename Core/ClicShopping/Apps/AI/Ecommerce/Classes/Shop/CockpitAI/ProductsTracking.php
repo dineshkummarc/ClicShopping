@@ -19,7 +19,6 @@
   {
       /**
      * ProductsTracking constructor.
-     * @param $CLICSHOPPING_Db
      */
     public function __construct()
     {

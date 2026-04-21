@@ -185,8 +185,8 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 
 #Requirement (more information in the wiki)
  - Apache 2.x <br>
- - MYSQL 8.x / MariaDb 11.x but >= 11.7 (recommended for embeddings and vectors)
- - PHP >= 8.4 +
+ - MYSQL 8.x / MariaDb 11.x but 11.7 (recommended for embeddings and vectors)<br>
+ - PHP >= 8.4
  - More information in the Github Wiki
 
 #Installation

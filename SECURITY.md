@@ -13,8 +13,6 @@ currently being supported with security updates.
 | +8.1        | < 3.400                | All version Mariadb / Mysql                                             |
 | > 8.3       | > 3.400 and <4.00      | All version Mariadb / Mysql                                             |
 | > 8.3       | > 4.000                | Mariadb >= 11.7 recommended if you want to use the RAG else any version |
-| > 8.4+      | > 4.200                | Mariadb >= 11.7 recommended if you want to use the RAG else any version |
-
 
 ## Reporting a Vulnerability
 

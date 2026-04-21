@@ -10,7 +10,8 @@
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
-use ClicShopping\OM\HTML;
+  use ClicShopping\OM\Hash;
+  use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 
 class pi_products_info_reviews
@@ -176,7 +177,7 @@ class pi_products_info_reviews
           $customer_tag = explode(',', $customer_tag);
           $reviews_id = $Qreviews->valueInt('reviews_id');
 
-          $customer_name = '*** ' . HTML::outputProtected(substr($Qreviews->value('customers_name') . ' ', 4, -4)) . ' ***';
+          $customer_name = '*** ' . HTML::outputProtected(substr(HASH::displayDecryptedDataText($Qreviews->value('customers_name')) . ' ', 4, -4)) . ' ***';
           $products_reviews_content .= '<div class="col-md-12">';
           $products_reviews_content .= '<span class="moduleProductsInfoTextReviewByName" itemprop="author">';
           $products_reviews_content .= '<a href="' . CLICSHOPPING::link(null, 'Products&ReviewsInfo&products_id=' . $CLICSHOPPING_ProductsCommon->getID() . '&reviews_id=' . $reviews_id) . '">' . CLICSHOPPING::getDef('text_review_by', ['customer_name' => $customer_name]) . '</a>';

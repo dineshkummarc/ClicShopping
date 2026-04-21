@@ -9,7 +9,8 @@
  */
 
 use ClicShopping\OM\DateTime;
-use ClicShopping\OM\HTML;
+  use ClicShopping\OM\Hash;
+  use ClicShopping\OM\HTML;
 use ClicShopping\OM\ObjectInfo;
 use ClicShopping\OM\Registry;
 
@@ -131,7 +132,7 @@ echo HTML::form('update', $CLICSHOPPING_Reviews->link('Reviews&Update&page=' . $
                 <label for="<?php echo $CLICSHOPPING_Reviews->getDef('customers_name'); ?>"
                        class="col-5 col-form-label"><?php echo $CLICSHOPPING_Reviews->getDef('customers_name'); ?></label>
                 <div class="col-md-5">
-                  <?php echo '<strong>' . $rInfo->customers_name . '</strong>'; ?>
+                  <?php echo '<strong>' . Hash::displayDecryptedDataText($rInfo->customers_name) . '</strong>'; ?>
                 </div>
               </div>
             </div>

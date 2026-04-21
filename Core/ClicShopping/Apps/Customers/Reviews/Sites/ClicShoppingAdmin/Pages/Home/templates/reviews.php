@@ -10,7 +10,8 @@
 
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\DateTime;
-use ClicShopping\OM\HTML;
+  use ClicShopping\OM\Hash;
+  use ClicShopping\OM\HTML;
 use ClicShopping\OM\ObjectInfo;
 use ClicShopping\OM\Registry;
 
@@ -312,7 +313,7 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
             <strong<?php echo HTML::link($CLICSHOPPING_Reviews->link('&Edit&page=' . $page . '&rID=' . $Qreviews->valueInt('reviews_id')), $CLICSHOPPING_ProductsAdmin->getProductsName($Qreviews->valueInt('products_id'))); ?></strong>
           </td>
           <td><?php echo '<i>' . HTML::stars($Qreviews->valueInt('reviews_rating')) . '</i>'; ?></td>
-          <td class="text-center"><?php echo $Qreviews->value('customers_name'); ?></td>
+          <td class="text-center"><?php echo Hash::displayDecryptedDataText($Qreviews->value('customers_name')); ?></td>
           <td class="text-center"><?php echo number_format($Qreviews->valueInt('reviews_read', 2)); ?></td>
           <td class="text-center"><?php echo $customer_group['customers_group_name']; ?></td>
           <td class="text-center"><?php echo DateTime::toLong($Qreviews->value('last_modified')); ?></td>
@@ -350,3 +351,4 @@ $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page']
   } // end $listingTotalRow
   ?>
 </div>
+<div class="py-4"></div>
