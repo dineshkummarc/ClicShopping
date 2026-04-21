@@ -4,6 +4,8 @@ reviews_id int not_null comment(FK to reviews table - review being voted on)
 vote tinyint(1) default(0) not_null comment(Vote type - 0: not helpful, 1: helpful)
 customer_id int not_null comment(FK to customers table - customer who voted)
 sentiment tinyint default(0) not_null comment(Sentiment indicator - -1: negative, 0: neutral, 1: positive)
+date_added datetime not_null default current_timestamp comment(date creation of the review vote)
+
 --
 primary id
 idx_reviews_products_id products_id

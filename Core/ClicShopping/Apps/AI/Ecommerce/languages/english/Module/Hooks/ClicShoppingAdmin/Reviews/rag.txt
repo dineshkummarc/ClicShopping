@@ -11,6 +11,7 @@ text_reviews_product_name = [Product name {{products_name}}]
 text_status_active = [Review active {{products_name}}]
 text_status_inactive = [Review inactive {{products_name}}]
 text_reviews_taxonomy = [Taxonomy]
+text_products_name = [Nom du produit]
 
 text_create_taxonomy = You are a document analysis system. Extract a structured conceptual taxonomy from the following text.
 The text corresponds to a product review (customer feedback or rating).

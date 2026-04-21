@@ -67,18 +67,18 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
 
     $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
 
-    $QreviewsCheck = $this->db->get('select r.reviews_id
-                                      from :table_reviews r
-                                      order by r.reviews_id desc
-                                      limit 1
-                                     ');
+    $QreviewsCheck = $this->db->prepare('select r.reviews_id
+                                        from :table_reviews r
+                                        order by r.reviews_id desc
+                                        limit 1
+                                       ');
     $QreviewsCheck->execute();
     $review_id = $QreviewsCheck->valueInt('reviews_id');
 
     $QcheckEntity = $this->app->db->prepare('select id
-                                       from :table_pages_manager_embedding
-                                       where entity_id = :entity_id
-                                      ');
+                                             from :table_reviews_embedding
+                                             where entity_id = :entity_id
+                                            ');
     $QcheckEntity->bindInt(':entity_id', $review_id);
     $QcheckEntity->execute();
 
@@ -103,8 +103,7 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
                                     from :table_reviews r,
                                          :table_reviews_description rd,
                                          :table_reviews_vote rv
-                                    where r.products_id = :products_id
-                                    and r.reviews_id = rd.reviews_id
+                                    where r.reviews_id = rd.reviews_id
                                     order by r.reviews_id desc
                                     limit 1
                                     ');
@@ -114,8 +113,8 @@ class Process implements \ClicShopping\OM\Modules\HooksInterface
 
     if (is_array($review_array)) {
       foreach ($review_array as $item) {
-       $language_code = $this->lang->getLanguageCodeById((int)$item['language_id']);
-       $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/PageManager/process', $language_code);
+       $language_code = $this->lang->getLanguageCodeById((int)$item['languages_id']);
+        $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/ReviewsWrite/process', $language_code);
 
         $reviews_text = isset($item['reviews_text']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['reviews_text']) : '';
         $reviews_rating = isset($item['reviews_rating']) ? (int)$item['reviews_rating'] : 0;

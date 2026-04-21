@@ -8,8 +8,8 @@ avg_response_time DECIMAL(10,3) default null comment(Average response time in se
 total_api_cost DECIMAL(10,4) default null comment(Total API cost in USD)
 unique_queries INT(11) not_null default (0)
 price_comparisons INT(11) not_null default (0) comment(Number of price comparison queries)
-created_at DATETIME not_null default (CURRENT_TIMESTAMP)
-updated_at DATETIME not_null default (CURRENT_TIMESTAMP) ON UPDATE CURRENT_TIMESTAMP
+created_at DATETIME not_null default(current_timestamp)
+updated_at DATETIME not_null default(current_timestamp) ON UPDATE CURRENT_TIMESTAMP
 
 --
 primary id

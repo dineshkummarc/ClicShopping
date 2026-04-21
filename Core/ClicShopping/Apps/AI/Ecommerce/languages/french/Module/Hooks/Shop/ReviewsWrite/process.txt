@@ -11,7 +11,7 @@ text_reviews_product_name = [Nom du produit de l'avis {{products_name}}]
 text_status_active = [Avis actif {{products_name}}]
 text_status_inactive = [Avis inactif {{products_name}}]
 text_reviews_taxonomy = [Taxonomie]
-text_products_name = Nom produit
+text_products_name = [Nom produit]
 
 text_create_taxonomy = Tu es un système d’analyse documentaire. Extrait une taxonomie conceptuelle structurée du texte suivant.
 Le texte correspond à un avis produit (retour client ou évaluation).

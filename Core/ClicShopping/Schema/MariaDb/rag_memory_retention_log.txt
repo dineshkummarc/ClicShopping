@@ -1,7 +1,7 @@
 id BIGINT not_null auto_increment comment(Primary key - unique identifier for each memory retention record)
 user_id VARCHAR(255) not_null comment(User identifier for memory tracking)
 interaction_id VARCHAR(255) not_null comment(Unique interaction identifier - prevents duplicates)
-timestamp_recorded TIMESTAMP default(CURRENT_TIMESTAMP) comment(When the memory was first recorded)
+timestamp_recorded TIMESTAMP default(current_timestamp) comment(When the memory was first recorded)
 timestamp_migrated TIMESTAMP default(NULL) comment(When the memory was migrated to a different level)
 level ENUM('working','short_term','long_term') default('short_term') comment(Memory retention level - working: active session - short_term: recent history - long_term: permanent storage)
 status ENUM('pending','short_term_stored','long_term_stored','archived') default('pending') comment(Processing status - pending: awaiting storage - short_term_stored: in short-term memory - long_term_stored: in long-term memory - archived: moved to archive)

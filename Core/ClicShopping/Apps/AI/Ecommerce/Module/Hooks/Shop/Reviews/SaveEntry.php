@@ -153,7 +153,12 @@ class SaveEntry implements \ClicShopping\OM\Modules\HooksInterface
 
     $language_name = $CLICSHOPPING_Language->getLanguagesName($CLICSHOPPING_Language->getId());
 
-    $question = 'Provide up in ' . $language_name . ' to 6 comma-separated tags indicating the sentiment of the customer review. Please exclude the prompt\'s response and any other unrelated information. The customer review : ' . $customer_review;
+    $question = 'Task: Sentiment Analysis for eCommerce product.
+- Provide the result in this Language: ' . $language_name . '
+- Format: Return ONLY a comma-separated list of maximum 6 tags.
+- Constraint 1: If the content is not related to an ecommerce review, return NONE.
+- Constraint 2: No introductory text, no explanations, no quotes.
+- Review to analyze: ' . $customer_review;
 
     $tag = GptShop::getGptResponse($question, 15, 0.7);
 

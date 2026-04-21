@@ -6,7 +6,7 @@ link TEXT null comment(Result URL)
 snippet TEXT null comment(Snippet of descriptive text)
 source_domain VARCHAR(255) null comment(Source domain (google.com, wikipedia.org, etc.))
 relevance_score FLOAT default (0.0) comment(Calculated relevance score (0-1))
-date_added DATETIME default (CURRENT_TIMESTAMP)
+date_added DATETIME default(current_timestamp)
 
 --
 primary id

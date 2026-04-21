@@ -15,7 +15,7 @@ user_admin VARCHAR(255) comment(User who performed the search)
 session_id VARCHAR(255) comment(Session ID)
 ip_address VARCHAR(45) comment(IP address (IPv4 or IPv6))
 audit_data JSON comment(Complete audit data (JSON))
-date_added DATETIME default(CURRENT_TIMESTAMP) comment(Creation date)
+date_added DATETIME default(current_timestamp) comment(Creation date)
 
 --
 primary id
