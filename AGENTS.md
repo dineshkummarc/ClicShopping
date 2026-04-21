@@ -270,7 +270,7 @@ See `AI_SYSTEM.md` §6 and `DATABASE.md` §6 for complete list.
 
 ## Stack — critical constraints
 
-- **PHP ≥ 8.4** — `public private(set)` on critical service properties
+- **PHP ≥ 8.4 +** — `public private(set)` on critical service properties
 - **MariaDB ≥ 11.7** — MySQL incompatible with `VECTOR(3072)`
 - **LLPhant** — only access layer to LLMs, no direct API call. for version look composer.json inside the root
 - **Autoload**: `CLICSHOPPING::autoload` + Composer vendor (`Core/ClicShopping/External/vendor`) — no alternative autoload mechanism. use composer.json in the root
