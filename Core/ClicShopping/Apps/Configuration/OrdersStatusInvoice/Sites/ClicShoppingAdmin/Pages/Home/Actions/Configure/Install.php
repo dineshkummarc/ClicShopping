@@ -36,7 +36,7 @@ class Install extends \ClicShopping\OM\Domains\ConfigureActionsAbstract
     
     // Install database menu if method exists
     if (method_exists($this, 'installDbMenuAdministration')) {
-      $this->installDbMenuAdministration();
+      self::installDbMenuAdministration();
     }
     
     self::installProductsOrdersStatusInvoiceDb();

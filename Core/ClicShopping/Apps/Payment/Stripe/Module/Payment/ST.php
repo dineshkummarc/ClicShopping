@@ -503,8 +503,6 @@ class ST implements \ClicShopping\OM\Modules\PaymentInterface
   public function getSubmitCardDetailsJavascript(mixed $intent = null)
   {
     $stripe_publishable_key = $this->public_key;
-
-//        $intent_url = tep_href_link("ext/modules/payment/stripe_sca/payment_intent.php", '', 'SSL', false, false);
     $intent_url = ''; // return url
 
     $js = <<<EOD

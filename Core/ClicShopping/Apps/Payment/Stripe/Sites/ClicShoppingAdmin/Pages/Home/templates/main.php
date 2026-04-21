@@ -14,6 +14,7 @@ use ClicShopping\OM\Registry;
 
 $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 $CLICSHOPPING_Stripe = Registry::get('Stripe');
+$CLICSHOPPING_Template = Registry::get('TemplateAdmin');
 
 if ($CLICSHOPPING_MessageStack->exists('Stripe')) {
   echo $CLICSHOPPING_MessageStack->get('Stripe');

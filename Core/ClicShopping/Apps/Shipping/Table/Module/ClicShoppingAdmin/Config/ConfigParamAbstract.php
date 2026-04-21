@@ -33,7 +33,7 @@ abstract class ConfigParamAbstract extends \ClicShopping\Sites\ClicShoppingAdmin
    */
   public function __construct($config_module)
   {
-    $this->app = Registry::get('Module');
+    $this->app = Registry::get('Table');
 
     $this->key_prefix .= mb_strtolower($config_module) . '_';
 
