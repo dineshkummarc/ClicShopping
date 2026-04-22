@@ -213,7 +213,7 @@ class GptCustomerManager
    */
   private function generateTemporaryPassword(): string
   {
-    return substr(md5(uniqid(rand(), true)), 0, 8);
+    return bin2hex(random_bytes(4));
   }
 
   /**

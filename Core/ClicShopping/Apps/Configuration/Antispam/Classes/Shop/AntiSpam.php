@@ -23,7 +23,7 @@ class AntiSpam
    */
   public static function getConfirmationNumericAntiSpam(): string
   {
-    $random_number = rand(1, 200);
+    $random_number = random_int(1, 200);
 
     $number = $random_number + 3;
     $antispam = ' (' . $random_number . ' + ' . CLICSHOPPING::getDef('text_antispam') . ') x 1';

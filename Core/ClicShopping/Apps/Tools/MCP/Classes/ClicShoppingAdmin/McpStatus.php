@@ -283,7 +283,7 @@ class McpStatus
   {
     // In a real implementation, this would query the database
     // For simulation, return a random number
-    return rand(100, 1000);
+    return random_int(100, 1000);
   }
 
   /**
@@ -294,7 +294,7 @@ class McpStatus
   private function getErrorCount(): int
   {
     // Simulate low error count for healthy status
-    return rand(0, 5);
+    return random_int(0, 5);
   }
 
   /**
@@ -304,7 +304,7 @@ class McpStatus
    */
   private function getAverageResponseTime(): float
   {
-    return round(rand(100, 800) / 10, 2);
+    return round(random_int(100, 800) / 10, 2);
   }
 
   /**
@@ -314,7 +314,7 @@ class McpStatus
    */
   private function getRequestsPerMinute(): int
   {
-    return rand(10, 100);
+    return random_int(10, 100);
   }
 
   /**
@@ -339,7 +339,7 @@ class McpStatus
   private function getCpuUsage(): float
   {
     // Simulate CPU usage
-    return round(rand(10, 80) / 10, 1);
+    return round(random_int(10, 80) / 10, 1);
   }
 
   /**
@@ -447,7 +447,7 @@ class McpStatus
     for ($i = 0; $i < 24; $i++) {
       $history[] = [
         'hour' => $i,
-        'avg_response_time' => rand(100, 800) / 10
+        'avg_response_time' => random_int(100, 800) / 10
       ];
     }
     return $history;
@@ -463,10 +463,10 @@ class McpStatus
     // Simulate error trends
     return [
       'hourly' => array_map(function ($hour) {
-        return ['hour' => $hour, 'errors' => rand(0, 5)];
+        return ['hour' => $hour, 'errors' => random_int(0, 5)];
       }, range(0, 23)),
       'daily' => array_map(function ($day) {
-        return ['day' => $day, 'errors' => rand(0, 50)];
+        return ['day' => $day, 'errors' => random_int(0, 50)];
       }, range(1, 7))
     ];
   }
@@ -480,11 +480,11 @@ class McpStatus
   {
     return [
       'peak_hours' => [9, 10, 11, 14, 15, 16],
-      'avg_concurrent_users' => rand(10, 100),
+      'avg_concurrent_users' => random_int(10, 100),
       'most_used_endpoints' => [
-        '/api/chat' => rand(100, 500),
-        '/api/status' => rand(50, 200),
-        '/api/health' => rand(20, 100)
+        '/api/chat' => random_int(100, 500),
+        '/api/status' => random_int(50, 200),
+        '/api/health' => random_int(20, 100)
       ]
     ];
   }

@@ -78,11 +78,11 @@ class McpMockMonitor
   {
     // Generate current metrics
     $metrics = [
-      'request_rate' => rand(20, 80),
-      'average_latency' => rand(100, 300),
-      'error_frequency' => rand(0, 10),
-      'uptime_percentage' => rand(95, 100),
-      'total_requests' => rand(1000, 5000)
+      'request_rate' => random_int(20, 80),
+      'average_latency' => random_int(100, 300),
+      'error_frequency' => random_int(0, 10),
+      'uptime_percentage' => random_int(95, 100),
+      'total_requests' => random_int(1000, 5000)
     ];
 
     // Store current metrics for persistence
@@ -136,10 +136,10 @@ class McpMockMonitor
       $timestamp = $baseTime - ($i * $interval);
       $history[] = [
         'timestamp' => $timestamp,
-        'latency' => rand(50, 200),
-        'error_rate' => rand(0, 5),
-        'requests' => rand(10, 50),
-        'uptime' => rand(95, 100)
+        'latency' => random_int(50, 200),
+        'error_rate' => random_int(0, 5),
+        'requests' => random_int(10, 50),
+        'uptime' => random_int(95, 100)
       ];
     }
 

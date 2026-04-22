@@ -5,6 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/Core" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/spec" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/ext/elFinder-master/spec" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/Core/ClicShopping/External/vendor/amnuts/opcache-gui" />
       <excludeFolder url="file://$MODULE_DIR$/Core/ClicShopping/External/vendor/composer" />
       <excludeFolder url="file://$MODULE_DIR$/Core/ClicShopping/External/vendor/daveearley/daves-email-validation-tool" />
@@ -58,7 +59,6 @@
       <excludeFolder url="file://$MODULE_DIR$/Core/ClicShopping/External/vendor/symfony/var-exporter" />
       <excludeFolder url="file://$MODULE_DIR$/Core/ClicShopping/External/vendor/theodo-group/llphant" />
       <excludeFolder url="file://$MODULE_DIR$/Core/ClicShopping/External/vendor/yethee/tiktoken" />
-      <excludeFolder url="file://$MODULE_DIR$/ext/elFinder-master/vendor/composer" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

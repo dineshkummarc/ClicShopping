@@ -133,7 +133,7 @@ class ProductsAdmin
   public function getProductModel(): string
   {
     if (empty($_POST['products_model'])) {
-      $rand = rand();
+      $rand = random_int(0, PHP_INT_MAX);
       $products_model = \defined('CONFIGURATION_PREFIX_MODEL') ? CONFIGURATION_PREFIX_MODEL . $rand : '';
     } else {
       $products_model = HTML::sanitize($_POST['products_model']);

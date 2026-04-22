@@ -5,6 +5,9 @@
       <PhpSpecSuiteConfiguration>
         <option name="myPath" value="$PROJECT_DIR$" />
       </PhpSpecSuiteConfiguration>
+      <PhpSpecSuiteConfiguration>
+        <option name="myPath" value="$PROJECT_DIR$/ext/elFinder-master" />
+      </PhpSpecSuiteConfiguration>
     </suites>
   </component>
 </project>

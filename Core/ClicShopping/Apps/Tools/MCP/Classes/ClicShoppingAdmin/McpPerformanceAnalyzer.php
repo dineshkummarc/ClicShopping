@@ -474,10 +474,10 @@ class McpPerformanceAnalyzer
     for ($i = 100; $i > 0; $i--) {
       $this->performanceHistory[] = [
         'timestamp' => $now - ($i * 900), // Every 15 minutes
-        'requests' => rand(100, 1000),
-        'latency' => rand(50, 200),
-        'error_rate' => rand(0, 5),
-        'status' => rand(1, 100) > 98 ? 'down' : 'up'
+        'requests' => random_int(100, 1000),
+        'latency' => random_int(50, 200),
+        'error_rate' => random_int(0, 5),
+        'status' => random_int(1, 100) > 98 ? 'down' : 'up'
       ];
     }
   }

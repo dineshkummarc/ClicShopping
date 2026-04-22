@@ -123,7 +123,7 @@ class Backup
         if (strlen($columnComment) > 0) {
           $backup_stats['columns_with_comments']++;
         }
-        if (strpos(strtolower($columnType), 'vector') !== false) {
+        if (str_contains(strtolower($columnType), 'vector')) {
           $backup_stats['vector_columns']++;
         }
 
