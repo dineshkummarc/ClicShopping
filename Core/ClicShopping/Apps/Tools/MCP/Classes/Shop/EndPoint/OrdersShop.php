@@ -253,7 +253,7 @@ class OrdersShop
    */
   protected function createOrder(array $data): void
   {
-    $orderId = rand(1000, 9999);
+    $orderId = random_int(1000, 9999);
     $this->message->sendSuccess(['action' => 'create_order', 'order_id' => $orderId]);
   }
 

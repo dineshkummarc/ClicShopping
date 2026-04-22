@@ -74,10 +74,10 @@ class Upload
     $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 
     if (isset($_GET[$this->_file])) {
-      $temp_filename = 'temp_' . mt_rand(100000, 999999);
+      $temp_filename = 'temp_' . random_int(100000, 999999);
 
       while (file_exists(CLICSHOPPING::BASE_DIR . 'Work/Temp/' . $temp_filename)) {
-        $temp_filename = 'temp_' . mt_rand(100000, 999999);
+        $temp_filename = 'temp_' . random_int(100000, 999999);
       }
 
       $input = fopen('php://input', 'r');
@@ -150,8 +150,7 @@ class Upload
     if ($this->_replace === true) {
       while (file_exists($this->_destination . DIRECTORY_SEPARATOR . $this->getFilename())) {
 
-        $salt = md5(rand(1, 100000));
-        $salt = substr($salt, 0, 10);
+        $salt = bin2hex(random_bytes(5));
 
         $this->setFilename($salt . '_' . $this->getFilename());
       }

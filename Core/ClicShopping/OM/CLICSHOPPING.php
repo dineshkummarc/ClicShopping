@@ -400,7 +400,7 @@ class CLICSHOPPING
 
     $args[0] = $req_site . DIRECTORY_SEPARATOR . self::getConfig('http_images_path', $req_site) . $page;
 
-    $url = forward_static_call_array([static::class, 'link'], $args);
+    $url = (static::link(...))(...$args);
 
     return $url;
   }
@@ -437,7 +437,7 @@ class CLICSHOPPING
 
     $args[0] = 'Shop/public/Sites/' . $req_site . DIRECTORY_SEPARATOR . $page;
 
-    $url = forward_static_call_array([self::class, 'link'], $args);
+    $url = (self::link(...))(...$args);
 
     return $url;
   }
@@ -451,7 +451,7 @@ class CLICSHOPPING
   {
     $args = func_get_args();
 
-    $url = call_user_func_array([self::class, 'link'], $args);
+    $url = (self::link(...))(...$args);
 
     if ((strstr($url, "\n") !== false) || (strstr($url, "\r") !== false)) {
       $url = self::link(null, '', false);
@@ -469,7 +469,7 @@ class CLICSHOPPING
   {
     $CLICSHOPPING_Language = Registry::get('Language');
 
-    return call_user_func_array([$CLICSHOPPING_Language, 'getDef'], func_get_args());
+    return ($CLICSHOPPING_Language->getDef(...))(...func_get_args());
   }
 
   /**

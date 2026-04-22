@@ -75,7 +75,7 @@ class CorrectionPatterns
 
       public function embedDocuments(array $documents): array
       {
-        return array_map([$this, 'embedDocument'], $documents);
+        return array_map($this->embedDocument(...), $documents);
       }
 
       public function getEmbeddingLength(): int

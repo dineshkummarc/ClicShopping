@@ -38,7 +38,7 @@ class Resend extends \ClicShopping\OM\Domains\PagesActionsAbstract
 
         $verification_code = '';
         for ($i = 0; $i < $code_length; $i++) {
-          $verification_code .= mt_rand(0, 9);
+          $verification_code .= random_int(0, 9);
         }
 
         // Durée d'expiration

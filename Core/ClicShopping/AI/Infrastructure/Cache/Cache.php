@@ -1130,7 +1130,7 @@ class Cache
   {
     $invalidated = 0;
     $cleanTableNames = array_map(
-      [SQLTableParser::class, 'cleanTableName'],
+      SQLTableParser::cleanTableName(...),
       $tableNames
     );
 

@@ -45,12 +45,12 @@ class Redis extends \ClicShopping\OM\Domains\SessionAbstract implements \Session
       $this->orig_module_name = session_module_name();
 
       session_set_save_handler(
-        [$this, 'open'],
-        [$this, 'close'],
-        [$this, 'read'],
-        [$this, 'write'],
-        [$this, 'destroy'],
-        [$this, 'gc']
+        $this->open(...),
+        $this->close(...),
+        $this->read(...),
+        $this->write(...),
+        $this->destroy(...),
+        $this->gc(...)
       );
     }
   }

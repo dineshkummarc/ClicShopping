@@ -80,7 +80,7 @@ use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
     $verification_code = '';
 
     for ($i = 0; $i < $code_length; $i++) {
-      $verification_code .= mt_rand(0, 9);
+      $verification_code .= random_int(0, 9);
     }
 
     $expiry_minutes = defined('EMAIL_VERIFICATION_CODE_EXPIRY') ? (int)EMAIL_VERIFICATION_CODE_EXPIRY : 15;
