@@ -1,5 +1,10 @@
 ALTER TABLE clic_customers ADD COLUMN customer_company_information text null default null comment(Company information, verification about the customer from Pappers)
 ALTER TABLE `clic_reviews_vote` ADD `date_added` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP comment(date creation of the review vote) AFTER `sentiment`;
+ALTER TABLE clic_reviews_sentiment_description  ADD COLUMN critique         TEXT    NULL COMMENT 'Agent critic result',  ADD COLUMN critique_verdict VARCHAR(30) NULL COMMENT 'reliable | partial | unreliable | ...';
+ALTER TABLE clic_reviews_sentiment  ADD COLUMN review_count INT UNSIGNED NOT NULL DEFAULT 0  COMMENT 'Comments number when the analyse start';
+
+
+
 
 -- English
 INSERT INTO clic_configuration VALUES(null, 'Pappers B2B company verification and information', 'PAPPERS_API_TOKEN', '', 'Insert the API token used to verify company information via the Pappers website (pappers.fr).<br><br><i>Enter your API token obtained from your Pappers account.</i>', 25, 161, '2006-10-23 01:16:20', '2006-04-09 16:13:48', NULL, NULL);

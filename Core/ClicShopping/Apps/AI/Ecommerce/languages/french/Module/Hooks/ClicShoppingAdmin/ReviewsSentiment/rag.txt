@@ -1,5 +1,5 @@
 text_review_sentiment_semantic_semantic_title = Analyse du sentiment pour le produit {{products_name}}
-text_sentiment_semantic_review_sentiment_id = ID ddu sentiment pour {{review_sentiment_id}}
+text_sentiment_semantic_review_sentiment_id = ID du sentiment pour {{review_sentiment_id}}
 text_review_sentiment_semantic_description = Contenu de l'avis sur {{products_name}}
 text_review_sentiment_semantic_status = Statut du sentiment pour {{products_name}}
 text_review_sentiment_semantic_approved = Validation du sentiment pour {{products_name}}
@@ -10,7 +10,7 @@ text_review_sentiment_semantic_vote_sentiment = Nature du vote pour {{products_n
 text_review_sentiment_taxonomy = [taxonomie]
 
 
-text_create_taxonomy = Tu es un système d’analyse documentaire. Extrait une taxonomie conceptuelle et un profil de sentiment à partir du texte suivant.
+text_create_taxonomy = TACHE : Tu es un système d’analyse documentaire. Extrait une taxonomie conceptuelle et un profil de sentiment à partir du texte suivant.
 Le texte correspond à un avis ou retour client (review) sur un produit ou une catégorie e-commerce.
 Le résultat doit suivre strictement le format ci-dessous.
 Chaque information pertinente doit être rangée dans la dimension appropriée.

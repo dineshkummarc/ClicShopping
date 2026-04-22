@@ -1,10 +1,51 @@
-text_sentiment = Veuillez fournir un résumé de l'analyse du sentiment client basée sur les avis concernant {{$products_name}}.
-Écrivez la réponse en {{$language_name}}.
-Limitez la réponse à 300 mots maximum.
-N'incluez aucun message système ou message de l'invite.
-Ne répétez pas la demande ou la question d'origine.
-Ne donnez que la réponse finale brute.
-Voici les avis clients pour l'analyse du sentiment : {{text_reviews}}.
+text_sentiment = TÂCHE : Rédige une analyse structurée du sentiment client pour le produit "{{products_name}}" à partir des commentaires fournis.
+CONTRAINTES :
+  - Rédigez uniquement en français.
+  - Maximum 300 mots.
+  - Base-toi UNIQUEMENT sur les commentaires fournis. Aucune spéculation.
+  - Ne mentionne pas de noms d'utilisateurs ou d'informations personnelles.
+
+STRUCTURE ATTENDUE :
+  SENTIMENT DOMINANT: [positif | négatif | neutre | mitigé]
+  POINTS FORTS: [2–3 éléments récurrents appréciés]
+  POINTS CRITIQUES: [2–3 problèmes ou reproches fréquents, ou "aucun"]
+  THÈMES RÉCURRENTS: [liste courte des sujets qui reviennent souvent]
+  RÉSUMÉ: [paragraphe de synthèse en 3–5 phrases]
+
+=== COMMENTAIRES CLIENTS ===
+{{text_reviews}}
+
+
+text_prompt_critic = RÔLE : Tu es un agent de contrôle qualité spécialisé dans l'analyse de sentiment e-commerce.
+CONTEXTE : Une analyse de sentiment a été générée automatiquement pour le produit "{{products_name}}"
+à partir de {{reviewCount}} commentaires clients.
+
+TA MISSION : Évaluer la fiabilité et la qualité de cette analyse.
+
+CONTRAINTES STRICTES :
+- Tu dois fonder ton évaluation UNIQUEMENT sur les commentaires bruts fournis.
+- Ne spécule pas sur des informations absentes des commentaires.
+- Sois précis et concis (150 mots maximum).
+- Écris en français.
+
+CRITÈRES D'ÉVALUATION :
+1. Ancrage factuel : le résumé est-il fidèle aux commentaires bruts ? (hallucinations ?)
+2. Biais de tonalité : le résumé sur-représente-t-il le positif ou le négatif ?
+3. Couverture thématique : des thèmes importants sont-ils absents ou sous-représentés ?
+4. Représentativité : le résumé reflète-t-il l'ensemble des commentaires ou seulement certains ?
+
+FORMAT DE RÉPONSE OBLIGATOIRE :
+VERDICT: [reliable | partial | unreliable]
+JUSTIFICATION: [ton analyse en 2–4 phrases]
+POINTS MANQUANTS: [liste courte ou "aucun"]
+
+=== COMMENTAIRES BRUTS ===
+{{text_reviews}}
+
+=== ANALYSE À ÉVALUER ===
+{{sentimentSummary}}
+
+
 
 text_review_sentiment_products_id = product_id
 text_review_sentiment_review_id = review_id
@@ -17,4 +58,5 @@ text_review_sentiment_vote = Vote
 text_review_sentiment_customer_id = ID du client (vote)
 text_review_sentiment_vote_sentiment = Sentiment du vote
 text_review_sentiment_description = Description du sentiment
-
+text_warning_mesage = Analyse des sentiments des consommateurs non realisés: vous devez avoir au moins {{review_number}} commentaire(s) pour être analysé(s).
+text_succes_mesage = Analyse des sentiments effectués.

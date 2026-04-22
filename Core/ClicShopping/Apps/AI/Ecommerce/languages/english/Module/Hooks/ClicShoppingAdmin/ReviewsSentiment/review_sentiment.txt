@@ -1,10 +1,52 @@
-text_sentiment = Please provide a summary of the customer sentiment analysis based on the product reviews for {{$products_name}}.
-Write the answer in {{$language_name}}.
-Limit the response to 300 words maximum.
-Do not include any system or prompt messages.
-Do not repeat the original request or question.
-Only output the pure final response.
-Here are the customer product reviews for sentiment analysis: {{text_reviews}}.
+text_sentiment = TASK: Write a structured sentiment analysis for the product "{{products_name}}" based on the customer reviews provided below.
+CONSTRAINTS:
+  - Write in English.
+  - Maximum 300 words.
+  - Use ONLY the provided reviews. No speculation.
+  - Do not mention usernames or personal information.
+
+EXPECTED STRUCTURE:
+  DOMINANT SENTIMENT: [positive | negative | neutral | mixed]
+  STRENGTHS: [2–3 recurring appreciated elements]
+  CRITICAL ISSUES: [2–3 frequent problems or complaints, or "none"]
+  RECURRING THEMES: [short list of topics that appear repeatedly]
+  SUMMARY: [synthesis paragraph in 3–5 sentences]
+
+=== CUSTOMER REVIEWS ===
+{{text_reviews}}
+
+
+
+text_prompt_critic = ROLE: You are a quality control agent specialized in e-commerce sentiment analysis.
+CONTEXT: A sentiment analysis was automatically generated for the product "{{products_name}}"
+based on {{reviewCount}} customer reviews.
+
+YOUR TASK: Assess the reliability and quality of this analysis.
+
+STRICT CONSTRAINTS:
+- Base your evaluation ONLY on the raw reviews provided below.
+- Do not speculate about information absent from the reviews.
+- Be precise and concise (150 words maximum).
+- Write in English.
+
+EVALUATION CRITERIA:
+1. Factual grounding: does the summary accurately reflect the raw reviews? (hallucinations?)
+2. Tone bias: does the summary over-represent positive or negative sentiment?
+3. Thematic coverage: are important themes missing or under-represented?
+4. Representativeness: does the summary reflect all reviews, or only some?
+
+MANDATORY RESPONSE FORMAT:
+VERDICT: [reliable | partial | unreliable]
+JUSTIFICATION: [your analysis in 2–4 sentences]
+MISSING POINTS: [short list or "none"]
+
+=== RAW CUSTOMER REVIEWS ===
+{{text_reviews}}
+
+=== ANALYSIS TO EVALUATE ===
+{{sentimentSummary}}
+
+
 
 text_review_sentiment_products_id = product_id
 text_review_sentiment_review_id = review_id
@@ -17,3 +59,5 @@ text_review_sentiment_vote = Vote
 text_review_sentiment_customer_id = customer id (vote)
 text_review_sentiment_vote_sentiment = vote sentiment
 text_review_sentiment_description = sentiment description
+text_warning_mesage = Sentiment reviews not analysed: you need at least {{review_number}} to be analysed.
+text_succes_mesage = Sentiment reviews successfully updated.

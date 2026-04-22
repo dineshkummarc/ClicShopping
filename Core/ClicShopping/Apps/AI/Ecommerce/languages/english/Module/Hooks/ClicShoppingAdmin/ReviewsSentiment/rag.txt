@@ -9,7 +9,7 @@ text_review_sentiment_semantic_customer_id = Customer ID who rated {{products_na
 text_review_sentiment_semantic_vote_sentiment = Nature of the vote for {{products_name}}
 text_review_sentiment_taxonomy = [taxonomy]
 
-text_create_taxonomy = You are a document analysis system. Extract a structured conceptual taxonomy and sentiment profile from the following text.
+text_create_taxonomy = TASK : You are a document analysis system. Extract a structured conceptual taxonomy and sentiment profile from the following text.
 The text corresponds to a customer review or feedback on a product or e-commerce category.
 The output must strictly follow the format below.
 Every relevant piece of information must be assigned to the appropriate dimension.

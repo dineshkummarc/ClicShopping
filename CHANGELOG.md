@@ -3,6 +3,8 @@ version4.25
 - Some fix
 - Add papers company checking for customers B2b
 - Add electronique EU invoice regulation
+- AI Sentiment Analyis improved
+- AI Custommer recommendation refactored
 
 ---------------
 version4.24

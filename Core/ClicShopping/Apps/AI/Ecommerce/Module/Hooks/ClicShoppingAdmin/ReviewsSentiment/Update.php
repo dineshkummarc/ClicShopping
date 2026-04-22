@@ -21,12 +21,55 @@ use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Common\HTMLOverrideCommon;
 use function count;
 
+/**
+ * Minimum number of reviews required to generate a main
+ * sentiment analysis (GPT summary).
+ *
+ * Below this threshold, processing is skipped and an
+ * "insufficient" status entry is recorded instead.
+ *
+ * Recommended value: 3 (reasonable statistical minimum)
+ * Conservative value: 5 (academic NLP consensus)
+ */
+const SENTIMENT_MIN_REVIEWS_FOR_ANALYSIS = 3;
+
+/**
+ * Minimum number of reviews required to enable the critic agent.
+ *
+ * The critic agent is more costly (2nd GPT call). It is only
+ * relevant on a sufficiently large corpus to detect biases
+ * or inconsistencies in the main analysis.
+ *
+ * Recommended value: 5
+ * Conservative value: 10
+ */
+const SENTIMENT_MIN_REVIEWS_FOR_CRITIC = 5;
+
+/**
+ * GPT temperature for the main sentiment analysis.
+ * Low (0.3–0.5) = stable, factual responses.
+ */
+const SENTIMENT_GPT_TEMPERATURE = 0.5;
+
+/**
+ * GPT temperature for the critic agent.
+ * Slightly higher (0.3) to encourage analytical perspective,
+ * while still remaining factual.
+ */
+const SENTIMENT_CRITIC_GPT_TEMPERATURE = 0.3;
+
+/**
+ * Maximum tokens allocated to the critic agent response.
+ * Shorter than the main analysis: the critic must be concise.
+ */
+const SENTIMENT_CRITIC_MAX_TOKENS = 800;
 
 class Update implements \ClicShopping\OM\Modules\HooksInterface
 {
   public mixed $app;
   public mixed $lang;
   public mixed $semantics;
+  protected mixed $messageStack;
 
   /**
    * Constructor method for initializing the ChatGpt application.
@@ -42,37 +85,40 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
     $this->app = Registry::get('Ecommerce');
     $this->lang = Registry::get('Language');
-    
+    $this->messageStack = Registry::get('MessageStack');
+
     if (!Registry::exists('Semantics')) {
       Registry::set('Semantics', new SemanticAgent());
     }
     $this->semantics = Registry::get('Semantics');
-    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/ReviewsSentiment/rag');    
+
+    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/ReviewsSentiment/review_sentiment');
   }
 
   /**
    * Retrieves all customer reviews for a specific review ID, sanitizing the input,
    * and returning the review texts concatenated and separated by "<br> - ".
    *
-   * @return string A string containing all customer reviews related to the specified review ID,
+   * @return array containing all customer reviews and count related to the specified review ID,
    * concatenated and separated by "<br> - ".
+   * @return array{texts: string, count: int}
    */
-  private function getAllCustomerReviews(): string
+  private function getAllCustomerReviews(): array
   {
     $id = HTML::sanitize($_GET['rID']);
 
-    $Qreview = $this->app->db->prepare('select rd.reviews_text
-                                        from :table_reviews r, 
-                                            :table_reviews_description rd
-                                        where r.status = 1
-                                        and rd.languages_id = 1
-                                        and r.reviews_id = :reviews_id
-                                        and r.reviews_id = rd.reviews_id
-                                      ');
+    $Qreview = $this->app->db->prepare('SELECT rd.reviews_text
+                                        FROM :table_reviews r,
+                                             :table_reviews_description rd
+                                        WHERE r.status = 1
+                                          AND r.reviews_id = :reviews_id
+                                          AND r.reviews_id = rd.reviews_id
+                                       ');
     $Qreview->bindInt(':reviews_id', $id);
     $Qreview->execute();
 
     $review_array = $Qreview->fetchAll();
+    $reviewCount  = count($review_array);
 
     $review_texts = [];
 
@@ -80,54 +126,208 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       $review_texts[] = $value['reviews_text'];
     }
 
-// Output the review texts separated by <br>
-    $result =  implode('<br> - ', $review_texts);
+    $texts = implode('<br> - ', $review_texts);
 
-    return $result;
+    return [
+      'texts' => $texts,
+      'count' => $reviewCount,
+    ];
   }
 
+  // ****************************
+  // Main sentiment analysis
+  // ****************************
   /**
-   * Generates a sentiment summary based on customer product reviews.
+   * Generates the main sentiment summary via GPT.
    *
-   * @param int $language_id The ID of the language in which the sentiment analysis should be written.
-   * @param string $products_name The name of the product for which the sentiment analysis is performed.
+   * Called only if $reviewCount >= SENTIMENT_MIN_REVIEWS_FOR_ANALYSIS.
    *
-   * @return string The sentiment analysis summary based on the provided product reviews.
+   * The prompt is structured to obtain an analysis that is:
+   *   - factual (based only on provided reviews)
+   *   - bounded (max 300 words)
+   *   - structured (dominant sentiment, themes, strengths, issues)
+   *
+   * @param int    $language_id    Language identifier for getDef()
+   * @param string $products_name  Product name
+   * @param string $text_reviews   Reviews text (already concatenated)
+   *
+   * @return string Sentiment summary generated by GPT
    */
-  private function generateSentiment(int $language_id, string $products_name): string
+  private function generateSentiment(int $language_id, string $products_name, string $text_reviews): string
   {
-    $CLICSHOPPING_Language = Registry::get('Language');
-    $language_name = $CLICSHOPPING_Language->getLanguagesName($language_id);
-    $text_reviews = $this->getAllCustomerReviews();
-
-    // Split the message into words
+    // Safety truncation: max 2250 words in input
     $words = preg_split('/\s+/', $text_reviews, -1, PREG_SPLIT_NO_EMPTY);
 
-    // Check if the message exceeds 300 words
     if (count($words) > 2250) {
-      $words = array_slice($words, 0, 300);
+      $words = array_slice($words, 0, 2250);
       $text_reviews = implode(' ', $words);
     }
 
     $language_array = [
       'products_name' => $products_name,
-      'language_name' => $language_name,
-      'text_reviews' => $text_reviews
+      'text_reviews'  => $text_reviews,
     ];
 
     $prompt = $this->app->getDef('text_sentiment', $language_array);
 
-    $sentiment = Gpt::getGptResponse($prompt, 2300, 0.5);
+    $sentiment = Gpt::getGptResponse($prompt, 2300, SENTIMENT_GPT_TEMPERATURE);
 
     return $sentiment;
   }
 
+  //*************************
+  // Critic Agent
+  //*************************
+
   /**
-   * Executes the process of managing and storing sentiment data for product reviews.
-   * Depending on the existence of a record, it updates or creates new sentiment entries,
-   * including multi-language support for the product's sentiment description.
+   * Critic agent: evaluates the quality and reliability of the
+   * sentiment summary generated by the main analysis.
    *
-   * @return bool|void Returns false if GPT status is unavailable; otherwise, performs the execution process without return value.
+   * Activated only if $reviewCount >= SENTIMENT_MIN_REVIEWS_FOR_CRITIC.
+   *
+   * Role of the critic:
+   *   1. Verify that the summary is grounded in the reviews (no hallucination)
+   *   2. Detect biases (over-positivity, over-negativity, generalization)
+   *   3. Identify missing or underrepresented themes
+   *   4. Issue a reliability verdict (Reliable / Partial / Unreliable)
+   *
+   * The critic result is stored in the database (separate field)
+   * and can feed a manual review flag by the admin.
+   *
+   * @param string $sentimentSummary  Summary generated by generateSentiment()
+   * @param string $text_reviews      Raw original reviews text
+   * @param string $products_name     Product name
+   * @param string $language_code     Language code (e.g. 'fr', 'en')
+   * @param int    $reviewCount       Number of reviews analyzed
+   *
+   * @return array{
+   *   critic: string,
+   *   verdict: string,
+   *   reliable: bool
+   * }
+   */
+  private function generateSentimentCritic(
+    string $sentimentSummary,
+    string $text_reviews,
+    string $products_name,
+    string $language_code,
+    int    $reviewCount
+  ): array {
+    // Threshold not reached → no critic, summary considered reliable by default
+    if ($reviewCount < SENTIMENT_MIN_REVIEWS_FOR_CRITIC) {
+      return [
+        'critic' => '',
+        'verdict'  => 'insufficient_data',
+        'reliable' => true,
+      ];
+    }
+
+    // Truncate source text for critic prompt (shorter than main analysis)
+    $words = preg_split('/\s+/', $text_reviews, -1, PREG_SPLIT_NO_EMPTY);
+
+    if (count($words) > 1000) {
+      $words        = array_slice($words, 0, 1000);
+      $text_reviews = implode(' ', $words);
+    }
+
+    $prompt = $this->buildCriticPrompt(
+      $sentimentSummary,
+      $text_reviews,
+      $products_name,
+      $reviewCount,
+      $language_code
+    );
+
+    $criticRaw = Gpt::getGptResponse($prompt, SENTIMENT_CRITIC_MAX_TOKENS, SENTIMENT_CRITIC_GPT_TEMPERATURE);
+
+    if (empty($criticRaw)) {
+      return [
+        'critic' => '',
+        'verdict'  => 'critic_unavailable',
+        'reliable' => true, // do not block in case of GPT failure
+      ];
+    }
+
+    // Extract verdict from critic response
+    $verdict  = $this->extractVerdict($criticRaw);
+    $reliable = in_array($verdict, ['reliable', 'partial'], true);
+
+    return [
+      'critic' => $criticRaw,
+      'verdict'  => $verdict,
+      'reliable' => $reliable,
+    ];
+  }
+
+  /**
+   * Builds the critic agent prompt based on language.
+   *
+   * The prompt is bilingual (fr/en). For any other language, the English
+   * prompt is used by default — GPT produces the response in the requested
+   * language via the final instruction.
+   *
+   * @param string $sentimentSummary  Summary to critique
+   * @param string $text_reviews      Raw reviews (truncated)
+   * @param string $products_name     Product name
+   * @param int    $reviewCount       Number of reviews
+   * @param string $language_code     Language code ('fr', 'en', …)
+   *
+   * @return string Full prompt for GPT
+   */
+  private function buildCriticPrompt(
+    string $sentimentSummary,
+    string $text_reviews,
+    string $products_name,
+    int    $reviewCount,
+    string $language_code
+  ): string {
+    $array = [
+      'products_name' => $products_name,
+      'reviewCount' => $reviewCount,
+      'text_reviews' => $text_reviews,
+      'sentimentSummary' => $sentimentSummary
+    ];
+    $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/ReviewsSentiment/review_sentiment', $language_code);
+
+    $prompt_critic =  $this->app->getDef('text_prompt_critic', $array);
+
+    return $prompt_critic;
+  }
+
+  /**
+   * Extracts the verdict from the raw critic response.
+   *
+   * Looks for the pattern "VERDICT: reliable|partial|unreliable".
+   * Returns 'unknown' if the format is not respected.
+   *
+   * @param string $criticRaw  Raw GPT response
+   * @return string  'reliable' | 'partial' | 'unreliable' | 'unknown'
+   */
+  private function extractVerdict(string $criticRaw): string
+  {
+    if (preg_match('/VERDICT\s*:\s*(reliable|partial|unreliable)/i', $criticRaw, $matches)) {
+      return strtolower(trim($matches[1]));
+    }
+
+    return 'unknown';
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // Main execution
+  // ════════════════════════════════════════════════════════════════
+
+  /**
+   * Hook entry point.
+   *
+   * Pipeline:
+   *   1. Preliminary checks (GPT status, constants)
+   *   2. Review count → minimum threshold validation
+   *   3. Generate sentiment summary (if threshold met)
+   *   4. Critique summary via critic agent (if critic threshold met)
+   *   5. Save to database (update or insert)
+   *   6. Generate embeddings
+   *
+   * @return bool|void  Returns false if GPT unavailable or threshold not met
    */
   public function execute()
   {
@@ -146,162 +346,203 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
-    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
+    $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined('CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
 
     $id = HTML::sanitize($_GET['rID']);
     $user_admin = AdministratorAdmin::getUserAdmin();
     $languages = $CLICSHOPPING_Language->getLanguages();
 
-    $Qchek = $this->app->db->get('reviews_sentiment', 'id', ['reviews_id' => (int)$id]);
+    // ── Step 1: retrieve reviews and validate threshold ──
+
+    $reviewData   = $this->getAllCustomerReviews();
+    $reviewCount  = $reviewData['count'];
+    $text_reviews = $reviewData['texts'];
+
+    if ($reviewCount < SENTIMENT_MIN_REVIEWS_FOR_ANALYSIS) {
+      $this->messageStack->add($this->app->getDef('text_warning_mesage',['review_number', SENTIMENT_MIN_REVIEWS_FOR_ANALYSIS]), 'warning');
+
+      return false;
+    }
+
+    // ── Step 2: DB — update or insert ──
+
+    $Qcheck   = $this->app->db->get('reviews_sentiment', 'id', ['reviews_id' => (int)$id]);
     $Qproduct = $this->app->db->get('reviews', 'products_id', ['reviews_id' => (int)$id]);
     $products_id = $Qproduct->valueInt('products_id');
-    //update
-    if (!empty($Qchek->valueInt('id'))) {
+
+    if (!empty($Qcheck->valueInt('id'))) {
       $sql_data_array = [
-        'reviews_id' => (int)$id,
+        'reviews_id'    => (int)$id,
         'date_modified' => 'now()',
-        'user_admin' => $user_admin,
+        'user_admin'    => $user_admin,
       ];
 
-      $this->app->db->save('reviews_sentiment', $sql_data_array, ['id' => (int)$Qchek->valueInt('id')]);
+      $this->app->db->save('reviews_sentiment', $sql_data_array, ['id' => (int)$Qcheck->valueInt('id')]);
 
       for ($i = 0, $n = \count($languages); $i < $n; $i++) {
-        $language_id = $languages[$i]['id'];
-        $products_name = $CLICSHOPPING_ProductsAdmin->getProductsName($products_id, $language_id);
+        $language_id    = $languages[$i]['id'];
+        $language_code  = $CLICSHOPPING_Language->getCode() ?? 'en';
+        $products_name  = $CLICSHOPPING_ProductsAdmin->getProductsName($products_id, $language_id);
+
+        // Main analyse
+        $sentimentSummary = $this->generateSentiment($language_id, $products_name, $text_reviews);
+
+        // critic (phase 2) — with SENTIMENT_MIN_REVIEWS_FOR_CRITIC
+        $criticResult = $this->generateSentimentCritic(
+          $sentimentSummary,
+          $text_reviews,
+          $products_name,
+          $language_code,
+          $reviewCount
+        );
 
         $sql_data_array = [
-          'description' => $this->generateSentiment($language_id, $products_name),
+          'description'      => $sentimentSummary,
+          'critic'         => $criticResult['critic'],
+          'critic_verdict' => $criticResult['verdict'],
         ];
 
         $insert_sql_data = [
-          'id' => (int)$Qchek->valueInt('id'),
-          'language_id' => $language_id
+          'id' => (int)$Qcheck->valueInt('id'),
+          'language_id' => $language_id,
         ];
 
-        $this->app->db->save('reviews_sentiment_description ', $sql_data_array, $insert_sql_data);
+        $this->app->db->save('reviews_sentiment_description', $sql_data_array, $insert_sql_data);
       }
     } else {
-      //insert
+      // — Insert —
       $sql_data_array = [
-        'reviews_id' => (int)$id,
-        'date_added' => 'now()',
-        'user_admin' => $user_admin,
-        'products_id' => $products_id,
-        'sentiment_status' => 1
+        'reviews_id'       => (int)$id,
+        'date_added'       => 'now()',
+        'user_admin'       => $user_admin,
+        'products_id'      => $products_id,
+        'sentiment_status' => 1,
+        'review_count'     => $reviewCount,
       ];
-
       $this->app->db->save('reviews_sentiment', $sql_data_array);
       $last_id = $this->app->db->lastInsertId();
 
       for ($i = 0, $n = \count($languages); $i < $n; $i++) {
-        $language_id = $languages[$i]['id'];
+        $language_id   = $languages[$i]['id'];
+        $language_code = $CLICSHOPPING_Language->getCode() ?? 'en';
         $products_name = $CLICSHOPPING_ProductsAdmin->getProductsName($products_id, $language_id);
 
+        // Main Analyse
+        $sentimentSummary = $this->generateSentiment($language_id, $products_name, $text_reviews);
+
+        // critic (phase 2) — with SENTIMENT_MIN_REVIEWS_FOR_CRITIC
+        $criticResult = $this->generateSentimentCritic(
+          $sentimentSummary,
+          $text_reviews,
+          $products_name,
+          $language_code,
+          $reviewCount
+        );
+
         $sql_data_array = [
-          'description' => $this->generateSentiment($language_id, $products_name)
+          'description'      => $sentimentSummary,
+          'critic'         => $criticResult['critic'],
+          'critic_verdict' => $criticResult['verdict'],
+          'id'               => (int)$last_id,
+          'language_id'      => (int)$language_id,
         ];
 
-        $insert_sql_data = [
-          'id' => (int)$last_id,
-          'language_id' => (int)$language_id
-        ];
-
-        $sql_data_array = array_merge($sql_data_array, $insert_sql_data);
-
-        $this->app->db->save('reviews_sentiment_description ', $sql_data_array);
+        $this->app->db->save('reviews_sentiment_description', $sql_data_array);
       }
     }
 
-    $Qcheck = $this->app->db->prepare('select id
-                                         from :reviews_sentiment_embedding
-                                         where entity_id = :entity_id
-                                        ');
-    $Qcheck->bindInt(':entity_id', $id);
-    $Qcheck->execute();
+    // ── Étape 3 : Embeddings ──
 
-    $insert_embedding = false;
+    $Qembcheck = $this->app->db->prepare('SELECT id
+                                          FROM :reviews_sentiment_embedding
+                                          WHERE entity_id = :entity_id
+                                         ');
+    $Qembcheck->bindInt(':entity_id', $id);
+    $Qembcheck->execute();
 
-    if ($Qcheck->fetch() === false) {
-      $insert_embedding = true;
-    }
+    $insert_embedding = ($Qembcheck->fetch() === false);
 
-    $QreviewSentiment = $this->app->db->prepare('SELECT distinct rs.id,
-                                                                  rs.sentiment_status,
-                                                                  rs.sentiment_approved,
-                                                                  rs.date_added,
-                                                                  rs.products_id,
-                                                                  rs.reviews_id,
-                                                                  rsd.language_id,
-                                                                  rsd.description,
-                                                                  rv.vote,
-                                                                  rv.customer_id,
-                                                                  rv.sentiment AS vote_sentiment
-                                                    FROM 
-                                                        :table_reviews_sentiment rs
-                                                    INNER JOIN 
-                                                        :table_reviews_sentiment_description rsd 
-                                                        ON rs.id = rsd.sentiment_id
-                                                    LEFT JOIN
-                                                        :table_reviews_vote rv
-                                                        ON rs.reviews_id = rv.reviews_id
-                                                        AND rs.products_id = rv.products_id
-                                                    WHERE 
-                                                        rs.id = :id
-                                                ');
+    $QreviewSentiment = $this->app->db->prepare('SELECT DISTINCT
+                                                    rs.id,
+                                                    rs.sentiment_status,
+                                                    rs.sentiment_approved,
+                                                    rs.date_added,
+                                                    rs.products_id,
+                                                    rs.reviews_id,
+                                                    rsd.id,
+                                                    rsd.language_id,
+                                                    rsd.description,
+                                                    rsd.critic,
+                                                    rsd.critic_verdict,
+                                                    rv.vote,
+                                                    rv.customer_id,
+                                                    rv.sentiment AS vote_sentiment
+                                                  FROM :table_reviews_sentiment rs
+                                                  INNER JOIN :table_reviews_sentiment_description rsd
+                                                    ON rs.id = rsd.id
+                                                  LEFT JOIN :table_reviews_vote rv
+                                                    ON rs.reviews_id = rv.reviews_id
+                                                   AND rs.products_id = rv.products_id
+                                                  WHERE rs.id = :id
+                                                 ');
     $QreviewSentiment->bindInt(':id', $id);
     $QreviewSentiment->execute();
 
     $review_sentiment_array = $QreviewSentiment->fetchAll();
-    $review_sentiment_id = $QreviewSentiment->valueInt('id');
+    $review_sentiment_id    = $QreviewSentiment->valueInt('id');
 
     if (is_array($review_sentiment_array)) {
       foreach ($review_sentiment_array as $item) {
         $language_code = $this->lang->getLanguageCodeById((int)$item['language_id']);
-        $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/PageManager/rag', $language_code);
-        $products_id = $item['products_id'];
-        $language_id = $item['language_id'];
+        $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/ReviewsSentiment/rag', $language_code);
 
-        $products_name = $CLICSHOPPING_ProductsAdmin->getProductsName($products_id, $item['language_id']);
-        $sentiment_status = isset($item['sentiment_status']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['sentiment_status']) : '';
+        $products_id      = $item['products_id'];
+        $products_name    = $CLICSHOPPING_ProductsAdmin->getProductsName($products_id, $item['language_id']);
+
+        $sentiment_status   = isset($item['sentiment_status'])   ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['sentiment_status'])   : '';
         $sentiment_approved = isset($item['sentiment_approved']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['sentiment_approved']) : '';
-        $date_added = isset($item['date_added']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['date_added']) : '';
-        $description = isset($item['description']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['description']) : '';
-        $vote = isset($item['vote']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['vote']) : '0';
-        $customer_id = isset($item['customer_id']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['customer_id']) : '';
-        $vote_sentiment = isset($item['vote_sentiment']) ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['vote_sentiment']) : '';
+        $date_added         = isset($item['date_added'])         ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['date_added'])         : '';
+        $description        = isset($item['description'])        ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['description'])        : '';
+        $critic           = isset($item['critic'])           ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['critic'])           : '';
+        $critic_verdict   = isset($item['critic_verdict'])   ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['critic_verdict'])   : '';
+        $vote               = isset($item['vote'])               ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['vote'])               : '0';
+        $customer_id        = isset($item['customer_id'])        ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['customer_id'])        : '';
+        $vote_sentiment     = isset($item['vote_sentiment'])     ? HTMLOverrideCommon::cleanHtmlForEmbedding($item['vote_sentiment'])     : '';
 
         //********************
         // add embedding
         //********************
 
         if ($embedding_enabled) {
-          $embedding_data = "\n" . $this->app->getDef('text_review_sentiment_semantic_title', ['products_name' => $products_name]) . "\n";
-          $embedding_data .= $this->app->getDef('text_sentiment_semantic_review_sentiment_id', ['review_sentiment_id' => $review_sentiment_id]) . "\n";
-          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_status', ['products_name' => $products_name]) . ' : ' . $sentiment_status . "\n";
-          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_approved', ['products_name' => $products_name]) . ' : ' . $sentiment_approved . "\n";
-          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_date_added', ['products_name' => $products_name]) . ' : ' . $date_added . "\n";
-          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_vote', ['products_name' => $products_name]) . ' : ' . $vote . "\n";
-          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_customer_id', ['products_name' => $products_name]) . ' : ' . $customer_id . "\n";
-          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_vote_sentiment', ['products_name' => $products_name]) . ' : ' . $vote_sentiment . "\n";
-          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_description', ['products_name' => $products_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($description) . "\n";
+          $embedding_data  = "\n" . $this->app->getDef('text_review_sentiment_semantic_semantic_title',        ['products_name' => $products_name]) . "\n";
+          $embedding_data .= $this->app->getDef('text_sentiment_semantic_review_sentiment_id',         ['review_sentiment_id' => $review_sentiment_id]) . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_status',               ['products_name' => $products_name]) . ' : ' . $sentiment_status   . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_approved',             ['products_name' => $products_name]) . ' : ' . $sentiment_approved . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_date_added',           ['products_name' => $products_name]) . ' : ' . $date_added         . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_vote',                 ['products_name' => $products_name]) . ' : ' . $vote               . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_customer_id',          ['products_name' => $products_name]) . ' : ' . $customer_id        . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_vote_sentiment',       ['products_name' => $products_name]) . ' : ' . $vote_sentiment     . "\n";
+          $embedding_data .= $this->app->getDef('text_review_sentiment_semantic_description',          ['products_name' => $products_name]) . ' : ' . HTMLOverrideCommon::cleanHtmlForEmbedding($description) . "\n";
+
+          // Critic integration inside embedding
+          if (!empty($critic)) {
+            $embedding_data .= 'critic qualité : ' . $critic         . "\n";
+            $embedding_data .= 'Verdict critic : ' . $critic_verdict . "\n";
+          }
 
           $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($description), $language_code, null);
 
+          $tags = [];
           if (!empty($taxonomy)) {
             $lines = array_filter(array_map('trim', explode("\n", $taxonomy)));
-            $tags = [];
-
             foreach ($lines as $line) {
               if (preg_match('/^\[([^\]]+)\]:\s*(.+)$/', $line, $matches)) {
                 $tags[$matches[1]] = trim($matches[2]);
               }
             }
-          } else {
-            $tags = [];
           }
 
           $embedding_data .= "\n" . $this->app->getDef('text_review_sentiment_taxonomy') . " :\n";
-
           foreach ($tags as $key => $value) {
             $embedding_data .= "[$key]: $value\n";
           }
@@ -309,20 +550,18 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
 
         $embeddedDocuments = NewVector::createEmbedding(null, $embedding_data);
 
-        // Prepare base metadata
         $baseMetadata = [
-          'review_sentiment_name' => HtmlOverrideCommon::cleanHtmlForEmbedding($products_name),
-          'content' => HtmlOverrideCommon::cleanHtmlForEmbedding($description),
-          'id' => (int)$item['id'],
-          'type' => 'review_sentiment',
-          'source' => [
-            'type' => 'manual',
-            'name' => 'manual'
-          ],
-          'tags' => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : []
+          'review_sentiment_name' => HTMLOverrideCommon::cleanHtmlForEmbedding($products_name),
+          'content'               => HTMLOverrideCommon::cleanHtmlForEmbedding($description),
+          'critic'              => $critic,
+          'critic_verdict'      => $critic_verdict,
+          'review_count'          => $reviewCount,
+          'id'                    => (int)$item['id'],
+          'type'                  => 'review_sentiment',
+          'source'                => ['type' => 'manual', 'name' => 'manual'],
+          'tags'                  => $taxonomy ? array_filter(array_map(fn($t) => trim(strip_tags($t)), explode("\n", $taxonomy))) : [],
         ];
 
-        // Save all chunks using centralized method
         $result = NewVector::saveEmbeddingsWithChunks(
           $embeddedDocuments,
           'reviews_sentiment_embedding',
@@ -330,13 +569,14 @@ class Update implements \ClicShopping\OM\Modules\HooksInterface
           (int)$item['language_id'],
           $baseMetadata,
           $this->app->db,
-          !$insert_embedding  // isUpdate = true if not inserting
+          !$insert_embedding
         );
 
         if (!$result['success']) {
           error_log("ReviewsSentiment: Failed to save embeddings for sentiment {$item['id']} - " . $result['error']);
         } else {
-          error_log("ReviewsSentiment: Successfully saved {$result['chunks_saved']} chunks for sentiment {$item['id']}");
+           $this->messageStack->add($this->app->getDef('text_succes_mesage'), 'success');
+          //error_log("ReviewsSentiment: Successfully saved {$result['chunks_saved']} chunks for sentiment {$item['id']}");
         }
       }
     }
