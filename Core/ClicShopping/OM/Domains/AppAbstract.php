@@ -215,7 +215,7 @@ abstract class AppAbstract implements AppInterface
       $args[2] = $this->vendor . '-' . $this->code;
     }
 
-    return call_user_func_array([$this->lang, 'getDef'], $args);
+    return ($this->lang->getDef(...))(...$args);
   }
 
   /**

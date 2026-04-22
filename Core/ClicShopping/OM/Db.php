@@ -424,7 +424,7 @@ class Db extends PDO
         $cache = [$cache];
       }
 
-      call_user_func_array([$Q, 'setCache'], $cache);
+      ($Q->setCache(...))(...$cache);
     }
 
     $Q->execute();

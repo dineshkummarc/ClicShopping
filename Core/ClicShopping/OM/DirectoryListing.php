@@ -256,7 +256,7 @@ class DirectoryListing
 
     if (is_array($this->listing) && (count($this->listing) > 0)) {
       if ($sort_by_directories === true) {
-        usort($this->listing, array($this, 'sortListing'));
+        usort($this->listing, $this->sortListing(...));
       }
 
       return $this->listing;

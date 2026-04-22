@@ -60,7 +60,7 @@ class SQLTableParser
 
     // Remove duplicates and clean table names
     $tables = array_unique($tables);
-    $tables = array_map([self::class, 'cleanTableName'], $tables);
+    $tables = array_map(self::cleanTableName(...), $tables);
     $tables = array_filter($tables); // Remove empty strings
 
     return array_values($tables);

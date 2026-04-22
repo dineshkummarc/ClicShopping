@@ -74,7 +74,7 @@ class SecurityLogger
         
         // Register shutdown function to flush buffer
         if ($bufferEnabled) {
-            register_shutdown_function([$this, 'flushBuffer']);
+            register_shutdown_function($this->flushBuffer(...));
         }
 	
 	$this->stats = new SecurityStatistics();

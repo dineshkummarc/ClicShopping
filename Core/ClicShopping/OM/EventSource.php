@@ -309,7 +309,7 @@ class EventSource
 
     try {
       // Utilisation du streaming de la nouvelle classe Stream
-      Stream::executeStreaming($parameters, [$this, 'processStreamData']);
+      Stream::executeStreaming($parameters, $this->processStreamData(...));
     } catch (Exception $e) {
       throw $e;
     } finally {
