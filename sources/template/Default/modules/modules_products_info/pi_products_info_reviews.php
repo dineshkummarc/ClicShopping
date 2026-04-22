@@ -120,8 +120,8 @@ class pi_products_info_reviews
 
        if ($Qsentiment->valueInt('sentiment_approved') == 1) {
           $products_reviews_content .= '<div class="alert alert-info" role="alert">';
-          $products_reviews_content .= '<span class="moduleProductsInfoReviewsTitleAiSentiment"><h6>' . CLICSHOPPING::getDef('modules_products_reviews_info_content_text_customers_ai_sentiment') . ' ' . $CLICSHOPPING_ProductsCommon->getProductsName() . '</h6></span>';
-          $products_reviews_content .= $Qsentiment->value('description');
+          $products_reviews_content .= '<span class="moduleProductsInfoReviewsTitleAiSentiment"><h4>' . CLICSHOPPING::getDef('modules_products_reviews_info_content_text_customers_ai_sentiment') . ' ' . $CLICSHOPPING_ProductsCommon->getProductsName() . '</h4></span>';
+          $products_reviews_content .= '<span class="moduleProductsInfoReviewsTitleAiSentimentDescription"><h5>' . $Qsentiment->value('description') . '</h5></span>';
           $products_reviews_content .= '<div class="mt-1"></div>';
 
          // Uniq ID for every button
@@ -239,17 +239,18 @@ class pi_products_info_reviews
 
             $products_reviews_content .= '<div class="moduleProductsInfoReviewCustomersNotice">';
             $products_reviews_content .= CLICSHOPPING::getDef('modules_products_reviews_text_useful_vote');
+// Bouton YES
             $products_reviews_content .= '<span class="buttonVoteYes">';
-            $products_reviews_content .= ' <span class="toggleButton yesButton" id="' . $uniqueId . '_yesButton" data-unique-id="' . $uniqueId . '" data-product-id="' . $products_id . '" data-customer-id="' . $customer_id . '" data-ajax-url="' . $ajax_url . '"><strong>' . CLICSHOPPING::getDef('modules_products_reviews_text_useful_vote_yes') . '</strong></span> ';
+            $products_reviews_content .= ' <button type="button" class="toggleButton yesButton" id="' . $uniqueId . '_yesButton" data-unique-id="' . $uniqueId . '" data-product-id="' . $products_id . '" data-customer-id="' . $customer_id . '" data-ajax-url="' . $ajax_url . '"><strong>' . CLICSHOPPING::getDef('modules_products_reviews_text_useful_vote_yes') . '</strong></button> ';
             $products_reviews_content .= ' <span class="toggleValue yesValue">(' . $QreviewsVoteYes->valueInt('countVoteYes') . ')</span> ';
             $products_reviews_content .= '</span>';
-
+// Bouton NO
             $products_reviews_content .= '<span class="buttonVoteNo">';
-            $products_reviews_content .= ' <span class="toggleButton noButton" id="' . $uniqueId . '_noButton" data-unique-id="' . $uniqueId . '" data-product-id="' . $products_id . '" data-customer-id="' . $customer_id . '" data-ajax-url="' . $ajax_url . '"><strong>' . CLICSHOPPING::getDef('modules_products_reviews_text_useful_vote_no') . '</strong></span> ';
+            $products_reviews_content .= ' <button type="button" class="toggleButton noButton" id="' . $uniqueId . '_noButton" data-unique-id="' . $uniqueId . '" data-product-id="' . $products_id . '" data-customer-id="' . $customer_id . '" data-ajax-url="' . $ajax_url . '"><strong>' . CLICSHOPPING::getDef('modules_products_reviews_text_useful_vote_no') . '</strong></button> ';
             $products_reviews_content .= ' <span class="toggleValue noValue">(' . $QreviewsVoteNo->valueInt('countVoteNo') . ')</span> ';
             $products_reviews_content .= ' <span class="thankYouMessage" style="display: none;">' . CLICSHOPPING::getDef('modules_products_reviews_text_useful_vote_thank_you') . '</span>';
-            $products_reviews_content .= '</div>';
             $products_reviews_content .= '</span>';
+            $products_reviews_content .= '</div>';
 
             $products_reviews_content .= '<script defer src="' . CLICSHOPPING::link($CLICSHOPPING_Template->getTemplateDefaultJavaScript('clicshopping/voted_review.js')) . '"></script>' . "\n";
             $products_reviews_content .= '<div class="mt-1"></div>';
@@ -279,13 +280,12 @@ class pi_products_info_reviews
 
       if ($count_review == 0) {
         $write_button = HTML::button(CLICSHOPPING::getDef('button_write_review'), null, CLICSHOPPING::link(null, 'Products&ReviewsWrite&products_id=' . $CLICSHOPPING_ProductsCommon->getID()), 'info');
-        $products_reviews_content .= '<div class="mt-1"></div>';
+        $products_reviews_content .= '<div class="py-3"></div>';
         $products_reviews_content .= '<div class="col-md-12">';
         $products_reviews_content .= '<div class="moduleProductsInfoNoReview">' . CLICSHOPPING::getDef('text_info_no_reviews') . '</div>';
         $products_reviews_content .= '<div class="text-end">' . $write_button . '</div>';
         $products_reviews_content .= '<div>';
       }
-
       $products_reviews_content .= '<div class="mt-1"></div>';
       $products_reviews_content .= '</div>' . "\n";
       $products_reviews_content .= '<div class="mt-1"></div>';

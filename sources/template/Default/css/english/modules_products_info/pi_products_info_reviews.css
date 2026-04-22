@@ -24,6 +24,15 @@
   font-weight: bold;
 }
 
+span.moduleProductsInfoReviewsTitleAiSentiment h4 {
+  font-size: 0.9rem;
+}
+
+span.moduleProductsInfoReviewsTitleAiSentimentDescription h5
+{
+  font-size: 0.9rem;
+}
+
 .moduleProductsInfoReviewText {
 }
 

@@ -2,8 +2,8 @@ version4.25
 - librairies updated
 - Some fix
 - Add papers company checking for customers B2b
-- Add electronique EU invoice regulation
-- AI Sentiment Analyis improved
+- Add electronic EU invoice regulation
+- AI Sentiment Analyis refactored
 - AI Custommer recommendation refactored
 
 ---------------
