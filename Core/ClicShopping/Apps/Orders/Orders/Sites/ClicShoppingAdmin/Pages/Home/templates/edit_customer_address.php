@@ -51,7 +51,6 @@ $entry_state = $Qcustomers->value('entry_state');
 $entry_country_id = $Qcustomers->valueInt('entry_country_id');
 $entry_zone_id = $Qcustomers->valueInt('entry_zone_id');
 
-//echo HTML::form('update_address', $CLICSHOPPING_Orders->link('Orders&UpdateOrder&UpdateCustomerAddress'), 'post', 'role="form"');
 echo HTML::form('update_address', $CLICSHOPPING_Orders->link('Orders&UpdateCustomerAddress'), 'post', 'role="form"');
 
 //  echo HTML::form('pop_up',         $CLICSHOPPING_Orders->link('CreateOrder&ProductsPopUpSave'), 'post', 'role="form"');

@@ -209,7 +209,6 @@ email_text_comments_update = Les commentaires de votre commande sont :
 
 error_order_does_not_exist = Erreur : La commande n'existe pas. : N° {{order_id}}
 success_order_updated = Succès : La commande est mise à jour avec succès.
-warning_order_not_updated = Attention : Aucune modification n'a été effectuée. La commande n'a pas été mis à jour.
 
 entry_order_siret = N° d'immatriculation <i>(ex : No RCS) :
 entry_tva_intracom = N° de TVA intracom :
@@ -228,10 +227,34 @@ button_packingslip_batch = Impression en lot bons de livraison
 orders_batch_heading = Impression commandes
 button_orders_batch = Impression en lot des commandes
 
-success_order_updated = Votre demande a été traité avec succès
-warning_order_not_updated = Attention : Commande non mise à jour
-
 text_info_new_quantity = Mise à jour quantité de la commande : la nouvelle quantité mis à jour est {{new_quantity}} concernant le nom du produit : {{products_name}}
+
+alert_invoice_locked_title = Commande verrouillée – facture validée
+alert_invoice_locked_body = Conformément à l'art. L441-9 C.com., une facture validée est intangible. Repassez le statut facture à « En attente » pour pouvoir modifier la commande.
+alert_invoice_locked_tab2 = Les lignes de commande sont en lecture seule car la facture a été validée.
+table_heading_qty_edit = Qté
+table_heading_price_edit = Prix HT
+title_add_product = Ajouter une ligne produit
+entry_add_product_id = ID produit (catalogue)
+placeholder_product_id = ex. 42
+button_add_product = Ajouter
+confirm_delete_product = Supprimer cette ligne de la commande ?
+error_order_invoice_locked = Modification impossible : la facture de cette commande est validée.
+success_product_updated = Ligne mise à jour avec succès.
+success_product_added = Produit ajouté à la commande.
+success_product_deleted = Ligne supprimée de la commande.
+error_product_update_failed = Échec de la mise à jour (quantité ou prix invalide).
+error_product_add_failed = Échec de l'ajout (produit introuvable ou données invalides).
+error_product_delete_failed = Échec de la suppression.
+
+text_info_product_updated = Qté ou Prix mise à jour
+warning_order_stock_not_updated = Stock non mis é jour
+error_order_invoice_locked = Facture bloquée
+warning_order_not_updated = Commande non mis à jour
+text_info_product_added = Produit mis à jour
+text_info_product_deleted = Produit supprimé
+text_info_new_quantity = Quantité mise à jour : La nouvelle quantité est {{new_quantity}} concernant ce produit : {{products_name}}
+
 
 text_result_page = Page {{listing_from}} à {{listing_total}}
 text_display_number_of_link = Affiche <strong>{{listing_from}}</strong> à <strong>{{listing_to}}</strong> (sur <strong>{{listing_total}}</strong>)
