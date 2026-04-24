@@ -1,6 +1,6 @@
 version4.26
-
-
+- remove table embedding no compatible with sql server
+- 
 
 ---------------
 version4.25
