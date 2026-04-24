@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '904fd650613fc1ec16a83bf73ed19d844915ee31',
+        'reference' => '96d2c46be5ea9dd80e70dbfc3ed40422af34c99b',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../../../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '904fd650613fc1ec16a83bf73ed19d844915ee31',
+            'reference' => '96d2c46be5ea9dd80e70dbfc3ed40422af34c99b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../../../../',
             'aliases' => array(),
@@ -101,9 +101,9 @@
             'dev_requirement' => false,
         ),
         'doctrine/migrations' => array(
-            'pretty_version' => '3.9.6',
-            'version' => '3.9.6.0',
-            'reference' => 'ffd8355cdd8505fc650d9604f058bf62aedd80a1',
+            'pretty_version' => '3.9.7',
+            'version' => '3.9.7.0',
+            'reference' => '96cb2a89b56c9efb0bac38e606dc0b0f13e650ec',
             'type' => 'library',
             'install_path' => __DIR__ . '/../doctrine/migrations',
             'aliases' => array(),
@@ -358,7 +358,7 @@
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => 'f41f65e527608a9a76cfbafd873756ed76c5452d',
+            'reference' => '3901f65a6ee5585978c60ee579f23c7f848ec6a2',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
@@ -385,9 +385,9 @@
             'dev_requirement' => false,
         ),
         'stripe/stripe-php' => array(
-            'pretty_version' => 'v20.0.0',
-            'version' => '20.0.0.0',
-            'reference' => '7338bd140e641b1f9c7cb602e2de971e14db6b3b',
+            'pretty_version' => 'v20.1.0',
+            'version' => '20.1.0.0',
+            'reference' => '6d0ec5ffa0678a408d63163ace1453b35a85fb24',
             'type' => 'library',
             'install_path' => __DIR__ . '/../stripe/stripe-php',
             'aliases' => array(),
