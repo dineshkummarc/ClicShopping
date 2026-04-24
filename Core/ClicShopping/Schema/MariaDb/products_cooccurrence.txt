@@ -1,9 +1,9 @@
-product_id  int not_null comment(Primary product identifier (source))
-related_id  int not_null comment(Associated product identifier (target))
-score INT NOT NULL DEFAULT 0 comment(Strength of association or frequency of co-purchase/view)
-updated_at timestamp NULL default(current_timestamp) ON UPDATE current_timestamp() comment(coocurrence updated date)
+product_id int not_null comment(Primary product identifier (source))
+related_id int not_null comment(Associated product identifier (target))
+score int not_null default(0) comment(Strength of association or frequency of co-purchase/view)
+updated_at timestamp null default(current_timestamp) on update current_timestamp() comment(coocurrence updated date)
 --
-primary product_id  related_id
+primary product_id related_id
 idx_product_id product_id
 idx_related_id related_id
 ##

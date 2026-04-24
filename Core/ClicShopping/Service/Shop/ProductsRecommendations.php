@@ -10,9 +10,10 @@
 
 namespace ClicShopping\Service\Shop;
 
-use ClicShopping\Apps\Catalog\Products\Classes\Shop\ProductsRecommendations as Recommendation;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
+use ClicShopping\Apps\AI\Ecommerce\Classes\Shop\Products\ProductsRecommendations as Recommendations;
+
 
 /**
  * Service class responsible for handling the initialization and shutdown of the ProductsRecommendations functionality.
@@ -30,8 +31,8 @@ class ProductsRecommendations implements \ClicShopping\OM\Interfaces\ServiceInte
    */
   public static function start(): bool
   {
-    if (is_file(CLICSHOPPING::BASE_DIR . 'Apps/Catalog/Products/Classes/Shop/ProductsRecommendations.php')) {
-      Registry::set('ProductsRecommendations', new Recommendation());
+    if (is_file(CLICSHOPPING::BASE_DIR . 'Apps/AI/Ecommerce/Classes/Shop/Products/ProductsRecommendations.php')) {
+      Registry::set('ProductsRecommendations', new Recommendations());
 
       return true;
     } else {
