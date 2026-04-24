@@ -14,6 +14,7 @@ use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\ClicShoppingAdmin\Tax;
 use ClicShopping\Apps\Orders\Orders\Classes\ClicShoppingAdmin\OrderAdmin;
+use ClicShopping\Apps\Orders\Orders\Classes\ClicShoppingAdmin\UpdateOrder as UpdateOrderService;
 use ClicShopping\Apps\Orders\Orders\Classes\Common\EInvoiceService;
 
 $CLICSHOPPING_Orders = Registry::get('Orders');
@@ -24,6 +25,11 @@ $CLICSHOPPING_MessageStack = Registry::get('MessageStack');
 $CLICSHOPPING_Image = Registry::get('Image');
 $CLICSHOPPING_Language = Registry::get('Language');
 $CLICSHOPPING_Hooks = Registry::get('Hooks');
+
+// ── Invoice lock flag for the view ───────────────────────────────────────
+// Computed once here so the template doesn't need to import UpdateOrder.
+// The actual mutations are handled by the UpdateOrder action controller
+// (Actions/Orders/UpdateOrder.php) — this file is display-only.
 
 if ($CLICSHOPPING_MessageStack->exists('main')) {
   echo $CLICSHOPPING_MessageStack->get('main');
@@ -65,6 +71,13 @@ if (isset($order_id) && is_numeric($order_id) && ($order_id > 0)) {
     $CLICSHOPPING_MessageStack->add(CLICSHOPPING::getDef('error_order_does_not_exist', ['order_id' => $oID]), 'error');
   }
 }
+
+// ── Invoice lock guard ──────────────────────────────────────────────────────
+// An order whose invoice status is >= 1 (validated / cancelled / credit-note)
+// must NOT be edited: French law (art. L441-9 C.com.) prohibits modifying a
+// validated invoice. The admin can only unlock it by reverting the invoice
+// status to 0 (pending) on the Status tab before making any changes.
+$order_is_invoice_locked = isset($oID) ? UpdateOrderService::isInvoiceLocked((int)$oID) : false;
 
 // orders_invoice status Dropdown
 $orders_invoice_statuses = [];
@@ -128,7 +141,7 @@ $Qcustomers->execute();
       </div>
     </div>
   </div>
-  <div class="mt-1"></div>
+  <div class="mt-2"></div>
   <!-- //###########################################//-->
   <!--          Customer information tab  1        //-->
   <!-- //###########################################//-->
@@ -365,27 +378,55 @@ $Qcustomers->execute();
         <!-- //###########################################//-->
 
         <div class="tab-pane" id="tab2">
+          <?php if ($order_is_invoice_locked): ?>
+          <!-- ── Read-only notice when invoice is validated ── -->
+          <div class="alert alert-warning d-flex align-items-center gap-2 my-2" role="alert">
+            <i class="bi bi-lock-fill"></i>
+            <span><?php echo $CLICSHOPPING_Orders->getDef('alert_invoice_locked_tab2'); ?></span>
+          </div>
+          <?php endif; ?>
+
           <table width="100%" border="0" cellspacing="0" cellpadding="5" class="adminformTitle">
             <tr class="dataTableHeadingRow">
+              <?php if (!$order_is_invoice_locked): ?><td></td><?php endif; ?>
               <td></td>
               <td></td>
-              <td></td>
+
               <td></td>
               <td></td>
               <td class="text-center"><?php echo $CLICSHOPPING_Orders->getDef('table_heading_products'); ?></td>
               <td></td>
               <td><?php echo $CLICSHOPPING_Orders->getDef('table_heading_products_model'); ?></td>
+
+
               <td class="text-end"><?php echo $CLICSHOPPING_Orders->getDef('table_heading_tax'); ?></td>
               <td class="text-end"><?php echo $CLICSHOPPING_Orders->getDef('table_heading_price_excluding_tax'); ?></td>
               <td class="text-end"><?php echo $CLICSHOPPING_Orders->getDef('table_heading_price_including_tax'); ?></td>
+
+              <?php if(!$order_is_invoice_locked) {
+                ?>
+                <td class="text-center"><?php echo $CLICSHOPPING_Orders->getDef('table_heading_qty_edit'); ?></td>
+                <td class="text-center"><?php echo $CLICSHOPPING_Orders->getDef('table_heading_price_edit'); ?></td>
+                <?php
+              }
+              ?>
+
               <td class="text-end"><?php echo $CLICSHOPPING_Orders->getDef('table_heading_total_excluding_tax'); ?></td>
               <td class="text-end"><?php echo $CLICSHOPPING_Orders->getDef('table_heading_total_including_tax'); ?></td>
+
+
+              <td></td>
+
             </tr>
             <?php
             for ($i = 0, $n = \count($order->products); $i < $n; $i++) {
-              $products_id = $order->products[$i]['products_id'];
+              $products_id         = $order->products[$i]['products_id'];
+              $orders_products_id  = (int)$order->products[$i]['orders_products_id'];
 
-              echo '    <tr class="dataTableRow">' . "\n" .
+              echo '    <tr class="dataTableRow">' . "\n";
+
+
+              echo
                 '      <td class="dataTableContent" vertical-align="top">' . HTML::link(CLICSHOPPING::link(null, 'A&Catalog\Products&Preview&pID=' . $products_id . '?page=' . $page), '<h4><i class="bi bi-easil3" title="' . $CLICSHOPPING_Orders->getDef('icon_preview') . '"></i></h4>') . '</td>' . "\n" .
                 '      <td class="dataTableContent" vertical-align="top">' . HTML::link(CLICSHOPPING::link(null, 'A&Catalog\Products&Edit&pID=' . $products_id), '<h4><i class="bi bi-pencil" title="' . $CLICSHOPPING_Orders->getDef('icon_edit') . '"></i></h4>') . '</td>' . "\n" .
                 '      <td class="dataTableContent" vertical-align="top">' . $CLICSHOPPING_Image->getSmallImageAdmin($products_id) . '</td>' . "\n" .
@@ -406,17 +447,80 @@ $Qcustomers->execute();
                 }
               }
 
+              echo      '      <td class="dataTableContent" vertical-align="top">' . $order->products[$i]['model'] . '</td>' . "\n";
+              // ── Inline edit fields (qty + price) — editable mode only ──
               echo '      </td>' . "\n" .
-                '      <td class="dataTableContent" vertical-align="top">' . $order->products[$i]['model'] . '</td>' . "\n" .
                 '      <td class="text-end dataTableContent">' . $order->products[$i]['tax'] . '</td>' . "\n" .
                 '      <td class="text-end dataTableContent"><strong>' . $CLICSHOPPING_Currencies->format($order->products[$i]['final_price'], true, $order->info['currency'], $order->info['currency_value']) . '</strong></td>' . "\n" .
-                '      <td class="text-end dataTableContent"><strong>' . $CLICSHOPPING_Currencies->format(Tax::addTax($order->products[$i]['final_price'], $order->products[$i]['tax'], true), true, $order->info['currency'], $order->info['currency_value']) . '</strong></td>' . "\n" .
-                '      <td class="text-end dataTableContent"><strong>' . $CLICSHOPPING_Currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'], true, $order->info['currency'], $order->info['currency_value']) . '</strong></td>' . "\n" .
+                '      <td class="text-end dataTableContent"><strong>' . $CLICSHOPPING_Currencies->format(Tax::addTax($order->products[$i]['final_price'], $order->products[$i]['tax'], true), true, $order->info['currency'], $order->info['currency_value']) . '</strong></td>' . "\n";
+
+
+              if (!$order_is_invoice_locked) {
+                echo '      <td class="dataTableContent text-center" vertical-align="top">'
+                  . HTML::form('edit_prod_' . $orders_products_id, $CLICSHOPPING_Orders->link('Orders&UpdateOrderProduct&UpdateProduct&oID=' . $oID), 'post', 'class="d-inline"')
+                  . HTML::hiddenField('orders_products_id', $orders_products_id)
+                  . '<input type="number" name="new_qty" value="' . (int)$order->products[$i]['qty'] . '" min="1" step="1" class="form-control form-control-sm d-inline" style="width:70px" />'
+                  . '</td>' . "\n"
+                  . '      <td class="dataTableContent text-center" vertical-align="top">'
+                  . '<input type="number" name="new_price" value="' . number_format((float)$order->products[$i]['final_price'], 4, '.', '') . '" min="0" step="0.0001" class="form-control form-control-sm d-inline" style="width:90px" />'
+                  . '</td>' . "\n";
+
+              }
+
+
+               echo  '      <td class="text-end dataTableContent"><strong>' . $CLICSHOPPING_Currencies->format($order->products[$i]['final_price'] * $order->products[$i]['qty'], true, $order->info['currency'], $order->info['currency_value']) . '</strong></td>' . "\n" .
                 '      <td class="text-end dataTableContent"><strong>' . $CLICSHOPPING_Currencies->format(Tax::addTax($order->products[$i]['final_price'], $order->products[$i]['tax'], true) * $order->products[$i]['qty'], true, $order->info['currency'], $order->info['currency_value']) . '</strong></td>' . "\n";
+
+
+              if (!$order_is_invoice_locked) {
+              echo  '      <td class="dataTableContent" vertical-align="top">'
+              . '<button type="submit" class="btn btn-sm btn-outline-success p-1" title="' . $CLICSHOPPING_Orders->getDef('button_update') . '">'
+              . '<i class="bi bi-check-lg"></i></button>'
+              . '</form></td>' . "\n";
+              }
+
               echo '    </tr>' . "\n";
             }
             ?>
           </table>
+
+
+
+
+
+          <?php
+            /*
+            if (!$order_is_invoice_locked): ?>
+          <!-- ── Add new product line ── -->
+          <div class="mt-3 adminformTitle">
+            <div class="mainTitle"><?php echo $CLICSHOPPING_Orders->getDef('title_add_product'); ?></div>
+            <?php echo HTML::form('add_product', $CLICSHOPPING_Orders->link('Orders&UpdateOrder&AddProduct&oID=' . $oID), 'post', 'class="row g-2 align-items-end mt-1"'); ?>
+              <?php echo HTML::hiddenField('order_id', $oID); ?>
+              <div class="col-md-3">
+                <label class="form-label small"><?php echo $CLICSHOPPING_Orders->getDef('entry_add_product_id'); ?></label>
+                <input type="number" name="new_products_id" min="1" step="1" class="form-control form-control-sm" placeholder="<?php echo $CLICSHOPPING_Orders->getDef('placeholder_product_id'); ?>" required />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small"><?php echo $CLICSHOPPING_Orders->getDef('table_heading_qty_edit'); ?></label>
+                <input type="number" name="new_qty" value="1" min="1" step="1" class="form-control form-control-sm" required />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small"><?php echo $CLICSHOPPING_Orders->getDef('table_heading_price_edit'); ?></label>
+                <input type="number" name="new_price" value="0.0000" min="0" step="0.0001" class="form-control form-control-sm" required />
+              </div>
+              <div class="col-md-2">
+                <?php echo HTML::button($CLICSHOPPING_Orders->getDef('button_add_product'), null, null, 'success btn-sm'); ?>
+              </div>
+            </form>
+          </div>
+          <?php endif;
+            */
+            ?>
+
+
+
+
+
 
           <div class="mt-1"></div>
           <table class="table">

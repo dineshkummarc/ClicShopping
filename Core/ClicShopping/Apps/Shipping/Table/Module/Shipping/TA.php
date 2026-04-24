@@ -141,13 +141,14 @@ class TA implements \ClicShopping\OM\Modules\ShippingInterface
       $shipping = $shipping * $shipping_num_boxes;
     }
 
-    $this->quotes = ['id' => $this->app->vendor . '\\' . $this->app->code . '\\' . $this->code,
+    $this->quotes = [
+      'id' => $this->app->vendor . '\\' . $this->app->code . '\\' . $this->code,
       'module' => $this->app->getDef('module_table_text_title'),
-      'methods' => [array('id' => $this->code,
-        'title' => $this->app->getDef('module_shipping_table_text_way'),
+      'methods' => [
+        ['id' => $this->code,
+        'title' => $this->app->getDef('module_shipping_table_text_way') ?? 'Best way',
         'cost' => $shipping + (float)CLICSHOPPING_APP_TABLE_TA_HANDLING
-
-      )
+        ]
       ]
     ];
 

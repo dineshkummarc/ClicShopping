@@ -1,3 +1,9 @@
+version4.26
+- remove table embedding no compatible with sql server inside schema
+- Add AI product recommendations (refactoring) inside product description (to do the cart, checkout  ... later)
+- librairies updated
+
+---------------
 version4.25
 - librairies updated
 - Some fix and security impovement

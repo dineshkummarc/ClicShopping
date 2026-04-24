@@ -227,7 +227,30 @@ button_orders_batch =  Orders print
 
 success_order_updated = Your request have been made with success
 warning_order_not_updated = Becarefull : order not updated
+alert_invoice_locked_title = Order locked – invoice validated
+alert_invoice_locked_body = In accordance with Article L441-9 of the French Commercial Code, a validated invoice is immutable. Set the invoice status back to "Pending" to modify the order.
+alert_invoice_locked_tab2 = Order lines are read-only because the invoice has been validated.
+table_heading_qty_edit = Qty
+table_heading_price_edit = Price excl. tax
+title_add_product = Add product line
+entry_add_product_id = Product ID (catalog)
+placeholder_product_id = e.g. 42
+button_add_product = Add
+confirm_delete_product = Remove this line from the order?
+error_order_invoice_locked = Modification not allowed: the invoice for this order has been validated.
+success_product_updated = Line updated successfully.
+success_product_added = Product added to the order.
+success_product_deleted = Line removed from the order.
+error_product_update_failed = Update failed (invalid quantity or price).
+error_product_add_failed = Add failed (product not found or invalid data).
+error_product_delete_failed = Delete failed.
 
+text_info_product_updated = Quantity or price updated
+warning_order_stock_not_updated = Stock not updated
+error_order_invoice_locked = Invoice locked
+warning_order_not_updated = Order not updated
+text_info_product_added = Product added
+text_info_product_deleted = Product deleted
 text_info_new_quantity = Quantity orders updated : New Quantity is {{new_quantity}} about the product name : {{products_name}}
 
 text_result_page = Page {{listing_from}} of {{listing_total}}

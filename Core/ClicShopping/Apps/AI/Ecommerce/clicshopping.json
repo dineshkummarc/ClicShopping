@@ -67,6 +67,7 @@
       },
       "ClicShoppingAdmin/Orders": {
         "Update": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\Update",
+        "UpdateOrderProduct": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\UpdateOrderProduct",
         "Insert": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\DeleteConfirm",
         "DeleteAll": "Module\\Hooks\\ClicShoppingAdmin\\Orders\\DeleteAll"
       },

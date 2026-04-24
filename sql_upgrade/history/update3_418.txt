@@ -1,1 +1,0 @@
-ALTER TABLE `clic_chatgpt` ADD `user_admin` VARCHAR(255) NULL DEFAULT NULL AFTER `date_added`;

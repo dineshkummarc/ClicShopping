@@ -1,0 +1,14 @@
+product_id  int not_null comment(Primary product identifier (source))
+related_id  int not_null comment(Associated product identifier (target))
+score INT NOT NULL DEFAULT 0 COMMENT 'Strength of association or frequency of co-purchase/view)
+PRIMARY KEY product_id  related_id
+INDEX idx_product_id product_id
+INDEX idx_related_id related_id
+
+--
+primary products_id
+products_name products_name
+##
+engine innodb
+character_set utf8mb4
+collate utf8mb4_unicode_ci
