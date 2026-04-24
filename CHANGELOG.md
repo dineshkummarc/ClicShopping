@@ -1,3 +1,8 @@
+version4.27
+
+
+
+---------------
 version4.26
 - remove table embedding no compatible with sql server inside schema
 - Add AI product recommendations (refactoring) inside product description (to do the cart, checkout  ... later)
