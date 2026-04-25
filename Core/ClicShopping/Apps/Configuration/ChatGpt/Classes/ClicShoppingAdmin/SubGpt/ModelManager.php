@@ -53,20 +53,30 @@ class ModelManager
       // GPT-5 SERIES (Future - Best Performance)
       // ============================================
       // Context: 200K+ | Embeddings: Yes | Reasoning: Yes | Analytics: Yes | Web Search: Yes
-      ['id' => 'gpt-5.4', 'text' => 'OpenAI GPT-5 (1.05M context, embeddings, reasoning, web search)', 'provider' => 'openai'],
-      ['id' => 'gpt-5.4-mini', 'text' => 'OpenAI GPT-5.4 mini (400K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
-      ['id' => 'gpt-5.4-nano', 'text' => 'OpenAI GPT-5.4 nano (400K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
-      ['id' => 'gpt-5.2', 'text' => 'OpenAI GPT-5.2 (200K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
-      ['id' => 'gpt-5.1', 'text' => 'OpenAI GPT-5.1 (200K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
-      ['id' => 'gpt-5-mini', 'text' => 'OpenAI GPT-5-mini (200K context, embeddings, reasoning)', 'provider' => 'openai'],
-      ['id' => 'gpt-5-nano', 'text' => 'OpenAI GPT-5-nano (128K context, no embeddings, reasoning)', 'provider' => 'openai'],
+        ['id' => 'gpt-5.5',       'text' => 'OpenAI GPT-5.5 (1.05M context, embeddings, reasoning, web search)', 'provider' => 'openai'],
+        ['id' => 'gpt-5.5-mini',  'text' => 'OpenAI GPT-5.5 mini (400K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
+        ['id' => 'gpt-5.5-nano',  'text' => 'OpenAI GPT-5.5 nano (128K context, reasoning)', 'provider' => 'openai'],
+
+        ['id' => 'gpt-5.4',       'text' => 'OpenAI GPT-5.4 (1.05M context, embeddings, reasoning, web search)', 'provider' => 'openai'],
+        ['id' => 'gpt-5.4-mini',  'text' => 'OpenAI GPT-5.4 mini (400K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
+        ['id' => 'gpt-5.4-nano',  'text' => 'OpenAI GPT-5.4 nano (128K context, reasoning)', 'provider' => 'openai'],
+
+        ['id' => 'gpt-5.2',       'text' => 'OpenAI GPT-5.2 (200K context, embeddings, reasoning, web search)', 'provider' => 'openai'],
+        ['id' => 'gpt-5.2-mini',  'text' => 'OpenAI GPT-5.2 mini (128K context, embeddings, reasoning)', 'provider' => 'openai'],
+        ['id' => 'gpt-5.2-nano',  'text' => 'OpenAI GPT-5.2 nano (64K context, reasoning)', 'provider' => 'openai'],
+
+        ['id' => 'gpt-5.1',       'text' => 'OpenAI GPT-5.1 (200K context, embeddings, reasoning)', 'provider' => 'openai'],
+        ['id' => 'gpt-5.1-mini',  'text' => 'OpenAI GPT-5.1 mini (128K context, embeddings, reasoning)', 'provider' => 'openai'],
+        ['id' => 'gpt-5.1-nano',  'text' => 'OpenAI GPT-5.1 nano (64K context, reasoning)', 'provider' => 'openai'],
 
       // ============================================
       // GPT-4.1 SERIES (Latest Stable)
       // ============================================
       // Context: 128K | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
-      ['id' => 'gpt-4.1-mini', 'text' => 'OpenAI GPT-4.1-mini (128K context, embeddings, reasoning) (recommended)', 'provider' => 'openai'],
-      ['id' => 'gpt-4.1-nano', 'text' => 'OpenAI GPT-4.1-nano (128K context, embeddings, reasoning)', 'provider' => 'openai'],
+        ['id' => 'gpt-4.1',       'text' => 'OpenAI GPT-4.1 (128K context, embeddings, reasoning)', 'provider' => 'openai'],
+        ['id' => 'gpt-4.1-mini',  'text' => 'OpenAI GPT-4.1 mini **Recommended** (64K context, embeddings, reasoning)', 'provider' => 'openai'],
+        ['id' => 'gpt-4.1-nano',  'text' => 'OpenAI GPT-4.1 nano (32K context, reasoning)', 'provider' => 'openai'],
+
 
       // ============================================
       // ANTHROPIC MODELS (Alternative Provider)
@@ -88,16 +98,15 @@ class ModelManager
       // Context: 1M | Embeddings: Yes | Reasoning: Yes | Analytics: Yes
       ['id' => 'gemini-2.5-flash', 'text' => 'gemini-2.5-flash  (1M context, embeddings, reasoning)', 'provider' => 'gemini'],
 
-
       // ============================================
       // LM STUDIO MODELS (Local Deployment)
       // ============================================
       // Context: 16K | Embeddings: No | Reasoning: Yes | Analytics: Limited
       // NOTE: Local models have limited capabilities but provide privacy and cost benefits
-      ['id' => 'openai/gpt-oss-20b', 'text' => 'LM Studio openai/gpt-oss-20b (16K context, reasoning, local)', 'provider' => 'lmstudio'],
-      ['id' => 'openai/gpt-oss-120b', 'text' => 'LM Studio openai/gpt-oss-120b (120K context, reasoning, local)', 'provider' => 'lmstudio'],
-      ['id' => 'qwen/qwen3-4b', 'text' => 'LM Studio qwen3-4b (16K context, no reasoning, local)', 'provider' => 'lmstudio'],
-      ['id' => 'microsoft/phi-4', 'text' => 'LM Studio phi 4 (16K context, no reasoning, local)', 'provider' => 'lmstudio'],
+        ['id' => 'openai/gpt-oss-120b', 'text' => 'LM Studio GPT-OSS 120B (120K context, reasoning, local)', 'provider' => 'lmstudio'],
+        ['id' => 'openai/gpt-oss-20b',  'text' => 'LM Studio GPT-OSS 20B (16K context, reasoning, local)', 'provider' => 'lmstudio'],
+        ['id' => 'qwen/qwen3-4b',       'text' => 'LM Studio Qwen3 4B (16K context, local)', 'provider' => 'lmstudio'],
+        ['id' => 'microsoft/phi-4',     'text' => 'LM Studio Phi-4 (16K context, reasoning, local)', 'provider' => 'lmstudio'],
     ];
 
     return $array;
