@@ -42,10 +42,10 @@ class Insert extends \ClicShopping\OM\Domains\PagesActionsAbstract
     $ssl_enabled = isset($_POST['ssl_enabled']) ? HTML::sanitize($_POST['ssl_enabled']) : 0;
 
     // Monitoring & alerts
-    $alert_threshold = HTML::sanitize($_POST['alert_threshold'] ?? '');
-    $latency_threshold = HTML::sanitize($_POST['latency_threshold'] ?? '');
-    $downtime_threshold = HTML::sanitize($_POST['downtime_threshold'] ?? '');
-    $data_retention = HTML::sanitize($_POST['data_retention'] ?? '');
+    $alert_threshold = isset($_POST['alert_threshold']) && $_POST['alert_threshold'] !== '' ? (int)$_POST['alert_threshold'] : 20;
+    $latency_threshold = isset($_POST['latency_threshold']) && $_POST['latency_threshold'] !== '' ? (int)$_POST['latency_threshold'] : 1000;
+    $downtime_threshold = isset($_POST['downtime_threshold']) && $_POST['downtime_threshold'] !== '' ? (int)$_POST['downtime_threshold'] : 300;
+    $data_retention = isset($_POST['data_retention']) && $_POST['data_retention'] !== '' ? (int)$_POST['data_retention'] : 7;
     $alert_notification = isset($_POST['alert_notification']) ? HTML::sanitize($_POST['alert_notification']) : 0;
 
     $sql_data_array = [

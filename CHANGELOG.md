@@ -1,6 +1,7 @@
 version4.27
-
-
+- MCP : Anthtopic Ecommerce Connector
+- librairies updated
+- Some fix
 
 ---------------
 version4.26

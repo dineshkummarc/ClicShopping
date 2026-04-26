@@ -114,7 +114,9 @@ The system supports multiple LLM providers simultaneously via **LLPhant abstract
 - Provider selection is configured via admin interface, not hardcoded
 - API keys via configuration constants only
 - Support for multiple providers in parallel (e.g., OpenAI for generation, VoyageAI for embeddings)
-
+- For the languages, it's important to use the function getDef('');
+- All the comment inside the classes must be in English and respect the PSR standardization.
+- 
 ### Multi-Agent Architecture
 
 ```
