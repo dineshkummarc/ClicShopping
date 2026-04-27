@@ -49,37 +49,35 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
    */
   private function saveProductCategory(array $current_category_id): void
   {
+    $input = array_map('intval', $current_category_id);
+
+    $hasZero = in_array(0, $input, true);
+
     $categories = array_values(
       array_unique(
-        array_filter(
-          array_map('intval', $current_category_id),
-          fn($id) => $id > 0
-        )
+        array_filter($input, fn($id) => $id >= 0)
       )
     );
 
-    // fallback obligatoire si aucune catégorie valide
-    if (empty($categories)) {
+    // No valid value and no explicit 0
+    if (empty($categories) && !$hasZero) {
       $categories = [0];
     }
 
-     $Qproducts = $this->app->db->prepare('select products_id
-                                              from :table_products
-                                              order by products_id desc
-                                              limit 1
-                                              ');
-     $Qproducts->execute();
+    $Qproducts = $this->app->db->prepare('select products_id
+                                         from :table_products
+                                         order by products_id desc
+                                         limit 1'
+                                        );
+    $Qproducts->execute();
 
-     $products_id = $Qproducts->valueInt('products_id');
+    $products_id = $Qproducts->valueInt('products_id');
 
     foreach ($categories as $cat_id) {
-      $sql_array = [
+      $this->app->db->save('products_to_categories', [
         'products_id' => $products_id,
         'categories_id' => (int)$cat_id
-      ];
-
-
-      $this->app->db->save('products_to_categories', $sql_array);
+      ]);
     }
 
     Cache::clear('categories');
@@ -100,17 +98,9 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
-    if (empty($parameters)) {
-      return false;
-    }
-
     if (isset($_GET['Insert'])) {
       $parameters = array_combine(
         array_map('trim', array_keys($parameters)), $parameters);
-
-      if (empty($parameters['categories_id']) || empty($parameters['products_id'])) {
-        return false;
-      }
 
       $category_id = (array)$parameters['categories_id'];
 

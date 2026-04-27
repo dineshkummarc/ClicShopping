@@ -133,7 +133,7 @@ class ProductsAdmin
   public function getProductModel(): string
   {
     if (empty($_POST['products_model'])) {
-      $model = HTML::generateRandomNumber(9); //creat a random number
+      $model = HTML::generateRandomNumber(9); //create a random number
 
       $products_model = \defined('CONFIGURATION_PREFIX_MODEL') ? CONFIGURATION_PREFIX_MODEL . $model : '';
     } else {

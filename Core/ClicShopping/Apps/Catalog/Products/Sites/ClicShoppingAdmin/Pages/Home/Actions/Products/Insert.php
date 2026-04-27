@@ -34,6 +34,7 @@ class Insert extends \ClicShopping\OM\Domains\PagesActionsAbstract
       $CLICSHOPPING_ProductsAdmin = Registry::get('ProductsAdmin');
 
       $categories_id = 0;
+      $cpath = 0;
 
       if($this->currentCategoryId) {
         $categories_id = $this->currentCategoryId;
@@ -41,17 +42,20 @@ class Insert extends \ClicShopping\OM\Domains\PagesActionsAbstract
 
       if($this->moveToCategoryId) {
         $categories_id = $this->moveToCategoryId;
+
+        if(empty($categories_id[0])) {
+          $categories_id = 0;
+        } elseif (count($categories_id) === 1) {
+          $categories_id = $categories_id[0];
+          $cpath = $categories_id[0];
+        }
       }
 
       $CLICSHOPPING_ProductsAdmin->save(null, 'Insert');
 
-      $last_products_id = $this->app->db->lastInsertId();
+      $CLICSHOPPING_Hooks->call('Products', 'Insert', ['categories_id ' => $categories_id]);
 
-      $array =  ['categories_id ' => $categories_id, 'products_id' => $last_products_id];
-
-      $CLICSHOPPING_Hooks->call('Products', 'Insert', $array);
-
-      $this->app->redirect('Products&cPath=' . (int)$categories_id);
+      $this->app->redirect('Products&cPath=' . (int)$cpath);
     } else {
       $this->app->redirect('Products');
     }
