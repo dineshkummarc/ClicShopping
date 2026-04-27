@@ -253,8 +253,16 @@ class OrdersShop
    */
   protected function createOrder(array $data): void
   {
-    $orderId = random_int(1000, 9999);
-    $this->message->sendSuccess(['action' => 'create_order', 'order_id' => $orderId]);
+     $Qorder = $this->db->prepare('SELECT order_id
+                                    FROM :table_orders
+                                    ORDER BY order_id DESC
+                                    LIMIT 1
+                                  ');
+
+    $last_order =   $Qorder->valueInt('order_id');
+    $new_order = $last_order + 1;
+
+    $this->message->sendSuccess(['action' => 'create_order', 'order_id' => $new_order]);
   }
 
   /**

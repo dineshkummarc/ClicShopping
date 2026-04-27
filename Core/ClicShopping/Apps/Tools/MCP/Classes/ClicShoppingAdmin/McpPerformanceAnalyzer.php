@@ -471,13 +471,20 @@ class McpPerformanceAnalyzer
   private function initializeDummyData(): void
   {
     $now = time();
+    $requests = random_int(100, 1000);
+
+    $latency = 50 + (int)($requests / 20) + random_int(0, 30);
+    $error_rate = (int)($requests / 300);
+
+    $status = ($error_rate > 2 || $latency > 200) ? (random_int(1, 100) > 70 ? 'down' : 'degraded') : 'up';
+
     for ($i = 100; $i > 0; $i--) {
       $this->performanceHistory[] = [
-        'timestamp' => $now - ($i * 900), // Every 15 minutes
-        'requests' => random_int(100, 1000),
-        'latency' => random_int(50, 200),
-        'error_rate' => random_int(0, 5),
-        'status' => random_int(1, 100) > 98 ? 'down' : 'up'
+        'timestamp' => $now - ($i * 900),
+        'requests' => $requests,
+        'latency_ms' => $latency,
+        'error_rate' => $error_rate,
+        'status' => $status
       ];
     }
   }

@@ -304,7 +304,7 @@ class McpStatus
    */
   private function getAverageResponseTime(): float
   {
-    return round(random_int(100, 800) / 10, 2);
+    return round(random_int(100, 800) * 0.1, 2);
   }
 
   /**
@@ -339,7 +339,7 @@ class McpStatus
   private function getCpuUsage(): float
   {
     // Simulate CPU usage
-    return round(random_int(10, 80) / 10, 1);
+    return round(random_int(10, 80) + random_int(0, 99) / 100, 1);
   }
 
   /**
@@ -460,13 +460,21 @@ class McpStatus
    */
   private function getErrorTrends(): array
   {
-    // Simulate error trends
     return [
       'hourly' => array_map(function ($hour) {
-        return ['hour' => $hour, 'errors' => random_int(0, 5)];
+        $base = (int) ($hour / 6); // légère montée en charge
+        return [
+          'hour' => $hour,
+          'errors' => random_int(0, 3 + $base)
+        ];
       }, range(0, 23)),
+
       'daily' => array_map(function ($day) {
-        return ['day' => $day, 'errors' => random_int(0, 50)];
+        $base = (int) ($day / 2);
+        return [
+          'day' => $day,
+          'errors' => random_int(0, 20 + $base * 5)
+        ];
       }, range(1, 7))
     ];
   }
@@ -478,13 +486,17 @@ class McpStatus
    */
   private function getUsagePatterns(): array
   {
+    $concurrent = random_int(10, 100);
+
+    $factor = $concurrent / 100;
+
     return [
       'peak_hours' => [9, 10, 11, 14, 15, 16],
-      'avg_concurrent_users' => random_int(10, 100),
+      'avg_concurrent_users' => $concurrent,
       'most_used_endpoints' => [
-        '/api/chat' => random_int(100, 500),
-        '/api/status' => random_int(50, 200),
-        '/api/health' => random_int(20, 100)
+        '/api/chat' => (int)(100 + 400 * $factor),
+        '/api/status' => (int)(50 + 150 * $factor),
+        '/api/health' => (int)(20 + 80 * $factor)
       ]
     ];
   }
@@ -498,15 +510,19 @@ class McpStatus
   {
     $recommendations = [];
 
-    if (($this->healthMetrics['connectivity']['latency'] ?? 0) > 500) {
+    $latency = $this->healthMetrics['connectivity']['latency'] ?? 0;
+    $errorRate = $this->healthMetrics['performance']['error_rate'] ?? 0;
+    $memory = $this->healthMetrics['system']['memory_usage']['used'] ?? 0;
+
+    if ($latency > 500) {
       $recommendations[] = 'Consider optimizing network configuration to reduce latency';
     }
 
-    if (($this->healthMetrics['performance']['error_rate'] ?? 0) > 5) {
+    if ($errorRate > 5) {
       $recommendations[] = 'Investigate and resolve causes of high error rate';
     }
 
-    if (($this->healthMetrics['system']['memory_usage']['used'] ?? 0) > 80) {
+    if ($memory > 80) {
       $recommendations[] = 'Monitor memory usage and consider scaling resources';
     }
 

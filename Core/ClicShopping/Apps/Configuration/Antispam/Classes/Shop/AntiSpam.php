@@ -23,12 +23,15 @@ class AntiSpam
    */
   public static function getConfirmationNumericAntiSpam(): string
   {
-    $random_number = random_int(1, 200);
+    $a = random_int(1, 20);
+    $b = random_int(1, 20);
 
-    $number = $random_number + 3;
+    $random_number = $a + $b;
+	
     $antispam = ' (' . $random_number . ' + ' . CLICSHOPPING::getDef('text_antispam') . ') x 1';
 
-    $_SESSION['createResponseAntiSpam'] = md5($number);
+    $random_number = $random_number + 3;
+    $_SESSION['createResponseAntiSpam'] = md5($random_number);
 
     return $antispam;
   }

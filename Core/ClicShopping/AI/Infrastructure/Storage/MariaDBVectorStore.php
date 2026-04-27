@@ -438,7 +438,13 @@ class MariaDBVectorStore extends VectorStoreBase
       $types[] = ParameterType::INTEGER;
 
       $stmt = $this->connection->executeQuery($sql, $params, $types);
-      $results = $stmt->fetchAllAssociative();
+
+      //too many connexion risk
+      try {
+        $results = $stmt->fetchAllAssociative();
+      } finally {
+        $stmt->free();
+      }
 
       if ($this->debug) {
         error_log("[stats] SQL returned " . count($results) . " raw results");

@@ -48,11 +48,6 @@ class Image
     $this->imageResample = Registry::get('ImageResample');
   }
 
-  /*
-   * generate a radom string
-   * @param int length of the random
-   * @return $randomString
-   */
   /**
    * Generates a random alphanumeric string of a specified length.
    *

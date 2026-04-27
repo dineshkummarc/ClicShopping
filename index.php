@@ -69,12 +69,12 @@ if (CLICSHOPPING::hasSitePage()) {
     }
   }
 
-  goto main_sub3;
-}
+    goto main_sub3;
+  }
 
 main_sub3: // Sites and Apps skip to here
 
-$footerFile = CLICSHOPPING::BASE_DIR . '/Sites/Shop/Templates/Default/footer.php';
-if (is_file($footerFile)) {
-  require_once($footerFile);
-}
+  $footerFile = CLICSHOPPING::BASE_DIR . '/Sites/Shop/Templates/Default/footer.php';
+  if (is_file($footerFile)) {
+    require_once($footerFile);
+  }

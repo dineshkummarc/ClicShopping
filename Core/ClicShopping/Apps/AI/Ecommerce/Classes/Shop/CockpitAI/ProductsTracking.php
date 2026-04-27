@@ -207,44 +207,36 @@
      */
     private static function applyCircularQuota(string $module_code): void
     {
-      $CLICSHOPPING_Db = Registry::get('Db');
-
-      // Define the maximum number of records to keep per module
-      // This could be moved to a configuration constant later
+      $db = Registry::get('Db');
       $quota = 1000;
 
-      /** * Optimization: We trigger the deletion logic only 10% of the time (randomly)
-       * to avoid performing a sub-query and a DELETE on every single impression.
-       */
-      if (random_int(1, 10) === 5) {
-        /**
-         * We look for the ID of the N-th record (the quota limit).
-         * If an ID exists at this offset, it means we have exceeded the quota.
-         */
-        $Qcheck = $CLICSHOPPING_Db->prepare('SELECT id 
-                                               FROM :table_products_cockpit_ai_tracking_impressions 
-                                               WHERE module_code = :module_code 
-                                               ORDER BY id DESC 
-                                               LIMIT 1 OFFSET :offset');
-        $Qcheck->bindValue(':module_code', $module_code);
-        $Qcheck->bindInt(':offset', $quota);
-        $Qcheck->execute();
+      // compter les lignes
+      $Qcount = $db->prepare('SELECT COUNT(*) as total 
+                            FROM :table_products_cockpit_ai_tracking_impressions 
+                            WHERE module_code = :module_code
+                            ');
+      $Qcount->bindValue(':module_code', $module_code);
+      $Qcount->execute();
 
-        $result = $Qcheck->fetch();
+      $row = $Qcount->fetch();
+      $total = (int)$row['total'];
 
-        if ($result !== false) {
-          $threshold_id = (int)$result['id'];
-
-          // Delete everything older or equal to this threshold ID
-          $Qdel = $CLICSHOPPING_Db->prepare('DELETE FROM :table_products_cockpit_ai_tracking_impressions 
-                                             WHERE module_code = :module_code 
-                                             AND id <= :threshold_id
-                                             ');
-          $Qdel->bindValue(':module_code', $module_code);
-          $Qdel->bindInt(':threshold_id', $threshold_id);
-          $Qdel->execute();
-        }
+      if ($total <= $quota) {
+        return;
       }
+
+      // suppression déterministe des plus anciennes entrées
+      $limit = $total - $quota;
+
+      $Qdel = $db->prepare('DELETE FROM :table_products_cockpit_ai_tracking_impressions 
+                             WHERE module_code = :module_code 
+                             ORDER BY id ASC 
+                             LIMIT :limit
+                             ');
+
+      $Qdel->bindValue(':module_code', $module_code);
+      $Qdel->bindInt(':limit', $limit);
+      $Qdel->execute();
     }
 
     /**

@@ -1132,4 +1132,20 @@ class HTML
     return $html;
   }
 
+  /**
+   * Generaete a model randomly
+   * @param int $length
+   * @return int, string
+   * @throws \Random\RandomException
+   */
+  public static function generateRandomNumber(int $length = 8): int|string
+  {
+    $rand = '';
+
+    for ($i = 0; $i < $length; $i++) {
+      $rand .= random_int(0, $length);
+    }
+
+    return $rand;
+  }
 }

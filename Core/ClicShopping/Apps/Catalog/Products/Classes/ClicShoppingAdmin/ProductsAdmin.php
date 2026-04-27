@@ -133,8 +133,9 @@ class ProductsAdmin
   public function getProductModel(): string
   {
     if (empty($_POST['products_model'])) {
-      $rand = random_int(0, PHP_INT_MAX);
-      $products_model = \defined('CONFIGURATION_PREFIX_MODEL') ? CONFIGURATION_PREFIX_MODEL . $rand : '';
+      $model = HTML::generateRandomNumber(9); //create a random number
+
+      $products_model = \defined('CONFIGURATION_PREFIX_MODEL') ? CONFIGURATION_PREFIX_MODEL . $model : '';
     } else {
       $products_model = HTML::sanitize($_POST['products_model']);
     }
@@ -575,12 +576,12 @@ class ProductsAdmin
     $Qimage = $this->getImage($id);
 
     $Qchek = $this->db->prepare('select count(*) as total
-                                                       from :table_categories
-                                                       where categories_image = :products_image
-                                                       or categories_image = :products_image_zoom
-                                                       or categories_image = :products_image_medium
-                                                       or categories_image = :products_image_small
-                                                      ');
+                                 from :table_categories
+                                 where categories_image = :products_image
+                                 or categories_image = :products_image_zoom
+                                 or categories_image = :products_image_medium
+                                 or categories_image = :products_image_small
+                                ');
     $Qchek->bindValue(':products_image', $Qimage['products_image']);
     $Qchek->bindValue(':products_image_zoom', $Qimage['products_image_zoom']);
     $Qchek->bindValue(':products_image_medium', $Qimage['products_image_medium']);
@@ -947,13 +948,13 @@ class ProductsAdmin
       $this->db->save('products', $sql_array);
       $dup_products_id = $this->db->lastInsertId();
 
-// ---------------------
-// gallery
-// ----------------------
+      // ---------------------
+      // gallery
+      // ----------------------
       $QproductImage = $this->db->prepare('select *
-                                              from :table_products_images
-                                              where products_id = :products_id
-                                            ');
+                                            from :table_products_images
+                                            where products_id = :products_id
+                                          ');
       $QproductImage->bindInt(':products_id', $id);
 
       $QproductImage->execute();
@@ -969,9 +970,9 @@ class ProductsAdmin
         $this->db->save('products_images', $sql_array);
       }
 
-// ---------------------
-// Description clonage
-// ----------------------
+      // ---------------------
+      // Description clonage
+      // ----------------------
       $Qdescription = $this->db->prepare('select language_id,
                                                     products_name,
                                                     products_description,
@@ -1012,9 +1013,9 @@ class ProductsAdmin
         $this->db->save('products_description', $sql_array);
       }
 
-// ---------------------
-// insertion table
-// ----------------------
+      // ---------------------
+      // insertion table
+      // ----------------------
       $sql_array = [
         'products_id' => (int)$dup_products_id,
         'categories_id' => (int)$clone_categories_id_to
@@ -1053,8 +1054,8 @@ class ProductsAdmin
         $Qattributes->execute();
 
         if ($Qattributes->rowCount() > 0) {
-// Definir la position 0 ou 1 pour --> Affichage Prix public + Affichage Produit + Autorisation Commande
-// L'Affichage des produits, autorisation de commander et affichage des prix mis par defaut en valeur 1 dans la cas de la B2B desactive.
+            // Definir la position 0 ou 1 pour --> Affichage Prix public + Affichage Produit + Autorisation Commande
+            // L'Affichage des produits, autorisation de commander et affichage des prix mis par defaut en valeur 1 dans la cas de la B2B desactive.
           if (MODE_B2B_B2C == 'True') {
             if (HTML::sanitize($_POST['price_group_view' . $QcustomersGroup->valueInt('customers_group_id')]) == 1) {
               $price_group_view = 1;
@@ -1107,7 +1108,7 @@ class ProductsAdmin
 
           $Qupdate->execute();
 
-// Prix TTC B2B ----------
+          // Prix TTC B2B ----------
           if ($_POST['price' . $QcustomersGroup->valueInt('customers_group_id')] <> $Qattributes->valueDecimal('customers_group_price') && $Qattributes->valueInt('customers_group_id') == $QcustomersGroup->valueInt('customers_group_id')) {
             $Qupdate = $this->db->prepare('update :table_products_groups
                                              set customers_group_price = :customers_group_price,
@@ -1122,9 +1123,9 @@ class ProductsAdmin
 
             $Qupdate->execute();
           } elseif ($_POST['price' . $QcustomersGroup->valueInt('customers_group_id')] == $Qattributes->valueInt('customers_group_id')) {
-//              $attributes = $Qattributes->fetch();
+            //              $attributes = $Qattributes->fetch();
           }
-// Prix + Afficher Prix public + Afficher Produit + Autoriser Commande
+        // Prix + Afficher Prix public + Afficher Produit + Autoriser Commande
         } elseif (is_array($_POST['price' . $QcustomersGroup->valueInt('customers_group_id')])) {
           if ($_POST['price' . $QcustomersGroup->valueInt('customers_group_id')] != '') {
             $sql_array = [
@@ -1376,7 +1377,6 @@ class ProductsAdmin
     } else {
 //insert
       $insert_sql_data = ['products_date_added' => 'now()'];
-
       $sql_data_array = array_merge($sql_data_array, $insert_sql_data);
 
       $this->db->save('products', $sql_data_array);
@@ -1392,7 +1392,7 @@ class ProductsAdmin
       $this->prepareCloneProducts($id, $categories_id);
     }
 
-    $this->hooks->call('Products', 'Save');
+    $this->hooks->call('Products', 'Save', ['products_id' => $id]);
   }
 
   /**

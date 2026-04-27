@@ -256,7 +256,7 @@ class ComposerStaticInit559d5c9b702bf740c3f0e192226eea14
         ),
         'Doctrine\\Persistence\\' =>
         array (
-            0 => __DIR__ . '/..' . '/doctrine/persistence/src/Persistence',
+            0 => __DIR__ . '/..' . '/doctrine/persistence/src',
         ),
         'Doctrine\\ORM\\' =>
         array (

@@ -49,9 +49,11 @@ class Update extends \ClicShopping\OM\Domains\PagesActionsAbstract
     $CLICSHOPPING_Hooks = Registry::get('Hooks');
     $CLICSHOPPING_ProductsAdmin = Registry::get('ProductsAdmin');
 
-    $CLICSHOPPING_ProductsAdmin->save($this->ID, 'Update');
+    if (isset($_GET['Update'], $_GET['Products'])) {
+      $CLICSHOPPING_ProductsAdmin->save($this->ID, 'Update');
 
-    $CLICSHOPPING_Hooks->call('Products', 'Update');
+      $CLICSHOPPING_Hooks->call('Products', 'Update', ['products_id', $this->ID]);
+    }
 
     $this->app->redirect('Products&cPath=' . $this->currentCategoryId . '&pID=' . $this->ID);
   }

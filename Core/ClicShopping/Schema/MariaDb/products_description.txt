@@ -1,4 +1,4 @@
-products_id int not_null auto_increment comment(FK to products table - product this description belongs to)
+products_id int not_null comment(FK to products table - product this description belongs to)
 language_id int default(1) not_null comment(FK to languages table - language of this description)
 products_name varchar(255) default('') not_null comment(Product name in this language)
 products_description text comment(Full product description in this language - HTML allowed)

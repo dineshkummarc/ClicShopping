@@ -23,7 +23,7 @@ class HeaderOutputBootstrapTable
 
     if (isset($_SESSION['admin'])) {
       $output = '<!-- Start BootStrap Table -->' . "\n";
-      $output .= '<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.27.2/dist/bootstrap-table.min.css">' . "\n";
+      $output .= '<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.27.3/dist/bootstrap-table.min.css">' . "\n";
       $output .= '<!-- Start BootStrap Table -->' . "\n";
     } else {
       return false;

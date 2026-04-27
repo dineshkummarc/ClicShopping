@@ -61,7 +61,7 @@ class ProductsContentTab1 implements \ClicShopping\OM\Modules\HooksInterface
       return false;
     }
 
-    if (isset($_GET['cPath'])) {
+    if (isset($_GET['cPath']) && !empty($_GET['cPath'])) {
       $current_category_id = HTML::sanitize($_GET['cPath']);
     } else {
       if (isset($_GET['pID'])) {

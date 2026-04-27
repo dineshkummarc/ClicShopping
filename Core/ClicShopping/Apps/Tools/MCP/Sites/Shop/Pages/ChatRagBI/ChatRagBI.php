@@ -50,17 +50,8 @@ class ChatRagBI extends \ClicShopping\OM\Domains\PagesAbstract
   /** @var McpPermissions The McpPermissions instance for access control. */
   public McpPermissions $mcpPermissions;
 
- // private mixed $mcpConnector;
   protected mixed $lang;
-  /**
-   * Determines if the site template should be used.
-   * @var bool
-   */
   protected bool $use_site_template = false;
-  /**
-   * The file name for the page.
-   * @var string|null
-   */
   protected ?string $file = null;
   private mixed $ragBIPermissions;
   /** @var string The username authenticated via session or key. */
@@ -214,8 +205,10 @@ class ChatRagBI extends \ClicShopping\OM\Domains\PagesAbstract
       } catch (\Exception $e) {
         McpSecurity::logSecurityEvent(
           'API Access Denied - Authentication Failed',
-          ['username' => $username, 'error' => $e->getMessage()]
-        );
+          [
+          'username' => $username,
+          'error' => $e->getMessage()
+          ]);
 
         $this->message->sendError('Unauthorized: Authentication failed. ' . $e->getMessage(), 401);
         return;
