@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="237046ab-2797-4d7a-b3f5-8235d048b27d" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea_old/deployment.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea_old/php.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea_old/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/ClicShopping_V3.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/codeception.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/deployment.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/deployment.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/php.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/php.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/phpspec.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/phpunit.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/webServers.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/webServers.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/CHANGELOG.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ClicShoppingAdmin/login.php" beforeDir="false" afterPath="$PROJECT_DIR$/ClicShoppingAdmin/login.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/AI/Ecommerce/Classes/Shop/CockpitAI/ProductsTracking.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/AI/Ecommerce/Classes/Shop/CockpitAI/ProductsTracking.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/AI/Ecommerce/Module/Hooks/ClicShoppingAdmin/Products/Insert.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/AI/Ecommerce/Module/Hooks/ClicShoppingAdmin/Products/Insert.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Catalog/Categories/Module/Hooks/ClicShoppingAdmin/Products/Insert.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Catalog/Categories/Module/Hooks/ClicShoppingAdmin/Products/Insert.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Catalog/Categories/Module/Hooks/ClicShoppingAdmin/Products/ProductsContentTab1.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Catalog/Categories/Module/Hooks/ClicShoppingAdmin/Products/ProductsContentTab1.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Catalog/Products/Classes/ClicShoppingAdmin/Image.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Catalog/Products/Classes/ClicShoppingAdmin/Image.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Catalog/Products/Classes/ClicShoppingAdmin/ProductsAdmin.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Catalog/Products/Classes/ClicShoppingAdmin/ProductsAdmin.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Catalog/Products/Sites/ClicShoppingAdmin/Pages/Home/Actions/Products/Insert.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Catalog/Products/Sites/ClicShoppingAdmin/Pages/Home/Actions/Products/Insert.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Catalog/Products/Sites/ClicShoppingAdmin/Pages/Home/Actions/Products/Update.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Catalog/Products/Sites/ClicShoppingAdmin/Pages/Home/Actions/Products/Update.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Configuration/Antispam/Classes/Shop/AntiSpam.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Configuration/Antispam/Classes/Shop/AntiSpam.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Configuration/ChatGpt/Sql/MariaDb/MariaDb.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Configuration/ChatGpt/Sql/MariaDb/MariaDb.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Customers/Customers/Sites/ClicShoppingAdmin/Pages/Home/Actions/Customers/Create.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Customers/Customers/Sites/ClicShoppingAdmin/Pages/Home/Actions/Customers/Create.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Classes/ClicShoppingAdmin/McpMockMonitor.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Classes/ClicShoppingAdmin/McpMockMonitor.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Classes/ClicShoppingAdmin/McpPerformanceAnalyzer.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Classes/ClicShoppingAdmin/McpPerformanceAnalyzer.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Classes/ClicShoppingAdmin/McpStatus.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Classes/ClicShoppingAdmin/McpStatus.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Classes/Shop/EndPoint/OrdersShop.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Classes/Shop/EndPoint/OrdersShop.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/AnthropicEcommerce/AnthropicEcommerce.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/AnthropicEcommerce/AnthropicEcommerce.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/AnthropicEcommerce/AnthropicEcommercePermissions.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/AnthropicEcommerce/AnthropicEcommercePermissions.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/ChatRagBI/ChatRagBI.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/ChatRagBI/ChatRagBI.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/CustomersProducts/CustomersProducts.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/CustomersProducts/CustomersProducts.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/composer/autoload_psr4.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/composer/autoload_psr4.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/composer/autoload_static.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/composer/autoload_static.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/composer/installed.json" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/composer/installed.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/composer/installed.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/composer/installed.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/UPGRADE.md" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/UPGRADE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/composer.json" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/composer.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/AbstractManagerRegistry.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/ConnectionRegistry.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Event/LifecycleEventArgs.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Event/LoadClassMetadataEventArgs.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Event/ManagerEventArgs.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Event/OnClearEventArgs.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Event/PreUpdateEventArgs.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/ManagerRegistry.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/AbstractClassMetadataFactory.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/ClassMetadata.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/ClassMetadataFactory.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/Driver/ClassLocator.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/Driver/ClassNames.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/Driver/ColocatedMappingDriver.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/Driver/DefaultFileLocator.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/Driver/FileClassLocator.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/Driver/FileDriver.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/Driver/FileLocator.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/Driver/MappingDriver.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/Driver/MappingDriverChain.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/Driver/PHPDriver.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/Driver/StaticPHPDriver.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/Driver/SymfonyFileLocator.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/MappingException.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/ProxyClassNameResolver.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/ReflectionService.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Mapping/RuntimeReflectionService.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/NotifyPropertyChanged.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/ObjectManager.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/ObjectManagerDecorator.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/ObjectRepository.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/PropertyChangedListener.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Proxy.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Reflection/EnumReflectionProperty.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Reflection/RuntimeReflectionProperty.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence/src/Persistence/Reflection/TypedNoDefaultReflectionProperty.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-intl-grapheme/Grapheme.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-intl-grapheme/Grapheme.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-intl-grapheme/bootstrap.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-intl-grapheme/bootstrap.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-intl-grapheme/bootstrap80.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-intl-grapheme/bootstrap80.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/OM/HTML.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/OM/HTML.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Schema/MariaDb/products_description.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Schema/MariaDb/products_description.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Sites/ClicShoppingAdmin/EmailVerification.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Sites/ClicShoppingAdmin/EmailVerification.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Sites/Shop/EmailVerification.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Sites/Shop/EmailVerification.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Core/ClicShopping/Sites/Shop/Pages/Account/Actions/LogInAuth/Resend.php" beforeDir="false" afterPath="$PROJECT_DIR$/Core/ClicShopping/Sites/Shop/Pages/Account/Actions/LogInAuth/Resend.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/composer.lock" beforeDir="false" afterPath="$PROJECT_DIR$/composer.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.php" beforeDir="false" afterPath="$PROJECT_DIR$/index.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/robots.txt" beforeDir="false" afterPath="$PROJECT_DIR$/robots.txt" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ComposerConfigs">
+    <option name="configs">
+      <option value="$PROJECT_DIR$/ext/elFinder-master/composer.json" />
+    </option>
+  </component>
+  <component name="ComposerSettings" synchronizationState="SYNCHRONIZE">
+    <pharConfigPath>$PROJECT_DIR$/composer.json</pharConfigPath>
+    <execution />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="7417" />
+    <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "ClicShopping"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/ClicShopping/ClicShopping.git",
+    "accountId": "f4e4c7c6-9b00-4a47-952e-8d7eedc2edaf"
+  }
+}]]></component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="PhpWorkspaceProjectConfiguration" interpreter_name="/bin/php">
+    <include_path>
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/daveearley/daves-email-validation-tool" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/smalot/pdfparser" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/collections" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/dbal" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/deprecations" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/event-manager" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/inflector" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/instantiator" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/lexer" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/migrations" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/orm" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/doctrine/persistence" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/guzzlehttp/guzzle" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/guzzlehttp/promises" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/guzzlehttp/psr7" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/mattketmo/email-checker" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/nyholm/psr7" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/php-http/discovery" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/phpmailer/phpmailer" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/phpxmlrpc/phpxmlrpc" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/psr/cache" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/psr/container" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/psr/http-client" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/psr/http-factory" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/psr/http-message" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/psr/log" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/ralouphie/getallheaders" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/setasign/fpdf" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/stymiee/email-validator" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/cache" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/cache-contracts" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/console" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/deprecation-contracts" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/http-client" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/http-client-contracts" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-ctype" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-intl-grapheme" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-intl-normalizer" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-mbstring" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/polyfill-php84" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/service-contracts" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/stopwatch" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/string" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/symfony/var-exporter" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/stripe/stripe-php" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/yethee/tiktoken" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/openai-php/client" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/theodo-group/llphant" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/php-http/multipart-stream-builder" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/amnuts/opcache-gui" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/composer" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/phpoffice/math" />
+      <path value="$PROJECT_DIR$/Core/ClicShopping/External/vendor/phpoffice/phpword" />
+    </include_path>
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 8
+}]]></component>
+  <component name="ProjectId" id="3CwxGnP7oXWkJtQZt6ja94uACfe" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "version4.27",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.devoxx.genie.DevoxxGenie",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-PS-261.23567.149" />
+        <option value="bundled-php-predefined-a98d8de5180a-022fa7b8ab75-com.jetbrains.php.sharedIndexes-PS-261.23567.149" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="237046ab-2797-4d7a-b3f5-8235d048b27d" name="Changes" comment="" />
+      <created>1777310340880</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1777310340880</updated>
+      <workItem from="1777310341909" duration="1072000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>

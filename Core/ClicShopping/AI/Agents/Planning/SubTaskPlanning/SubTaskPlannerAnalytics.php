@@ -35,18 +35,18 @@ class SubTaskPlannerAnalytics
      */
     public function canHandle(string $query): bool
     {
-        $queryLower = strtolower($query);
-        
-        foreach ($this->analyticsKeywords as $keyword) {
-            if (str_contains($queryLower, $keyword)) {
-                if ($this->debug) {
-                    $this->logDebug("Analytics keyword detected: '$keyword'");
-                }
-                return true;
-            }
+      $queryLower = strtolower($query);
+
+      foreach ($this->analyticsKeywords as $keyword) {
+        if (str_contains($queryLower, $keyword)) {
+          if ($this->debug) {
+              $this->logDebug("Analytics keyword detected: '$keyword'");
+          }
+          return true;
         }
-        
-        return true;
+      }
+
+      return true;
     }
     
     /**

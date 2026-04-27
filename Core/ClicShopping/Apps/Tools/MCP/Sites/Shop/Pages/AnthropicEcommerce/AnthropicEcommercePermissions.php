@@ -12,28 +12,29 @@ namespace ClicShopping\Apps\Tools\MCP\Sites\Shop\Pages\AnthropicEcommerce;
 
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpPermissions;
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\McpSecurity;
+use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\OM\Registry;
 
 /**
  * Permission manager specific to the AnthropicEcommerce MCP endpoint.
  *
  * Mirrors the pattern of RagBIPermissions: whitelist of allowed actions,
- * blacklist of forbidden tables, strict SQL validation for any raw query
- * that might be added in the future.
+ * blacklist of forbidden tables, and a security report generator.
  *
- * Read-only actions (products, categories, stats, recommendations, orders
- * listing, order detail, session listing) require only select_data.
+ * Read-only actions require only select_data.
+ * Write actions additionally require create_data or update_data.
  *
- * Write actions (session_create, session_update, session_complete,
- * session_cancel, order_cancel, order_message, customer_create) additionally
- * require create_data or update_data as appropriate.
+ * isTableAllowed() is called by sub-handlers before any DB query.
+ * generateSecurityReport() is exposed via the 'security_report' action
+ * in AnthropicEcommerce.php (authenticated users only).
  */
 class AnthropicEcommercePermissions
 {
   private mixed $db;
   private McpPermissions $mcpPermissions;
+  private string $prefix;
 
-  // Actions that only need read permission
+  // Actions that only require read (select_data) permission
   private const READ_ACTIONS = [
     'products',
     'product',
@@ -49,9 +50,10 @@ class AnthropicEcommercePermissions
     'customer',
     'addresses',
     'countries',
+    'security_report',
   ];
 
-  // Actions that need write permission
+  // Actions that require write-level permission (select_data + create_data or update_data)
   private const WRITE_ACTIONS = [
     'session_create',
     'session_update',
@@ -62,51 +64,30 @@ class AnthropicEcommercePermissions
     'customer_create',
   ];
 
-  // All allowed actions (union of the above)
+  // Union of all allowed actions (READ + WRITE)
   private const ALLOWED_ACTIONS = [
+    // Products
     'products', 'product', 'search', 'categories', 'recommendations', 'stats',
+    // Orders
     'orders', 'order', 'order_history', 'order_cancel', 'order_message',
+    // Sessions
     'session_create', 'session_get', 'session_update',
     'session_complete', 'session_cancel', 'session_list',
+    // Customers
     'customer', 'customer_create', 'addresses', 'countries',
-  ];
-
-  // Tables the endpoint is allowed to touch (read or write)
-  private const ALLOWED_TABLES = [
-    'clic_products',
-    'clic_products_description',
-    'clic_products_to_categories',
-    'clic_categories',
-    'clic_categories_description',
-    'clic_manufacturers',
-    'clic_specials',
-    'clic_orders',
-    'clic_orders_products',
-    'clic_orders_status',
-    'clic_orders_status_history',
-    'clic_customers',
-    'clic_address_book',
-    'clic_countries',
-    'clic_zones',
-  ];
-
-  // Tables that must never be accessed
-  private const FORBIDDEN_TABLES = [
-    'clic_administrators',
-    'clic_mcp',
-    'clic_mcp_session',
-    'clic_sessions',
-    'clic_configuration',
-    'clic_customers_info',
+    // Admin
+    'security_report',
   ];
 
   public function __construct()
   {
-    $this->db = Registry::get('Db');
+    $this->db     = Registry::get('Db');
+    $this->prefix = CLICSHOPPING::getConfig('db_table_prefix');
 
     if (!Registry::exists('McpPermissions')) {
       Registry::set('McpPermissions', new McpPermissions());
     }
+
     $this->mcpPermissions = Registry::get('McpPermissions');
   }
 
@@ -115,7 +96,15 @@ class AnthropicEcommercePermissions
   // =========================================================================
 
   /**
-   * Check whether a user can perform a given AnthropicEcommerce action.
+   * Check whether a user is allowed to execute a given action.
+   *
+   * Rules:
+   *   - Action must be in the whitelist
+   *   - Read actions  : select_data == 1
+   *   - Write actions : select_data == 1 AND (create_data == 1 OR update_data == 1)
+   *
+   * Uses == 1 (not strict cast) to handle both integer and string DB values
+   * safely, consistent with the rest of ClicShopping.
    */
   public function canPerformAction(string $username, string $action): bool
   {
@@ -132,9 +121,9 @@ class AnthropicEcommercePermissions
       return false;
     }
 
-    // Read actions: select_data is enough
+    // Read actions: select_data is sufficient
     if (in_array($action, self::READ_ACTIONS, true)) {
-      if (!(bool)$permissions['select_data']) {
+      if ($permissions['select_data'] != 1) {
         McpSecurity::logSecurityEvent('AnthropicEcommerce - missing select_data', [
           'username' => $username,
           'action'   => $action,
@@ -146,8 +135,8 @@ class AnthropicEcommercePermissions
 
     // Write actions: select_data + (create_data or update_data)
     if (in_array($action, self::WRITE_ACTIONS, true)) {
-      $canWrite = (bool)$permissions['select_data']
-        && ((bool)$permissions['create_data'] || (bool)$permissions['update_data']);
+      $canWrite = ($permissions['select_data'] == 1)
+        && (($permissions['create_data'] == 1) || ($permissions['update_data'] == 1));
 
       if (!$canWrite) {
         McpSecurity::logSecurityEvent('AnthropicEcommerce - missing write permission', [
@@ -163,43 +152,114 @@ class AnthropicEcommercePermissions
   }
 
   /**
-   * Validate that a table referenced by the endpoint is on the whitelist.
+   * Validate that a table referenced by a sub-handler is on the whitelist.
+   *
+   * Called by Sessions::buildLineItems(), Products, Orders, Customers
+   * before executing any DB query, to prevent accidental access to
+   * sensitive tables.
+   *
+   * @param string $tableName  Raw table name (with or without prefix)
+   * @return bool
    */
   public function isTableAllowed(string $tableName): bool
   {
-    $clean = 'clic_' . str_replace('clic_', '', strtolower($tableName));
+    // Normalise: strip any existing prefix then re-apply to avoid double-prefix
+    $bare  = str_replace($this->prefix, '', strtolower($tableName));
+    $clean = $this->prefix . $bare;
 
-    if (in_array($clean, self::FORBIDDEN_TABLES, true)) {
+    if (in_array($clean, $this->getForbiddenTables(), true)) {
+      McpSecurity::logSecurityEvent('AnthropicEcommerce - forbidden table access attempt', [
+        'table' => $clean,
+      ]);
       return false;
     }
 
-    return in_array($clean, self::ALLOWED_TABLES, true);
+    return in_array($clean, $this->getAllowedTables(), true);
   }
 
   /**
-   * Generate a security report for a given user.
+   * Generate a full security report for the authenticated user.
+   * Exposed via the 'security_report' action in AnthropicEcommerce.php.
+   *
+   * @param string $username
+   * @return array
    */
   public function generateSecurityReport(string $username): array
   {
     $permissions = $this->mcpPermissions->getUserPermissions($username);
 
     return [
-      'username'        => $username,
-      'allowed_actions' => self::ALLOWED_ACTIONS,
-      'read_actions'    => self::READ_ACTIONS,
-      'write_actions'   => self::WRITE_ACTIONS,
-      'allowed_tables'  => self::ALLOWED_TABLES,
-      'forbidden_tables'=> self::FORBIDDEN_TABLES,
-      'permissions'     => $permissions,
-      'security_level'  => 'ECOMMERCE_READ_WRITE',
-      'restrictions'    => [
-        'table_whitelist_enforced'  => true,
-        'dangerous_functions_blocked' => true,
+      'username'         => $username,
+      'security_level'   => 'ECOMMERCE_READ_WRITE',
+      'allowed_actions'  => self::ALLOWED_ACTIONS,
+      'read_actions'     => self::READ_ACTIONS,
+      'write_actions'    => self::WRITE_ACTIONS,
+      'allowed_tables'   => $this->getAllowedTables(),
+      'forbidden_tables' => $this->getForbiddenTables(),
+      'permissions'      => [
+        'select_data' => $permissions['select_data'] == 1,
+        'create_data' => $permissions['create_data'] == 1,
+        'update_data' => $permissions['update_data'] == 1,
+        'delete_data' => $permissions['delete_data'] == 1,
+        'create_db'   => $permissions['create_db']   == 1,
+      ],
+      'restrictions' => [
+        'table_whitelist_enforced'           => true,
+        'forbidden_table_access_blocked'     => true,
         'write_requires_explicit_permission' => true,
+        'delete_never_allowed'               => true,
       ],
     ];
   }
 
-  public function getAllowedActions(): array { return self::ALLOWED_ACTIONS; }
-  public function getAllowedTables(): array  { return self::ALLOWED_TABLES; }
+  /**
+   * Returns the full list of allowed actions.
+   */
+  public function getAllowedActions(): array
+  {
+    return self::ALLOWED_ACTIONS;
+  }
+
+  /**
+   * Returns the list of allowed DB tables (prefix applied at runtime).
+   */
+  public function getAllowedTables(): array
+  {
+    return [
+      $this->prefix . 'products',
+      $this->prefix . 'products_description',
+      $this->prefix . 'products_to_categories',
+      $this->prefix . 'categories',
+      $this->prefix . 'categories_description',
+      $this->prefix . 'manufacturers',
+      $this->prefix . 'specials',
+      $this->prefix . 'orders',
+      $this->prefix . 'orders_products',
+      $this->prefix . 'orders_status',
+      $this->prefix . 'orders_status_history',
+      $this->prefix . 'customers',
+      $this->prefix . 'address_book',
+      $this->prefix . 'countries',
+      $this->prefix . 'zones',
+    ];
+  }
+
+  // =========================================================================
+  // Private helpers
+  // =========================================================================
+
+  /**
+   * Returns the list of tables that must never be accessed.
+   */
+  private function getForbiddenTables(): array
+  {
+    return [
+      $this->prefix . 'administrators',
+      $this->prefix . 'mcp',
+      $this->prefix . 'mcp_session',
+      $this->prefix . 'sessions',
+      $this->prefix . 'configuration',
+      $this->prefix . 'customers_info',
+    ];
+  }
 }

@@ -72,8 +72,9 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 - B2B - B2C full functionalities
 - Ready for mobile, tablet, and desktop with BootStrap 5.x technology
 - Multi-template
-- Dynamic Pricing with special prices, and customer groups
+- Dynamic Pricing with special prices,
 - Product reviews and ratings
+- Rest API
 ... and Lot of common ecommerce functionalities
 
 ##Generative AI functionalities :
@@ -105,10 +106,12 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 - Real time safety stock predictive (AI)
 - Server MCP (model context Protocol) for ecommerce agentic approach
   - Chat Rab - BI - WebSearch Connexion
+  - Anthropic Ecommerce Connexion
 - Agentic Commerce Protocol (ACP) from OpenAI.
 - Universal Commerce Protocol (UCP) from Google.
 - Agentic SEO Analysis
-- Product cockpit AI with forecasting metrics and recommendations
+- Product cockpit AI with forecasting metrics and customers recommendations
+- AI product recommendation
 
 ##Security & Compliance
 - GDPR Ready: Built-in compliance tools and data protection
@@ -136,18 +139,18 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 
 ##Comparison between competitors (native functions):
 
-| Caractéristiques        | ClicShopping           | Shopify             | Magento          | WooCommerce         |
-|------------------------|-----------------------|---------------------|------------------|---------------------|
-| IA Générative          | ✅ Natif multi-agents | ❌ Apps tierces     | ❌ Extensions     | ❌ Plugins          |
-| Support Multi-LLM      | ✅ 6+ fournisseurs    | ❌ OpenAI uniquement| ❌ Limité         | ❌ Limité           |
-| Base Vectorielle       | ✅ MariaDB native     | ❌ Externe requis   | ❌ Externe requis | ❌ Externe requis   |
-| Protocoles IA          | ✅ ACP/UCP/MCP        | ❌ Extensions       | ❌ Extensions     | ❌ Extensions       |
-| WebSearch Intégré      | ✅ Natif              | ❌ Apps tierces     | ❌ Extensions     | ❌ Plugins          |
-| Open Source            | ✅ GPL2/MIT           | ❌ Propriétaire     | ❌ Open Source    | ❌ Open Source      |
-| Rag                    | ✅ Semantic           | ❌ Propriétaire     | ❌ Open Source    | ❌ Open Source      |
-| BI                     | ✅ Analytic           | ❌ Propriétaire     | ❌ Open Source    | ❌ Open Source      |
-| Agentic                | ✅ 8 Autonomous       | ❌ Propriétaire     | ❌ Open Source    | ❌ Open Source      |
-
+| Caractéristiques        | ClicShopping         | Shopify             | Magento         | WooCommerce        |
+|-------------------------|----------------------|---------------------|-----------------|--------------------|
+| IA Générative           | ✅ Natif multi-agents | ❌ Apps tierces      | ❌ Extensions    | ❌ Plugins          |
+| Support Multi-LLM       | ✅ 6+ fournisseurs    | ❌ OpenAI uniquement | ❌ Limité        | ❌ Limité           |
+| Base Vectorielle        | ✅ MariaDB native     | ❌ Externe requis    | ❌ Externe requis | ❌ Externe requis   |
+| Protocoles IA Ecommerce | ✅ ACP/UCP/MCP        | ❌ Extensions        | ❌ Extensions    | ❌ Extensions       |
+| WebSearch Intégré       | ✅ Natif              | ❌ Apps tierces      | ❌ Extensions    | ❌ Plugins          |
+| Open Source             | ✅ GPL2/MIT           | ❌ Propriétaire      | ❌ Open Source   | ❌ Open Source      |
+| Rag                     | ✅ Semantic           | ❌ Propriétaire      | ❌ Open Source   | ❌ Open Source      |
+| BI                      | ✅ Analytic           | ❌ Propriétaire      | ❌ Open Source   | ❌ Open Source      |
+| Agentic                 | ✅ 8 Autonomous       | ❌ Propriétaire      | ❌ Open Source   | ❌ Open Source      |
+| MCP management          | ✅ Natif              | ❌ Extensions        | ❌ Extensions    | ❌ Extensions       |
 
 ##Server performance
 - OpCache
@@ -214,7 +217,7 @@ Get Started Today : Use the Artificial Intelligence to your Ecommerce business w
 
 #Analyse
   -  [![SymfonyInsight](https://insight.symfony.com/projects/417b7cb7-2fd4-44eb-b0cd-e97c4b96fcc1/mini.svg)](https://insight.symfony.com/projects/417b7cb7-2fd4-44eb-b0cd-e97c4b96fcc1)  
-  -  [![php](https://img.shields.io/badge/Php-%3E%3D8.3-green])](https://img.shields.io/badge/Php-%3E%3D8.4green)
+  -  [![php](https://img.shields.io/badge/Php-%3E%3D8.3-green])](https://img.shields.io/badge/Php-%3E%3D8.3-green)
   -  ![GitHub repo size](https://img.shields.io/github/repo-size/ClicShopping/ClicShopping_v3)
   -  ![GitHub top language](https://img.shields.io/github/languages/top/ClicShopping/ClicShopping_v3)
   -  [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ClicShopping/ClicShopping)
@@ -248,3 +251,7 @@ Available in most hosting control panels
  ![image3](https://www.clicshopping.org/images/order.png)
  
  ![image1](https://www.clicshopping.org/images/dashboard.png)
+
+![image1](https://www.clicshopping.org/images/ai_dashboard.png)
+
+![image1](https://www.clicshopping.org/images/lmstudio.png)

@@ -10,6 +10,7 @@
 
 namespace ClicShopping\Sites\Shop;
 
+use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\OM\CLICSHOPPING;
 use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
@@ -75,13 +76,7 @@ use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
     $CLICSHOPPING_Mail = Registry::get('Mail');
 
     $code_length = defined('EMAIL_VERIFICATION_CODE_LENGTH') ? (int)EMAIL_VERIFICATION_CODE_LENGTH : 6;
-    $code_length = max(4, min(8, $code_length)); // Limiter entre 4 et 8
-
-    $verification_code = '';
-
-    for ($i = 0; $i < $code_length; $i++) {
-      $verification_code .= random_int(0, 9);
-    }
+    $verification_code = HTML::generateRandomNumber($code_length);
 
     $expiry_minutes = defined('EMAIL_VERIFICATION_CODE_EXPIRY') ? (int)EMAIL_VERIFICATION_CODE_EXPIRY : 15;
     $expiry_time = date('Y-m-d H:i:s', time() + ($expiry_minutes * 60));

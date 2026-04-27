@@ -43,7 +43,7 @@ return array(
     'EmailValidation\\Tests\\' => array($vendorDir . '/daveearley/daves-email-validation-tool/tests'),
     'EmailValidation\\' => array($vendorDir . '/daveearley/daves-email-validation-tool/src'),
     'EmailChecker\\' => array($vendorDir . '/mattketmo/email-checker/src/EmailChecker'),
-    'Doctrine\\Persistence\\' => array($vendorDir . '/doctrine/persistence/src/Persistence'),
+    'Doctrine\\Persistence\\' => array($vendorDir . '/doctrine/persistence/src'),
     'Doctrine\\ORM\\' => array($vendorDir . '/doctrine/orm/src'),
     'Doctrine\\Migrations\\' => array($vendorDir . '/doctrine/migrations/src'),
     'Doctrine\\Instantiator\\' => array($vendorDir . '/doctrine/instantiator/src/Doctrine/Instantiator'),

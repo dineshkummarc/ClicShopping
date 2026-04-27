@@ -12,6 +12,7 @@ namespace ClicShopping\Sites\Shop\Pages\Account\Actions\LogInAuth;
 
 use ClicShopping\Apps\Configuration\TemplateEmail\Classes\Shop\TemplateEmail;
 use ClicShopping\OM\CLICSHOPPING;
+use ClicShopping\OM\HTML;
 use ClicShopping\OM\Registry;
 use ClicShopping\Sites\Shop\EmailVerification;
 
@@ -36,10 +37,7 @@ class Resend extends \ClicShopping\OM\Domains\PagesActionsAbstract
         $code_length = defined('EMAIL_VERIFICATION_CODE_LENGTH') ? (int)EMAIL_VERIFICATION_CODE_LENGTH : 6;
         $code_length = max(4, min(8, $code_length));
 
-        $verification_code = '';
-        for ($i = 0; $i < $code_length; $i++) {
-          $verification_code .= random_int(0, 9);
-        }
+        $verification_code = HTML::generateRandomNumber();
 
         // Durée d'expiration
         $expiry_minutes = defined('EMAIL_VERIFICATION_CODE_EXPIRY') ? (int)EMAIL_VERIFICATION_CODE_EXPIRY : 15;

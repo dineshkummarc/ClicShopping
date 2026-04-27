@@ -1150,9 +1150,10 @@ class Db extends PDO
     }
 
     // Validation stricte du préfixe : lettres, chiffres, underscores uniquement
-    if (!preg_match('/^[a-zA-Z0-9_]*$/', $prefix)) {
-      throw new \InvalidArgumentException('Invalid table prefix');
+    if (!is_string($prefix) || !preg_match('/^[a-zA-Z0-9_]{1,64}$/', $prefix)) {
+      throw new \InvalidArgumentException('Invalid table prefix'); 
     }
+
 
     // Ajout d'un underscore terminal si le préfixe est non vide et ne se termine pas déjà par un underscore
     if ($prefix !== '' && substr($prefix, -1) !== '_') {

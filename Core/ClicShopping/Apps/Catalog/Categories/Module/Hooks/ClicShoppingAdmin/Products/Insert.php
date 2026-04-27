@@ -49,22 +49,35 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
    */
   private function saveProductCategory(array $current_category_id): void
   {
-    if (isset($_GET['Insert'])) {
-      $current_category_id = $current_category_id[0];
+    $categories = array_values(
+      array_unique(
+        array_filter(
+          array_map('intval', $current_category_id),
+          fn($id) => $id > 0
+        )
+      )
+    );
 
-      $Qproducts = $this->app->db->prepare('select products_id
+    // fallback obligatoire si aucune catégorie valide
+    if (empty($categories)) {
+      $categories = [0];
+    }
+
+     $Qproducts = $this->app->db->prepare('select products_id
                                               from :table_products
                                               order by products_id desc
                                               limit 1
                                               ');
-      $Qproducts->execute();
+     $Qproducts->execute();
 
-      $id = $Qproducts->valueInt('products_id');
+     $products_id = $Qproducts->valueInt('products_id');
 
+    foreach ($categories as $cat_id) {
       $sql_array = [
-        'products_id' => (int)$id,
-        'categories_id' => (int)$current_category_id
+        'products_id' => $products_id,
+        'categories_id' => (int)$cat_id
       ];
+
 
       $this->app->db->save('products_to_categories', $sql_array);
     }
@@ -81,16 +94,27 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
    *
    * @return bool Returns false if the application status is either undefined or set to 'False'.
    */
-  public function execute()
+  public function execute(?array $parameters = null)
   {
-    if (!\defined('CLICSHOPPING_APP_CATEGORIES_CT_STATUS') || CLICSHOPPING_APP_CATEGORIES_CT_STATUS == 'False') {
+    if (!\defined('CLICSHOPPING_APP_CATEGORIES_CT_STATUS') || CLICSHOPPING_APP_CATEGORIES_CT_STATUS === 'False') {
       return false;
     }
 
-    if (isset($_POST['move_to_category_id'])) {
-      $current_category_id = HTML::sanitize($_POST['move_to_category_id']);
+    if (empty($parameters)) {
+      return false;
+    }
 
-      $this->saveProductCategory($current_category_id);
+    if (isset($_GET['Insert'])) {
+      $parameters = array_combine(
+        array_map('trim', array_keys($parameters)), $parameters);
+
+      if (empty($parameters['categories_id']) || empty($parameters['products_id'])) {
+        return false;
+      }
+
+      $category_id = (array)$parameters['categories_id'];
+
+      $this->saveProductCategory($category_id);
     }
   }
 }

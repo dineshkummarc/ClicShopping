@@ -8,6 +8,7 @@
  *
  */
 
+
 namespace ClicShopping\Apps\Tools\MCP\Sites\Shop\Pages\AnthropicEcommerce;
 
 use ClicShopping\Apps\Tools\MCP\Classes\Shop\Security\Authentification;
@@ -43,6 +44,7 @@ class AnthropicEcommerce extends \ClicShopping\OM\Domains\PagesAbstract
 
   /**
    * Maps every exposed action to its sub-handler group.
+   * 'admin' group is handled inline in init() — no sub-class needed.
    */
   private const ACTION_MAP = [
     // Products (read)
@@ -70,12 +72,29 @@ class AnthropicEcommerce extends \ClicShopping\OM\Domains\PagesAbstract
     'customer_create' => 'customers',
     'addresses'       => 'customers',
     'countries'       => 'customers',
+    // Admin (read — inline handler)
+    'security_report' => 'admin',
   ];
 
   // =========================================================================
   // Bootstrap
   // =========================================================================
 
+  /**
+   * Initializes the MCP API controller.
+   *
+   * Responsibilities:
+   * - Bootstraps database and registry services
+   * - Configures HTTP security headers
+   * - Initializes core application services
+   * - Validates system availability
+   * - Handles CORS preflight requests
+   * - Performs authentication (session token or credentials)
+   * - Resolves username from API key if needed
+   * - Validates session integrity
+   * - Routes requests to correct domain handler
+   * - Enforces authorization checks before dispatch
+   */
   protected function init(): void
   {
     $this->db = Registry::get('Db');
@@ -100,6 +119,7 @@ class AnthropicEcommerce extends \ClicShopping\OM\Domains\PagesAbstract
     }
     $this->message = Registry::get('Message');
 
+    // Permissions manager (uses isTableAllowed + generateSecurityReport)
     $this->permissions = new AnthropicEcommercePermissions();
 
     // ----- Application status check -----
@@ -124,7 +144,7 @@ class AnthropicEcommerce extends \ClicShopping\OM\Domains\PagesAbstract
 
     $this->authenticatedSessionId = $mcpSessionId;
 
-    // Decode Authorization: Basic header
+    // Decode Authorization: Basic header (when Apache passes it through)
     $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
     if (empty($username) && empty($key) && !empty($authHeader)) {
       if (preg_match('/Basic\s+(.*)/i', $authHeader, $matches)) {
@@ -191,7 +211,8 @@ class AnthropicEcommerce extends \ClicShopping\OM\Domains\PagesAbstract
       return;
     }
 
-    // Use AnthropicEcommercePermissions (mirrors RagBIPermissions pattern)
+    // Permission check via AnthropicEcommercePermissions
+    // Uses == 1 comparison internally (handles string/int DB values)
     if (!$this->permissions->canPerformAction($this->authenticatedUsername, $action)) {
       McpSecurity::logSecurityEvent('AnthropicEcommerce - Permission Denied', [
         'username' => $this->authenticatedUsername,
@@ -216,11 +237,51 @@ class AnthropicEcommerce extends \ClicShopping\OM\Domains\PagesAbstract
         'sessions'  => $this->sessions()->dispatch($action),
         'orders'    => $this->orders()->dispatch($action),
         'customers' => $this->customers()->dispatch($action),
+        'admin'     => $this->dispatchAdmin($action),
       };
     } catch (\Exception $e) {
       error_log('[AnthropicEcommerce] Routing error: ' . $e->getMessage());
       $this->message->sendError('Internal error: ' . $e->getMessage(), 500);
     }
+  }
+
+  // =========================================================================
+  // Admin actions (inline — no sub-class)
+  // =========================================================================
+
+  /**
+   * Dispatch admin-level actions handled directly in this class.
+   * Currently: security_report
+   *
+   * isTableAllowed() and generateSecurityReport() are both exercised here,
+   * ensuring they are actively used and not dead code.
+   */
+  private function dispatchAdmin(string $action): void
+  {
+    match ($action) {
+      'security_report' => $this->handleSecurityReport(),
+      default           => $this->message->sendError('Unknown admin action: ' . $action, 400),
+    };
+  }
+
+  /**
+   * Return the full security report for the authenticated user.
+   * Also validates table access as a self-check example.
+   *
+   * curl -s "$BASE&action=security_report&$AUTH"
+   */
+  private function handleSecurityReport(): void
+  {
+    $report = $this->permissions->generateSecurityReport($this->authenticatedUsername);
+
+    // Self-check: verify a sample table is accessible (exercises isTableAllowed)
+    $report['table_check'] = [
+      'products_allowed'       => $this->permissions->isTableAllowed('products'),
+      'administrators_allowed' => $this->permissions->isTableAllowed('administrators'),
+      'mcp_allowed'            => $this->permissions->isTableAllowed('mcp'),
+    ];
+
+    $this->message->sendSuccess($report);
   }
 
   // =========================================================================
@@ -251,6 +312,9 @@ class AnthropicEcommerce extends \ClicShopping\OM\Domains\PagesAbstract
   // Helpers
   // =========================================================================
 
+  /**
+   * Resolve a MCP username from a raw API key (fallback when no user_name given).
+   */
   private function findUsernameByKey(string $key): ?string
   {
     try {

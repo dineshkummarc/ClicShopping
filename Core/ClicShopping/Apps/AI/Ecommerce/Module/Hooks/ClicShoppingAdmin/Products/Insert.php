@@ -82,16 +82,18 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
     $embedding_enabled = \defined('CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING') && CLICSHOPPING_APP_CHATGPT_RA_OPENAI_EMBEDDING == 'True' && \defined( 'CLICSHOPPING_APP_CHATGPT_RA_STATUS') && CLICSHOPPING_APP_CHATGPT_RA_STATUS == 'True';
     
     if (isset($_GET['Insert'], $_GET['Products'])) {
+      $Qproducts = $this->app->db->prepare('select products_id
+                                          from :table_products
+                                          order by products_id desc
+                                          limit 1
+                                          ');
+       $Qproducts->execute();
+
+      $products_id = $Qproducts->valueInt('products_id');
+      
       $translate_language = $this->app->getDef('text_seo_page_translate_language');
 
-      $Qcheck = $this->app->db->prepare('select products_id
-                                         from :table_products
-                                         order by products_id desc
-                                         limit 1
-                                        ');
-      $Qcheck->execute();
-
-      if ($Qcheck->valueInt('products_id') !== null) {
+      if (!empty($products_id) || $products_id !== null) {
         $Qproducts = $this->app->db->prepare('select p.products_id,
                                                      p.products_model,
                                                      p.manufacturers_id,
@@ -115,12 +117,12 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
                                                 where p.products_id = :products_id
                                                 and p.products_id = pd.products_id
                                               ');
-        $Qproducts->bindInt(':products_id', $Qcheck->valueInt('products_id'));
+        $Qproducts->bindInt(':products_id', $products_id);
         $Qproducts->execute();
 
         $products_array = $Qproducts->fetchAll();
 
-        $Qcategories = $this->app->db->get('products_to_categories', 'categories_id', ['products_id' => $Qcheck->valueInt('products_id')]);
+        $Qcategories = $this->app->db->get('products_to_categories', 'categories_id', ['products_id' => $products_id]);
 
         if (is_array($products_array)) {
           foreach ($products_array as $item) {
@@ -143,7 +145,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
             $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Products/seo_chat_gpt', $language_code);
             $this->app->loadDefinitions('Module/Hooks/ClicShoppingAdmin/Products/rag', $language_code);
-	    
+
             $update_sql_data = [
               'language_id' => $item['language_id'],
               'products_id' => $item['products_id']
@@ -195,8 +197,8 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
 
               $seo_product_title = $translate_language . ' ' . $language_name . ' : ' . $question;
               $seo_product_title = Gpt::getGptResponse($seo_product_title);
-              $seo_product_title =  SeoAdmin::normalizeSeoTitle($seo_product_title);
-	       
+              $seo_product_title = SeoAdmin::normalizeSeoTitle($seo_product_title);
+
               if ($seo_product_title !== false) {
                 $sql_data_array = [
                   'products_head_desc_tag' => SeoAdmin::normalizeSeoDescription($seo_product_description),
@@ -253,7 +255,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
               if ($seo_product_tag !== false) {
                 $sql_data_array = [
                   'products_head_tag' => SeoAdmin::normalizeSeoKeywords($seo_product_tag),
-                  ];
+                ];
 
                 $this->app->db->save('products_description', $sql_data_array, $update_sql_data);
               }
@@ -342,7 +344,7 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
               }
 
               if (!empty($products_description)) {
-	              $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
+                $embedding_data .= $this->app->getDef('text_product_description') . ': ' . HTMLOverrideCommon::cleanHtmlForEmbedding($products_description) . "\n";
                 $taxonomy = $this->semantics->createTaxonomy(HTMLOverrideCommon::cleanHtmlForEmbedding($products_description), $language_code, null);
 
                 if (!empty($taxonomy)) {
@@ -403,76 +405,6 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
           }
         }
       }
-                  //-------------------
-                  //image
-                  //-------------------
-      /*
-              if (isset($_POST['option_gpt_create_image'])) {
-                $Qproducts = $this->app->db->prepare('select products_name,
-                                                               language_id
-                                                        from :table_products_description
-                                                        where products_id = :products_id
-                                                        and language_id = 1
-                                                      ');
-                $Qproducts->bindInt(':products_id', $Qcheck->valueInt('products_id'));
-                $Qproducts->execute();
-
-                $update_sql_data = [
-                  'products_id' => $Qcheck->valueInt('products_id')
-                ];
-
-                $products_image = Gpt::createImageChatGpt($Qproducts->value('products_name'), 'products', '256x256', true, true);
-
-                if (!empty($products_image) || $products_image !== false) {
-                  $sql_data_products_image = [
-                    'products_image' => $products_image ?? '',
-                    'products_image_small' => $products_image ?? ''
-                  ];
-
-                  $this->app->db->save('products', $sql_data_products_image, $update_sql_data);
-                }
-
-               //zoom
-                $products_image_zoom = Gpt::createImageChatGpt($Qproducts->value('products_name'), 'products', '512x512', true);
-
-                if (!empty($products_image_zoom) || $products_image_zoom !== false) {
-                  $sql_data_array_products_image_zoom = [
-                    'products_image_zoom' => $products_image_zoom ?? '',
-                  ];
-
-                  $this->app->db->save('products', $sql_data_array_products_image_zoom, $update_sql_data);
-
-                  $sql_array = [
-                    'products_id' => $Qcheck->valueInt('products_id'),
-                    'image' => $products_image_zoom ?? '',
-                    'htmlcontent' => '',
-                    'sort_order' => 2
-                  ];
-
-                  $this->app->db->save('products_images', $sql_array);
-                }
-
-                // medium
-                $products_image_medium = Gpt::createImageChatGpt($Qproducts->value('products_name'), 'products', '512x512', true);
-
-                if (!empty($products_image_medium) || $products_image_medium !== false) {
-                  $sql_data_array_products_image_medium = [
-                    'products_image_medium' => $products_image_medium ?? '',
-                  ];
-
-                  $this->app->db->save('products', $sql_data_array_products_image_medium, $update_sql_data);
-
-                  $sql_array = [
-                    'products_id' => $Qcheck->valueInt('products_id'),
-                    'image' => $products_image_medium ?? '',
-                    'htmlcontent' => '',
-                    'sort_order' => 2
-                  ];
-
-                  $this->app->db->save('products_images', $sql_array);
-                }
-              }
-      */
-      }
     }
+  }
 }

@@ -242,6 +242,7 @@ class ResultAggregator extends BaseQueryProcessor
     
     // Get description fields for this entity type (if domain configured)
     $descriptionFields = [];
+    
     if (!empty($entityType) && DomainConfig::getActivities() !== '') {
       $entityConfigClass = DomainFields::resolveAppClass(DomainConfig::getActivities(), 'EntityConfig');
       if ($entityConfigClass !== null && method_exists($entityConfigClass, 'getDescriptionFields')) {

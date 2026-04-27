@@ -1,7 +1,8 @@
 version4.27
 - MCP : Anthtopic Ecommerce Connector
-- librairies updated
-- Some fix
+- libraries updated
+- Some bug fix and improvement
+- Agents.md updated
 
 ---------------
 version4.26
@@ -20,7 +21,6 @@ version4.25
 
 ---------------
 version4.24
-
 - Some fix
 - add shop cron for product Cockpit Ai
 - fix constant bug in CokpitAI

@@ -349,7 +349,7 @@ class Create extends \ClicShopping\OM\Domains\PagesActionsAbstract
     }
 
     if ($error === false) {
-      $customers_password = 'clicshopping_' . random_int(5, 500);
+      $customers_password = 'clicshopping_' . bin2hex(random_bytes(4));
 
 // Autorisation aux clients de modifier informations societe et adresse principal + Ajout adresse
       if ($customers_modify_company !== 1) {

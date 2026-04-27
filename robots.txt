@@ -1,5 +1,5 @@
 # Rules for ClicShopping (https://www.clicshopping.org)
-User-Agent: *
+User-agent: *
 
 # Block pages with no unique content
 Disallow: /Account/CreatePro
@@ -13,10 +13,14 @@ Disallow: /Infos/Cookies
 Disallow: /Infos/SSLCheck
 Disallow: /Cart
 
-# Block faceted pages and 301 redirect pages
-Disallow: /*?page*
-Disallow: /*?sort*
-Disallow: /*currency=*
+# Block faceted pages and parameterized URLs
+Disallow: /*?page=
+Disallow: /*?sort=
+Disallow: /*currency=
+
+#ai
+Content-Signal: ai-train=no, search=yes, ai-input=no
+
 
 # Sitemap URL
-Sitemap: https://domain.tld/index.php?Sitemap&GoogleSitemapIndex
+Sitemap: https://demo.clicshopping.org/index.php?Sitemap&GoogleSitemapIndex

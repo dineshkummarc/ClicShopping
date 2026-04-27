@@ -206,9 +206,9 @@ class ChatRagBI extends \ClicShopping\OM\Domains\PagesAbstract
         McpSecurity::logSecurityEvent(
           'API Access Denied - Authentication Failed',
           [
-	  'username' => $username, 
-	  'error' => $e->getMessage()
-	  ]);
+          'username' => $username,
+          'error' => $e->getMessage()
+          ]);
 
         $this->message->sendError('Unauthorized: Authentication failed. ' . $e->getMessage(), 401);
         return;
