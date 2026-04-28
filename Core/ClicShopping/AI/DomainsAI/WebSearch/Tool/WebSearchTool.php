@@ -765,6 +765,17 @@
         // Extract prices from web search results
         if (isset($webResults['items']) && is_array($webResults['items'])) {
           foreach ($webResults['items'] as $item) {
+            // Skip non-array items (defensive check for data integrity)
+            if (!is_array($item)) {
+              if ($this->debug) {
+                $this->logger->logSecurityEvent(
+                  "Skipping non-array item in web results: " . gettype($item),
+                  'warning'
+                );
+              }
+              continue;
+            }
+            
             $extractedPrice = $this->extractPriceFromResult($item);
 
             if ($extractedPrice !== null) {

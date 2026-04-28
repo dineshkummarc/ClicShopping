@@ -20,7 +20,7 @@ class SubTaskPlannerAnalytics
 {
     private bool $debug;
     private ?SecurityLogger $securityLogger;
-    
+
     public function __construct(bool $debug = false, ?SecurityLogger $securityLogger = null)
     {
         $this->debug = $debug;
@@ -30,23 +30,19 @@ class SubTaskPlannerAnalytics
     /**
      * Check if query can be handled by this planner
      * 
+     * This is a catch-all planner for analytics queries.
+     * It always returns true as it handles all basic analytics operations.
+     * 
      * @param string $query User query to analyze
-     * @return bool True if planner can handle the query
+     * @return bool Always true (catch-all planner)
      */
     public function canHandle(string $query): bool
     {
-      $queryLower = strtolower($query);
-
-      foreach ($this->analyticsKeywords as $keyword) {
-        if (str_contains($queryLower, $keyword)) {
-          if ($this->debug) {
-              $this->logDebug("Analytics keyword detected: '$keyword'");
-          }
-          return true;
+        if ($this->debug) {
+            $this->logDebug("Analytics planner (catch-all) can handle query: " . substr($query, 0, 50));
         }
-      }
 
-      return true;
+        return true;
     }
     
     /**
@@ -63,7 +59,6 @@ class SubTaskPlannerAnalytics
         }
 
         $steps = [];
-        $queryType = 'analytics';
         
         $step1 = new TaskStep(
             'step_1',

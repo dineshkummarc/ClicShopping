@@ -1,5 +1,13 @@
+
+version4.28
+- php9 compatibility improvement
+- libraries updated
+- AI fix and improvement
+
+
+---------------
 version4.27
-- MCP : Anthtopic Ecommerce Connector
+- MCP : Anthropic Ecommerce Connector
 - libraries updated
 - Some bug fix and improvement
 - Agents.md updated
