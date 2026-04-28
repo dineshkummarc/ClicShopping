@@ -309,12 +309,13 @@ class WeightedConsensusBuilder
                     difference = VALUES(difference)";
             
             $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(':evaluation_id', $consensusResult->getEvaluationId());
-            $stmt->bindValue(':dynamic_consensus', $consensusResult->getDynamicConsensus());
-            $stmt->bindValue(':static_consensus', $consensusResult->getStaticConsensus());
-            $stmt->bindValue(':difference', $consensusResult->getConsensusDifference());
-            $stmt->bindValue(':created_at', $consensusResult->getCalculatedAt()->format('Y-m-d H:i:s'));
-            $stmt->execute();
+            $stmt->execute([
+                'evaluation_id' => $consensusResult->getEvaluationId(),
+                'dynamic_consensus' => $consensusResult->getDynamicConsensus(),
+                'static_consensus' => $consensusResult->getStaticConsensus(),
+                'difference' => $consensusResult->getConsensusDifference(),
+                'created_at' => $consensusResult->getCalculatedAt()->format('Y-m-d H:i:s')
+            ]);
             
             if ($this->debug) {
                 error_log(sprintf(

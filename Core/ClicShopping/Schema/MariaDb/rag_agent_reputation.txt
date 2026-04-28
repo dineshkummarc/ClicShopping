@@ -1,4 +1,4 @@
-reputation_id bigint(20) not_null comment(Auto-incrementing reputation ID)
+reputation_id bigint(20) not_null auto_increment comment(Auto-incrementing reputation ID)
 critic_id varchar(100) not_null comment(Identifier of the critic agent)
 reputation_score decimal(3,2) not_null comment(Overall reputation score (0.50-1.00))
 consensus_alignment decimal(3,2) not_null comment(Percentage of evaluations within 0.1 of consensus (0.00-1.00))

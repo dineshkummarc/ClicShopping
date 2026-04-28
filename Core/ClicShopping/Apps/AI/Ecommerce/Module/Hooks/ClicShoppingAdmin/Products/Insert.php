@@ -405,6 +405,76 @@ class Insert implements \ClicShopping\OM\Modules\HooksInterface
           }
         }
       }
+      //-------------------
+      //image
+      //-------------------
+      /*
+              if (isset($_POST['option_gpt_create_image'])) {
+                $Qproducts = $this->app->db->prepare('select products_name,
+                                                               language_id
+                                                        from :table_products_description
+                                                        where products_id = :products_id
+                                                        and language_id = 1
+                                                      ');
+                $Qproducts->bindInt(':products_id', $Qcheck->valueInt('products_id'));
+                $Qproducts->execute();
+
+                $update_sql_data = [
+                  'products_id' => $Qcheck->valueInt('products_id')
+                ];
+
+                $products_image = Gpt::createImageChatGpt($Qproducts->value('products_name'), 'products', '256x256', true, true);
+
+                if (!empty($products_image) || $products_image !== false) {
+                  $sql_data_products_image = [
+                    'products_image' => $products_image ?? '',
+                    'products_image_small' => $products_image ?? ''
+                  ];
+
+                  $this->app->db->save('products', $sql_data_products_image, $update_sql_data);
+                }
+
+               //zoom
+                $products_image_zoom = Gpt::createImageChatGpt($Qproducts->value('products_name'), 'products', '512x512', true);
+
+                if (!empty($products_image_zoom) || $products_image_zoom !== false) {
+                  $sql_data_array_products_image_zoom = [
+                    'products_image_zoom' => $products_image_zoom ?? '',
+                  ];
+
+                  $this->app->db->save('products', $sql_data_array_products_image_zoom, $update_sql_data);
+
+                  $sql_array = [
+                    'products_id' => $Qcheck->valueInt('products_id'),
+                    'image' => $products_image_zoom ?? '',
+                    'htmlcontent' => '',
+                    'sort_order' => 2
+                  ];
+
+                  $this->app->db->save('products_images', $sql_array);
+                }
+
+                // medium
+                $products_image_medium = Gpt::createImageChatGpt($Qproducts->value('products_name'), 'products', '512x512', true);
+
+                if (!empty($products_image_medium) || $products_image_medium !== false) {
+                  $sql_data_array_products_image_medium = [
+                    'products_image_medium' => $products_image_medium ?? '',
+                  ];
+
+                  $this->app->db->save('products', $sql_data_array_products_image_medium, $update_sql_data);
+
+                  $sql_array = [
+                    'products_id' => $Qcheck->valueInt('products_id'),
+                    'image' => $products_image_medium ?? '',
+                    'htmlcontent' => '',
+                    'sort_order' => 2
+                  ];
+
+                  $this->app->db->save('products_images', $sql_array);
+                }
+              }
+      */
     }
   }
 }

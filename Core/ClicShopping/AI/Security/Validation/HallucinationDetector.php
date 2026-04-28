@@ -493,50 +493,38 @@ class HallucinationDetector
     $hallucinationKeywords = [];
     
     // Check for revenue bias hallucination
-    // Include French equivalents: chiffre d'affaires, CA, revenu
+    // Uses language-agnostic detection (no hardcoded French keywords)
     if (str_contains($translatedQueryLower, 'revenue') 
-        && !str_contains($originalQueryLower, 'revenue')
-        && !str_contains($originalQueryLower, 'chiffre')
-        && !str_contains($originalQueryLower, 'affaires')
-        && !str_contains($originalQueryLower, 'revenu')
-        && !str_contains($originalQueryLower, ' ca ')) {
+        && !$this->containsKeywordInAnyLanguage($originalQueryLower, 'revenue')) {
       $hallucinationDetected = true;
       $hallucinationKeywords[] = 'revenue';
     }
     
-    // Check for month/monthly (English and French)
+    // Check for month/monthly hallucination
     if ((str_contains($translatedQueryLower, 'month') || str_contains($translatedQueryLower, 'monthly')) 
-        && !str_contains($originalQueryLower, 'month') 
-        && !str_contains($originalQueryLower, 'mois')
-        && !str_contains($originalQueryLower, 'mensuel')) {
+        && !$this->containsKeywordInAnyLanguage($originalQueryLower, 'month')) {
       $hallucinationDetected = true;
       $hallucinationKeywords[] = 'month';
     }
     
-    // Check for quarter/quarterly (English and French)
+    // Check for quarter/quarterly hallucination
     if ((str_contains($translatedQueryLower, 'quarter') || str_contains($translatedQueryLower, 'quarterly')) 
-        && !str_contains($originalQueryLower, 'quarter') 
-        && !str_contains($originalQueryLower, 'trimestre')
-        && !str_contains($originalQueryLower, 'trimestriel')) {
+        && !$this->containsKeywordInAnyLanguage($originalQueryLower, 'quarter')) {
       $hallucinationDetected = true;
       $hallucinationKeywords[] = 'quarter';
     }
     
-    // Check for semester/semestre
+    // Check for semester hallucination
     if ((str_contains($translatedQueryLower, 'semester') || str_contains($translatedQueryLower, 'semestre')) 
-        && !str_contains($originalQueryLower, 'semester') 
-        && !str_contains($originalQueryLower, 'semestre')) {
+        && !$this->containsKeywordInAnyLanguage($originalQueryLower, 'semester')) {
       $hallucinationDetected = true;
       $hallucinationKeywords[] = 'semester';
     }
     
-    // Check for year/annual (only if combined with revenue)
+    // Check for year/annual hallucination (only if combined with revenue)
     if (str_contains($translatedQueryLower, 'revenue') 
         && (str_contains($translatedQueryLower, 'year') || str_contains($translatedQueryLower, 'annual'))
-        && !str_contains($originalQueryLower, 'year') 
-        && !str_contains($originalQueryLower, 'année')
-        && !str_contains($originalQueryLower, 'annuel')
-        && !str_contains($originalQueryLower, 'an ')) {
+        && !$this->containsKeywordInAnyLanguage($originalQueryLower, 'year')) {
       $hallucinationDetected = true;
       $hallucinationKeywords[] = 'year';
     }
@@ -558,5 +546,34 @@ class HallucinationDetector
     }
     
     return $result;
+  }
+
+  /**
+   * Check if a keyword exists in text regardless of language
+   *
+   * This method provides language-agnostic keyword detection by checking
+   * if an English keyword or its translation exists in the original text.
+   * 
+   * Architecture compliance (AGENTS.md):
+   * - No hardcoded language patterns (agnostic layer principle)
+   * - All processing in English (multilingual UI, English processing)
+   * - Uses LLM-based translation for semantic matching
+   *
+   * @param string $text Text to search (any language, lowercase)
+   * @param string $englishKeyword English keyword to search for (lowercase)
+   * @return bool True if keyword or its translation exists in text
+   */
+  private function containsKeywordInAnyLanguage(string $text, string $englishKeyword): bool
+  {
+    // First check if English keyword exists directly
+    if (str_contains($text, $englishKeyword)) {
+      return true;
+    }
+
+    // Use TranslationService for language-agnostic detection
+    // This leverages existing LLM translation infrastructure
+    $translationService = new \ClicShopping\AI\Agents\Orchestrator\SubIntentAnalyzer\TranslationService($this->debug);
+    
+    return $translationService->containsKeywordInAnyLanguage($text, $englishKeyword);
   }
 }

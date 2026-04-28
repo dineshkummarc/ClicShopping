@@ -11,23 +11,23 @@
 namespace ClicShopping\AI\DomainsAI\Hybrid\Processor;
 
 
-use ClicShopping\AI\DomainsAI\WebSearch\Tool\WebSearchTool;
 use ClicShopping\AI\DomainsAI\Hybrid\Helper\Formatter\ResultFormatter;
-use ClicShopping\AI\Config\DomainConfig;
-use ClicShopping\AI\Config\DomainFields;
 
 /**
- * ResultAggregator - Aggregates results from different query type combinations
+ * ResultAggregator - Aggregates results from different query type combinations (AGNOSTIC)
+ *
+ * This class provides generic aggregation logic that is framework and domain-agnostic.
+ * Domain-specific aggregation logic (e.g., e-commerce price comparison) should be
+ * implemented in subclasses in Apps/AI/{Domain}/ directories.
  *
  * Responsibilities:
- * - Provide specialized aggregation for price comparison (analytics + web_search)
- * - Provide specialized aggregation for semantic + analytics combinations
+ * - Provide generic aggregation for semantic + analytics combinations
  * - Provide default aggregation for other query combinations
  * - Collect and deduplicate sources from all sub-queries
  * - Handle failed sub-queries gracefully with warnings
+ * - Provide hooks for domain-specific aggregation
  *
  * Requirements:
- * - REQ-5.1: Specialized aggregation for price comparison
  * - REQ-5.2: Specialized aggregation for semantic + analytics
  * - REQ-5.3: Default aggregation for other combinations
  * - REQ-5.4: Source deduplication
@@ -35,6 +35,7 @@ use ClicShopping\AI\Config\DomainFields;
  *
  * @package ClicShopping\AI\Agents\Orchestrator\SubHybridQueryProcessor
  * @since 2025-12-14
+ * @updated 2026-04-28 - Refactored to be domain-agnostic
  */
 
 class ResultAggregator extends BaseQueryProcessor
@@ -87,9 +88,8 @@ class ResultAggregator extends BaseQueryProcessor
 
       // Aggregate based on type
       return match($aggregationType) {
-        'price_comparison' => $this->aggregatePriceComparison($successfulResults, $failedResults),
         'semantic_analytics' => $this->aggregateSemanticWithAnalytics($successfulResults, $failedResults),
-        default => $this->aggregateDefault($successfulResults, $failedResults)
+        default => $this->aggregateDomainSpecific($aggregationType, $successfulResults, $failedResults)
       };
 
     } catch (\Exception $e) {
@@ -140,14 +140,14 @@ class ResultAggregator extends BaseQueryProcessor
     sort($queryTypes);
     $typeKey = implode('_', $queryTypes);
 
-    // Price comparison: analytics + web_search
-    if (in_array('analytics', $queryTypes, true) && in_array('web_search', $queryTypes, true)) {
-      return 'price_comparison';
-    }
-
     // Semantic + analytics
     if (in_array('semantic', $queryTypes, true) && in_array('analytics', $queryTypes, true)) {
       return 'semantic_analytics';
+    }
+
+    // Price comparison: analytics + web_search (domain-specific, handled by subclasses)
+    if (in_array('analytics', $queryTypes, true) && in_array('web_search', $queryTypes, true)) {
+      return 'price_comparison';
     }
 
     // Default for all other combinations
@@ -155,293 +155,20 @@ class ResultAggregator extends BaseQueryProcessor
   }
 
   /**
-   * Aggregate price comparison results (analytics + web_search)
-   * REQ-5.1: Specialized aggregation for price comparison
-   */
-  private function aggregatePriceComparison(array $successfulResults, array $failedResults): array
-  {
-    list($productData, $webSearchResults, $sources) = $this->extractPriceComparisonData($successfulResults, $failedResults);
-
-    // If we have both product data and web results, use comparePrice()
-    if ($productData !== null && $webSearchResults !== null) {
-      $comparison = $this->performPriceComparison($productData, $webSearchResults);
-      if ($comparison !== null) {
-        $aggregatedText = ResultFormatter::formatPriceComparisonAsText($comparison);
-        if ($this->debug) {
-          $this->logInfo("Price comparison successful", ['product' => $productData['name']]);
-        }
-        return $this->formatAggregatedResult(
-          'price_comparison',
-          $aggregatedText,
-          ['comparison_data' => $comparison, 'product' => $productData],
-          $sources,
-          $successfulResults,
-          $failedResults
-        );
-      }
-    }
-
-    // Fallback: Basic aggregation
-    return $this->buildBasicPriceComparison($productData, $webSearchResults, $sources, $successfulResults, $failedResults);
-  }
-
-  /**
-   * Extract product data and web search results for price comparison
-   * Uses EntityConfig to dynamically discover field names instead of hardcoding
-   */
-  private function extractPriceComparisonData(array $successfulResults, array $failedResults): array
-  {
-    $productData = null;
-    $webSearchResults = null;
-    $sources = [];
-
-    foreach ($successfulResults as $subResult) {
-      $type = $subResult['type'] ?? '';
-      $result = $subResult['result'] ?? [];
-
-      if ($type === 'analytics') {
-        $data = $result['result']['data'] ?? [];
-        if (!empty($data)) {
-          $firstRow = $data[0];
-          
-          // Extract product data using dynamic field discovery
-          $productData = $this->extractProductDataFromRow($firstRow);
-        }
-      } elseif ($type === 'web_search') {
-        // Check if already formatted
-        if (isset($result['is_price_comparison']) && $result['is_price_comparison']) {
-          return [null, null, []]; // Signal to return early
-        }
-        $webSearchResults = $result;
-        $sources = $this->collectSources($result, $sources);
-      }
-    }
-
-    return [$productData, $webSearchResults, $sources];
-  }
-
-  /**
-   * Extract product data from a database row using dynamic field discovery
-   * 
-   * This method uses EntityConfig to discover available fields instead of
-   * hardcoding field names like "products_name" or "products_price".
-   * 
-   * Fallback strategy:
-   * 1. Try to detect entity type from row keys
-   * 2. Use EntityConfig to get description fields for that entity
-   * 3. Map common field patterns (id, name, price, model)
-   * 4. Use generic fallbacks if specific fields not found
-   * 
-   * @param array $row Database row data
-   * @return array Product data with standardized keys
-   */
-  private function extractProductDataFromRow(array $row): array
-  {
-    // Detect entity type from row keys (e.g., "products_id" -> "products")
-    $entityType = $this->detectEntityTypeFromRow($row);
-    
-    // Get description fields for this entity type (if domain configured)
-    $descriptionFields = [];
-    
-    if (!empty($entityType) && DomainConfig::getActivities() !== '') {
-      $entityConfigClass = DomainFields::resolveAppClass(DomainConfig::getActivities(), 'EntityConfig');
-      if ($entityConfigClass !== null && method_exists($entityConfigClass, 'getDescriptionFields')) {
-        $descriptionFields = $entityConfigClass::getDescriptionFields($entityType);
-      }
-    }
-    
-    // Extract fields using dynamic discovery with fallbacks
-    return [
-      'product_id' => $this->extractField($row, ['id', 'product_id'], $entityType, 0),
-      'name' => $this->extractField($row, ['name', 'title', 'description'], $entityType, 'Unknown Item'),
-      'price' => (float)$this->extractField($row, ['price', 'cost', 'amount'], $entityType, 0),
-      'model' => $this->extractField($row, ['model', 'sku', 'code', 'reference'], $entityType, ''),
-      'entity_type' => $entityType,
-      'available_fields' => array_keys($row)
-    ];
-  }
-
-  /**
-   * Detect entity type from row keys
-   * 
-   * Looks for patterns like "products_id", "orders_id", "customers_id"
-   * and extracts the entity type prefix.
-   * 
-   * @param array $row Database row
-   * @return string|null Entity type or null if not detected
-   */
-  private function detectEntityTypeFromRow(array $row): ?string
-  {
-    foreach (array_keys($row) as $key) {
-      // Look for pattern: {entity}_id or {entity}_{field}
-      if (preg_match('/^([a-z_]+)_(id|name|price|model)$/i', $key, $matches)) {
-        return $matches[1]; // Return entity prefix (e.g., "products", "orders")
-      }
-    }
-    
-    // Fallback: check if we can get entity types from EntityConfig
-    if (DomainConfig::getActivities() !== '') {
-      $entityConfigClass = DomainFields::resolveAppClass(DomainConfig::getActivities(), 'EntityConfig');
-      if ($entityConfigClass !== null && method_exists($entityConfigClass, 'getEntityTypes')) {
-        $entityTypes = $entityConfigClass::getEntityTypes();
-        foreach ($entityTypes as $entityType) {
-          if (method_exists($entityConfigClass, 'getIdColumn')) {
-            $idColumn = $entityConfigClass::getIdColumn($entityType);
-            if (isset($row[$idColumn])) {
-              return $entityType;
-            }
-          }
-        }
-      }
-    }
-    
-    return null;
-  }
-
-  /**
-   * Extract a field value from row using multiple possible field names
-   * 
-   * Tries multiple field name patterns with entity type prefix:
-   * - {entity}_{fieldName} (e.g., "products_name")
-   * - {fieldName} (e.g., "name")
-   * 
-   * @param array $row Database row
-   * @param array $fieldNames Possible field names to try
-   * @param string|null $entityType Entity type prefix
-   * @param mixed $default Default value if field not found
-   * @return mixed Field value or default
-   */
-  private function extractField(array $row, array $fieldNames, ?string $entityType, $default)
-  {
-    // Try with entity prefix first (e.g., "products_name")
-    if (!empty($entityType)) {
-      foreach ($fieldNames as $fieldName) {
-        $prefixedKey = $entityType . '_' . $fieldName;
-        if (isset($row[$prefixedKey])) {
-          return $row[$prefixedKey];
-        }
-      }
-    }
-    
-    // Try without prefix (e.g., "name")
-    foreach ($fieldNames as $fieldName) {
-      if (isset($row[$fieldName])) {
-        return $row[$fieldName];
-      }
-    }
-    
-    return $default;
-  }
-
-  /**
-   * Perform price comparison using WebSearchTool
-   */
-  private function performPriceComparison(array $productData, array $webSearchResults): ?array
-  {
-    try {
-      $webSearchTool = new WebSearchTool();
-      $formattedWebResults = [
-        'success' => true,
-        'items' => $webSearchResults['result'] ?? $webSearchResults['items'] ?? []
-      ];
-      $comparison = $webSearchTool->comparePrice($productData, $formattedWebResults);
-      return $comparison['success'] ? $comparison : null;
-    } catch (\Exception $e) {
-      $this->logWarning("Error in price comparison", ['error' => $e->getMessage()]);
-      return null;
-    }
-  }
-
-  /**
-   * Build basic price comparison when WebSearchTool is unavailable
-   * Uses fallback display strategies for missing fields
-   */
-  private function buildBasicPriceComparison(?array $productData, ?array $webSearchResults, array $sources, array $successfulResults, array $failedResults): array
-  {
-    $text = "";
-
-    // Display product information with fallback strategies
-    if ($productData !== null) {
-      $text .= $this->formatProductDisplay($productData);
-    } else {
-      $text .= "Product information not available.\n\n";
-    }
-
-    // Display competitor information
-    $competitorInfo = [];
-    if ($webSearchResults !== null) {
-      $response = $webSearchResults['result']['text_response'] ?? $webSearchResults['response'] ?? '';
-      if (!empty($response)) {
-        $competitorInfo[] = $response;
-      }
-    }
-
-    if (!empty($competitorInfo)) {
-      $text .= "Competitor Information:\n" . implode("\n", $competitorInfo) . "\n";
-    }
-
-    $text = $this->addFailedQueryWarning($text, $failedResults);
-
-    return $this->formatAggregatedResult(
-      'price_comparison',
-      trim($text),
-      [
-        'product' => $productData,
-        'competitor_info' => $competitorInfo
-      ],
-      $sources,
-      $successfulResults,
-      $failedResults
-    );
-  }
-
-  /**
-   * Format product display with fallback strategies for missing fields
+   * Hook for domain-specific aggregation
    *
-   * This method provides intelligent display formatting that adapts to
-   * available fields instead of assuming specific field names.
+   * Subclasses can override this method to provide domain-specific aggregation logic.
+   * Default implementation falls back to aggregateDefault().
    *
-   * Display strategy:
-   * 1. Show name/title if available
-   * 2. Show price if available
-   * 3. Show model/SKU if available
-   * 4. Show entity type if detected
-   * 5. Gracefully handle missing fields
-   *
-   * @param array $productData Product data from extractProductDataFromRow()
-   * @return string Formatted product display text
+   * @param string $aggregationType Aggregation type
+   * @param array $successfulResults Successful results
+   * @param array $failedResults Failed results
+   * @return array Aggregated result
    */
-  private function formatProductDisplay(array $productData): string
+  protected function aggregateDomainSpecific(string $aggregationType, array $successfulResults, array $failedResults): array
   {
-    $lines = [];
-
-    // Display name/title
-    if (!empty($productData['name']) && $productData['name'] !== 'Unknown Item') {
-      $lines[] = "Item: " . $productData['name'];
-    }
-
-    // Display price
-    if (!empty($productData['price'])) {
-      $lines[] = "Our Price: $" . number_format($productData['price'], 2);
-    }
-
-    // Display model/SKU
-    if (!empty($productData['model'])) {
-      $lines[] = "Model: " . $productData['model'];
-    }
-
-    // Display entity type if detected (helps with debugging)
-    if ($this->debug && !empty($productData['entity_type'])) {
-      $lines[] = "Type: " . $productData['entity_type'];
-    }
-
-    // Fallback if no useful information
-    if (empty($lines)) {
-      return "Item information available but fields not recognized.\n" .
-             "Available fields: " . implode(', ', $productData['available_fields'] ?? []) . "\n\n";
-    }
-
-    return implode("\n", $lines) . "\n\n";
+    // Default: fallback to generic aggregation
+    return $this->aggregateDefault($successfulResults, $failedResults);
   }
 
   /**
@@ -540,7 +267,7 @@ class ResultAggregator extends BaseQueryProcessor
   /**
    * Collect sources from result - REQ-5.4: Source collection
    */
-  private function collectSources(array $result, array $sources): array
+  protected function collectSources(array $result, array $sources): array
   {
     if (!empty($result['result']['sources'])) {
       return array_merge($sources, $result['result']['sources']);
@@ -576,17 +303,20 @@ class ResultAggregator extends BaseQueryProcessor
    * REQ-5.5: Failed sub-query handling
    * 
    * Adds a user-friendly warning message when some sub-queries fail.
-   * The message is localized and provides clear information about partial results.
+   * The message provides clear information about partial results.
+   * 
+   * Note: Subclasses should override this method to provide localized messages
+   * using their domain's language system.
    */
-  private function addFailedQueryWarning(string $text, array $failedResults): string
+  protected function addFailedQueryWarning(string $text, array $failedResults): string
   {
     if (!empty($failedResults)) {
       $failedCount = count($failedResults);
       
-      // User-friendly message in French (primary language)
+      // Generic English message (subclasses should override for localization)
       $warningMessage = $failedCount === 1
-        ? "\n⚠️ Note: Certaines informations n'ont pas pu être récupérées. Les résultats affichés sont partiels.\n"
-        : "\n⚠️ Note: Certaines informations n'ont pas pu être récupérées ({$failedCount} requêtes ont échoué). Les résultats affichés sont partiels.\n";
+        ? "\n⚠️ Note: Some information could not be retrieved. Results shown are partial.\n"
+        : "\n⚠️ Note: Some information could not be retrieved ({$failedCount} queries failed). Results shown are partial.\n";
       
       $text .= $warningMessage;
       
@@ -603,7 +333,7 @@ class ResultAggregator extends BaseQueryProcessor
   /**
    * Format aggregated result with standard structure
    */
-  private function formatAggregatedResult(string $type, string $textResponse, $data, array $sources, array $successfulResults, array $failedResults): array
+  protected function formatAggregatedResult(string $type, string $textResponse, $data, array $sources, array $successfulResults, array $failedResults): array
   {
     return [
       'success' => !empty($successfulResults),

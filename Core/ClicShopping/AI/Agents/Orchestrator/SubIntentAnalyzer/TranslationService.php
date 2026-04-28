@@ -231,4 +231,37 @@ class TranslationService
     // Remove extra whitespace only (not internal quotes)
     return $clean;
   }
+
+  /**
+   * Check if a keyword exists in text regardless of language
+   *
+   * This method uses LLM translation to detect if an English keyword
+   * has an equivalent in the original text (any language).
+   * 
+   * This is language-agnostic and respects the AI layer architecture:
+   * - No hardcoded language patterns
+   * - Works for all languages automatically
+   * - Uses existing LLM translation infrastructure
+   *
+   * @param string $text Text to search (any language)
+   * @param string $englishKeyword English keyword to search for
+   * @return bool True if keyword or its translation exists in text
+   */
+  public function containsKeywordInAnyLanguage(string $text, string $englishKeyword): bool
+  {
+    $textLower = strtolower($text);
+    $keywordLower = strtolower($englishKeyword);
+
+    // First check if English keyword exists directly
+    if (str_contains($textLower, $keywordLower)) {
+      return true;
+    }
+
+    // If not found, translate the text to English and check again
+    // This handles cases where the keyword exists in another language
+    $translationResult = $this->translateIfNeeded($text);
+    $translatedTextLower = strtolower($translationResult['translated_query']);
+
+    return str_contains($translatedTextLower, $keywordLower);
+  }
 }
