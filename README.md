@@ -34,9 +34,6 @@ Driven by Community Support : ClicShopping AI™ is powered by its community. Do
 
 Get Started Today : Use the Artificial Intelligence to your Ecommerce business with ClicShopping AI™. Fast setup, powerful features, and a vibrant community — all completely free.
 
-
-
-
 ## Table of Contents
 
 * [What is ClicShopping AI™](https://github.com/ClicShopping#ClicShopping)
